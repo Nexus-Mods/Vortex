@@ -1,6 +1,7 @@
 import * as os from 'os';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { analyticsLog } from './utils/analyticsLog';
+import { getCPUArch } from './../../util/nativeArch';
 import { setAnalytics } from './actions/analytics.action';
 import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
 import { AppCrashedEvent, AppLaunchedEvent, MixpanelEvent, ModsInstallationCompletedEvent } from './mixpanel/MixpanelEvents';
@@ -124,7 +125,7 @@ function init(context: IExtensionContext): boolean {
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
           process.platform,  // OS platform (e.g., "win32", "darwin", "linux")
           os.release(),      // OS version (e.g., "10.0.22000" for Windows 11)
-          process.arch       // Architecture (e.g., "x64", "arm64")
+          getCPUArch()       // Architecture (e.g., "x64", "arm64")
         ));
 
         analyticsLog('info', 'Analytics started');
