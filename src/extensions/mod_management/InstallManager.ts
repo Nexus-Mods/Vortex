@@ -1816,6 +1816,13 @@ class InstallManager {
           return resolve();
         }
 
+        // Check if the dependency installation has been cancelled
+        // If mDependencyInstalls entry is missing, installation was cancelled and cleaned up
+        if (!this.mDependencyInstalls[sourceModId]) {
+          log('debug', 'Stopping phase polling - dependency installation cancelled', { sourceModId });
+          return resolve();
+        }
+
         // Determine which phase we're checking
         const checkPhase = options.phase ?? phaseState.allowedPhase ?? 0;
         const active = phaseState.activeByPhase.get(checkPhase) ?? 0;
@@ -3703,10 +3710,9 @@ class InstallManager {
           const refName = (dep.reference !== undefined)
             ? renderModReference(dep.reference, undefined)
             : 'undefined';
-          const notiId = `failed-install-dependency-${refName}`;
           if (err instanceof UserCanceled) {
             if (err.skipped) {
-              return Bluebird.resolve();
+              return Bluebird.resolve(undefined);
             } else {
               abort.abort();
               return Bluebird.reject(err);
@@ -3759,9 +3765,6 @@ class InstallManager {
         });
     }, { concurrency: 10 })
       .finally(() => {
-        delete this.mDependencyInstalls[sourceModId];
-        this.cleanupPendingInstalls(sourceModId);
-
         // Process any pending installations that were queued during dependency installation
         const phaseState = this.mInstallPhaseState.get(sourceModId);
         if (phaseState && phaseState.allowedPhase !== undefined) {
@@ -3804,12 +3807,24 @@ class InstallManager {
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
         // adequate to show an error but not as a bug in Vortex
+        
+        // Clean up phase state and dependency tracking when process is canceled
+        delete this.mDependencyInstalls[sourceModId];
+        this.cleanupPendingInstalls(sourceModId, true);
+        
         api.showErrorNotification('Failed to install dependencies',
           err.message, { allowReport: false });
         return Bluebird.resolve([]);
       })
       .catch(UserCanceled, () => {
         log('info', 'canceled out of dependency install');
+        // Cancel all remaining operations when user cancels
+        abort.abort();
+        
+        // Clean up phase state and dependency tracking when canceled
+        delete this.mDependencyInstalls[sourceModId];
+        this.cleanupPendingInstalls(sourceModId, true);
+        
         api.sendNotification({
           id: 'dependency-installation-canceled',
           type: 'info',
