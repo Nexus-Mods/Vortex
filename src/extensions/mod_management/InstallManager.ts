@@ -1606,13 +1606,9 @@ class InstallManager {
     const phaseNum = phase ?? 0;
 
     // Check if this installation is already active or pending
-    const depKey = `${sourceModId}:${dep.reference.tag || downloadId}`;
-    const alreadyActive = Array.from(this.mActiveInstalls.values()).some(
-      inst => inst.installId.startsWith(depKey)
-    );
-    const alreadyPending = Array.from(this.mPendingInstalls.keys()).some(
-      key => key.startsWith(depKey)
-    );
+    const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
+    const alreadyActive = this.mActiveInstalls.has(installKey);
+    const alreadyPending = this.mPendingInstalls.has(installKey);
 
     if (alreadyActive || alreadyPending) {
       return;
