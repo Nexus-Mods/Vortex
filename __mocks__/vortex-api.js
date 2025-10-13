@@ -208,6 +208,13 @@ class MockTestAPI {
           return;
         }
 
+        // Handle deploy-mods event with callback
+        if (event === 'deploy-mods' && typeof args[0] === 'function') {
+          // Call the callback immediately to simulate instant deployment
+          setImmediate(() => args[0](null)); // Call with no error
+          return;
+        }
+
         // Call any registered listeners for this event
         const listeners = this.eventListeners.get(event) || [];
         listeners.forEach(listener => {
