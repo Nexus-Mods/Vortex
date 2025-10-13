@@ -1016,16 +1016,6 @@ class InstallManager {
                 log('debug', '(nameloop) no existing ids', { testModId: testModId ?? '<undefined>' });
                 return Promise.resolve(testModId);
               } else {
-                // If we're installing as part of a collection, handle existing mods differently
-                if (sourceModId) {
-                  // Check if the existing mod is suitable for collection use
-                  const existingMod = api.getState().persistent.mods[installGameId]?.[existingIds[0]];
-                  if (existingMod && existingMod.state === 'installed') {
-                    // Use the existing mod without replacement or removal
-                    testModId = existingIds[0];
-                    return Promise.resolve(testModId);
-                  }
-                }
                 const installOptions: IInstallOptions = {
                   ...info,
                   unattended,
@@ -1712,7 +1702,10 @@ class InstallManager {
         }
 
         const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
-        const modId = await this.withInstructions(api,
+        // Check if mod is already installed
+        const mods = api.getState().persistent.mods[gameId];
+        const existingMod = findModByRef(currentDep.reference, mods);
+        const modId = existingMod != null ? existingMod.id : await this.withInstructions(api,
           modName(sourceMod),
           renderModReference(currentDep.reference),
           currentDep.reference?.tag ?? downloadId,
