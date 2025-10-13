@@ -122,7 +122,7 @@ function init(context: IExtensionContext): boolean {
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
-          process.platform,
+          process.platform,  // OS platform (e.g., "win32", "darwin", "linux")
           os.release(),      // OS version (e.g., "10.0.22000" for Windows 11)
           process.arch       // Architecture (e.g., "x64", "arm64")
         ));
