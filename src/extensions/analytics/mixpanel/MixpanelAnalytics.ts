@@ -1,4 +1,4 @@
-import Mixpanel from 'mixpanel';
+import mixpanel from 'mixpanel-browser';
 import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from '../constants';
 import { getApplication } from '../../../util/application';
 import { IValidateKeyDataV2 } from '../../nexus_integration/types/IValidateKeyData';
@@ -7,34 +7,56 @@ import { MixpanelEvent } from './MixpanelEvents';
 
 class MixpanelAnalytics {
 
-  private mixpanel: Mixpanel.Mixpanel;
   private user: number;
-  private superProperties: Record<string, any> = {};
+  private isInitialized: boolean = false;
 
   /**
    * isUserSet returns if the user is set
    */
   public isUserSet(): boolean {
-    return !!this.user && !!this.mixpanel;
+    return !!this.user && this.isInitialized;
   }
 
   /**
    * Sets and Initializes the Mixpanel tracking with super properties
    */
-  public start(userInfo: IValidateKeyDataV2, isStable: boolean) {
+  public start(userInfo: IValidateKeyDataV2, isProduction: boolean) {
+    // Guard against multiple initialization
+    if (this.isInitialized) {
+      analyticsServiceLog('mixpanel', 'warn', 'start() called but already initialized', {
+        userId: this.user,
+        newUserId: userInfo.userId
+      });
+      return;
+    }
+
     this.user = userInfo.userId;
-    const token = isStable ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
-    const environment = isStable ? 'production' : 'development';
-    this.mixpanel = Mixpanel.init(token);
+    const token = isProduction ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
+    const environment = isProduction ? 'production' : 'development';
 
-    // Build and store super properties based on data team requirements
-    this.superProperties = this.buildSuperProperties(userInfo);
+    // Initialize mixpanel-browser with config
+    mixpanel.init(token, {
+      debug: false,  // Disable internal Mixpanel logging (we use our own analyticsServiceLog)
+      track_pageview: false,  // We're not a web page
+      persistence: 'localStorage',
+      api_host: 'https://api.mixpanel.com',
+      // IP and geolocation are automatically tracked by mixpanel-browser
+    });
 
-    analyticsServiceLog('mixpanel', 'debug', `Started for ${environment}`, { 
-      userId: this.user, 
-      isStable,
+    this.isInitialized = true;
+
+    // Identify the user
+    mixpanel.identify(this.user.toString());
+
+    // Build and register super properties
+    const superProperties = this.buildSuperProperties(userInfo);
+    mixpanel.register(superProperties);
+
+    analyticsServiceLog('mixpanel', 'debug', `Started for ${environment}`, {
+      userId: this.user,
+      isProduction,
       environment,
-      superProperties: this.superProperties 
+      superProperties
     });
   }
 
@@ -92,7 +114,7 @@ class MixpanelAnalytics {
    */
   public updateSuperProperties(properties: Record<string, any>) {
     if (!this.isUserSet()) return;
-    this.superProperties = { ...this.superProperties, ...properties };
+    mixpanel.register(properties);
   }
 
   /**
@@ -100,8 +122,8 @@ class MixpanelAnalytics {
    */
   public stop() {
     this.user = null;
-    this.mixpanel = null;
-    this.superProperties = {};
+    this.isInitialized = false;
+    mixpanel.reset();  // Clears user identity and super properties
   }
 
   /**
@@ -113,15 +135,15 @@ class MixpanelAnalytics {
       return;
     }
 
-    // Merge super properties with event properties
-    const eventData = {
-      distinct_id: this.user,
-      ...this.superProperties,
-      ...event.properties,
-    };
+    // Track event with mixpanel-browser
+    // Super properties are automatically included
+    // IP address and geolocation are automatically tracked
+    mixpanel.track(event.eventName, event.properties);
 
-    analyticsServiceLog('mixpanel', 'debug', 'Event tracked', { eventName: event.eventName, eventData });
-    this.mixpanel!.track(event.eventName, eventData);
+    analyticsServiceLog('mixpanel', 'debug', 'Event tracked', {
+      eventName: event.eventName,
+      properties: event.properties
+    });
   }
 }
 
