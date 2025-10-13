@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+**Your Nexus Mods username**
+Will help us debug your issue.
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 

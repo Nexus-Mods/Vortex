@@ -309,7 +309,7 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      installManager.markPhaseDownloadsFinished(sourceModId, 1);
+      installManager.markPhaseDownloadsFinished(sourceModId, 1, mockApi);
 
       const state = installManager.mInstallPhaseState.get(sourceModId);
       expect(state.downloadsFinished.has(1)).toBe(true);
@@ -323,7 +323,7 @@ describe('Phased Installer', () => {
 
       expect(state.allowedPhase).toBeUndefined();
 
-      installManager.markPhaseDownloadsFinished(sourceModId, 2);
+      installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
 
       expect(state.allowedPhase).toBe(2);
     });
@@ -335,7 +335,7 @@ describe('Phased Installer', () => {
       const state = installManager.mInstallPhaseState.get(sourceModId);
       state.allowedPhase = 1;
 
-      installManager.markPhaseDownloadsFinished(sourceModId, 3);
+      installManager.markPhaseDownloadsFinished(sourceModId, 3, mockApi);
 
       expect(state.allowedPhase).toBe(1); // Should remain unchanged
       expect(state.downloadsFinished.has(3)).toBe(true);
@@ -385,7 +385,7 @@ describe('Phased Installer', () => {
       installManager.ensurePhaseState(sourceModId);
       // Use the proper method to mark phase 2's downloads as finished
       // This should auto-populate previous phases
-      installManager.markPhaseDownloadsFinished(sourceModId, 2);
+      installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
 
       const state = installManager.mInstallPhaseState.get(sourceModId);
 

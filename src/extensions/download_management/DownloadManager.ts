@@ -197,13 +197,19 @@ class DownloadWorker {
         }
       })
       .catch(err => {
-        log('error', 'DownloadWorker URL resolution failed', {
-          workerId: job.workerId || 'unknown',
-          chunkOffset: job.offset,
-          chunkSize: job.size,
-          error: err.message
-        });
-        this.handleError(err);
+        const isCanceled = (err instanceof ProcessCanceled) || (err instanceof UserCanceled);
+        if (!isCanceled) {
+          log('error', 'DownloadWorker URL resolution failed', {
+            workerId: job.workerId || 'unknown',
+            chunkOffset: job.offset,
+            chunkSize: job.size,
+            error: err.message
+          });
+          this.handleError(err);
+        } else {
+          this.cancel();
+          this.mJob.errorCB?.(err);
+        }
       })
       .finally(() => {
         this.mURLResolve = undefined;
