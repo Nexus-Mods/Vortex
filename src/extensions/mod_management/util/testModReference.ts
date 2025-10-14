@@ -294,34 +294,28 @@ export function testRefByIdentifiers(identifiers: { name?: string, gameId: strin
 
   if (ref.repo?.modId != null && modId != null
     && ref.repo?.fileId != null && fileId != null) {
-    if (ref.repo.modId !== modId.toString()
-      || ref.repo.fileId !== fileId.toString()) {
-      return false;
+    if (ref.repo.modId === modId.toString()
+      && ref.repo.fileId === fileId.toString()) {
+      return true;
     }
   }
 
   // right file?
   if (ref.fileExpression == null && ref.logicalFileName != null && name != null) {
     if (identifiers.name.includes(ref.logicalFileName)) {
-      // two matches is good enough.
       return true;
     }
   }
 
-  if (ref.fileExpression != null) {
+  if (ref.fileExpression != null && identifiers.name != null) {
     // file expression is either an exact match against the mod name or
     // a glob match against the archive name (without file extension)
-    if (identifiers.name == null) {
-        return false;
-    } else {
-      const baseName = sanitizeExpression(identifiers.name);
-      if ((baseName !== ref.fileExpression) &&
-          !minimatch(baseName, ref.fileExpression)) {
-        return false;
-      }
+    const baseName = sanitizeExpression(identifiers.name);
+    if ((baseName === ref.fileExpression) || minimatch(baseName, ref.fileExpression)) {
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 /**
