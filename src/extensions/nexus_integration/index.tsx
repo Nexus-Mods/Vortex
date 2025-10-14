@@ -75,7 +75,7 @@ import {
 import { checkModVersion } from './util/checkModsVersion';
 
 import NexusT, {
-  IDownloadURL, IFileInfo, IModFile,
+  IDownloadURL, IFileInfo, IFileUpdate, IModFile,
   IModFileQuery, IModInfo, IRevision, IRevisionQuery,
   IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
@@ -1287,6 +1287,7 @@ interface IDLQueueItem {
   canceled: boolean;
   res: (res: IResolvedURL) => void;
   rej: (err: Error) => void;
+  queryRelevantUpdates: () => Promise<IFileUpdate[]>;
 }
 
 const freeDLQueue: IDLQueueItem[] = [];
@@ -1331,13 +1332,54 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           resolve = undefined;
         }
       };
-      const queueItems = { input, url, name, friendlyName, res, rej, canceled: false };
+      const queryRelevantUpdates = () => {
+        return nexus.getModFiles(url.modId, url.gameId)
+          .then(files => {
+            // Build a bidirectional map for O(1) lookups, we're doing this
+            //  in the hope that the mod authors have kept a clear update chain
+            //  which we can use to find relevant fileIds.
+            // It's not cool that we're consuming an API slot for this, but without this
+            //  we can't reliably compare the dependency reference to what we're attempting
+            //  to skip (we only have the NXM url which isn't enough).
+            const forwardMap = new Map<number, IFileUpdate>();  // old_file_id -> update
+            const backwardMap = new Map<number, IFileUpdate>(); // new_file_id -> update
+
+            files.file_updates.forEach(update => {
+              forwardMap.set(update.old_file_id, update);
+              backwardMap.set(update.new_file_id, update);
+            });
+
+            // Traverse backwards to find the oldest file in the chain
+            let currentId = url.fileId;
+            const backwardChain: IFileUpdate[] = [];
+
+            while (backwardMap.has(currentId)) {
+              const update = backwardMap.get(currentId);
+              backwardChain.unshift(update); // Add to beginning
+              currentId = update.old_file_id;
+            }
+
+            // Now traverse forwards from the oldest file to build complete chain
+            const oldestId = backwardChain.length > 0 ? backwardChain[0].old_file_id : url.fileId;
+            currentId = oldestId;
+            const completeChain: IFileUpdate[] = [];
+
+            while (forwardMap.has(currentId)) {
+              const update = forwardMap.get(currentId);
+              completeChain.push(update);
+              currentId = update.new_file_id;
+            }
+
+            return completeChain;
+          })
+      }
+      const queueItems = { input, url, name, friendlyName, res, rej, queryRelevantUpdates, canceled: false };
       onCancel(() => {
         queueItems.canceled = true;
         const idx = freeDLQueue.findIndex(iter => iter.input === input);
         freeDLQueue.splice(idx, 1);
       });
-      freeDLQueue.push(queueItems);
+      freeDLQueue.push(queueItems as any);
       api.store.dispatch(addFreeUserDLItem(input));
     });
   }
@@ -1528,13 +1570,32 @@ function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
 function onSkip(api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
   if (queueItem !== undefined) {
-    const parsed = new NXMUrl(queueItem.input);
-    const itemIdentifiers = {
-      ...parsed.identifiers,
-      name: queueItem.name,
-    };
-    api.events.emit('free-user-skipped-download', itemIdentifiers);
-    queueItem.rej(new UserCanceled(true));
+    queueItem.queryRelevantUpdates()
+      .then(updates => {
+        const fileIdSet = new Set<string>();
+        const fileNames = new Set<string>();
+        fileIdSet.add(queueItem.url.fileId.toString());
+        fileNames.add(queueItem.name);
+        fileNames.add(queueItem.friendlyName);
+        updates.forEach(update => {
+          if (update.old_file_id != null) {
+            fileIdSet.add(update.old_file_id.toString());
+            fileNames.add(update.old_file_name);
+          }
+          if (update.new_file_id != null) {
+            fileIdSet.add(update.new_file_id.toString());
+            fileNames.add(update.new_file_name);
+          }
+        });
+        const parsed = new NXMUrl(queueItem.input);
+        const itemIdentifiers = {
+          ...parsed.identifiers,
+          fileNames: Array.from(fileNames),
+          fileIds: Array.from(fileIdSet),
+        };
+        api.events.emit('free-user-skipped-download', itemIdentifiers);
+        queueItem.rej(new UserCanceled(true));
+      })
   }
 }
 

@@ -593,6 +593,31 @@ class InstallManager {
     }
   }
 
+  private handleDownloadSkipped(api: IExtensionApi, sourceModId: string, dep: IDependency) {
+    if (!sourceModId || !dep) {
+      return;
+    }
+
+    // Check if we're currently in collection installation for this collection
+    const isInstallingCollection = !!this.mDependencyInstalls[sourceModId] || this.mInstallPhaseState.has(sourceModId);
+    if (!isInstallingCollection) {
+      log('debug', 'Collection is not currently installing - ignoring skipped download', { sourceModId });
+      return;
+    }
+
+    const downloads = api.getState().persistent.downloads.files;
+    const dlId = dep.download ?? findDownloadByReferenceTag(downloads, dep.reference);
+    if (dlId != null) {
+      // Remove any active or pending installation for this dependency
+      const installKey = this.generateDependencyInstallKey(sourceModId, dlId);
+      this.mPendingInstalls.delete(installKey);
+      this.mActiveInstalls.delete(installKey);
+    }
+
+    // See if we can advance the phase
+    this.maybeAdvancePhase(sourceModId, api);
+  }
+
   /**
    * Get information about all currently active installations
    */
@@ -2183,6 +2208,11 @@ class InstallManager {
 
   private startPendingForPhase(sourceModId: string, phase: number) {
     const state = this.mInstallPhaseState.get(sourceModId);
+    if (!state) {
+      // Phase state was cleaned up, nothing to start
+      return;
+    }
+
     const tasks = state.pendingByPhase.get(phase) ?? [];
 
     if (tasks.length === 0) {
@@ -2195,6 +2225,11 @@ class InstallManager {
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
     const state = this.mInstallPhaseState.get(sourceModId);
+    if (!state) {
+      // Phase state was cleaned up, nothing to advance
+      return;
+    }
+
     if (state.allowedPhase === undefined) {
       log('debug', 'phase gating: awaiting first finished phase', { sourceModId });
       return;
@@ -4184,6 +4219,12 @@ class InstallManager {
         }
       }
       return dlPromise
+        .catch(UserCanceled, err => {
+          if (err.skipped) {
+            this.handleDownloadSkipped(api, sourceModId, dep);
+          } 
+          return Bluebird.reject(err);
+        })
         .catch(AlreadyDownloaded, err => {
           if (err.downloadId !== undefined) {
             return Bluebird.resolve(err.downloadId);
