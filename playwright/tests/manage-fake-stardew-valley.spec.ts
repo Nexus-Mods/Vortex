@@ -128,111 +128,36 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
     await mainWindow.waitForTimeout(2000);
     await mainWindow.screenshot({ path: path.join(testRunDir, '21-details-menu.png') });
 
-    // Step 5: Set game path directly via Redux action (bypassing dialog)
-    console.log('\nStep 5: Setting game path via Redux action...');
+    // Step 5: Set game path programmatically and click the button
+    console.log('\nStep 5: Setting game path programmatically...');
     console.log(`Game path: ${gamePath}`);
     console.log(`Executable path: ${path.join(gamePath, gameConfig.executable)}`);
 
-    // Click Manually Set Location button (will open native dialog)
-    console.log('Looking for Manually Set Location button...');
+    // Set the global variable with the path - Vortex will check this instead of showing dialog
+    await mainWindow.evaluate((gamePath: string) => {
+      (global as any).__VORTEX_TEST_GAME_PATH__ = gamePath;
+    }, gamePath);
+    console.log('✓ Set test path in global variable');
+
+    // Click "Manually Set Location" button - it will read the global variable instead of showing dialog
+    console.log('Clicking Manually Set Location button...');
     const manuallySetLocationButton = mainWindow.locator('button.action-manually-set-location');
     await manuallySetLocationButton.waitFor({ state: 'visible', timeout: 10000 });
-
-    console.log('✓ Manually Set Location button found');
-    console.log('\n========================================');
-    console.log('⚠  MANUAL STEP REQUIRED');
-    console.log('========================================');
-    console.log('The test will now click "Manually Set Location".');
-    console.log('A native folder dialog will appear.');
-    console.log('');
-    console.log('Please select this folder:');
-    console.log(`  ${gamePath}`);
-    console.log('');
-    console.log('💡 TIP: Copy the path above and paste it into the');
-    console.log('   folder dialog address bar for quick navigation.');
-    console.log('');
-    console.log('Then select "Steam" as the store when prompted.');
-    console.log('');
-    console.log('Waiting 5 seconds before clicking...');
-    console.log('========================================\n');
-
-    await mainWindow.waitForTimeout(5000);
-
-    console.log('Clicking Manually Set Location...');
     await manuallySetLocationButton.click();
 
-    console.log('\n⏸  Waiting for manual folder selection...');
-    console.log('   Polling for store selection dialog...\n');
+    console.log('✓ Button clicked - path should be set automatically');
 
-    // Poll to detect when the store selection dialog appears
-    let storeDialogVisible = false;
-    let pollAttempts = 0;
-    const maxPollAttempts = 120; // 2 minutes with 1 second intervals
+    // Wait for game store selection dialog
+    await mainWindow.waitForTimeout(2000);
 
-    while (!storeDialogVisible && pollAttempts < maxPollAttempts) {
-      pollAttempts++;
-
-      // Check for the "Choose a Game Store" modal dialog
-      const dialogCheck = await mainWindow.evaluate(() => {
-        try {
-          // Look for the modal header with "Choose a Game Store" title
-          const modalTitle = document.querySelector('.modal-header h4.modal-title');
-          if (modalTitle && modalTitle.textContent?.includes('Choose a Game Store')) {
-            console.log('Found "Choose a Game Store" modal dialog!');
-            return { visible: true };
-          }
-
-          // Fallback: Look for Steam radio button as secondary check
-          const steamRadio = document.querySelector('input#steam[type="radio"]');
-          if (steamRadio) {
-            console.log('Found Steam radio button - store dialog is visible!');
-            return { visible: true };
-          }
-
-          return { visible: false };
-        } catch (err) {
-          return { visible: false, error: err instanceof Error ? err.message : String(err) };
-        }
-      });
-
-      if (dialogCheck.visible) {
-        storeDialogVisible = true;
-        console.log(`✓ Store selection dialog appeared after ${pollAttempts} seconds`);
-        break;
-      }
-
-      // Log progress every 10 seconds
-      if (pollAttempts % 10 === 0) {
-        console.log(`  Still waiting... (${pollAttempts}s elapsed)`);
-      }
-
-      await mainWindow.waitForTimeout(1000);
-    }
-
-    if (!storeDialogVisible) {
-      console.log('⚠ Store selection dialog did not appear within timeout');
-      console.log('Taking screenshot of current state...');
-      await mainWindow.screenshot({ path: path.join(testRunDir, '22-timeout-no-dialog.png') });
-      throw new Error('Store selection dialog did not appear after folder selection');
-    }
-
-    await mainWindow.screenshot({ path: path.join(testRunDir, '22-store-selection-dialog.png') });
-
-    // Step 5b: Select Steam store and close dialog
-    console.log('\nStep 5b: Selecting Steam store...');
-
-    // Click Steam radio button
-    console.log('Clicking Steam radio button...');
+    // Select Steam as the store
+    console.log('Selecting Steam store...');
     await mainWindow.locator('input#steam[type="radio"]').click();
     await mainWindow.waitForTimeout(500);
-
-    // Click the Select button
-    console.log('Clicking Select button...');
     await mainWindow.locator('.modal-content button#close').click();
-    await mainWindow.waitForTimeout(500);
-    console.log('✓ Store selection confirmed');
 
-    await mainWindow.screenshot({ path: path.join(testRunDir, '23-after-store-selection.png') });
+    await mainWindow.waitForTimeout(1000);
+    await mainWindow.screenshot({ path: path.join(testRunDir, '22-after-path-set.png') });
 
     // Step 5c: Click Manage button for Stardew Valley
     console.log('\nStep 5c: Clicking Manage button...');
@@ -291,12 +216,12 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
     console.log('✓ Logged into Nexus Mods');
     console.log('✓ Navigated to Games page');
     console.log('✓ Opened Stardew Valley details menu');
-    console.log('✓ Clicked Manually Set Location (manual folder selection)');
+    console.log('✓ Set game path programmatically (automated, no dialog)');
     console.log(`✓ Game discovered: ${gameDiscovered.isDiscovered}`);
     if (gameDiscovered.isDiscovered) {
       console.log(`✓ Game path in Vortex: ${gameDiscovered.path}`);
     } else {
-      console.log('⚠ Game was not discovered - manual selection may have been skipped');
+      console.log('⚠ Game was not discovered - path setting may have failed');
     }
     console.log(`✓ Screenshots saved to: ${testRunDir}`);
     console.log('====================\n');
