@@ -1,0 +1,592 @@
+{
+  "info": {
+    "author": "QtheConqueror",
+    "authorUrl": "",
+    "name": "SVE + Grandpa's Farm",
+    "description": "Stardew Valley Expanded with dependencies + Grandpa's Farm",
+    "installInstructions": "",
+    "domainName": "stardewvalley",
+    "gameVersions": [
+      "1.6.8.24119"
+    ]
+  },
+  "mods": [
+    {
+      "name": "Stardew Valley Expanded Code",
+      "version": "1.14.46",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 3753,
+        "fileId": 102098,
+        "md5": "afe0a8e16cb8736017001a363ea9a9cf",
+        "fileSize": 86101915,
+        "logicalFilename": "-Stardew Valley Expanded-",
+        "updatePolicy": "latest",
+        "tag": "EM_77zb8o"
+      },
+      "author": "FlashShifter",
+      "details": {
+        "category": "Expansions",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "SMAPI - Stardew Modding API - SMAPI 4.0.8",
+      "version": "4.0.8",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 2400,
+        "fileId": 94412,
+        "md5": "119ed0fa02e5d64e4a7aa543b3647814",
+        "fileSize": 41258412,
+        "logicalFilename": "SMAPI 4.0.8",
+        "updatePolicy": "latest",
+        "tag": "I2odxDmAhJ"
+      },
+      "author": "Pathoschild",
+      "details": {
+        "category": "Modding Tools",
+        "type": "SMAPI"
+      },
+      "phase": 0
+    },
+    {
+      "name": "Grandpa's Farm",
+      "version": "1.14.43",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 3753,
+        "fileId": 96097,
+        "md5": "c3c95e364736cc87eebc5bc53219b4a6",
+        "fileSize": 1272790,
+        "logicalFilename": "Grandpa's Farm",
+        "updatePolicy": "latest",
+        "tag": "skOFDHV9k9"
+      },
+      "author": "FlashShifter",
+      "details": {
+        "category": "Expansions",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Farm Type Manager",
+      "version": "1.23.0",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 3231,
+        "fileId": 107930,
+        "md5": "2345fe8f02a21947ae9cc2696e0bc8a6",
+        "fileSize": 128407,
+        "logicalFilename": "Farm Type Manager v1.23.0",
+        "updatePolicy": "latest",
+        "tag": "RaLZCEkBCT"
+      },
+      "author": "Esca-MMC",
+      "details": {
+        "category": "Gameplay Mechanics",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Content Patcher",
+      "version": "2.3.0",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 1915,
+        "fileId": 105346,
+        "md5": "daf22c41bf00ce6fb97139f6815e339c",
+        "fileSize": 323939,
+        "logicalFilename": "Content Patcher 2.3.0",
+        "updatePolicy": "latest",
+        "tag": "y6gDfNcPLc"
+      },
+      "author": "Pathoschild",
+      "details": {
+        "category": "Modding Tools",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "BirbCore",
+      "version": "1.0.3",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 19140,
+        "fileId": 94244,
+        "md5": "f05c4ab8bb6af3e1c96c50fee7ee0b98",
+        "fileSize": 47941,
+        "logicalFilename": "BirbCore",
+        "updatePolicy": "latest",
+        "tag": "pQ9CErhStq"
+      },
+      "author": "drbirbdev",
+      "details": {
+        "category": "Modding Tools",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Skip Intro",
+      "version": "1.9.19",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 533,
+        "fileId": 103136,
+        "md5": "d3d4b60a7088dee07491021941fcd69a",
+        "fileSize": 75385,
+        "logicalFilename": "Skip Intro 1.9.19",
+        "updatePolicy": "latest",
+        "tag": "m3MbFlRe5X"
+      },
+      "author": "Pathoschild",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Seasonal Cute Swimwear",
+      "version": "1.0.0",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 5450,
+        "fileId": 35517,
+        "md5": "ea82954baff129c3e0f1a2f63a30c191",
+        "fileSize": 424809,
+        "logicalFilename": "Seasonal Cute Characters - Swimwear",
+        "updatePolicy": "latest",
+        "tag": "aDIgdl2MCq"
+      },
+      "author": "Poltergeister and various artists",
+      "details": {
+        "category": "Characters",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Seasonal Cute Characters SVE",
+      "version": "3.0.0",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 5969,
+        "fileId": 99115,
+        "md5": "a0c13594859d7e83c47c9112b350c698",
+        "fileSize": 17610112,
+        "logicalFilename": "Seasonal Cute Characters- SVE",
+        "updatePolicy": "latest",
+        "tag": "rWZhiXw0Pp"
+      },
+      "author": "Poltergeister",
+      "details": {
+        "category": "Characters",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Seasonal Cute Characters",
+      "version": "6.0.1",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 5450,
+        "fileId": 99110,
+        "md5": "9524051e61f9708d62f35b575b637ea0",
+        "fileSize": 32340721,
+        "logicalFilename": "Seasonal Cute Characters",
+        "updatePolicy": "latest",
+        "tag": "-MU6mTduWR"
+      },
+      "author": "Poltergeister and various artists",
+      "details": {
+        "category": "Characters",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "NPC Map Locations",
+      "version": "3.1.0",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 239,
+        "fileId": 94446,
+        "md5": "8af8010a3cfe9b398ad5f3bcb5e81f79",
+        "fileSize": 81141,
+        "logicalFilename": "NPC Map Locations 3.1.0",
+        "updatePolicy": "latest",
+        "tag": "hSH9ZHtDgZ"
+      },
+      "author": "Bouhm and Pathoschild",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Mod Update Menu",
+      "version": "1.6.1-unofficial-1.dphill",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "browse",
+        "url": "https://forums.stardewvalley.net/attachments/modupdatemenu-1-6-1-unofficial-1-dphill-zip.20861/",
+        "instructions": "The mod download should start in a few seconds (by dphill & Pathoschild)",
+        "adultContent": false,
+        "md5": "9630d07774d9116bdbbe793846a1b1b7",
+        "fileSize": 32445,
+        "updatePolicy": "latest",
+        "tag": "NWJaB8q2kq"
+      },
+      "author": "Cat",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Mini Bars",
+      "version": "1.0.4",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 8329,
+        "fileId": 72041,
+        "md5": "68df9a2e2c80d0a391413f4403d14201",
+        "fileSize": 101985,
+        "logicalFilename": "Mini Bars 1.0.4",
+        "updatePolicy": "latest",
+        "tag": "a4oW5Iq8Ck"
+      },
+      "author": "Ophaneom",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Horse Overhaul",
+      "version": "1.5.9",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 7911,
+        "fileId": 100151,
+        "md5": "4c0d6689356d49b75bfcc077c3593913",
+        "fileSize": 437414,
+        "logicalFilename": "Horse Overhaul 1.5.9",
+        "updatePolicy": "latest",
+        "tag": "yMSH0jOYd2"
+      },
+      "author": "Goldenrevolver",
+      "details": {
+        "category": "Pets / Horses",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Help Wanted Redux For 1.6",
+      "version": "1.1.1",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 21766,
+        "fileId": 99727,
+        "md5": "a7774eb1feced1494992a1623e38b2a8",
+        "fileSize": 66107,
+        "logicalFilename": "Help Wanted 1.1.1",
+        "updatePolicy": "latest",
+        "tag": "_UD6RCrKJ9"
+      },
+      "author": "aedenthorn",
+      "details": {
+        "category": "Gameplay Mechanics",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Grampleton Fields",
+      "version": "1.14.45",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 3753,
+        "fileId": 102069,
+        "md5": "950f6975461cd2448e441e3fa3888c3a",
+        "fileSize": 141642,
+        "logicalFilename": "Grampleton Fields",
+        "updatePolicy": "latest",
+        "tag": "icFDnSxjDg"
+      },
+      "author": "FlashShifter",
+      "details": {
+        "category": "Expansions",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Experience Updates",
+      "version": "1.0.1",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 7581,
+        "fileId": 35299,
+        "md5": "b6b288f1122c6a88969e566f0677c8fd",
+        "fileSize": 11086,
+        "logicalFilename": "Experience Updates",
+        "updatePolicy": "latest",
+        "tag": "41R63A2IMtT"
+      },
+      "author": "Henesy13",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Experience Bars",
+      "version": "1.4.5",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 509,
+        "fileId": 83796,
+        "md5": "2b99be7aac12e6da69920e1ad01d23ab",
+        "fileSize": 74307,
+        "logicalFilename": "Experience Bars 1.4.5",
+        "updatePolicy": "latest",
+        "tag": "ZagGOKcYn0C"
+      },
+      "author": "spacechase0",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Event Lookup",
+      "version": "0.2.9",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 8505,
+        "fileId": 91865,
+        "md5": "f047039da028110243db514cc17dc821",
+        "fileSize": 71356,
+        "logicalFilename": "Event Lookup 0.2.9",
+        "updatePolicy": "latest",
+        "tag": "KqGFDHOXB_O"
+      },
+      "author": "shekurika",
+      "details": {
+        "category": "User Interface",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Elle's Seasonal Vanilla Buildings",
+      "version": "1.0.4",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 6330,
+        "fileId": 35409,
+        "md5": "706b311fb4250fa1bf503d2753194c8a",
+        "fileSize": 2295300,
+        "logicalFilename": "Seasonal Vanilla Buildings",
+        "updatePolicy": "latest",
+        "tag": "2tGrb5LWj5w"
+      },
+      "author": "Elle",
+      "details": {
+        "category": "Buildings",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Better Crafting",
+      "version": "2.13.0",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 11115,
+        "fileId": 101959,
+        "md5": "4c5ee0bd7bd9d49999a5aa94acd5a6e5",
+        "fileSize": 501995,
+        "logicalFilename": "Better Crafting",
+        "updatePolicy": "latest",
+        "tag": "qPJcmeOvITv"
+      },
+      "author": "Khloe Leclair",
+      "details": {
+        "category": "Crafting",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "AutomaticGates",
+      "version": "2.5.4",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 3109,
+        "fileId": 83140,
+        "md5": "6e5a596460a1b3d64a2de767291694aa",
+        "fileSize": 21709,
+        "logicalFilename": "AutomaticGates 2.5.4",
+        "updatePolicy": "latest",
+        "tag": "73Y0vDg_BWw"
+      },
+      "author": "Rakiin aka ScheKaa",
+      "details": {
+        "category": "Gameplay Mechanics",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Add Berry seasons to calendar",
+      "version": "1.1.0",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 10477,
+        "fileId": 52886,
+        "md5": "5b3fb7951d6fc82c067b89a317c94d97",
+        "fileSize": 3233,
+        "logicalFilename": "Add Berry seasons to calendar",
+        "updatePolicy": "latest",
+        "tag": "sAgBhk5VPSy"
+      },
+      "author": "Inmognito",
+      "details": {
+        "category": "Visuals and Graphics",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "SpaceCore",
+      "version": "1.25.2",
+      "optional": false,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 1348,
+        "fileId": 109131,
+        "md5": "4039ccc566d497dace3f5edee119e623",
+        "fileSize": 285875,
+        "logicalFilename": "SpaceCore 1.25.2",
+        "updatePolicy": "latest",
+        "tag": "O4sE0iRHQq1"
+      },
+      "author": "spacechase0",
+      "details": {
+        "category": "Modding Tools",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Yet Another Cooking Skill",
+      "version": "1.7.7",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 22681,
+        "fileId": 110422,
+        "md5": "7c338c15c22e42d31ffbee5bdc29b848",
+        "fileSize": 231542,
+        "logicalFilename": "YACS-1.6-v1.7.7",
+        "updatePolicy": "latest",
+        "tag": "RX1c2n8sOy3"
+      },
+      "author": "MoonSlime",
+      "details": {
+        "category": "Gameplay Mechanics",
+        "type": ""
+      },
+      "phase": 0
+    },
+    {
+      "name": "Generic Mod Config Menu",
+      "version": "1.13.2",
+      "optional": true,
+      "domainName": "stardewvalley",
+      "source": {
+        "type": "nexus",
+        "modId": 5098,
+        "fileId": 111626,
+        "md5": "aff8363ef2d773801f798d93d6d5218c",
+        "fileSize": 99612,
+        "logicalFilename": "Generic Mod Config Menu 1.13.2",
+        "updatePolicy": "latest",
+        "tag": "OR5rGinWD72"
+      },
+      "author": "spacechase0",
+      "details": {
+        "category": "Modding Tools",
+        "type": ""
+      },
+      "phase": 0
+    }
+  ],
+  "modRules": [],
+  "tools": [],
+  "collectionConfig": {
+    "recommendNewProfile": false
+  }
+}

@@ -182,7 +182,7 @@ class DownloadWorker {
     this.mURLResolve = Bluebird.resolve(job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
-        if (jobUrl.toString().startsWith('blob:')) {
+        if (jobUrl && jobUrl.toString().startsWith('blob:')) {
           // in the case of blob downloads (meaning: javascript already placed the entire file
           // in local storage) the main process has already downloaded this file, we just have
           // to use it now
@@ -190,8 +190,10 @@ class DownloadWorker {
           job.size = 0;
           const [ignore, fileName] = jobUrl.split('<')[0].split('|');
           finishCB(false, fileName);
-        } else {
+        } else if (jobUrl) {
           this.assignJob(job, jobUrl);
+        } else {
+          this.handleError(new ProcessCanceled('No URL found for this download'));
         }
       })
       .catch(err => {
@@ -919,7 +921,9 @@ class DownloadManager {
     });
     
     const speedCalcCB = (speed: number) => {
-      speedCB(speed);
+      if (speedCB && typeof speedCB === 'function') {
+        speedCB(speed);
+      }
     }
     setInterval(() => this.tickQueue(false), 200);
     this.mSpeedCalculator = new SpeedCalculator(5, speedCalcCB);

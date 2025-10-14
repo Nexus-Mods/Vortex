@@ -170,27 +170,31 @@ export class DownloadObserver {
     const innerState: IState = this.mApi.getState();
 
     const nexusIds = nexusIdsFromDownloadId(innerState, id);
-    const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
-    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-    if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+    // Only track analytics if we have valid Nexus metadata
+    if (nexusIds) {
+      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+      const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-      if (isCollection) {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+      if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
+        if (isCollection) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+        } else {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+        }
+
       } else {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
-      }
 
-    } else {
-
-      if (isCollection) {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
-      } else {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+        if (isCollection) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
+        } else {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+        }
       }
     }
 
