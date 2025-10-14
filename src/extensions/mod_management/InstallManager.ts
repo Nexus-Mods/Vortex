@@ -5103,7 +5103,7 @@ class InstallManager {
   /**
    * Find any download that matches the given mod reference using all available methods
    */
-  private findDownloadForMod(reference: any, downloads: any): string | null {
+  private findDownloadForMod(reference: IModReference, downloads: { [id: string]: IDownload }): string | null {
     // Try the primary lookup first
     const downloadId = findDownloadByRef(reference, downloads);
     if (downloadId) {
@@ -5158,9 +5158,14 @@ class InstallManager {
         if (download.state !== 'finished') {
           return false;
         }
-        
+
+        const nameSet = new Set<string>();
+        const fileIdsSet = new Set<string>();
+        fileIdsSet.add(download.modInfo?.nexus?.ids?.fileId?.toString?.());
+        nameSet.add(download.localPath ? path.basename(download.localPath, path.extname(download.localPath)) : undefined);
         const identifiers = {
-          name: download.localPath ? require('path').basename(download.localPath, require('path').extname(download.localPath)) : undefined,
+          fileNames: Array.from(nameSet).filter(truthy) as string[],
+          fileIds: Array.from(fileIdsSet).filter(truthy) as string[],
           gameId: download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
           modId: download.modInfo?.nexus?.ids?.modId,
           fileId: download.modInfo?.nexus?.ids?.fileId

@@ -293,10 +293,17 @@ export function findDownloadByRef(reference: IReference,
         return false;
       }
       const lookup = lookupFromDownload(download);
+      const fileIdSet = new Set<string>();
+      const nameSet = new Set<string>();
+      fileIdSet.add(lookup.fileId.toString());
+      nameSet.add(lookup?.logicalFileName);
+      nameSet.add(lookup?.customFileName);
+      nameSet.add(download.modInfo?.name);
       const identifiers = {
         modId: parseInt(lookup?.modId, 10),
         fileId: parseInt(lookup?.fileId, 10),
-        name: lookup?.logicalFileName || download.modInfo?.name,
+        fileIds: Array.from(fileIdSet).filter(truthy),
+        fileNames: Array.from(nameSet).filter(truthy),
         gameId: download.game[0],
       }
       return testModReference(lookup, reference, undefined, fuzzy) ?? testRefByIdentifiers(identifiers, reference);
