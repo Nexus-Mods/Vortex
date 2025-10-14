@@ -121,9 +121,15 @@ class MixpanelAnalytics {
    * Disable tracking
    */
   public stop() {
+    if (this.isInitialized) {
+      try {
+        mixpanel.reset();  // Clears user identity and super properties
+      } catch (error) {
+        analyticsServiceLog('mixpanel', 'warn', 'Failed to reset mixpanel', { error: error.message });
+      }
+    }
     this.user = null;
     this.isInitialized = false;
-    mixpanel.reset();  // Clears user identity and super properties
   }
 
   /**
