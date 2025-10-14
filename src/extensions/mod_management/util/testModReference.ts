@@ -9,6 +9,7 @@ import * as _ from 'lodash';
 import minimatch from 'minimatch';
 import * as path from 'path';
 import * as semver from 'semver';
+import { IFileUpdate } from '@nexusmods/nexus-api';
 
 export interface IModLookupInfo {
   id?: string;
@@ -285,34 +286,40 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   return true;
 }
 
-export function testRefByIdentifiers(identifiers: { name?: string, gameId: string, modId?: number, fileId?: number }, ref: IModReference): boolean {
+export function testRefByIdentifiers(identifiers: {
+  gameId: string,
+  modId?: number,
+  fileId?: number,
+  fileNames?: string[],
+  fileIds?: string[],
+}, ref: IModReference): boolean {
   if (identifiers == null || typeof identifiers !== 'object' || Array.isArray(identifiers)) {
     return false;
   }
 
-  const { name, modId, fileId } = identifiers;
-
+  const { fileNames, modId, fileIds } = identifiers;
   if (ref.repo?.modId != null && modId != null
-    && ref.repo?.fileId != null && fileId != null) {
+    && ref.repo?.fileId != null && fileIds.length > 0) {
     if (ref.repo.modId === modId.toString()
-      && ref.repo.fileId === fileId.toString()) {
+      && fileIds.includes(ref.repo.fileId)) {
       return true;
     }
   }
-
   // right file?
-  if (ref.fileExpression == null && ref.logicalFileName != null && name != null) {
-    if (identifiers.name.includes(ref.logicalFileName)) {
+  if (ref.fileExpression == null && ref.logicalFileName != null && fileNames != null) {
+    if (fileNames.includes(ref.logicalFileName)) {
       return true;
     }
   }
 
-  if (ref.fileExpression != null && identifiers.name != null) {
+  if (ref.fileExpression != null && fileNames != null) {
     // file expression is either an exact match against the mod name or
     // a glob match against the archive name (without file extension)
-    const baseName = sanitizeExpression(identifiers.name);
-    if ((baseName === ref.fileExpression) || minimatch(baseName, ref.fileExpression)) {
-      return true;
+    for (const fileName of fileNames) {
+      const baseName = sanitizeExpression(fileName);
+      if ((baseName === ref.fileExpression) || minimatch(baseName, ref.fileExpression)) {
+        return true;
+      }
     }
   }
   return false;
