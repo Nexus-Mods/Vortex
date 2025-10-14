@@ -301,9 +301,10 @@ export function testRefByIdentifiers(identifiers: { name?: string, gameId: strin
   }
 
   // right file?
-  if (ref.logicalFileName != null && name != null) {
-    if (!identifiers.name.includes(ref.logicalFileName) && ref.fileExpression == null) {
-      return false;
+  if (ref.fileExpression == null && ref.logicalFileName != null && name != null) {
+    if (identifiers.name.includes(ref.logicalFileName)) {
+      // two matches is good enough.
+      return true;
     }
   }
 
