@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import { test, Browser, expect } from '@playwright/test';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
-import { loginToNexusMods } from '../src/nexusmods-auth-helpers';
+import { loginToNexusMods, downloadModFromNexus } from '../src/nexusmods-auth-helpers';
 import {
   cleanupFakeGameInstallation,
   createFakeGameInstallation,
@@ -32,11 +32,16 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
   console.log(`\nTest: ${TEST_NAME}`);
   console.log(`Screenshots: ${testRunDir}\n`);
 
+  let browserContext: any;
+
   try {
     // Login to Nexus Mods
     console.log('1. Logging in...');
     const loginResult = await loginToNexusMods(browser, mainWindow, undefined, undefined, testRunDir);
     if (!loginResult.success) throw new Error(`Login failed: ${loginResult.error}`);
+
+    // Keep the browser context for downloading mods later
+    browserContext = loginResult.browserContext;
 
     // Create fake game installation
     console.log('2. Creating fake game files...');
@@ -88,11 +93,32 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
 
     await mainWindow.screenshot({ path: path.join(testRunDir, 'final.png') });
 
+    
+
     // Assert test passed
     expect(isDiscovered).toBe(true);
     console.log(`✓ Test passed - game discovered at: ${gamePath}\n`);
 
+    // Download a mod using the authenticated browser context
+    if (browserContext) {
+      console.log('8. Downloading mod...');
+      const modUrl = 'https://nexusmods-staging.cluster.nexdev.uk/stardewvalley/mods/1?tab=files&file_id=1';
+      const downloadSuccess = await downloadModFromNexus(browserContext, modUrl, testRunDir);
+
+      if (downloadSuccess) {
+        console.log('✓ Mod download initiated\n');
+        await mainWindow.waitForTimeout(2000);
+      } else {
+        console.warn('⚠ Mod download may have failed\n');
+      }
+    }
+
   } finally {
+    // Clean up browser context
+    if (browserContext) {
+      await browserContext.close();
+    }
+
     cleanupFakeGameInstallation(gamePath);
     await closeVortex(app, appProcess, pid, userDataDir);
   }

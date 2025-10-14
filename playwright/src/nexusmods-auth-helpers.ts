@@ -17,6 +17,7 @@ interface OAuthData {
 interface LoginResult {
   success: boolean;
   error?: string;
+  browserContext?: any; // BrowserContext from Playwright
 }
 
 /**
@@ -197,10 +198,9 @@ export async function performOAuthLogin(
       await mainWindow.screenshot({ path: path.join(testRunDir, '09-vortex-logged-in.png') });
     }
 
-    // Gracefully close browser context
-    await context.close();
-
-    return { success: true };
+    // Return the browser context so it can be reused (e.g., for downloading mods)
+    // Caller is responsible for closing the context when done
+    return { success: true, browserContext: context };
   } catch (err) {
     console.error('Error during OAuth login:', err);
     return { success: false, error: (err as Error).message };
@@ -275,6 +275,73 @@ export async function loginToNexusMods(
   } catch (err) {
     console.error('Error during login flow:', err);
     return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
+ * Downloads a mod from Nexus Mods using an authenticated browser context
+ *
+ * @param browserContext - Authenticated browser context from loginToNexusMods
+ * @param modUrl - URL to the mod page (e.g., https://nexusmods-staging.cluster.nexdev.uk/stardewvalley/mods/1?tab=files&file_id=1)
+ * @param testRunDir - Optional directory for saving screenshots
+ * @returns Promise<boolean> - true if download was initiated successfully
+ */
+export async function downloadModFromNexus(
+  browserContext: any,
+  modUrl: string,
+  testRunDir?: string
+): Promise<boolean> {
+  try {
+    console.log(`\nDownloading mod from: ${modUrl}`);
+
+    // Create a new page in the authenticated context
+    const page = await browserContext.newPage();
+
+    // Navigate to the mod page
+    await page.goto(modUrl);
+    console.log('✓ Loaded mod page');
+
+    if (testRunDir) {
+      await page.screenshot({ path: path.join(testRunDir, 'mod-page.png') });
+    }
+
+    // Wait for page to load
+    await page.waitForTimeout(2000);
+
+    // Look for the "Slow download" button on staging Nexus Mods
+    // Button text varies: "Slow download" (free users) or "Mod Manager Download" (premium)
+    const downloadButton = page.locator('button:has-text("Slow download"), button:has-text("Mod Manager Download"), button:has-text("Download")').first();
+
+    const isVisible = await downloadButton.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (isVisible) {
+      console.log('✓ Found download button, clicking...');
+      await downloadButton.click();
+
+      // Wait for download to initiate or for any modals/dialogs
+      await page.waitForTimeout(2000);
+
+      if (testRunDir) {
+        await page.screenshot({ path: path.join(testRunDir, 'download-clicked.png') });
+      }
+
+      // Check if download actually started
+      console.log('Current URL after click:', page.url());
+
+      console.log('✓ Download button clicked - Vortex should receive the nxm:// link');
+      await page.close();
+      return true;
+    } else {
+      console.error('❌ Could not find download button on mod page');
+      if (testRunDir) {
+        await page.screenshot({ path: path.join(testRunDir, 'no-download-button.png') });
+      }
+      await page.close();
+      return false;
+    }
+  } catch (err) {
+    console.error('Error downloading mod:', err);
+    return false;
   }
 }
 
