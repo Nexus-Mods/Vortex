@@ -189,7 +189,8 @@ export async function performOAuthLogin(
     // The loopback server in Vortex should now receive the auth code
     console.log('OAuth flow completed - Vortex should now be logged in');
 
-    await mainWindow.waitForTimeout(2000);
+    // Short wait for Vortex to process the callback
+    await mainWindow.waitForTimeout(1000);
 
     // Wait for Vortex to update its UI to reflect logged-in state
     if (testRunDir) {
@@ -245,7 +246,8 @@ export async function loginToNexusMods(
     }
 
     // Wait for OAuth URL to be generated and stored in Redux
-    await mainWindow.waitForTimeout(2000);
+    // Keep this short to prevent token expiration
+    await mainWindow.waitForTimeout(1000);
 
     // Extract OAuth URL
     const oauthData = await extractOAuthUrl(mainWindow);
