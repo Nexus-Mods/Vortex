@@ -34,14 +34,11 @@ import OverlayContainer from './OverlayContainer';
 import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
-import SpineQuickLauncher from './SpineQuickLauncher';
-import ThemeSelector from './ThemeSelector';
 import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
 import { profileById } from '../util/selectors';
 import { getGame } from '../util/api';
-import { initializeTheme } from '../util/theme';
 
 import update from 'immutability-helper';
 import * as _ from 'lodash';
@@ -53,10 +50,8 @@ import { addStyle } from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-import * as Tailwind from '../tailwind/components';
-import { tokens } from '../tailwind/tokens';
-
 import { Toaster } from 'react-hot-toast'; // at top
+
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -189,9 +184,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       document.body.classList.add('custom-titlebar-body');
     }
 
-    // Initialize theme system
-    initializeTheme();
-
     this.updateSize();
 
     window.addEventListener('resize', this.updateSize);
@@ -202,9 +194,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public componentWillUnmount() {
-    // Remove dark class from html element
-    document.documentElement.classList.remove('dark');
-
     window.removeEventListener('resize', this.updateSize);
     window.removeEventListener('keydown', this.updateModifiers);
     window.removeEventListener('keyup', this.updateModifiers);
@@ -275,10 +264,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               className={classes.join(' ')}
             >
               <div className='menu-layer' ref={this.setMenuLayer} />
-              {/* New 3-column Tailwind grid layout */}
-              <div className="tw:grid tw:grid-cols-[auto_auto_1fr] tw:h-screen" id='main-window-content'>
-                {switchingProfile ? this.renderWait() : this.render3ColumnBody()}
-              </div>
+              <FlexLayout id='main-window-content' type='column'>
+                {this.renderToolbar(switchingProfile)}
+                {customTitlebar ? <div className='dragbar' /> : null}
+                {switchingProfile ? this.renderWait() : this.renderBody()}
+              </FlexLayout>
               <Dialog />
               <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
               <OverlayContainer />
@@ -392,6 +382,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
+        <QuickLauncher t={t} />
         <Banner group='main-toolbar' />
         <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
@@ -460,94 +451,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   }
 
-  private render3ColumnBody() {
-    const { customTitlebar } = this.props;
-
-    return (
-      <>
-        {/* Column 1: Spine Menu */}
-        <div className="tw:w-24 tw:bg-gray-400 tw:dark:bg-gray-900 tw:flex tw:flex-col tw:p-3 tw:gap-3">          
-          <div className="tw:flex-1 tw:flex tw:justify-center">
-            <SpineQuickLauncher t={this.props.t} />
-          </div>
-          <div className="tw:flex-shrink-0">
-            <ThemeSelector t={this.props.t} />
-          </div>
-        </div>
-
-        {/* Column 2: Sidebar */}
-        <div className="tw:bg-gray-100 tw:dark:bg-gray-800">
-          {this.renderSidebarColumn()}
-        </div>
-
-        {/* Column 3: Main Content Area (2 rows) */}
-        <div className="tw:grid tw:grid-rows-[auto_1fr] tw:overflow-hidden">
-          {/* Row 1: Titlebar */}
-          <div className="tw:bg-gray-200 tw:dark:bg-gray-700">
-            {this.renderToolbar(false)}
-            {customTitlebar ? <div className='dragbar' /> : null}
-          </div>
-
-          {/* Row 2: Main Content */}
-          <div className="tw:bg-white tw:dark:bg-gray-900 tw:overflow-hidden">
-            {this.renderMainContent()}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  private renderSidebarColumn() {
-    const { t, objects, tabsMinimized } = this.props;
-    const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
-
-    const state = this.props.api.getState();
-    const profile = profileById(state, this.props.activeProfileId);
-    const game = profile !== undefined ? getGame(profile.gameId) : undefined;
-    const gameName = game?.shortName || game?.name || 'Mods';
-    const pageGroups = [
-      { title: undefined, key: 'dashboard' },
-      { title: 'General', key: 'global' },
-      { title: gameName, key: 'per-game' },
-      { title: 'About', key: 'support' },
-    ];
-
-    return (
-      <div className={sbClass}>
-        {/* <Tailwind.Button
-          variant='primary'
-          onClick={() => console.log('Tailwind Button Clicked')}
-        >
-          Tailwind Button
-        </Tailwind.Button> */}
-        <div id='main-nav-container' ref={this.setSidebarRef}>
-          {pageGroups.map(this.renderPageGroup)}
-        </div>
-        {/* <MainFooter slim={tabsMinimized} /> */}
-        {/* <Button
-          tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
-          id='btn-minimize-menu'
-          onClick={this.toggleMenu}
-          className='btn-menu-minimize'
-        >
-          <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
-        </Button> */}
-      </div>
-    );
-  }
-
-  private renderMainContent() {
-    const { objects } = this.props;
-    const pages = objects.map(obj => this.renderPage(obj));
-    pages.push(this.renderPage(this.settingsPage));
-
-    return (
-      <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {pages}
-      </DNDContainer>
-    );
-  }
-
   private renderBody() {
     const { t, objects, tabsMinimized } = this.props;
 
@@ -570,7 +473,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <FlexLayout.Flex>
         <FlexLayout type='row' style={{ overflow: 'hidden' }}>
           <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
-            <div id='main-nav-container' ref={this.setSidebarRef} className="tw:w-44 tw:flex tw:flex-col tw:gap-8 tw:pt-8 tw:px-3">
+            <div id='main-nav-container' ref={this.setSidebarRef}>
               {pageGroups.map(this.renderPageGroup)}
             </div>
             <MainFooter slim={tabsMinimized} />
@@ -614,11 +517,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const showTitle = !tabsMinimized && (title !== undefined);
 
     return (
-      <div key={key} className="tw:flex tw:flex-col tw:gap-2">
-        {showTitle ? <p className={`main-nav-group-title ${tokens.textStyles.title.xs.semi} ${tokens.semanticColors.textStrong}`}>{t(title)}</p> : null}
-        <div className="tw:flex tw:flex-col tw:gap-1">
+      <div key={key}>
+        {showTitle ? <p className='main-nav-group-title'>{t(title)}</p> : null}
+        <Nav
+          bsStyle='pills'
+          stacked
+          activeKey={mainPage}
+          className='main-nav-group'
+        >
           {pages.map(this.renderPageButton)}
-        </div>
+        </Nav>
       </div>
     );
   }
@@ -632,28 +540,23 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage, idx: number) => {
-    const { t, mainPage, secondaryPage } = this.props;
-    const isSelected = mainPage === page.id || secondaryPage === page.id;
-
-    const handlePageClick = (evt: React.MouseEvent<HTMLButtonElement>) => {
-      // Create a synthetic event that matches the expected signature
-      const syntheticEvent = {
-        ...evt,
-        currentTarget: { ...evt.currentTarget, id: page.id }
-      } as React.MouseEvent<any>;
-      this.handleClickPage(syntheticEvent);
-    };
-
+    const { t, secondaryPage } = this.props;
     return (
-      <Tailwind.SidebarPageButton
-        key={page.id}
-        t={t}
-        namespace={page.namespace}
-        page={page}
-        onClick={handlePageClick}
-        selected={isSelected}
+      <NavItem
+        id={page.id}
         className={secondaryPage === page.id ? 'secondary' : undefined}
-      />
+        key={page.id}
+        eventKey={page.id}
+        tooltip={t(page.title, { ns: page.namespace })}
+        placement='right'
+        onClick={this.handleClickPage}
+      >
+        <PageButton
+          t={this.props.t}
+          namespace={page.namespace}
+          page={page}
+        />
+      </NavItem>
     );
   }
 

@@ -1,13 +1,7 @@
-// Main design system exports
+// Main Tailwind exports
 
-// Components
+// Components (demo components only)
 export * from './components';
 
-// Tokens
-export * from './tokens';
-
-// Utilities
-export * from './utils';
-
-// Hooks
-export * from './hooks';
+// Web team components from "next" project
+export * from './next/typography';

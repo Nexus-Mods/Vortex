@@ -7,7 +7,118 @@
 
   /* Semantic color with fallback (light-dark() not widely supported yet) */
   --color-accent: #f59e0b;  /* Amber-500 - fallback color */
+
+  /* Neutral colors for typography (from web team's design system) */
+  --color-neutral-inverted: #ffffff;
+  --color-neutral-strong: #171717;      /* neutral-900 */
+  --color-neutral-moderate: #404040;    /* neutral-700 */
+  --color-neutral-subdued: #737373;     /* neutral-500 */
+  --color-neutral-weak: #a3a3a3;        /* neutral-400 */
+
+  /* Translucent colors for typography on dark backgrounds */
+  --color-translucent-dark-950: rgba(0, 0, 0, 0.95);
+  --color-translucent-strong: rgba(0, 0, 0, 0.85);
+  --color-translucent-moderate: rgba(0, 0, 0, 0.65);
+  --color-translucent-subdued: rgba(0, 0, 0, 0.45);
+  --color-translucent-weak: rgba(0, 0, 0, 0.25);
 }
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);
+
+/* Typography utility classes from web team's design system */
+
+/* Heading styles */
+.tw\:typography-heading-2xl {
+  font-size: 3rem;      /* 48px */
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tw\:typography-heading-xl {
+  font-size: 2.25rem;   /* 36px */
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tw\:typography-heading-lg {
+  font-size: 1.875rem;  /* 30px */
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.tw\:typography-heading-md {
+  font-size: 1.5rem;    /* 24px */
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.tw\:typography-heading-sm {
+  font-size: 1.25rem;   /* 20px */
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.tw\:typography-heading-xs {
+  font-size: 1.125rem;  /* 18px */
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+/* Title styles */
+.tw\:typography-title-md {
+  font-size: 1rem;      /* 16px */
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.tw\:typography-title-sm {
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.tw\:typography-title-xs {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* Body styles */
+.tw\:typography-body-2xl {
+  font-size: 1.25rem;   /* 20px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tw\:typography-body-xl {
+  font-size: 1.125rem;  /* 18px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tw\:typography-body-lg {
+  font-size: 1rem;      /* 16px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tw\:typography-body-md {
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tw\:typography-body-sm {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.tw\:typography-body-xs {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.5;
+  font-weight: 400;
+}

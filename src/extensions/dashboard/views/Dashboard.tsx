@@ -24,6 +24,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 import { TailwindTest } from '../../../tailwind/components/TailwindTest';
+import { TypographyDemo } from '../../../tailwind/next/typography/TypographyDemo';
 
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
@@ -147,7 +148,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage id='page-dashboard' className={classes.join(' ')}>
-        {/* <TailwindTest /> */}
+        <TailwindTest />
+        <TypographyDemo />
         <MainPage.Body
           style={{ display: 'flex', flexDirection: 'column' }}
         >
