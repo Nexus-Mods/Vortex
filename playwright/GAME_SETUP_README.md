@@ -8,6 +8,53 @@ The game setup helpers allow you to:
 1. **Create fake game installations** with the correct file structure
 2. **Clean up test installations** after tests complete
 
+## Prerequisites
+
+### Browser Requirements
+
+**Google Chrome Required:** The Nexus Mods login tests require Google Chrome to be installed at the default location:
+- Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe`
+
+**Why Chrome?**
+- We use Chrome DevTools Protocol (CDP) to connect to your real browser
+- Your real browser session helps bypass Cloudflare's bot detection
+- This allows manual captcha solving to work correctly
+- The test uses a "homemade incognito mode" (temporary profile) to ensure clean state
+
+**Alternative: Microsoft Edge**
+Microsoft Edge (Chromium-based) can also work with minor path modifications, but Chrome is recommended for consistency.
+
+**Firefox/Safari users:**
+These tests currently do not support Firefox or Safari. You can either:
+1. Install Chrome for testing purposes
+2. Skip authentication tests
+3. Modify the test to use your preferred browser (contributions welcome!)
+
+### Environment Variables
+
+Some tests require Nexus Mods credentials for authentication. These are stored in a `.env` file at the repository root.
+
+**Setup:**
+
+1. Copy the example file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` and add your Nexus Mods credentials:
+   ```
+   PLAYWRIGHT_NEXUS_USERNAME=your_username
+   PLAYWRIGHT_NEXUS_PASSWORD=your_password
+   ```
+
+3. The `.env` file is already in `.gitignore` and will not be committed to the repository
+
+**Required Variables:**
+- `PLAYWRIGHT_NEXUS_USERNAME` - Your Nexus Mods username
+- `PLAYWRIGHT_NEXUS_PASSWORD` - Your Nexus Mods password
+
+**Note:** Tests that require authentication will throw a clear error if these variables are not set
+
 ## Quick Start
 
 ```typescript
@@ -85,23 +132,26 @@ try {
 ## Complete Test Example
 
 ```typescript
-import { test, Browser } from '@playwright/test';
+import { test } from '@playwright/test';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
-import { loginToNexusMods } from '../src/nexusmods-auth-helpers';
+import { loginToNexusModsWithRealChrome } from '../src/nexusmods-auth-helpers';
+import { closeRealChrome } from '../src/chrome-browser-helpers';
 import { GAME_CONFIGS, createFakeGameInstallation, cleanupFakeGameInstallation } from '../src/game-setup-helpers';
 import path from 'path';
 import os from 'os';
 
-test('test with fake game', async ({ browser }: { browser: Browser }) => {
+test('test with fake game', async () => {
   const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } =
     await launchVortex('test-fake-game');
 
   const fakeGamesPath = path.join(os.tmpdir(), 'vortex-test-games', `test-${Date.now()}`);
   let gamePath: string | undefined;
+  let loginResult;
 
   try {
-    // 1. Login
-    await loginToNexusMods(browser, mainWindow);
+    // 1. Login to Nexus Mods (production)
+    loginResult = await loginToNexusModsWithRealChrome(mainWindow, testRunDir);
+    if (!loginResult.success) throw new Error(`Login failed: ${loginResult.error}`);
 
     // 2. Create fake game files
     const gameConfig = GAME_CONFIGS.stardewvalley;
@@ -120,6 +170,11 @@ test('test with fake game', async ({ browser }: { browser: Browser }) => {
     console.log('Game created successfully!');
 
   } finally {
+    // Clean up Chrome (this also closes the browser context)
+    // NOTE: Don't close browserContext separately - it's the default context from CDP
+    if (loginResult?.chromeInstance) await closeRealChrome(loginResult.chromeInstance);
+
+    // Clean up game and Vortex
     if (gamePath) cleanupFakeGameInstallation(gamePath);
     await closeVortex(app, appProcess, pid, userDataDir);
   }

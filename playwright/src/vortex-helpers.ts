@@ -184,12 +184,12 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
       NODE_ENV: 'development',
       START_DEVTOOLS: 'false',
       ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-      NEXUS_DOMAIN: 'cluster.nexdev.uk',
-      API_SUBDOMAIN: 'api-staging',
-      USERS_SUBDOMAIN: 'users-staging',
-      FLAMEWORK_SUBDOMAIN: 'nexusmods-staging',
-      NEXT_SUBDOMAIN: 'next-staging',
-      PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
+      // NEXUS_DOMAIN: 'cluster.nexdev.uk',
+      // API_SUBDOMAIN: 'api-staging',
+      // USERS_SUBDOMAIN: 'users-staging',
+      // FLAMEWORK_SUBDOMAIN: 'nexusmods-staging',
+      // NEXT_SUBDOMAIN: 'next-staging',
+      // PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
     },
     timeout: 30000
   });

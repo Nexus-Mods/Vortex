@@ -1,12 +1,18 @@
 /* eslint-disable max-lines-per-function */
 import { test, Browser, expect } from '@playwright/test';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
-import { loginToNexusMods, downloadModFromNexus } from '../src/nexusmods-auth-helpers';
+import {
+  loginToNexusModsWithRealChrome,
+  downloadModFromNexus,
+  buildModDownloadPopupUrl,
+} from '../src/nexusmods-auth-helpers';
 import {
   cleanupFakeGameInstallation,
   createFakeGameInstallation,
   GAME_CONFIGS,
 } from '../src/game-setup-helpers';
+import { closeRealChrome } from '../src/chrome-browser-helpers';
+import { constants } from '../src/constants';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
@@ -24,6 +30,7 @@ test('list available game configurations', () => {
 });
 
 test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => {
+  test.setTimeout(180000); // 3 minutes timeout for manual captcha + protocol prompt
   const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
   const fakeGamesPath = path.join(os.tmpdir(), 'vortex-test-games', `test-${Date.now()}`);
   const gameConfig = GAME_CONFIGS.stardewvalley;
@@ -32,16 +39,13 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
   console.log(`\nTest: ${TEST_NAME}`);
   console.log(`Screenshots: ${testRunDir}\n`);
 
-  let browserContext: any;
+  let loginResult;
 
   try {
-    // Login to Nexus Mods
-    console.log('1. Logging in...');
-    const loginResult = await loginToNexusMods(browser, mainWindow, undefined, undefined, testRunDir);
+    // Login to Nexus Mods using real Chrome browser
+    console.log('1. Logging in to Nexus Mods (production)...');
+    loginResult = await loginToNexusModsWithRealChrome(mainWindow, testRunDir);
     if (!loginResult.success) throw new Error(`Login failed: ${loginResult.error}`);
-
-    // Keep the browser context for downloading mods later
-    browserContext = loginResult.browserContext;
 
     // Create fake game installation
     console.log('2. Creating fake game files...');
@@ -93,30 +97,87 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
 
     await mainWindow.screenshot({ path: path.join(testRunDir, 'final.png') });
 
-    
-
     // Assert test passed
     expect(isDiscovered).toBe(true);
     console.log(`✓ Test passed - game discovered at: ${gamePath}\n`);
 
     // Download a mod using the authenticated browser context
-    if (browserContext) {
-      console.log('8. Downloading mod...');
-      const modUrl = 'https://nexusmods-staging.cluster.nexdev.uk/stardewvalley/mods/1?tab=files&file_id=1';
-      const downloadSuccess = await downloadModFromNexus(browserContext, modUrl, testRunDir);
+    if (loginResult.browserContext) {
+      console.log('8. Downloading mod from Nexus Mods (production)...');
+      console.log(`   Browser object exists: ${!!loginResult.browser}`);
+      console.log(`   Browser context exists: ${!!loginResult.browserContext}`);
+
+      // Build download popup URL from constants
+      const modUrl = buildModDownloadPopupUrl(
+        constants.TEST_MODS.STARDEW_VALLEY.fileId,
+        constants.TEST_MODS.STARDEW_VALLEY.gameId
+      );
+      console.log(`   Download Popup URL: ${modUrl}`);
+
+      // Check Vortex download state before download
+      const downloadsBefore = await mainWindow.evaluate(() => {
+        const remote = (window as any).require('@electron/remote');
+        const state = JSON.parse(remote.getGlobal('getReduxState')());
+        return {
+          downloadCount: Object.keys(state?.persistent?.downloads?.files || {}).length,
+          downloads: state?.persistent?.downloads?.files
+        };
+      });
+      console.log(`   Downloads in Vortex before: ${downloadsBefore.downloadCount}`);
+
+      const downloadSuccess = await downloadModFromNexus(
+        loginResult.browserContext,
+        modUrl,
+        testRunDir
+      );
 
       if (downloadSuccess) {
-        console.log('✓ Mod download initiated\n');
-        await mainWindow.waitForTimeout(2000);
+        console.log('✓ Mod download initiated in browser\n');
+
+        // Wait for Vortex to receive and process the NXM link
+        await mainWindow.waitForTimeout(5000);
+
+        // Check Vortex download state after download
+        const downloadsAfter = await mainWindow.evaluate(() => {
+          const remote = (window as any).require('@electron/remote');
+          const state = JSON.parse(remote.getGlobal('getReduxState')());
+          const downloads = state?.persistent?.downloads?.files || {};
+          return {
+            downloadCount: Object.keys(downloads).length,
+            downloads: Object.values(downloads).map((d: any) => ({
+              id: d.id,
+              game: d.game,
+              modInfo: d.modInfo,
+              state: d.state,
+              localPath: d.localPath
+            }))
+          };
+        });
+
+        console.log(`   Downloads in Vortex after: ${downloadsAfter.downloadCount}`);
+
+        if (downloadsAfter.downloadCount > downloadsBefore.downloadCount) {
+          console.log('✅ Vortex received the NXM link and started download!');
+          console.log('   Download details:', JSON.stringify(downloadsAfter.downloads[downloadsAfter.downloads.length - 1], null, 2));
+        } else {
+          console.warn('⚠️  Vortex did not receive the NXM link or download did not start');
+          console.log('   Current downloads:', JSON.stringify(downloadsAfter.downloads, null, 2));
+        }
       } else {
-        console.warn('⚠ Mod download may have failed\n');
+        console.warn('⚠ Mod download may have failed in browser\n');
       }
     }
 
   } finally {
-    // Clean up browser context
-    if (browserContext) {
-      await browserContext.close();
+    // Clean up Chrome instance (this also closes the browser context)
+    // NOTE: Don't close browserContext separately - it's the default context from CDP
+    // and closing it would disconnect from Chrome prematurely
+    if (loginResult?.chromeInstance) {
+      try {
+        await closeRealChrome(loginResult.chromeInstance);
+      } catch (e) {
+        console.error('Failed to close Chrome:', e);
+      }
     }
 
     cleanupFakeGameInstallation(gamePath);
