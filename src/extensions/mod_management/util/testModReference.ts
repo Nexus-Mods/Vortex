@@ -299,7 +299,7 @@ export function testRefByIdentifiers(identifiers: {
 
   const { fileNames, modId, fileIds } = identifiers;
   if (ref.repo?.modId != null && modId != null
-    && ref.repo?.fileId != null && fileIds?.length > 0) {
+    && ref.repo?.fileId != null && fileIds != null && fileIds.length > 0) {
     if (ref.repo.modId === modId.toString()
       && fileIds.includes(ref.repo.fileId)) {
       return true;
