@@ -2091,13 +2091,24 @@ class InstallManager {
       log('debug', 'Download state check', { downloadId, downloadState });
       if (downloads[downloadId].state === 'finished') {
         const hasPendingOrActive = this.hasActiveOrPendingInstallation(sourceModId, downloadId);
-        log('debug', 'Requeue check', { downloadId, hasPendingOrActive });
-        if (!hasPendingOrActive) {
+
+        // Check if mod is already installed
+        const gameId = activeGameId(api.getState());
+        const mods = api.getState().persistent.mods[gameId] ?? {};
+        const existingMod = mod.rule?.reference && findModByRef(mod.rule.reference, mods);
+
+        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
+        if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
           this.handleDownloadFinished(api, downloadId);
           anyQueued = true;
+        } else if (!hasPendingOrActive && existingMod) {
+          const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
+          this.mPendingInstalls.delete(installKey);
+          this.mActiveInstalls.delete(installKey);
+          api.events.emit('did-install-mod', gameId, downloadId, existingMod.id, existingMod.attributes);
         } else {
-          log('debug', 'Download blocked by pending/active installation', { downloadId });
+          log('debug', 'Download already has pending/active installation', { downloadId });
         }
       } else {
         log('debug', 'Download not in finished state', { downloadId, state: downloadState });
