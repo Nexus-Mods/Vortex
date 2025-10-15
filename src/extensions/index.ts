@@ -41,3 +41,4 @@ import {} from './tool_variables_base';
 import {} from './updater';
 import {} from './onboarding_dashlet';
 import {} from './mod_spotlights_dashlet';
+import {} from './tailwind_dev';

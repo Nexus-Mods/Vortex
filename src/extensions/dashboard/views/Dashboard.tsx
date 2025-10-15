@@ -23,9 +23,6 @@ import { Button, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-import { TailwindTest } from '../../../tailwind/components/TailwindTest';
-import { TypographyDemo } from '../../../tailwind/next/typography/TypographyDemo';
-
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 
 const UPDATE_FREQUENCY_MS = 1000;

@@ -8,7 +8,7 @@ import { Typography } from './Typography';
 
 export const TypographyDemo: React.ComponentType = () => {
   return (
-    <div className="tw:p-6 tw:max-w-4xl tw:mx-auto tw:bg-white tw:rounded-xl tw:shadow-lg tw:m-4">
+    <div className="tw:p-6">
       <Typography
         as="h1"
         typographyType="heading-2xl"
