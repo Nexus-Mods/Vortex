@@ -306,7 +306,7 @@ export function findDownloadByRef(reference: IReference,
         fileNames: Array.from(nameSet).filter(truthy),
         gameId: download.game[0],
       }
-      return testModReference(lookup, reference, undefined, fuzzy) ?? testRefByIdentifiers(identifiers, reference);
+      return testRefByIdentifiers(identifiers, reference) || testModReference(lookup, reference, undefined, fuzzy);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];
