@@ -148,8 +148,6 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage id='page-dashboard' className={classes.join(' ')}>
-        <TailwindTest />
-        <TypographyDemo />
         <MainPage.Body
           style={{ display: 'flex', flexDirection: 'column' }}
         >
