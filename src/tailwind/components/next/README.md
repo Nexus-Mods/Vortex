@@ -7,6 +7,7 @@ This folder contains components adapted from the web team's "next" project for u
 Components are organized by domain/feature:
 - `typography/` - Typography system components
 - `button/` - Button system components
+- `collectiontile/` - Collection card components for browsing
 
 ## Adaptations Made
 
@@ -48,8 +49,12 @@ Semantic colors defined in `@theme`:
 - `--color-neutral-inverted`, `--color-neutral-strong`, `--color-neutral-moderate`, `--color-neutral-subdued`, `--color-neutral-weak`
 - `--color-neutral-800` - For filled buttons
 - `--color-translucent-*` - For dark backgrounds
-- `--color-primary-moderate` - Primary button color
+- `--color-primary-moderate`, `--color-primary-400` - Primary button and element colors
 - `--color-stroke-moderate`, `--color-stroke-strong` - Border colors
+- `--color-stroke-neutral-translucent-weak`, `--color-stroke-neutral-translucent-moderate` - Translucent borders
+- `--color-surface-mid`, `--color-surface-high` - Card and panel backgrounds
+- `--color-info-strong` - Informational tag color
+- `--color-danger-400` - Warning/adult tag color
 - `--color-success-moderate` - Success button color
 - `--color-premium-moderate` - Premium button color
 
@@ -198,6 +203,50 @@ import { Button } from '../../../tailwind/next/button';
 **Demo:** See `ButtonDemo` component
 
 **Note:** Icon support (leftIcon, rightIcon, loading spinner) is stubbed out. The Icon component returns null, so icons won't visually render. Text-only buttons work fully.
+
+### CollectionTile
+
+Located in `collectiontile/`
+
+**Files:**
+- `CollectionTile.tsx` - Collection card component
+- `CollectionTileDemo.tsx` - Demo with sample collection data
+- `index.ts` - Public exports
+
+**Features:**
+- Fixed dimensions (465x288px) matching Figma design
+- Collection cover image (166x207px)
+- Title, author with avatar placeholder
+- Tag system (max 2 tags, "Adult" tag uses danger-400 color)
+- Stats display (downloads, size, endorsements) with icon placeholders
+- Description truncation (3 lines max with line-clamp-3)
+- Action buttons (primary "Add collection", tertiary "View page")
+- Surface-mid/high backgrounds for dark theme
+
+**Usage:**
+```tsx
+import { CollectionTile } from '../../../tailwind/next/collectiontile';
+
+<CollectionTile
+  id="collection-1"
+  title="Ultimate Civil War Reloaded"
+  author={{ name: 'RyukanoHi' }}
+  coverImage="https://example.com/cover.jpg"
+  tags={['Total Overhaul', 'Adult']}
+  stats={{
+    downloads: 320,
+    size: '540MB',
+    endorsements: 320
+  }}
+  description="The story of Stardew Valley expands..."
+  onAddCollection={() => console.log('Add')}
+  onViewPage={() => console.log('View')}
+/>
+```
+
+**Demo:** See `CollectionTileDemo` component
+
+**Note:** Icons are placeholder divs (no actual icons rendered). Avatar uses simple img tag or colored circle if no avatar provided.
 
 ## Testing
 

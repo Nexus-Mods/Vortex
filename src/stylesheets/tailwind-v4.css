@@ -24,11 +24,24 @@
 
   /* Button colors (from web team's design system) */
   --color-primary-moderate: #3b82f6;        /* Blue-500 for primary buttons */
+  --color-primary-400: #60a5fa;             /* Blue-400 for primary elements */
   --color-stroke-moderate: #d4d4d4;         /* neutral-300 for borders */
   --color-stroke-strong: #a3a3a3;           /* neutral-400 for hover borders */
   --color-neutral-800: #262626;             /* neutral-800 for filled buttons */
   --color-success-moderate: #22c55e;        /* Green-500 for success buttons */
   --color-premium-moderate: #f59e0b;        /* Amber-500 for premium buttons */
+
+  /* Surface colors for cards and panels */
+  --color-surface-mid: #1f1f1f;             /* Dark gray for card backgrounds */
+  --color-surface-high: #2a2a2a;            /* Slightly lighter for elevated surfaces */
+
+  /* Semantic colors */
+  --color-info-strong: #3b82f6;             /* Blue for informational tags */
+  --color-danger-400: #f87171;              /* Red-400 for adult/warning tags */
+
+  /* Stroke colors with transparency */
+  --color-stroke-neutral-translucent-weak: rgba(255, 255, 255, 0.1);
+  --color-stroke-neutral-translucent-moderate: rgba(255, 255, 255, 0.3);
 }
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */

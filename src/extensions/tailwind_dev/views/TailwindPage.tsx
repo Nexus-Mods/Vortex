@@ -9,6 +9,7 @@ import MainPage from '../../../views/MainPage';
 import { TailwindTest } from '../../../tailwind/components/TailwindTest';
 import { TypographyDemo } from '../../../tailwind/components/next/typography/TypographyDemo';
 import { ButtonDemo } from '../../../tailwind/components/next/button/ButtonDemo';
+import { CollectionTileDemo } from '../../../tailwind/components/next/collectiontile/CollectionTileDemo';
 
 interface ITailwindPageProps {
   // Props passed from extension context
@@ -42,6 +43,12 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
 
             {/* Button Demo from web team */}
             <ButtonDemo />
+
+            {/* Divider */}
+            <div style={{ margin: '60px 0', borderTop: '2px solid #e5e7eb' }} />
+
+            {/* CollectionTile Demo from web team */}
+            <CollectionTileDemo />
           </div>
         </MainPage.Body>
       </MainPage>
