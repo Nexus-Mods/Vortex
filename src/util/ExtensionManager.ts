@@ -2033,10 +2033,11 @@ class ExtensionManager {
                     const sanitizedLastLine = lastLine.replace(/[^\x20-\x7E]/g, '?').substring(0, 500);
                     const exitCodeHex = code.toString(16);
 
-                    const err: any = new Error(
-                      `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`);
+                    const errorMessage = `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`;
+                    const err: any = new Error(errorMessage);
                     err.exitCode = code;
-                    return reject(err);
+                    reject(err);
+                    return;
                   }
                 }
                 resolve();

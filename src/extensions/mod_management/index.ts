@@ -1153,8 +1153,10 @@ function once(api: IExtensionApi) {
     gameMode: string,
     removedId: string,
     modId: string,
-    options: { willBeReplaced?: boolean, modData?: types.IMod }) => {
-    removeModToastDebouncer.schedule();
+    options: { silent?: boolean, willBeReplaced?: boolean, modData?: types.IMod }) => {
+    if (options?.silent !== true && options?.willBeReplaced !== true) {
+      removeModToastDebouncer.schedule();
+    }
     return Promise.resolve();
   });
 
@@ -1260,7 +1262,11 @@ function once(api: IExtensionApi) {
       if (previous[gameMode] !== current[gameMode]) {
         waitForCondition({
           callback: () => onceCB(() => onNeedToDeploy(api, current[gameMode])),
-          condition: () => getSafe(api.getState(), ['session', 'base', 'activity', 'installing_dependencies'], []).length === 0,
+          condition: () => {
+            const installingDeps = getSafe(api.getState(), ['session', 'base', 'activity', 'installing_dependencies'], []).length === 0;
+            const activeCollectionInstall = getSafe(api.getState(), ['session', 'collections', 'activeSession'], undefined);
+            return installingDeps && (activeCollectionInstall === undefined);
+          },
           required: () => getSafe(api.getState(), ['persistent', 'deployment', 'needToDeploy', gameMode], false),
         });
       }

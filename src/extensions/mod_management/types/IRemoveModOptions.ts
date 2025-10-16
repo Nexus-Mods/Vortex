@@ -1,6 +1,9 @@
 import { IMod } from '../types/IMod';
 
 export interface IRemoveModOptions {
+  // if true will not raise any notifications/toasts
+  silent?: boolean;
+
   // Event emitters should set this to true if the mod is being replaced.
   //  e.g. when reinstalling or updating a mod.
   willBeReplaced?: boolean;

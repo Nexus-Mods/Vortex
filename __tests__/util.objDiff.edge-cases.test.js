@@ -64,12 +64,10 @@ describe('objDiff edge cases that could cause TypeError', () => {
       
       expect(() => util.objDiff(obj1, obj2)).not.toThrow();
       const result = util.objDiff(obj1, obj2);
-      // When comparing null to object, the recursive call returns null,
-      // triggering the primitive change logic
+      // When comparing null to object, they are treated as different primitive values
       expect(result).toEqual({
-        nested: {
-          '+key': 'value'
-        }
+        '-nested': null,
+        '+nested': { key: 'value' }
       });
     });
 
@@ -79,12 +77,10 @@ describe('objDiff edge cases that could cause TypeError', () => {
       
       expect(() => util.objDiff(obj1, obj2)).not.toThrow();
       const result = util.objDiff(obj1, obj2);
-      // When comparing undefined to object, the recursive call returns null,
-      // triggering the primitive change logic
+      // When comparing undefined to object, they are treated as different primitive values
       expect(result).toEqual({
-        nested: {
-          '+key': 'value'
-        }
+        '-nested': undefined,
+        '+nested': { key: 'value' }
       });
     });
 

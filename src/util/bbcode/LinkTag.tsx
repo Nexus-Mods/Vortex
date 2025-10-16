@@ -63,17 +63,23 @@ class LinkTag extends Tag {
   private clicked = (evt: React.MouseEvent<any>, callbacks, allowLocal: boolean) => {
     evt.preventDefault();
     const uri = evt.currentTarget.href;
-    const parsed = url.parse(uri);
+    let parsed: URL;
+    try {
+      parsed = new URL(uri);
+    } catch {
+      // Invalid URL, don't handle it
+      return;
+    }
     const protocols = allowLocal
       ? ['http:', 'https:', 'file:']
       : ['http:', 'https:'];
 
     if ((parsed.protocol === 'cb:') && (callbacks?.[parsed.host] !== undefined)) {
       try {
-        if (parsed.path === null) {
+        if (parsed.pathname === '') {
           callbacks[parsed.host]();
         } else {
-          const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
+          const args = parsed.pathname.slice(1).split('/').map(seg => decodeURIComponent(seg));
           callbacks[parsed.host](...args);
         }
       } catch (err) {

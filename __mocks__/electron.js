@@ -13,6 +13,8 @@ const app = {
   exit: jest.fn(),
   getAppPath: jest.fn(() => os.tmpdir()),
   getPath: jest.fn(() => os.tmpdir()),
+  getName: jest.fn(() => 'Vortex'),
+  getVersion: jest.fn(() => '1.0.0-test'),
 };
 
 module.exports = {

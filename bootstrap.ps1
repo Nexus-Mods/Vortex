@@ -26,7 +26,7 @@ Write-Host "Installing essential apps via Scoop"
 
 scoop install git
 scoop bucket add versions
-scoop install python310 nodejs18 cmake yarn
+scoop install python310 nodejs22 cmake yarn
 
 Write-Host "Downloading Visual Studio Build Tools..."
 
@@ -37,7 +37,7 @@ Start-Process -FilePath "$env:TEMP\vs_BuildTools.exe" -ArgumentList `
   "--passive", "--wait",
   "--add Microsoft.VisualStudio.Workload.VCTools",
   "--includeRecommended",
-  "--add Microsoft.NetCore.Component.Runtime.6.0",
+  "--add Microsoft.NetCore.Component.Runtime.9.0",
   "--add Microsoft.NetCore.Component.SDK",
   "--add Microsoft.VisualStudio.Component.VC.ATL",
   "--add Microsoft.VisualStudio.Component.Windows10SDK.$windows_sdk_ver",

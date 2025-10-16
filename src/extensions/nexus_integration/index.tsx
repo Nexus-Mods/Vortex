@@ -1525,9 +1525,15 @@ function onDownloadImpl(resolveFunc: ResolveFunc, inputUrl: string) {
     .catch(() => null);
 }
 
-function onSkip(inputUrl: string) {
+function onSkip(api: IExtensionApi, inputUrl: string) {
   const queueItem = freeDLQueue.find(iter => iter.input === inputUrl);
   if (queueItem !== undefined) {
+    const parsed = new NXMUrl(queueItem.input);
+    const itemIdentifiers = {
+      ...parsed.identifiers,
+      name: queueItem.name,
+    };
+    api.events.emit('free-user-skipped-download', itemIdentifiers);
     queueItem.rej(new UserCanceled(true));
   }
 }
@@ -1682,8 +1688,6 @@ function init(context: IExtensionContextExt): boolean {
       return Promise.resolve();
     }
 
-    toast.success('User info refreshed!');
-
     context.api.events.emit('refresh-user-info');
 
     return Promise.resolve();
@@ -1751,10 +1755,10 @@ function init(context: IExtensionContextExt): boolean {
     nexus,
     onUpdated,
     onDownload,
-    onSkip,
+    onSkip: (inputUrl: string) => onSkip(context.api, inputUrl),
     onCancel,
     onRetry,
-    onCheckStatus
+    onCheckStatus,
   }));
 
   context.registerBanner('downloads', () => {

@@ -32,10 +32,11 @@ jobs:
   build: 
     runs-on: windows-latest 
     env: 
-      ES_USERNAME: ${{ secrets.ES_USERNAME }} 
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }} 
-      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }} 
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }} 
+      ES_USERNAME: ${{ secrets.ES_USERNAME }}
+      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+      ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
+      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands 
       CERT_PATH: Release      
       DEBUG: electron-builder # gives electron more verbose logs
@@ -87,7 +88,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Print dotnet info
         run: dotnet --info
@@ -96,11 +97,11 @@ jobs:
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "build\\VC_redist.x64.exe"
- 
-      - name: Download Microsoft .NET 6 Runtime
+
+      - name: Download .NET 9 Runtime
         shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://aka.ms/dotnet/6.0/windowsdesktop-runtime-win-x64.exe" -OutFile "build\\dotnet-runtime-6.0.36-win-x64.exe"
+        run: | 
+          Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile "build\\windowsdesktop-runtime-win-x64.exe"
 
       - name: Download CodeSignTool 
         id: codesign 

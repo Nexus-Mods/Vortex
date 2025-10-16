@@ -19,6 +19,7 @@ import {
   initDownload,
   pauseDownload,
   removeDownload,
+  removeDownloadSilent,
   setDownloadFilePath,
   setDownloadModInfo,
   setDownloadPausable,
@@ -27,6 +28,7 @@ import { IChunk } from './types/IChunk';
 import { IDownload, IDownloadOptions } from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IDownloadRemoveOptions } from './types/IDownloadRemoveOptions';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import { finalizeDownload } from './util/postprocessDownload';
@@ -101,7 +103,7 @@ export class DownloadObserver {
     this.mManager = manager;
 
     events.on('remove-download',
-      (downloadId, callback?) => this.handleRemoveDownload(downloadId, callback));
+      (downloadId, callback?, options?: IDownloadRemoveOptions) => this.handleRemoveDownload(downloadId, callback, options));
     events.on('pause-download',
       (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
@@ -126,7 +128,7 @@ export class DownloadObserver {
         const state = api.getState();
         const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach(dlId => {
-          this.handleRemoveDownload(dlId);
+          this.handleRemoveDownload(dlId, undefined, { silent: true });
         });
         if (newValue?.isPremium === true) {
           manager.setMaxConcurrentDownloads(10);
@@ -168,27 +170,31 @@ export class DownloadObserver {
     const innerState: IState = this.mApi.getState();
 
     const nexusIds = nexusIdsFromDownloadId(innerState, id);
-    const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
-    const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-    if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+    // Only track analytics if we have valid Nexus metadata
+    if (nexusIds) {
+      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+      const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-      if (isCollection) {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+      if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
+
+        if (isCollection) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new CollectionsDownloadCancelledEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId));
+        } else {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
+        }
+
       } else {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadCancelledEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID));
-      }
 
-    } else {
-
-      if (isCollection) {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
-      } else {
-        this.mApi.events.emit('analytics-track-mixpanel-event',
-          new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+        if (isCollection) {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new CollectionsDownloadFailedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, '', err.message));
+        } else {
+          this.mApi.events.emit('analytics-track-mixpanel-event',
+            new ModsDownloadFailedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, '', err.message));
+        }
       }
     }
 
@@ -228,7 +234,8 @@ export class DownloadObserver {
           this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
         })
         .then(() => {
-          this.mApi.store.dispatch(removeDownload(id));
+          const isSilent = (err instanceof UserCanceled);
+          this.mApi.store.dispatch(isSilent ? removeDownloadSilent(id) : removeDownload(id));
           if (callback !== undefined) {
             callback(err, id);
           } else {
@@ -339,10 +346,12 @@ export class DownloadObserver {
               .filter(iter => iter.tag !== modInfo?.referenceTag);
             return Promise.reject(new UserCanceled());
           }
-
           log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           return this.mManager.enqueue(id, urls, fileName, processCB,
             downloadPath, downloadOptions);
+        })
+        .catch(UserCanceled, err => {
+          return Promise.reject(err);
         })
         .catch(AlreadyDownloaded, err => {
           const downloads = this.mApi.getState().persistent.downloads.files;
@@ -445,7 +454,6 @@ export class DownloadObserver {
             this.mApi.events.emit('analytics-track-mixpanel-event',
               new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
           } else {
-            alert('Download completed but missing nexus mod/file id: ' + JSON.stringify(nexusIds));
             // This is a bundled mod - bye!
           }
           if ((state.settings.automation?.install && (allowInstall === true))
@@ -493,7 +501,7 @@ export class DownloadObserver {
     };
   }
 
-  private handleRemoveDownload(downloadId: string, cb?: (err: Error) => void) {
+  private handleRemoveDownload(downloadId: string, cb?: (err: Error) => void, options?: IDownloadRemoveOptions) {
     if (downloadId === null) {
       log('warn', 'invalid download id');
       return;
@@ -524,7 +532,7 @@ export class DownloadObserver {
 
         return fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => {
-            this.mApi.store.dispatch(removeDownload(downloadId));
+            this.mApi.store.dispatch(options?.silent ? removeDownloadSilent(downloadId) : removeDownload(downloadId));
             callCB(null);
           })
           .catch(UserCanceled, callCB)
@@ -538,7 +546,7 @@ export class DownloadObserver {
             }
           });
       } else {
-        this.mApi.store.dispatch(removeDownload(downloadId));
+        this.mApi.store.dispatch(options?.silent ? removeDownloadSilent(downloadId) : removeDownload(downloadId));
         return Promise.resolve();
       }
     };
@@ -754,6 +762,7 @@ export class DownloadObserver {
       referer: modInfo.referer,
       redownload,
       nameHint: modInfo.name,
+      tag: modInfo.referenceTag,
     };
   }
 }

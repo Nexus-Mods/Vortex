@@ -30,6 +30,7 @@ import { inspect } from 'util';
 import {} from 'uuid';
 import { getApplication } from './application';
 import lazyRequire from './lazyRequire';
+import { getCPUArch } from './nativeArch';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -66,6 +67,7 @@ function createReport(type: string, error: IError, context: IErrorContext,
 | | |
 |------------ | -------------|
 |Platform | ${process.platform} ${os.release()} ${isWine() ? '(Wine)' : ''} |
+|CPU Architecture | ${getCPUArch()} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |
 |Process | ${proc} |`,

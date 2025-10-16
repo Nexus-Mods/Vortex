@@ -6,6 +6,24 @@ export interface MixpanelEvent {
   readonly properties: Record<string, any>;
 }
 
+/**
+ * Maps Node.js process.platform values to Mixpanel's expected OS format
+ * @param platform - Node.js platform string (win32, darwin, linux, etc.)
+ * @returns Mixpanel-compatible OS name (Windows, Mac OS X, Linux, etc.)
+ */
+export function mapPlatformToMixpanel(platform: string): string {
+  switch (platform) {
+    case 'win32':
+      return 'Windows';
+    case 'darwin':
+      return 'Mac OS X';
+    case 'linux':
+      return 'Linux';
+    default:
+      return platform;
+  }
+}
+
 
 
 /**
@@ -16,15 +34,19 @@ export interface MixpanelEvent {
 
 /**
  * App launched event - sent when Vortex starts up
- * @param os Operating system
+ * @param os Operating system (Node.js platform string: win32, darwin, linux)
+ * @param os_version Operating system version (e.g., "10.0.22000" for Windows 11)
+ * @param architecture CPU architecture (e.g., "x64", "arm64")
  */
 export class AppLaunchedEvent implements MixpanelEvent {
   readonly eventName = 'app_launched';
   readonly properties: Record<string, any>;
 
-  constructor(os: string) {
+  constructor(os: string, os_version?: string, architecture?: string) {
     this.properties = {
-      os: os,
+      $os: mapPlatformToMixpanel(os),  // Override auto-detected OS for accuracy
+      $os_version: os_version,          // Not auto-tracked by mixpanel-browser
+      architecture,                     // Custom property for CPU architecture
     };
   }
 }
@@ -55,19 +77,19 @@ export class AppStartGameEvent implements MixpanelEvent {
  * Event sent when the application is updated.
  * @param from_version Previous version
  * @param to_version New version
- * @param os Operating system
+ * @param os Operating system (Node.js platform string: win32, darwin, linux)
  */
 export class AppUpdatedEvent implements MixpanelEvent {
   readonly eventName = 'app_updated';
   readonly properties: Record<string, any>;
   constructor(from_version: string, to_version: string, os: string) {
-    this.properties = { from_version, to_version, os };
+    this.properties = { from_version, to_version, $os: mapPlatformToMixpanel(os) };
   }
 }
 
 /**
  * Event sent when the application crashes.
- * @param os Operating system
+ * @param os Operating system (Node.js platform string: win32, darwin, linux)
  * @param error_code Error code
  * @param error_message Error message
  */
@@ -75,7 +97,7 @@ export class AppCrashedEvent implements MixpanelEvent {
   readonly eventName = 'app_crashed';
   readonly properties: Record<string, any>;
   constructor(os: string, error_code: string, error_message: string) {
-    this.properties = { os, error_code, error_message };
+    this.properties = { $os: mapPlatformToMixpanel(os), error_code, error_message };
   }
 }
 

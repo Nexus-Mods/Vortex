@@ -233,8 +233,14 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       .then(result => {
           if (result.action === 'Download') {
             let inputUrl = result.input.url;
-            if (!truthy(url.parse(inputUrl).protocol)) {
-              // no protocol specified
+            try {
+              const parsed = new URL(inputUrl);
+              if (!truthy(parsed.protocol)) {
+                // no protocol specified
+                inputUrl = 'https://' + inputUrl;
+              }
+            } catch {
+              // invalid URL, assume no protocol
               inputUrl = 'https://' + inputUrl;
             }
             this.props.drop('urls', [inputUrl]);

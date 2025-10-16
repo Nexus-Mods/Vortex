@@ -15,8 +15,7 @@ import * as Redux from 'redux';
 import { batch } from 'redux-act';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
-import * as url from 'url';
-import { getApplication } from './application';
+import { dequal } from 'dequal';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -108,34 +107,50 @@ function isPlainObject(obj: any): boolean {
  * @param rhs the right, "after", object
  * @param skip properties to skip in the diff, string array
  */
-export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
-  const res = {};
+export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string, any> {
+  // The current objDiff implementation only performs deep diffs between plain objects.
+  //  Arrays and other non-plain-object inputs are treated as non-comparable types.
+  //  - If both inputs are the same reference or deeply equal arrays, objDiff returns an empty object `{}`.
+  //  - If arrays differ, objDiff still returns `{}` instead of describing element-level changes.
+  //  - If one input is an array and the other is an object (mismatched types), objDiff returns `{}`
+  //    to indicate no diff is computed between incompatible structures.
+  //  - Nested arrays ARE deeply compared if they are properties of plain objects.
+  // This test ensures objDiff handles array inputs gracefully without throwing or misbehaving.
+  const res: Record<string, any> = {};
+  const skipArray = Array.isArray(skip) ? skip : [];
   if (isPlainObject(lhs) && isPlainObject(rhs)) {
-    Object.keys(lhs).forEach(key => {
-      if ((skip !== undefined) && Array.isArray(skip) && (skip.indexOf(key) !== -1)) {
-        return null;
-      }
-      if (!Object.prototype.hasOwnProperty.call(rhs, key)
-        && Object.prototype.hasOwnProperty.call(lhs, key)) {
+    for (const key of Object.keys(lhs)) {
+      if (skipArray.includes(key)) continue;
+      if (!(key in rhs)) {
         res['-' + key] = lhs[key];
-      } else {
-        const sub = objDiff(lhs?.[key] ?? {}, rhs?.[key] ?? {});
-        if (sub === null || sub === undefined) {
-          res['-' + key] = lhs?.[key] ?? null;
-          res['+' + key] = rhs?.[key] ?? null;
-        } else if (Object.keys(sub).length !== 0) {
+        continue;
+      }
+
+      const lhsVal = lhs[key];
+      const rhsVal = rhs[key];
+
+      if (Array.isArray(lhsVal) && Array.isArray(rhsVal)) {
+        if (!dequal(lhsVal, rhsVal)) {
+          res['-' + key] = lhsVal;
+          res['+' + key] = rhsVal;
+        }
+      } else if (isPlainObject(lhsVal) && isPlainObject(rhsVal)) {
+        const sub = objDiff(lhsVal, rhsVal, skip);
+        if (Object.keys(sub).length > 0) {
           res[key] = sub;
         }
+      } else if (!dequal(lhsVal, rhsVal)) {
+        res['-' + key] = lhsVal;
+        res['+' + key] = rhsVal;
       }
-    });
-    Object.keys(rhs).forEach(key => {
-      if (!Object.prototype.hasOwnProperty.call(lhs, key)
-        && Object.prototype.hasOwnProperty.call(rhs, key)) {
+    }
+
+    for (const key of Object.keys(rhs)) {
+      if (skipArray.includes(key)) continue;
+      if (!(key in lhs)) {
         res['+' + key] = rhs[key];
       }
-    });
-  } else if (lhs !== rhs) {
-    return null;
+    }
   }
 
   return res;
@@ -210,7 +225,12 @@ export function spawnSelf(args: string[]) {
   }
   spawn(process.execPath, args, {
     detached: true,
-  });
+    stdio: 'ignore',
+  })
+  .on('error', (err) => {
+    log('error', 'Failed to spawn self', { execPath: process.execPath, args, error: err.message });
+  })
+  .unref();
 }
 
 const BYTE_LABELS = ['B', 'KB', 'MB', 'GB', 'TB'];

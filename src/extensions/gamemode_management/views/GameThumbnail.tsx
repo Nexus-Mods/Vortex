@@ -79,7 +79,13 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
     let imgurl = null;
     if (logoPath !== null) {
-      const protocol = url.parse(logoPath).protocol;
+      let protocol = null;
+      try {
+        const parsedUrl = new URL(logoPath);
+        protocol = parsedUrl.protocol;
+      } catch (err) {
+        // If URL parsing fails, treat as file path
+      }
       imgurl = ((protocol !== null) && (protocol.startsWith('http')))
         ? logoPath
         : url.pathToFileURL(logoPath).href;
