@@ -553,6 +553,10 @@ export function onSearchCollections(api: IExtensionApi, nexus: Nexus) {
       search,
     } = options;
 
+    // Convert internal game ID to Nexus domain name
+    const game = gameById(api.store.getState(), gameId);
+    const gameDomain = nexusGameId(game, gameId);
+
     // Build the sort parameter based on the field
     const sortParam: any = {};
     sortParam[sort.field] = { direction: sort.direction };
@@ -561,17 +565,15 @@ export function onSearchCollections(api: IExtensionApi, nexus: Nexus) {
     const filter: any = {
       collectionStatus: [
         { op: 'EQUALS', value: 'listed' },
-        { op: 'EQUALS', value: 'published' },
-        { op: 'EQUALS', value: 'under_moderation' },
-        { op: 'EQUALS', value: 'unlisted' },
       ],
-      gameDomain: [{ op: 'EQUALS', value: gameId }],
+      gameDomain: [{ op: 'EQUALS', value: gameDomain }],
+      categoryName: [{ op: 'NOT_EQUALS', value: 'Wabbajack Mod List' }],
+      op: 'AND',
     };
 
     // Add generalSearch if search query is provided
     if (search && search.trim()) {
       filter.generalSearch = [{ op: 'WILDCARD', value: search.trim() }];
-      filter.op = 'AND';
     }
 
     // Build variables for the collectionsV2 query
@@ -623,10 +625,6 @@ export function onSearchCollections(api: IExtensionApi, nexus: Nexus) {
             avatar: true,
             memberId: true,
             name: true,
-          },
-          badges: {
-            name: true,
-            description: true,
           },
         },
       },
