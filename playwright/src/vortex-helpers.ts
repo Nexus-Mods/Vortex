@@ -2,6 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 import { _electron as electron, ElectronApplication, Page } from '@playwright/test';
+import { ChildProcess } from 'child_process';
 
 interface WindowInfo {
   url: string;
@@ -13,6 +14,71 @@ interface VortexLaunchResult {
   app: ElectronApplication;
   mainWindow: Page;
   testRunDir: string;
+  appProcess: ChildProcess | null;
+  pid: number | undefined;
+  userDataDir: string;
+}
+
+export async function closeVortex(
+  app: ElectronApplication,
+  appProcess: ChildProcess | null,
+  pid: number | undefined,
+  userDataDir?: string
+): Promise<void> {
+  console.log(`Closing app (PID: ${pid})...`);
+
+  try {
+    // Close all windows first
+    const windows = app.windows();
+    console.log(`Found ${windows.length} window(s) to close`);
+
+    for (const window of windows) {
+      try {
+        await window.close();
+        console.log('Window closed');
+      } catch (e) {
+        console.log(`Error closing window: ${e}`);
+      }
+    }
+
+    // Give it a moment
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Force kill the process
+    if (appProcess && pid) {
+      console.log(`Force killing process ${pid}...`);
+      try {
+        appProcess.kill('SIGKILL');
+        console.log(`Process ${pid} killed successfully`);
+      } catch (killError) {
+        console.log(`Kill error: ${killError}`);
+      }
+    }
+
+    // Wait a bit for file handles to release
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Clean up user data directory if provided
+    if (userDataDir && fs.existsSync(userDataDir)) {
+      try {
+        console.log(`Cleaning up user data directory: ${userDataDir}`);
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+        console.log('User data directory cleaned up');
+      } catch (cleanupError) {
+        console.warn(`Could not clean up user data directory: ${cleanupError}`);
+      }
+    }
+  } catch (error) {
+    console.error(`Error during cleanup: ${error}`);
+    // Force kill anyway
+    if (appProcess && pid) {
+      try {
+        appProcess.kill('SIGKILL');
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
 }
 
 export async function waitForMainWindow(app: ElectronApplication): Promise<Page> {
@@ -91,39 +157,50 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
   const runNumber = getNextRunNumber();
   const testRunDir = path.join(
-    process.cwd(), 
-    'playwright', 
+    process.cwd(),
+    'playwright',
     'test-results',
     `run-${timestamp}-${runNumber.toString().padStart(3, '0')}-${testName}`
   );
-  
+
   fs.mkdirSync(testRunDir, { recursive: true });
 
-  const electronPath = process.platform === 'win32' 
+  // Use a unique vortex_playwright directory per test run to avoid locked file issues
+  const appdataDir = process.env.APPDATA || path.join(require('os').homedir(), 'AppData', 'Roaming');
+  const userDataDir = path.join(appdataDir, `vortex_playwright_${testName}_${Date.now()}`);
+
+  console.log(`Using user data directory: ${userDataDir}`);
+  fs.mkdirSync(userDataDir, { recursive: true });
+
+  const electronPath = process.platform === 'win32'
     ? path.join(process.cwd(), 'node_modules', '.bin', 'electron.cmd')
     : path.join(process.cwd(), 'node_modules', '.bin', 'electron');
-  
-  const app = await electron.launch({ 
+
+  const app = await electron.launch({
     executablePath: electronPath,
-    args: ['.', path.join(process.cwd(), 'out', 'main.js')],
+    args: ['.', path.join(process.cwd(), 'out', 'main.js'), '--user-data', userDataDir],
     env: {
       ...process.env,
       NODE_ENV: 'development',
       START_DEVTOOLS: 'false',
       ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-      NEXUS_DOMAIN: 'cluster.nexdev.uk',
-      API_SUBDOMAIN: 'api-staging',
-      USERS_SUBDOMAIN: 'users-staging',
-      FLAMEWORK_SUBDOMAIN: 'nexusmods-staging',
-      NEXT_SUBDOMAIN: 'next-staging',
-      PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
+      // NEXUS_DOMAIN: 'cluster.nexdev.uk',
+      // API_SUBDOMAIN: 'api-staging',
+      // USERS_SUBDOMAIN: 'users-staging',
+      // FLAMEWORK_SUBDOMAIN: 'nexusmods-staging',
+      // NEXT_SUBDOMAIN: 'next-staging',
+      // PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
     },
-    timeout: 30000
+    timeout: 60000  // 60s timeout for first launch of the day
   });
-  
+
   const mainWindow = await waitForMainWindow(app);
-  
-  return { app, mainWindow, testRunDir };
+
+  // Capture process reference for cleanup
+  const appProcess = app.process();
+  const pid = appProcess?.pid;
+
+  return { app, mainWindow, testRunDir, appProcess, pid, userDataDir };
 }
 
 function resetRunCounter(): void {
