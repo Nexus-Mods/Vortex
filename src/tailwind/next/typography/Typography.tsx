@@ -93,7 +93,7 @@ const getTypographyStyles = ({
 };
 
 export const Typography: React.ComponentType<TypographyProps> = ({
-  appearance = 'strong',
+  appearance = 'inverted',
   as = 'p',
   children,
   className,
