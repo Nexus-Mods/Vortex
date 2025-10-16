@@ -292,12 +292,13 @@ export function testRefByIdentifiers(identifiers: {
   fileId?: number,
   fileNames?: string[],
   fileIds?: string[],
+  condition?: () => boolean,
 }, ref: IModReference): boolean {
   if (identifiers == null || typeof identifiers !== 'object' || Array.isArray(identifiers)) {
     return false;
   }
 
-  const { fileNames, modId, fileIds } = identifiers;
+  const { fileNames, modId, fileIds, condition } = identifiers;
   if (ref.repo?.modId != null && modId != null
     && ref.repo?.fileId != null && fileIds != null && fileIds.length > 0) {
     if (ref.repo.modId === modId.toString()
@@ -322,6 +323,11 @@ export function testRefByIdentifiers(identifiers: {
       }
     }
   }
+
+  if (condition?.()) {
+    return true;
+  }
+
   return false;
 }
 

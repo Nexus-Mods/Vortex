@@ -289,13 +289,14 @@ export function findDownloadByRef(reference: IReference,
 
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
-      if (download.state === 'failed') {
+      const isRelevantDownload = download.game.includes(reference.gameId);
+      if (download.state === 'failed' || !isRelevantDownload) {
         return false;
       }
       const lookup = lookupFromDownload(download);
       const fileIdSet = new Set<string>();
       const nameSet = new Set<string>();
-      fileIdSet.add(lookup.fileId.toString());
+      fileIdSet.add(lookup?.fileId?.toString?.());
       nameSet.add(lookup?.logicalFileName);
       nameSet.add(lookup?.customFileName);
       nameSet.add(download.modInfo?.name);

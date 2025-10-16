@@ -5115,8 +5115,10 @@ class InstallManager {
    * Find any download that matches the given mod reference using all available methods
    */
   private findDownloadForMod(reference: IModReference, downloads: { [id: string]: IDownload }): string | null {
+    const relevantDownloads = Object.fromEntries(Object.entries(downloads)
+      .filter(([dlId, dl]) => dl.state === 'finished' && dl.game.includes(reference.gameId)));
     // Try the primary lookup first
-    const downloadId = findDownloadByRef(reference, downloads);
+    const downloadId = findDownloadByRef(reference, relevantDownloads);
     if (downloadId) {
       return downloadId;
     }
@@ -5124,9 +5126,9 @@ class InstallManager {
     // Try filename match
     const targetFilename = reference?.logicalFileName;
     if (targetFilename) {
-      const altDownloadId = Object.keys(downloads).find(dlId => {
-        const download = downloads[dlId];
-        return download.localPath && download.localPath.endsWith(targetFilename) && 
+      const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+        const download = relevantDownloads[dlId];
+        return download.localPath && download.localPath.endsWith(targetFilename) &&
                download.state === 'finished';
       });
       if (altDownloadId) {
@@ -5138,8 +5140,8 @@ class InstallManager {
     if (reference?.repo) {
       const { modId, fileId } = reference.repo;
       if (modId && fileId) {
-        const altDownloadId = Object.keys(downloads).find(dlId => {
-          const download = downloads[dlId];
+        const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+          const download = relevantDownloads[dlId];
           return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
                  download.modInfo?.nexus?.fileId?.toString() === fileId.toString() &&
                  download.state === 'finished';
@@ -5151,8 +5153,8 @@ class InstallManager {
 
       // Try modId only
       if (modId) {
-        const altDownloadId = Object.keys(downloads).find(dlId => {
-          const download = downloads[dlId];
+        const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+          const download = relevantDownloads[dlId];
           return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
                  download.state === 'finished';
         });
@@ -5164,8 +5166,8 @@ class InstallManager {
 
     // Try testRefByIdentifiers
     if (reference) {
-      const altDownloadId = Object.keys(downloads).find(dlId => {
-        const download = downloads[dlId];
+      const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+        const download = relevantDownloads[dlId];
         if (download.state !== 'finished') {
           return false;
         }
