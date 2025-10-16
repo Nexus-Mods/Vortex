@@ -289,17 +289,25 @@ export function findDownloadByRef(reference: IReference,
 
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
-      if (download.state === 'failed') {
+      const isRelevantDownload = download.game.includes(reference.gameId);
+      if (download.state === 'failed' || !isRelevantDownload) {
         return false;
       }
       const lookup = lookupFromDownload(download);
+      const fileIdSet = new Set<string>();
+      const nameSet = new Set<string>();
+      fileIdSet.add(lookup?.fileId?.toString?.());
+      nameSet.add(lookup?.logicalFileName);
+      nameSet.add(lookup?.customFileName);
+      nameSet.add(download.modInfo?.name);
       const identifiers = {
         modId: parseInt(lookup?.modId, 10),
         fileId: parseInt(lookup?.fileId, 10),
-        name: lookup?.logicalFileName || download.modInfo?.name,
+        fileIds: Array.from(fileIdSet).filter(truthy),
+        fileNames: Array.from(nameSet).filter(truthy),
         gameId: download.game[0],
       }
-      return testModReference(lookup, reference, undefined, fuzzy) ?? testRefByIdentifiers(identifiers, reference);
+      return testRefByIdentifiers(identifiers, reference) || testModReference(lookup, reference, undefined, fuzzy);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];
