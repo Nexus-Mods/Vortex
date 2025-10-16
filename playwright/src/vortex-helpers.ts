@@ -191,7 +191,7 @@ export async function launchVortex(testName: string = 'unknown-test'): Promise<V
       // NEXT_SUBDOMAIN: 'next-staging',
       // PRIVATEBIN_SUBDOMAIN: 'privatebin-staging'
     },
-    timeout: 30000
+    timeout: 60000  // 60s timeout for first launch of the day
   });
 
   const mainWindow = await waitForMainWindow(app);

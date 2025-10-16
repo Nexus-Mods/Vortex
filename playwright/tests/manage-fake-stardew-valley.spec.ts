@@ -31,6 +31,40 @@ test('list available game configurations', () => {
 
 test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => {
   test.setTimeout(180000); // 3 minutes timeout for manual captcha + protocol prompt
+
+  // Clean up any leftover directories from previous failed test runs
+  console.log('Cleaning up old test directories...');
+  const appdataDir = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+  const testDirPattern = `vortex_playwright_${TEST_NAME}_`;
+
+  try {
+    const entries = fs.readdirSync(appdataDir);
+    const oldTestDirs = entries.filter(entry => entry.startsWith(testDirPattern));
+
+    for (const dirName of oldTestDirs) {
+      const dirPath = path.join(appdataDir, dirName);
+      try {
+        const stats = fs.statSync(dirPath);
+        if (stats.isDirectory()) {
+          console.log(`  Removing old directory: ${dirName}`);
+          fs.rmSync(dirPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 1000 });
+        }
+      } catch (e) {
+        console.warn(`  Could not remove ${dirName}: ${e}`);
+      }
+    }
+
+    if (oldTestDirs.length === 0) {
+      console.log('  No old directories found');
+    } else {
+      // Give Windows time to fully release file handles after cleanup
+      console.log('  Waiting for file handles to release...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  } catch (e) {
+    console.warn(`  Error during cleanup: ${e}`);
+  }
+
   const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
   const fakeGamesPath = path.join(os.tmpdir(), 'vortex-test-games', `test-${Date.now()}`);
   const gameConfig = GAME_CONFIGS.stardewvalley;
@@ -135,7 +169,12 @@ test('manage fake Stardew Valley', async ({ browser }: { browser: Browser }) => 
         console.log('✓ Mod download initiated in browser\n');
 
         // Wait for Vortex to receive and process the NXM link
-        await mainWindow.waitForTimeout(5000);
+        await mainWindow.waitForTimeout(3000);
+
+        // Navigate to Downloads page to see the download
+        console.log('9. Navigating to Downloads page...');
+        await mainWindow.locator('#main-nav-container a#Downloads').click();
+        await mainWindow.waitForTimeout(2000);
 
         // Check Vortex download state after download
         const downloadsAfter = await mainWindow.evaluate(() => {
