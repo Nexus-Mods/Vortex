@@ -1846,7 +1846,7 @@ class ExtensionManager {
       });
   }
 
-  private genMd5Hash = (filePath: string, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
+  private genMd5Hash = (data: string | Buffer, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
     let lastProgress: number = 0;
     const progressHash = (progress: number, total: number) => {
       progressFunc?.(progress, total);
@@ -1854,17 +1854,25 @@ class ExtensionManager {
         lastProgress = total;
       }
     };
-    return toPromise<string>(cb => fileMD5(filePath, cb, progressHash))
-      .then((result) => (lastProgress === 0)
-        ? fsVortex.statAsync(filePath).then(stats => stats.size).catch(() => 0)
-          .then(numBytes => Promise.resolve({
+    return toPromise<string>(cb => fileMD5(data, cb, progressHash))
+      .then((result) => {
+        if (lastProgress === 0) {
+          // Need to get the size from the file or buffer
+          const sizePromise = Buffer.isBuffer(data)
+            ? Promise.resolve(data.length)
+            : fsVortex.statAsync(data as string).then(stats => stats.size).catch(() => 0);
+
+          return sizePromise.then(numBytes => ({
             md5sum: result,
             numBytes
-          }))
-        : Promise.resolve({
-          md5sum: result,
-          numBytes: lastProgress
-        }));
+          }));
+        } else {
+          return Promise.resolve({
+            md5sum: result,
+            numBytes: lastProgress
+          });
+        }
+      });
   }
 
   private openArchive = (archivePath: string,

@@ -28,7 +28,7 @@ EndProject
 # Native C++ Addon Projects  
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winapi", "node_modules\winapi-bindings\build\winapi.vcxproj", "{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xxhash-addon", "node_modules\xxhash-addon\build\addon.vcxproj", "{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vortexmt", "node_modules\vortexmt\build\vortexmt.vcxproj", "{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
 EndProject
 
 # Gamebryo Extension Projects

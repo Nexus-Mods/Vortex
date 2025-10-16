@@ -624,11 +624,11 @@ export interface IExtensionApi {
 
   /**
    * generate an md5 hash for the specified file
-   * @param filePath the path to the file
+   * @param data Either a string containing the file path or a Buffer containing the data to hash
    * @param progressFunc optional function to report progress
    * @returns a promise resolving to the md5 hash result
    */
-  genMd5Hash: (filePath: string, progressFunc?: (progress: number, total: number) => void) => Promise<IHashResult>;
+  genMd5Hash: (data: string | Buffer, progressFunc?: (progress: number, total: number) => void) => Promise<IHashResult>;
 
   /**
    * find meta information about a mod
