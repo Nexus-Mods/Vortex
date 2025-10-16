@@ -537,6 +537,113 @@ export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
       });
 }
 
+export function onSearchCollections(api: IExtensionApi, nexus: Nexus) {
+  return (options: {
+    gameId: string;
+    count?: number;
+    offset?: number;
+    sort?: { field: string; direction: string };
+    search?: string;
+  }): Promise<{ nodes: ICollection[]; totalCount: number }> => {
+    const {
+      gameId,
+      count = 20,
+      offset = 0,
+      sort = { field: 'endorsements', direction: 'DESC' },
+      search,
+    } = options;
+
+    // Build the sort parameter based on the field
+    const sortParam: any = {};
+    sortParam[sort.field] = { direction: sort.direction };
+
+    // Build filter with gameDomain and optional search
+    const filter: any = {
+      collectionStatus: [
+        { op: 'EQUALS', value: 'listed' },
+        { op: 'EQUALS', value: 'published' },
+        { op: 'EQUALS', value: 'under_moderation' },
+        { op: 'EQUALS', value: 'unlisted' },
+      ],
+      gameDomain: [{ op: 'EQUALS', value: gameId }],
+    };
+
+    // Add generalSearch if search query is provided
+    if (search && search.trim()) {
+      filter.generalSearch = [{ op: 'WILDCARD', value: search.trim() }];
+      filter.op = 'AND';
+    }
+
+    // Build variables for the collectionsV2 query
+    const variables = {
+      count,
+      offset,
+      filter,
+      sort: sortParam,
+    };
+
+    // Use the internal requestGraph method to make a direct GraphQL call
+    // This is a workaround until the nexus-api package supports collectionsV2
+    return Promise.resolve((nexus as any).requestGraph(
+      'collectionsV2',
+      {
+        count: { type: 'Int', optional: true },
+        filter: { type: 'CollectionsSearchFilter', optional: true },
+        offset: { type: 'Int', optional: true },
+        sort: { type: '[CollectionsSearchSort!]', optional: true },
+      },
+      {
+        totalCount: true,
+        nodes: {
+          id: true,
+          name: true,
+          slug: true,
+          collectionStatus: true,
+          endorsements: true,
+          recentRating: true,
+          recentRatingCount: true,
+          totalDownloads: true,
+          summary: true,
+          category: {
+            name: true,
+          },
+          game: {
+            domainName: true,
+            name: true,
+          },
+          latestPublishedRevision: {
+            adultContent: true,
+            modCount: true,
+            totalSize: true,
+          },
+          tileImage: {
+            thumbnailUrl: { $filter: { size: 'med' } },
+          },
+          user: {
+            avatar: true,
+            memberId: true,
+            name: true,
+          },
+          badges: {
+            name: true,
+            description: true,
+          },
+        },
+      },
+      variables,
+      (nexus as any).args({ path: (nexus as any).filter({}) })
+    ))
+      .then((result: any) => ({
+        nodes: result.nodes || [],
+        totalCount: result.totalCount || 0,
+      }))
+      .catch(err => {
+        api.showErrorNotification('Failed to search collections', err);
+        return Promise.resolve({ nodes: [], totalCount: 0 });
+      });
+  };
+}
+
 export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
   : (apiLink: string) => Promise<IDownloadURL[]> {
   return (apiLink: string): Promise<IDownloadURL[]> =>

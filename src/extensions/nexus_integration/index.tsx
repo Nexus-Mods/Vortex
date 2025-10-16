@@ -932,6 +932,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusDownload: eh.onNexusDownload(api, nexus),
     nexusGetCollection: eh.onGetNexusCollection(api, nexus),
     nexusGetCollections: eh.onGetNexusCollections(api, nexus),
+    nexusSearchCollections: eh.onSearchCollections(api, nexus),
     nexusGetMyCollections: eh.onGetMyCollections(api, nexus),
     nexusResolveCollectionUrl: eh.onResolveCollectionUrl(api, nexus),
     nexusGetCollectionRevision: eh.onGetNexusCollectionRevision(api, nexus),
