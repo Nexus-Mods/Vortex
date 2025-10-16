@@ -45,11 +45,22 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
   onViewPage,
   className,
 }) => {
+  // Helper to extract tag text from string or object
+  const getTagText = (tag: any): string => {
+    if (typeof tag === 'string') {
+      return tag;
+    }
+    if (tag && typeof tag === 'object' && 'name' in tag) {
+      return String(tag.name);
+    }
+    return String(tag);
+  };
+
   // Take max 2 tags
   const displayTags = tags.slice(0, 2);
 
   return (
-    <div className={`tw:w-[465px] tw:h-72 tw:bg-surface-mid tw:inline-flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
+    <div className={`tw:w-full tw:max-w-[465px] tw:h-72 tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
       {/* Main content area */}
       <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
         <div className="tw:self-stretch tw:flex-1 tw:inline-flex tw:justify-between tw:items-center">
@@ -102,23 +113,28 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
             {displayTags.length > 0 && (
               <div className="tw:self-stretch tw:pl-3 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
                 <div className="tw:self-stretch tw:py-2 tw:border-t tw:border-b tw:border-stroke-neutral-translucent-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
-                  {displayTags.map((tag, index) => (
-                    <React.Fragment key={index}>
-                      <Typography
-                        as="div"
-                        typographyType="body-xs"
-                        appearance="none"
-                        className={`tw:justify-center tw:tracking-tight ${
-                          tag.toLowerCase() === 'adult' ? 'tw:text-danger-400' : 'tw:text-info-strong'
-                        }`}
-                      >
-                        {tag}
-                      </Typography>
-                      {index < displayTags.length - 1 && (
-                        <div className="tw:w-1 tw:h-0.5 tw:origin-top-left tw:rotate-45 tw:bg-neutral-subdued" />
-                      )}
-                    </React.Fragment>
-                  ))}
+                  {displayTags.map((tag, index) => {
+                    const tagText = getTagText(tag);
+                    return (
+                      <React.Fragment key={index}>
+                        <Typography
+                          as="div"
+                          typographyType="body-xs"
+                          appearance="none"
+                          className={`tw:justify-center tw:tracking-tight ${
+                            tagText.toLowerCase() === 'adult'
+                              ? 'tw:text-danger-strong'
+                              : 'tw:text-info-strong'
+                          }`}
+                        >
+                          {tagText}
+                        </Typography>
+                        {index < displayTags.length - 1 && (
+                          <div className="tw:w-1 tw:h-0.5 tw:origin-top-left tw:rotate-45 tw:bg-neutral-subdued" />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -125,7 +125,10 @@ const getButtonClasses = ({
 
   switch (buttonType) {
     case 'primary':
-      classes.push('tw:bg-primary-moderate tw:text-neutral-inverted');
+      classes.push(
+        'tw:bg-primary-moderate tw:text-neutral-inverted',
+        canHover ? 'hover:tw:bg-primary-subdued' : ''
+      );
       break;
     case 'secondary':
       classes.push('tw:border tw:border-stroke-moderate', canHover ? 'hover:tw:border-stroke-strong' : '');
@@ -134,7 +137,7 @@ const getButtonClasses = ({
         classes.push(
           ...(filled === 'strong'
             ? ['tw:bg-neutral-strong tw:text-neutral-inverted', canHover ? 'tw:hover-dark-overlay' : '']
-            : ['tw:bg-neutral-800 tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong tw:hover-overlay' : '']),
+            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong hover:tw:bg-surface-high' : '']),
         );
       } else {
         classes.push('tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong' : '');
@@ -146,17 +149,23 @@ const getButtonClasses = ({
         classes.push(
           ...(filled === 'strong'
             ? ['tw:bg-neutral-strong tw:text-neutral-inverted', canHover ? 'tw:hover-dark-overlay' : '']
-            : ['tw:bg-neutral-800 tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong tw:hover-overlay' : '']),
+            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong hover:tw:bg-surface-high' : '']),
         );
       } else {
         classes.push('tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong' : '');
       }
       break;
     case 'success':
-      classes.push('tw:bg-success-moderate tw:text-neutral-inverted');
+      classes.push(
+        'tw:bg-success-moderate tw:text-neutral-inverted',
+        canHover ? 'hover:tw:bg-success-subdued' : ''
+      );
       break;
     case 'premium':
-      classes.push('tw:bg-premium-moderate tw:text-neutral-strong');
+      classes.push(
+        'tw:bg-premium-moderate tw:text-neutral-strong',
+        canHover ? 'hover:tw:bg-premium-subdued' : ''
+      );
       break;
   }
 
