@@ -93,7 +93,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     state.persistent['nexus'].userInfo);
 
   const collectionInstallSession = useSelector<IState, any>(state =>
-    state.session['collections'].activeSession);
+    state.session?.['collections']?.activeSession);
   const context = React.useContext<IComponentContext>(MainContext);
 
   const [fileInfo, setFileInfo] = React.useState<any>(null);
