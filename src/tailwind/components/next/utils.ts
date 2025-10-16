@@ -1,5 +1,5 @@
 /**
- * Utility functions for Typography component
+ * Shared utility functions for web team components
  * Adapted from web team's "next" project
  */
 

@@ -7,7 +7,7 @@
 
 import * as React from 'react';
 import { AllHTMLAttributes, createElement, Ref } from 'react';
-import { joinClasses, ResponsiveScreenSizes } from './utils';
+import { joinClasses, ResponsiveScreenSizes } from '../utils';
 
 export type TypographyTypes =
   | 'heading-2xl'

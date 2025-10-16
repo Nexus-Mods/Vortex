@@ -21,6 +21,14 @@
   --color-translucent-moderate: rgba(0, 0, 0, 0.65);
   --color-translucent-subdued: rgba(0, 0, 0, 0.45);
   --color-translucent-weak: rgba(0, 0, 0, 0.25);
+
+  /* Button colors (from web team's design system) */
+  --color-primary-moderate: #3b82f6;        /* Blue-500 for primary buttons */
+  --color-stroke-moderate: #d4d4d4;         /* neutral-300 for borders */
+  --color-stroke-strong: #a3a3a3;           /* neutral-400 for hover borders */
+  --color-neutral-800: #262626;             /* neutral-800 for filled buttons */
+  --color-success-moderate: #22c55e;        /* Green-500 for success buttons */
+  --color-premium-moderate: #f59e0b;        /* Amber-500 for premium buttons */
 }
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
@@ -121,4 +129,52 @@
   font-size: 12px;
   line-height: 1.5;
   font-weight: 400;
+}
+
+/* Button utility classes from web team's design system */
+
+/* Hover overlay effect for buttons */
+.tw\:hover-overlay {
+  position: relative;
+}
+
+.tw\:hover-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tw\:hover-overlay:hover::before {
+  opacity: 1;
+}
+
+/* Dark hover overlay effect for buttons */
+.tw\:hover-dark-overlay {
+  position: relative;
+}
+
+.tw\:hover-dark-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tw\:hover-dark-overlay:hover::before {
+  opacity: 1;
 }
