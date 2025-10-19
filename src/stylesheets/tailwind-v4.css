@@ -1,6 +1,35 @@
 @import "tailwindcss" prefix(tw);
 
 /* ========================================
+   TAILWIND ROOT VARIABLE OVERRIDES
+   ========================================
+
+   Legacy Vortex UI has a non-standard base font-size which affects rem calculations.
+   These overrides convert Tailwind's rem-based values to fixed pixels to ensure
+   consistent sizing/spacing regardless of the inherited font-size.
+
+   Standard Tailwind v4 assumes 1rem = 16px:
+   - --tw-spacing: 0.25rem = 4px
+   - --tw-text-sm: 0.875rem = 14px
+   - --tw-text-lg: 1.125rem = 18px
+   - --tw-text-xl: 1.25rem = 20px
+   - --tw-container-sm: 24rem = 384px
+   ======================================== */
+
+:root {
+  /* Spacing: 0.25rem → 4px (base unit for padding, margin, gap, width, height) */
+  --tw-spacing: 4px;
+
+  /* Typography: Convert rem to px for consistent font sizing */
+  --tw-text-sm: 14px;
+  --tw-text-lg: 18px;
+  --tw-text-xl: 20px;
+
+  /* Container breakpoints: Convert rem to px */
+  --tw-container-sm: 384px;  /* 24rem = 384px */
+}
+
+/* ========================================
    WEB TEAM DESIGN SYSTEM COLORS
    ========================================
 

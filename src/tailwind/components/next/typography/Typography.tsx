@@ -103,7 +103,7 @@ export const Typography: React.ComponentType<TypographyProps> = ({
 }) => {
   /* eslint-disable sort-keys */
   const appearanceClasses: Record<Exclude<TypographyProps['appearance'], undefined>, string> = {
-    none: '',
+    none: 'tw:text-inherit',
     inverted: isTranslucent ? 'tw:text-translucent-dark-950' : 'tw:text-neutral-inverted',
     moderate: isTranslucent ? 'tw:text-translucent-moderate' : 'tw:text-neutral-moderate',
     strong: isTranslucent ? 'tw:text-translucent-strong' : 'tw:text-neutral-strong',
