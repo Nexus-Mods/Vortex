@@ -10,7 +10,7 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
-import * as selectors from '../../util/selectors';
+import { downloadPath } from '../download_management/selectors';
 import { getSafe } from '../../util/storeHelper';
 import MainPage from '../../views/MainPage';
 
@@ -22,7 +22,7 @@ import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
 import { EndorsedStatus } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -216,13 +216,13 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     let success = false;
     log('info', '📦 installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
-      ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
+      ? promiseMap(extPaths, extPath => installExtension(this.context.api, extPath)
         .then(() => { success = true; })
         .catch(err => {
           this.context.api.showErrorNotification('Failed to install extension', err,
                                                  { allowReport: false });
         }))
-      : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
+      : promiseMap(extPaths, url => new Promise<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
                                        const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
@@ -292,7 +292,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     extensionConfig: state.app.extensions || emptyObject,
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
-    downloadPath: selectors.downloadPath(state),
+    downloadPath: downloadPath(state),
     extensions: state.session.extensions.installed,
   };
 }

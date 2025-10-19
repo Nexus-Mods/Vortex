@@ -1,8 +1,8 @@
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import path from 'path';
 import walk from './walk';
 
-function calculateFolderSize(dirPath: string): Bluebird<number> {
+function calculateFolderSize(dirPath: string): Promise<number> {
   let totalSize = 0;
   const onIter = (walkPath, iter, stats) => {
     if (stats.isFile()) {
@@ -15,8 +15,8 @@ function calculateFolderSize(dirPath: string): Bluebird<number> {
   };
   return walk(dirPath, (iter, stats) =>
     onIter(dirPath, iter, stats), { ignoreErrors: true })
-    .then(() => Bluebird.resolve(totalSize))
-    .catch(err => Bluebird.reject(err));
+    .then(() => Promise.resolve(totalSize))
+    .catch(err => Promise.reject(err));
 }
 
 export default calculateFolderSize;

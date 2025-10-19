@@ -2,7 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 import { DataInvalid } from './CustomErrors';
 import { log } from './log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import encode from 'encoding-down';
 import leveldownT from 'leveldown';
 import * as levelup from 'levelup';
@@ -60,7 +60,7 @@ class LevelPersist implements IPersistor {
           log('info', 'failed to open db', err);
           return Promise.reject(new DatabaseLocked());
         } else {
-          return Promise.delay(500)
+          return promiseDelay(500)
             .then(() => LevelPersist.create(persistPath, tries - 1, false));
         }
       });

@@ -28,7 +28,6 @@ import onceCB from '../../util/onceCB';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
-  activeProfile,
   currentGameDiscovery,
   downloadPathForGame,
   installPath,
@@ -36,6 +35,7 @@ import {
   modPathsForGame,
   profileById,
 } from '../../util/selectors';
+import { activeProfile } from '../../extensions/profile_management/activeGameId';
 import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 import { setAutoDeployment } from '../settings_interface/actions/automation';
@@ -103,7 +103,8 @@ import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 import { findModByRef } from './util/dependencies';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach, promiseMap, promiseMapSeries } from '../../util/bluebird-migration-helpers.local';
 import * as _ from 'lodash';
 import * as path from 'path';
 import React from 'react';
@@ -258,7 +259,7 @@ function deployAllModTypes(api: IExtensionApi,
 
   api.dismissNotification('redundant-mods');
 
-  return Promise.each(deployableModTypes(modPaths),
+  return promiseEach(deployableModTypes(modPaths),
     typeId => deployModType(api, activator, game, sortedModList, typeId,
       stagingPath, modPaths[typeId], overwritten, mergeResult,
       lastDeployment[typeId], onProgress)
@@ -344,9 +345,7 @@ function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: strin
     .filter((mod: IMod) => getSafe(modState, [mod.id, 'enabled'], false));
 
   return sortMods(profile.gameId, unsorted, api)
-    .catch(CycleError, err => Promise.reject(
-      new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. '
-                          + err.message)));
+    .catch((err) => { if (err instanceof CycleError) { return Promise.reject(new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. ' + err.message)); } else { return Promise.reject(err); } });
 }
 
 interface IMergeResultByType {
@@ -383,14 +382,14 @@ function doMergeMods(api: IExtensionApi,
     }, {});
 
   // clean up merged mods
-  return Promise.mapSeries(mergeModTypes, typeId => {
+  return promiseMapSeries(mergeModTypes, typeId => {
     const mergePath = truthy(typeId)
       ? MERGED_PATH + '.' + typeId
       : MERGED_PATH;
     return fs.removeAsync(path.join(stagingPath, mergePath));
   })
     // update merged mods
-    .then(() => Promise.each(mergeModTypes,
+    .then(() => promiseEach(mergeModTypes,
       typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
         sortedModList.filter(
           mod => ((mod.type || '') === typeId) && (mod.installationPath !== undefined)),
@@ -592,8 +591,9 @@ function genUpdateModDeployment() {
 
     // test if anything was changed by an external application
     return (manual ? Promise.resolve() : userGate())
-      .tap(() => {
+      .then(() => {
         notification.id = api.sendNotification(notification);
+        return Promise.resolve();
       })
       .then(() => withActivationLock(() => {
         log('debug', 'deploying mods', {
@@ -610,10 +610,13 @@ function genUpdateModDeployment() {
         api.store.dispatch(startActivity('mods', 'deployment'));
         progress(t('Loading deployment manifest'), 0);
 
-        return Promise.each(deployableModTypes(modPaths), typeId =>
+        return promiseEach(deployableModTypes(modPaths), typeId =>
             loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, activator)
               .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
-          .tap(() => progress(t('Running pre-deployment events'), 2))
+          .then(() => {
+            progress(t('Running pre-deployment events'), 2);
+            return Promise.resolve();
+          })
           .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
           .then(() => {
             // need to update the profile so that if a will-deploy handler disables a mod, that
@@ -627,21 +630,36 @@ function genUpdateModDeployment() {
               log('warn', 'profile no longer found?', profileId);
             }
           })
-          .tap(() => progress(t('Checking for external changes'), 5))
+          .then(() => {
+            progress(t('Checking for external changes'), 5);
+            return Promise.resolve();
+          })
           .then(() => dealWithExternalChanges(api, activator, profileId, stagingPath, modPaths,
             lastDeployment))
-          .tap(() => progress(t('Checking for mod incompatibilities'), 25))
+          .then(() => {
+            progress(t('Checking for mod incompatibilities'), 25);
+            return Promise.resolve();
+          })
           .then(() => checkIncompatibilities(api, profile, mods))
-          .tap(() => progress(t('Sorting mods'), 30))
+          .then(() => {
+            progress(t('Sorting mods'), 30);
+            return Promise.resolve();
+          })
           .then(() => doSortMods(api, profile, mods)
             .then((sortedModListIn: IMod[]) => {
               sortedModList = sortedModListIn;
             }))
-          .tap(() => progress(t('Merging mods'), 35))
+          .then(() => {
+            progress(t('Merging mods'), 35);
+            return Promise.resolve();
+          })
           .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList,
                                   modPaths, lastDeployment)
             .then(mergeResultIn => mergeResult = mergeResultIn))
-          .tap(() => progress(t('Starting deployment'), 35))
+          .then(() => {
+            progress(t('Starting deployment'), 35);
+            return Promise.resolve();
+          })
           .then(() => {
             const deployProgress = (name, percent) =>
               progress(t('Deploying: ') + name, 50 + percent / 2);
@@ -657,41 +675,25 @@ function genUpdateModDeployment() {
       })
         // at this point the deployment lock gets released so another deployment
         // can be started during post-deployment
-        .tap(() => progress(t('Running post-deployment events'), 99))
+        .then(() => {
+          progress(t('Running post-deployment events'), 99);
+          return Promise.resolve();
+        })
         .then(() => api.emitAndAwait('did-deploy', profile.id, newDeployment,
           (title: string) => progress(title, 99)))
-        .tap(() => progress(t('Preparing game settings'), 100))
+        .then(() => {
+          progress(t('Preparing game settings'), 100);
+          return Promise.resolve();
+        })
         .then(() => bakeSettings(api, profile, sortedModList))
         // finally wrapping up
         .then(() => {
           api.store.dispatch(setDeploymentNecessary(game.id, false));
         })
-        .catch(UserCanceled, () => undefined)
-        .catch(ProcessCanceled, err => {
-          api.sendNotification({
-            type: 'warning',
-            title: 'Deployment interrupted',
-            message: err.message,
-          });
-        })
-        .catch(TemporaryError, err => {
-          api.showErrorNotification('Failed to deploy mods, please try again',
-            err.message, { allowReport: false });
-        })
-        .catch(CycleError, err => {
-          api.sendNotification({
-            id: 'mod-cycle-warning',
-            type: 'warning',
-            message: 'Mod rules contain cycles',
-            actions: [
-              {
-                title: 'Show', action: () => {
-                  showCycles(api, err.cycles, profile.gameId);
-                },
-              },
-            ],
-          });
-        })
+        .catch((err) => { if (err instanceof UserCanceled) { return undefined; } else { return Promise.reject(err); } })
+        .catch((err) => { if (err instanceof ProcessCanceled) { api.sendNotification({ type: 'warning', title: 'Deployment interrupted', message: err.message, }); return Promise.resolve(); } else { return Promise.reject(err); } })
+        .catch((err) => { if (err instanceof TemporaryError) { api.showErrorNotification('Failed to deploy mods, please try again', err.message, { allowReport: false }); return Promise.resolve(); } else { return Promise.reject(err); } })
+        .catch((err) => { if (err instanceof CycleError) { api.sendNotification({ id: 'mod-cycle-warning', type: 'warning', message: 'Mod rules contain cycles', actions: [ { title: 'Show', action: () => { showCycles(api, err.cycles, profile.gameId); }, }, ], }); return Promise.resolve(); } else { return Promise.reject(err); } })
         .catch(err => {
           if (err instanceof UserCanceled) {
             // not sure how we'd get here, UserCanceled is caught further up!
@@ -1020,21 +1022,16 @@ function onDeploySingleMod(api: IExtensionApi) {
                                new BlacklistSet(mod.fileOverrides ?? [], game, normalize))
           : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
-      .tapCatch(() => {
+      .catch((err) => {
         if (activator.cancel !== undefined) {
           activator.cancel(gameId, dataPath, stagingPath);
         }
+        return Promise.reject(err);
       })
       .then(() => activator.finalize(gameId, dataPath, stagingPath))
       .then(newActivation =>
         doSaveActivation(api, gameId, mod.type, dataPath, stagingPath, newActivation, activator.id))
-      .catch(ProcessCanceled, err => {
-        api.sendNotification({
-          type: 'warning',
-          title: 'Deployment interrupted',
-          message: err.message,
-        });
-      })
+      .catch((err) => { if (err instanceof ProcessCanceled) { api.sendNotification({ type: 'warning', title: 'Deployment interrupted', message: err.message, }); return Promise.resolve(); } else { return Promise.reject(err); } })
       .catch(err => {
         const userCanceled = err instanceof UserCanceled;
         api.showErrorNotification('Failed to deploy mod', err, {
@@ -1141,14 +1138,9 @@ function once(api: IExtensionApi) {
 
   api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
     return purgeModsInPath(api, gameId, modType, modPath)
-      .catch(UserCanceled, () => Promise.resolve())
-      .catch(NoDeployment, () => {
-        api.showErrorNotification('Failed to purge mods',
-          'No deployment method currently available',
-          { allowReport: false });
-      })
-      .catch(ProcessCanceled, err =>
-        api.showErrorNotification('Failed to purge mods', err, { allowReport: false }))
+      .catch((err) => { if (err instanceof UserCanceled) { return Promise.resolve(); } else { return Promise.reject(err); } })
+      .catch((err) => { if (err instanceof NoDeployment) { api.showErrorNotification('Failed to purge mods', 'No deployment method currently available', { allowReport: false }); return Promise.resolve(); } else { return Promise.reject(err); } })
+      .catch((err) => { if (err instanceof ProcessCanceled) { api.showErrorNotification('Failed to purge mods', err, { allowReport: false }); return Promise.resolve(); } else { return Promise.reject(err); } })
       .catch(err => api.showErrorNotification('Failed to purge mods', err));
   });
 
@@ -1176,9 +1168,9 @@ function once(api: IExtensionApi) {
         const state: IState = api.store.getState();
         const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
-        Promise.map(modIds, modId =>
+        promiseMap(modIds, modId =>
           installManager.installDependencies(api, profile, gameId, modId, silent === true)
-            .catch(ProcessCanceled, () => null))
+            .catch((err) => { if (err instanceof ProcessCanceled) { return null; } else { return Promise.reject(err); } }))
           .catch(err => api.showErrorNotification('Failed to install dependencies', err));
       } catch (err) {
         api.showErrorNotification('Failed to install dependencies', err);
@@ -1194,9 +1186,9 @@ function once(api: IExtensionApi) {
           api.showErrorNotification('Failed to install recommendations', 'Invalid profile');
         }
 
-        Promise.map(modIds, modId =>
+        promiseMap(modIds, modId =>
           installManager.installRecommendations(api, profile, gameId, modId)
-            .catch(ProcessCanceled, () => null))
+            .catch((err) => { if (err instanceof ProcessCanceled) { return null; } else { return Promise.reject(err); } }))
           .catch(err => api.showErrorNotification('Failed to install recommendations', err));
       } catch (err) {
         api.showErrorNotification('Failed to install recommendations', err);
@@ -1590,7 +1582,7 @@ function init(context: IExtensionContext): boolean {
       const profile = activeProfile(context.api.getState());
       // installRecommendations should already do nothing if there are no recommendations
       // on a mod so no need to make the code more complicated here
-      Promise.mapSeries(instanceIds, modId =>
+      promiseMapSeries(instanceIds, modId =>
         installManager.installRecommendations(context.api, profile, profile.gameId, modId))
         .catch(err => {
           context.api.showErrorNotification('Failed to install recommendations', err);

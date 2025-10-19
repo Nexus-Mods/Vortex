@@ -13,7 +13,7 @@ import { setLastUpdateCheck } from '../actions/session';
 
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -109,7 +109,7 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
 
   return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game, fallBackGameId)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
-      .tapCatch(err => {
+      .catch(err => {
         log('warn', 'dropping update info', { gameMode, id: mod.id, err: err.message });
         if ([403, 404].indexOf(err.statusCode) !== -1) {
           setNoUpdateAttributes(store.dispatch, gameMode, mod);

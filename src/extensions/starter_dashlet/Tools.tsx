@@ -6,7 +6,7 @@ import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IMod, IRunningTool } from '../../types/IState';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
@@ -26,7 +26,7 @@ import { setPrimaryTool, setToolOrder } from './actions';
 
 import ToolEditDialog from './ToolEditDialog';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 import { Media } from 'react-bootstrap';
 import * as Redux from 'redux';

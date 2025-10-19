@@ -2,7 +2,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import { IGame } from '../types/IGame';
 import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import { setDiscoveryProgress, setDiscoveryRunning, clearDiscoveryProgress } from '../extensions/gamemode_management/actions/discoveryProgress';
 import { getMacOSGameFix, validateRequiredFilesWithMacOSCompat } from '../util/macOSGameCompatibility';

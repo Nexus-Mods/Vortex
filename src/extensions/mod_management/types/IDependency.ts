@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import {ILookupResult, IModInfo} from 'modmeta-db';
 import { IFileListItem, IMod, IModReference } from './IMod';
 

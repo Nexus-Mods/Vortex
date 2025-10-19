@@ -7,7 +7,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameThumbnail from './GameThumbnail';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 
 export interface IBaseProps {

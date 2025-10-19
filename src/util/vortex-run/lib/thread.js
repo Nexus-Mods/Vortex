@@ -22,7 +22,6 @@ const __importDefault = (this && this.__importDefault) || function (mod) {
   return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const bluebird_1 = __importDefault(require("bluebird"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const tmp = __importStar(require("tmp"));
@@ -75,7 +74,7 @@ function writeProgram(func, moduleBase, args) {
   return prog;
 }
 function runThreaded(func, moduleBase, ...args) {
-  return new bluebird_1.default((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     tmp.file({ postfix: '.js' }, (err, tmpPath, fd, cleanup) => {
       if (err) {
         return reject(err);

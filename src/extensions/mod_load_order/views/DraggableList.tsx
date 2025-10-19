@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,

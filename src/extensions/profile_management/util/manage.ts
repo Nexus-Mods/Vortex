@@ -1,4 +1,4 @@
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 import { IExtensionApi } from '../../../types/IExtensionContext';
@@ -7,7 +7,8 @@ import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import * as actions from '../actions/profiles';
 import { clearLastActiveProfile, setNextProfile } from '../actions/settings';
-import { activeProfile, lastActiveProfileForGame, profileById } from '../selectors';
+import { activeProfile, lastActiveProfileForGame } from '../activeGameId';
+import { profileById } from '../selectors';
 import { IProfile } from '../types/IProfile';
 
 export function profilePath(profile: IProfile): string {
@@ -65,7 +66,8 @@ export function removeProfile(api: IExtensionApi, profileId: string): boolean {
 
   if (removeProfilePP === undefined) {
     removeProfilePP = api.withPrePost('remove-profile', (profileInner: IProfile) =>
-      Bluebird.resolve(removeProfileImpl(api, profileInner)));
+      // Replace Bluebird.resolve with Promise.resolve
+      Promise.resolve(removeProfileImpl(api, profileInner)));
   }
 
   removeProfilePP(profile);

@@ -6,7 +6,10 @@ import { INotification } from '../../../types/INotification';
 import { IProfile } from '../../../types/IState';
 import { ProcessCanceled, TemporaryError } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
-import { activeProfile, discoveryByGame, lastActiveProfileForGame, profileById } from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { profileById } from '../../../extensions/profile_management/selectors';
+import { lastActiveProfileForGame } from '../../../extensions/profile_management/activeGameId';
+import { discoveryByGame } from '../../../extensions/gamemode_management/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModType } from '../../gamemode_management/types/IModType';
@@ -18,7 +21,8 @@ import { getActivator, getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseFilter, promiseMap, promiseMapSeries, promiseReduce } from '../../../util/bluebird-migration-helpers.local';
 import { generate as shortid } from 'shortid';
 
 const MERGE_SUBDIR = 'zzz_merge';
@@ -53,7 +57,7 @@ function filterManifest(activator: IDeploymentMethod,
                         deployPath: string,
                         stagingPath: string,
                         deployment: IDeployedFile[]): Promise<IDeployedFile[]> {
-  return Promise.filter(deployment, file =>
+  return promiseFilter(deployment, file =>
     activator.isDeployed(stagingPath, deployPath, file));
 }
 
@@ -64,7 +68,7 @@ export function loadAllManifests(api: IExtensionApi,
                                  stagingPath: string) {
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
-  return Promise.reduce(modTypes, (prev, typeId) =>
+  return promiseReduce(modTypes, (prev, typeId) =>
     loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, deploymentMethod)
       .then(deployment => {
         prev[typeId] = deployment;
@@ -211,13 +215,19 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
       .then(() => loadAllManifests(api, activator, gameId, modPaths, stagingPath)
         .then(deployments => { lastDeployment = deployments; }))
       .then(() => api.emitAndAwait('will-purge', profile.id, lastDeployment))
-      .tap(() => onProgress(10, 'Removing links'))
+      .then(() => {
+        onProgress(10, 'Removing links');
+        return Promise.resolve();
+      })
       // deal with all external changes
       .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath,
                                           modPaths, lastDeployment))
-      .tap(() => onProgress(25, 'Removing links'))
+      .then(() => {
+        onProgress(25, 'Removing links');
+        return Promise.resolve();
+      })
       // purge all mod types
-      .then(() => Promise.mapSeries(modTypes, (typeId: string, idx: number) => {
+      .then(() => promiseMapSeries(modTypes, (typeId: string, idx: number) => {
         // calculating progress for the actual file removal is a bit awkward, we get the idx
         // and total for each mod type separately. The total removal progress should cover 50%
         // of our progress bar, each mod type is then a fraction of that.
@@ -227,27 +237,34 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
         };
         return activator.purge(stagingPath, modPaths[typeId], gameId, progressType);
       }))
-      .tap(() => onProgress(75, 'Saving updated manifest'))
+      .then(() => {
+        onProgress(75, 'Saving updated manifest');
+        return Promise.resolve();
+      })
       // save (empty) activation
-      .then(() => Promise.map(modTypes, typeId =>
+      .then(() => promiseMap(modTypes, typeId =>
         saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                        [], activator.id)))
       // the deployment may be changed so on an exception we still need to update it
-      .tapCatch(() => {
+      .catch((err) => {
         if (lastDeployment === undefined) {
           // exception happened before the deployment is even loaded so there is nothing
           // to clean up
-          return;
+          return Promise.reject(err);
         }
-        return Promise.map(modTypes, typeId =>
+        return promiseMap(modTypes, typeId =>
           filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
             .then(files =>
               saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId], stagingPath,
-                             files, activator.id)));
+                             files, activator.id)))
+          .then(() => Promise.reject(err));
       })
-      .catch(ProcessCanceled, () => null)
+      .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
       .then(() => Promise.resolve())
-      .tap(() => onProgress(85, 'Post purge events'))
+      .then(() => {
+        onProgress(85, 'Post purge events');
+        return Promise.resolve();
+      })
       .finally(() => activator.postPurge())
       .then(() => {
         // Build summary based on previous activation data
@@ -334,20 +351,29 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     let lastDeployment: IDeployedFile[] = [];
 
     return activator.prePurge(stagingPath)
-      .tap(() => onProgress(25, 'Removing links'))
+      .then(() => {
+        onProgress(25, 'Removing links');
+        return Promise.resolve();
+      })
       // load previous deployment for this type
       .then(() => loadActivation(api, gameId, typeId, modPath, stagingPath, activator)
         .then(deployment => { lastDeployment = deployment; }))
       // purge the specified mod type
       .then(() => activator.purge(stagingPath, modPath, gameId))
-      .tap(() => onProgress(50, 'Saving updated manifest'))
+      .then(() => {
+        onProgress(50, 'Saving updated manifest');
+        return Promise.resolve();
+      })
       // save (empty) activation
       .then(() => saveActivation(gameId, typeId, state.app.instanceId, modPath, stagingPath,
                                  [], activator.id))
-      .catch(ProcessCanceled, () => null)
+      .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge())
-      .tap(() => onProgress(75, 'Post purge events'))
+      .then(() => {
+        onProgress(75, 'Post purge events');
+        return Promise.resolve();
+      })
       .then(() => {
         const summary = {
           gameId,

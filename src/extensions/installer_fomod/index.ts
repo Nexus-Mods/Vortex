@@ -37,7 +37,7 @@ import Workarounds from './views/Workarounds';
 
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { createIPC, killProcess } from 'fomod-installer';
 import * as net from 'net';
 import * as path from 'path';
@@ -342,7 +342,7 @@ function transformError(err: any): Error {
 //     .catch(() => Bluebird.resolve({}));
 // }
 
-function spawnRetry(api: IExtensionApi, command: string, args: string[], tries = 3): Bluebird<void> {
+function spawnRetry(api: IExtensionApi, command: string, args: string[], tries = 3): Promise<void> {
   return api.runExecutable(command, args, {
     expectSuccess: false,
     constrained: true,
@@ -351,7 +351,7 @@ function spawnRetry(api: IExtensionApi, command: string, args: string[], tries =
     .catch(err => {
       if (err && err.code === 'EBUSY') {
         if (tries > 0) {
-          return Bluebird.delay(100).then(() => spawnRetry(api, command, args, tries - 1))
+          return new Promise(resolve => setTimeout(resolve, 100)).then(() => spawnRetry(api, command, args, tries - 1))
         } else {
           return api.showDialog('error', 'File locked', {
             text: 'The file "{{fileName}}" is locked, probably because it\'s being accessed by another process.',
@@ -361,14 +361,14 @@ function spawnRetry(api: IExtensionApi, command: string, args: string[], tries =
             { label: 'Retry' },
           ]).then(result => {
             if (result.action === 'Cancel') {
-              return Bluebird.reject(new UserCanceled());
+              return Promise.reject(new UserCanceled());
             } else {
               return spawnRetry(api, command, args);
             }
           });
         }
       }
-      return Bluebird.reject(err);
+      return Promise.reject(err);
     });
 }
 
@@ -461,7 +461,7 @@ async function checkNetInstall(api: IExtensionApi): Promise<ITestResult> {
         + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
       replace: { stderr: stderr.replace('\n', '[br][/br]') },
     },
-    automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
+    automaticFix: () => Promise.resolve(installDotNet(api, false)),
     severity: 'fatal',
   };
 
@@ -1287,8 +1287,8 @@ async function install(securityLevel: SecurityLevel,
   }
 }
 
-function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
-  return (...args: any[]) => Bluebird.resolve(func(...args));
+function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Promise<T> {
+  return (...args: any[]) => Promise.resolve(func(...args));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -1583,7 +1583,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
 
   if (isWindows()) {
-    context.registerTest('net-current', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
+    context.registerTest('net-current', 'startup', () => Promise.resolve(checkNetInstall(context.api)));
   } else {
     onFoundDotNet();
   }

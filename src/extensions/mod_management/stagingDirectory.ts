@@ -1,4 +1,4 @@
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { IDialogResult } from '../../types/IDialog';
@@ -9,7 +9,8 @@ import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
-import { activeGameId, installPathForGame } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { installPathForGame } from './selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -36,7 +37,7 @@ function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
 }
 
-function validateStagingTag(api: IExtensionApi, tagPath: string): Bluebird<void> {
+function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
     .then(data => {
       const state: IState = api.store.getState();
@@ -51,14 +52,14 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Bluebird<void>
           { label: 'Continue' },
         ])
           .then(result => (result.action === 'Cancel')
-            ? Bluebird.reject(new UserCanceled())
-            : Bluebird.resolve());
+            ? Promise.reject(new UserCanceled())
+            : Promise.resolve());
       }
-      return Bluebird.resolve();
+      return Promise.resolve();
     })
     .catch(err => {
       if (err instanceof UserCanceled) {
-        return Bluebird.reject(err);
+        return Promise.reject(err);
       }
       return api.showDialog('question', 'Confirm', {
         text: 'This directory is not marked as a staging folder. '
@@ -68,8 +69,8 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Bluebird<void>
         { label: 'I\'m sure' },
       ])
         .then(result => result.action === 'Cancel'
-          ? Bluebird.reject(new UserCanceled())
-          : Bluebird.resolve());
+          ? Promise.reject(new UserCanceled())
+          : Promise.resolve());
     });
 }
 
@@ -77,7 +78,7 @@ function queryStagingFolderInvalid(api: IExtensionApi,
                                    err: Error,
                                    dirExists: boolean,
                                    instPath: string)
-                                   : Bluebird<IDialogResult> {
+                                   : Promise<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog('error', 'Mod Staging Folder invalid', {
@@ -165,7 +166,7 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
       // profile_management/index.ts as soon as we start managing the game for the
       // first time but we probably still don't want to report an error if we have
       // no meta information about any mods anyway
-      await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+      await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
     } else {
       const dialogResult = await queryStagingFolderInvalid(api, err, dirExists, instPath)
       if (dialogResult.action === 'Quit Vortex') {
@@ -180,7 +181,7 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
         });
         try {
           await fallbackPurge(api, gameId);
-          await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
+          await fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
         } catch (purgeErr) {
           if (!partitionExists) {
             // Can't purge a non-existing partition!
@@ -231,6 +232,6 @@ async function ensureStagingDirectoryImpl(api: IExtensionApi,
 export function ensureStagingDirectory(api: IExtensionApi,
                                        instPath?: string,
                                        gameId?: string)
-                                       : Bluebird<string> {
-  return Bluebird.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
+                                       : Promise<string> {
+  return Promise.resolve(ensureStagingDirectoryImpl(api, instPath, gameId));
 }

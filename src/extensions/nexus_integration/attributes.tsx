@@ -1,7 +1,10 @@
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ITableAttribute } from '../../types/api';
 import { laterT } from '../../util/i18n';
-import { activeGameId, currentGame, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { currentGame, gameById } from '../gamemode_management/selectors';
+import { knownGames } from '../gamemode_management/selectors';
+import { downloadPathForGame } from '../download_management/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 import { IModWithState } from '../mod_management/types/IModProps';

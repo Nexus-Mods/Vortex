@@ -1,6 +1,6 @@
 import React = require('react');
 import * as types from '../../../types/api';
-import * as selectors from '../../../util/selectors';
+import { lastActiveProfileForGame } from '../../../extensions/profile_management/activeGameId';
 
 import { setFBLoadOrder } from '../actions/loadOrder';
 
@@ -31,7 +31,7 @@ export async function generate(api: types.IExtensionApi,
 
   let loadOrder;
   try {
-    const profileId = selectors.lastActiveProfileForGame(api.getState(), gameEntry.gameId);
+    const profileId = lastActiveProfileForGame(api.getState(), gameEntry.gameId);
     if (profileId === undefined) {
       throw new CollectionGenerateError('Invalid profile');
     }
@@ -54,7 +54,7 @@ export async function parser(api: types.IExtensionApi,
                              updateSet: UpdateSet): Promise<void> {
   const state = api.getState();
 
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const profileId = lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
     return Promise.reject(new CollectionParseError(collection, 'Invalid profile id'));
   }

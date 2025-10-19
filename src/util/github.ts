@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as semver from 'semver';

@@ -2,7 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { Normalize } from '../../../util/getNormalizeFunc';
 import { TFunction } from '../../../util/i18n';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * details about a file change

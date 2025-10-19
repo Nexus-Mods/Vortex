@@ -31,7 +31,9 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
 import presetManager from '../../util/PresetManager';
-import { discoveryByGame, gameById, installPathForGame, needToDeployForGame } from '../../util/selectors';
+import { discoveryByGame, gameById } from '../gamemode_management/selectors';
+import { installPathForGame } from '../mod_management/selectors';
+import { needToDeployForGame } from '../mod_management/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, truthy } from '../../util/util';
 
@@ -56,10 +58,11 @@ import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
 
 import { STUCK_TIMEOUT } from './constants';
-import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
+import { activeGameId, activeProfile } from './activeGameId';
+import { lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
@@ -502,24 +505,24 @@ function genOnProfileChange(api: IExtensionApi,
         })
         // ensure the old profile is synchronised before we switch, otherwise me might
         // revert some changes
-        .tap(() => log('info', 'Starting deployment of previously active profile', { 
+        .then(() => log('info', 'Starting deployment of previously active profile', { 
           profileId: prev, 
           from: prev, 
           to: current 
         }))
         .then(() => deploy(api, prev))
-        .tap(() => log('info', 'Completed deployment of previously active profile', { 
+        .then(() => log('info', 'Completed deployment of previously active profile', { 
           profileId: prev, 
           from: prev, 
           to: current 
         }))
-        .tap(() => log('info', 'Starting deployment of next active profile', { 
+        .then(() => log('info', 'Starting deployment of next active profile', { 
           profileId: current, 
           from: prev, 
           to: current 
         }))
         .then(() => deploy(api, current))
-        .tap(() => log('info', 'Completed deployment of next active profile', { 
+        .then(() => log('info', 'Completed deployment of next active profile', { 
           profileId: current, 
           from: prev, 
           to: current 
@@ -598,7 +601,7 @@ function genOnProfileChange(api: IExtensionApi,
         showError(store.dispatch, 'Failed to set profile', err.message,
                   { allowReport: false });
       })
-      .catch(CorruptActiveProfile, (err) => {
+      .catch(err => { if (err instanceof CorruptActiveProfile) { 
         // AFAICT the only way for this error to pop up is when upgrading from
         //  an ancient version of Vortex which probably had a bug in it which we
         //  fixed a long time ago. Corrupt profiles are automatically removed by
@@ -611,11 +614,13 @@ function genOnProfileChange(api: IExtensionApi,
         });
         cancelSwitch();
         showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
-      })
-      .catch(UserCanceled, () => {
+        return Promise.resolve();
+      } else { return Promise.reject(err); }})
+      .catch(err => { if (err instanceof UserCanceled) { 
         log('info', 'Profile switch canceled by user', { from: prev, to: current });
         cancelSwitch();
-      })
+        return Promise.resolve();
+      } else { return Promise.reject(err); }})
       .catch(err => {
         log('error', 'Profile switch failed with unexpected error', { 
           from: prev, 
@@ -942,11 +947,11 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
     .then(result => {
       if (result.action === 'Delete profiles') {
         return purgeMods(api, gameId, true)
-          .then(() => Promise.map(Object.keys(mods[gameId] ?? {}),
+          .then(() => promiseMap(Object.keys(mods[gameId] ?? {}),
                                   modId => removeMod(api, gameId, modId)))
-          .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
+          .then(() => promiseMap(profileIds, profileId => removeProfileImpl(api, profileId)))
           .then(() => Promise.resolve())
-          .catch(UserCanceled, () => Promise.resolve())
+          .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
           .catch(err => {
             const isSetupError = (err instanceof NoDeployment) || (err instanceof TemporaryError);
             if (isSetupError) {

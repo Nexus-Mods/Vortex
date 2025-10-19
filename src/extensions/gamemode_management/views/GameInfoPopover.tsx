@@ -7,7 +7,7 @@ import { bytesToString } from '../../../util/util';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as React from 'react';
 

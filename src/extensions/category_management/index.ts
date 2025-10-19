@@ -3,7 +3,7 @@ import {IState} from '../../types/IState';
 import { TFunction } from '../../util/i18n';
 import {log} from '../../util/log';
 import { showError } from '../../util/message';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 
 import { setDownloadModInfo } from '../download_management/actions/state';

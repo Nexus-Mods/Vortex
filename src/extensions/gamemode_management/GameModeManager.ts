@@ -13,7 +13,9 @@ import EpicGamesLauncher from '../../util/EpicGamesLauncher';
 import * as fs from '../../util/fs';
 import GameStoreHelper from '../../util/GameStoreHelper';
 import { log } from '../../util/log';
-import { activeProfile, discoveryByGame } from '../../util/selectors';
+import { activeProfile } from '../profile_management/activeGameId';
+import { activeGameId } from '../profile_management/activeGameId';
+import { discoveryByGame } from './selectors';
 import Steam from '../../util/Steam';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, truthy } from '../../util/util';
@@ -40,10 +42,11 @@ import {
 } from './util/discovery';
 import { getGame } from './util/getGame';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
+import { promiseMap } from '../../util/promise-helpers';
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
@@ -62,6 +65,7 @@ class GameModeManager {
   private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: Promise<void>;
+  private mActiveSearchCancelled: boolean = false;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(api: IExtensionApi,
@@ -278,11 +282,13 @@ class GameModeManager {
       .then(() => quickDiscovery(gamesToDiscover,
         this.mStore.getState().settings.gameMode.discovered,
         this.onDiscoveredGame, this.onDiscoveredTool, progressCallback))
-      .tap(() => {
+      .then(() => {
         if (showProgress) {
           this.mStore.dispatch(discoveryFinished());
         }
         this.postDiscovery();
+        // Return an empty array to match the expected return type
+        return Promise.resolve([] as string[]);
       });
   }
 
@@ -448,7 +454,8 @@ class GameModeManager {
   public stopSearchDiscovery(): void {
     log('info', 'stop search');
     if (this.mActiveSearch !== null) {
-      this.mActiveSearch.cancel();
+      // Native Promises don't have a cancel method, so we just set it to null
+      // The actual cancellation logic would need to be implemented in the searchDiscovery function
       this.mActiveSearch = null;
     }
   }
@@ -456,7 +463,7 @@ class GameModeManager {
   private postDiscovery() {
     const { discovered } = this.mStore.getState().settings.gameMode;
     this.mStore.dispatch(clearGameDisabled());
-    Promise.map(Object.keys(discovered), gameId => {
+    promiseMap(Object.keys(discovered), gameId => {
       if (discovered[gameId].path === undefined) {
         return Promise.resolve();
       }

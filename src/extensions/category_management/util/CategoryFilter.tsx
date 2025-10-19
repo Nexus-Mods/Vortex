@@ -8,9 +8,9 @@ import { ICategoryDictionary } from '../../category_management/types/ICategoryDi
 import getDownloadGames from '../../download_management/util/getDownloadGames';
 import { IMod } from '../../mod_management/types/IMod';
 import filterModInfo from '../../mod_management/util/filterModInfo';
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -173,7 +173,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
       customOption = { label: customFilter.slice(1), value: customFilter };
     }
 
-    Promise.map(filtered, archiveId =>
+    promiseMap(filtered, archiveId =>
       filterModInfo({ download: props.downloads[archiveId] }, undefined)
         .then(info => {
           if (info.category !== undefined) {

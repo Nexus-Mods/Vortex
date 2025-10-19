@@ -2,7 +2,7 @@ import { SITE_ID } from '../../extensions/gamemode_management/constants';
 import { IGameStored } from '../../extensions/gamemode_management/types/IGameStored';
 import { IDiscoveryResult, IState } from '../../types/IState';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 import { SITE_GAME_NAME } from '../constants';
 

@@ -6,7 +6,7 @@ import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { setOptionalExtensions } from '../extensions/extension_manager/actions';
-import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
+import { IExtension, IAvailableExtension } from '../extensions/extension_manager/types';
 import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -18,13 +18,13 @@ import {
   IExtensionContext,
   ILookupDetails,
   IOpenOptions,
-  IReducerSpec,
   IRunOptions,
   IRunParameters,
   ISaveOptions,
   StateChangeCallback,
   ThunkStore,
   ToolParameterCB,
+  IReducerSpec,
 } from '../types/IExtensionContext';
 import { ILookupOptions, IModLookupResult } from '../types/IModLookupResult';
 import { INotification } from '../types/INotification';
@@ -44,18 +44,18 @@ import { showError } from './message';
 import { registerSanityCheck, SanityCheck } from './reduxSanity';
 import ReduxWatcher from './ReduxWatcher';
 import runElevatedCustomTool from './runElevatedCustomTool';
-import { activeGameId } from './selectors';
+import { activeGameId } from '../extensions/profile_management/activeGameId';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
 import { filteredEnvironment, isFunction, setdefault, timeout, toPromise, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
+import { promiseEach, promiseFilter, promiseMap, promiseMapSeries } from './bluebird-migration-helpers.local';
 
-import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { ipcMain, ipcRenderer, OpenDialogOptions, SaveDialogOptions, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import * as fuzz from 'fuzzball';
-import JsonSocket from 'json-socket';
+import JsonSocket = require('json-socket');
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
@@ -518,7 +518,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
                             : { [extId: string]: IExtensionLoadFailure[] } {
     const addAPIs: string[] =
         this.mApiAdditions.map((addition: IApiAddition) => addition.key);
-    const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
+    const fullAPI = new Set(Array.from(furtherAPIs).concat(this.staticAPIs, addAPIs));
 
     const incompatibleExtensions: { [extId: string]: IExtensionLoadFailure[] } = {};
 
@@ -1229,7 +1229,7 @@ class ExtensionManager {
         err, { allowReport });
     };
 
-    return Promise.mapSeries(calls, (call, idx) => {
+    return promiseMapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
       const ext = this.mExtensions.find(iter => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
@@ -1250,8 +1250,13 @@ class ExtensionManager {
               log('debug', 'slow initialization', { extension: call.extension, elapsed });
             }
           })
-          .catch(TimeoutError, () => {
-            reportError(new Error('Initialization didn\'t finish in time.'), call, false);
+          .catch(err => {
+            if (err instanceof TimeoutError) {
+              reportError(new Error('Initialization didn\'t finish in time.'), call, false);
+              return Promise.resolve();
+            } else {
+              return Promise.reject(err);
+            }
           })
           .catch(err => {
             reportError(err, call);
@@ -1259,6 +1264,7 @@ class ExtensionManager {
       } catch (err) {
         reportError(err, call);
       }
+      return Promise.resolve();
     })
     .then(() => {
       this.mLoadingCallbacks.forEach(cb => {
@@ -1584,7 +1590,7 @@ class ExtensionManager {
             if (migrations[ext.name] === undefined) {
               this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
-              Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
+              promiseMapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
                   log('info', 'set extension version',
                       { name: ext.name, info: JSON.stringify(ext.info) });
@@ -1725,14 +1731,14 @@ class ExtensionManager {
       } else {
         return this.getModDB()
           .then(modDB => modDB.getByReference(reference))
-          .filter((mod: ILookupResult) => {
+          .then((mods: ILookupResult[]) => promiseFilter(mods, async (mod: ILookupResult) => {
             if (options.requireURL === true) {
               return truthy(mod.value.sourceURI);
             } else {
               return true;
             }
-          })
-          .map((mod: ILookupResult) => convertMD5Result(mod));
+          }))
+          .then((filteredMods: ILookupResult[]) => promiseMap(filteredMods, async (mod: ILookupResult) => convertMD5Result(mod)));
       }
     })
     .then((results: IModLookupResult[]) => {
@@ -1951,31 +1957,25 @@ class ExtensionManager {
     return creator(archivePath, options || {})
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
-  private applyStartHooks = (input: IRunParameters): Promise<IRunParameters> => {
+  private applyStartHooks = async (input: IRunParameters): Promise<IRunParameters> => {
     let updated = input;
-    return Promise.each(this.mStartHooks, hook => hook.hook(updated)
-      .then((newParameters: IRunParameters) => {
-        updated = newParameters;
-      })
-      .catch(UserCanceled, err => {
+    try {
+      for (const hook of this.mStartHooks) {
+        updated = await hook.hook(updated);
+      }
+      return updated;
+    } catch (err) {
+      if (err instanceof UserCanceled) {
         log('debug', 'start canceled by user');
-        return Promise.reject(err);
-      })
-      .catch(ProcessCanceled, err => {
+        throw err;
+      } else if (err instanceof ProcessCanceled) {
         log('debug', 'hook canceled start', err.message);
-        return Promise.reject(err);
-      })
-      .catch(err => {
-        if (err instanceof UserCanceled) {
-          log('debug', 'start canceled by user');
-        } else if (err instanceof ProcessCanceled) {
-          log('debug', 'hook canceled start', err.message);
-        } else {
-          log('error', 'hook failed', err);
-        }
-        return Promise.reject(err);
-      }))
-      .then(() => updated);
+        throw err;
+      } else {
+        log('error', 'hook failed', err);
+        throw err;
+      }
+    }
   }
 
   private runExecutable =
@@ -2190,13 +2190,21 @@ class ExtensionManager {
             return reject(err);
           }
         }))
-        .catch(ProcessCanceled, () => null)
-        .catch({ code: 'EACCES' }, () =>
-          this.runElevated(executable, cwd, args, env, options.onSpawned))
-        .catch({ code: 'ECANCELED' }, () => Promise.reject(new UserCanceled()))
-        .catch({ systemCode: 1223 }, () => Promise.reject(new UserCanceled()))
-        // Is errno still used ? looks like shellEx call returns systemCode instead
-        .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch((err) => {
+          if (err instanceof ProcessCanceled) {
+            return Promise.resolve(null);
+          } else if (err.code === 'EACCES') {
+            return this.runElevated(executable, cwd, args, env, options.onSpawned);
+          } else if (err.code === 'ECANCELED') {
+            return Promise.reject(new UserCanceled());
+          } else if (err.systemCode === 1223) {
+            return Promise.reject(new UserCanceled());
+          } else if (err.errno === 1223) {
+            return Promise.reject(new UserCanceled());
+          } else {
+            return Promise.reject(err);
+          }
+        })
         .catch((err) => {
           if (err.message.toLowerCase().indexOf('the operation was canceled by the user') !== -1) {
             // This is more of a sanity check than anything else as one user report
@@ -2218,7 +2226,7 @@ class ExtensionManager {
         if (err !== null) {
           reject(err);
         } else {
-          resolve();
+          resolve(undefined);
         }
       });
 

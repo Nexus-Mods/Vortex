@@ -4,9 +4,9 @@
 
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 
-import { activeGameId } from './selectors';
+import { activeGameId } from '../extensions/profile_management/activeGameId';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as Redux from 'redux';
 
 function clone<T>(input: T): T {

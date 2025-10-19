@@ -1,6 +1,6 @@
 import { IModLookupInfo } from '../mod_management/util/testModReference';
 import { IState } from '../../types/IState';
-import { activeGameId } from '../profile_management/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 
 import * as _ from 'lodash';

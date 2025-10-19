@@ -1,7 +1,9 @@
 import Modal from '../../../controls/Modal';
 import { IDeploymentMethod } from '../../../types/api';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId, currentGameDiscovery, modPathsForGame } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { currentGameDiscovery } from '../../../extensions/gamemode_management/selectors';
+import { modPathsForGame } from '../../selectors';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { IDeploymentProblem, setDeploymentProblem } from '../actions/session';

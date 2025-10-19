@@ -5,7 +5,7 @@ import { deBOM } from '../../../util/util';
 
 import chromePath from './chromePath';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * changes the chrome config file to allow for handling of the specified url scheme.

@@ -2,7 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { TFunction } from '../../../util/i18n';
 import { log } from '../../../util/log';
-import { profileById } from '../../../util/selectors';
+import { profileById } from '../../../extensions/profile_management/selectors';
 import { midClip } from '../../../util/util';
 import { IHistoryEvent, IHistoryStack, Revertability } from '../../history_management/types';
 import { setModEnabled } from '../../profile_management/actions/profiles';

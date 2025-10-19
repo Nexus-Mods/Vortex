@@ -9,7 +9,7 @@ import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { isWindows } from '../../util/platform';
-import { installPathForGame } from '../../util/selectors';
+import { installPathForGame } from '../mod_management/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
 
@@ -18,22 +18,23 @@ import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
 import { NEXUS_DOMAIN } from '../nexus_integration/constants';
-import {activeGameId} from '../profile_management/selectors';
+import {activeGameId} from '../profile_management/activeGameId';
 
 import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseMapSeries } from '../../../util/bluebird-migration-helpers.local';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
-  return Promise.map(iniFiles(gameMode, discovery), file => {
+  return promiseMap(iniFiles(gameMode, discovery), file => {
     const backupFile = file + '.base';
     const bakedFile = file + '.baked';
-    return Promise.map([backupFile, bakedFile],
+    return promiseMap([backupFile, bakedFile],
       copy => fs.statAsync(copy)
         .catch(() =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
@@ -90,7 +91,7 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
 
   const t: TFunction = api.translate;
 
-  return Promise.map(iniFiles(gameMode, discovery), iniFileName => {
+  return promiseMap(iniFiles(gameMode, discovery), iniFileName => {
     let newContent: any;
     let oldContent: any;
     return parser.read(iniFileName)
@@ -162,7 +163,7 @@ function bakeSettings(t: TFunction,
   const parser = new IniParser(genIniFormat(format));
 
   // get a list of all tweaks we need to apply
-  return Promise.each(mods, mod => {
+  return promiseEach(mods, mod => {
     if (mod.installationPath === undefined) {
       return Promise.resolve();
     }
@@ -180,7 +181,7 @@ function bakeSettings(t: TFunction,
           return Promise.resolve();
         })
         .catch(err => Promise.resolve(undefined));
-  }).then(() => Promise.mapSeries(baseFiles, iniFileName => {
+  }).then(() => promiseMapSeries(baseFiles, iniFileName => {
     // starting with the .base file for each ini, re-bake the file by applying
     // the ini tweaks
     const baseName = path.basename(iniFileName).toLowerCase();
@@ -201,8 +202,7 @@ function bakeSettings(t: TFunction,
                                        fs.makeFileWritableAsync(iniFileName + '.baked')]))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
-      .then(ini => Promise.each(enabledTweaks[baseName] || [],
-        tweak => parser.read(tweak).then(patchIni => {
+      .then(ini => promiseEach(enabledTweaks[baseName] || [], tweak => parser.read(tweak).then(patchIni => {
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
@@ -220,7 +220,7 @@ function bakeSettings(t: TFunction,
 }
 
 function purgeChanges(t: TFunction, gameMode: string, discovery: IDiscoveryResult) {
-  return Promise.map(
+  return promiseMap(
       iniFiles(gameMode, discovery),
       iniFileName =>
           fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
@@ -301,12 +301,13 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       ensureIniBackups(context.api.translate, gameMode,
                        state.settings.gameMode.discovered[gameMode])
-      .catch(UserCanceled, () => {
+      .catch(err => { if (err instanceof UserCanceled) { 
         log('warn',
             'User has canceled creation of ini backups. Well, the user is boss I guess...', {
           allowReport: false,
-        });
-      })
+        }); 
+        return Promise.resolve();
+      } else { return Promise.reject(err); }})
       .catch(err => {
         deactivated = true;
         if ((err.code === 'EINVAL') && (err.path.toLowerCase().indexOf('onedrive') !== -1)) {
@@ -352,10 +353,11 @@ function main(context: IExtensionContext) {
       return discoverSettingsChanges(context.api, profile.gameId, discovery)
         .then(() => bakeSettings(context.api.translate, profile.gameId, discovery,
                                  mods, state, onApplySettings))
-        .catch(UserCanceled, () => {
+        .catch(err => { if (err instanceof UserCanceled) { 
           // nop
           log('info', 'user canceled baking game settings');
-        })
+          return Promise.resolve();
+        } else { return Promise.reject(err); }})
         .catch(err => {
           const nonReportable = [362, 1359, 'EBUSY'];
           const allowReport = !(
@@ -379,10 +381,11 @@ function main(context: IExtensionContext) {
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
       discoverSettingsChanges(context.api, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
-        .catch(UserCanceled, () => {
+        .catch(err => { if (err instanceof UserCanceled) { 
           context.api.showErrorNotification('Ini files were not restored',
                                             undefined, { allowReport: false });
-        })
+          return Promise.resolve();
+        } else { return Promise.reject(err); }})
         .catch(err => {
           context.api.showErrorNotification('Failed to purge ini edits', err,
                                             { allowReport: (err as any).code !== 'ENOENT' });

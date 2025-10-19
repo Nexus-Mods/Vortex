@@ -12,7 +12,7 @@ import {getGame} from '../../gamemode_management/util/getGame';
 
 import DelegateBase from './DelegateBase';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import minimatch from 'minimatch';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';

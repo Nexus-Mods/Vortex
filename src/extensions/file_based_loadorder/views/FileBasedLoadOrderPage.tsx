@@ -10,7 +10,9 @@ import { DraggableList, EmptyPlaceholder, FlexLayout, IconBar, Spinner, ToolbarI
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { needToDeploy } from '../../mod_management/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 import FilterBox from './FilterBox';
 
@@ -97,7 +99,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             className: this.props.needToDeploy ? 'toolbar-flash-button' : undefined,
             onClick: async () => {
               await util.toPromise(cb => this.context.api.events.emit('deploy-mods', cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, false);
             },
           };
@@ -113,7 +115,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             className: 'load-order-purge-list',
             onClick: async () => {
               await util.toPromise(cb => this.context.api.events.emit('purge-mods', false, cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, true);
             },
           };
@@ -360,12 +362,12 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
+  const profile = activeProfile(state) || undefined;
   let loadOrder = (profile?.id) ? currentLoadOrderForProfile(state, profile.id) : [];
   return {
     loadOrder,
     profile,
-    needToDeploy: selectors.needToDeploy(state),
+    needToDeploy: needToDeploy(state),
     refreshId: util.getSafe(state, ['session', 'fblo', 'refresh', profile?.id], ''),
     validationResult: util.getSafe(state, ['session', 'fblo', 'validationResult', profile?.id], undefined),
     disabled: shouldSuppressUpdate(state),

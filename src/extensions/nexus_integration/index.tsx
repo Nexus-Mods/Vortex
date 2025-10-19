@@ -17,8 +17,12 @@ import { log, LogLevel } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import presetManager from '../../util/PresetManager';
-import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
-import { currentGame, getSafe } from '../../util/storeHelper';
+import { activeGameId } from '../profile_management/activeGameId';
+import { gameById } from '../gamemode_management/selectors';
+import { knownGames } from '../gamemode_management/selectors';
+import { downloadPathForGame } from '../download_management/selectors';
+import { getSafe } from '../../util/storeHelper';
+import { currentGame } from '../gamemode_management/selectors';
 import { batchDispatch, decodeHTML, nexusModsURL, Section, truthy, Content, Campaign } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
@@ -78,7 +82,7 @@ import NexusT, {
   IValidateKeyResponse, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
 import * as path from 'path';
@@ -338,7 +342,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         .then((categories: ICategoryDictionary) => {
           api.events.emit('update-categories', gameId, categories, isUpdate);
         })
-        .catch(ProcessCanceled, () => null)
+        .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
         .catch(TimeoutError, () => {
           api.sendNotification({
             type: 'warning',
@@ -584,7 +588,7 @@ function doDownload(api: IExtensionApi, url: string): Promise<string> {
     .catch(DownloadIsHTML, () => undefined)
     // DataInvalid is used here to indicate invalid user input or invalid
     // data from remote, so it's presumably not a bug in Vortex
-    .catch(DataInvalid, () => {
+    .catch(err => { if (err instanceof DataInvalid) {
       api.showErrorNotification('Failed to start download', url, { allowReport: false });
       return Promise.resolve(undefined);
     })
@@ -716,7 +720,7 @@ function makeNXMLinkCallback(api: IExtensionApi) {
       })
       // doDownload handles all download errors so the catches below are
       //  only for log in errors
-      .catch(UserCanceled, () => null)
+      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
       .catch(ProcessCanceled, err => {
         api.showErrorNotification('Log-in failed', err, {
           id: 'failed-get-nexus-key',

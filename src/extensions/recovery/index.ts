@@ -2,7 +2,8 @@
 
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { activeProfile, currentGameDiscovery } from '../../util/selectors';
+import { activeProfile } from '../profile_management/activeGameId';
+import { currentGameDiscovery } from '../gamemode_management/selectors';
 
 import { getGame } from '../gamemode_management/util/getGame';
 
@@ -17,11 +18,9 @@ import { getSafe } from '../../util/storeHelper';
 import { getManifest } from '../mod_management/util/activationStore';
 import Workarounds from './Workarounds';
 
-import Bluebird from 'bluebird';
-
 const ONE_HOUR = 60 * 60 * 1000;
 
-function createBackup(api: IExtensionApi, name: string): Bluebird<string> {
+function createBackup(api: IExtensionApi, name: string): Promise<string> {
   return createFullStateBackup(name, api.store)
     .catch(err => {
       log('error', 'failed to create state backup', { error: err.message });

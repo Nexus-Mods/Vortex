@@ -16,7 +16,7 @@ import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
 import * as RemoteT from '@electron/remote';
 import NexusT, { IFeedbackResponse, IOAuthCredentials } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import {
   BrowserWindow,
   dialog as dialogIn,
@@ -152,7 +152,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
       anonymous,
       hash,
       referenceId))
-    .tap(() =>
+    .then(() =>
       opn(`${NEXUS_BASE_URL}/crash-report/?key=${referenceId}`).catch(() => null))
     .catch(err => {
       log('error', 'failed to report error to nexus', err.message);

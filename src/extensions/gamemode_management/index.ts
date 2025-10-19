@@ -23,7 +23,8 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
-import { activeGameId, activeProfile } from '../../util/selectors';
+import { activeProfile } from '../profile_management/activeGameId';
+import { activeGameId } from '../profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 import { isWindows } from '../../util/platform';
 
@@ -64,7 +65,8 @@ import GameModeManager, { IGameStub } from './GameModeManager';
 import GameDiscoveryService from '../../services/GameDiscoveryService';
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from './selectors';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseMap } from '../../util/bluebird-migration-helpers.local';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -202,7 +204,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
     }
   };
 
-  return Promise.map(providersToQuery, prov => {
+  return promiseMap(providersToQuery, prov => {
     const expires = now + prov.expireMS;
     return prov.query({ ...game, ...gameDiscovery })
       .then(details => {
@@ -267,7 +269,7 @@ function findGamePath(game: IGame, selectedPath: string,
 
   return verifyGamePath(game, selectedPath)
     .then(() => selectedPath)
-    .catch({ code: 'ENOENT' }, () =>
+    .catch(err => { if (err.code === 'ENOENT') {
       findGamePath(game, path.dirname(selectedPath), depth + 1, maxDepth));
 }
 
@@ -489,9 +491,8 @@ function removeDisappearedGames(api: IExtensionApi,
           });
   };
 
-  return Promise.map(
-    Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
-    gameId => {
+  return promiseMap(
+    Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined), gameId => {
       const stored = known.find(iter => iter.id === gameId);
       return fsExtra.stat(discovered[gameId].path)
         .then(() => assertRequiredFiles(stored?.requiredFiles, gameId))
@@ -1090,7 +1091,7 @@ function init(context: IExtensionContext): boolean {
               const installedExtensions = state.session.extensions?.installed || {};
               
               // Process each installed game extension to ensure it's registered
-              return Promise.map(Object.keys(installedExtensions), extId => {
+              return promiseMap(Object.keys(installedExtensions), extId => {
                 const ext = installedExtensions[extId];
                 // Enhanced condition to process game extensions
                 // Process extensions that are explicitly marked as 'game' type

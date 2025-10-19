@@ -40,7 +40,7 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 
 interface ICheckEntry {
@@ -178,7 +178,7 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
   triggerDelays[event] = setTimeout(() => {
     const eventChecks = getSafe(checks, [event], []);
     log('debug', 'running checks', { event, count: eventChecks.length });
-    Promise.map(eventChecks, (par: ICheckEntry) => runCheck(api, par))
+    promiseMap(eventChecks, (par: ICheckEntry) => runCheck(api, par))
       .then(() => {
         log('debug', 'all checks completed', { event });
       });

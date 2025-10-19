@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 function step(startTime: number, endTime: number, time: number) {
   if (time <= startTime) {

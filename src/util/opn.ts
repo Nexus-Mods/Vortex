@@ -1,7 +1,7 @@
 import { MissingInterpreter } from './CustomErrors';
 import { log } from './log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import {ipcMain, ipcRenderer, shell} from 'electron';
 
 import { isWindows } from './platform';

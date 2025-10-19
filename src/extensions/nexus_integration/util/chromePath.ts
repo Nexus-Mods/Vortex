@@ -3,7 +3,7 @@ import getVortexPath from '../../../util/getVortexPath';
 import { isWindows, isLinux, isMacOS } from '../../../util/platform';
 import { deBOM, truthy } from '../../../util/util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 /**

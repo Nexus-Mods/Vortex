@@ -9,7 +9,7 @@ import { log } from './log';
 import { isWindows, isMacOS } from './platform';
 import { isChildPath } from './util';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -32,9 +32,9 @@ interface IDiskInfo {
  * @param source The current source folder.
  * @param destination The proposed destination folder.
  */
-export function testPathTransfer(source: string, destination: string): Bluebird<void> {
+export function testPathTransfer(source: string, destination: string): Promise<void> {
   if (!isWindows() && !isMacOS()) {
-    return Bluebird.reject(new UnsupportedOperatingSystem());
+    return Promise.reject(new UnsupportedOperatingSystem());
   }
 
   let destinationRoot: string;
@@ -47,8 +47,8 @@ export function testPathTransfer(source: string, destination: string): Bluebird<
     //  the only way for this error to be reported at this point is when
     //  the destination path is pointing towards a non-existing partition.
     return (err.systemCode === 2)
-      ? Bluebird.reject(new NotFound(err.path))
-      : Bluebird.reject(err);
+      ? Promise.reject(new NotFound(err.path))
+      : Promise.reject(err);
   }
 
   const isOnSameVolume = (): Promise<boolean> => {
@@ -88,48 +88,48 @@ export function testPathTransfer(source: string, destination: string): Bluebird<
       return Promise.reject(new ProcessCanceled('Missing source directory'));
     })
     .then(() => isOnSameVolume())
-    .then((sameVolume: boolean): Bluebird<IDiskInfo> => {
+    .then((sameVolume: boolean): Promise<IDiskInfo> => {
       if (sameVolume) {
         // Same volume - no need to check disk space
-        return Bluebird.resolve({ free: Number.MAX_VALUE });
+        return Promise.resolve({ free: Number.MAX_VALUE });
       }
-      return Bluebird.try(() => calculate(source)).then(size => ({ size }));
+      return Promise.resolve().then(() => calculate(source)).then(size => ({ size }));
     })
-    .then((info: IDiskInfo): Bluebird<IDiskInfo> => {
+    .then((info: IDiskInfo): Promise<IDiskInfo> => {
       if (info.free !== undefined) {
         // Same volume transfer - no need to check disk space
-        return Bluebird.resolve(info);
+        return Promise.resolve(info);
       }
       totalNeededBytes = info.size;
       const checkPath = isWindows() ? destinationRoot : path.dirname(destination);
-      return Bluebird.resolve(diskusage.check(checkPath))
+      return Promise.resolve(diskusage.check(checkPath))
         .then(usage => {
           const requiredSpace = (info.size || 0) + MIN_DISK_SPACE_OFFSET;
           if (usage.free < requiredSpace) {
-            return Bluebird.reject(new InsufficientDiskSpace(checkPath));
+            return Promise.reject(new InsufficientDiskSpace(checkPath));
           }
-          return Bluebird.resolve<IDiskInfo>({ free: usage.free });
+          return Promise.resolve<IDiskInfo>({ free: usage.free });
         })
         .catch(err => {
           if (err instanceof InsufficientDiskSpace) {
-            return Bluebird.reject(err);
+            return Promise.reject(err);
           }
           // don't report an error just because this check failed
           log('warn', 'Failed to check disk space', err);
-          return Bluebird.resolve<IDiskInfo>({ free: Number.MAX_VALUE });
+          return Promise.resolve<IDiskInfo>({ free: Number.MAX_VALUE });
         });
     })
-    .then((info: IDiskInfo): Bluebird<void> => {
+    .then((info: IDiskInfo): Promise<void> => {
       const requiredSpace = totalNeededBytes + MIN_DISK_SPACE_OFFSET;
       if (info.free < requiredSpace) {
         const errorPath = isWindows() ? destinationRoot : path.dirname(destination);
-        return Bluebird.reject(new InsufficientDiskSpace(errorPath));
+        return Promise.reject(new InsufficientDiskSpace(errorPath));
       }
-      return Bluebird.resolve();
+      return Promise.resolve();
     })
     .catch(err => {
       if (err instanceof ProcessCanceled || err instanceof NotFound || err instanceof InsufficientDiskSpace) {
-        return Bluebird.reject(err);
+        return Promise.reject(err);
       }
       throw err;
     });
@@ -147,7 +147,7 @@ export type ProgressCallback = (from: string, to: string, percentage: number) =>
  */
 export function transferPath(source: string,
                              dest: string,
-                             progress: ProgressCallback): Bluebird<void> {
+                             progress: ProgressCallback): Promise<void> {
   let func = fs.copyAsync;
 
   let completed: number = 0;
@@ -155,7 +155,7 @@ export function transferPath(source: string,
   let lastPerc: number = 0;
   let lastProgress: number = 0;
 
-  let copyPromise: Bluebird<void> = Bluebird.resolve();
+  let copyPromise: Promise<void> = Promise.resolve();
 
   // Used to keep track of leftover empty directories when
   //  the user moves the directory to a nested one
@@ -182,12 +182,11 @@ export function transferPath(source: string,
       }
       moveDown = isChildPath(dest, source, norm);
     })
-    .then(() => Bluebird.join(fs.statAsync(source), fs.statAsync(dest),
-                              (statOld: fs.Stats, statNew: fs.Stats) =>
-                                Bluebird.resolve(statOld.dev === statNew.dev)))
+    .then(() => Promise.all([fs.statAsync(source), fs.statAsync(dest)])
+                              .then(([statOld, statNew]) => Promise.resolve(statOld.dev === statNew.dev)))
     .then((sameVolume: boolean) => {
       func = sameVolume ? linkFile : fs.copyAsync;
-      return Bluebird.resolve();
+      return Promise.resolve();
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
       if (moveDown) {
@@ -201,58 +200,52 @@ export function transferPath(source: string,
       count += files.length;
 
       copyPromise = isCancelled
-        ? Bluebird.resolve()
-        : copyPromise.then(() => Bluebird.each(directories.sort(longestFirst), entry => {
+        ? Promise.resolve()
+        : copyPromise.then(() => Promise.all(directories.sort(longestFirst).map(entry => {
           if (moveDown && isChildPath(dest, entry.filePath)) {
-            return Bluebird.resolve();
+            return Promise.resolve();
           }
           removableDirectories.push(entry.filePath);
           const destPath = path.join(dest, path.relative(source, entry.filePath));
           return isCancelled
-            ? Bluebird.reject(new UserCanceled())
+            ? Promise.reject(new UserCanceled())
             : fs.ensureDirWritableAsync(destPath).catch(err => (err.code === 'EEXIST')
-              ? Bluebird.resolve()
-              : Bluebird.reject(err));
-        })
-          .then(() => null))
-          .then(() => Bluebird.map(files, entry => {
+              ? Promise.resolve()
+              : Promise.reject(err));
+        }))
+          .then(() => null)
+          .then(() => Promise.all(files.map(entry => {
             const sourcePath = entry.filePath;
             const destPath = path.join(dest, path.relative(source, entry.filePath));
 
             return func(sourcePath, destPath, { showDialogCallback })
-              .catch(UserCanceled, () => {
+              .catch(err => { if (err instanceof UserCanceled) {
                 isCancelled = true;
-                copyPromise = Bluebird.resolve();
+                copyPromise = Promise.resolve();
               })
               .catch(err => {
                 if (['EXDEV', 'ENOTSUP', 'EISDIR'].indexOf(err.code) !== -1) {
                   func = fs.copyAsync;
                   return func(sourcePath, destPath, { showDialogCallback });
                 } else if (err.code === 'ENOENT') {
-                  return Bluebird.resolve();
+                  return Promise.resolve();
                 } else {
-                  return Bluebird.reject(err);
-                }
-              })
-              .then(() => {
-                ++completed;
-                const perc = Math.floor((completed * 100) / count);
-                if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
-                  lastPerc = perc;
-                  lastProgress = Date.now();
-                  progress(sourcePath, destPath, perc);
+                  return Promise.reject(err);
                 }
               });
-          })
-            .then(() => null)
-            .catch(err => {
-              exception = err;
-              return null;
-            }));
+          })))
+          .then(() => {
+            ++completed;
+            const perc = Math.floor((completed * 100) / count);
+            if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
+              lastPerc = perc;
+              lastProgress = Date.now();
+            }
+          }));
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise.then(() => (exception !== undefined)
-      ? Bluebird.reject(exception)
-      : Bluebird.resolve()))
+      ? Promise.reject(exception)
+      : Promise.resolve()))
     .then(() => {
       const cleanUp = () => {
         return (moveDown)
@@ -283,17 +276,17 @@ export function transferPath(source: string,
  *  https://github.com/Nexus-Mods/Vortex/issues/6769
  * @param dirPath
  */
-export function cleanFailedTransfer(dirPath: string): Bluebird<void> {
+export function cleanFailedTransfer(dirPath: string): Promise<void> {
   let files: IEntry[] = [];
   return turbowalk(dirPath, entries => {
     files = files.concat(entries);
   }, { skipHidden: false, skipLinks: false, recurse: true })
     .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
-      ? Bluebird.resolve()
-      : Bluebird.reject(err))
+      ? Promise.resolve()
+      : Promise.reject(err))
     .then(() => {
       files = files.sort((lhs, rhs) => rhs.filePath.length - lhs.filePath.length);
-      return Bluebird.each(files, file => fs.removeAsync(file.filePath));
+      return Promise.all(files.map(file => fs.removeAsync(file.filePath)));
     })
     .then(() => fs.removeAsync(dirPath));
 }
@@ -301,31 +294,31 @@ export function cleanFailedTransfer(dirPath: string): Bluebird<void> {
 function removeFolderTags(sourceDir: string) {
   // Attempt to remove the folder tag. (either staging folder or downloads tag)
   //  This should only be called when the folder is moved down a layer.
-  const tagFileExists = (filePath: string): Bluebird<boolean> => {
-    return Bluebird.try(() => fs.statAsync(filePath))
+  const tagFileExists = (filePath: string): Promise<boolean> => {
+    return Promise.resolve().then(() => fs.statAsync(filePath))
       .then(() => true)
       .catch(() => false);
   };
 
-  const removeTag = (filePath: string): Bluebird<void> => {
+  const removeTag = (filePath: string): Promise<void> => {
     return tagFileExists(filePath)
       .then(exists => exists
         ? fs.removeAsync(filePath).catch(err => {
           log('error', 'Unable to remove directory tag', err);
           return (['ENOENT'].indexOf(err.code) !== -1)
             // Tag file is gone ? no problem.
-            ? Bluebird.resolve()
-            : Bluebird.reject(err);
+            ? Promise.resolve()
+            : Promise.reject(err);
         })
-        : Bluebird.resolve());
+        : Promise.resolve());
   };
 
   const stagingFolderTag = path.join(sourceDir, STAGING_DIR_TAG);
   const downloadsTag = path.join(sourceDir, DOWNLOADS_DIR_TAG);
-  return Bluebird.all([removeTag(stagingFolderTag), removeTag(downloadsTag)]).then(() => undefined);
+  return Promise.all([removeTag(stagingFolderTag), removeTag(downloadsTag)]).then(() => undefined);
 }
 
-function removeOldDirectories(items: IEntry[] | string[]): Bluebird<void> {
+function removeOldDirectories(items: IEntry[] | string[]): Promise<void> {
   const longestFirst = (lhs: string | IEntry, rhs: string | IEntry) => {
     const lPath = typeof lhs === 'string' ? lhs : lhs.filePath;
     const rPath = typeof rhs === 'string' ? rhs : rhs.filePath;
@@ -333,24 +326,25 @@ function removeOldDirectories(items: IEntry[] | string[]): Bluebird<void> {
   };
 
   const paths = items.map(item => typeof item === 'string' ? item : item.filePath);
-  return Bluebird.each(paths.sort(longestFirst), path => 
+  return Promise.all(paths.sort(longestFirst).map(path => 
     fs.removeAsync(path)
       .catch(err => (['ENOENT'].indexOf(err.code) !== -1)
-        ? Bluebird.resolve()
-        : Bluebird.reject(err))
-  ).then(() => undefined);
+        ? Promise.resolve()
+        : Promise.reject(err))
+  )).then(() => undefined);
 }
 
-function exists(filePath: string): Bluebird<boolean> {
+function exists(filePath: string): Promise<boolean> {
   return fs.statAsync(filePath)
     .then(() => true)
     .catch(() => false);
 }
 
-function linkFile(source: string, dest: string, options?: any): Bluebird<void> {
+function linkFile(source: string, dest: string, options?: any): Promise<void> {
   return fs.ensureDirAsync(path.dirname(dest))
     .then(() => fs.linkAsync(source, dest, options))
     .catch(err => (err.code !== 'EEXIST')
-      ? Bluebird.reject(err)
-      : Bluebird.resolve());
+      ? Promise.reject(err)
+      : Promise.resolve());
 }
+

@@ -7,7 +7,7 @@ import Nexus, {
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
 import { makeFileUID } from './util/UIDs';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ipcRenderer } from 'electron';
 import { TFunction } from 'i18next';
 import jwt from 'jsonwebtoken';
@@ -32,7 +32,7 @@ import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { jsonRequest } from '../../util/network';
 import opn from '../../util/opn';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 import { toPromise, truthy } from '../../util/util';
 import { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
@@ -465,7 +465,7 @@ function startDownloadCollection(api: IExtensionApi,
                                                      }, (revisionInfo as any).file_name, cb, 'always', { allowInstall: false }))
         .catch(err => Promise.reject(contextify(err)));
     })
-    .tap(dlId => api.events.emit('did-download-collection', dlId))
+    .then(dlId => api.events.emit('did-download-collection', dlId))
     .catch(err => {
       err['collectionSlug'] = url.collectionSlug;
       err['revisionNumber'] = revisionInfo?.revisionNumber ?? url.revisionNumber;
@@ -721,7 +721,7 @@ function startDownloadMod(api: IExtensionApi,
                         redownload, { allowInstall });
       });
     })
-    .tap(() => {
+    .then(() => {
       api.sendNotification({
         id: url.fileId.toString(),
         type: 'global',
@@ -1212,7 +1212,7 @@ function filterByUpdateList(store: Redux.Store<any>,
     return prev;
   }, {});
 
-  return Promise.reduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
+  return promiseReduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
     // minAge map may be missing certain gameIds when none of the installed mods
     //  for that gameId have the lastUpdateTime attribute. We still want to check for
     //  updates in this scenario - the lastUpdateTime attribute will be populated immediately
@@ -1339,7 +1339,7 @@ function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
   const newWerP = ['attributes', 'newestVersion'];
   const newFileIdP = ['attributes', 'newestFileId'];
 
-  return Promise.map(modsList, (mod: IMod) => {
+  return promiseMap(modsList, (mod: IMod) => {
     if (!forceFull && !filtered.has(mod.id)) {
       store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
       return;
@@ -1657,7 +1657,7 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     }) 
     //.then(userInfo => updateUserInfo(api, nexus))
     // don't stop the login just because the github rate limit is exceeded
-    .catch(RateLimitExceeded, () => Promise.resolve(true))
+    .catch(err => { if (err instanceof RateLimitExceeded) { return Promise.resolve(true); } else { return Promise.reject(err); }})
     .catch(TimeoutError, err => {
       api.sendNotification({
         type: 'error',

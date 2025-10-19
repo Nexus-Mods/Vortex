@@ -16,7 +16,7 @@ const baseB = path.sep + 'driveb';
 jest.mock('../src/util/fs', () => {
   const path = require('path');
   let fakeFS = {};
-  const Promise = require('bluebird');
+  // const Promise = require('bluebird');
 
   const insert = (filePath, info) => {
     const insertInner = (tgt, restPath) => {

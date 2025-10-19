@@ -2,11 +2,12 @@ import { showDialog } from '../../../actions';
 import { ThunkStore } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { UserCanceled } from '../../../util/CustomErrors';
-import { activeGameId, discoveryByGame, gameName, knownGames } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { discoveryByGame, gameName, knownGames } from '../../../extensions/gamemode_management/selectors';
 import { SITE_ID } from '../../gamemode_management/constants';
 import { convertGameIdReverse, nexusGameId } from '../../nexus_integration/util/convertGameId';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * Determine which game to install a download for.

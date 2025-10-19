@@ -12,7 +12,7 @@ import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
 import * as RemoteT from '@electron/remote';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import update from 'immutability-helper';
 import * as os from 'os';
 import * as path from 'path';

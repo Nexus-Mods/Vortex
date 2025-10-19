@@ -4,7 +4,8 @@ import { IExtensionContext, IRunParameters } from '../../types/IExtensionContext
 import { IProfile, IState } from '../../types/IState';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
-import { activeProfile } from '../../util/selectors';
+import { activeProfile } from '../profile_management/activeGameId';
+import { activeGameId } from '../profile_management/activeGameId';
 
 function init(context: IExtensionContext): boolean {
   context.registerToolVariables((parameters: IRunParameters) => {

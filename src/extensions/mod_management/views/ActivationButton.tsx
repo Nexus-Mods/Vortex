@@ -7,7 +7,9 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
 import onceCB from '../../../util/onceCB';
-import * as selectors from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { lastActiveProfileForGame } from '../../../extensions/profile_management/activeGameId';
+import { needToDeploy } from '../selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
@@ -84,9 +86,9 @@ class ActivationButton extends ComponentEx<IProps, {}> {
 }
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
-  const gameId = selectors.activeGameId(state);
+  const gameId = activeGameId(state);
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const profileId = lastActiveProfileForGame(state, gameId);
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
     activator = ownProps.getActivators().find((act: IDeploymentMethod) => act.id === activatorId);
@@ -94,7 +96,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   return {
     profileId,
     activator,
-    needToDeploy: selectors.needToDeploy(state),
+    needToDeploy: needToDeploy(state),
   };
 }
 

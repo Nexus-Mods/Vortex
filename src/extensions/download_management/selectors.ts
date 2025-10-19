@@ -1,4 +1,4 @@
-import { activeGameId } from '../../extensions/profile_management/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import { IDownload, IState } from '../../types/IState';
 import { log } from '../../util/log';
 

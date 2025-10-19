@@ -15,7 +15,7 @@ import sessionReducer from './reducers';
 import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions, readExtensionsSync } from './util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -109,7 +109,7 @@ function checkForUpdates(api: IExtensionApi) {
     updateable: updateable.map(ext => `${ext.current.name} v${ext.current.version} `
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
-  return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
+  return promiseMap(updateable, update => downloadAndInstallExtension(api, update.update))
     .then((results: boolean[]) => {
       api.dismissNotification('extension-updates');
 
@@ -167,11 +167,12 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
     return Promise.resolve();
   }
   return fetchAvailableExtensions(true, force)
-    .catch(DataInvalid, err => {
+    .catch(err => err instanceof DataInvalid ? (
       api.showErrorNotification('Failed to fetch available extensions', err,
-                                { allowReport: false });
-      return { time: null, extensions: [] };
-    })
+                                { allowReport: false }),
+      Promise.reject(err)) : Promise.reject(err))
+      .then(() => ({ time: null, extensions: [] }))
+    .catch(() => ({ time: null, extensions: [] }))
     .catch(err => {
       api.showErrorNotification('Failed to fetch available extensions', err);
       return { time: null, extensions: [] };
@@ -278,7 +279,7 @@ function checkMissingDependencies(api: IExtensionApi,
                + 'they have missing or incompatible dependencies.',
         actions: [
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
-            Promise.map(Object.keys(installableMissing), depId =>
+            promiseMap(Object.keys(installableMissing), depId =>
               installDependency(api, depId, updateInstalled)
                 .then(success => ({ depId, success }))
                 .catch(err => {
@@ -517,7 +518,7 @@ function init(context: IExtensionContext) {
                       return Promise.resolve();
                     }
                     // After refresh, try discovery and then activate the game
-                    return Promise.map(newGameExtensions, (extId: string) => {
+                    return promiseMap(newGameExtensions, (extId: string) => {
                       const installedExt = state.session.extensions.installed[extId];
                       const knownGames = state.session.gameMode.known || [];
                       // Enhanced matching logic to find the correct game ID

@@ -1,7 +1,7 @@
 import React = require('react');
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
-import * as selectors from '../../../util/selectors';
+import { lastActiveProfileForGame } from '../../../extensions/profile_management/activeGameId';
 
 import { setLoadOrder } from '../../../actions/loadOrder';
 
@@ -22,7 +22,7 @@ export async function generate(api: types.IExtensionApi,
                                modIds: string[],
                                mods: { [modId: string]: types.IMod })
                                : Promise<ICollectionLoadOrder> {
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const profileId = lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
     return Promise.reject(new CollectionGenerateError('Invalid profile id'));
   }
@@ -54,7 +54,7 @@ export async function parser(api: types.IExtensionApi,
                              collection: ICollection): Promise<void> {
   const state = api.getState();
 
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const profileId = lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
     return Promise.reject(new CollectionParseError(collection, 'Invalid profile id'));
   }

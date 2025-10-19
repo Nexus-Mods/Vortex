@@ -7,14 +7,10 @@ import createCachedSelector, {
 } from 're-reselect';
 import { createSelector, OutputSelector } from 'reselect';
 import { IState } from '../../types/IState';
+import { activeGameId } from './activeGameId';
 
 const profilesBase = (state: IState) => state.persistent.profiles;
 const lastActiveProfiles = (state: IState) => state.settings.profiles.lastActiveProfile;
-
-export const activeGameId = (state: IState): string => {
-  const profile = activeProfile(state);
-  return profile !== undefined ? profile.gameId : undefined;
-};
 
 export const gameProfiles =
     createSelector(activeGameId, profilesBase,
@@ -23,11 +19,6 @@ export const gameProfiles =
                        .filter((id: string) => profiles[id].gameId === gameId)
                        .map((id: string) => profiles[id]);
                    });
-
-export const activeProfile = (state): IProfile => {
-  const profileId = getSafe(state, ['settings', 'profiles', 'activeProfileId'], undefined);
-  return getSafe(state, ['persistent', 'profiles', profileId], undefined);
-};
 
 const profileByIdImpl = createCachedSelector(
   profilesBase,

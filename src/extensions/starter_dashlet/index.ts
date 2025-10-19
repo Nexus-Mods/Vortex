@@ -1,11 +1,11 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import path from 'path';
 import { fs } from '../..';
 
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { ITestResult } from '../../types/ITestResult';
 import { IStarterInfo } from '../../util/StarterInfo'
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -56,7 +56,7 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
 
       // Make sure all the required files are still present.
       const requiredFiles = primaryTool.requiredFiles.map(file => path.join(workingDir, file));
-      return Promise.each(requiredFiles, (file: string) => fs.statAsync(file))
+      return promiseEach(requiredFiles, (file: string) => fs.statAsync(file))
         .then(() => Promise.resolve(undefined))
         .catch(err => {
           notifyInvalid();
@@ -111,7 +111,7 @@ function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: s
     return Promise.resolve([]);
   }
 
-  return Promise.reduce(starters, (accum, iter) => {
+  return promiseReduce(starters, (accum, iter) => {
     if (!iter?.exePath) {
       return Promise.resolve(accum);
     }

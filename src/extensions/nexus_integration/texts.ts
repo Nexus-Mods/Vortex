@@ -1,6 +1,6 @@
 import chromePath from './util/chromePath';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 
 function getText(id: string, t: TFunction): string {

@@ -12,7 +12,8 @@ import {IResolvedMerger} from './types/IResolvedMerger';
 
 import {BACKUP_TAG} from './LinkingDeployment';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach, promiseMapSeries } from '../../util/bluebird-migration-helpers.local';
 import * as crypto from 'crypto';
 import * as path from 'path';
 
@@ -84,7 +85,7 @@ function mergeArchive(api: IExtensionApi,
       // of the archive, then copy every file from the archive that differs from the
       // base into the output directory, overwriting the file from previous mods if
       // necessary
-    .then(() => Promise.each(sources, modPath => {
+    .then(() => promiseEach(sources, modPath => {
       const outputPath = path.join(mergePath, path.basename(modPath));
       return fs.ensureDirAsync(outputPath)
         .then(() => api.openArchive(path.join(modPath, relArcPath)))
@@ -159,12 +160,12 @@ function mergeMods(api: IExtensionApi,
 
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
-  return Promise.mapSeries(mods.filter(mod => mod.installationPath !== undefined), mod => {
+  return promiseMapSeries(mods.filter(mod => mod.installationPath !== undefined), mod => {
     const modPath = path.join(modBasePath, mod.installationPath);
     return getFileList(modPath)
       .filter((entry: IFileEntry) => entry.stats.isFile())
       .then(fileList =>
-        Promise.mapSeries(fileList, fileEntry => {
+        promiseMapSeries(fileList, fileEntry => {
           if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {
             const relPath = path.relative(modPath, fileEntry.filePath);
             res.usedInMerge.push(relPath);
@@ -184,7 +185,7 @@ function mergeMods(api: IExtensionApi,
               return getNormalizeFunc(modPath)
                 .then(normalizeIn => { normalize = normalizeIn; })
                 .then(() => fs.ensureDirAsync(realDest))
-                .then(() => Promise.mapSeries(merger.match.baseFiles(deployedFiles), file => {
+                .then(() => promiseMapSeries(merger.match.baseFiles(deployedFiles), file => {
                   const norm = normalize(file.out);
                   setdefault(res.mergeInfluences, norm, { modType: merger.modType, sources: [] })
                     .sources.push(mod.id);
@@ -253,7 +254,7 @@ function mergeMods(api: IExtensionApi,
         }));
   })
     // merge archives
-    .then(() => Promise.mapSeries(Object.keys(archiveMerges), relPath =>
+    .then(() => promiseMapSeries(Object.keys(archiveMerges), relPath =>
       mergeArchive(api, game, relPath, destinationPath,
                    archiveMerges[relPath].map(iter => iter.path), mergeDest)
         .then(() => getNormalizeFunc(destinationPath))

@@ -10,7 +10,7 @@ import { Icon, IconButton } from '../../controls/TooltipControls';
 import { getApplication } from '../../util/application';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
-import * as selectors from '../../util/selectors';
+import { activeGameId } from '../../extensions/profile_management/activeGameId';
 
 import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
@@ -178,7 +178,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 const empty = {};
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameMode: selectors.activeGameId(state) || undefined,
+    gameMode: activeGameId(state) || undefined,
     announcements: state.session.announcements.announcements,
   };
 }

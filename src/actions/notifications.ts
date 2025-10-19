@@ -6,7 +6,7 @@ import {truthy} from '../util/util';
 
 import safeCreateAction from './safeCreateAction';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ipcMain, ipcRenderer } from 'electron';
 
 import * as reduxAct from 'redux-act';
@@ -148,10 +148,10 @@ export function addNotification(notification: INotification) {
 
     dispatch(startNotification(storeNoti));
     if (noti.displayMS !== undefined) {
-      return new Promise((resolve) => {
-        timers[noti.id] = setTimeout(() =>
-          resolve()
-        , noti.displayMS);
+      return new Promise<void>((resolve) => {
+        timers[noti.id] = setTimeout(() => {
+          resolve();
+        }, noti.displayMS);
       }).then(() => {
         dispatch(dismissNotification(noti.id));
       });

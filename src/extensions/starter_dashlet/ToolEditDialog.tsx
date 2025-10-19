@@ -9,7 +9,7 @@ import StarterInfo from '../../util/StarterInfo';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
 
-import * as selectors from '../../util/selectors';
+import { currentGame } from '../gamemode_management/selectors';
 
 import ToolIcon from '../../controls/ToolIcon';
 
@@ -395,7 +395,7 @@ export default function ToolEditDialog(props: IProps) {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     displayGroups: state.session.base.displayGroups,
-    game: selectors.currentGame(state),
+    game: currentGame(state),
   };
 }
 

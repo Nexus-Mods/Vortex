@@ -3,7 +3,7 @@ import ua from 'universal-analytics';
 
 import { GA4_BETA_MEASUREMENT_ID, GA4_NEXT_MEASUREMENT_ID, GA4_STABLE_MEASUREMENT_ID } from '../constants';
 import  ga4mp  from  '../ga4mp/ga4mp.esm';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 
 class AnalyticsGA4 {
   public user: string;

@@ -2,7 +2,9 @@ import { setSettingsPage } from '../../actions/session';
 import Icon from '../../controls/Icon';
 import Spinner from '../../controls/Spinner';
 import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
-import * as selectors from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { downloadPath } from '../download_management/selectors';
+import { installPath } from '../mod_management/selectors';
 
 import { setProfilesVisible } from '../settings_interface/actions/interface';
 
@@ -67,7 +69,7 @@ function todos(api: IExtensionApi): IToDo[] {
       icon: 'game',
       type: 'search' as ToDoType,
       priority: 10,
-      props: state => ({ gameMode: selectors.activeGameId(state) }),
+      props: state => ({ gameMode: activeGameId(state) }),
       condition: props => props.gameMode === undefined,
       text: 'Select a game to manage',
       action: openGames,
@@ -90,7 +92,7 @@ function todos(api: IExtensionApi): IToDo[] {
       icon: 'settings',
       type: 'settings' as ToDoType,
       priority: 30,
-      props: state => ({ dlPath: selectors.downloadPath(state) }),
+      props: state => ({ dlPath: downloadPath(state) }),
       text: 'Downloads are on drive',
       value: (t: TFunction, props: any) => {
         try {
@@ -113,7 +115,7 @@ function todos(api: IExtensionApi): IToDo[] {
       icon: 'settings',
       type: 'settings' as ToDoType,
       priority: 31,
-      props: state => ({ instPath: selectors.installPath(state) }),
+      props: state => ({ instPath: installPath(state) }),
       text: 'Mods are staged on drive',
       value: (t: TFunction, props: any) => {
         try {

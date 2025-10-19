@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * downloads and installs development extensions that help with redux / react development.

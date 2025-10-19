@@ -1,6 +1,6 @@
 import walk from './walk';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fs from 'fs';
 
 export interface IFileEntry {

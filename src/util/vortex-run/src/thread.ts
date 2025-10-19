@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';

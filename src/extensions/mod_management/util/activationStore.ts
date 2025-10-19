@@ -8,7 +8,9 @@ import { writeFileAtomic } from '../../../util/fsAtomic';
 import getVortexPath from '../../../util/getVortexPath';
 import { TFunction } from '../../../util/i18n';
 import { log } from '../../../util/log';
-import { activeGameId, discoveryByGame, installPathForGame } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { discoveryByGame } from '../../../extensions/gamemode_management/selectors';
+import { installPathForGame } from '../selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { deBOM, makeQueue, truthy } from '../../../util/util';
 
@@ -21,7 +23,8 @@ import { getActivator, getCurrentActivator } from './deploymentMethods';
 import format_1 from './manifest_formats/format_1';
 
 import msgpackT from '@msgpack/msgpack';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach, promiseMap } from '../../../util/bluebird-migration-helpers.local';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';
 
@@ -101,7 +104,7 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
 
 export function purgeDeployedFiles(basePath: string,
                                    files: IDeployedFile[]): Promise<void> {
-  return Promise.map(files, file => {
+  return promiseMap(files, file => {
     const fullPath = path.join(basePath, file.relPath);
     return fs.statAsync(fullPath).then(
       stats => {
@@ -209,7 +212,7 @@ function getManifestImpl(api: IExtensionApi,
       }
 
       return readManifestFileBinary(backup2Path)
-        .catch({ code: 'ENOENT' }, () => readManifestFile(backupPath))
+        .catch(err => err.code === 'ENOENT' ? readManifestFile(backupPath) : Promise.reject(err))
         .then(data =>
           api.showDialog('question', 'Manifest damaged', {
             text: 'The deployment manifest has been corrupted.\n'
@@ -292,7 +295,7 @@ export function fallbackPurge(api: IExtensionApi, gameId?: string): Promise<void
   const stagingPath = installPathForGame(state, gameId);
   const activator = getCurrentActivator(state, gameId, false);
 
-  return Promise.each(Object.keys(modPaths), typeId =>
+  return promiseEach(Object.keys(modPaths), typeId =>
     fallbackPurgeType(api, activator, gameId, typeId, modPaths[typeId], stagingPath))
     .then(() => undefined);
 }
@@ -444,6 +447,6 @@ export function saveActivation(gameId: string, modType: string, instance: string
     : Promise.resolve(writeFileAtomic(tagFilePath, dataJSON))
         // remove backup from previous Vortex versions
         .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
-          .catch({ code: 'ENOENT' }, () => null))
+          .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve(null); } else { return Promise.reject(err); }}))
         .then(() => undefined);
 }

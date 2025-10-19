@@ -2,7 +2,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { installPathForGame } from '../../util/selectors';
+import { installPathForGame } from '../mod_management/selectors';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { getGame } from '../gamemode_management/util/getGame';
@@ -10,7 +10,7 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -176,7 +176,7 @@ class DeploymentMethod extends LinkingDeployment {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
-      Promise.delay(100)
+      promiseDelay(100)
         .then(() => fs.removeAsync(canary + '.link'))
         .then(() => fs.removeAsync(canary))
         .catch(err => {
@@ -246,8 +246,7 @@ class DeploymentMethod extends LinkingDeployment {
       }
       return turbowalk(dataPath, entries => {
         queue = queue
-          .then(() => Promise.map(entries,
-                                  entry => {
+          .then(() => promiseMap(entries, entry => {
                                     if ((entry.linkCount > 1) && inos.has(entry.id)) {
                                       ++purged;
                                       if ((purged % 1000) === 0) {

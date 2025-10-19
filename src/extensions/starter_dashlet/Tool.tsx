@@ -9,7 +9,7 @@ import * as React from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 
 import { IRunningTool } from '../../types/IState';
 

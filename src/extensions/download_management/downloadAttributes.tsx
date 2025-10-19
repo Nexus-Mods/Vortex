@@ -24,7 +24,7 @@ import DownloadProgressFilter from './views/DownloadProgressFilter';
 import { IDownloadViewProps } from './views/DownloadView';
 import FileTime from './views/FileTime';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

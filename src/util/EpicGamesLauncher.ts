@@ -1,5 +1,6 @@
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { log } from './log';
+import { promiseMap } from './bluebird-migration-helpers.local';
 import { isWindows, isMacOS, isLinux } from './platform';
 
 import * as path from 'path';
@@ -30,25 +31,25 @@ class EpicGamesLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mDataPath: Bluebird<string | undefined>;
+  private mDataPath: Promise<string | undefined>;
   private mLauncherExecPath: string;
-  private mCache: Bluebird<IGameStoreEntry[]>;
+  private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
     this.mDataPath = this.getEpicDataPath();
   }
 
-  private getEpicDataPath(): Bluebird<string | undefined> {
+  private getEpicDataPath(): Promise<string | undefined> {
     if (isWindows()) {
       try {
         // We find the launcher's dataPath
         const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
                                                 'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
                                                 'AppDataPath');
-        return Bluebird.resolve(epicDataPath.value as string);
+        return Promise.resolve(epicDataPath.value as string);
       } catch (err) {
         log('info', 'Epic games launcher not found', { error: err.message });
-        return Bluebird.resolve(undefined);
+        return Promise.resolve(undefined);
       }
     } else if (isMacOS()) {
       // macOS: Epic Games Launcher stores data in ~/Library/Application Support/Epic
@@ -73,25 +74,25 @@ class EpicGamesLauncher implements IGameStore {
     }
   }
 
-  public launchGame(appInfo: any, api?: IExtensionApi): Bluebird<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
     const appId = ((typeof(appInfo) === 'object') && ('appId' in appInfo))
       ? appInfo.appId : appInfo.toString();
 
     return this.getPosixPath(appId)
-      .then(posPath => opn(posPath).catch(err => Bluebird.resolve()));
+      .then(posPath => opn(posPath).catch(err => Promise.resolve()));
   }
 
-  public launchGameStore(api: IExtensionApi, parameters?: string[]): Bluebird<void> {
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): Promise<void> {
     const launchCommand = 'com.epicgames.launcher://start';
-    return opn(launchCommand).catch(err => Bluebird.resolve());
+    return opn(launchCommand).catch(err => Promise.resolve());
   }
 
-  public getPosixPath(name): Bluebird<string> {
+  public getPosixPath(name): Promise<string> {
     const posixPath = `com.epicgames.launcher://apps/${name}?action=launch&silent=true`;
-    return Bluebird.resolve(posixPath);
+    return Promise.resolve(posixPath);
   }
 
-  public queryPath(): Bluebird<string> {
+  public queryPath(): Promise<string> {
     return this.mDataPath.then(dataPath => path.join(dataPath, this.executable()));
   }
 
@@ -100,14 +101,14 @@ class EpicGamesLauncher implements IGameStore {
    * Please keep in mind that epic seems to internally give third-party games animal names. Kinky.
    * @param name
    */
-  public isGameInstalled(name: string): Bluebird<boolean> {
+  public isGameInstalled(name: string): Promise<boolean> {
     return this.findByAppId(name)
       .catch(() => this.findByName(name))
-      .then(() => Bluebird.resolve(true))
-      .catch(() => Bluebird.resolve(false));
+      .then(() => Promise.resolve(true))
+      .catch(() => Promise.resolve(false));
   }
 
-  public findByAppId(appId: string | string[]): Bluebird<IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: IGameStoreEntry) => (appId.includes(entry.appid))
       : (entry: IGameStoreEntry) => (appId === entry.appid);
@@ -115,9 +116,9 @@ class EpicGamesLauncher implements IGameStore {
     return this.allGames()
       .then(entries => entries.find(matcher))
       .then(entry => (entry === undefined)
-        ? Bluebird.reject(
+        ? Promise.reject(
           new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
-        : Bluebird.resolve(entry));
+        : Promise.resolve(entry));
   }
 
   /**
@@ -125,18 +126,31 @@ class EpicGamesLauncher implements IGameStore {
    *  e.g. "Flour" === "Untitled Goose Game" lol
    * @param name
    */
-  public findByName(name: string): Bluebird<IGameStoreEntry> {
+  public findByName(name: string): Promise<IGameStoreEntry> {
     const re = new RegExp('^' + name + '$');
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => (entry === undefined)
-        ? Bluebird.reject(new GameEntryNotFound(name, STORE_ID))
-        : Bluebird.resolve(entry));
+        ? Promise.reject(new GameEntryNotFound(name, STORE_ID))
+        : Promise.resolve(entry));
   }
 
-  public allGames(): Bluebird<IGameStoreEntry[]> {
+  public allGames(): Promise<IGameStoreEntry[]> {
     if (!this.mCache) {
-      this.mCache = this.parseManifests();
+      // Find the manifest path and then parse manifests
+      return this.getGameStorePath().then(storePath => {
+        if (storePath) {
+          // On Windows, manifests are in the Manifests subdirectory
+          // On macOS/Linux, manifests are in the Epic Games Launcher data directory
+          const manifestPath = isWindows() 
+            ? path.join(path.dirname(storePath), 'Manifests')
+            : path.join(storePath, 'Manifests');
+          this.mCache = this.parseManifests();
+        } else {
+          this.mCache = Promise.resolve([]);
+        }
+        return this.mCache;
+      });
     }
     return this.mCache;
   }
@@ -213,13 +227,124 @@ class EpicGamesLauncher implements IGameStore {
     return undefined;
   }
 
-  public reloadGames(): Bluebird<void> {
-    this.mCache = this.parseManifests();
-    return Bluebird.resolve();
+  private getDataPath(): Promise<string | undefined> {
+    if (isWindows()) {
+      // On Windows, the data path is typically in %LOCALAPPDATA%\EpicGamesLauncher\Data
+      return Promise.resolve(path.join(getVortexPath('localAppData'), 'EpicGamesLauncher', 'Data'));
+    } else if (isMacOS()) {
+      // On macOS, the data path is in ~/Library/Application Support/Epic
+      return this.findMacOSEpicDataPath();
+    } else {
+      // On Linux, check for Heroic data path
+      const heroicPath = path.join(getVortexPath('home'), '.config', 'heroic');
+      return fs.statAsync(heroicPath)
+        .then(() => heroicPath)
+        .catch(() => {
+          // Try flatpak path
+          const flatpakPath = path.join(getVortexPath('home'), '.var', 'app', 'com.heroicgameslauncher.hgl', 'config', 'heroic');
+          return fs.statAsync(flatpakPath)
+            .then(() => flatpakPath)
+            .catch(() => undefined);
+        });
+    }
   }
 
-  public getGameStorePath(): Bluebird<string | undefined> {
-    const getExecPath = (): Bluebird<string | undefined> => {
+  public reloadGames(): Promise<void> {
+    this.mCache = this.parseManifests();
+    return Promise.resolve(undefined);
+  }
+
+  private parseManifests(): Promise<IGameStoreEntry[]> {
+    return this.getDataPath().then(dataPath => {
+      if (!dataPath) {
+        return Promise.resolve([]);
+      }
+
+      // Manifests are in the Manifests subdirectory
+      const manifestsPath = path.join(dataPath, 'Manifests');
+      
+      return fs.readdirAsync(manifestsPath)
+        .then(files => {
+          // Filter for .item files which are the manifest files
+          const manifestFiles = files.filter(file => path.extname(file) === '.item');
+          
+          // Parse each manifest file
+          return promiseMap(manifestFiles, file => {
+            const manifestPath = path.join(manifestsPath, file);
+            return fs.readFileAsync(manifestPath, { encoding: 'utf8' })
+              .then(data => {
+                const manifest = JSON.parse(data);
+                if ((manifest.MainGameAppName !== undefined) && (manifest.AppName !== manifest.MainGameAppName)) {
+                  // this is a DLC, not a game
+                  return Promise.resolve(undefined);
+                }
+                if ((manifest.LaunchExecutable === undefined) || (manifest.InstallLocation === undefined)) {
+                  return Promise.resolve(undefined);
+                }
+
+                const launchExecutable = manifest.LaunchExecutable.split(path.sep).join(path.posix.sep);
+                const executables = [launchExecutable];
+                if (manifest.OwnedAppNames !== undefined) {
+                  // This is a "core" game, and we're looking at the "base" manifest.
+                  //  The "OwnedAppNames" attribute contains the name of the actual
+                  //  game manifest which we're going to need to resolve the executable
+                  //  path.
+                  const split = manifest.OwnedAppNames.split('/');
+                  const ownedAppName = split[split.length - 1];
+                  const ownedManifestPath = path.join(manifestsPath, `${ownedAppName}.item`);
+                  return fs.readFileAsync(ownedManifestPath, { encoding: 'utf8' })
+                    .then(ownedData => {
+                      const ownedManifest = JSON.parse(ownedData);
+                      const ownedExec = ownedManifest.LaunchExecutable?.split(path.sep).join(path.posix.sep);
+                      if (!!ownedExec && (executables.indexOf(ownedExec) === -1)) {
+                        executables.push(ownedExec);
+                      }
+                      return Promise.resolve({
+                        appid: manifest.AppName,
+                        name: manifest.DisplayName,
+                        gamePath: manifest.InstallLocation,
+                        gameStoreId: STORE_ID,
+                        parameters: [{
+                          appName: manifest.AppName,
+                          user: manifest.InstalledBy,
+                          executables,
+                        }],
+                      });
+                    })
+                    .catch(err => {
+                      log('error', 'Cannot read Epic Games manifest', err);
+                      return Promise.resolve(undefined);
+                    });
+                } else {
+                  return Promise.resolve({
+                    appid: manifest.AppName,
+                    name: manifest.DisplayName,
+                    gamePath: manifest.InstallLocation,
+                    gameStoreId: STORE_ID,
+                    parameters: [{
+                      appName: manifest.AppName,
+                      user: manifest.InstalledBy,
+                      executables,
+                    }],
+                  });
+                }
+              })
+              .catch(err => {
+                log('error', 'Failed to parse Epic Games manifest', { file, error: err.message });
+                return Promise.resolve(undefined);
+              });
+          });
+        })
+        .then(results => results.filter(result => result !== undefined) as IGameStoreEntry[])
+        .catch(err => {
+          log('error', 'Failed to read Epic Games manifests directory', err);
+          return Promise.resolve([]);
+        });
+    });
+  }
+
+  public getGameStorePath(): Promise<string | undefined> {
+    const getExecPath = (): Promise<string | undefined> => {
       if (isWindows()) {
         try {
           const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
@@ -227,10 +352,10 @@ class EpicGamesLauncher implements IGameStore {
                                                   '(Default)');
           const val = epicLauncher.value;
           this.mLauncherExecPath = val.toString().split(',')[0];
-          return Bluebird.resolve(this.mLauncherExecPath);
+          return Promise.resolve(this.mLauncherExecPath);
         } catch (err) {
           log('info', 'Epic games launcher not found', { error: err.message });
-          return Bluebird.resolve(undefined);
+          return Promise.resolve(undefined);
         }
       } else if (isMacOS()) {
          // macOS: Epic Games Launcher is typically in /Applications
@@ -323,7 +448,7 @@ class EpicGamesLauncher implements IGameStore {
     };
 
     return (!!this.mLauncherExecPath)
-      ? Bluebird.resolve(this.mLauncherExecPath)
+      ? Promise.resolve(this.mLauncherExecPath)
       : getExecPath();
   }
 
@@ -336,101 +461,6 @@ class EpicGamesLauncher implements IGameStore {
       // Linux: Use Heroic Games Launcher as alternative
       return 'heroic';
     }
-  }
-
-  private parseManifests(): Bluebird<IGameStoreEntry[]> {
-    let manifestsLocation;
-    return this.mDataPath
-      .then(dataPath => {
-        if (dataPath === undefined) {
-          return Bluebird.resolve([]);
-        }
-
-        if (isLinux()) {
-          // For Heroic Games Launcher on Linux, check for Epic games in the gog_store/installed.json
-          manifestsLocation = path.join(dataPath, 'store_cache', 'legendary_library.json');
-          return this.parseHeroicManifests(manifestsLocation);
-        } else {
-          // Windows and macOS use the standard Epic manifests
-          manifestsLocation = path.join(dataPath, 'Manifests');
-          return fs.readdirAsync(manifestsLocation);
-        }
-      })
-      .catch({ code: 'ENOENT' }, err => {
-        log('info', 'Epic launcher manifests could not be found', err.code);
-        return Bluebird.resolve([]);
-      })
-      .then(entries => {
-        if (isLinux()) {
-          // Already parsed in parseHeroicManifests
-          return entries;
-        }
-        
-        const manifests = entries.filter(entry => entry.endsWith(ITEM_EXT));
-        return Bluebird.map(manifests, manifest =>
-          fs.readFileAsync(path.join(manifestsLocation, manifest), { encoding: 'utf8' })
-            .then(data => {
-              try {
-                const parsed = JSON.parse(data);
-                const gameStoreId = STORE_ID;
-                const gameExec = getSafe(parsed, ['LaunchExecutable'], undefined);
-                const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
-                const name = getSafe(parsed, ['DisplayName'], undefined);
-                const appid = getSafe(parsed, ['AppName'], undefined);
-
-                return (!!gamePath && !!name && !!appid && !!gameExec)
-                  ? fs.statSilentAsync(path.join(gamePath, gameExec))
-                    .then(() => Bluebird.resolve({ appid, name, gamePath, gameStoreId }))
-                    .catch(() => Bluebird.resolve(undefined))
-                  : Bluebird.resolve(undefined);
-              } catch (err) {
-                log('error', 'Cannot parse Epic Games manifest', err);
-                return Bluebird.resolve(undefined);
-              }
-            })
-            .catch(err => {
-              log('error', 'Cannot read Epic Games manifest', err);
-              return Bluebird.resolve(undefined);
-            }));
-      })
-      .then((games) => games.filter(game => game !== undefined))
-      .catch(err => {
-        log('error', 'Failed to parse Epic Games manifests', err);
-        return Bluebird.resolve([]);
-      });
-  }
-
-  private parseHeroicManifests(manifestPath: string): Bluebird<IGameStoreEntry[]> {
-    return fs.readFileAsync(manifestPath, { encoding: 'utf8' })
-      .then(data => {
-        try {
-          const parsed = JSON.parse(data);
-          const games: IGameStoreEntry[] = [];
-          
-          // Heroic stores Epic games in a different format
-          if (Array.isArray(parsed)) {
-            for (const game of parsed) {
-              if (game.app_name && game.title && game.install_path) {
-                games.push({
-                  appid: game.app_name,
-                  name: game.title,
-                  gamePath: game.install_path,
-                  gameStoreId: STORE_ID
-                });
-              }
-            }
-          }
-          
-          return Promise.resolve(games);
-        } catch (err) {
-          log('error', 'Cannot parse Heroic Games manifest', err);
-          return Promise.resolve([]);
-        }
-      })
-      .catch(err => {
-        log('info', 'Heroic Games manifest not found', err);
-        return Promise.resolve([]);
-      });
   }
 }
 

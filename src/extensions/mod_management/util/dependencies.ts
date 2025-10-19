@@ -8,11 +8,12 @@ import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../
 
 import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
 import { log } from '../../../util/log';
-import { activeGameId, lastActiveProfileForGame } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { lastActiveProfileForGame } from '../../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../../util/storeHelper';
 import { semverCoerce, truthy } from '../../../util/util';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import minimatch from 'minimatch';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
@@ -21,8 +22,8 @@ import * as semver from 'semver';
 import testModReference, { IModLookupInfo, isFuzzyVersion } from './testModReference';
 
 interface IBrowserResult {
-  url: string | (() => Bluebird<string>);
-  referer?: string | (() => Bluebird<string>);
+  url: string | (() => Promise<string>);
+  referer?: string | (() => Promise<string>);
 }
 
 export function findModByRef(reference: IModReference, mods: { [modId: string]: IMod },
@@ -79,9 +80,9 @@ function newerSort(lhs: IDownload, rhs: IDownload): number {
 function browseForDownload(api: IExtensionApi,
   url: string,
   instruction: string)
-  : Bluebird<IBrowserResult> {
-  return new Bluebird((resolve, reject) => {
-    let lookupResult: Bluebird<{ url: string, referer: string }>;
+  : Promise<IBrowserResult> {
+  return new Promise((resolve, reject) => {
+    let lookupResult: Promise<{ url: string, referer: string }>;
 
     const doLookup = () => {
       if (lookupResult === undefined) {
@@ -93,11 +94,11 @@ function browseForDownload(api: IExtensionApi,
             if (resultList[0].startsWith('err:')) {
               const msg = resultList[0].slice(4);
               if (msg === 'skip') {
-                return Bluebird.reject(new UserCanceled(true));
+                return Promise.reject(new UserCanceled(true));
               } else if (msg === 'cancel') {
-                return Bluebird.reject(new UserCanceled(false));
+                return Promise.reject(new UserCanceled(false));
               }
-              return Bluebird.reject(new Error(msg));
+              return Promise.reject(new Error(msg));
             }
             const [dlUrl, referer] = resultList[0].split('<');
             return { url: dlUrl, referer };
@@ -107,7 +108,7 @@ function browseForDownload(api: IExtensionApi,
     };
 
     return resolve({
-      url: () => doLookup().then(out => Bluebird.resolve(out?.url)),
+      url: () => doLookup().then(out => Promise.resolve(out?.url)),
       referer: () => doLookup().then(out => out?.referer),
     });
   });
@@ -115,9 +116,9 @@ function browseForDownload(api: IExtensionApi,
 
 function lookupDownloadHint(api: IExtensionApi,
   input: IDownloadHint)
-  : Bluebird<IBrowserResult> {
+  : Promise<IBrowserResult> {
   if (input === undefined) {
-    return Bluebird.resolve(undefined);
+    return Promise.resolve(undefined);
   }
 
   if (input.mode === 'direct') {
@@ -125,33 +126,33 @@ function lookupDownloadHint(api: IExtensionApi,
     try {
       urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
     } catch (err) {
-      return Bluebird.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
+      return Promise.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
     }
-    return Bluebird.resolve({ url: urlNorm });
+    return Promise.resolve({ url: urlNorm });
   } else if (input.mode === 'browse') {
     let urlNorm: string = '';
     try {
       urlNorm = normalizeUrl(input.url ?? '', { defaultProtocol: 'https:' });
     } catch (err) {
-      return Bluebird.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
+      return Promise.reject(new NotFound(`Invalid URL set for external dependency: "${input.url ?? '<unset>'}"`));
     }
     return browseForDownload(api, urlNorm, input.instructions)
       .then(result => {
         if (result === undefined) {
-          return Bluebird.reject(new NotFound('No download found browsing url'));
+          return Promise.reject(new NotFound('No download found browsing url'));
         } else {
-          return Bluebird.resolve(result);
+          return Promise.resolve(result);
         }
       })
       .catch(err => {
         if (err instanceof UserCanceled) {
-          return Bluebird.reject(new UserCanceled(err.skipped ?? true));
+          return Promise.reject(new UserCanceled(err.skipped ?? true));
         } else {
-          return Bluebird.reject(err);
+          return Promise.reject(err);
         }
       });
   } else {
-    return Bluebird.reject(new ProcessCanceled(input.instructions));
+    return Promise.reject(new ProcessCanceled(input.instructions));
   }
 }
 
@@ -186,7 +187,7 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
       || semver.satisfies(semver.coerce(value.fileVersion), versionMatch));
 }
 
-function tagDuplicates(input: IDependencyNode[]): Bluebird<IDependencyNode[]> {
+function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   // for all dependencies, figure out which of the other dependencies
   // would be solved by the same lookup result, sorted by the number of
   // collaterals it would fulfill
@@ -238,7 +239,7 @@ function tagDuplicates(input: IDependencyNode[]): Bluebird<IDependencyNode[]> {
     }
   }
 
-  return Bluebird.resolve(temp.filter(iter => iter !== null).map(iter => iter.dep));
+  return Promise.resolve(temp.filter(iter => iter !== null).map(iter => iter.dep));
 }
 
 export function lookupFromDownload(download: IDownload): IModLookupInfo {
@@ -441,7 +442,7 @@ function gatherDependencies(
   api: IExtensionApi,
   recommendations: boolean,
   progressCB?: (percent: number) => void,
-): Bluebird<IDependency[]> {
+): Promise<IDependency[]> {
   const state = api.getState();
   const gameMode: string = activeGameId(state);
   const requirements: IModRule[] =
@@ -461,17 +462,17 @@ function gatherDependencies(
   const limit = new ConcurrencyLimiter(20);
 
   // for each requirement, look up the reference and recursively their dependencies
-  return Bluebird.all(requirements.map((rule: IModRule) => Bluebird.resolve(limit.do(() =>
+  return Promise.all(requirements.map((rule: IModRule) => Promise.resolve(limit.do(() =>
     gatherDependenciesGraph(rule, api, gameMode, recommendations)))
     .then((node: IDependencyNode) => {
       onProgress();
-      return Bluebird.resolve(node);
+      return Promise.resolve(node);
     })
     .catch(err => {
       // gatherDependenciesGraph handles exceptions itself so we shouldn't get here
       // but better to make sure
       api.showErrorNotification('Failed to gather dependencies', err);
-      return Bluebird.resolve(null);
+      return Promise.resolve(null);
     })),
   )
     // tag duplicates

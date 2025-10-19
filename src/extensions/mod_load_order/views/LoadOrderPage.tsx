@@ -9,7 +9,9 @@ import { FlexLayout, IconBar, Spinner, ToolbarIcon } from '../../../controls/api
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { needToDeploy } from '../../mod_management/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
 import { setGameLoadOrderRendererOptions } from '../actions/settings';
@@ -514,7 +516,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 const empty = {};
 const defaultOpts: IItemRendererOptions = { listViewType: 'full', displayCheckboxes: true };
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
+  const profile = activeProfile(state) || undefined;
   let loadOrder: ILoadOrder = {};
 
   let itemRendererOptions: IItemRendererOptions = defaultOpts;
@@ -529,7 +531,7 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
     loadOrder,
     mods: util.getSafe(state, ['persistent', 'mods', profile.gameId], []),
     profile,
-    needToDeploy: selectors.needToDeploy(state),
+    needToDeploy: needToDeploy(state),
   };
 }
 

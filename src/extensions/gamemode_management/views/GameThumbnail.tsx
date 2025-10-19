@@ -12,7 +12,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

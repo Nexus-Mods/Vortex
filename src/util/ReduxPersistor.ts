@@ -2,7 +2,8 @@ import {IPersistor, PersistorKey} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 import { log } from '../util/log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseMapSeries } from './bluebird-migration-helpers.local';
 import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any, hive: string) {
@@ -71,7 +72,7 @@ class ReduxPersistor<T> {
             ({ key: kv.key, value: this.deserialize(kv.value) }))
         : persistor.getAllKeys()
           .then(keys =>
-            Promise.map(keys, key => persistor.getItem(key)
+            promiseMap(keys, key => persistor.getItem(key)
               .then(value => ({ key, value: this.deserialize(value) }))
               .catch(err => {
                 if (err.name === 'NotFoundError') {
@@ -192,14 +193,12 @@ class ReduxPersistor<T> {
         const oldkeys = Object.keys(oldState);
         const newkeys = Object.keys(newState);
 
-        return Promise.mapSeries(oldkeys,
-                                 key => (newState[key] === undefined)
+        return promiseMapSeries(oldkeys, key => (newState[key] === undefined)
               // keys that exist in oldState but not newState
                                    ? this.remove(persistor, [].concat(statePath, key), oldState[key])
               // keys that exist in both
                                    : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
-          .then(() => Promise.mapSeries(newkeys,
-                                        key => ((oldState[key] === undefined) && (newState[key] !== undefined))
+          .then(() => promiseMapSeries(newkeys, key => ((oldState[key] === undefined) && (newState[key] !== undefined))
               // keys that exist in newState but not oldState
                                           ? this.add(persistor, [].concat(statePath, key), newState[key])
               // keys that exist in both - already handled above
@@ -217,7 +216,7 @@ class ReduxPersistor<T> {
 
   private remove(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
     return this.isObject(state)
-      ? Promise.mapSeries(Object.keys(state), key =>
+      ? promiseMapSeries(Object.keys(state), key =>
         this.remove(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.removeItem(statePath);
@@ -228,7 +227,7 @@ class ReduxPersistor<T> {
       return Promise.resolve();
     }
     return this.isObject(state)
-      ? Promise.mapSeries(Object.keys(state), key =>
+      ? promiseMapSeries(Object.keys(state), key =>
         this.add(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));

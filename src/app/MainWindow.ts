@@ -7,12 +7,12 @@ import { terminate } from '../util/errorHandling';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
 import opn from '../util/opn';
-import { downloadPath } from '../util/selectors';
+import { downloadPath } from '../extensions/download_management/selectors';
 import * as storeHelperT from '../util/storeHelper';
 import { parseBool, truthy } from '../util/util';
 import { closeAllViews } from '../util/webview';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ipcMain, screen, webContents } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';

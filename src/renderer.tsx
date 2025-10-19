@@ -81,7 +81,6 @@ import MainWindow from './views/MainWindow';
 
 import * as remote from '@electron/remote';
 import * as msgpackT from '@msgpack/msgpack';
-import Promise from 'bluebird';
 import { ipcRenderer, webFrame } from 'electron';
 import { forwardToMain, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
@@ -111,6 +110,7 @@ import presetManager from './util/PresetManager';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
+import { promiseMap } from './util/bluebird-migration-helpers.local';
 
 log('debug', 'renderer process started', { pid: process['pid'] });
 
@@ -210,11 +210,7 @@ if (process.platform === 'win32') {
 }
 
 // allow promises to be cancelled.
-Promise.config({
-  cancellation: true,
-  // long stack traces would be sooo nice but the performance cost in some places is ridiculous
-  longStackTraces: false,
-});
+// TODO: Remove Promise.config - native Promise does not support this
 
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
@@ -702,7 +698,7 @@ function renderer(extensions: ExtensionManager) {
           path: ext.path,
         }));
 
-      return Promise.map(dynamicExts, ext => {
+      return promiseMap(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');
         return fs.readFile(filePath, { encoding: 'utf-8' })
           .then((fileData: string) => {

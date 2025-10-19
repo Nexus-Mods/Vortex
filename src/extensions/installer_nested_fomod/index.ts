@@ -12,7 +12,7 @@ import {
 } from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 function testSupported(files: string[]): Promise<ISupportedResult> {

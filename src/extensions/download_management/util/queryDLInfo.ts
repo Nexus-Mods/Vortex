@@ -1,4 +1,3 @@
-import Bluebird from 'bluebird';
 import * as path from 'path';
 import { Action } from 'redux';
 import { IExtensionApi, ILookupResult } from '../../../types/IExtensionContext';
@@ -9,7 +8,7 @@ import * as selectors from '../../gamemode_management/selectors';
 import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
 import NXMUrl from '../../nexus_integration/NXMUrl';
 import { convertNXMIdReverse } from '../../nexus_integration/util/convertGameId';
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 import { setDownloadModInfo } from '../actions/state';
 import { downloadPathForGame } from '../selectors';
 
@@ -103,7 +102,7 @@ class MetadataLookupQueue {
 }
 
 function queryInfoInternal(api: IExtensionApi, dlId: string,
-                           ignoreCache: boolean): Bluebird<void> {
+                           ignoreCache: boolean): Promise<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
@@ -113,12 +112,12 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
   const dl = state.persistent.downloads.files[dlId];
   if (dl === undefined) {
     log('warn', 'download no longer exists', dlId);
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 
   if (!dl.fileMD5) {
     log('debug', 'skipping metadata lookup - no MD5 hash available', { dlId });
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 
   const gameMode = activeGameId(state);
@@ -126,7 +125,7 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
   const downloadPath = downloadPathForGame(state, gameId);
   if ((downloadPath === undefined) || (dl.localPath === undefined)) {
     // almost certainly dl.localPath is undefined with a bugged download
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
   log('info', 'lookup mod meta info', { dlId, md5: dl.fileMD5 });
   // note: this may happen in addition to and in parallel to a separate mod meta lookup
@@ -156,7 +155,7 @@ function queryInfoInternal(api: IExtensionApi, dlId: string,
     }, timeoutMs);
   });
 
-  return Bluebird.resolve(Promise.race([lookupPromise, timeoutPromise]))
+  return Promise.resolve(Promise.race([lookupPromise, timeoutPromise]))
     .then((modInfo: ILookupResult[]) => {
       const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
       const timeLookupFinished = Date.now();

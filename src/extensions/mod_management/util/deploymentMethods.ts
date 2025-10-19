@@ -2,7 +2,7 @@ import { IState } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 import { log } from '../../../util/log';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';

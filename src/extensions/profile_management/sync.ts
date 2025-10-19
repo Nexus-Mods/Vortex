@@ -3,16 +3,17 @@ import * as fs from '../../util/fs';
 import {copyFileAtomic} from '../../util/fsAtomic';
 import {log} from '../../util/log';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 export function syncToProfile(
   profilePath: string, sourceFiles: string[],
-  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Bluebird<void> {
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Promise<void> {
   log('debug', 'sync to profile', { profilePath, sourceFiles });
   return fs.ensureDirAsync(profilePath)
     .then(() =>
-      Bluebird.map(sourceFiles, (filePath: string) => {
+      // Replace Bluebird.map with Promise.all and map
+      Promise.all(sourceFiles.map((filePath: string) => {
         const destPath = path.join(profilePath, path.basename(filePath));
         return copyFileAtomic(filePath, destPath)
           .catch((err) => {
@@ -30,19 +31,22 @@ export function syncToProfile(
               onError('failed to sync to profile: ' + filePath, err);
             }
           });
-      }))
+      })))
     .then(() => {
       log('debug', 'sync to profile complete');
       return undefined;
     })
-    .catch(err => Bluebird.reject(new Error('failed to sync to profile: ' + err.message)));
+    .catch(err => 
+      // Replace Bluebird.reject with Promise.reject
+      Promise.reject(new Error('failed to sync to profile: ' + err.message)));
 }
 
 export function syncFromProfile(
   profilePath: string, sourceFiles: string[],
-  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Bluebird<void> {
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Promise<void> {
   log('debug', 'sync from profile', { profilePath, sourceFiles });
-  return Bluebird.map(sourceFiles, (filePath: string) => {
+  // Replace Bluebird.map with Promise.all and map
+  return Promise.all(sourceFiles.map((filePath: string) => {
     const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
       .catch((err) => {
@@ -60,10 +64,11 @@ export function syncFromProfile(
           onError('failed to sync from profile', err);
         }
       });
-  }).then(() => {
+  })).then(() => {
     log('debug', 'sync from profile complete');
     return undefined;
   })
     .catch(err =>
-      Bluebird.reject(new Error('failed from sync to profile: ' + err.message)));
+      // Replace Bluebird.reject with Promise.reject
+      Promise.reject(new Error('failed from sync to profile: ' + err.message)));
 }

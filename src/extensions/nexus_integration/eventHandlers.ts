@@ -9,7 +9,10 @@ import { log } from '../../util/log';
 import { calcDuration, showError } from '../../util/message';
 import { upload } from '../../util/network';
 import opn from '../../util/opn';
-import { activeGameId, currentGame, downloadPathForGame, gameById } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { gameById } from '../gamemode_management/selectors';
+import { currentGame } from '../gamemode_management/selectors';
+import { downloadPathForGame } from '../download_management/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, toPromise, truthy } from '../../util/util';
 
@@ -36,7 +39,7 @@ import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
                 IIssue, IModInfo, IRating, IRevision, IUserInfo, NexusError,
                 ProtocolError,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import * as semver from 'semver';
 import { format as urlFormat } from 'url';
@@ -74,7 +77,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
         return Promise.resolve();
       }
 
-      return Promise.map(changedDownloadIds, dlId => {
+      return promiseMap(changedDownloadIds, dlId => {
         const download = newDownloadTable[dlId];
         const modId = getSafe(download, [...IDS_PATH, 'modId'], undefined);
         const fileId = getSafe(download, [...IDS_PATH, 'fileId'], undefined);
@@ -195,7 +198,7 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
         && (newModTable[gameMode] !== undefined)) {
       // for any mod where modid or download section have been changed,
       // retrieve the new mod info
-      return Promise.map(Object.keys(newModTable[gameMode]), modId => {
+      return promiseMap(Object.keys(newModTable[gameMode]), modId => {
         const modSource =
           getSafe(newModTable, [gameMode, modId, 'attributes', 'source'], undefined);
         if (modSource !== 'nexus') {
@@ -401,13 +404,15 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
       : Promise.reject(new ProcessCanceled('Game not found')); // Can't download an update for a game extension that doesn't exist
 
     downloadFunc()
-      .catch(AlreadyDownloaded, err => {
-        const state = api.getState();
-        const downloads = state.persistent.downloads.files;
-        const dlId = Object.keys(downloads).find(iter =>
-          downloads[iter].localPath === err.fileName);
-        return dlId;
-      })
+      .catch(err => err instanceof AlreadyDownloaded ? (
+        (() => {
+          const state = api.getState();
+          const downloads = state.persistent.downloads.files;
+          const dlId = Object.keys(downloads).find(iter =>
+            downloads[iter].localPath === err.fileName);
+          return Promise.resolve(dlId);
+        })()
+      ) : Promise.reject(err))
       .then(downloadId => {
         const state = api.getState();
         const downloads = state.persistent.downloads.files;
@@ -420,17 +425,18 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
           api.events.emit('start-install-download', downloadId);
         }
       })
-      .catch(DownloadIsHTML, err => undefined)
-      .catch(DataInvalid, () => {
+      .catch(err => { if (err instanceof DownloadIsHTML) { return Promise.resolve(undefined); } else { return Promise.reject(err); }})
+      .catch(err => { if (err instanceof DataInvalid) { 
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
-      })
-      .catch(ProcessCanceled, () => {
+        return Promise.resolve();
+      } else { return Promise.reject(err); }})
+      .catch(err => { if (err instanceof ProcessCanceled) { 
         const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), 'mods', modId].join('/');
         const params = `?tab=files&file_id=${fileId}&nmm=1`;
         return opn(url + params)
           .catch(() => undefined);
-      })
+      } else { return Promise.reject(err); }})
       .catch(err => {
         api.showErrorNotification('Failed to start download', err);
       });
@@ -452,21 +458,21 @@ export function onNexusDownload(api: IExtensionApi,
           return Promise.reject(new ProcessCanceled('Game not found'));
         }
       })
-      .catch(UserCanceled, () => {
+      .catch(err => { if (err instanceof UserCanceled) { 
         return Promise.resolve(undefined);
-      })
-      .catch(ProcessCanceled, err => {
+      } else { return Promise.reject(err); }})
+      .catch(err => { if (err instanceof ProcessCanceled) { 
         api.sendNotification({
           type: 'error',
           message: err.message,
         });
         return Promise.resolve(undefined);
-      })
-      .catch(AlreadyDownloaded, err => {
+      } else { return Promise.reject(err); }})
+      .catch(err => { if (err instanceof AlreadyDownloaded) { 
         const { files } = api.getState().persistent.downloads;
         const dlId = Object.keys(files).find(iter => files[iter].localPath === err.fileName);
         return Promise.resolve(dlId);
-      })
+      } else { return Promise.reject(err); }})
       .catch(err => {
         api.showErrorNotification('Nexus download failed', err);
         return Promise.resolve(undefined);
@@ -599,7 +605,7 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
     api.showErrorNotification('Collection not found, it might have been removed.', err, {
       allowReport: false,
     });
-  } else if ((['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code']))
+  } else if (['ENOENT', 'ECONNRESET', 'ECONNABORTED', 'ESOCKETTIMEDOUT'].includes(err['code'])
       || (err instanceof ProcessCanceled)) {
     api.showErrorNotification('Rating collection failed, please try again later', err, {
       allowReport: false,
@@ -974,12 +980,13 @@ export function onCheckModsVersion(api: IExtensionApi,
           }
           return Promise.resolve(modIds);
         })
-        .catch(NexusError, err => {
+        .catch(err => err instanceof NexusError ? (
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
-          });
-          return Promise.resolve([]);
-        })
+          }),
+          Promise.reject(err)) : Promise.reject(err))
+          .then(() => Promise.resolve([]))
+        .catch(() => Promise.resolve([]))
         .catch(TimeoutError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
@@ -992,17 +999,18 @@ export function onCheckModsVersion(api: IExtensionApi,
           });
           return Promise.resolve([]);
         })
-        .catch(ProcessCanceled, err => {
+        .catch(err => err instanceof ProcessCanceled ? (
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
-          });
-          return Promise.resolve([]);
-        })
+          }),
+          Promise.reject(err)) : Promise.reject(err))
+          .then(() => Promise.resolve([]))
+        .catch(() => Promise.resolve([]))
         .catch(err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err);
           return Promise.resolve([]);
         })
-        .then((modIds: string[]) => Promise.delay(2000 - (Date.now() - start))
+        .then((modIds: string[]) => promiseDelay(2000 - (Date.now() - start))
           .then(() => modIds))
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));

@@ -6,7 +6,8 @@ import { ISupportedInstaller } from './types/IModInstaller';
 import { ProgressDelegate } from './types/InstallFunc';
 import { ISupportedResult } from './types/TestSupported';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseReduce } from '../../util/bluebird-migration-helpers.local';
 import * as path from 'path';
 // Import xxhash-addon with fallback for when native module is not available
 let XXHash64: any;
@@ -84,8 +85,10 @@ function makeListInstaller(extractList: IFileListItem[],
                 progressDelegate: ProgressDelegate) => {
         let prog = 0;
         // build lookup table of the existing files on disk md5 -> source path
-        return Promise.reduce(files.filter(relPath => !relPath.endsWith(path.sep)),
-                              (prev, relPath, idx, length) => {
+        const filteredFiles = files.filter(relPath => !relPath.endsWith(path.sep));
+        const length = filteredFiles.length;
+        return promiseReduce(filteredFiles.map((relPath, idx) => ({ relPath, idx })),
+                              (prev, { relPath, idx }) => {
                                 return lookupFunc(path.join(basePath, relPath))
                                   .then(checksum => {
                                     if (Math.floor((idx * 10) / length) > prog) {

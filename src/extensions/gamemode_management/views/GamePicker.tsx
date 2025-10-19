@@ -11,7 +11,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import opn from '../../../util/opn';
 import { isMacOS } from '../../../util/platform';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { MACOS_GAME_FIXES } from '../../../util/macOSGameCompatibility';
@@ -33,7 +33,7 @@ import InstalledOnlyButton from './InstalledOnlyButton';
 import ShowHiddenButton from './ShowHiddenButton';
 
 import { IGameListEntry } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ratio } from 'fuzzball';
 import update from 'immutability-helper';
 import memoizeOne from 'memoize-one';

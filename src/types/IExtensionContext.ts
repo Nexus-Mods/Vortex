@@ -30,8 +30,7 @@ import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
-import { ICollectionsGameSupportEntry } from './collections/api';
-
+// Import specific types instead of the entire api module to avoid circular dependencies
 import { DialogActions, IDialogContent, IModReference, IModRepoId, IOverlayOptions, IPosition } from './api';
 import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
@@ -44,7 +43,10 @@ import { IDiscoveryResult, IMod, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
-import Promise from 'bluebird';
+// Import collections types directly to avoid circular dependencies
+import { ICollectionsGameSupportEntry } from './collections/api';
+
+// TODO: Remove Bluebird import - using native Promise;
 import { IHashResult, ILookupResult, IModInfo, IQuery, IReference, IServer } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -405,6 +407,7 @@ export interface IApiFuncOptions {
    * minimum number of arguments the caller has to pass to a api extension function
    */
   minArguments?: number;
+
 }
 
 export interface IExtensionApiExtension extends INexusAPIExtension {

@@ -1,7 +1,7 @@
 import { log } from '../util/log';
 import IconBase from './Icon.base';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import * as fs from 'fs';
@@ -37,8 +37,13 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
     container.appendChild(newset);
   }
   log('info', 'read font', setPath);
-  return new Promise((resolve, reject) => {
+  
+  let cancelled = false;
+  const promise = new Promise((resolve, reject) => {
     fs.readFile(setPath, {}, (err, data) => {
+      if (cancelled) {
+        return;
+      }
       if (err !== null) {
         return reject(err);
       }
@@ -46,6 +51,9 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
     });
   })
     .then(data => {
+      if (cancelled) {
+        return Promise.reject(new Error('Cancelled'));
+      }
       newset.innerHTML = data.toString();
       const newSymbols = newset.querySelectorAll('symbol');
       const newSet = new Set<string>();
@@ -53,13 +61,18 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
         newSet.add(ele.id);
       });
       return newSet;
-    });
+    }) as Promise<Set<string>>;
+    
+  return promise;
 }
 
 const loadingIconSets = new Set<string>();
 
+// Define a type for cancellable promises
+type CancellablePromise<T> = Promise<T> & { cancel?: () => void };
+
 class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
-  private mLoadPromise: Promise<any>;
+  private mLoadPromise: CancellablePromise<any>;
   private mMounted: boolean = false;
 
   constructor(props: IIconProps) {
@@ -76,7 +89,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
 
   public componentWillUnmount() {
     this.mMounted = false;
-    if (this.mLoadPromise !== undefined) {
+    if (this.mLoadPromise !== undefined && typeof this.mLoadPromise.cancel === 'function') {
       this.mLoadPromise.cancel();
     }
   }
@@ -85,7 +98,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
     return <IconBase {...this.props} getSet={this.loadSet} />;
   }
 
-  private loadSet = (set: string): Promise<Set<string>> => {
+  private loadSet = (set: string): CancellablePromise<Set<string>> => {
     const { sets } = this.state;
     if ((sets[set] === undefined) && !loadingIconSets.has(set)) {
       { // mark the set as being loaded
@@ -108,7 +121,9 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         newSymbols.forEach(ele => {
           newSet.add(ele.id);
         });
-        this.mLoadPromise = Promise.resolve(newSet);
+        this.mLoadPromise = Promise.resolve(newSet) as CancellablePromise<any>;
+        // Add a no-op cancel function for resolved promises
+        this.mLoadPromise.cancel = () => {};
       } else {
         // make sure that no other icon instance tries to render this icon
         const fontPath = path.resolve(getVortexPath('assets'), 'fonts', set + '.svg');
@@ -126,9 +141,11 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
           this.setState(update(this.state, { sets: { $set: copy } }));
         }
         return newSet;
-      });
+      }) as CancellablePromise<Set<string>>;
     } else {
-      return Promise.resolve(sets[set] || null);
+      const result = Promise.resolve(sets[set] || null) as CancellablePromise<Set<string>>;
+      result.cancel = () => {};
+      return result;
     }
   }
 }

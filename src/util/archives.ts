@@ -1,6 +1,6 @@
 import { IArchiveHandler } from '../types/IExtensionContext';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * wrapper around an format-specific archive handler

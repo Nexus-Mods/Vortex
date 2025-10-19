@@ -1,7 +1,7 @@
 import { IChunk } from './IChunk';
 import { IDownloadOptions } from './IDownload';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 export interface IDownloadJob extends IChunk {
   state: 'init' | 'running' | 'paused' | 'finished';

@@ -4,7 +4,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { makeQueue } from '../../util/util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { dialog as dialogIn } from 'electron';
 import * as fsFast from 'fs-extra';
 import * as path from 'path';
@@ -79,7 +79,7 @@ class FileAssembler {
     // then open it again
     return this.mQueue(() =>
       closeFD()
-        .catch({ code: 'EBADF' }, () => null)
+        .catch(err => { if (err.code === 'EBADF') { return Promise.resolve(null); } else { return Promise.reject(err); }})
         .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
         .then(() => fs.renameAsync(this.mFileName, resolved))
         .then(() => fs.openAsync(resolved, 'r+'))
@@ -122,9 +122,9 @@ class FileAssembler {
             this.mLastFlushedTime = now;
             synced = true;
             return fs.fsyncAsync(this.mFD)
-              .catch({ code: 'EBADF' }, () => {
+              .catch(err => { if (err.code === 'EBADF') {
               // if we log this we may be generating thousands of log messages
-              })
+              return Promise.resolve(); } else { return Promise.reject(err); }})
               .then(() => bytesWritten);
           } else {
             return Promise.resolve(bytesWritten);
@@ -133,8 +133,8 @@ class FileAssembler {
         .then((bytesWritten: number) => (bytesWritten !== data.length)
           ? Promise.reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
           : Promise.resolve(synced))
-        .catch({ code: 'ENOSPC' }, () => {
-          (dialog.showMessageBoxSync(getVisibleWindow(), {
+        .catch(err => { if (err.code === 'ENOSPC') {
+          return (dialog.showMessageBoxSync(getVisibleWindow(), {
             type: 'warning',
             title: 'Disk is full',
             message: 'Download can\'t continue because disk is full, '
@@ -145,7 +145,7 @@ class FileAssembler {
           }) === 1)
             ? this.addChunk(offset, data)
             : Promise.reject(new UserCanceled());
-        })
+        } else { return Promise.reject(err); }})
     , false);
   }
 
@@ -156,11 +156,11 @@ class FileAssembler {
         this.mFD = undefined;
         return fs.fsyncAsync(fd)
           .then(() => fs.closeAsync(fd))
-          .catch({ code: 'EBADF' }, () => {
+          .catch(err => { if (err.code === 'EBADF') {
             log('warn', 'failed to sync or close file', this.mFileName);
             return Promise.resolve();
-          })
-          .catch({ code: 'ENOENT' }, () => Promise.resolve());
+          } else { return Promise.reject(err); }})
+          .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve(); } else { return Promise.reject(err); }});
       } else {
         return Promise.resolve();
       }

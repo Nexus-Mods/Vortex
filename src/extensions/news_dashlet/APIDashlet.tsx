@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import bbcode, { stripBBCode } from '../../util/bbcode';
 import { MainContext } from '../../views/MainWindow';
-import { activeGameId } from '../profile_management/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 import BaseDashlet from './BaseDashlet';
 import { MAX_SUMMARY_LENGTH } from './constants';
 import { IExtra, IListItem, IModListItem } from './types';

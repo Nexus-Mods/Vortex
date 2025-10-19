@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 
 const debugMissingIcons = process.env.NODE_ENV === 'development';

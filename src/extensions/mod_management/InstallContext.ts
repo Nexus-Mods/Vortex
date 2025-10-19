@@ -25,8 +25,9 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import { IMod, ModState } from './types/IMod';
 import getModName from './util/modName';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
+import { promiseDelay } from '../../util/promise-helpers';
 
 class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
@@ -152,7 +153,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification('install_' + this.mIndicatorId);
     this.mStopActivity(`installing_${this.mIndicatorId}`);
 
-    Promise.delay(50)
+    promiseDelay(50)
       .then(() => {
         if (!this.mDidReportError) {
           this.mDidReportError = true;

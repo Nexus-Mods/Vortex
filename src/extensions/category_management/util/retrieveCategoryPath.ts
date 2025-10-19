@@ -1,5 +1,5 @@
 import {IState} from '../../../types/IState';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { ICategoryDictionary } from '../types/ICategoryDictionary';

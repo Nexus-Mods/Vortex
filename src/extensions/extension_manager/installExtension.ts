@@ -15,7 +15,8 @@ import { countryExists, languageExists } from '../settings_interface/languagemap
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo, readExtensionsSync } from './util';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseFilter, promiseMap } from '../../util/promise-helpers';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as vortexRunT from 'vortex-run';
@@ -414,9 +415,9 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
     const state: IState = api.store.getState();
 
     return Promise.resolve(
-      Bluebird.map(handler.dependencies, (depId: string) => {
+      Promise.all(handler.dependencies.map((depId: string) => {
         if (state.session.extensions.installed[depId] !== undefined) {
-          return;
+          return Promise.resolve();
         }
         const ext = state.session.extensions.available.find(iter =>
           (!iter.type && ((iter.name === depId) || (iter.id === depId))));
@@ -426,7 +427,7 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
         } else {
           return Promise.resolve();
         }
-      }).then(() => undefined),
+      })).then(() => undefined),
     );
   } catch (err) {
     // TODO: can't check for dependencies if the extension is already loaded
@@ -457,10 +458,10 @@ function sanitize(input: string): string {
 function flattenNestedRoot(root: string): Promise<void> {
   return Promise.resolve(fs.readdirAsync(root)
     .then((entries: string[]) =>
-      Bluebird.map(entries, (name: string) =>
+      Promise.all(entries.map((name: string) =>
         fs.statAsync(path.join(root, name))
           .then(stat => ({ name, stat }))
-          .catch(() => null)))
+          .catch(() => null))))
     .then((items: Array<{ name: string, stat: any } | null>) =>
       (items || []).filter((it): it is { name: string, stat: any } => it !== null))
     .then((items) => {
@@ -472,8 +473,9 @@ function flattenNestedRoot(root: string): Promise<void> {
       if ((files.length === 0) && (dirs.length === 1)) {
         const inner = path.join(root, dirs[0].name);
         return fs.readdirAsync(inner)
-          .then(innerEntries => Bluebird.map(innerEntries, (innerName: string) =>
-            fs.renameAsync(path.join(inner, innerName), path.join(root, innerName))))
+          .then(innerEntries => 
+            Promise.all(innerEntries.map((innerName: string) =>
+              fs.renameAsync(path.join(inner, innerName), path.join(root, innerName)))))
           .then(() => fs.removeAsync(inner))
           // In case there are multiple nested levels, recurse until flattened
           .then(() => flattenNestedRoot(root));
@@ -1134,10 +1136,10 @@ async function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<v
  * "variables.scss", "style.scss" or "fonts.scss"
  */
 function validateTheme(extPath: string): Promise<void> {
-  return Promise.resolve(fs.readdirAsync(extPath)
-    .filter((fileName: string) =>
+  return Promise.resolve(fs.readdirAsync(extPath))
+    .then(fileNames => promiseFilter(fileNames, (fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
-        .then(stats => stats.isDirectory()))
+        .then(stats => stats.isDirectory())))
     .then(dirNames => {
       if (dirNames.length === 0) {
         return Promise.reject(
@@ -1166,7 +1168,8 @@ function validateTheme(extPath: string): Promise<void> {
       // Convert Bluebird promise to standard Promise
       return Promise.all(validationPromises)
         .then(() => undefined);
-    }));
+    })
+    .then(() => undefined);
 }
 
 function isLocaleCode(input: string): boolean {
@@ -1184,12 +1187,12 @@ function isLocaleCode(input: string): boolean {
  */
 function validateTranslation(extPath: string): Promise<void> {
   return Promise.resolve(
-    fs.readdirAsync(extPath)
-      .filter((fileName: string) => isLocaleCode(fileName))
-      .filter((fileName: string) =>
-        fs.statAsync(path.join(extPath, fileName))
-          .then(stats => stats.isDirectory()))
-      .then(dirNames => {
+    fs.readdirAsync(extPath))
+    .then(fileNames => promiseFilter(fileNames, (fileName: string) => Promise.resolve(isLocaleCode(fileName))))
+    .then(filteredFileNames => promiseFilter(filteredFileNames, (fileName: string) =>
+      fs.statAsync(path.join(extPath, fileName))
+        .then(stats => stats.isDirectory())))
+    .then(dirNames => {
         if (dirNames.length !== 1) {
           return Promise.reject(
             new DataInvalid('Expected exactly one language subdirectory'));
@@ -1215,7 +1218,7 @@ function validateTranslation(extPath: string): Promise<void> {
           `validate translation directory ${dirNames[0]} for ${extPath}`
         ).then(() => undefined); // Convert to standard Promise
       })
-  );
+    .then(() => undefined);
 }
 
 /**
@@ -1810,9 +1813,8 @@ async function installExtension(api: IExtensionApi,
       if (type === 'translation') {
         log('debug', 'Processing translation extension', { destPath });
         return fs.readdirAsync(destPath)
-          .map((entry: string) => fs.statAsync(path.join(destPath, entry))
-            .then(stat => ({ name: entry, stat })))
-          .then(() => {
+          .then(entries => promiseMap(entries, (entry: string) => fs.statAsync(path.join(destPath, entry))
+            .then(stat => ({ name: entry, stat })))).then(() => {
             log('debug', 'Translation extension processing completed', { destPath });
             return undefined;
           });

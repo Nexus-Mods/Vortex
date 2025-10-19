@@ -6,7 +6,8 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseMap } from './promise-helpers';
 import { isMacOS } from './platform';
 import { log } from './log';
 import { resolveGameExecutable, GameExecutableOptions, ExecutableCandidate } from './executableResolver';
@@ -287,14 +288,14 @@ export function discoverMacOSGames(knownGames: IGame[],
                                    discoveredGames: {[id: string]: IDiscoveryResult},
                                    onDiscoveredGame: DiscoveredCB,
                                    onDiscoveredTool: DiscoveredToolCB,
-                                   onProgress?: (gameId: string, step: string, percent: number) => void): Bluebird<string[]> {
+                                   onProgress?: (gameId: string, step: string, percent: number) => void): Promise<string[]> {
   if (!isMacOS()) {
-    return Bluebird.resolve([]);
+    return Promise.resolve([]);
   }
 
   const discoveredGameIds: string[] = [];
   
-  return Bluebird.map(knownGames, async (game, gameIndex) => {
+  return promiseMap(knownGames, async (game) => {
     try {
       // Use macOS compatibility fixes to improve discovery accuracy
       const winExec = game.executable?.();
@@ -318,7 +319,7 @@ export function discoverMacOSGames(knownGames: IGame[],
           gameId: game.id, 
           step, 
           percent,
-          gameIndex: gameIndex + 1,
+          gameIndex: knownGames.indexOf(game) + 1,
           totalGames: knownGames.length
         });
       };
@@ -353,7 +354,7 @@ export function discoverMacOSGames(knownGames: IGame[],
     }
     
     return game.id;
-  }, { concurrency: 3 }) // Reduced concurrency to avoid overwhelming the system
+  })
   .then(() => discoveredGameIds);
 }
 

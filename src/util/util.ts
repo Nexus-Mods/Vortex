@@ -7,7 +7,8 @@ import getVortexPath from './getVortexPath';
 import { log } from './log';
 import { isWindows } from './platform';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseDelay } from './promise-helpers';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -153,7 +154,7 @@ export function restackErr(error: Error, stackErr: Error): Error {
 }
 
 interface IQueueItem {
-  func: () => Bluebird<any>;
+  func: () => Promise<any>;
   stackErr: Error;
   resolve: (value: any) => void;
   reject: (err: Error) => void;
@@ -181,12 +182,12 @@ export function makeQueue<T>() {
     }
   };
 
-  return (func: () => Bluebird<T>, tryOnly: boolean) => {
+  return (func: () => Promise<T>, tryOnly: boolean) => {
     const stackErr = new Error();
 
-    return new Bluebird<T>((resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
       if (tryOnly && (processing !== undefined)) {
-        return resolve();
+        return resolve(undefined);
       }
       pending.push({ func, stackErr, resolve, reject });
       if (processing === undefined) {
@@ -395,7 +396,7 @@ export function escapeRE(input: string): string {
 export interface ITimeoutOptions {
   cancel?: boolean;
   throw?: boolean;
-  queryContinue?: () => Bluebird<boolean>;
+  queryContinue?: () => Promise<boolean>;
 }
 
 /**
@@ -405,17 +406,17 @@ export interface ITimeoutOptions {
  * @param delayMS the time in milliseconds after which this should return
  * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Bluebird<T>,
+export function timeout<T>(prom: Promise<T>,
   delayMS: number,
   options?: ITimeoutOptions)
-  : Bluebird<T> {
+  : Promise<T> {
   let timedOut: boolean = false;
   let resolved: boolean = false;
 
   const doTimeout = () => {
     timedOut = true;
     if (options?.throw === true) {
-      return Bluebird.reject(new TimeoutError());
+      return Promise.reject(new TimeoutError());
     } else {
       return undefined;
     }
@@ -423,14 +424,14 @@ export function timeout<T>(prom: Bluebird<T>,
 
   const onTimeExpired = () => {
     if (resolved) {
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
     if (options?.queryContinue !== undefined) {
       return options?.queryContinue()
         .then(requestContinue => {
           if (requestContinue) {
             delayMS *= 2;
-            return Bluebird.delay(delayMS).then(onTimeExpired);
+            return promiseDelay(delayMS, undefined).then(onTimeExpired);
           } else {
             return doTimeout();
           }
@@ -440,23 +441,21 @@ export function timeout<T>(prom: Bluebird<T>,
     }
   };
 
-  return Bluebird.race<T>([prom, Bluebird.delay(delayMS).then(onTimeExpired)])
+  return Promise.race<T>([prom, promiseDelay(delayMS, undefined).then(onTimeExpired)])
     .finally(() => {
       resolved = true;
       if (timedOut && (options?.cancel === true)) {
-        prom.cancel();
+        // prom.cancel(); // Native Promise doesn't have cancel method
       }
     });
 }
 
 /**
  * wait for the specified number of milliseconds before resolving the promise.
- * Bluebird has this feature as Promise.delay but when using es6 default promises this can be used
+ * This replaces Promise.delay feature with a native Promise implementation.
  */
-export function delay(timeoutMS: number): Bluebird<void> {
-  return new Bluebird(resolve => {
-    setTimeout(resolve, timeoutMS);
-  });
+export function delay(timeoutMS: number): Promise<void> {
+  return promiseDelay(timeoutMS, undefined) as Promise<void>;
 }
 
 /**
@@ -663,8 +662,8 @@ function flattenInner(obj: any, key: string[],
   }, {});
 }
 
-export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
-  return new Bluebird((resolve, reject) => {
+export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
+  return new Promise((resolve, reject) => {
     const cb = (err: Error | number | string, res: ResT) => {
       if ((err !== null) && (err !== undefined)) {
         // Convert non-Error objects to Error instances
@@ -749,8 +748,8 @@ export function delayed(delayMS: number): Promise<void> {
 
 export function toBlue<T, ArgsT extends any[]>(
   func: (...args: ArgsT) => Promise<T>)
-  : (...args: ArgsT) => Bluebird<T> {
-  return (...args: ArgsT) => Bluebird.resolve(func(...args));
+  : (...args: ArgsT) => Promise<T> {
+  return (...args: ArgsT) => Promise.resolve(func(...args));
 }
 
 export function replaceRecursive(input: any, from: any, to: any) {
@@ -816,11 +815,11 @@ export function isFunction(functionToCheck) {
 export function wrapExtCBAsync<ArgT extends any[], ResT>(
   cb: (...args: ArgT) => PromiseLike<ResT>,
   extInfo?: { name: string, official: boolean })
-  : (...args: ArgT) => Bluebird<ResT> {
+  : (...args: ArgT) => Promise<ResT> {
 
-  return (...args: ArgT): Bluebird<ResT> => {
+  return (...args: ArgT): Promise<ResT> => {
     try {
-      return Bluebird.resolve(cb(...args))
+      return Promise.resolve(cb(...args))
         .catch?.(err => {
           if (typeof (err) === 'string') {
             err = new Error(err);
@@ -836,7 +835,7 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
       if ((extInfo !== undefined) && !extInfo.official) {
         err.extensionName = extInfo.name;
       }
-      return Bluebird.reject(err);
+      return Promise.reject(err);
     }
   };
 }

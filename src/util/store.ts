@@ -11,7 +11,7 @@ import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { dialog, ipcMain } from 'electron';
 import { forwardToRenderer } from 'electron-redux';
 import encode from 'encoding-down';

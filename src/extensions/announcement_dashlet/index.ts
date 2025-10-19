@@ -1,4 +1,4 @@
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -14,7 +14,7 @@ import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import opn from '../../util/opn';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId } from '../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../util/storeHelper';
 
 import sessionReducer from './reducers/announcements';
@@ -43,17 +43,17 @@ function readLocalSurveysFile() {
     .then(data => {
       try {
         const parsed: ISurveyInstance[] = JSON.parse(data);
-        return Bluebird.resolve(parsed);
+        return Promise.resolve(parsed);
       } catch (err) {
-        return Bluebird.reject(err);
+        return Promise.reject(err);
       }
     });
 }
 
-function getHTTPData<T>(link: string): Bluebird<T[]> {
+function getHTTPData<T>(link: string): Promise<T[]> {
   const sanitizedURL = url.parse(link);
   log('info', 'getHTTPData', sanitizedURL);
-  return new Bluebird((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     https.get(sanitizedURL.href, res => {
       res.setEncoding('utf-8');
       let output = '';
@@ -95,7 +95,7 @@ async function updateAnnouncements(store: ThunkStore<IState>) {
   } catch (err) {
     log('warn', 'failed to retrieve list of announcements', err);
   }
-  return Bluebird.resolve();
+  return Promise.resolve();
 }
 
 function updateSurveys(store: Redux.Store<IState>) {
@@ -103,7 +103,7 @@ function updateSurveys(store: Redux.Store<IState>) {
     ? readLocalSurveysFile()
     : getHTTPData<ISurveyInstance>(SURVEYS_LINK)).then((res) => {
     if (!Array.isArray(res)) {
-      return Bluebird.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
+      return Promise.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
     }
 
       // Ugly but needed.
@@ -115,7 +115,7 @@ function updateSurveys(store: Redux.Store<IState>) {
     }
 
     store.dispatch(setAvailableSurveys(validSurveys));
-    return Bluebird.resolve();
+    return Promise.resolve();
   })
     .catch(err => log('warn', 'failed to retrieve list of surveys', err));
 }

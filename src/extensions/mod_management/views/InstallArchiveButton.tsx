@@ -6,7 +6,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { batchDispatch } from '../../../util/util';
 
 import { setModAttribute } from '../../mod_management/actions/mods';

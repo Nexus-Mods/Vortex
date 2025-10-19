@@ -11,9 +11,9 @@ import { setINITweakEnabled } from '../mod_management/actions/mods';
 import { INI_TWEAKS_PATH } from '../mod_management/InstallManager';
 import { installPath } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
-import { activeGameId } from '../profile_management/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -130,7 +130,7 @@ const TweakListConnected = translate(['common'])(
 
 interface ITweakListWrapProps {
   modId: string;
-  getTweaks: (modsPath: string, mod: IMod) => Bluebird<string[]>;
+  getTweaks: (modsPath: string, mod: IMod) => Promise<string[]>;
 }
 
 function TweakListWrap(props: ITweakListWrapProps) {
@@ -157,11 +157,11 @@ function TweakListWrap(props: ITweakListWrapProps) {
 }
 
 const renderINITweaks = (() => {
-  const tweakLists: { [modId: string]: Bluebird<string[]> } = {};
+  const tweakLists: { [modId: string]: Promise<string[]> } = {};
 
   const getTweakList = (modsPath: string, mod: IMod) => {
     if (mod?.installationPath === undefined) {
-      return Bluebird.resolve([]);
+      return Promise.resolve([]);
     }
 
     if ((tweakLists[mod.id] === undefined)

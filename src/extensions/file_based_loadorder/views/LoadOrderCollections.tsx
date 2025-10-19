@@ -8,7 +8,8 @@ import { EmptyPlaceholder, FlexLayout, Icon } from '../../../controls/api';
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 
 import { IGameSpecificInterfaceProps } from '../types/collections';
 import { ILoadOrderEntry, LoadOrder } from '../types/types';
@@ -175,9 +176,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
 }
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state);
+  const profile = activeProfile(state);
   return {
-    gameId: selectors.activeGameId(state),
+    gameId: activeGameId(state),
     loadOrder: currentLoadOrderForProfile(state, profile.id),
     mods: currentGameMods(state),
     profile,

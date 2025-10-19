@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import _ from 'lodash';
 import Debouncer from '../../util/Debouncer';
 import { nativeImage } from 'electron';

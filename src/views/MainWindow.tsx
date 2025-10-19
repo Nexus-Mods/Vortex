@@ -37,7 +37,7 @@ import Settings from './Settings';
 import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
-import { profileById } from '../util/selectors';
+import { profileById } from '../extensions/profile_management/selectors';
 import { getGame } from '../util/api';
 
 import update from 'immutability-helper';
@@ -238,203 +238,110 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.secondaryPage !== nextProps.secondaryPage
       || this.props.activeProfileId !== nextProps.activeProfileId
       || this.props.nextProfileId !== nextProps.nextProfileId
-      || this.props.progressProfile !== nextProps.progressProfile
+      || this.props.customTitlebar !== nextProps.customTitlebar
+      || this.props.version !== nextProps.version
+      || this.props.updateChannel !== nextProps.updateChannel
       || this.props.userInfo !== nextProps.userInfo
-      || this.props.uiBlockers !== nextProps.uiBlockers
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       || this.state.focused !== nextState.focused
-      || this.state.menuOpen !== nextState.menuOpen
-    ;
+      || this.state.menuOpen !== nextState.menuOpen;
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    const page = newProps.objects.find(iter => iter.id === newProps.mainPage);
-    if ((page !== undefined) && !page.visible()) {
-      this.setMainPage('Dashboard', false);
+  public componentDidUpdate(prevProps: IProps, prevState: IMainWindowState) {
+    if ((prevProps.mainPage !== this.props.mainPage)
+        || (prevProps.secondaryPage !== this.props.secondaryPage)) {
+      this.updateState({
+        loadedPages: { $push: [this.props.mainPage] },
+      });
     }
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, customTitlebar, onHideDialog,
-      nextProfileId, uiBlockers, visibleDialog } = this.props;
-    const { focused, hidpi, menuOpen } = this.state;
+    const { t, visibleDialog, customTitlebar } = this.props;
+    const { focused } = this.state;
 
-    const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
-
-    const classes = [];
-    classes.push(hidpi ? 'hidpi' : 'lodpi');
-    classes.push(focused ? 'window-focused' : 'window-unfocused');
+    const classes = ['main-window'];
     if (customTitlebar) {
-      // a border around the window if the standard os frame is disabled.
-      // this is important to indicate to the user he can resize the window
-      // (even though it's not actually this frame that lets him do it)
-      classes.push('window-frame');
+      classes.push('custom-titlebar');
     }
-    if (menuOpen) {
-      classes.push('menu-open');
+    if (!focused) {
+      classes.push('blurred');
     }
-
-    if (startupSettings.disableGPU) {
-      classes.push('no-gpu-acceleration');
-    }
-
-    const uiBlocker = truthy(uiBlockers)
-      ? Object.keys(uiBlockers).find(() => true)
-      : undefined;
-
-    const contextValue = this.getChildContext();
 
     return (
-      <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
-        <MainContext.Provider value={contextValue}>
-          <MutexProvider value={this.mutexQueue}>
-            <div
-              key='main'
-              className={classes.join(' ')}
-            >
-              <div className='menu-layer' ref={this.setMenuLayer} />
-              <FlexLayout id='main-window-content' type='column'>
-                {this.renderToolbar(switchingProfile)}
-                {/* Show dragbar on macOS or when custom titlebar is enabled */}
-                {customTitlebar || isMacOS() ? <div className='dragbar' /> : null}
-                {switchingProfile ? this.renderWait() : this.renderBody()}
-              </FlexLayout>
-              <Dialog />
-              <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-              <OverlayContainer />
-              {customTitlebar ? <WindowControls /> : null}
-            </div>
-            {(uiBlocker !== undefined)
-              ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker])
-              : null}
-          </MutexProvider>
+      <div className={classes.join(' ')}>
+        <MainContext.Provider value={{
+          api: this.props.api,
+          menuLayer: this.menuLayer,
+          getModifiers: this.getModifiers,
+        }}>
+          {this.renderTitleBar()}
+          <FlexLayout type='column' className='main-window-content'>
+            <FlexLayout.Fixed className='main-window-header'>
+              {this.renderHeader()}
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex className='main-window-body'>
+              {this.renderBody()}
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed className='main-window-footer'>
+              <MainFooter slim={false} />
+            </FlexLayout.Fixed>
+          </FlexLayout>
+          <DialogContainer visibleDialog={visibleDialog} onHideDialog={this.props.onHideDialog} />
+          <DNDContainer />
+          <OverlayContainer />
+          {visibleDialog !== undefined ? <Dialog /> : null}
         </MainContext.Provider>
-      </React.Suspense>
-    );
-  }
-
-  private getModifiers = () => {
-    return this.modifiers;
-  }
-
-  private renderWait() {
-    const { t, onHideDialog, nextProfileId, profiles, progressProfile, visibleDialog } = this.props;
-    const progress = getSafe(progressProfile, ['deploying'], undefined);
-    const profile = nextProfileId !== undefined ? profiles[nextProfileId] : undefined;
-    const control = (progress !== undefined)
-      ? <ProgressBar labelLeft={progress.text} now={progress.percent} style={{ width: '50%' }} />
-      : <Spinner style={{ width: 64, height: 64 }} />;
-    return (
-      <div key='wait'>
-        <div className='center-content' style={{ flexDirection: 'column' }}>
-          <h4>{
-            t('Switching to Profile: {{name}}',
-              { replace: { name: profile?.name ?? t('None') } })
-          }</h4>
-          {control}
-        </div>
-        <Dialog />
-        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
   }
 
-  private renderBlocker(id: string, blocker: IUIBlocker) {
-    const { t } = this.props;
-    return (
-      <div className='ui-blocker'>
-        <Icon name={blocker.icon}/>
-        <div className='blocker-text'>{blocker.description}</div>
-        {blocker.mayCancel
-          ? (
-            <ReactButton data-id={id} onClick={this.unblock}>
-              {t('Cancel')}
-            </ReactButton>
-          )
-          : null}
-      </div>
-    );
-  }
-
-  private unblock = (evt: React.MouseEvent<any>) => {
-    const id = evt.currentTarget.getAttribute('data-id');
-    this.props.api.events.emit(`force-unblock-${id}`);
-    this.props.onUnblockUI(id);
-  }
-
-  private updateModifiers = (event: KeyboardEvent) => {
-    const newModifiers = {
-      alt: event.altKey,
-      ctrl: event.ctrlKey,
-      shift: event.shiftKey,
-    };
-    if (!_.isEqual(newModifiers, this.modifiers)) {
-      this.modifiers = newModifiers;
-    }
-  }
-
-  private updateState(spec: any) {
-    this.nextState = update(this.nextState, spec);
+  private updateState = (diff) => {
+    this.nextState = update(this.nextState, diff);
     this.setState(this.nextState);
   }
 
-  private renderToolbar(switchingProfile: boolean) {
-    const { t, customTitlebar, updateChannel, version } = this.props;
-    const parsedVersion = semver.parse(version);
-    const prerelease = parsedVersion?.prerelease[0] ?? 'stable';
-    const updateChannelClassName = 'toolbar-version-container toolbar-version-' + prerelease;
+  private getModifiers = (): IModifiers => {
+    return this.modifiers;
+  }
 
-    const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
-    if (switchingProfile) {
-      return (<div className={className}/>);
-    }
+  private updateModifiers = (evt: KeyboardEvent) => {
+    this.modifiers = {
+      ctrl: evt.ctrlKey,
+      shift: evt.shiftKey,
+      alt: evt.altKey,
+    };
+  }
+
+  private renderTitleBar(): JSX.Element {
+    const { customTitlebar, t } = this.props;
+    return customTitlebar ? (
+      <div className='window-titlebar'>
+        <div className='window-title'>{t('Vortex')}</div>
+        <WindowControls />
+      </div>
+    ) : null;
+  }
+
+  private renderHeader(): JSX.Element {
+    const { t, tabsMinimized } = this.props;
+    const { menuOpen } = this.state;
+
     return (
-      <FlexLayout.Fixed id='main-toolbar' className={className}>
-        <QuickLauncher t={t} />
-        <Banner group='main-toolbar' />
-        <DynDiv group='main-toolbar' />
-        <div className='flex-fill' />
-        <div className='main-toolbar-right'>          
-          
-          <div className='toolbar-version'>
-
-            {process.env.IS_PREVIEW_BUILD === 'true' ? <div className='toolbar-version-container toolbar-version-staging'>
-              <Icon name='conflict'></Icon>
-              <div className='toolbar-version-text'>Staging</div>
-            </div> : null}
-
-            {process.env.NODE_ENV === 'development' ? <div className='toolbar-version-container toolbar-version-dev'>
-              <Icon name='mods'></Icon>
-              <div className='toolbar-version-text'>Development</div>
-            </div> : null}
-
-            <div className={updateChannelClassName}>
-              { prerelease !== 'stable' ? <Icon name='highlight-lab'></Icon> : null }
-              <div className='toolbar-version-text'>{version}</div>
-            </div>            
-          </div>
-
-          <div className='application-icons-group'>
-            <IconBar
-              className='application-icons'
-              group='application-icons'
-              staticElements={this.applicationButtons}
-              t={t}
-            />          
-            <NotificationButton id='notification-button' hide={switchingProfile} />
-            <IconBar
-              id='global-icons'
-              className='global-icons'
-              group='global-icons'
-              staticElements={this.globalButtons}
-              orientation='vertical'
-              collapse
-              t={t}
-            />
-          </div>
+      <div>
+        <IconBar
+          id='main-buttons'
+          className='main-buttons'
+          group='main-toolbar'
+          staticElements={this.applicationButtons}
+          t={t}
+          collapse={tabsMinimized}
+        />
+        <div className='btn-group' style={{ float: 'right' }}>
+          <NotificationButton id='notification-button' hide={false} />
         </div>
-      </FlexLayout.Fixed>
+      </div>
     );
   }
 
@@ -475,261 +382,99 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       { title: undefined, key: 'dashboard' },
       { title: 'General', key: 'global' },
       { title: gameName, key: 'per-game' },
-      { title: 'About', key: 'support' },
     ];
 
     return (
-      <FlexLayout.Flex>
-        <FlexLayout type='row' style={{ overflow: 'hidden' }}>
-          <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
-            <div id='main-nav-container' ref={this.setSidebarRef}>
-              {pageGroups.map(this.renderPageGroup)}
-            </div>
-            <MainFooter slim={tabsMinimized} />
-            <Button
-              tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
-              id='btn-minimize-menu'
-              onClick={this.toggleMenu}
-              className='btn-menu-minimize'
-            >
-              <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
-            </Button>
-          </FlexLayout.Fixed>
-          <FlexLayout.Flex fill id='main-window-pane'>
-            <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              {pages}
-            </DNDContainer>
-          </FlexLayout.Flex>
-        </FlexLayout>
-      </FlexLayout.Flex>
+      <FlexLayout type='row'>
+        <FlexLayout.Fixed className={sbClass}>
+          <Nav bsStyle='pills' stacked={true} className='main-nav'>
+            {pageGroups.map(group => this.renderPageGroup(group.title, group.key, pages))}
+          </Nav>
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex>
+          <MainPageContainer pages={pages} />
+        </FlexLayout.Flex>
+      </FlexLayout>
     );
   }
 
-  private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
-    const { t, mainPage, objects, tabsMinimized } = this.props;
-    const pages = objects.filter(page => {
-      try {
-        return (page.group === key) && page.visible();
-      } catch (err) {
-        log('error', 'Failed to determine page visibility', { error: err.message, page: page.id });
-        return false;
-      }
-    });
-    if (key === 'global') {
-      pages.push(this.settingsPage);
-    }
+  private renderPageGroup(title: string, key: string, pages: JSX.Element[]): JSX.Element {
+    const { t } = this.props;
+    const groupPages = pages
+      .filter(page => page.props.group === key)
+      .sort((lhs, rhs) => lhs.props.priority - rhs.props.priority);
 
-    if (pages.length === 0) {
+    if (groupPages.length === 0) {
       return null;
     }
 
-    const showTitle = !tabsMinimized && (title !== undefined);
-
     return (
       <div key={key}>
-        {showTitle ? <p className='main-nav-group-title'>{t(title)}</p> : null}
-        <Nav
-          bsStyle='pills'
-          stacked
-          activeKey={mainPage}
-          className='main-nav-group'
-        >
-          {pages.map(this.renderPageButton)}
-        </Nav>
+        {title !== undefined ? <div className='nav-group-title'>{t(title)}</div> : null}
+        {groupPages}
       </div>
     );
   }
 
-  private setSidebarRef = ref => {
-    this.sidebarRef = ref;
-    if (this.sidebarRef !== null) {
-      this.sidebarRef.setAttribute('style',
-                                   'min-width: ' + ref.getBoundingClientRect().width + 'px');
-    }
-  }
+  private renderPage(page: IMainPage): JSX.Element {
+    const { mainPage, secondaryPage, t } = this.props;
+    const visible = (page.id === 'application_settings')
+      ? secondaryPage === 'Settings'
+      : page.title === mainPage;
 
-  private renderPageButton = (page: IMainPage, idx: number) => {
-    const { t, secondaryPage } = this.props;
-    return (
-      <NavItem
-        id={page.id}
-        className={secondaryPage === page.id ? 'secondary' : undefined}
-        key={page.id}
-        eventKey={page.id}
-        tooltip={t(page.title, { ns: page.namespace })}
-        placement='right'
-        onClick={this.handleClickPage}
-      >
-        <PageButton
-          t={this.props.t}
-          namespace={page.namespace}
-          page={page}
-        />
-      </NavItem>
-    );
-  }
-
-  private renderPage(page: IMainPage) {
-    const { mainPage, secondaryPage } = this.props;
-    const { loadedPages } = this.state;
-
-    if (loadedPages.indexOf(page.id) === -1) {
-      // don't render pages that have never been opened
+    // Only render visible pages
+    if (!visible) {
       return null;
     }
 
-    const active = [mainPage, secondaryPage].indexOf(page.id) !== -1;
-
     return (
-      <MainPageContainer
+      <PageButton
         key={page.id}
+        t={t}
         page={page}
-        active={active}
-        secondary={secondaryPage === page.id}
+        namespace={undefined}
       />
     );
   }
 
-  private setMenuLayer = (ref) => {
-    this.menuLayer = ref;
-
-    if (this.menuObserver !== undefined) {
-      this.menuObserver.disconnect();
-      this.menuObserver = undefined;
-    }
-
-    if (ref !== null) {
-      let hasChildren = this.menuLayer.children.length > 0;
-      this.menuObserver = new MutationObserver(() => {
-        if (this.menuLayer === null) {
-          // shouldn't get here but better make sure
-          return;
-        }
-        const newHasChildren = this.menuLayer.children.length > 0;
-        if (newHasChildren !== hasChildren) {
-          hasChildren = newHasChildren;
-          this.updateState({ menuOpen: { $set: hasChildren } });
-        }
-      });
-
-      this.menuObserver.observe(ref, { childList: true });
-    }
-  }
-
-  private handleClickPage = (evt: React.MouseEvent<any>) => {
-    if (this.props.mainPage !== evt.currentTarget.id) {
-      this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
-    } else {
-      // a second click on the same nav item is treated as a request to "reset"
-      // the page, as in: return it to its initial state (without canceling any operations).
-      // What that means for an individual page, whether it has an actual effect,
-      // is up to the individual page.
-      const page = this.props.objects.find(iter => iter.id === this.props.mainPage);
-      page?.onReset?.();
-    }
-  }
-
-  private setMainPage = (pageId: string, secondary: boolean) => {
-    // set the page as "loaded", set it as the shown page next frame.
-    // this way it gets rendered as hidden once and can then "transition"
-    // to visible
-    if (this.state.loadedPages.indexOf(pageId) === -1) {
-      this.updateState({
-        loadedPages: { $push: [pageId] },
-      });
-    }
-    setImmediate(() => {
-      if (secondary && (pageId === this.props.secondaryPage)) {
-        this.props.onSetOpenMainPage('', secondary);
-      } else {
-        this.props.onSetOpenMainPage(pageId, secondary);
-      }
-    });
-  }
-
-  private toggleMenu = () => {
-    const newMinimized = !this.props.tabsMinimized;
-    this.props.onSetTabsMinimized(newMinimized);
-    if (this.sidebarTimer !== undefined) {
-      clearTimeout(this.sidebarTimer);
-      this.sidebarTimer = undefined;
-    }
-    if (this.sidebarRef !== null) {
-      if (newMinimized) {
-        this.sidebarRef.setAttribute('style', '');
-      } else {
-        this.sidebarTimer = setTimeout(() => {
-          this.sidebarTimer = undefined;
-          this.sidebarRef?.setAttribute?.('style',
-                                          'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
-        }, 500);
-      }
-    }
+  private setMainPage = (page: string, secondary: boolean) => {
+    const { onSetOpenMainPage } = this.props;
+    onSetOpenMainPage(page, secondary);
   }
 }
 
-function trueFunc() {
-  return true;
-}
-
-function emptyFunc() {
-  return {};
-}
+const emptyArray = [];
+const emptyObject = {};
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
-    visibleDialog: state.session.base.visibleDialog || undefined,
+    tabsMinimized: state.settings.window.tabsMinimized,
+    visibleDialog: state.session.base.visibleDialog,
     mainPage: state.session.base.mainPage,
     secondaryPage: state.session.base.secondaryPage,
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
-    profiles: state.persistent.profiles,
-    progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
+    progressProfile: getSafe(state, ['session', 'base', 'progress', 'profile'], {}),
     customTitlebar: state.settings.window.customTitlebar,
+    version: getSafe(state, ['session', 'base', 'version'], '0.0.0'),
+    updateChannel: getSafe(state, ['settings', 'update', 'channel'], 'stable'),
     userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     notifications: state.session.notifications.notifications,
     uiBlockers: state.session.base.uiBlockers,
-    version: state.app.appVersion,
-    updateChannel: state.settings.update.channel,
+    profiles: state.persistent.profiles,
   };
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
-    onSetOpenMainPage:
-      (page: string, secondary: boolean) => dispatch(setOpenMainPage(page, secondary)),
+    onSetOpenMainPage: (page: string, secondary: boolean) =>
+      dispatch(setOpenMainPage(page, secondary)),
     onHideDialog: () => dispatch(setDialogVisible(undefined)),
     onUnblockUI: (id: string) => dispatch(clearUIBlocker(id)),
   };
 }
 
-function registerMainPage(
-  instanceGroup: undefined,
-  extInfo: Partial<IRegisteredExtension>,
-  icon: string,
-  title: string,
-  component: React.ComponentClass<any> | React.StatelessComponent<any>,
-  options: IMainPageOptions): IMainPage {
-  return {
-    id: options.id || title,
-    icon,
-    title,
-    component,
-    propsFunc: options.props || emptyFunc,
-    visible: options.visible || trueFunc,
-    group: options.group,
-    badge: options.badge,
-    activity: options.activity,
-    priority: options.priority !== undefined ? options.priority : 100,
-    onReset: options.onReset,
-    namespace: extInfo.namespace,
-  };
-}
-
 export default
-  extend(registerMainPage, undefined, true)(
-    connect(mapStateToProps, mapDispatchToProps)(
-      MainWindow),
-  ) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps, mapDispatchToProps)(
+    MainWindow as React.ComponentClass<IBaseProps>);

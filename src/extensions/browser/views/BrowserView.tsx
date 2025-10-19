@@ -13,7 +13,7 @@ import Notification from '../../../views/Notification';
 
 import { closeBrowser } from '../actions';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { clipboard } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';

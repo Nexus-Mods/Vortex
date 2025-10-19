@@ -19,7 +19,7 @@ import { log } from './log';
 import { flatten, nexusModsURL, setdefault, truthy } from './util';
 
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import ZipT = require('node-7z');
 import { addToArchive } from './archive';
 import * as os from 'os';
@@ -27,6 +27,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { file as tmpFile, tmpName } from 'tmp';
+import { promiseReduce } from './promise-helpers';
 
 import * as _ from 'lodash';
 import getVortexPath from './getVortexPath';
@@ -212,7 +213,7 @@ export function bundleAttachment(options?: IErrorOptions): Promise<string> {
     return Promise.resolve(undefined);
   }
 
-  return Promise.reduce(options.attachments, (accum: string[], iter: IAttachment) => {
+  return promiseReduce(options.attachments, (accum: string[], iter: IAttachment) => {
     if (iter.type === 'file') {
       return fs.statAsync(iter.data)
         .then(() => serializeAttachments(iter))

@@ -12,7 +12,8 @@ import renderModName from './util/modName';
 
 import { MERGED_PATH } from './modMerging';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach } from '../../util/bluebird-migration-helpers.local';
 import * as path from 'path';
 import { UserCanceled } from '../../util/api';
 
@@ -83,7 +84,7 @@ function deployMods(api: IExtensionApi,
       normalize = norm;
       return method.prepare(destinationPath, true, lastActivation, norm);
     })
-    .then(() => Promise.each(mods, (mod, idx, length) => {
+    .then(() => promiseEach(mods, (mod, idx, length) => {
       try {
         if (progressCB !== undefined) {
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
@@ -110,10 +111,11 @@ function deployMods(api: IExtensionApi,
       return method.activate(path.join(installationPath, mergePath),
                              mergePath, subDir(null), new Set<string>());
     })
-    .tapCatch(() => {
+    .catch((err) => {
       if (method.cancel !== undefined) {
         method.cancel(gameId, destinationPath, installationPath);
       }
+      return Promise.reject(err);
     })
     .then(() => {
       const cb = progressCB === undefined

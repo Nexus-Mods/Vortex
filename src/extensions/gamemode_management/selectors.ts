@@ -1,5 +1,5 @@
 import { IState } from '../../types/IState';
-import {activeGameId} from '../../util/selectors';
+import {activeGameId} from '../profile_management/activeGameId';
 import {getSafe} from '../../util/storeHelper';
 
 import {IDiscoveryResult} from './types/IDiscoveryResult';

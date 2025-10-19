@@ -1,5 +1,5 @@
-import Bluebird from 'bluebird';
-const Promise = Bluebird;
+// Use native Promise instead of Bluebird
+// const Promise = Bluebird;
 import { log } from './log';
 
 import * as path from 'path';
@@ -287,7 +287,7 @@ class GOGGalaxy implements IGameStore {
           return Promise.resolve([]);
         }
 
-        return Promise.map(gameIds, gameId => {
+        return promiseMap(gameIds, gameId => {
           return this.mDataPath.then(dataPath => {
             if (!dataPath) {
               return Promise.reject(new Error('GOG Galaxy data path not found'));

@@ -4,7 +4,7 @@ import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
-import { currentGame, currentGameDiscovery } from '../../../util/selectors';
+import { currentGame, currentGameDiscovery } from '../selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { setdefault } from '../../../util/util';
 

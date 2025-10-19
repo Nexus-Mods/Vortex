@@ -1,7 +1,7 @@
 import * as fs from '../../../util/fs';
 
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import ZipT = require('node-7z');
 import { addToArchive } from '../../../util/archive';
 import { tmpName } from 'tmp';

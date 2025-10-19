@@ -17,7 +17,8 @@ import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
-import * as selectors from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { downloadPath } from '../selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -34,7 +35,7 @@ import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import _ from 'lodash';
 import * as path from 'path';
@@ -691,10 +692,10 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: selectors.activeGameId(state),
+    gameMode: activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: selectors.downloadPath(state),
+    downloadPath: downloadPath(state),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
     maxBandwidth: state.settings.downloads.maxBandwidth,

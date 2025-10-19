@@ -3,11 +3,11 @@ import FlexLayout from '../../../controls/FlexLayout';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IGameStored } from '../../../types/IState';
 import { PureComponentEx } from '../../../util/ComponentEx';
-import * as selectors from '../../../util/selectors';
+import { gameName } from '../../gamemode_management/selectors';
 
 import { SITE_ID } from '../../gamemode_management/constants';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
 import * as React from 'react';
@@ -52,7 +52,7 @@ class DownloadGameList extends PureComponentEx<IDownloadGameListProps, {}> {
   private renderGame = (game: IGameStored) => {
     return (
       <MenuItem key={game.id} eventKey={game.id}>
-        {selectors.gameName(this.context.api.store.getState(), game.id)}
+        {gameName(this.context.api.store.getState(), game.id)}
       </MenuItem>
     );
   }
@@ -61,7 +61,7 @@ class DownloadGameList extends PureComponentEx<IDownloadGameListProps, {}> {
     const { t, currentGames } = this.props;
     const gameName = gameId === SITE_ID
       ? t(SITE_GAME_NAME)
-      : selectors.gameName(this.context.api.store.getState(), gameId);
+      : gameName(this.context.api.store.getState(), gameId);
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
         {gameName || gameId}

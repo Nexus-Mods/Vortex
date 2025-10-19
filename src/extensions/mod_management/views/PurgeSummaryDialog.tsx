@@ -1,6 +1,6 @@
 import Modal from '../../../controls/Modal';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { Button } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';

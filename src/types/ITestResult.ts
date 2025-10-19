@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 export type ProblemSeverity = 'warning' | 'error' | 'fatal';
 

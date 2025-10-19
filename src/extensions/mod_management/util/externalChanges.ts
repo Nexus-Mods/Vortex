@@ -4,7 +4,8 @@ import { IDeployedFile, IDeploymentMethod,
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
-import { activeGameId, activeProfile, profileById } from '../../../util/selectors';
+import { activeGameId, activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { profileById } from '../../../extensions/profile_management/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { setdefault, truthy } from '../../../util/util';
 
@@ -13,7 +14,8 @@ import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import { MERGED_PATH } from '../modMerging';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach, promiseMap, promiseMapSeries } from '../../../util/bluebird-migration-helpers.local';
 import * as path from 'path';
 
 /**
@@ -51,17 +53,14 @@ function applyFileActions(api: IExtensionApi,
   // thing in this case.
 
   // process the actions that the user selected in the dialog
-  return Promise.map(actionGroups['drop'] || [],
-      // delete the links the user wants to drop.
+  return promiseMap(actionGroups['drop'] || [], // delete the links the user wants to drop.
       (entry) => truthy(entry.filePath)
           ? fs.removeAsync(path.join(outputPath, entry.filePath))
           : Promise.reject(new Error('invalid file path')))
-    .then(() => Promise.map(actionGroups['delete'] || [],
-      entry => truthy(entry.filePath)
+    .then(() => promiseMap(actionGroups['delete'] || [], entry => truthy(entry.filePath)
           ? fs.removeAsync(path.join(sourcePath, entry.source, entry.filePath))
           : Promise.reject(new Error('invalid file path'))))
-    .then(() => Promise.map(actionGroups['import'] || [],
-      // copy the files the user wants to import
+    .then(() => promiseMap(actionGroups['import'] || [], // copy the files the user wants to import
       (entry) => {
         const source = path.join(sourcePath, entry.source, entry.filePath);
         const deployed = path.join(outputPath, entry.filePath);
@@ -72,7 +71,7 @@ function applyFileActions(api: IExtensionApi,
         // can't fail
         return fs.removeAsync(source)
           .then(() => fs.moveAsync(deployed, source, { overwrite: true }))
-          .catch({ code: 'ENOENT' }, (err: any) => log('warn', 'file disappeared', err.path));
+          .catch(err => { if (err.code === 'ENOENT') { log('warn', 'file disappeared', err.path); return Promise.resolve(); } else { return Promise.reject(err); }});
       }))
     .then(() => {
       // remove files that the user wants to restore from
@@ -188,7 +187,7 @@ function checkForExternalChanges(api: IExtensionApi,
   if (profile === undefined) {
     return Promise.reject(new ProcessCanceled('Profile no longer exists.'));
   }
-  return Promise.each(Object.keys(modPaths),
+  return promiseEach(Object.keys(modPaths),
     typeId => {
       log('debug', 'checking external changes',
         { modType: typeId, count: lastDeployment[typeId]?.length ?? 0 });
@@ -243,7 +242,7 @@ export function dealWithExternalChanges(api: IExtensionApi,
         return Promise.resolve(automaticActions);
       }
     })
-    .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
+    .then((fileActions: IFileEntry[]) => promiseMapSeries(Object.keys(lastDeployment),
       typeId => applyFileActions(api, profileId, stagingPath, modPaths[typeId],
         lastDeployment[typeId],
         fileActions.filter(action => action.modTypeId === typeId))

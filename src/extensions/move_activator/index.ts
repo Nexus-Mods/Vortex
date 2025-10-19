@@ -13,7 +13,7 @@ import { installPathForGame } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -245,7 +245,7 @@ class DeploymentMethod extends LinkingDeployment {
                      {
                        details: true,
                      })
-      .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
+      .then(() => promiseMap(links, entry => this.restoreLink(entry.filePath)));
   }
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
@@ -328,7 +328,7 @@ class DeploymentMethod extends LinkingDeployment {
     // if the sourcePath doesn't exist but a link placeholder, restore the link
     // first before creating it again
     return fs.statAsync(sourcePath)
-      .catch({ code: 'ENOENT' }, () => fs.statAsync(sourcePath + LNK_EXT)
+      .catch(err => { if (err.code === 'ENOENT') { return fs.statAsync(sourcePath + LNK_EXT); } else { return Promise.reject(err); }})
         .then(() => this.restoreLink(sourcePath + LNK_EXT)))
       .then(() => fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, { encoding: 'utf-8' }))
       .then(() => fs.statAsync(sourcePath).then(stat =>

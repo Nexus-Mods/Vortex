@@ -17,8 +17,8 @@ import makeThrottle from './util/throttle';
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
-import Bluebird from 'bluebird';
 import * as contentDisposition from 'content-disposition';
+import { promiseMapSeries, promiseReduce } from '../../util/bluebird-migration-helpers.local';
 import * as contentType from 'content-type';
 import * as http from 'http';
 import * as https from 'https';
@@ -106,10 +106,10 @@ interface IRunningDownload {
   fd?: number;
   error: boolean;
   urls: string[];
-  resolvedUrls: () => Bluebird<IResolvedURLs>;
+  resolvedUrls: () => Promise<IResolvedURLs>;
   origName: string;
   tempName: string;
-  finalName?: Bluebird<string>;
+  finalName?: Promise<string>;
   lastProgressSent: number;
   received: number;
   started: Date;
@@ -117,10 +117,10 @@ interface IRunningDownload {
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
-  assemblerProm?: Bluebird<FileAssembler>;
+  assemblerProm?: Promise<FileAssembler>;
   chunks: IDownloadJob[];
   chunkable: boolean;
-  promises: Array<Bluebird<any>>;
+  promises: Array<Promise<any>>;
   progressCB?: ProgressCallback;
   finishCB: (res: IDownloadResult) => void;
   failedCB: (err) => void;
@@ -157,7 +157,7 @@ class DownloadWorker {
   private mNetworkRetries: number = 0; // Track network error retries
   private mThrottle: () => stream.Transform;
   private mGetAgent: (protocol: string) => http.Agent | https.Agent;
-  private mURLResolve: Bluebird<void>;
+  private mURLResolve: Promise<void>;
   private mOnAbort: () => void;
 
   constructor(job: IDownloadJob,
@@ -175,7 +175,7 @@ class DownloadWorker {
     this.mThrottle = throttle;
     this.mGetAgent = getAgent;
     
-    this.mURLResolve = Bluebird.resolve(job.url())
+    this.mURLResolve = Promise.resolve().then(() => job.url())
       .then(jobUrl => {
         this.mUrl = jobUrl;
         if (jobUrl.startsWith('blob:')) {
@@ -586,7 +586,7 @@ class DownloadWorker {
 
   private abort = (paused: boolean): boolean => {
     if (this.mURLResolve !== undefined) {
-      this.mURLResolve.cancel();
+      // Native Promises don't have a cancel method, so we just set it to undefined
       this.mURLResolve = undefined;
     }
     this.mOnAbort?.();
@@ -625,8 +625,8 @@ class DownloadWorker {
         }
         this.abort(false);
       })
-      .catch(UserCanceled, () => null)
-      .catch(ProcessCanceled, () => null)
+      .catch(err => { if (err instanceof UserCanceled) return null; throw err; })
+      .catch(err => { if (err instanceof ProcessCanceled) return null; throw err; })
       .catch(err => this.handleError(err));
   }
 
@@ -641,7 +641,7 @@ class DownloadWorker {
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
-        this.mJob.url = () => Bluebird.resolve(newUrl);
+        this.mJob.url = () => Promise.resolve(newUrl);
         this.mRedirected = true;
 
         if (response.headers['set-cookie'] !== undefined) {
@@ -764,7 +764,7 @@ class DownloadWorker {
     return this.mBuffers.reduce((prev, iter) => prev + iter.length, 0);
   }
 
-  private doWriteBuffer = (buf: Buffer): Bluebird<void> => {
+  private doWriteBuffer = (buf: Buffer): Promise<void> => {
     const len = buf.length;
     const res = this.mJob.dataCB(this.mJob.offset, buf)
       .then(() => {
@@ -780,9 +780,9 @@ class DownloadWorker {
     return res;
   }
 
-  private writeBuffer = (str?: stream.Readable): Bluebird<void> => {
+  private writeBuffer = (str?: stream.Readable): Promise<void> => {
     if (this.mBuffers.length === 0) {
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
     let merged: Buffer;
@@ -796,7 +796,7 @@ class DownloadWorker {
       const bufs = this.mBuffers;
       this.mBuffers = [];
       str?.pause?.();
-      return Bluebird.mapSeries(bufs, buf => this.doWriteBuffer(buf))
+      return promiseMapSeries(bufs, buf => this.doWriteBuffer(buf))
         .then(() => {
           str?.resume?.();
         });
@@ -829,8 +829,8 @@ class DownloadWorker {
       if (!this.mWriting) {
         this.mWriting = true;
         this.writeBuffer(str)
-          .catch(UserCanceled, () => null)
-          .catch(ProcessCanceled, () => null)
+          .catch(err => { if (err instanceof UserCanceled) return null; throw err; })
+          .catch(err => { if (err instanceof ProcessCanceled) return null; throw err; })
           .catch(err => {
             this.handleError(err);
           })
@@ -877,7 +877,7 @@ class DownloadManager {
   private mUserAgent: string;
   private mProtocolHandlers: IProtocolHandlers;
   private mResolveCache: { [url: string]: { time: number, urls: string[], meta: any } } = {};
-  private mFileExistsCB: (fileName: string) => Bluebird<boolean>;
+  private mFileExistsCB: (fileName: string) => Promise<boolean>;
   private mThrottle: () => stream.Transform;
   private mHttpAgent: http.Agent;
   private mHttpsAgent: https.Agent;
@@ -930,7 +930,7 @@ class DownloadManager {
     this.mThrottle = () => makeThrottle(maxBandwidth);
   }
 
-  public setFileExistsCB = (cb: (fileName: string) => Bluebird<boolean>) => {
+  public setFileExistsCB = (cb: (fileName: string) => Promise<boolean>) => {
     this.mFileExistsCB = cb;
   }
 
@@ -984,9 +984,9 @@ class DownloadManager {
                  fileName: string,
                  progressCB: ProgressCallback,
                  destinationPath?: string,
-                 options?: IDownloadOptions): Bluebird<IDownloadResult> => {
+                 options?: IDownloadOptions): Promise<IDownloadResult> => {
     if (urls.length === 0) {
-      return Bluebird.reject(new Error('No download urls'));
+      return Promise.reject(new Error('No download urls'));
     }
     log('info', 'queueing download', id);
     let nameTemplate: string;
@@ -995,7 +995,7 @@ class DownloadManager {
       baseUrl = urls[0].split('<')[0];
       nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
     } catch (err) {
-      return Bluebird.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
+      return Promise.reject(new ProcessCanceled(`failed to parse url "${baseUrl}"`));
     }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
@@ -1004,18 +1004,18 @@ class DownloadManager {
         ? fs.removeAsync(path.join(destPath, nameTemplate))
             .catch(err => {
               log('debug', 'failed to remove archive expected to be replaced', err);
-              return Bluebird.resolve();
+              return Promise.resolve();
             })
-        : Bluebird.resolve())
+        : Promise.resolve())
       .then(() => this.unusedName(destPath, nameTemplate || 'deferred', options.redownload, id))
       .then((filePath: string) =>
-        new Bluebird<IDownloadResult>((resolve, reject) => {
+        new Promise<IDownloadResult>((resolve, reject) => {
           download = {
             id,
             origName: nameTemplate,
             tempName: filePath,
             finalName: (fileName !== undefined)
-              ? Bluebird.resolve(path.join(destPath, path.basename(filePath))) : undefined,
+              ? Promise.resolve(path.join(destPath, path.basename(filePath))) : undefined,
             error: false,
             urls,
             resolvedUrls: this.resolveUrls(urls, nameTemplate, options?.nameHint),
@@ -1054,7 +1054,7 @@ class DownloadManager {
                 started: number,
                 chunks: IChunk[],
                 progressCB: ProgressCallback,
-                options?: IDownloadOptions): Bluebird<IDownloadResult> => {
+                options?: IDownloadOptions): Promise<IDownloadResult> => {
     if (options === undefined) {
       options = {};
     }
@@ -1063,7 +1063,7 @@ class DownloadManager {
       // or the user said yes, otherwise why is this resumable and not canceled?
       options.redownload = 'always';
     }
-    return new Bluebird<IDownloadResult>((resolve, reject) => {
+    return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
         origName: path.basename(filePath),
@@ -1187,15 +1187,15 @@ class DownloadManager {
   private resolveUrl = (input: string,
                      name: string,
                      friendlyName: string)
-                     : Bluebird<IResolvedURL> => {
+                     : Promise<IResolvedURL> => {
     if ((this.mResolveCache[input] !== undefined)
       && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
       const cache = this.mResolveCache[input];
-      return Bluebird.resolve({ urls: cache.urls, meta: cache.meta });
+      return Promise.resolve({ urls: cache.urls, meta: cache.meta });
     }
     const protocol = url.parse(input).protocol;
     if (!truthy(protocol)) {
-      return Bluebird.resolve({ urls: [], meta: {} });
+      return Promise.resolve({ urls: [], meta: {} });
     }
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
@@ -1205,14 +1205,14 @@ class DownloadManager {
           this.mResolveCache[input] = { time: Date.now(), urls: res.urls, meta: res.meta };
           return res;
         })
-      : Bluebird.resolve({ urls: [input], meta: {} });
+      : Promise.resolve({ urls: [input], meta: {} });
   }
 
   private resolveUrls = (urls: string[],
                       name: string,
                       friendlyName: string)
-                      : () => Bluebird<IResolvedURLs> => {
-    let cache: Bluebird<{ result: IResolvedURLs, error: Error }>;
+                      : () => Promise<IResolvedURLs> => {
+    let cache: Promise<{ result: IResolvedURLs, error: Error }>;
 
     return () => {
       if (cache === undefined) {
@@ -1220,19 +1220,19 @@ class DownloadManager {
         // TODO: Does it make sense here to resolve all urls?
         //   For all we know they could resolve to an empty list so
         //   it wouldn't be enough to just one source url
-        cache = Bluebird.reduce(urls, (prev, iter) => {
+        cache = promiseReduce(urls, (prev, iter) => {
           return this.resolveUrl(iter, name, friendlyName)
             .then(resolved => {
-              return Bluebird.resolve({
+              return Promise.resolve({
                 urls: [...prev.urls, ...resolved.urls],
                 meta: _.merge(prev.meta, resolved.meta),
                 updatedUrls: [...prev.updatedUrls, resolved.updatedUrl || iter],
               });
             })
-            .catch(Error, err => {
-              error = err;
-              return Bluebird.resolve(prev);
-            });
+            .catch(err => err instanceof Error ? Promise.resolve({
+              ...prev,
+              error: err
+            }) : Promise.reject(err));
         }, { urls: [], meta: {}, updatedUrls: [] })
         .then(result => {
           return { result, error };
@@ -1240,9 +1240,9 @@ class DownloadManager {
       }
       return cache.then(({ result, error }) => {
         if ((result.urls.length === 0) && (error !== undefined)) {
-          return Bluebird.reject(error);
+          return Promise.reject(error);
         } else {
-          return Bluebird.resolve(result);
+          return Promise.resolve(result);
         }
       });
     };
@@ -1315,7 +1315,7 @@ class DownloadManager {
     const multiChunkDownloads: IRunningDownload[] = this.mQueue.filter(item => item.chunks.length > 1 && item.chunkable);
 
     // Prioritize single-chunk downloads first - start them concurrently
-    const singleChunkPromises: Bluebird<void>[] = [];
+    const singleChunkPromises: Promise<void>[] = [];
     let singleChunkSlotsUsed = 0;
     for (let idx = 0; idx < singleChunkDownloads.length && singleChunkSlotsUsed < freeSpots; idx++) {
       const queueItem = singleChunkDownloads[idx];
@@ -1347,7 +1347,7 @@ class DownloadManager {
     // Update free spots after accounting for single-chunk downloads
     freeSpots = Math.max(freeSpots - singleChunkSlotsUsed, 0);
 
-    const multiChunkPromises: Bluebird<void>[] = [];
+    const multiChunkPromises: Promise<void>[] = [];
     for (const queueItem of multiChunkDownloads) {
       if (freeSpots <= 0) break;
       const finishedChunks = queueItem.chunks.filter(chunk => chunk.state === 'finished');
@@ -1423,7 +1423,7 @@ class DownloadManager {
     const job: IDownloadJob = download.chunks.find(ele => ele.state === 'init');
     if (!job) {
       // No init chunks? no problem.
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
     job.state = 'running';
     job.workerId = workerId;
@@ -1518,7 +1518,7 @@ class DownloadManager {
   private startJob = (download: IRunningDownload, job: IDownloadJob) => {
     if (download.assemblerProm === undefined) {
       download.assemblerProm = FileAssembler.create(download.tempName)
-        .tap(assembler => assembler.setTotalSize(download.size));
+        .then(assembler => { assembler.setTotalSize(download.size); return assembler; });
     }
 
     job.dataCB = this.makeDataCB(download);
@@ -1539,7 +1539,7 @@ class DownloadManager {
       if (stopped) {
         // Clean up the placeholder and reject
         delete this.mBusyWorkers[job.workerId];
-        return Bluebird.reject(new UserCanceled(true));
+        return Promise.reject(new UserCanceled(true));
       }
       download.assembler = assembler;
 
@@ -1553,16 +1553,16 @@ class DownloadManager {
         this.getAgent.bind(this));
 
       this.mBusyWorkers[job.workerId] = worker;
-      return Bluebird.resolve();
+      return Promise.resolve();
     })
     .catch((err) => {
       // Clean up the worker and reset job state on failure
       delete this.mBusyWorkers[job.workerId];
       job.state = 'paused';
       if (err.code === 'EBUSY') {
-        return Bluebird.reject(new ProcessCanceled('output file is locked'));
+        return Promise.reject(new ProcessCanceled('output file is locked'));
       } else {
-        return Bluebird.reject(err);
+        return Promise.reject(err);
       }
     });
   }
@@ -1576,7 +1576,7 @@ class DownloadManager {
         download.received = 0;
       }
       if (download.assembler.isClosed()) {
-        return Bluebird.reject(new ProcessCanceled('file already closed'));
+        return Promise.reject(new ProcessCanceled('file already closed'));
       }
       // these values will change until the data was written to file
       // so copy them so we write the correct info to state
@@ -1610,7 +1610,7 @@ class DownloadManager {
                   download.tempName);
             });
           }
-          return Bluebird.resolve(synced);
+          return Promise.resolve(synced);
         })
         .catch(err => {
           if (!(err instanceof ProcessCanceled)) {
@@ -1621,7 +1621,7 @@ class DownloadManager {
             }
             download.failedCB(err);
           }
-          return Bluebird.reject(err);
+          return Promise.reject(err);
         });
     };
   }
@@ -1660,7 +1660,7 @@ class DownloadManager {
               download.tempName = oldTempName;
               return fs.removeAsync(resolvedName)
                 .catch(() => null)
-                .then(() => Bluebird.reject(err));
+                .then(() => Promise.reject(err));
             });
         }
       })
@@ -1777,8 +1777,8 @@ class DownloadManager {
     download.assembler.close()
       .then(() => fs.removeAsync(download.tempName)
         .catch(err => (err.code !== 'ENOENT')
-          ? Bluebird.reject(err)
-          : Bluebird.resolve()))
+          ? Promise.reject(err)
+          : Promise.resolve()))
       .then(() => fs.statAsync(filePath + '.tmp'))
       .then(stat => {
         download.progressCB(stat.size, stat.size, undefined, false, undefined, filePath);
@@ -1862,7 +1862,7 @@ class DownloadManager {
                 log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
                 return fs.renameAsync(download.tempName, resolvedPath);
               } else {
-                return Bluebird.resolve();
+                return Promise.resolve();
               }
             });
           } else if ((download.headers !== undefined)
@@ -1872,8 +1872,8 @@ class DownloadManager {
             // don't keep html files. It's possible handleHTML already deleted it though
             return fs.removeAsync(download.tempName)
               .catch(err => (err.code !== 'ENOENT')
-                  ? Bluebird.reject(err)
-                  : Bluebird.resolve());
+                  ? Promise.reject(err)
+                  : Promise.resolve());
           }
         })
         .catch(err => {
@@ -1922,12 +1922,12 @@ class DownloadManager {
   private unusedName = (destination: string,
                      fileName: string,
                      redownload: RedownloadMode,
-                     downloadId?: string): Bluebird<string> => {
+                     downloadId?: string): Promise<string> => {
     fileName = this.sanitizeFilename(fileName);
     if (fileName === '') {
       fileName = 'unnamed';
     }
-    return new Bluebird<string>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       let fd = null;
       let counter = 0;
       const ext = path.extname(fileName);
@@ -1944,7 +1944,7 @@ class DownloadManager {
                 // EBADF may be a non-issue. If it isn't we will notice when
                 // we try to write to the file
                 if (err.code !== 'EBADF') {
-                  return Bluebird.reject(err);
+                  return Promise.reject(err);
                 }
               });
           }).then(() => {

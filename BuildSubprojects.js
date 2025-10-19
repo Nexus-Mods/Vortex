@@ -1,4 +1,3 @@
-const Promise = require('bluebird');
 const { spawn } = require('child_process');
 const copyfiles = require('copyfiles');
 const fs = require('fs');
@@ -7,6 +6,11 @@ const minimist = require('minimist');
 const path = require('path');
 const rimraf = require('rimraf');
 const vm = require('vm');
+
+// Promisify functions that were previously using Bluebird
+const util = require('util');
+const copyfilesAsync = util.promisify(copyfiles);
+const rimrafAsync = util.promisify(rimraf);
 
 // Platform detection utilities
 function isWindows() {
@@ -28,10 +32,9 @@ const yarncli = isWindows() ? 'yarn.cmd' : 'yarn';
 const useYarn = true;
 
 //const rebuild = path.join('node_modules', '.bin', process.platform === 'win32' ? 'electron-rebuild.cmd' : 'electron-rebuild');
-const globOptions = { };
+const globOptions = {};
 
-const copyfilesAsync = Promise.promisify(copyfiles);
-const rimrafAsync = Promise.promisify(rimraf);
+// Bluebird promisify replaced with util.promisify above
 
 class Unchanged extends Error {
   constructor(message = 'No changes') {
@@ -109,6 +112,7 @@ function spawnAsync(exe, args, options, out) {
 }
 
 let nextId = 0;
+
 function getId() {
   return nextId++;
 }
@@ -176,10 +180,10 @@ function processModule(project, buildType, feedback) {
   }
 
   // Use the project's node-gyp instead of the extension's node-gyp
-  const build = project.build !== undefined && project.build !== false
-    ? npm('install', [], { cwd: project.path }, feedback)
-      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path, env: { ...process.env, npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') } }, feedback))
-    : Promise.resolve();
+  const build = project.build !== undefined && project.build !== false ?
+    npm('install', [], { cwd: project.path }, feedback)
+    .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path, env: { ...process.env, npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') } }, feedback)) :
+    Promise.resolve();
 
   return build
     .then(() => rimrafAsync(modulePath))
@@ -196,7 +200,7 @@ async function updateSourceMap(filePath) {
   const modPath = path.basename(path.dirname(filePath));
 
   dat = dat.replace(/\/\/# sourceMappingURL=([a-z\-.]+\.js\.map)$/,
-                    `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
+    `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
 
   await fs.promises.writeFile(filePath, dat);
 }
@@ -211,61 +215,61 @@ function processCustom(project, buildType, feedback, noparallel) {
     CXXFLAGS: `${process.env.CXXFLAGS ? process.env.CXXFLAGS + ' ' : ''}-DNAPI_CPP_EXCEPTIONS -std=c++17 -fexceptions`,
     MACOSX_DEPLOYMENT_TARGET: process.env.MACOSX_DEPLOYMENT_TARGET || '10.15'
   } : {};
-  
+
   // Special handling for gamebryo-savegame-management extension
   let res;
   if (project.name === 'gamebryo-savegame-management') {
     // For macOS, we need to handle the gamebryo-savegame dependency properly
     // The extension has an optional dependency on gamebryo-savegame which should be installed normally
-    res = npm('install', instArgs, { 
-      cwd: project.path, 
-      env: { 
-        ...process.env, 
-        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
-        // Add environment variables for macOS build
-        LDFLAGS: "-L/usr/local/opt/zlib/lib",
-        CPPFLAGS: `${macosNativeEnv.CPPFLAGS || ''} -I/usr/local/opt/zlib/include`.trim(),
-        CXXFLAGS: macosNativeEnv.CXXFLAGS,
-        PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig",
-        GYP_DEFINES: macosNativeEnv.GYP_DEFINES,
-        MACOSX_DEPLOYMENT_TARGET: macosNativeEnv.MACOSX_DEPLOYMENT_TARGET
-      } 
-    }, feedback)
+    res = npm('install', instArgs, {
+        cwd: project.path,
+        env: {
+          ...process.env,
+          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
+          // Add environment variables for macOS build
+          LDFLAGS: "-L/usr/local/opt/zlib/lib",
+          CPPFLAGS: `${macosNativeEnv.CPPFLAGS || ''} -I/usr/local/opt/zlib/include`.trim(),
+          CXXFLAGS: macosNativeEnv.CXXFLAGS,
+          PKG_CONFIG_PATH: "/usr/local/opt/zlib/lib/pkgconfig",
+          GYP_DEFINES: macosNativeEnv.GYP_DEFINES,
+          MACOSX_DEPLOYMENT_TARGET: macosNativeEnv.MACOSX_DEPLOYMENT_TARGET
+        }
+      }, feedback)
       .then(() => {
-      // Build the extension
-        return npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
-          cwd: project.path, 
-          env: { 
-            ...process.env, 
-            npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
-          } 
+        // Build the extension
+        return npm('run', [typeof project.build === 'string' ? project.build : 'build'], {
+          cwd: project.path,
+          env: {
+            ...process.env,
+            npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js')
+          }
         }, feedback);
       });
   } else {
     // Use the project's node-gyp instead of the extension's node-gyp
-    res = npm('install', instArgs, { 
-      cwd: project.path, 
-      env: { 
-        ...process.env, 
-        npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
-        // Ensure Node-API C++ exceptions are enabled on macOS to avoid build failures
-        ...macosNativeEnv
-      } 
-    }, feedback)
-      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { 
-        cwd: project.path, 
-        env: { 
-          ...process.env, 
-          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js') 
-        } 
+    res = npm('install', instArgs, {
+        cwd: project.path,
+        env: {
+          ...process.env,
+          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js'),
+          // Ensure Node-API C++ exceptions are enabled on macOS to avoid build failures
+          ...macosNativeEnv
+        }
+      }, feedback)
+      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], {
+        cwd: project.path,
+        env: {
+          ...process.env,
+          npm_config_node_gyp: path.join(__dirname, 'node_modules', 'node-gyp', 'bin', 'node-gyp.js')
+        }
       }, feedback));
   }
-  
+
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
     const distDir = path.join(project.path, 'dist');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
-    
+
     // Check if dist directory exists before copying
     if (fs.existsSync(distDir)) {
       feedback.log('copying files', source, output);
@@ -276,7 +280,7 @@ function processCustom(project, buildType, feedback, noparallel) {
       feedback.log('skipping copy - dist directory not found (extension may handle its own copying)', distDir);
     }
   }
-  
+
   res = res.then(() => {
     const elapsed = (Date.now() - start) / 1000;
     return { elapsed };
@@ -289,7 +293,7 @@ function evalCondition(condition, context) {
     return true;
   }
   const script = new vm.Script(condition);
-  return script.runInNewContext({ ... context, process });
+  return script.runInNewContext({ ...context, process });
 }
 
 function processProject(project, buildType, feedback, noparallel) {
@@ -300,8 +304,8 @@ function processProject(project, buildType, feedback, noparallel) {
     return processModule(project, buildType, feedback);
   } else if (project.type === 'build-copy') {
     return processCustom(project, buildType, feedback, noparallel);
-  // } else if (project.type === 'electron-rebuild') {
-  //   return processRebuild(project, buildType, feedback);
+    // } else if (project.type === 'electron-rebuild') {
+    //   return processRebuild(project, buildType, feedback);
   }
   if (project.type.startsWith('_')) {
     return Promise.resolve(null);
@@ -316,85 +320,109 @@ function main(args) {
   }
 
   const globalFeedback = new ProcessFeedback('global');
-
   const buildType = args._[0];
-  const targetProject = args._[1]; // Optional project name filter
+  const targetProject = args._[1];
 
-  process.env.TARGET_ENV = (buildType === 'app')
-    ? 'production' : 'development';
+  process.env.TARGET_ENV = (buildType === 'app') ? 'production' : 'development';
 
   const buildStateName = `./BuildState_${buildType}.json`;
   let buildState;
 
   try {
-    buildState = JSON.parse(fs.readFileSync(buildStateName));
-  } catch (err) {
+    const raw = fs.readFileSync(buildStateName, 'utf8');
+    buildState = JSON.parse(raw || '{}');
+  } catch {
     buildState = {};
   }
 
   let failed = false;
 
-  // the projects file contains groups of projects
-  // each group is processed in parallel
-  return Promise.each(projectGroups, (projects) => {
-    return Promise.map(projects, (project) => {
-    // Filter by target project if specified
-      if (targetProject && project.name !== targetProject) {
-        return Promise.resolve();
-      }
-      if ((project.variant !== undefined) && (buildType !== 'out') && (process.env.VORTEX_VARIANT !== project.variant)) {
-        return Promise.resolve();
-      }
-      const feedback = new ProcessFeedback(project.name);
-      return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
-        .then((lastChange) => {
-          if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
-            const platform = isWindows() ? 'Windows' : isMacOS() ? 'macOS' : 'Linux';
-            return Promise.reject(new Unchanged(`Extension "${project.name}" is already up-to-date and compatible with ${platform}, no rebuild needed (use -f to force rebuild)`));
-          }
-          return processProject(project, buildType, feedback, args.noparallel);
+  return Promise.all(
+    projectGroups.map((projects) =>
+      Promise.all(
+        projects.map((project) => {
+          if (targetProject && project.name !== targetProject) return Promise.resolve();
+          if (
+            project.variant !== undefined &&
+            buildType !== 'out' &&
+            process.env.VORTEX_VARIANT !== project.variant
+          ) return Promise.resolve();
+
+          const feedback = new ProcessFeedback(project.name);
+
+          return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
+            .then((lastChange) => {
+              if (
+                lastChange !== undefined &&
+                buildState[project.name] !== undefined &&
+                lastChange < buildState[project.name]
+              ) {
+                const platform = isWindows() ?
+                  'Windows' :
+                  isMacOS() ?
+                  'macOS' :
+                  'Linux';
+                return Promise.reject(
+                  new Unchanged(
+                    `Extension "${project.name}" is already up-to-date and compatible with ${platform}, no rebuild needed (use -f to force rebuild)`
+                  )
+                );
+              }
+              return processProject(project, buildType, feedback, args.noparallel);
+            })
+            .then((result) => {
+              const platformName = isWindows() ?
+                'Windows' :
+                isMacOS() ?
+                'macOS' :
+                process.platform === 'linux' ?
+                'Linux' :
+                process.platform;
+              if (result && result.elapsed) {
+                console.log(
+                  `Successfully built extension "${project.name}" in ${result.elapsed} s - compatible with ${platformName} ✅`
+                );
+              } else {
+                console.log(`Successfully built "${project.name}" - compatible with ${platformName} ✅`);
+              }
+              buildState[project.name] = Date.now();
+              return fsP.writeFile(buildStateName, JSON.stringify(buildState, null, 2));
+            })
+            .catch((err) => {
+              if (err instanceof Unchanged) {
+                console.log(`✅ ${err.message}`);
+              } else if (err instanceof ConditionNotMet) {
+                const targetPlatform = err.condition?.includes('win32') ?
+                  'Windows' :
+                  err.condition?.includes('darwin') ?
+                  'macOS' :
+                  err.condition?.includes('linux') ?
+                  'Linux' :
+                  'unknown';
+                const currentPlatform = isWindows() ?
+                  'Windows' :
+                  isMacOS() ?
+                  'macOS' :
+                  process.platform === 'linux' ?
+                  'Linux' :
+                  process.platform;
+                console.log(
+                  `⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`
+                );
+              } else {
+                console.error('❌ failed ', project.name, err);
+                failed = true;
+              }
+            });
         })
-        .then((result) => {
-          const platformName = isWindows() ? 'Windows' : 
-            isMacOS() ? 'macOS' : 
-            process.platform === 'linux' ? 'Linux' : process.platform;
-          if (result && result.elapsed) {
-            console.log(`Successfully built extension "${project.name}" in ${result.elapsed} s - compatible with ${platformName} ✅`);
-          } else {
-            console.log(`Successfully built "${project.name}" - compatible with ${platformName} ✅`);
-          }
-          buildState[project.name] = Date.now();
-          return fsP.writeFile(buildStateName, JSON.stringify(buildState, undefined, 2));
-        })
-        .catch((err) => {
-          if (err instanceof Unchanged) {
-            console.log(`✅ ${err.message}`);
-            return Promise.resolve();
-          } else if (err instanceof ConditionNotMet) {
-            const targetPlatform = err.condition?.includes('win32') ? 'Windows' : 
-              err.condition?.includes('darwin') ? 'macOS' : 
-              err.condition?.includes('linux') ? 'Linux' : 'unknown';
-            const currentPlatform = isWindows() ? 'Windows' : 
-              isMacOS() ? 'macOS' : 
-              process.platform === 'linux' ? 'Linux' : process.platform;
-            console.log(`⏭️  Skipping ${targetPlatform}-only module "${project.name}" as we are running on ${currentPlatform}`);
-            return Promise.resolve();
-          } else {
-            console.error('❌ failed ', project.name, err);
-            failed = true;
-            return Promise.resolve();
-          }
-        })
-      ;
-    });
-  }, { concurrency: 1 })
-    .then(() => failed ? 1 : 0);
+      )
+    )
+  ).then(() => (failed ? 1 : 0));
 }
 
 const args = minimist(process.argv.slice(2));
 main(args)
-  .then(firstRunResult => {
-    // only run a second time if there were failures in the first run
+  .then((firstRunResult) => {
     if (firstRunResult === 1) {
       console.log('\n🔄 Retrying failed builds...');
       return main(args);
@@ -403,4 +431,7 @@ main(args)
       return firstRunResult;
     }
   })
-  .then(res => process.exit(res));
+  .then((res) => process.exit(res))
+  .catch((code) => {
+    process.exit(typeof code === 'number' ? code : 1);
+  });

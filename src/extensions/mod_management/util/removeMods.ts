@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { INotification } from '../../../types/INotification';
 import { toPromise } from '../../../util/util';

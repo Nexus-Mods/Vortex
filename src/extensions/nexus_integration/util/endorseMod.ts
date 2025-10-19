@@ -1,5 +1,5 @@
 import NexusT from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 /**
  * endorse the mod by the server call

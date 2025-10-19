@@ -1,7 +1,7 @@
 import {IInstruction, IModTypeOptions} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 export interface IModType {
   typeId: string;

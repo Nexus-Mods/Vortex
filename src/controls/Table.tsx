@@ -14,6 +14,7 @@ import {isMacOS, isWindows} from '../util/platform';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
 import {makeUnique, sanitizeCSSId, truthy} from '../util/util';
+import { promiseMap } from '../util/promise-helpers';
 
 import IconBar from './IconBar';
 import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
@@ -24,7 +25,7 @@ import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
 import Usage from './Usage';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -1157,10 +1158,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
-    return Promise.map(Object.keys(data), (rowId: string) => {
+    return promiseMap(Object.keys(data), (rowId: string) => {
       const delta: any = {};
 
-      return Promise.map(objects, (attribute: ITableAttribute) => {
+      return promiseMap(objects, (attribute: ITableAttribute) => {
         // avoid recalculating if the source data hasn't changed. To support
         // isVolatile we still go through each attribute even if the entire row didn't change
         if (!attribute.isVolatile
@@ -1199,10 +1200,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           }
         });
     })
-      .then(() => Promise.map(Object.keys(oldState.data), rowId => {
+      .then(() => promiseMap(Object.keys(oldState.data), rowId => {
         if (data[rowId] === undefined) {
           delete newValues[rowId];
         }
+        return Promise.resolve();
       }))
       .then(() =>
       // once everything is recalculated, update the cache

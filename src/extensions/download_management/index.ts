@@ -11,7 +11,9 @@ import { log } from '../../util/log';
 import { isWindows } from '../../util/platform';
 import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
-import * as selectors from '../../util/selectors';
+import { activeDownloads } from './selectors';  // Import directly
+import { activeGameId } from '../profile_management/activeGameId';
+import { downloadPath, downloadPathForGame } from './selectors';  // Import directly from local selectors
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, sum, toPromise, truthy } from '../../util/util';
 
@@ -47,7 +49,7 @@ import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as RemoteT from '@electron/remote';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import { addToArchive } from '../../util/archive';
 import * as path from 'path';
@@ -59,7 +61,7 @@ import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
 import { ensureLoggedIn } from '../nexus_integration/util';
 import NXMUrl from '../nexus_integration/NXMUrl';
-import { knownGames } from '../../util/selectors';
+import { knownGames } from '../gamemode_management/selectors';
 import { convertNXMIdReverse, convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
@@ -111,8 +113,8 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
       const removedDLs = knownDLs.filter((name: string) =>
         dlsNormalized.indexOf(name) === -1);
 
-      return Promise.map(addedDLs, onAddDownload)
-        .then(() => Promise.map(removedDLs, onRemoveDownload));
+      return promiseMap(addedDLs, onAddDownload)
+        .then(() => promiseMap(removedDLs, onRemoveDownload));
     });
 }
 
@@ -193,7 +195,7 @@ function genDownloadChangeHandler(api: IExtensionApi,
       // this delay is intended to prevent this from picking up files that Vortex added itself.
       // It is not enough however to prevent this from getting the wrong file size if the file
       // copy/write takes more than this one second.
-      Promise.delay(1000)
+      promiseDelay(1000)
         .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
         .then(stats => {
           let dlId = findDownload(fileName);
@@ -264,12 +266,12 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   downloads = state.persistent.downloads.files;
 
   if (gameId === undefined) {
-    gameId = selectors.activeGameId(state);
+    gameId = activeGameId(state);
     if (gameId === undefined) {
       return Promise.resolve();
     }
   }
-  const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
+  const currentDownloadPath = downloadPathForGame(state, gameId);
 
   let nameIdMap: {[name: string]: string} = {};
 
@@ -315,7 +317,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
                                   { label: 'Allow access', action: () => resolve() },
                                 ]);
                               }))
-        .catch(UserCanceled, () => null)
+        .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
         .catch(err => {
           api.showErrorNotification('Failed to refresh download directory', err, {
             allowReport: err.code !== 'EPERM',
@@ -336,8 +338,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   return ensureDownloadsDirectory(api)
-    .catch(ProcessCanceled, () => Promise.resolve())
-    .catch(UserCanceled, () => Promise.resolve())
+    .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
+    .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
     .catch(err => {
       const errTitle = (err.code === 'EPERM')
         ? 'Insufficient permissions'
@@ -410,7 +412,7 @@ function processInstallError(api: IExtensionApi,
 function postImport(api: IExtensionApi, destination: string,
                     fileSize: number, silent: boolean): Promise<string> {
   const store = api.store;
-  const gameMode = selectors.activeGameId(store.getState());
+  const gameMode = activeGameId(store.getState());
   if (gameMode === undefined) {
     return Promise.reject(new Error('no active game'));
   }
@@ -550,7 +552,7 @@ function importDirectory(api: IExtensionApi,
 function genImportDownloadsHandler(api: IExtensionApi) {
   return (downloadPaths: string[], cb?: (dlIds: string[]) => void, silent?: boolean) => {
     const state = api.getState();
-    const gameMode = selectors.activeGameId(state);
+    const gameMode = activeGameId(state);
 
     if (gameMode === undefined) {
       log('warn', 'can\'t import download(s) when no game is active', downloadPaths);
@@ -558,8 +560,8 @@ function genImportDownloadsHandler(api: IExtensionApi) {
     }
 
     log('debug', 'importing download(s)', downloadPaths);
-    const downloadPath = selectors.downloadPathForGame(state, gameMode);
-    Promise.map(downloadPaths, dlPath => {
+    const downloadPath = downloadPathForGame(state, gameMode);
+    promiseMap(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
       let destination = path.join(downloadPath, fileName);
       return fs.statAsync(dlPath)
@@ -571,7 +573,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             return move(api, dlPath, destination, silent ?? false);
           }
         })
-        .tap((dlId: string) => {
+        .then(((dlId: string) => {
           log('info', 'imported archives', { count: downloadPaths.length });
           return dlId;
         })
@@ -592,7 +594,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = activeGameId(state);
   if (gameMode === undefined) {
     return Promise.resolve(result);
   }
@@ -673,7 +675,7 @@ function updateShutdown(downloads: { [key: string]: IDownload }) {
 function toggleShutdown(api: IExtensionApi) {
   if (shutdownPending) {
     shutdownPending = false;
-    updateShutdown(selectors.activeDownloads(api.getState()));
+    updateShutdown(activeDownloads(api.getState()));
   } else {
     api.showDialog('question', 'Confirm Shutdown', {
       text: 'Your computer will be shut down 30 seconds after the last download finished. '
@@ -684,7 +686,7 @@ function toggleShutdown(api: IExtensionApi) {
       {
         label: 'Schedule Shutdown', action: () => {
           shutdownPending = true;
-          updateShutdown(selectors.activeDownloads(api.getState()));
+          updateShutdown(activeDownloads(api.getState()));
         },
       },
     ]);
@@ -726,11 +728,11 @@ function checkForUnfinalized(api: IExtensionApi,
 
             progress('...');
 
-            Promise.map(unfinalized, id => {
+            promiseMap(unfinalized, id => {
               const gameId = Array.isArray(downloads[id].game)
                 ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
                 : gameMode;
-              const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
+              const downloadPath = downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
               progress(downloads[id].localPath);
               if (downloads[id].state === 'finalizing') {
@@ -778,6 +780,9 @@ function removeDownloadsWithoutFile(store: Redux.Store,
     .forEach(dlId => {
       store.dispatch(removeDownload(dlId));
     });
+  }
+      store.dispatch(removeDownload(dlId));
+    });
 }
 
 function processInterruptedDownloads(api: IExtensionApi,
@@ -793,7 +798,7 @@ function processInterruptedDownloads(api: IExtensionApi,
         ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
         : gameMode;
 
-      const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
+      const downloadPath = downloadPathForGame(api.getState(), gameId);
       if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
         fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
           .then(() => {
@@ -863,7 +868,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   const downloadPathForGame = (gameId: string) =>
-    selectors.downloadPathForGame(context.api.getState(), gameId);
+    downloadPathForGame(context.api.getState(), gameId);
 
   const downloadColumns = (props: () => IDownloadViewProps) =>
     downloadAttributes(context.api, props, withAddInProgress);
@@ -937,7 +942,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
     t: context.api.translate,
     shutdownPending,
-    activeDownloads: selectors.activeDownloads(context.api.getState()),
+    activeDownloads: activeDownloads(context.api.getState()),
     toggleShutdown: () => toggleShutdown(context.api),
   }), () => isWindows());
 
@@ -999,10 +1004,10 @@ function init(context: IExtensionContextExt): boolean {
 
                                 const state: IState = context.api.store.getState();
 
-                                updateShutdown(selectors.activeDownloads(state));
+                                updateShutdown(activeDownloads(state));
 
-                                Promise.map(filtered, dlId => {
-                                  const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+                                promiseMap(filtered, dlId => {
+                                  const downloadPath = downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
                                   if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
@@ -1106,7 +1111,7 @@ function init(context: IExtensionContextExt): boolean {
         : 1;
 
       manager = new DownloadManagerImpl(
-        selectors.downloadPath(store.getState()),
+        downloadPath(store.getState()),
         maxParallelDownloads,
         store.getState().settings.downloads.maxChunks, (speed: number) => {
           if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
@@ -1140,7 +1145,7 @@ function init(context: IExtensionContextExt): boolean {
       observer = observeImpl(context.api, manager);
 
       const downloads = state.persistent.downloads?.files ?? {};
-      const gameMode = selectors.activeGameId(state);
+      const gameMode = activeGameId(state);
 
       processInterruptedDownloads(context.api, downloads, gameMode);
       checkForUnfinalized(context.api, downloads, gameMode);
@@ -1214,7 +1219,7 @@ function init(context: IExtensionContextExt): boolean {
             'start-download', [step.url], {}, undefined, cb, 'always', {
               allowInstall: false,
             })))
-          .tapCatch(err => {
+          .catch(err => {
             log('error', 'download failed', { url: step.url, error: err.message });
           })
           .then((dlId: string) => {

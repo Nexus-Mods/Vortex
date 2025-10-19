@@ -1,7 +1,8 @@
 /* eslint-disable */
 import * as types from '../../types/api';
 import * as util from '../../util/api';
-import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { lastActiveProfileForGame } from '../profile_management/activeGameId';
 import { findGameEntry } from './gameSupport';
 import { ILoadOrderGameInfoExt, IValidationResult, LoadOrder,
   LoadOrderSerializationError, LoadOrderValidationError, ILoadOrderEntryExt } from './types/types';

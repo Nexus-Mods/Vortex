@@ -5,7 +5,8 @@ import * as fs from '../../util/fs';
 import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { isWindows, isMacOS } from '../../util/platform';
-import { activeGameId, gameName } from '../../util/selectors';
+import { activeGameId } from '../profile_management/activeGameId';
+import { gameName } from '../gamemode_management/selectors';
 import { getMacOSGameFix } from '../../util/macOSGameCompatibility';
 import walk from '../../util/walk';
 
@@ -14,7 +15,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import getVortexPath from '../../util/getVortexPath';
 
@@ -127,7 +128,7 @@ class DeploymendMethod extends LinkingDeployment {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
-      Promise.delay(100)
+      promiseDelay(100)
         .then(() => fs.removeAsync(canary + '.link'))
         .then(() => fs.removeAsync(canary))
         .catch(err => {

@@ -4,7 +4,7 @@ import onceCB from '../../util/onceCB';
 
 import { needToDeploy } from './selectors';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import getText from './texts';
 import { UserCanceled } from '../../util/CustomErrors';
 

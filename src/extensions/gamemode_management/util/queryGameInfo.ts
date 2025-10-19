@@ -6,7 +6,7 @@ import walk from '../../../util/walk';
 
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {

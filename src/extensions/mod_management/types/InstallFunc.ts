@@ -1,6 +1,6 @@
 import {IInstallResult} from './IInstallResult';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 export type ProgressDelegate = (perc: number) => void;
 

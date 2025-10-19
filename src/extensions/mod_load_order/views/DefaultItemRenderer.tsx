@@ -11,7 +11,8 @@ import { IItemRendererOptions, ILoadOrder, ILoadOrderDisplayItem,
 import { Icon } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
 
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../../util/storeHelper';
 
 import { setLoadOrderEntry } from '../actions/loadOrder';
@@ -165,7 +166,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 const empty = {};
 const defaultRendererOpts: IItemRendererOptions = { listViewType: 'full', displayCheckboxes: true };
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
-  const profile: IProfile = selectors.activeProfile(state);
+  const profile: IProfile = activeProfile(state);
   return {
     profile,
     loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], empty),

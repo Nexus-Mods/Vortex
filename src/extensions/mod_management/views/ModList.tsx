@@ -19,7 +19,9 @@ import { withBatchContext } from '../../../util/BatchContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
-import * as selectors from '../../../util/selectors';
+import { activeGameId, activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { downloadPath } from '../../../extensions/download_management/selectors';
+import { installPath } from '../selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { batchDispatch, bytesToString, toPromise, truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -54,7 +56,7 @@ import CheckModVersionsButton from './CheckModVersionsButton';
 import Description from './Description';
 import InstallArchiveButton from './InstallArchiveButton';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import path from 'path';
@@ -939,7 +941,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // insert downloads. Since this requires deriving mod attributes from
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
-    return Promise.map(Object.keys(newProps.downloads), archiveId => {
+    return promiseMap(Object.keys(newProps.downloads), archiveId => {
       if ((getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !== -1)
         && (newProps.downloads[archiveId].state === 'finished')
         && !installedIds.has(archiveId)) {
@@ -1022,8 +1024,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       if (modsWithState[modId].state !== 'downloaded') {
         return removeMods(this.context.api, gameMode, [modId])
           .then(() => null)
-          .catch(UserCanceled, () => null)
-          .catch(ProcessCanceled, err => {
+          .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
+          .catch(err => err instanceof ProcessCanceled ? {
             this.context.api.sendNotification({
               id: 'cant-remove-mod',
               type: 'warning',
@@ -1272,15 +1274,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           return this.removeSelectedImpl(idsToRemove, true, removeArchives);
         }
       })
-      .catch(ProcessCanceled, err => {
+      .catch(err => err instanceof ProcessCanceled ? {
         this.context.api.sendNotification({
           id: 'cant-remove-mod',
           type: 'warning',
           title: 'Failed to remove mods',
           message: err.message,
-        });
+        } : Promise.reject(err));
       })
-      .catch(UserCanceled, () => null)
+      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
       .catch(err => {
         this.context.api.showErrorNotification('Failed to remove selected mods', err);
       });
@@ -1371,15 +1373,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         return this.removeSelectedImpl(filteredIds, doRemoveMods, removeArchive);
       })
-      .catch(ProcessCanceled, err => {
+      .catch(err => err instanceof ProcessCanceled ? {
         this.context.api.sendNotification({
           id: 'cant-remove-mod',
           type: 'warning',
           title: 'Failed to remove mods',
           message: err.message,
-        });
+        } : Promise.reject(err));
       })
-      .catch(UserCanceled, () => null)
+      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
       .catch(err => {
         this.context.api.showErrorNotification('Failed to remove selected mods', err);
       });
@@ -1552,8 +1554,8 @@ const shouldSuppressModActions = (state: IState): boolean => {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const profile = selectors.activeProfile(state);
-  const gameMode = selectors.activeGameId(state);
+  const profile = activeProfile(state);
+  const gameMode = activeGameId(state);
   const suppressModActions = shouldSuppressModActions(state);
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
@@ -1562,8 +1564,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     profileId: getSafe(profile, ['id'], undefined),
     language: state.settings.interface.language,
-    installPath: selectors.installPath(state),
-    downloadPath: selectors.downloadPath(state),
+    installPath: installPath(state),
+    downloadPath: downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
     autoInstall: state.settings.automation.install,
     suppressModActions,

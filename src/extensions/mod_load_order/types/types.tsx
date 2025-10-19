@@ -1,5 +1,5 @@
-import Bluebird from 'bluebird';
-const Promise = Bluebird;
+// Use native Promise instead of Bluebird
+// const Promise = Bluebird;
 import { IActionDefinitionEx } from '../../../controls/ActionControl';
 import { IMod } from '../../../types/IState';
 import { ICollection } from '../types/collections';

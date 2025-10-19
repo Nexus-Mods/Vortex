@@ -15,12 +15,14 @@ import Debouncer from '../util/Debouncer';
 import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { showError } from '../util/message';
-import { activeGameId, currentGame, currentGameDiscovery, activeProfile } from '../util/selectors';
+import { activeProfile } from '../extensions/profile_management/activeGameId';
+import { activeGameId } from '../extensions/profile_management/activeGameId';
+import { currentGame, currentGameDiscovery } from '../extensions/gamemode_management/selectors';
 import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';

@@ -1,6 +1,6 @@
 import * as fs from '../../../util/fs';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 // Platform detection utilities

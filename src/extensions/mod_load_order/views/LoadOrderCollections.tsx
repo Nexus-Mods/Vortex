@@ -8,7 +8,8 @@ import { EmptyPlaceholder, FlexLayout, Icon, Usage } from '../../../controls/api
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 
 import { IGameSpecificInterfaceProps } from '../types/collections';
 import { ILoadOrder, ILoadOrderEntry } from '../types/types';
@@ -145,7 +146,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IComponentState> {
 
 const empty = {};
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
+  const profile = activeProfile(state) || undefined;
   let loadOrder: ILoadOrder = {};
   if (!!profile?.gameId) {
     loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], empty);

@@ -10,13 +10,14 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import {showError} from '../../util/message';
-import { downloadPathForGame } from '../../util/selectors';
+import { downloadPathForGame } from '../download_management/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {batchDispatch, truthy} from '../../util/util';
-import { knownGames } from '../../util/selectors';
+import { knownGames } from '../gamemode_management/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
-import {activeGameId, activeProfile} from '../profile_management/selectors';
+import { activeProfile } from '../profile_management/activeGameId';
+import { activeGameId } from '../profile_management/activeGameId';
 import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 import { setDeploymentNecessary } from './actions/deployment';
@@ -46,7 +47,8 @@ import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
 import { ensureStagingDirectory } from './stagingDirectory';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseMap, promiseMapSeries } from '../../util/bluebird-migration-helpers.local';
 import * as _ from 'lodash';
 import { RuleType } from 'modmeta-db';
 import * as path from 'path';
@@ -156,7 +158,7 @@ function purgeOldMethod(api: IExtensionApi,
       })))
     .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
     .then(() => oldActivator.prePurge(instPath))
-    .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
+    .then(() => promiseMapSeries(Object.keys(modPaths), typeId => {
       return getNormalizeFunc(modPaths[typeId])
         .then(normalize => {
           // test for the special case where the game has been moved since the deployment
@@ -178,15 +180,13 @@ function purgeOldMethod(api: IExtensionApi,
       ;
     }))
     // save (empty) activation
-    .then(() => Promise.map(Object.keys(modPaths), typeId =>
+    .then(() => promiseMap(Object.keys(modPaths), typeId =>
       saveActivation(gameId, typeId, state.app.instanceId, modPaths[typeId],
                      stagingPath, [], oldActivator.id)))
     .then(() => undefined)
     .finally(() => oldActivator.postPurge())
-    .catch(ProcessCanceled, () => Promise.resolve())
-    .catch(TemporaryError, err =>
-      api.showErrorNotification('Purge failed, please try again',
-                                err.message, { allowReport: false }))
+    .catch((err) => { if (err instanceof ProcessCanceled) { return Promise.resolve(); } else { return Promise.reject(err); } })
+    .catch((err) => { if (err instanceof TemporaryError) { return api.showErrorNotification('Purge failed, please try again', err.message, { allowReport: false }); } else { return Promise.reject(err); } })
     .catch(err => api.showErrorNotification('Purge failed', err, {
       allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
     }));
@@ -290,7 +290,7 @@ export function onGameModeActivated(
         });
     })
     .then(() => ensureStagingDirectory(api, instPath, gameId))
-    .tap(updatedPath => instPath = updatedPath)
+    .then(updatedPath => { instPath = updatedPath; return updatedPath; })
     .then(() => undefined);
 
   const configuredActivatorId = currentActivator(state);
@@ -371,7 +371,7 @@ export function onGameModeActivated(
           .then(() => (safeFB === undefined)
             ? purgeOldMethod(api, oldActivator, profile, gameId, instPath, modPaths)
             : Promise.resolve())
-          .catch(ProcessCanceled, () => Promise.resolve());
+          .catch((err) => { if (err instanceof ProcessCanceled) { return Promise.resolve(); } else { return Promise.reject(err); } });
       }
 
       {
@@ -413,10 +413,8 @@ export function onGameModeActivated(
       api.events.emit('mods-refreshed');
       return null;
     })
-    .catch(UserCanceled, () => undefined)
-    .catch(ProcessCanceled, err => {
-      log('warn', 'Failed to refresh mods', err.message);
-    })
+    .catch((err) => { if (err instanceof UserCanceled) { return undefined; } else { return Promise.reject(err); } })
+    .catch((err) => { if (err instanceof ProcessCanceled) { log('warn', 'Failed to refresh mods', err.message); return Promise.resolve(); } else { return Promise.reject(err); } })
     .catch((err: Error) => {
       const error: any = (err as any);
       const allowReport = (error.allowReport !== undefined)
@@ -558,10 +556,11 @@ function undeploy(api: IExtensionApi,
       .then(() => Promise.all(byModTypes[typeId].map(mod =>
         activator.deactivate(path.join(stagingPath, mod.installationPath),
                              subdir(mod), mod.installationPath))))
-      .tapCatch(() => {
+      .catch((err) => {
         if (activator.cancel !== undefined) {
           activator.cancel(gameMode, deployPath, stagingPath);
         }
+        return Promise.reject(err);
       })
       .then(() => activator.finalize(gameMode, deployPath, stagingPath))
       .then(newActivation =>
@@ -677,7 +676,7 @@ export function onRemoveMods(api: IExtensionApi,
 
   api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id), options)
     .then(() => undeployMods(api, activators, gameId, removeMods))
-    .then(() => Promise.mapSeries(removeMods,
+    .then(() => promiseMapSeries(removeMods,
                                   (mod: IMod, idx: number, length: number) => {
                                     options?.progressCB?.(idx, length, modName(mod));
                                     const forwardOptions = { ...(options || {}), modData: { ...mod } };
@@ -688,7 +687,7 @@ export function onRemoveMods(api: IExtensionApi,
                                           log('debug', 'removing files for mod',
                                               { game: gameId, mod: mod.id });
                                           return fs.removeAsync(fullModPath)
-                                            .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
+                                            .catch(err => err.code === 'ENOTEMPTY' ? fs.removeAsync(fullModPath) : Promise.reject(err))
                                             .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
                                         } else {
                                           return Promise.resolve();
@@ -704,26 +703,9 @@ export function onRemoveMods(api: IExtensionApi,
         callback(null);
       }
     })
-    .catch(TemporaryError, (err) => {
-      if (callback !== undefined) {
-        callback(err);
-      } else {
-        api.showErrorNotification('Failed to undeploy mod, please try again',
-                                  err.message, { allowReport: false });
-      }
-    })
-    .catch(ProcessCanceled, (err) => {
-      if (callback !== undefined) {
-        callback(err);
-      } else {
-        api.showErrorNotification('Failed to remove mod', err, { allowReport: false });
-      }
-    })
-    .catch(UserCanceled, err => {
-      if (callback !== undefined) {
-        callback(err);
-      }
-    })
+    .catch((err) => { if (err instanceof TemporaryError) { if (callback !== undefined) { callback(err); } else { api.showErrorNotification('Failed to undeploy mod, please try again', err.message, { allowReport: false }); } return Promise.resolve(); } else { return Promise.reject(err); } })
+    .catch((err) => { if (err instanceof ProcessCanceled) { if (callback !== undefined) { callback(err); } else { api.showErrorNotification('Failed to remove mod', err, { allowReport: false }); } return Promise.resolve(); } else { return Promise.reject(err); } })
+    .catch((err) => { if (err instanceof UserCanceled) { if (callback !== undefined) { callback(err); } return Promise.resolve(); } else { return Promise.reject(err); } })
     .catch(err => {
       if (callback !== undefined) {
         callback(err);

@@ -7,10 +7,9 @@ import { getGame } from '../../gamemode_management/util/getGame';
 import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 import modName from '../../mod_management/util/modName';
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 import NXMUrl from '../NXMUrl';
 
-import Bluebird from 'bluebird';
 import * as path from 'path';
 import { toNXMId } from './convertGameId';
 import { gameById } from '../../gamemode_management/selectors';
@@ -27,7 +26,7 @@ export function guessFromFileName(fileName: string): string {
 
 export function queryLookupResult(api: IExtensionApi,
                                   lookupResult: ILookupResult[])
-                                  : Bluebird<number> {
+                                  : Promise<number> {
   const t = api.translate;
   const gameMode = activeGameId(api.getState());
 
@@ -118,7 +117,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
                                  fileName: string,
                                  downloadPath: string,
                                  hasArchive: boolean)
-                                 : Bluebird<void> {
+                                 : Promise<void> {
   const hasValidIds = truthy(mod?.attributes?.modId) && truthy(mod?.attributes?.fileId);
   const isNewestVersion = hasValidIds && (mod?.attributes?.newestFileId === mod?.attributes?.fileId);
   // We're not using the gameId in the query intentionally as we can't
@@ -148,7 +147,7 @@ export function fillNexusIdByMD5(api: IExtensionApi,
       }, []);
       if (applicable.length > 0) {
         const idxProm = (applicable.length === 1)
-          ? Bluebird.resolve(0)
+          ? Promise.resolve(0)
           : queryLookupResult(api, applicable);
 
         return idxProm

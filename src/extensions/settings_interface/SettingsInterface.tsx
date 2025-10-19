@@ -25,7 +25,7 @@ import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import * as remoteT from '@electron/remote';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { app } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
@@ -319,7 +319,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
       ? this.context.api.emitAndAwait('install-extension', ext)
-        .tap(success => success ? this.props.onReloadLanguages() : Promise.resolve())
+        .then(success => success ? this.props.onReloadLanguages() : Promise.resolve())
       : Promise.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
@@ -537,66 +537,21 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
 
   let local: string[] = [];
 
-  return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
-    .map((file: string) => path.basename(file))
-    .tap(files => local = files),
-                      translationExts.map(ext => ext.language))
-    .then(fileLists => Array.from(new Set([].concat(...fileLists))))
-    .filter((langId: string) => isValidLanguageCode(langId))
-    .then(files => {
-      // files contains just the unique languages being supported, but there
-      // may be multiple extensions providing the same language
-      const loc = new Set(local);
-      const locales = files.map((key: string) => {
-        let language;
-        let country;
-
-        const [languageKey, countryKey] = key.split('-');
-        language = nativeLanguageName(languageKey);
-        if (countryKey !== undefined) {
-          country = nativeCountryName(countryKey);
-        }
-
-        const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
-          ? []
-          : translationExts.filter(iter => iter.language === key);
-        return { key, language, country, ext };
-      });
-
-      return locales;
+  return promiseJoin(readExtensibleDir('translation', bundledLanguages, iteration))
+    .then(() => {
+      return readExtensibleDir('translation', userLanguages, iteration);
     })
-    .catch(err => {
-      log('warn', 'failed to read locales', err);
-      return [];
+    .then(() => {
+      return local.map(key => {
+        const [language, country] = key.split('-');
+        return {
+          key,
+          language: nativeLanguageName(language),
+          country: country ? nativeCountryName(country) : undefined,
+          ext: translationExts.filter(ext => ext.name === key),
+        };
+      }).filter(isValidLanguageCode);
     });
-}
-
-function SettingsInterface(props: IBaseProps) {
-  const [languages, setLanguages] = React.useState<ILanguage[]>([]);
-  const [iteration, setIteration] = React.useState<number>(0);
-
-  const { lang, exts } = useSelector<IState, { lang: string, exts: IAvailableExtension[] }>(
-    state => ({
-      lang: state.settings.interface.language,
-      exts: state.session.extensions.available,
-    }));
-
-  const forceReload = React.useCallback(() => setIteration(i => i + 1), []);
-
-  React.useEffect(() => {
-    (async () => {
-      const langs = await readLocales(exts);
-      // ensure the selected language is always an option
-      if (langs.length === 0) {
-        langs.push({
-          key: lang,
-          language: nativeLanguageName(lang),
-          ext: [],
-        });
-      }
-      setLanguages(langs);
-    })();
-  }, [lang, exts, iteration]);
 
   return (
     <SettingsInterfaceMapped

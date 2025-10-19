@@ -1,6 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import opn from '../../util/opn';
-import { currentGame } from '../../util/storeHelper';
+import { currentGame } from '../gamemode_management/selectors';
 import { dismissOverlay } from '../instructions_overlay/actions';
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 import { nexusGameId } from '../nexus_integration/util/convertGameId';

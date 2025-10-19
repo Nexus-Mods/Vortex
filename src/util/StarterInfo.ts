@@ -21,7 +21,7 @@ import { MissingDependency, MissingInterpreter,
 import getVortexPath from './getVortexPath';
 import { getExecutablePathForPlatform } from './macOSGameCompatibility';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fs from 'fs';
 import * as path from 'path';
 import { GameEntryNotFound, GameStoreNotFound } from '../types/IGameStore';
@@ -120,18 +120,32 @@ class StarterInfo implements IStarterInfo {
               getApplication().quit();
             }
           })
-          .catch(UserCanceled, () => null)
-          .catch(GameEntryNotFound, err => {
-            const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
-            log('error', errorMsg);
-            onShowError('Failed to start game through launcher', err, !game.contributed);
-            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+          .catch(err => {
+            if (err instanceof UserCanceled) {
+              return Promise.resolve(null);
+            } else {
+              return Promise.reject(err);
+            }
           })
-          .catch(GameStoreNotFound, err => {
-            onShowError(
-              'Failed to start game through launcher',
-              `Game store "${err.storeName}" not supported, is the extension disabled?`, false);
-            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+          .catch(err => {
+            if (err instanceof GameEntryNotFound) {
+              const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
+              log('error', errorMsg);
+              onShowError('Failed to start game through launcher', err, !game.contributed);
+              return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+            } else {
+              return Promise.reject(err);
+            }
+          })
+          .catch(err => {
+            if (err instanceof GameStoreNotFound) {
+              onShowError(
+                'Failed to start game through launcher',
+                `Game store "${err.storeName}" not supported, is the extension disabled?`, false);
+              return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+            } else {
+              return Promise.reject(err);
+            }
           })
           .catch(err => {
             onShowError('Failed to start game through launcher', err, true);
@@ -179,14 +193,31 @@ class StarterInfo implements IStarterInfo {
       detach: info.detach || (info.onStart === 'close'),
       onSpawned: spawned,
     })
-    .catch(ProcessCanceled, () => undefined)
-    .catch(UserCanceled, () => undefined)
-    .catch(MissingDependency, () => {
-      onShowError('Failed to run tool', {
-        executable: info.exePath,
-        message: 'An Application/Tool dependency is missing, please consult the '
-               + 'Application/Tool documentation for required dependencies.',
-      }, false);
+    .catch(err => {
+      if (err instanceof ProcessCanceled) {
+        return Promise.resolve(undefined);
+      } else {
+        return Promise.reject(err);
+      }
+    })
+    .catch(err => {
+      if (err instanceof UserCanceled) {
+        return Promise.resolve(undefined);
+      } else {
+        return Promise.reject(err);
+      }
+    })
+    .catch(err => {
+      if (err instanceof MissingDependency) {
+        onShowError('Failed to run tool', {
+          executable: info.exePath,
+          message: 'An Application/Tool dependency is missing, please consult the '
+                 + 'Application/Tool documentation for required dependencies.',
+        }, false);
+        return Promise.resolve();
+      } else {
+        return Promise.reject(err);
+      }
     })
     .catch(err => {
       if (err.code === 'ENOENT') {

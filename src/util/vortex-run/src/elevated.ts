@@ -1,5 +1,5 @@
 /* eslint-disable */
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';
@@ -21,7 +21,7 @@ const winapi = isWindows() ? (isWindows() ? require('winapi-bindings') : undefin
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequire) =>
-                        void | Promise<void> | Bluebird<void>) {
+                        void | Promise<void> | Promise<void>) {
   let client;
   const syntaxErrors = ['ReferenceError'];
   const handleError = (error: any) => {
@@ -93,15 +93,15 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                        the global require. Regular require calls will not work in production
  *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @returns {Bluebird<string>} a promise that will be resolved as soon as the process is started
+ * @returns {Promise<string>} a promise that will be resolved as soon as the process is started
  *                             (which happens after the user confirmed elevation). It resolves to
  *                             the path of the tmpFile we had to create. If the caller can figure
  *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequire) =>
-                        void | Promise<void> | Bluebird<void>,
-                     args?: any): Bluebird<any> {
-  return new Bluebird((resolve, reject) => {
+                        void | Promise<void> | Promise<void>,
+                     args?: any): Promise<any> {
+  return new Promise((resolve, reject) => {
     tmp.file({ postfix: '.js' }, (err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);

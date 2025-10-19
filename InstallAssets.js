@@ -1,6 +1,4 @@
 'use strict';
-
-const Promise = require('bluebird');
 const fs = require('fs-extra');
 const path = require('path');
 // Removed glob dependency - using native Node.js fs operations
@@ -150,57 +148,62 @@ function applyExcludes(files, fileConfig) {
 }
 
 // copy files
-Promise.mapSeries(data.copy, file => {
-  if (!file.target || file.target.indexOf(tgt) === -1) {
-    return;
-  }
-
-  return new Promise((resolve, reject) => {
-    // Handle different path patterns
-    if (file.srcPath.includes('*')) {
-      // For wildcard patterns, we need to expand them
-      const basePath = file.srcPath.split('*')[0];
-      const pattern = file.srcPath.split('*')[1] || '';
-      
-      if (fs.existsSync(basePath)) {
-        let files = expandWildcardPath(file.srcPath);
-        // Apply excludes if configured
-        files = applyExcludes(files, file);
-        copies = copies === -1 ? files.length : copies += files.length;
-        resolve(files);
-      } else {
-        resolve([]);
-      }
-    } else {
-      // For direct file paths
-      if (fs.existsSync(file.srcPath)) {
-        let files = [file.srcPath];
-        files = applyExcludes(files, file);
-        copies = copies === -1 ? files.length : copies += files.length;
-        resolve(files);
-      } else {
-        resolve([]);
-      }
+// Using a sequential approach to replace Promise.mapSeries
+async function processFiles() {
+  for (const file of data.copy) {
+    if (!file.target || file.target.indexOf(tgt) === -1) {
+      continue;
     }
-  })
-    .then(files => Promise.map(files, (globResult) => {
-      let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
-      if (file.rename) {
-        globTarget = path.join(path.dirname(globTarget), file.rename);
-      }
-      const targetFile = path.join(tgt, file.outPath, globTarget);
 
-      return fs.ensureDir(path.dirname(targetFile))
-        .then(() => fs.copy(globResult, targetFile))
-        .then(() => {
+    await new Promise((resolve, reject) => {
+      // Handle different path patterns
+      if (file.srcPath.includes('*')) {
+        // For wildcard patterns, we need to expand them
+        const basePath = file.srcPath.split('*')[0];
+        const pattern = file.srcPath.split('*')[1] || '';
+        
+        if (fs.existsSync(basePath)) {
+          let files = expandWildcardPath(file.srcPath);
+          // Apply excludes if configured
+          files = applyExcludes(files, file);
+          copies = copies === -1 ? files.length : copies += files.length;
+          resolve(files);
+        } else {
+          resolve([]);
+        }
+      } else {
+        // For direct file paths
+        if (fs.existsSync(file.srcPath)) {
+          let files = [file.srcPath];
+          files = applyExcludes(files, file);
+          copies = copies === -1 ? files.length : copies += files.length;
+          resolve(files);
+        } else {
+          resolve([]);
+        }
+      }
+    })
+    .then(async (files) => {
+      // Process files sequentially to replace Promise.map with concurrency
+      for (const globResult of files) {
+        let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
+        if (file.rename) {
+          globTarget = path.join(path.dirname(globTarget), file.rename);
+        }
+        const targetFile = path.join(tgt, file.outPath, globTarget);
+
+        try {
+          await fs.ensureDir(path.dirname(targetFile));
+          await fs.copy(globResult, targetFile);
           console.log('📋 Copied:', globResult, targetFile);
-        })
-        .catch((copyErr) => {
+        } catch (copyErr) {
           console.log('❌ Failed to copy:', globResult, targetFile, copyErr);
-        })
-        .finally(() => {
+        } finally {
           --copies;
-        });
-    }));
-})
-  .then(() => waitForProcesses());
+        }
+      }
+    });
+  }
+}
+
+processFiles().then(() => waitForProcesses());

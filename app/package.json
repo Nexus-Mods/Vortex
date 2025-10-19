@@ -24,7 +24,6 @@
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#master",
     "bbcode-to-react": "^0.2.9",
     "big.js": "^5.2.2",
-    "bluebird": "^3.7.2",
     "bootstrap-sass": "^3.4.1",
     "classnames": "^2.5.1",
     "commander": "^4.0.1",

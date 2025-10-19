@@ -3,7 +3,7 @@ import {LogLevel} from '../../../util/log';
 
 import { ILog, ISession } from '../types/ISession';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import getVortexPath from '../../../util/getVortexPath';
 
@@ -30,7 +30,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
     .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
     .then((logFileNames: string[]) => {
       logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
-      return Promise.mapSeries(logFileNames, (logFileName: string) =>
+      return promiseMapSeries(logFileNames, (logFileName: string) =>
         fs.readFileAsync(path.join(logPath, logFileName), 'utf8'));
     })
     .then((data: string[]) => data.join('\n'))

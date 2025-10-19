@@ -2,12 +2,14 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IDownload, IState } from '../../types/IState';
 import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { existsSync } from 'original-fs';
 import { writeFileAtomic } from '../../util/fsAtomic';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE, truthy } from '../../util/util';
+import { promiseDelay, promiseFilter, promiseMap, promiseReduce } from '../../util/promise-helpers';
 
 import { ipcRenderer } from 'electron';
 
@@ -20,7 +22,7 @@ import installExtension from './installExtension';
 import { ExtensionType, IAvailableExtension, IExtension,
          IExtensionDownloadInfo, IExtensionManifest, ISelector } from './types';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as _ from 'lodash';
 import * as path from 'path';
 import { SemVer } from 'semver';
@@ -69,26 +71,28 @@ function getExtensionStateForFiltering(): any {
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
-    .filter((fileName: string) => {
-      if (path.extname(fileName) === '.installing') {
-        // ignore directories during installation
-        return Promise.resolve(false);
-      }
-      return fs.statAsync(path.join(searchPath, fileName))
-        .then(stat => stat.isDirectory())
-        .catch(err => {
-          if (err.code !== 'ENOENT') {
-            log('error', '❌ failed to stat file/directory', {
-              searchPath, fileName, error: err.message,
-            });
-          }
-          // the stat may fail if the directory has been removed/renamed between reading the dir
-          // and the stat. Specifically this can happen while installing an extension for the
-          // temporary ".installing" directory
+    .then((files: string[]) => 
+      promiseFilter(files, (fileName: string) => {
+        if (path.extname(fileName) === '.installing') {
+          // ignore directories during installation
           return Promise.resolve(false);
-        });
-    })
-    .catch({ code: 'ENOENT' }, () => []);
+        }
+        return fs.statAsync(path.join(searchPath, fileName))
+          .then(stat => stat.isDirectory())
+          .catch(err => {
+            if (err.code !== 'ENOENT') {
+              log('error', '❌ failed to stat file/directory', {
+                searchPath, fileName, error: err.message,
+              });
+            }
+            // the stat may fail if the directory has been removed/renamed between reading the dir
+            // and the stat. Specifically this can happen while installing an extension for the
+            // temporary ".installing" directory
+            return Promise.resolve(false);
+          });
+      })
+    )
+    .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve([]); } else { return Promise.reject(err); }});
 }
 
 /**
@@ -140,7 +144,7 @@ function retryNetworkOperation<T>(
           Math.floor(baseDelayMs * Math.pow(2, attempt - 1) * platformFactor),
         );
         log('warn', 'retrying network operation', { description, attempt, delay });
-        return Promise.delay(delay).then(doAttempt);
+        return promiseDelay(delay).then(doAttempt);
       });
   };
   return doAttempt();
@@ -219,8 +223,10 @@ function readExtensionDir(pluginPath: string,
                           bundled: boolean)
                           : Promise<Array<{ id: string, info: IExtension }>> {
   return getAllDirectories(pluginPath)
-    .map((extPath: string) => path.join(pluginPath, extPath))
-    .map((fullPath: string) => readExtensionInfo(fullPath, bundled));
+    .then((dirs: string[]) => promiseMap(dirs, (extPath: string) => {
+      const fullPath = path.join(pluginPath, extPath);
+      return readExtensionInfo(fullPath, bundled);
+    }));
 }
 
 export function readExtensions(force: boolean): Promise<{ [extId: string]: IExtension }> {
@@ -228,6 +234,17 @@ export function readExtensions(force: boolean): Promise<{ [extId: string]: IExte
     caches.__installedExtensions = doReadExtensions();
   }
   return caches.__installedExtensions;
+}
+
+let syncCache: { [extId: string]: IExtension } = {};
+
+export function readExtensionsSync(force: boolean): { [extId: string]: IExtension } {
+  // This is a synchronous version for cases where we need immediate results
+  // Note: This should be used sparingly as it blocks the event loop
+  if ((Object.keys(syncCache).length === 0) || force) {
+    syncCache = doReadExtensionsSync();
+  }
+  return syncCache;
 }
 
 function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
@@ -240,14 +257,103 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
   return Promise.all([readExtensionDir(bundledPath, true),
     readExtensionDir(extensionsPath, false)])
     .then(extLists => [].concat(...extLists))
-    .reduce((prev, value: { id: string, info: IExtension }) => {
+    .then((extArray: Array<{ id: string, info: IExtension }>) => 
+      promiseReduce(extArray, (prev: { [extId: string]: IExtension }, value: { id: string, info: IExtension }) => {
+        // Skip extensions marked for removal in persistent state
+        if (!persistentState[value.id]?.remove) {
+          prev[value.id] = value.info;
+        }
+        return Promise.resolve(prev);
+      }, {})
+    );
+}
+
+function doReadExtensionsSync(): { [extId: string]: IExtension } {
+  const bundledPath = getVortexPath('bundledPlugins');
+  const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
+
+  // Get the current extension state to check for extensions marked for removal
+  const persistentState = getExtensionStateForFiltering();
+
+  try {
+    const bundledExtensions = readExtensionDirSync(bundledPath, true);
+    const userExtensions = readExtensionDirSync(extensionsPath, false);
+    const extArray = [...bundledExtensions, ...userExtensions];
+    
+    return extArray.reduce((prev: { [extId: string]: IExtension }, value: { id: string, info: IExtension }) => {
       // Skip extensions marked for removal in persistent state
       if (!persistentState[value.id]?.remove) {
         prev[value.id] = value.info;
       }
       return prev;
-    }, {})
-  ;
+    }, {});
+  } catch (err) {
+    log('error', 'Failed to read extensions synchronously', err.message);
+    return {};
+  }
+}
+
+function readExtensionDirSync(searchPath: string, bundled: boolean): Array<{ id: string, info: IExtension }> {
+  try {
+    if (!existsSync(searchPath)) {
+      return [];
+    }
+    
+    const files = fs.readdirSync(searchPath);
+    const validFiles = files.filter(fileName => {
+      if (path.extname(fileName) === '.installing') {
+        // ignore directories during installation
+        return false;
+      }
+      try {
+        const fullPath = path.join(searchPath, fileName);
+        const stat = fs.statSync(fullPath);
+        return stat.isDirectory();
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          log('error', '❌ failed to stat file/directory', {
+            searchPath, fileName, error: err.message,
+          });
+        }
+        // the stat may fail if the directory has been removed/renamed between reading the dir
+        // and the stat. Specifically this can happen while installing an extension for the
+        // temporary ".installing" directory
+        return false;
+      }
+    });
+    
+    return validFiles.map(extPath => {
+      const fullPath = path.join(searchPath, extPath);
+      return readExtensionInfoSync(fullPath, bundled);
+    });
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+}
+
+function readExtensionInfoSync(extensionPath: string, bundled: boolean, fallback: any = {}): { id: string, info: IExtension } {
+  const finalPath = extensionPath.replace(/\.installing$/, '');
+
+  try {
+    const info = fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' });
+    const data: IExtension = JSON.parse(info);
+    const id = path.basename(finalPath);
+
+    return {
+      id,
+      info: applyExtensionInfo(id, bundled, data, fallback),
+    };
+  } catch (err) {
+    log('warn', 'Failed to read extension info', { extensionPath, error: err.message });
+    const id = path.basename(finalPath);
+    return {
+      id,
+      info: applyExtensionInfo(id, bundled, {}, fallback),
+    };
+  }
 }
 
 export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boolean = false)
@@ -263,10 +369,14 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then(manifest => {
       log('debug', '📋 extension list received');
-      return manifest.extensions.filter(ext => ext.name !== undefined);
+      const extensions = manifest.extensions.filter(ext => ext.name !== undefined);
+      return writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2))
+        .then(() => extensions);
     })
-    .tap(extensions => writeFileAtomic(cachePath, JSON.stringify({ extensions }, undefined, 2)))
-    .tapCatch(err => log('error', '❌ failed to download extension list', err));
+    .catch(err => {
+      log('error', '❌ failed to download extension list', err);
+      return [];
+    });
 }
 
 function doFetchAvailableExtensions(forceDownload: boolean)
@@ -304,16 +414,18 @@ function doFetchAvailableExtensions(forceDownload: boolean)
             }
           });
     })
-    .catch({ code: 'ENOENT' }, () => {
+    .catch(err => { if (err.code === 'ENOENT') {
       log('info', '📋 extension list missing, will update');
       return downloadExtensionList(cachePath);
-    })
+    }})
     .catch(err => {
       log('error', '❌ failed to fetch list of extensions', err);
       return Promise.resolve([]);
     })
-    .filter((ext: IAvailableExtension) => ext.description !== undefined)
-    .then(extensions => ({ time, extensions }));
+    .then((extensions: IAvailableExtension[]) => 
+      promiseFilter(extensions, (ext: IAvailableExtension) => Promise.resolve(ext.description !== undefined))
+        .then(filtered => ({ time, extensions: filtered }))
+    );
 }
 
 export function downloadAndInstallExtension(api: IExtensionApi,
@@ -400,12 +512,12 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       api.dismissNotification(notificationId);
       return Promise.resolve(true);
     })
-    .catch(UserCanceled, () => {
+    .catch(err => { if (err instanceof UserCanceled) { 
       // Dismiss the activity notification
       api.dismissNotification(notificationId);
-      return null;
-    })
-    .catch(ProcessCanceled, () => {
+      return Promise.resolve(null); 
+    } else { return Promise.reject(err); }})
+    .catch(err => { if (err instanceof ProcessCanceled) { 
       // Dismiss the activity notification
       api.dismissNotification(notificationId);
       api.showDialog('error', 'Installation failed', {
@@ -421,14 +533,14 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       }, [
         { label: 'Close' },
       ]);
-      return Promise.resolve(false);
-    })
-    .catch(ServiceTemporarilyUnavailable, err => {
+      return Promise.resolve(false); 
+    } else { return Promise.reject(err); }})
+    .catch(err => err instanceof ServiceTemporarilyUnavailable ? Promise.resolve(false).then(() => {
       // Dismiss the activity notification
       api.dismissNotification(notificationId);
       log('warn', '⚠️ Failed to download from github', { message: err.message });
-      return Promise.resolve(false);
-    })
+      return false;
+    }) : Promise.reject(err))
     .catch(err => {
       // Dismiss the activity notification
       api.dismissNotification(notificationId);
@@ -501,12 +613,12 @@ export function downloadGithubRelease(api: IExtensionApi,
                       }
                     }, 'always', { allowInstall: 'force' });
   })
-    .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
+    .catch(err => { if (err instanceof AlreadyDownloaded) { 
       const state = api.getState();
       const downloads = state.persistent.downloads.files;
       const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
-      return [dlId];
-    });
+      return Promise.resolve([dlId]); 
+    } else { return Promise.reject(err); }});
 }
 
 export function downloadFile(url: string, outputPath: string): Promise<void> {
@@ -578,10 +690,10 @@ function downloadGithubRawRecursive(repo: string, source: string, destination: s
       const repoDirs: string[] =
         data.filter(iter => iter.type === 'dir').map(iter => iter.name);
 
-      return Promise.map(repoFiles, fileName => downloadFile(
+      return promiseMap(repoFiles, fileName => downloadFile(
         githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
         path.join(destination, fileName)))
-        .then(() => Promise.map(repoDirs, fileName => {
+        .then(() => promiseMap(repoDirs, fileName => {
           const sourcePath = `${source}/${fileName}`;
           const outPath = path.join(destination, fileName);
           return fs.mkdirAsync(outPath)
@@ -632,11 +744,21 @@ export function downloadGithubRaw(api: IExtensionApi,
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
   const readBaseDir = (baseName: string): Promise<string[]> => {
     return fs.readdirAsync(baseName)
-      .filter((name: string) => fs.statAsync(path.join(baseName, name))
-        .then(stats => stats.isDirectory()))
-      .map((name: string) => path.join(baseName, name))
-      .catch({ code: 'ENOENT' }, () => []);
+      .then((files: string[]) => 
+        promiseFilter(files, (name: string) => 
+          fs.statAsync(path.join(baseName, name))
+            .then(stats => stats.isDirectory())
+            .catch(() => false)
+        )
+      )
+      .then((filteredFiles: string[]) => 
+        filteredFiles.map((name: string) => path.join(baseName, name))
+      )
+      .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve([]); } else { return Promise.reject(err); }});
   };
+
+  // Read user extensions directory
+  const userExtensionsPromise = readBaseDir(customPath);
 
   return readExtensions(false)
     .then(extensions => {
@@ -644,101 +766,18 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
         .filter(extId => extensions[extId].type === extType)
         .map(extId => extensions[extId].path);
 
-      return Promise.join(
+      // Use Promise.all to wait for all directory reads
+      const promises = [
         readBaseDir(bundledPath),
         ...extDirs.map(extPath => readBaseDir(extPath)),
-        readBaseDir(customPath),
-      );
+        userExtensionsPromise
+      ];
+
+      return Promise.all(promises);
     })
-    .then(lists => [].concat(...lists));
-}
-
-// Synchronous versions of extension reading functions
-function getAllDirectoriesSync(searchPath: string): string[] {
-  try {
-    return fs.readdirSync(searchPath)
-      .filter((fileName: string) => {
-        if (path.extname(fileName) === '.installing') {
-          // ignore directories during installation
-          return false;
-        }
-        try {
-          const stat = fs.statSync(path.join(searchPath, fileName));
-          return stat.isDirectory();
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            log('error', 'failed to stat file/directory', {
-              searchPath, fileName, error: err.message,
-            });
-          }
-          return false;
-        }
-      });
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return [];
-    }
-    throw err;
-  }
-}
-
-function readExtensionDirSync(pluginPath: string, bundled: boolean): Array<{ id: string, info: IExtension }> {
-  const directories = getAllDirectoriesSync(pluginPath);
-  const results: Array<{ id: string, info: IExtension }> = [];
-  
-  for (const extPath of directories) {
-    const fullPath = path.join(pluginPath, extPath);
-    try {
-      // Use the synchronous version of readExtensionInfo
-      const extensionInfo = readExtensionInfoSync(fullPath, bundled);
-      results.push(extensionInfo);
-    } catch (err) {
-      log('warn', 'failed to read extension info synchronously', { fullPath, error: err.message });
-    }
-  }
-  
-  return results;
-}
-
-function readExtensionInfoSync(extensionPath: string, bundled: boolean, fallback: any = {}): { id: string, info: IExtension } {
-  const finalPath = extensionPath.replace(/\.installing$/, '');
-  
-  try {
-    const infoData = fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' });
-    const data: IExtension = JSON.parse(infoData);
-    data.path = finalPath;
-    const id = data.id || path.basename(finalPath);
-    return {
-      id,
-      info: applyExtensionInfo(id, bundled, data, fallback),
-    };
-  } catch (err) {
-    const id = path.basename(finalPath);
-    return {
-      id,
-      info: applyExtensionInfo(id, bundled, {}, fallback),
-    };
-  }
-}
-
-export function readExtensionsSync(force: boolean = false): { [extId: string]: IExtension } {
-  const bundledPath = getVortexPath('bundledPlugins');
-  const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
-
-  // Get the current extension state to check for extensions marked for removal
-  const persistentState = getExtensionStateForFiltering();
-
-  const bundledExtensions = readExtensionDirSync(bundledPath, true);
-  const userExtensions = readExtensionDirSync(extensionsPath, false);
-  const allExtensions = [...bundledExtensions, ...userExtensions];
-
-  const result: { [extId: string]: IExtension } = {};
-  for (const ext of allExtensions) {
-    // Skip extensions marked for removal in persistent state
-    if (!persistentState[ext.id]?.remove) {
-      result[ext.id] = ext.info;
-    }
-  }
-
-  return result;
+    .then((results: string[][]) => {
+      // Flatten the results array
+      const allPaths: string[] = [].concat(...results);
+      return allPaths;
+    });
 }

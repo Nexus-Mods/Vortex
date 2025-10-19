@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { IDeploymentMethod, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { getGame } from '../gamemode_management/util/getGame';

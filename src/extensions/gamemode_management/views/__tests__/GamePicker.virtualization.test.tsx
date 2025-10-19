@@ -8,7 +8,7 @@ import { IDiscoveryResult } from '../../types/IDiscoveryResult';
 import { IProfile } from '../../../profile_management/types/IProfile';
 import { IAvailableExtension, IExtension } from '../../../extension_manager/types';
 import { IGameListEntry } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 // Mock the translation function
 const mockT = (input: string) => input;

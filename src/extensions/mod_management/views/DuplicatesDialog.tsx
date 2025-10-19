@@ -3,7 +3,7 @@ import { Button, Checkbox } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '../../../controls/api';
 
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { useSelector } from 'react-redux';
 import { renderModName } from '../../../util/api';
 

@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 import { pathToFileURL } from 'url';
 import getVortexPath from '../util/getVortexPath';
@@ -16,7 +16,7 @@ class SplashScreen {
     this.mWindow.setAlwaysOnTop(true);
 
     // Close splash screen immediately without fade animation
-    return Promise.delay(200)
+    return promiseDelay(200)
       .then(() => {
         if (!this.mWindow.isDestroyed()) {
           this.mWindow.close();

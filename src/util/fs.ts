@@ -22,7 +22,7 @@ import { decodeSystemError } from './nativeErrors';
 import { isWindows } from './platform';
 import { restackErr, truthy } from './util';
 
-import PromiseBB from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { decode } from 'iconv-lite';
 import { dialog as dialogIn } from 'electron';
 import * as fs from 'fs-extra';
@@ -90,7 +90,7 @@ const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'EMFILE', 'UNKNOWN']);
 
 const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
-  ? (func: () => PromiseBB<any>): PromiseBB<any> => {
+  ? (func: () => Promise<any>): Promise<any> => {
     if (Math.random() < 0.25) {
       const code = Math.random() < 0.33 ? 'EBUSY' : Math.random() < 0.5 ? 'EIO' : 'UNKNOWN';
       const res: any = new Error(`fake error ${code}`);
@@ -99,16 +99,16 @@ const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
       }
       res.code = code;
       res.path = 'foobar file';
-      return PromiseBB.reject(res);
+      return Promise.reject(res);
     } else {
       return func();
     }
   }
-  : (func: () => PromiseBB<any>) => func();
+  : (func: () => Promise<any>) => func();
 
-function nospcQuery(): PromiseBB<boolean> {
+function nospcQuery(): Promise<boolean> {
   if (dialog === undefined) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 
   const options: Electron.MessageBoxOptions = {
@@ -123,13 +123,13 @@ function nospcQuery(): PromiseBB<boolean> {
 
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(true);
 }
 
-function ioQuery(): PromiseBB<boolean> {
+function ioQuery(): Promise<boolean> {
   if (dialog === undefined) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 
   const options: Electron.MessageBoxOptions = {
@@ -145,13 +145,13 @@ function ioQuery(): PromiseBB<boolean> {
 
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(true);
 }
 
-function unlockConfirm(filePath: string): PromiseBB<boolean> {
+function unlockConfirm(filePath: string): Promise<boolean> {
   if ((dialog === undefined) || !truthy(filePath)) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 
   let processes = [];
@@ -191,13 +191,17 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(choice === 2);
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(choice === 2);
 }
 
-function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): PromiseBB<boolean> {
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promise<boolean> {
   if (dialog === undefined) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 
   if (filePath === undefined) {
@@ -253,24 +257,24 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       stack: restackErr(err, stackErr).stack,
       path: filePath,
     }, {}, ['bug'], {});
-    return PromiseBB.reject(new UserCanceled());
+    return Promise.reject(new UserCanceled());
   }
 
   switch (options.buttons[choice]) {
-    case 'Retry': return PromiseBB.resolve(true);
+    case 'Retry': return Promise.resolve(true);
     case 'Ignore': {
       err['code'] = decoded?.rethrowAs ?? 'UNKNOWN';
       err['allowReport'] = false;
-      return PromiseBB.reject(err);
+      return Promise.reject(err);
     }
   }
 
-  return PromiseBB.reject(new UserCanceled());
+  return Promise.reject(new UserCanceled());
 }
 
-function busyRetry(filePath: string): PromiseBB<boolean> {
+function busyRetry(filePath: string): Promise<boolean> {
   if (dialog === undefined) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 
   if (filePath === undefined) {
@@ -303,22 +307,22 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(true);
 }
 
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
                      stackErr: Error, showDialogCallback?: () => boolean,
-                     options?: IErrorHandlerOptions): PromiseBB<boolean> {
+                     options?: IErrorHandlerOptions): Promise<boolean> {
   if ((retries > 0)
       && (RETRY_ERRORS.has(error.code)
           || ((options?.extraRetryErrors || []).includes(error.code)))) {
     // retry these errors without query for a few times
-    return PromiseBB.delay(retries === 1 ? 1000 : 100)
-      .then(() => PromiseBB.resolve(true));
+    return delay(retries === 1 ? 1000 : 100)
+      .then(() => Promise.resolve(true));
   }
   if ((showDialogCallback !== undefined) && !showDialogCallback()) {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
   // system error code 1224 means there is a user-mapped section open in the file
   if ((error.code === 'EBUSY')
@@ -331,13 +335,13 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
     return ioQuery();
   } else if (error.code === 'EPERM') {
     let unlockPath = filePath;
-    return PromiseBB.resolve(fs.stat(unlockPath))
+    return Promise.resolve(fs.stat(unlockPath))
       .catch(statErr => {
         if (statErr.code === 'ENOENT') {
           unlockPath = path.dirname(filePath);
-          return PromiseBB.resolve();
+          return Promise.resolve();
         } else {
-          return PromiseBB.reject(statErr);
+          return Promise.reject(statErr);
         }
       })
       .then(() => unlockConfirm(unlockPath))
@@ -362,13 +366,13 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
               return Promise.reject(error);
             });
         } else {
-          return PromiseBB.resolve(true);
+          return Promise.resolve(true);
         }
       });
   } else if (error.code === 'UNKNOWN') {
     return unknownErrorRetry(filePath, error, stackErr);
   } else {
-    return PromiseBB.resolve(false);
+    return Promise.resolve(false);
   }
 }
 
@@ -386,7 +390,7 @@ function augmentError(error: NodeJS.ErrnoException) {
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
                       showDialogCallback?: () => boolean,
-                      options?: IErrorHandlerOptions): PromiseBB<void> {
+                      options?: IErrorHandlerOptions): Promise<void> {
   augmentError(error);
   const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
                               stackErr, showDialogCallback, options);
@@ -396,19 +400,19 @@ function errorHandler(error: NodeJS.ErrnoException,
     const err = new Error(
       `Failed to handle filesystem error "${error.code}": ${error.message}.`);
     err.stack = error.stack;
-    throw PromiseBB.reject(err);
+    throw Promise.reject(err);
   }
 
   return repProm
     .then(repeat => repeat
-      ? PromiseBB.resolve()
-      : PromiseBB.reject(restackErr(error, stackErr)))
-    .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
+      ? Promise.resolve()
+      : Promise.reject(restackErr(error, stackErr)))
+    .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
 
 export function genFSWrapperAsync<T extends (...args) => any>(func: T) {
   const wrapper = (stackErr: Error, tries: number, ...args) =>
-    simfail(() => PromiseBB.resolve(func(...args)))
+    simfail(() => Promise.resolve(func(...args)))
       .catch(err => errorHandler(err, stackErr, tries)
         .then(() => wrapper(stackErr, tries - 1, ...args)));
 
@@ -419,16 +423,16 @@ export function genFSWrapperAsync<T extends (...args) => any>(func: T) {
 }
 
 // tslint:disable:max-line-length
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genFSWrapperAsync(fs.chmod);
-const closeAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.close);
-const fsyncAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.fsync);
-const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.lstat);
-const mkdirAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdir);
-const mkdirsAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdirs);
-const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genFSWrapperAsync(fs.move);
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fs.open);
-const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fs.readdir);
-const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fs.readFile);
+const chmodAsync: (path: string, mode: string | number) => Promise<void> = genFSWrapperAsync(fs.chmod);
+const closeAsync: (fd: number) => Promise<void> = genFSWrapperAsync(fs.close);
+const fsyncAsync: (fd: number) => Promise<void> = genFSWrapperAsync(fs.fsync);
+const lstatAsync: (path: string) => Promise<fs.Stats> = genFSWrapperAsync(fs.lstat);
+const mkdirAsync: (path: string) => Promise<void> = genFSWrapperAsync(fs.mkdir);
+const mkdirsAsync: (path: string) => Promise<void> = genFSWrapperAsync(fs.mkdirs);
+const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => Promise<void> = genFSWrapperAsync(fs.move);
+const openAsync: (path: string, flags: string | number, mode?: number) => Promise<number> = genFSWrapperAsync(fs.open);
+const readdirAsync: (path: string) => Promise<string[]> = genFSWrapperAsync(fs.readdir);
+const readFileAsync: (...args: any[]) => Promise<any> = genFSWrapperAsync(fs.readFile);
 
 /**
  * USAGE GUIDANCE:
@@ -446,16 +450,16 @@ const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fs.r
  * Consider migrating statSilentAsync() usage to statAsync() for better robustness,
  * unless the silent behavior is specifically required.
  */
-const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.stat);
-const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => PromiseBB.resolve(fs.stat(statPath));
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fs.symlink);
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genFSWrapperAsync(fs.utimes);
+const statAsync: (path: string) => Promise<fs.Stats> = genFSWrapperAsync(fs.stat);
+const statSilentAsync: (path: string) => Promise<fs.Stats> = (statPath: string) => Promise.resolve(fs.stat(statPath));
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise<void> = genFSWrapperAsync(fs.symlink);
+const utimesAsync: (path: string, atime: number, mtime: number) => Promise<void> = genFSWrapperAsync(fs.utimes);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
-const writeAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesWritten: number, buffer: BufferT }> = genFSWrapperAsync(fs.write) as any;
-const readAsync: <BufferT>(...args: any[]) => PromiseBB<{ bytesRead: number, buffer: BufferT }> = genFSWrapperAsync(fs.read) as any;
-const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.writeFile);
-const appendFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.appendFile);
+const writeAsync: <BufferT>(...args: any[]) => Promise<{ bytesWritten: number, buffer: BufferT }> = genFSWrapperAsync(fs.write) as any;
+const readAsync: <BufferT>(...args: any[]) => Promise<{ bytesRead: number, buffer: BufferT }> = genFSWrapperAsync(fs.read) as any;
+const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => Promise<void> = genFSWrapperAsync(fs.writeFile);
+const appendFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => Promise<void> = genFSWrapperAsync(fs.appendFile);
 // tslint:enable:max-line-length
 
 export {
@@ -479,8 +483,8 @@ export {
   writeFileAsync,
 };
 
-export function isDirectoryAsync(dirPath: string): PromiseBB<boolean> {
-  return PromiseBB.resolve(fs.stat(dirPath))
+export function isDirectoryAsync(dirPath: string): Promise<boolean> {
+  return Promise.resolve(fs.stat(dirPath))
     .then(stats => stats.isDirectory());
 }
 
@@ -492,16 +496,16 @@ export function ensureDirSync(dirPath: string) {
   }
 }
 
-export function ensureFileAsync(filePath: string): PromiseBB<void> {
+export function ensureFileAsync(filePath: string): Promise<void> {
   const stackErr = new Error();
-  return PromiseBB.resolve(fs.ensureFile(filePath))
+  return Promise.resolve(fs.ensureFile(filePath))
     .catch(err => {
       throw restackErr(err, stackErr);
     });
 }
 
 export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
-  (created: string) => PromiseBB<void>): PromiseBB<void> {
+  (created: string) => Promise<void>): Promise<void> {
   const stackErr = new Error();
   // If a onDirCreated callback is provided, we can't use fs-extra's
   //  implementation directly as there's no way for us to reliably determine
@@ -512,55 +516,55 @@ export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
     : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }
 
-function ensureDirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
-  return PromiseBB.resolve(fs.ensureDir(dirPath))
+function ensureDirInt(dirPath: string, stackErr: Error, tries: number): Promise<void> {
+  return Promise.resolve(fs.ensureDir(dirPath))
     .catch(err => {
       // ensureDir isn't supposed to cause EEXIST errors as far as I understood
       // it but on windows, when targeting a OneDrive path (and similar?)
       // it apparently still does
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
     });
 }
 
-function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => PromiseBB<void>) {
+function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promise<void>) {
   // Please note, onDirCreatedCB will be called for _each_ directory
   //  we create.
   const created: string[] = [];
-  const mkdirRecursive = (dir: string) => PromiseBB.resolve(fs.mkdir(dir))
+  const mkdirRecursive = (dir: string) => Promise.resolve(fs.mkdir(dir))
     .then(() => {
       created.push(dir);
       return onDirCreatedCB(dir);
     })
     .catch(err => {
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       } else {
         return (['ENOENT'].indexOf(err.code) !== -1)
           ? mkdirRecursive(path.dirname(dir))
-            .then(() => PromiseBB.resolve(fs.mkdir(dir)))
+            .then(() => Promise.resolve(fs.mkdir(dir)))
             .then(() => {
               created.push(dir);
               return onDirCreatedCB(dir);
             })
             .catch(err2 => (err2.code === 'EEXIST')
-              ? PromiseBB.resolve()
-              : PromiseBB.reject(err2))
-          : PromiseBB.reject(err);
+              ? Promise.resolve()
+              : Promise.reject(err2))
+          : Promise.reject(err);
       }
     });
 
   return mkdirRecursive(targetDir)
     .then(() => (created.indexOf(targetDir) !== -1)
-      ? PromiseBB.resolve(targetDir)
-      : PromiseBB.resolve(null));
+      ? Promise.resolve(targetDir)
+      : Promise.resolve(null));
 }
 
 function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.all([(fs.stat as any)(src, { bigint: true }),
+  return Promise.all([(fs.stat as any)(src, { bigint: true }),
     (fs.stat as any)(dest, { bigint: true })
       .catch(err => {
         return err.code === 'ENOENT'
@@ -569,9 +573,9 @@ function selfCopyCheck(src: string, dest: string) {
       }),
   ])
     .then((stats: fs.BigIntStats[]) => (stats[0].ino === stats[1].ino)
-      ? PromiseBB.reject(new Error(
+      ? Promise.reject(new Error(
         `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
-      : PromiseBB.resolve());
+      : Promise.resolve());
 }
 
 function nextName(input: string): string {
@@ -585,10 +589,10 @@ function nextName(input: string): string {
  * move a file. If the destination exists, will generate a new name with an
  * increasing counter until an unused name is found
  */
-export function moveRenameAsync(src: string, dest: string): PromiseBB<string> {
+export function moveRenameAsync(src: string, dest: string): Promise<string> {
   return moveAsync(src, dest, { overwrite: false })
     .then(() => dest)
-    .catch({ code: 'EEXIST' }, () => moveRenameAsync(src, nextName(dest)));
+    .catch(err => { if (err.code === 'EEXIST') { return moveRenameAsync(src, nextName(dest)); } else { return Promise.reject(err); }});
 }
 
 /**
@@ -605,15 +609,15 @@ export function moveRenameAsync(src: string, dest: string): PromiseBB<string> {
 export function copyAsync(src: string, dest: string,
                           options?: fs.CopyOptions & {
                             noSelfCopy?: boolean,
-                            showDialogCallback?: () => boolean }): PromiseBB<void> {
+                            showDialogCallback?: () => boolean }): Promise<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
   const check = (options !== undefined) && options.noSelfCopy
-    ? PromiseBB.resolve()
+    ? Promise.resolve()
     : selfCopyCheck(src, dest);
   return check
     .then(() => copyInt(src, dest, options || undefined, stackErr, NUM_RETRIES))
-    .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
+    .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
 
 type CopyOptionsEx = fs.CopyOptions & {
@@ -625,19 +629,19 @@ function copyFileCloneFallback(
   src: string,
   dest: string,
   options: CopyOptionsEx,
-): PromiseBB<void> {
+): Promise<void> {
   if (process.platform !== 'darwin') {
-    return PromiseBB.resolve(fs.copy(src, dest, options));
+    return Promise.resolve(fs.copy(src, dest, options));
   }
-  return PromiseBB.resolve(fs.stat(src))
+  return Promise.resolve(fs.stat(src))
     .then(stat => {
       if (!stat.isFile()) {
-        return PromiseBB.resolve(fs.copy(src, dest, options));
+        return Promise.resolve(fs.copy(src, dest, options));
       }
       const overwrite = (options?.overwrite !== undefined) ? options.overwrite : true;
       const ensureNotExists = overwrite
-        ? PromiseBB.resolve()
-        : PromiseBB.resolve(fs.pathExists(dest))
+        ? Promise.resolve()
+        : Promise.resolve(fs.pathExists(dest))
             .then(exists => {
               if (exists) {
                 const err: any = new Error('destination exists');
@@ -655,7 +659,7 @@ function copyFileCloneFallback(
         .catch((err: any) => {
           // If clone is not supported (different FS, not APFS, etc.), fallback to normal copy
           if ([ 'ENOSYS', 'ENOTSUP', 'EXDEV', 'EINVAL' ].includes(err.code)) {
-            return PromiseBB.resolve(fs.copy(src, dest, options));
+            return Promise.resolve(fs.copy(src, dest, options));
           }
           throw err;
         }) as any;
@@ -670,7 +674,7 @@ function copyInt(
   tries: number) {
   return simfail(() => (process.platform === 'darwin'
       ? copyFileCloneFallback(src, dest, options)
-      : PromiseBB.resolve(fs.copy(src, dest, options))))
+      : Promise.resolve(fs.copy(src, dest, options))))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options?.showDialogCallback,
                    { extraRetryErrors: ['EEXIST'] })
@@ -679,17 +683,17 @@ function copyInt(
 
 export function linkAsync(
   src: string, dest: string,
-  options?: ILinkFileOptions): PromiseBB<void> {
+  options?: ILinkFileOptions): Promise<void> {
   const stackErr = new Error();
   return linkInt(src, dest, stackErr, NUM_RETRIES, options)
-    .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
+    .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
 
 function linkInt(
   src: string, dest: string,
   stackErr: Error, tries: number,
-  options?: ILinkFileOptions): PromiseBB<void> {
-  return simfail(() => PromiseBB.resolve(fs.link(src, dest)))
+  options?: ILinkFileOptions): Promise<void> {
+  return simfail(() => Promise.resolve(fs.link(src, dest)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries,
                    (options !== undefined) ? options.showDialogCallback : undefined)
@@ -700,24 +704,24 @@ export function removeSync(dirPath: string) {
   fs.removeSync(dirPath);
 }
 
-export function unlinkAsync(filePath: string, options?: IRemoveFileOptions): PromiseBB<void> {
+export function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Promise<void> {
   return unlinkInt(filePath, new Error(), NUM_RETRIES, options || {});
 }
 
 function unlinkInt(filePath: string, stackErr: Error, tries: number,
-                   options: IRemoveFileOptions): PromiseBB<void> {
-  return simfail(() => PromiseBB.resolve(fs.unlink(filePath)))
+                   options: IRemoveFileOptions): Promise<void> {
+  return simfail(() => Promise.resolve(fs.unlink(filePath)))
     .catch((err: NodeJS.ErrnoException) => {
       const handle = () => errorHandler(err, stackErr, tries, options.showDialogCallback)
         .then(() => unlinkInt(filePath, stackErr, tries - 1, options));
 
       if (err.code === 'ENOENT') {
         // don't mind if a file we wanted deleted was already gone
-        return PromiseBB.resolve();
+        return Promise.resolve();
       } else if (err.code === 'EPERM') {
         // this could be caused by the path actually pointing to a directory,
         // unlink can only handle files
-        return PromiseBB.resolve(fs.stat(filePath))
+        return Promise.resolve(fs.stat(filePath))
           .then((stats) => {
             if (stats.isDirectory()) {
               err.code = 'EISDIR';
@@ -733,63 +737,63 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number,
     });
 }
 
-export function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void> {
+export function renameAsync(sourcePath: string, destinationPath: string): Promise<void> {
   return renameInt(sourcePath, destinationPath, new Error(), NUM_RETRIES);
 }
 
 function renameInt(sourcePath: string, destinationPath: string,
-                   stackErr: Error, tries: number): PromiseBB<void> {
-  return simfail(() => PromiseBB.resolve(fs.rename(sourcePath, destinationPath)))
+                   stackErr: Error, tries: number): Promise<void> {
+  return simfail(() => Promise.resolve(fs.rename(sourcePath, destinationPath)))
     .catch((err: NodeJS.ErrnoException) => {
       if ((tries > 0) && RETRY_ERRORS.has(err.code)) {
-        return PromiseBB.delay((NUM_RETRIES - tries + 1) * RETRY_DELAY_MS)
+        return delay((NUM_RETRIES - tries + 1) * RETRY_DELAY_MS)
           .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1));
       }
       return (err.code === 'EPERM')
-        ? PromiseBB.resolve(fs.stat(destinationPath))
+        ? Promise.resolve(fs.stat(destinationPath))
           .then(stat => stat.isDirectory()
-            ? PromiseBB.reject(restackErr(err, stackErr))
+            ? Promise.reject(restackErr(err, stackErr))
             : errorHandler(err, stackErr, tries)
               .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1)))
-          .catch(newErr => PromiseBB.reject(restackErr(newErr, stackErr)))
+          .catch(newErr => Promise.reject(restackErr(newErr, stackErr)))
         : errorHandler(err, stackErr, tries)
           .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1));
     });
 }
 
-export function rmdirAsync(dirPath: string): PromiseBB<void> {
+export function rmdirAsync(dirPath: string): Promise<void> {
   return rmdirInt(dirPath, new Error(), NUM_RETRIES);
 }
 
-function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
-  return simfail(() => PromiseBB.resolve(fs.rmdir(dirPath)))
+function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void> {
+  return simfail(() => Promise.resolve(fs.rmdir(dirPath)))
     .catch((err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') {
         // don't mind if a file we wanted deleted was already gone
-        return PromiseBB.resolve();
+        return Promise.resolve();
       } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-        return PromiseBB.delay(RETRY_DELAY_MS)
+        return delay(RETRY_DELAY_MS)
           .then(() => rmdirInt(dirPath, stackErr, tries - 1));
       }
       throw restackErr(err, stackErr);
     });
 }
 
-export function removeAsync(remPath: string, options?: IRemoveFileOptions): PromiseBB<void> {
+export function removeAsync(remPath: string, options?: IRemoveFileOptions): Promise<void> {
   const stackErr = new Error();
   return removeInt(remPath, stackErr, NUM_RETRIES, options || {});
 }
 
 function removeInt(remPath: string, stackErr: Error, tries: number,
-                   options: IRemoveFileOptions): PromiseBB<void> {
+                   options: IRemoveFileOptions): Promise<void> {
   return simfail(() => rimrafAsync(remPath))
     .catch(err => errorHandler(err, stackErr, tries, options.showDialogCallback,
                                { enotempty: true })
       .then(() => removeInt(remPath, stackErr, tries - 1, options)));
 }
 
-function rimrafAsync(remPath: string): PromiseBB<void> {
-  return new PromiseBB((resolve, reject) => {
+function rimrafAsync(remPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
     // don't use the rimraf implementation of busy retries because it's f*cked:
     // https://github.com/isaacs/rimraf/issues/187
     rimraf(remPath, {
@@ -804,13 +808,13 @@ function rimrafAsync(remPath: string): PromiseBB<void> {
   });
 }
 
-export function readlinkAsync(linkPath: string): PromiseBB<string> {
+export function readlinkAsync(linkPath: string): Promise<string> {
   const stackErr = new Error();
   return readlinkInt(linkPath, stackErr, NUM_RETRIES);
 }
 
-function readlinkInt(linkPath: string, stackErr: Error, tries: number): PromiseBB<string> {
-  return simfail(() => PromiseBB.resolve(fs.readlink(linkPath)))
+function readlinkInt(linkPath: string, stackErr: Error, tries: number): Promise<string> {
+  return simfail(() => Promise.resolve(fs.readlink(linkPath)))
     .catch(err => {
       if ((err.code === 'UNKNOWN') && isWindows()) {
         // on windows this return UNKNOWN if the file is not a link.
@@ -831,9 +835,9 @@ function readlinkInt(linkPath: string, stackErr: Error, tries: number): PromiseB
 }
 
 function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
-                  parameters: any): PromiseBB<void> {
+                  parameters: any): Promise<void> {
   let server: net.Server;
-  return new PromiseBB<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const id = shortid();
     let resolved = false;
 
@@ -889,12 +893,12 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 }
 
 export function ensureDirWritableAsync(dirPath: string,
-                                       confirm?: () => PromiseLike<void>): PromiseBB<void> {
+                                       confirm?: () => PromiseLike<void>): Promise<void> {
   if (confirm === undefined) {
-    confirm = () => PromiseBB.resolve();
+    confirm = () => Promise.resolve();
   }
   const stackErr = new Error();
-  return PromiseBB.resolve(fs.ensureDir(dirPath))
+  return Promise.resolve(fs.ensureDir(dirPath))
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
       return ensureFileAsync(canary)
@@ -909,7 +913,7 @@ export function ensureDirWritableAsync(dirPath: string,
       //  it doesn't hurt to add some code to handle that use case.
       //  https://github.com/Nexus-Mods/Vortex/issues/6856
       if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST', 'EROFS'].indexOf(err.code) !== -1) {
-        return PromiseBB.resolve(confirm())
+        return Promise.resolve(confirm())
           .then(() => {
             const userId = permission.getUserId();
             return elevated((ipcPath, req: NodeRequire) => {
@@ -955,27 +959,27 @@ export function ensureDirWritableAsync(dirPath: string,
                   return Promise.reject(new UserCanceled());
                 }
               // if elevation failed, return the original error because the one from
-              // elevate, while interesting as well, would make error handling too complicated
+              // elevate - while interesting as well - would make error handling too complicated
                 log('error', 'failed to acquire permission', elevatedErr.message);
 
-                return PromiseBB.reject(restackErr(err, stackErr));
+                return Promise.reject(restackErr(err, stackErr));
               });
           });
       } else {
-        return PromiseBB.reject(restackErr(err, stackErr));
+        return Promise.reject(restackErr(err, stackErr));
       }
     });
 }
 
-export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB<void> {
+export function changeFileOwnership(filePath: string, stat: fs.Stats): Promise<void> {
   if (isWindows()) {
     // This is a *nix only function.
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
   const readAndWriteOther = parseInt('0006', 8);
   if ((stat.mode & readAndWriteOther) === readAndWriteOther) {
-    return PromiseBB.reject(new ProcessCanceled('Ownership change not required'));
+    return Promise.reject(new ProcessCanceled('Ownership change not required'));
   }
 
   const readAndWriteGroup = parseInt('0060', 8);
@@ -991,28 +995,28 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
   // Ask for forgiveness, not permission.
   return (stat.uid !== process.getuid())
     ? (!hasGroupPermissions) || (hasGroupPermissions && (stat.gid !== process.getgid()))
-      ? PromiseBB.resolve(fs.chown(filePath, process.getuid(), stat.gid))
-        .catch(err => PromiseBB.reject(err))
-      : PromiseBB.resolve()
-    : PromiseBB.resolve();
+      ? Promise.resolve(fs.chown(filePath, process.getuid(), stat.gid))
+        .catch(err => Promise.reject(err))
+      : Promise.resolve()
+    : Promise.resolve();
 }
 
 export function changeFileAttributes(filePath: string,
                                      wantedAttributes: number,
-                                     stat: fs.Stats): PromiseBB<void> {
+                                     stat: fs.Stats): Promise<void> {
   return this.changeFileOwnership(filePath, stat)
     .then(() => {
       const finalAttributes = stat.mode | wantedAttributes;
-      return PromiseBB.resolve(fs.chmod(filePath, finalAttributes));
+      return Promise.resolve(fs.chmod(filePath, finalAttributes));
     })
-    .catch(ProcessCanceled, () => PromiseBB.resolve())
-    .catch(err => PromiseBB.reject(err));
+    .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
+    .catch(err => Promise.reject(err));
 }
 
-export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
+export function makeFileWritableAsync(filePath: string): Promise<void> {
   const stackErr = new Error();
   const wantedAttributes = isWindows() ? parseInt('0666', 8) : parseInt('0600', 8);
-  return PromiseBB.resolve(fs.stat(filePath)).then(stat => {
+  return Promise.resolve(fs.stat(filePath)).then(stat => {
     if (!stat.isFile()) {
       const err: NodeJS.ErrnoException =
         new Error(`Expected a file, found a directory: "${filePath}"`);
@@ -1020,19 +1024,19 @@ export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
       err.path = filePath;
       err.syscall = 'stat';
       err.stack = stackErr.stack;
-      return PromiseBB.reject(err);
+      return Promise.reject(err);
     }
 
     return ((stat.mode & wantedAttributes) !== wantedAttributes)
       ? this.changeFileAttributes(filePath, wantedAttributes, stat)
-      : PromiseBB.resolve();
+      : Promise.resolve();
   });
 }
 
 function raiseUACDialog<T>(t: TFunction,
                            err: any,
-                           op: () => PromiseBB<T>,
-                           filePath: string): PromiseBB<T> {
+                           op: () => Promise<T>,
+                           filePath: string): Promise<T> {
   let fileToAccess = filePath !== undefined ? filePath : err.path;
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), {
     title: 'Access denied (2)',
@@ -1052,12 +1056,12 @@ function raiseUACDialog<T>(t: TFunction,
     return forcePerm(t, op, filePath);
   } else if (choice === 2) { // Give Permission
     const userId = permission.getUserId();
-    return PromiseBB.resolve(fs.stat(fileToAccess))
+    return Promise.resolve(fs.stat(fileToAccess))
       .catch((statErr) => {
         if (statErr.code === 'ENOENT') {
           fileToAccess = path.dirname(fileToAccess);
         }
-        return PromiseBB.resolve();
+        return Promise.resolve();
       })
       .then(() => elevated((ipcPath, req: NodeRequire) => {
         // tslint:disable-next-line:no-shadowed-variable
@@ -1076,14 +1080,14 @@ function raiseUACDialog<T>(t: TFunction,
         }))
       .then(() => forcePerm(t, op, filePath));
   } else {
-    return PromiseBB.reject(new UserCanceled());
+    return Promise.reject(new UserCanceled());
   }
 }
 
 export function forcePerm<T>(t: TFunction,
-                             op: () => PromiseBB<T>,
+                             op: () => Promise<T>,
                              filePath?: string,
-                             maxTries: number = 3): PromiseBB<T> {
+                             maxTries: number = 3): Promise<T> {
   return op()
     .catch(err => {
       const fileToAccess = filePath !== undefined ? filePath : err.path;
@@ -1101,16 +1105,16 @@ export function forcePerm<T>(t: TFunction,
             return raiseUACDialog(t, err, op, filePath);
           });
       } else if (RETRY_ERRORS.has(err.code) && maxTries > 0) {
-        return PromiseBB.delay(RETRY_DELAY_MS)
+        return delay(RETRY_DELAY_MS)
           .then(() => forcePerm(t, op, filePath, maxTries - 1));
       } else {
-        return PromiseBB.reject(err);
+        return Promise.reject(err);
       }
     });
 }
 
-export function withTmpDirImpl<T>(cb: (tmpPath: string) => PromiseBB<T>): PromiseBB<T> {
-  return new PromiseBB<T>((resolve, reject) => {
+export function withTmpDirImpl<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
       if (err !== null) {
         return reject(err);
@@ -1139,9 +1143,9 @@ export interface ITmpOptions {
   cleanup?: boolean;
 }
 
-function withTmpFileImpl<T>(cb: (fd: number, name: string) => PromiseBB<T>,
-                            options?: ITmpOptions & tmp.FileOptions): PromiseBB<T> {
-  return new PromiseBB<T>((resolve, reject) => {
+function withTmpFileImpl<T>(cb: (fd: number, name: string) => Promise<T>,
+                            options?: ITmpOptions & tmp.FileOptions): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
     tmp.file(_.omit(options ?? {}, ['cleanup']), (err, name, fd, cleanup) => {
       if (err !== null) {
         return reject(err);

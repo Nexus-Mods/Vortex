@@ -8,7 +8,7 @@ import BrowserView, { SubscriptionResult } from './views/BrowserView';
 import { closeBrowser, showURL } from './actions';
 import { sessionReducer } from './reducers';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ipcRenderer } from 'electron';
 import { generate as shortid } from 'shortid';
 import * as url from 'url';

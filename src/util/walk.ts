@@ -1,8 +1,9 @@
 import * as fs from './fs';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as fsOrig from 'fs-extra';
 import * as path from 'path';
+import { promiseMap, promiseMapSeries } from './promise-helpers';
 
 export interface IWalkOptions {
   ignoreErrors?: string[] | true;
@@ -30,24 +31,24 @@ function walk(target: string,
       : Promise.reject(err))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
-      return Promise.map(fileNames, (statPath: string) =>
-        Promise.resolve(fsOrig.lstat([target, statPath].join(path.sep))).reflect());
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+      return promiseMap(fileNames, (statPath: string) =>
+        Promise.resolve(fsOrig.lstat([target, statPath].join(path.sep))).then(value => ({ status: "fulfilled", value })).catch(err => ({ status: "rejected", reason: err })));
+    }).then((res: Array<{ status: string, value?: fs.Stats, reason?: Error }>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
       const cbPromises: Array<Promise<any>> = [];
       res.forEach((stat, idx) => {
-        if (!stat.isFulfilled()) {
+        if (stat.status !== "fulfilled") {
           return;
         }
         const fullPath: string = path.join(target, allFileNames[idx]);
-        cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory() && (path.extname(fullPath) !== '.asar')) {
+        cbPromises.push(callback(fullPath, stat.value));
+        if (stat.value.isDirectory() && (path.extname(fullPath) !== '.asar')) {
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
+      return Promise.all(cbPromises.concat(promiseMapSeries(subDirs, (subDir) =>
         walk(subDir, callback))));
     })
     .catch(err => {

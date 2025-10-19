@@ -9,7 +9,7 @@ import { isMacOS } from '../util/platform';
 
 import Icon from './Icon';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';

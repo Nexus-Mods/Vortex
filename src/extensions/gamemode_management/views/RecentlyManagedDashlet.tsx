@@ -4,14 +4,14 @@ import { IProfile, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
 import GameThumbnail from './GameThumbnail';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 
 export interface IBaseProps {

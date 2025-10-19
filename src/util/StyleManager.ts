@@ -7,7 +7,7 @@ import {log} from './log';
 import { getCurrentPlatform } from './platform';
 import { sanitizeCSSId } from './util';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { ipcMain, ipcRenderer } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -248,7 +248,7 @@ class StyleManager {
   public clearCache(): void {
     this.mSetQueue = this.mSetQueue.then(() =>
       fs.removeAsync(cachePath())
-        .catch({ code: 'ENOENT' }, () => null)
+        .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve(null); } else { return Promise.reject(err); }})
         .catch(err => log('error', 'failed to remove css cache', {error: err.message})));
   }
 
@@ -286,16 +286,11 @@ class StyleManager {
           ? Promise.allSettled([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
             .then(results => {
               // Check if at least one of the promises fulfilled
-              if (results.some(result => result.isFulfilled())) {
+              if (results.some(result => result.status === 'fulfilled')) {
                 return null;
               } else {
-                // If both failed, throw the first error
-                const firstError = results.find(result => result.isRejected());
-                if (firstError) {
-                  // Get the reason from the rejected promise
-                  throw new Error('Both .scss and .css files not found');
-                }
-                return null;
+                // If both failed, throw an error
+                throw new Error('Both .scss and .css files not found');
               }
             })
           : fs.statAsync(filePath).then(() => null);

@@ -2,7 +2,7 @@ import { IExecInfo } from './IExecInfo';
 import { IExtensionApi } from './IExtensionContext';
 import { IGameStoreEntry } from './IGameStoreEntry';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 
 export type GameLaunchType = 'gamestore' | 'commandline';
 

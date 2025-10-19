@@ -17,7 +17,7 @@ import { setToolVisible } from '../gamemode_management/actions/settings';
 
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IState } from '../../types/IState';
-import * as selectors from '../../util/selectors';
+import { currentGame } from '../gamemode_management/selectors';
 
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 
@@ -128,7 +128,7 @@ export default function AddToolButton(props: IBaseProps) {
 
 const emptyObj = {};
 function mapStateToProps(state: IState): IConnectedProps {
-  const game: IGameStored = selectors.currentGame(state);
+  const game: IGameStored = currentGame(state);
   if (game?.id === undefined) {
     return {
       gameMode: undefined,

@@ -1,4 +1,3 @@
-import Bluebird from 'bluebird';
 import { IExtensionApi, IExtensionContext, IPreviewFile } from '../../types/IExtensionContext';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
@@ -6,7 +5,7 @@ import opn from '../../util/opn';
 
 interface IPreviewHandler {
   priority: number;
-  handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>;
+  handler: (files: IPreviewFile[], allowPick: boolean) => Promise<IPreviewFile>;
 }
 
 let previewHandlers: IPreviewHandler[] = [];
@@ -41,7 +40,7 @@ async function fallbackHandler(
 function init(context: IExtensionContext) {
   context.registerPreview = (
     priority: number,
-    handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>,
+    handler: (files: IPreviewFile[], allowPick: boolean) => Promise<IPreviewFile>,
   ) => {
     previewHandlers.push({ priority, handler });
     previewHandlers = previewHandlers.sort(
@@ -50,7 +49,7 @@ function init(context: IExtensionContext) {
   };
 
   context.registerPreview(300, (files: IPreviewFile[], allowPick: boolean) =>
-    Bluebird.resolve(fallbackHandler(context.api, files)),
+    Promise.resolve(fallbackHandler(context.api, files)),
   );
 
   context.once(() => {

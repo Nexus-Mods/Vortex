@@ -9,7 +9,8 @@ import makeCI from '../util/makeCaseInsensitive';
 import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
+import { promiseEach, promiseJoin, promiseMap } from './bluebird-migration-helpers.local';
 import { BrowserWindow, MessageBoxOptions, dialog } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -56,19 +57,19 @@ function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Pro
 }
 
 function transferPath(from: string, to: string): Promise<void> {
-  return Promise.join(fs.statAsync(from), fs.statAsync(to),
+  return promiseJoin(fs.statAsync(from), fs.statAsync(to),
                       (statOld: fs.Stats, statNew: fs.Stats) => Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
       const func = sameVolume ? fs.renameAsync : fs.copyAsync;
       return Promise.resolve(fs.readdirAsync(from))
-        .map((fileName: string) =>
+        .then(files => promiseMap(files, (fileName: string) =>
           func(path.join(from, fileName), path.join(to, fileName))
             .catch(err => (err.code === 'EXDEV')
               // EXDEV implies we tried to rename when source and destination are
               // not in fact on the same volume. This is what comparing the stat.dev
               // was supposed to prevent.
               ? fs.copyAsync(path.join(from, fileName), path.join(to, fileName))
-              : Promise.reject(err)))
+              : Promise.reject(err))))
         .then(() => fs.removeAsync(from));
     })
     .catch(err => (err.code === 'ENOENT')
@@ -129,7 +130,7 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
     .then(() => selectDirectory(window, state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
-      return Promise.map(Object.keys(state.settings.gameMode.discovered),
+      return promiseMap(Object.keys(state.settings.gameMode.discovered),
                          gameId => {
                            const resolvedPath = path.join(downloadPath, gameId);
                            return fs.ensureDirAsync(resolvedPath)
@@ -144,7 +145,7 @@ function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): 
 function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   const { paths } = (state.settings.mods as any);
-  return Promise.map(Object.keys(paths || {}), gameId => {
+  return promiseMap(Object.keys(paths || {}), gameId => {
     const base = resolvePath('base', paths, gameId);
     log('info', 'set install path',
         format(paths[gameId].install || pathDefaults.install, { base }));
@@ -229,14 +230,19 @@ function migrate(store: Redux.Store<IState>, window: BrowserWindow): Promise<voi
   const neccessaryMigrations = migrations
     .filter(mig => semver.lt(oldVersion, mig.minVersion))
     .filter(mig => state.app.migrations.indexOf(mig.id) === -1);
-  return Promise.each(neccessaryMigrations, migration =>
+  return promiseEach(neccessaryMigrations, migration =>
     queryMigration(window, migration)
       .then((proceed: boolean) => proceed ? migration.apply(window, store) : Promise.resolve())
       .then(() => {
         store.dispatch(completeMigration(migration.id));
         return Promise.resolve();
       })
-      .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(window, err)))
+      .catch((err: Error) => {
+        if (!(err instanceof UserCanceled)) {
+          return queryContinue(window, err);
+        }
+        throw err;
+      }))
     .then(() => null);
 }
 

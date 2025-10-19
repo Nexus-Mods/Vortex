@@ -2,7 +2,7 @@
 
 import * as fs from 'fs-extra';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 function walk(target: string,
@@ -12,9 +12,9 @@ function walk(target: string,
   return Promise.resolve(fs.readdir(target))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
-      return Promise.mapSeries(fileNames, (statPath: string) => {
+      return promiseMapSeries(fileNames, (statPath: string) => {
         const fullPath: string = path.join(target, statPath);
-        return Promise.resolve(fs.lstat(fullPath)).reflect();
+        return Promise.resolve(fs.lstat(fullPath)).then(value => ({ isFulfilled: true, value })).catch(err => ({ isFulfilled: false, reason: err }));
       });
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
@@ -22,17 +22,17 @@ function walk(target: string,
       const subDirs: string[] = [];
       const cbPromises: Array<Promise<any>> = [];
       res.forEach((stat, idx) => {
-        if (!stat.isFulfilled()) {
+        if (!stat.status === "fulfilled") {
           return;
         }
         const fullPath: string = path.join(target, allFileNames[idx]);
-        cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory()) {
+        cbPromises.push(callback(fullPath, stat.value));
+        if (stat.value.isDirectory()) {
           subDirs.push(fullPath);
         }
       });
       return Promise.all(
-        cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback))));
+        cbPromises.concat(promiseMapSeries(subDirs, (subDir) => walk(subDir, callback))));
     }).then(() => null);
 }
 

@@ -1,7 +1,7 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 import { log } from '../../../util/log';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as reduxAct from 'redux-act';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { batchDispatch } from '../../../util/util';
@@ -42,7 +42,7 @@ export interface IEnableOptions {
 
 const setModsEnabled = (() => {
   let ppFunc: (profileId: string, modIds: string[],
-               enabled: boolean, options: IEnableOptions) => Bluebird<void>;
+               enabled: boolean, options: IEnableOptions) => Promise<void>;
 
   return (api: IExtensionApi, profileIdIn: string, modIdsIn: string[],
           enableIn: boolean, optionsIn?: IEnableOptions) => {
@@ -81,14 +81,16 @@ const setModsEnabled = (() => {
                                    } catch (_) { /* noop */ }
                                  }
 
-                                 return Bluebird.resolve();
+                                 // Replace Bluebird.resolve with Promise.resolve
+                                 return Promise.resolve();
                                });
     }
 
     {
       const profile: IProfile = profileById(api.getState(), profileIdIn);
       if (profile === undefined) {
-        return Bluebird.resolve();
+        // Replace Bluebird.resolve with Promise.resolve
+        return Promise.resolve();
       }
       const willChange = modIdsIn.filter(id =>
         (profile.modState?.[id]?.enabled ?? false) !== enableIn);

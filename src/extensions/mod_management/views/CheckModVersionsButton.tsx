@@ -1,7 +1,7 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IProfileMod } from '../../profile_management/types/IProfile';

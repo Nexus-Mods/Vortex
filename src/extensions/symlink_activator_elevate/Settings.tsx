@@ -6,7 +6,7 @@ import { ComponentEx } from '../../util/ComponentEx';
 
 import { enableUserSymlinks } from './actions';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as React from 'react';
 import { Alert, ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';

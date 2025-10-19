@@ -1,7 +1,7 @@
 import { log } from './log';
 
-import Bluebird from 'bluebird';
-const Promise = Bluebird;
+// TODO: Remove Bluebird import - using native Promise;
+
 import * as path from 'path';
 const winapiT = isWindows() ? (isWindows() ? require('winapi-bindings') : undefined) : undefined;
 import * as fs from './fs';

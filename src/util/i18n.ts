@@ -4,7 +4,7 @@ import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-import Bluebird from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import I18next, { i18n, TOptions } from 'i18next';
 import * as path from 'path';
 import { initReactI18next } from 'react-i18next';
@@ -138,7 +138,7 @@ class HighlightPP {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
+function init(language: string, translationExts: () => IExtension[]): Promise<IInitResult> {
   // reset to english if the language isn't valid
   try {
     (new Date()).toLocaleString(language);
@@ -156,7 +156,7 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
     .use(initReactI18next)
   ;
 
-  return Bluebird.resolve(i18nObj.init(
+  return Promise.resolve(i18nObj.init(
     {
       lng: language,
       fallbackLng: 'en',
@@ -200,12 +200,12 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         translationExts,
       },
     }))
-    .tap(tFunc => { actualT = tFunc; })
-    .then(tFunc => Bluebird.resolve({
+    .then(tFunc => { actualT = tFunc; })
+    .then(() => Promise.resolve({
       i18n: i18nObj,
-      tFunc,
+      tFunc: actualT as TFunction,
     }))
-    .catch((error) => ({
+    .catch((error) => Promise.resolve({
       i18n: i18nObj,
       tFunc: fallbackTFunc,
       error,

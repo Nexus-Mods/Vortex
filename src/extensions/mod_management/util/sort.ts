@@ -8,12 +8,13 @@ import { IMod } from '../types/IMod';
 
 import testModReference, { isFuzzyVersion } from './testModReference';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import { alg, Graph } from 'graphlib';
 import * as _ from 'lodash';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
 import * as path from 'path';
 import { setModAttribute } from '../actions/mods';
+import { promiseMap } from '../../../util/promise-helpers';
 
 export class CycleError extends Error {
   private mCycles: string[][];
@@ -102,7 +103,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
 
   mods.forEach(mod => { dependencies.setNode(mod.id); });
 
-  const sorted = Promise.map(mods, modMapper)
+  const sorted = promiseMap(mods, modMapper)
     .catch((err: Error) => {
       log('error', 'failed to sort mods',
           {msg: err.message, stack: err.stack});

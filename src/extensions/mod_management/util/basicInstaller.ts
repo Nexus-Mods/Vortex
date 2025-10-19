@@ -1,7 +1,7 @@
 import {ProgressDelegate} from '../types/InstallFunc';
 import {ISupportedResult} from '../types/TestSupported';
 
-import Promise from 'bluebird';
+// TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
 
 export function testSupported(files: string[]): Promise<ISupportedResult> {

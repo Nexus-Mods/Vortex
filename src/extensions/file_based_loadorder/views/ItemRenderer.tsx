@@ -9,7 +9,8 @@ import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
 import { Icon, tooltip } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
 
-import * as selectors from '../../../util/selectors';
+import { activeProfile } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../extensions/profile_management/activeGameId';
 
 import { setFBLoadOrder, setFBLoadOrderEntry } from '../actions/loadOrder';
 
@@ -170,7 +171,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 }
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state);
+  const profile = activeProfile(state);
   return {
     profile: profile,
     loadOrder: currentLoadOrderForProfile(state, profile.id),

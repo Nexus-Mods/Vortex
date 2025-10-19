@@ -8,7 +8,7 @@ import { setModType } from '../../mod_management/actions/mods';
 import { getGame } from '../util/getGame';
 import { IModWithState } from '../../mod_management/types/IModProps';
 import { useTranslation } from 'react-i18next';
-import { activeGameId } from '../../profile_management/selectors';
+import { activeGameId } from '../../profile_management/activeGameId';
 import { midClip, truthy } from '../../../util/util';
 import { util } from '../../..';
 import { IconButton } from '../../../controls/TooltipControls';
