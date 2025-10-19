@@ -60,35 +60,35 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
   const displayTags = tags.slice(0, 2);
 
   return (
-    <div className={`tw:w-full tw:max-w-[465px] tw:h-72 tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
+    <div className={`tw:w-full tw:max-w-[465px] tw:h-[275px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
       {/* Main content area */}
       <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
-        <div className="tw:self-stretch tw:flex-1 tw:inline-flex tw:justify-between tw:items-center">
+        <div className="tw:self-stretch tw:flex tw:flex-1 tw:justify-between tw:items-start">
 
           {/* Left: Image */}
-          <div className="tw:w-44 tw:h-56 tw:relative">
+          <div className="tw:w-[175px] tw:h-[219px] tw:relative tw:shrink-0">
             <img
-              className="tw:w-40 tw:h-52 tw:left-0 tw:top-0 tw:absolute tw:rounded-sm tw:object-cover"
+              className="tw:w-[166px] tw:h-[208px] tw:absolute tw:top-0 tw:left-0 tw:rounded-sm tw:object-cover"
               src={coverImage}
               alt={title}
             />
           </div>
 
           {/* Right: Details */}
-          <div className="tw:flex-1 tw:self-stretch tw:inline-flex tw:flex-col tw:justify-start tw:items-start">
+          <div className="tw:flex-1 tw:self-stretch tw:flex tw:flex-col tw:justify-start tw:items-start">
 
             {/* Header: Title + Author */}
             <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-1">
               <Typography
                 as="div"
-                className="tw:self-stretch tw:justify-start tw:font-semibold tw:leading-relaxed"
+                className="tw:line-clamp-2 tw:font-semibold tw:break-words"
                 appearance="strong"
                 typographyType="body-xl"
               >
                 {title}
               </Typography>
 
-              <div className="tw:w-72 tw:h-4 tw:inline-flex tw:justify-start tw:items-center tw:gap-1">
+              <div className="tw:flex tw:items-center tw:gap-1">
                 {author.avatar && (
                   <img
                     src={author.avatar}
@@ -130,7 +130,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                           {tagText}
                         </Typography>
                         {index < displayTags.length - 1 && (
-                          <div className="tw:w-1 tw:h-1 tw:origin-top-left tw:rotate-45 tw:bg-neutral-subdued" />
+                          <div className="tw:w-1 tw:h-1 tw:rotate-45 tw:bg-neutral-subdued" />
                         )}
                       </React.Fragment>
                     );
@@ -169,9 +169,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     {stats.size}
                   </Typography>
                 </div>
-              </div>
 
-              
                 {/* Mod count */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
                   <div className="tw:w-4 tw:h-4 tw:relative" />
@@ -184,6 +182,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     {stats.modCount}
                   </Typography>
                 </div>
+              </div>
             </div>
 
             {/* Description */}
@@ -192,7 +191,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                 as="div"
                 typographyType="body-md"
                 appearance="subdued"
-                className="tw:self-stretch tw:flex-1 tw:justify-start tw:leading-tight tw:line-clamp-3 tw:overflow-ellipsis"
+                className="tw:line-clamp-4 tw:break-words tw:leading-tight"
               >
                 {description}
               </Typography>
