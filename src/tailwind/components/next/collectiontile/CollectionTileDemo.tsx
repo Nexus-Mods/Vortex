@@ -27,9 +27,9 @@ export const CollectionTileDemo: React.ComponentType = () => {
       coverImage: 'https://placehold.co/166x207/1f1f1f/ffffff?text=Collection',
       tags: ['Total Overhaul', 'Adult'],
       stats: {
-        downloads: 320,
-        size: '540MB',
         endorsements: 320,
+        size: '540MB',
+        modCount: 320
       },
       description: '1.6.8 The story of Stardew Valley expands outside of Pelican Town with this expanded collection designed to stay true to the original game. Created with co-op in mind, perfect for experienced solo-players. Easy install, includes configuration.',
       version: '1.6.8',
@@ -44,9 +44,9 @@ export const CollectionTileDemo: React.ComponentType = () => {
       coverImage: 'https://placehold.co/166x207/2a2a2a/ffffff?text=Graphics',
       tags: ['Graphics', 'Performance'],
       stats: {
-        downloads: 1520,
-        size: '2.1GB',
         endorsements: 890,
+        size: '2.1GB',
+        modCount: 1520
       },
       description: 'Complete graphics overhaul with enhanced textures, lighting, and weather effects. Optimized for performance with minimal FPS impact. Includes ENB preset and configuration tool.',
     },
@@ -60,9 +60,9 @@ export const CollectionTileDemo: React.ComponentType = () => {
       coverImage: 'https://placehold.co/166x207/1a1a1a/ffffff?text=Quests',
       tags: ['Quests'],
       stats: {
-        downloads: 650,
-        size: '125MB',
         endorsements: 425,
+        size: '125MB',
+        modCount: 650,
       },
       description: 'Adds 50+ new quests with unique storylines, characters, and rewards. Fully voice-acted with professional cast. Compatible with all major mods.',
     },

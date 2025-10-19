@@ -259,16 +259,31 @@ export const ButtonDemo: React.ComponentType = () => {
         </div>
       </div>
 
-      {/* Note about Icons */}
-      <div className="tw:p-4 tw:bg-yellow-50 tw:rounded tw:border tw:border-yellow-200">
+      {/* Buttons with Icons */}
+      <div className="tw:space-y-4">
         <Typography
-          as="p"
-          typographyType="body-sm"
-          appearance="moderate"
+          as="h2"
+          typographyType="heading-xl"
+          appearance="strong"
+          className="tw:mb-4"
         >
-          <strong>Note:</strong> Icon support (leftIcon, rightIcon, loading spinner) is not yet implemented.
-          The Icon component is currently stubbed out. Buttons work fully with text labels.
+          Buttons with Icons
         </Typography>
+
+        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+          <Button buttonType="primary" size="md" leftIconPath="mdiDownload">
+            Download
+          </Button>
+          <Button buttonType="secondary" size="md" rightIconPath="mdiChevronRight">
+            Next
+          </Button>
+          <Button buttonType="success" size="sm" leftIconPath="mdiCheck">
+            Confirm
+          </Button>
+          <Button buttonType="tertiary" size="md" leftIconPath="mdiCog">
+            Settings
+          </Button>
+        </div>
       </div>
     </div>
   );

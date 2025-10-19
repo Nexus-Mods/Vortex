@@ -19,9 +19,9 @@ export interface CollectionTileProps {
   coverImage: string;
   tags: string[];  // Max 2 tags
   stats: {
-    downloads: number;
-    size: string;  // e.g., '540MB'
     endorsements: number;
+    modCount: number;
+    size: string;  // e.g., '540MB'
   };
   description: string;
   version?: string;
@@ -81,8 +81,9 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
             <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-1">
               <Typography
                 as="div"
-                className="tw:self-stretch tw:justify-start tw:text-lg tw:font-semibold tw:font-['Inter'] tw:leading-relaxed"
+                className="tw:self-stretch tw:justify-start tw:font-semibold tw:leading-relaxed"
                 appearance="strong"
+                typographyType="body-xl"
               >
                 {title}
               </Typography>
@@ -121,16 +122,15 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                           as="div"
                           typographyType="body-xs"
                           appearance="none"
-                          className={`tw:justify-center tw:tracking-tight ${
-                            tagText.toLowerCase() === 'adult'
-                              ? 'tw:text-danger-strong'
-                              : 'tw:text-info-strong'
-                          }`}
+                          className={`tw:justify-center tw:tracking-tight ${tagText.toLowerCase() === 'adult'
+                            ? 'tw:text-danger-strong'
+                            : 'tw:text-info-strong'
+                            }`}
                         >
                           {tagText}
                         </Typography>
                         {index < displayTags.length - 1 && (
-                          <div className="tw:w-1 tw:h-0.5 tw:origin-top-left tw:rotate-45 tw:bg-neutral-subdued" />
+                          <div className="tw:w-1 tw:h-1 tw:origin-top-left tw:rotate-45 tw:bg-neutral-subdued" />
                         )}
                       </React.Fragment>
                     );
@@ -143,7 +143,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
             <div className="tw:self-stretch tw:pl-3 tw:inline-flex tw:justify-start tw:items-center tw:gap-5">
               <div className="tw:flex-1 tw:py-2 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
 
-                {/* Downloads */}
+                {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
                   <div className="tw:w-4 tw:h-4 tw:relative" />
                   <Typography
@@ -152,9 +152,10 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {stats.downloads}
+                    {stats.endorsements}
                   </Typography>
                 </div>
+
 
                 {/* Size */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
@@ -168,8 +169,10 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     {stats.size}
                   </Typography>
                 </div>
+              </div>
 
-                {/* Endorsements */}
+              
+                {/* Mod count */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
                   <div className="tw:w-4 tw:h-4 tw:relative" />
                   <Typography
@@ -178,19 +181,18 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {stats.endorsements}
+                    {stats.modCount}
                   </Typography>
                 </div>
-              </div>
             </div>
 
             {/* Description */}
             <div className="tw:self-stretch tw:flex-1 tw:pl-3 tw:py-1 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
               <Typography
                 as="div"
-                typographyType="body-sm"
+                typographyType="body-md"
                 appearance="subdued"
-                className="tw:self-stretch tw:flex-1 tw:justify-start tw:leading-tight tw:line-clamp-3"
+                className="tw:self-stretch tw:flex-1 tw:justify-start tw:leading-tight tw:line-clamp-3 tw:overflow-ellipsis"
               >
                 {description}
               </Typography>
@@ -213,6 +215,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
           buttonType="tertiary"
           size="sm"
           onClick={onViewPage}
+          leftIconPath="mdiOpenInNew"
         >
           View page
         </Button>

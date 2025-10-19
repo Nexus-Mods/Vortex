@@ -24,10 +24,10 @@ All Tailwind classes use the `tw:` prefix to avoid conflicts with existing Boots
 ```
 
 ### 2. **Dependencies**
-Web-specific dependencies have been replaced or stubbed:
+Web-specific dependencies have been replaced or adapted:
 - `@/utils/join-classes` → **Shared `utils.ts`** at `src/tailwind/components/next/utils.ts`
 - `@/types/x-or.types` → **Shared `utils.ts`** at `src/tailwind/components/next/utils.ts`
-- `@/domains/ui/icon` → `Icon.tsx` stub (returns null, icons won't render)
+- `@/domains/ui/icon` → `Icon.tsx` using Material Design Icons from `@mdi/js`
 - `@/domains/ui/link` → `Link.tsx` simple wrapper (anchor tag for Electron)
 - `@/domains/ui/typography` → Converted Typography component
 - Next.js routing → Removed (Electron doesn't use Next.js)
@@ -152,7 +152,7 @@ Located in `button/`
 **Files:**
 - `Button.tsx` - Main Button component
 - `ButtonDemo.tsx` - Demo showcasing all button types and states
-- `Icon.tsx` - Icon stub (placeholder, icons won't render)
+- `Icon.tsx` - Icon component using Material Design Icons from @mdi/js
 - `Link.tsx` - Simple Link wrapper for Electron
 - `index.ts` - Public exports
 
@@ -202,7 +202,26 @@ import { Button } from '../../../tailwind/next/button';
 
 **Demo:** See `ButtonDemo` component
 
-**Note:** Icon support (leftIcon, rightIcon, loading spinner) is stubbed out. The Icon component returns null, so icons won't visually render. Text-only buttons work fully.
+**Icon Support:**
+Icons are fully supported using Material Design Icons from `@mdi/js`:
+```tsx
+// With icon name (automatically looks up in @mdi/js)
+<Button buttonType="primary" leftIconPath="mdiDownload">
+  Download
+</Button>
+
+// With right icon
+<Button buttonType="secondary" rightIconPath="mdiChevronRight">
+  Next
+</Button>
+
+// With both icons
+<Button buttonType="tertiary" leftIconPath="mdiCog" rightIconPath="mdiChevronDown">
+  Settings
+</Button>
+```
+
+Available icon names can be found at: https://pictogrammers.com/library/mdi/
 
 ### CollectionTile
 
@@ -260,7 +279,8 @@ After making changes:
 ## Future Work
 
 - [x] Extract common utilities to a shared location (`utils.ts`)
-- [ ] Implement proper Icon component with MDI path support
-- [ ] Add icon rendering to Button component (loading spinner, left/right icons)
+- [x] Implement proper Icon component with MDI path support
+- [x] Add icon rendering to Button component (left/right icons)
+- [ ] Add loading spinner animation to Button component
 - [ ] Add more components from the web team (Input, Card, etc.)
-- [ ] Implement TypographyLink once Icon component is ready
+- [ ] Implement TypographyLink component
