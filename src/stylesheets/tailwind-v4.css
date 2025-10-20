@@ -27,6 +27,14 @@
 
   /* Container breakpoints: Convert rem to px */
   --tw-container-sm: 384px;  /* 24rem = 384px */
+
+  /* Icon sizes: Convert rem to px for consistent icon sizing */
+  --icon-size-xs: 12px;   /* 0.75rem → 12px */
+  --icon-size-sm: 16px;   /* 1rem → 16px */
+  --icon-size-md: 20px;   /* 1.25rem → 20px */
+  --icon-size-lg: 24px;   /* 1.5rem → 24px */
+  --icon-size-xl: 32px;   /* 2rem → 32px */
+  --icon-size-2xl: 48px;  /* 3rem → 48px */
 }
 
 /* ========================================

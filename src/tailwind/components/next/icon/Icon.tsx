@@ -25,14 +25,14 @@ import { XOr } from '../utils';
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'none';
 
 /* eslint-disable sort-keys */
-const sizeMap: { [key in IconSize]: `${number}rem` | undefined } = {
+const sizeMap: { [key in IconSize]: string | undefined } = {
   'none': undefined,
-  'xs': '0.75rem',
-  'sm': '1rem',
-  'md': '1.25rem',
-  'lg': '1.5rem',
-  'xl': '2rem',
-  '2xl': '3rem',
+  'xs': 'var(--icon-size-xs)',
+  'sm': 'var(--icon-size-sm)',
+  'md': 'var(--icon-size-md)',
+  'lg': 'var(--icon-size-lg)',
+  'xl': 'var(--icon-size-xl)',
+  '2xl': 'var(--icon-size-2xl)',
 };
 /* eslint-enable sort-keys */
 
@@ -59,10 +59,10 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, 'size' | 'path'> & {
   },
   {
     /**
-     * Custom size in rem units (e.g., '1.5rem')
+     * Custom size override (e.g., '1.5rem', '24px', 'var(--custom-size)')
      * Cannot be used with size
      */
-    sizeOverride?: `${number}rem`;
+    sizeOverride?: string;
   }
 >;
 
@@ -127,8 +127,7 @@ export const Icon = ({
   return (
     <svg
       viewBox="0 0 24 24"
-      width={sizeValue}
-      height={sizeValue}
+      style={{ width: sizeValue, height: sizeValue }}
       className={className}
       role={title ? 'img' : 'presentation'}
       aria-label={title}
