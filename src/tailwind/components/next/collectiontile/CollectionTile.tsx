@@ -183,7 +183,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    { numeral(stats.modCount).format('0.0a') }
+                    { numeral(stats.modCount).format('0,0') }
                   </Typography>
                 </div>
               </div>
