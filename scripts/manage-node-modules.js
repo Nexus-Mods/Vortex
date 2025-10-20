@@ -33,7 +33,7 @@ const MODULE_CONFIG = {
     sshRepository: 'git@github.com:Nexus-Mods/fomod-installer.git',
     description: 'FOMOD Installer .NET libraries',
     type: 'csharp',
-    branch: 'dotnet9',
+    branch: 'master',
     projects: [
       'FomodInstaller.Interface/FomodInstaller.Interface.csproj',
       'ModInstaller/ModInstaller.csproj',
@@ -45,7 +45,7 @@ const MODULE_CONFIG = {
       'AntlrUtil/AntlrUtil.csproj'
     ]
   },
-
+  
   // Native C++ Addon Projects
   'winapi-bindings': {
     path: 'node_modules/winapi-bindings',
@@ -54,13 +54,12 @@ const MODULE_CONFIG = {
     description: 'Windows API bindings for Node.js',
     type: 'cpp'
   },
-  'xxhash-addon': {
-    path: 'node_modules/xxhash-addon',
-    repository: 'https://github.com/jdarpinian/xxhash-addon.git', // This is a third-party library
-    sshRepository: 'git@github.com:jdarpinian/xxhash-addon.git',
-    description: 'xxHash algorithm implementation for Node.js',
-    type: 'cpp',
-    thirdParty: true
+  'vortexmt': {
+    path: 'node_modules/vortexmt',
+    repository: 'https://github.com/Nexus-Mods/node-vortexmt.git',
+    sshRepository: 'git@github.com:Nexus-Mods/node-vortexmt.git',
+    description: 'Vortex Mod Manager Toolkit',
+    type: 'cpp'
   },
 
   // Gamebryo Extension C++ Projects
@@ -98,7 +97,7 @@ const MODULE_CONFIG = {
     sshRepository: 'git@github.com:Nexus-Mods/bsdiff-node.git',
     description: 'Binary diff/patch library for Node.js',
     type: 'cpp'
-  }
+  },
 };
 
 class ModuleManager {
