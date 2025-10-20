@@ -9,6 +9,7 @@ import { Button } from '../button/Button';
 import { Typography } from '../typography/Typography';
 import { Icon } from '../icon';
 import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
+import numeral from 'numeral'; 
 
 export interface CollectionTileProps {
   // Data
@@ -155,7 +156,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {stats.endorsements}
+                    { numeral(stats.endorsements).format('0.0a') }
                   </Typography>
                 </div>
 
@@ -169,7 +170,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {stats.size}
+                    {numeral(stats.size).format('0.0b')}
                   </Typography>
                 </div>
 
@@ -182,7 +183,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {stats.modCount}
+                    { numeral(stats.modCount).format('0.0a') }
                   </Typography>
                 </div>
               </div>
