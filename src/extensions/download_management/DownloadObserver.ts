@@ -5,9 +5,7 @@ import { withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {renderError, showError} from '../../util/message';
-import { downloadPathForGame, queueClearingDownloads } from './selectors';
-import { downloadPath } from './selectors';
-import { activeGameId } from '../profile_management/activeGameId';
+import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { flatten, setdefault, truthy } from '../../util/util';
 
@@ -36,7 +34,7 @@ import { finalizeDownload } from './util/postprocessDownload';
 
 import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -120,17 +118,12 @@ export class DownloadObserver {
 
     api.onStateChange(['persistent', 'nexus', 'userInfo'], (old, newValue) => {
       if (old?.isPremium !== newValue?.isPremium) {
-        // User's premium status has changed; avoid losing progress.
-        // Pause ongoing downloads, adjust concurrency, and attempt resume.
+        // User's premium status has changed
+        // Clear the download queue by pausing all active downloads
         const state = api.getState();
-        const activeDownloadsList = queueClearingDownloads(state);
+        const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach(dlId => {
-          try {
-            log('info', 'pausing download due to membership change', { id: dlId, premium: newValue?.isPremium });
-          } catch (_) { /* noop */ }
-          this.handlePauseDownload(dlId);
-          // Schedule a resume attempt shortly after user info refresh settles
-          setTimeout(() => this.attemptResumeDownload(dlId), 1500);
+          this.handleRemoveDownload(dlId);
         });
         if (newValue?.isPremium === true) {
           manager.setMaxConcurrentDownloads(10);
@@ -191,7 +184,7 @@ export class DownloadObserver {
       const prom: Promise<void> = (filePath !== undefined)
         ? fs.removeAsync(path.join(downloadPath, filePath))
           .catch(cleanupErr => {
-            // this is a cleanup step. If the file' doesn't exist that's fine with me
+            // this is a cleanup step. If the file doesn' exist that's fine with me
             if ((cleanupErr instanceof UserCanceled) || (cleanupErr['code'] === 'ENOENT')) {
               return Promise.resolve();
             } else {
@@ -221,20 +214,8 @@ export class DownloadObserver {
       if (dlId !== undefined) {
         err.downloadId = dlId;
       }
-      // Remove the transient download entry; the file already exists.
       this.mApi.store.dispatch(removeDownload(id));
-      // Do NOT treat as an unknown error. Either notify the caller via callback,
-      // or quietly resolve to avoid showing a generic error dialog.
-      if (callback !== undefined) {
-        callback(err, err['downloadId'] ?? dlId ?? id);
-      } else {
-        // Best-effort: if we know the existing download, emit a finish event to
-        // let the UI update without showing an error dialog. Otherwise, just resolve.
-        if ((dlId !== undefined) && (downloads[dlId]?.state !== 'failed')) {
-          this.mApi.events.emit('did-finish-download', dlId, downloads[dlId].state);
-        }
-      }
-      return Promise.resolve();
+      return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
     } else {
       return Promise.resolve(this.handleUnknownDownloadError(err, id, callback));
     }
@@ -264,19 +245,6 @@ export class DownloadObserver {
     }
 
     const id = shortid();
-
-    // Verbose: initial request context
-    try {
-      log('info', 'download request received', {
-        id,
-        fileName,
-        urlCount: Array.isArray(urls) ? urls.length : undefined,
-        redownload,
-        allowInstall: options?.allowInstall,
-        allowOpenHTML: options?.allowOpenHTML,
-        modInfoKeys: Object.keys(modInfo || {}),
-      });
-    } catch (_) { /* noop */ }
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
         // could happen if triggered by foreign extensions, can't prevent that.
@@ -298,7 +266,7 @@ export class DownloadObserver {
     }
 
     const state: IState = this.mApi.store.getState();
-    let gameId: string = (modInfo || {}).game || activeGameId(state);
+    let gameId: string = (modInfo || {}).game || selectors.activeGameId(state);
     
     // Debug logging for macOS compatibility
     log('debug', 'DownloadObserver: Processing URLs for macOS compatibility', {
@@ -334,19 +302,7 @@ export class DownloadObserver {
     // Use the converted internal game ID for download path instead of the domain name
     // This ensures downloads are saved to the correct directory based on Vortex's
     // internal game identification rather than the Nexus domain name
-    let downloadPath = downloadPathForGame(state, downloadGameId);
-
-    // Verbose: resolved download context
-    try {
-      log('debug', 'resolved download context', {
-        id,
-        gameId,
-        downloadDomain,
-        downloadGameId,
-        gameIds,
-        downloadPath,
-      });
-    } catch (_) { /* noop */ }
+    let downloadPath = selectors.downloadPathForGame(state, downloadGameId);
 
     const processCB = this.genProgressCB(id);
 
@@ -364,7 +320,7 @@ export class DownloadObserver {
             initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameIds));
 
           // Recompute download path after ensure as it may have been reset.
-          downloadPath = downloadPathForGame(this.mApi.store.getState(), downloadGameId);
+          downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), downloadGameId);
 
           if (this.wasIntercepted(modInfo?.referenceTag)) {
             this.mInterceptedDownloads = this.mInterceptedDownloads
@@ -372,18 +328,12 @@ export class DownloadObserver {
             return Promise.reject(new UserCanceled());
           }
 
-          log('info', 'about to enqueue', {
-            id,
-            tag: modInfo?.referenceTag,
-            fileName,
-            downloadPath,
-            urlCount: Array.isArray(urls) ? urls.length : undefined,
-          });
+          log('info', 'about to enqueue', { id, tag: modInfo?.referenceTag });
           return this.mManager.enqueue(id, urls, fileName, processCB,
                                        downloadPath, downloadOptions);
         })
-        .catch(err => err instanceof AlreadyDownloaded ? (
-          (() => {
+        .catch(err => {
+          if (err instanceof AlreadyDownloaded) {
             const downloads = this.mApi.getState().persistent.downloads.files;
             const dlId = Object.keys(downloads)
               .find(iter => downloads[iter].localPath === err.fileName);
@@ -400,145 +350,98 @@ export class DownloadObserver {
               return this.mManager.enqueue(id, urls, fileName, processCB,
                                            downloadPath, downloadOptions);
             }
-          })()
-        ) : Promise.reject(err))
+          } else {
+            return Promise.reject(err);
+          }
+        })
         .then((res: IDownloadResult) => {
-          try {
-            log('debug', 'download finished', {
-              id,
-              file: res.filePath,
-              size: res.size,
-              unfinishedChunks: res.unfinishedChunks?.length,
-            });
-          } catch (_) { /* noop */ }
-          return this.handleDownloadFinished(id, res, callback);
+          log('debug', 'download finished', { id, file: res.filePath });
+          return this.handleDownloadFinished(id, callback, res, options?.allowInstall ?? true);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath,
-                                               options?.allowOpenHTML ?? true, callback));
+                                               options?.allowOpenHTML ?? true, callback)));
   }
 
-  private handleDownloadFinished = (id: string, res: any, callback?: (err: Error, id?: string) => void) => {
-    const download: IDownload = this.mApi.store.getState().persistent.downloads.files[id];
+  private handleDownloadFinished(id: string,
+                                 callback: (error: Error, id: string) => void,
+                                 res: IDownloadResult,
+                                 allowInstall: boolean | 'force') {
+    const download = this.mApi.getState().persistent.downloads.files?.[id];
     if (download === undefined) {
-      log('warn', 'download finished for unknown download', { id });
-      if (callback !== undefined) {
-        callback(new ProcessCanceled('invalid download id'));
-      }
-      return;
-    }
-
-    log('info', 'handleDownloadFinished entered', { id, filePath: res.filePath, allowInstall: res.allowInstall });
-
-    // Set the final download name if it's different from current
-    if ((res.fileName !== undefined) && (res.fileName !== download.localPath)) {
-      log('debug', 'setting final download name', { id, fileName: res.fileName });
-      this.mApi.store.dispatch(setDownloadFilePath(id, res.fileName));
-    }
-
-    // Handle extension downloads specially
-    const isExtensionDownload = download.game?.includes('site') || 
-                               (download.modInfo?.game === 'site') ||
-                               (download.localPath?.toLowerCase().includes('extension'));
-
-    if (isExtensionDownload) {
-      // For extension downloads, we want to show installation progress
-      log('debug', 'handling extension download completion', { id, filePath: res.filePath });
-      
-      // Update download state to finalizing to show installation progress
-      this.mApi.store.dispatch(finishDownload(id, 'finished', {
-        message: 'Installing extension...',
-        filePath: res.filePath,
-      }));
-      
-      // Process the extension installation
-      this.processExtensionDownload(id, res.filePath, callback);
-      return;
-    }
-
-    // Handle regular downloads
-    const unfinishedChunks = res.unfinishedChunks;
-    if (unfinishedChunks === undefined) {
-      this.mInterceptedDownloads.push({
-        time: Date.now(),
-        tag: download.modInfo?.referenceTag,
-      });
-    }
-    
-    // Safety: if there are unfinished chunks, resume immediately without a visible pause
-    if (Array.isArray(res.unfinishedChunks) && res.unfinishedChunks.length > 0) {
-      try { log('debug', 'unfinished chunks detected, resuming immediately without UI pause', { id, count: res.unfinishedChunks.length }); } catch (_) { /* noop */ }
-
-      // Keep the download in a running state to avoid flicker
-      // and resume directly using the manager.
-      const state = this.mApi.getState();
-      const currentDownload = state.persistent.downloads.files?.[id];
-      if (!currentDownload) {
-        // If the download entry is gone, fall back to a delayed resume attempt
-        setTimeout(() => this.attemptResumeDownload(id), 500);
-        callback?.(null, id);
-        return;
-      }
-
-      const gameMode = getDownloadGames(currentDownload)[0];
-      const downloadPath = downloadPathForGame(this.mApi.store.getState(), gameMode);
-      const fullPath = res.filePath || path.join(downloadPath, currentDownload.localPath);
-
-      // Clear any paused marker and avoid dispatching a paused state
-      this.mApi.store.dispatch(pauseDownload(id, false, undefined));
-
-      const extraInfo = this.getExtraDlOptions(currentDownload.modInfo ?? {}, 'always');
-      
-      // Resume the download with the unfinished chunks
-      return ensureDownloadsDirectory(this.mApi)
-        .then(() => this.mManager.resume(id, fullPath, currentDownload.urls,
-                                        currentDownload.received, currentDownload.size, currentDownload.startTime, unfinishedChunks,
-                                        this.genProgressCB(id), extraInfo))
-        .then(res => {
-          log('debug', 'download finished (resumed)', { file: res.filePath });
-          return this.handleDownloadFinished(id, res, callback);
-        })
-        .catch(err => this.handleDownloadError(err, id, downloadPath,
-                                              true, callback));
-    } else {
-      // Normal download completion
-      this.mApi.store.dispatch(finishDownload(id, 'finished', {
-        message: 'Download finished',
-        filePath: res.filePath,
-      }));
-      this.mApi.events.emit('did-finish-download', id, 'finished');
-      if (callback !== undefined) {
-        callback(null, id);
-      }
-      return;
-    }
-  }
-
-  private processExtensionDownload = (id: string, filePath: string, callback?: (err: Error, id?: string) => void) => {
-    log('info', 'processing extension download', { id, filePath });
-    
-    // Emit the install-extension-from-download event to trigger extension installation
-    this.mApi.events.emit('install-extension-from-download', id, (err: Error) => {
-      if (err) {
-        log('error', 'extension installation failed', { id, error: err.message });
-        this.mApi.store.dispatch(finishDownload(id, 'failed', {
-          message: `Extension installation failed: ${err.message}`,
-        }));
-        this.mApi.events.emit('did-finish-download', id, 'failed');
-        if (callback !== undefined) {
-          callback(err, id);
+      // Check if the download file actually exists - if it does, the download completed
+       // successfully but was removed from state (possibly due to cleanup or race condition)
+       if (res?.filePath) {
+        try {
+          fs.statSync(res.filePath);
+          log('warn', 'download completed but entry missing from state, continuing with file processing', { id, filePath: res.filePath });
+          // Continue processing the completed download even though state entry is missing
+        } catch (err) {
+          // The download entry is missing and no file exists - user likely canceled
+          log('debug', 'download canceled by user - no state entry and no file', { id });
+          callback?.(new UserCanceled(), id);
+          return;
         }
       } else {
-        log('info', 'extension installation completed successfully', { id });
-        // Update download state to finished
-        this.mApi.store.dispatch(finishDownload(id, 'finished', {
-          message: 'Extension installed successfully',
-        }));
-        this.mApi.events.emit('did-finish-download', id, 'finished');
-        if (callback !== undefined) {
-          callback(null, id);
-        }
+        // The download entry is missing and no file exists - user likely canceled
+        log('debug', 'download canceled by user - no state entry and no file', { id });
+        callback?.(new UserCanceled(), id);
+        return;
       }
-    });
+    }
+    const fileName = path.basename(res.filePath);
+    if (truthy(fileName)) {
+      log('debug', 'setting final download name', { id, fileName });
+      this.mApi.store.dispatch(setDownloadFilePath(id, fileName));
+    } else {
+      log('error', 'finished download has no filename?', res);
+    }
+    log('debug', 'unfinished chunks', { chunks: JSON.stringify(res.unfinishedChunks) });
+
+    const onceFinished = () => {
+      if (this.mOnFinishCBs[id] !== undefined) {
+        return Promise.all(this.mOnFinishCBs[id].map(cb => cb())).then(() => null);
+      } else {
+        return Promise.resolve();
+      }
+    };
+
+    if (res.unfinishedChunks.length > 0) {
+      this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      callback?.(null, id);
+      return onceFinished();
+    } else if (res.filePath.toLowerCase().endsWith('.html')) {
+      const batched = [
+        downloadProgress(id, res.size, res.size, [], undefined),
+        finishDownload(id, 'redirect', {htmlFile: res.filePath})
+      ];
+      util.batchDispatch(this.mApi.store.dispatch, batched);
+      this.mApi.events.emit('did-finish-download', id, 'redirect');
+      callback?.(new Error('html result'), id);
+      return onceFinished();
+    } else {
+      // Defer download finalization to prevent blocking
+      setImmediate(() => {
+        finalizeDownload(this.mApi, id, res.filePath)
+          .then(() => {
+            const flattened = flatten(res.metaInfo ?? {});
+            const batchedActions: Redux.Action[] = Object.keys(flattened).map(key => setDownloadModInfo(id, key, flattened[key]));
+            if (batchedActions.length > 0) {
+              util.batchDispatch(this.mApi.store.dispatch, batchedActions);
+            }
+            const state = this.mApi.getState();
+            if ((state.settings.automation?.install && (allowInstall === true))
+                || (allowInstall === 'force')
+                || (download.modInfo?.['startedAsUpdate'] === true)) {
+              this.mApi.events.emit('start-install-download', id);
+            }
+
+            callback?.(null, id);
+          })
+          .catch(err => callback?.(err, id))
+          .finally(() => onceFinished());
+      });
+      return Promise.resolve();
+    }
   }
 
   private genProgressCB(id: string): ProgressCallback {
@@ -597,21 +500,20 @@ export class DownloadObserver {
         // Newer versions won't do this anymore (hopefully) but we still need to enable users to
         // clean up these broken downloads
         const rawGameId = getDownloadGames(download)[0];
-        const gameId = rawGameId ? convertGameIdReverse(knownGames(this.mApi.store.getState()), rawGameId) : undefined;
+        const gameId = rawGameId ? convertGameIdReverse(selectors.knownGames(this.mApi.store.getState()), rawGameId) : undefined;
         const dlPath = truthy(gameId)
-          ? downloadPathForGame(this.mApi.store.getState(), gameId)
-          : downloadPath(this.mApi.store.getState());
+          ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+          : selectors.downloadPath(this.mApi.store.getState());
 
         return fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => {
             this.mApi.store.dispatch(removeDownload(downloadId));
             callCB(null);
           })
-          .catch(err => { if (err instanceof UserCanceled) { return callCB(); } else { return Promise.reject(err); }})
-          .finally(() => {
-            this.mApi.store.dispatch(setDownloadPaused(downloadId, false));
-          })
           .catch(err => {
+          if (err instanceof UserCanceled) {
+            callCB(err);
+          } else {
             if (cb !== undefined) {
               cb(err);
             } else {
@@ -619,15 +521,27 @@ export class DownloadObserver {
                 allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1,
               });
             }
-          });
+          }
+        });
       } else {
         this.mApi.store.dispatch(removeDownload(downloadId));
-        callCB(null);
         return Promise.resolve();
       }
+    };
+
+    if (['init', 'started', 'paused', 'failed'].includes(download.state)) {
+      // need to cancel the download
+      if (!this.mManager.stop(downloadId)) {
+        // error case, for some reason the manager didn't know about this download, maybe some
+        // delay?
+        this.mInterceptedDownloads.push(
+          { time: Date.now(), tag: download.modInfo?.referenceTag });
+        onceStopped();
+      } else {
+        this.queueFinishCB(downloadId, () => onceStopped());
+      }
     } else {
-      this.mApi.store.dispatch(removeDownload(downloadId));
-      return Promise.resolve();
+      onceStopped();
     }
   }
 
@@ -677,7 +591,7 @@ export class DownloadObserver {
 
       if (['paused', 'failed'].includes(download.state)) {
         const gameMode = getDownloadGames(download)[0];
-        const downloadPath = downloadPathForGame(this.mApi.store.getState(), gameMode);
+        const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
 
         const fullPath = path.join(downloadPath, download.localPath);
         this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
@@ -692,7 +606,8 @@ export class DownloadObserver {
                                                 undefined, { redownload: 'replace' }))
               .then(res => {
                 log('debug', 'download finished (re-tried)', { file: res.filePath });
-                return this.handleDownloadFinished(downloadId, res, callback);
+                return this.handleDownloadFinished(downloadId, callback, res,
+                                                   options?.allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
                                                      options?.allowOpenHTML ?? true, callback));
@@ -703,7 +618,8 @@ export class DownloadObserver {
                                                this.genProgressCB(downloadId), extraInfo))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
-                return this.handleDownloadFinished(downloadId, res, callback);
+                return this.handleDownloadFinished(downloadId, callback, res,
+                                                   options?.allowInstall ?? true);
               })
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath,
                                                      options?.allowOpenHTML ?? true, callback));
@@ -736,7 +652,7 @@ export class DownloadObserver {
                                         download.localPath, callback, 'never');
       }
     }
-    log('debug', 'not resuming download', { id: downloadId, state: download.state });
+    log('debug', 'not resuming download', { id: downloadId, state: download.state })
     if (callback !== undefined) {
       callback(new ProcessCanceled('download not paused'));
     }

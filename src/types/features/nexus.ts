@@ -1,0 +1,1 @@
+export { IValidateKeyData } from '../../extensions/nexus_integration/types/IValidateKeyData';

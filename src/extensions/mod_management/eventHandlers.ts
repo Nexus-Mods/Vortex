@@ -676,9 +676,13 @@ export function onRemoveMods(api: IExtensionApi,
 
   api.emitAndAwait('will-remove-mods', gameId, removeMods.map(mod => mod.id), options)
     .then(() => undeployMods(api, activators, gameId, removeMods))
-    .then(() => promiseMapSeries(removeMods,
-                                  (mod: IMod, idx: number, length: number) => {
+    .then(() => {
+      let idx = 0;
+      const length = removeMods.length;
+      return promiseMapSeries(removeMods,
+                                  (mod: IMod) => {
                                     options?.progressCB?.(idx, length, modName(mod));
+                                    idx++;
                                     const forwardOptions = { ...(options || {}), modData: { ...mod } };
                                     return api.emitAndAwait('will-remove-mod', gameId, mod.id, forwardOptions)
                                       .then(() => {
@@ -697,27 +701,58 @@ export function onRemoveMods(api: IExtensionApi,
                                         store.dispatch(removeMod(gameId, mod.id));
                                         return api.emitAndAwait('did-remove-mod', gameId, mod.id, forwardOptions);
                                       });
-                                  }))
-    .then(() => {
-      if (callback !== undefined) {
-        callback(null);
-      }
-    })
-    .catch((err) => { if (err instanceof TemporaryError) { if (callback !== undefined) { callback(err); } else { api.showErrorNotification('Failed to undeploy mod, please try again', err.message, { allowReport: false }); } return Promise.resolve(); } else { return Promise.reject(err); } })
-    .catch((err) => { if (err instanceof ProcessCanceled) { if (callback !== undefined) { callback(err); } else { api.showErrorNotification('Failed to remove mod', err, { allowReport: false }); } return Promise.resolve(); } else { return Promise.reject(err); } })
-    .catch((err) => { if (err instanceof UserCanceled) { if (callback !== undefined) { callback(err); } return Promise.resolve(); } else { return Promise.reject(err); } })
-    .catch(err => {
-      if (callback !== undefined) {
-        callback(err);
-      } else {
-        api.showErrorNotification('Failed to remove mod', err);
-      }
-    })
-    .finally(() => {
-      log('debug', 'done removing mods', { game: gameId, mods: modIds });
-      store.dispatch(stopActivity('mods', `removing_${modIds[0]}`));
-      return api.emitAndAwait('did-remove-mods', gameId, removeMods);
-    });
+                                  })
+                              .then(() => {
+                                if (callback !== undefined) {
+                                  callback(null);
+                                }
+                              })
+                              .catch((err) => {
+                                if (err instanceof TemporaryError) {
+                                  if (callback !== undefined) {
+                                    callback(err);
+                                  } else {
+                                    api.showErrorNotification('Failed to undeploy mod, please try again', err.message, { allowReport: false });
+                                  }
+                                  return Promise.resolve();
+                                } else {
+                                  return Promise.reject(err);
+                                }
+                              })
+                              .catch((err) => {
+                                if (err instanceof ProcessCanceled) {
+                                  if (callback !== undefined) {
+                                    callback(err);
+                                  } else {
+                                    api.showErrorNotification('Failed to remove mod', err, { allowReport: false });
+                                  }
+                                  return Promise.resolve();
+                                } else {
+                                  return Promise.reject(err);
+                                }
+                              })
+                              .catch((err) => {
+                                if (err instanceof UserCanceled) {
+                                  if (callback !== undefined) {
+                                    callback(err);
+                                  }
+                                  return Promise.resolve();
+                                } else {
+                                  return Promise.reject(err);
+                                }
+                              })
+                              .catch(err => {
+                                if (callback !== undefined) {
+                                  callback(err);
+                                } else {
+                                  api.showErrorNotification('Failed to remove mod', err);
+                                }
+                              })
+                              .finally(() => {
+                                log('debug', 'done removing mods', { game: gameId, mods: modIds });
+                                store.dispatch(stopActivity('mods', `removing_${modIds[0]}`));
+                                return api.emitAndAwait('did-remove-mods', gameId, removeMods);
+                              });
 }
 
 export function onRemoveMod(api: IExtensionApi,

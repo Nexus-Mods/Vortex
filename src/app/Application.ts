@@ -33,6 +33,7 @@ import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 import { isMajorDowngrade, replaceRecursive, spawnSelf, timeout, truthy } from '../util/util';
 import { initializeNativeThemeManager } from '../util/nativeThemeManager';
+import { promiseMap, promiseMapSeries, promiseDelay } from '../util/promise-helpers';
 
 import { addNotification, setCommandLine, showDialog } from '../actions';
 
@@ -48,8 +49,6 @@ import { MacOSHandoffManager } from '../util/macOSHandoffManager';
 import { MacOSShortcutsManager } from '../util/macOSShortcutsManager';
 
 import * as msgpackT from '@msgpack/msgpack';
-// TODO: Remove Bluebird import - using native Promise;
-import { promiseMapSeries } from '../util/bluebird-migration-helpers.local';
 import crashDumpT from 'crash-dump';
 import {app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell} from 'electron';
 import contextMenu from 'electron-context-menu';
@@ -434,5184 +433,884 @@ class Application {
         ? Promise.resolve(undefined)
         : this.startSplash())
         // start initialization
-      .then(() => {
-        log('info', 'Initializing...');
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions = new ExtensionManagerT(this.mStore, this.mBasePath);
-        return this.mExtensions.loadExtensions();
-      })
-      .then(() => {
-        this.mStore = createVortexStore(this.mExtensions.getReducers(), this.mExtensions.getMiddleware());
-        this.mExtensions.setStore(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupApiMain(this.mStore, undefined);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupApiRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensions(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
-      .then(() => {
-        this.mExtensions.setupExtensionsMain(this.mStore);
-        return Promise.resolve();
+      .then(splashIn => {
+        if (splashIn !== undefined) {
+          log('debug', 'showing splash screen');
+        } else {
+          log('debug', 'starting without splash screen');
+        }
+        return Promise.resolve(splashIn);
       })
-      .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
+      .then(splashIn => {
+        splash = splashIn;
+        return this.createStore(args.restore, args.merge)
+          .catch((err) => {
+            if (err instanceof DataInvalid) {
+              log('error', 'store data invalid', err.message);
+              return dialog.showMessageBox(getVisibleWindow(), {
+                type: 'error',
+                buttons: ['Continue'],
+                title: 'Error',
+                message: 'Data corrupted',
+                detail: 'The application state which contains things like your Vortex '
+                        + 'settings, meta data about mods and other important data is '
+                        + 'corrupted and can\'t be read. This could be a result of '
+                        + 'hard disk corruption, a power outage or something similar. '
+                        + 'Vortex will now try to repair the database, usually this '
+                        + 'should work fine but please check that settings, mod list and so '
+                        + 'on are ok before you deploy anything. '
+                        + 'If not, you can go to settings->workarounds and restore a backup '
+                        + 'which shouldn\'t lose you more than an hour of progress.',
+              })
+                .then(() => this.createStore(args.restore, args.merge, true));
+            } else {
+              return Promise.reject(err);
+            }
+          });
       })
       .then(() => {
-        this.mExtensions.setupExtensionsRenderer(this.mStore);
-        return Promise.resolve();
-      })
+        log('debug', 'checking admin rights');
+        return Promise.resolve();
+      })
+      .then(() => this.warnAdmin())
+      .then(() => {
+        log('debug', 'checking how Vortex was installed');
+        return Promise.resolve();
+      })
+      .then(() => this.identifyInstallType())
+      .then(() => {
+        log('debug', 'checking if migration is required');
+        return Promise.resolve();
+      })
+      .then(() => this.checkUpgrade())
+      .then(() => {
+        log('debug', 'setting up error handlers');
+        return Promise.resolve();
+      })
+      .then(() => {
+          // as soon as we have a store, install an extended error handler that has
+          // access to application state
+        const handleError = this.genHandleError();
+        process.removeAllListeners('uncaughtException');
+        process.removeAllListeners('unhandledRejection');
+        process.on('uncaughtException', handleError);
+        process.on('unhandledRejection', handleError);
+      })
+      .then(() => {
+        this.mStore.dispatch(setCommandLine(args));
+      })
+      .then(() => this.initDevel())
+      .then(() => {
+        log('debug', 'starting user interface');
+        return Promise.resolve();
+      })
+      .then(() => {
+        this.setupContextMenu();
+        return Promise.resolve();
+      })
+      .then(() => this.startUi())
+      .then(() => {
+        log('debug', 'setting up tray icon');
+        return Promise.resolve();
+      })
+      .then(() => this.createTray())
+        // end initialization
+      .then(() => {
+        if (splash !== undefined) {
+          log('debug', 'removing splash screen');
+        }
+        return Promise.resolve();
+      })
+      .then(() => {
+        this.connectTrayAndWindow();
+        return (splash !== undefined)
+          ? splash.fadeOut()
+          : Promise.resolve();
+      })
+      .catch((err) => {
+        log('debug', 'quitting with exception', err.message);
+        return Promise.reject(err);
+      })
+      .catch((err) => {
+        if (err instanceof UserCanceled) {
+          app.exit();
+        } else if (err instanceof ProcessCanceled) {
+          app.quit();
+        } else if (err instanceof DocumentsPathMissing) {
+          return dialog.showMessageBox(getVisibleWindow(), {
+            type: 'error',
+            buttons: ['Close', 'More info'],
+            defaultId: 1,
+            title: 'Error',
+            message: 'Startup failed',
+            detail: 'Your "My Documents" folder is missing or is '
+                + 'misconfigured. Please ensure that the folder is properly '
+                + 'configured and accessible, then try again.',
+          }).then(response => {
+            if (response.response === 1) {
+              shell.openExternal(
+                `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`);
+            }
+            app.quit();
+          });
+        } else if (err instanceof DatabaseLocked) {
+          dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
+              + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        } else if (err.code === 'ENOSPC') {
+          dialog.showErrorBox('Startup failed', 'Your system drive is full. '
+              + 'You should always ensure your system drive has some space free (ideally '
+              + 'at least 10% of the total capacity, especially on SSDs). '
+              + 'Vortex can\'t start until you have freed up some space.');
+          app.quit();
+        } else {
+          return Promise.reject(err);
+        }
+      })
+      .catch((err) => {
+        try {
+          if (err instanceof Error) {
+            const pretty = prettifyNodeErrorMessage(err);
+            const details = pretty.message
+              .replace(/{{ *([a-zA-Z]+) *}}/g, (m, key) => pretty.replace?.[key] || key);
+            terminate({
+              message: 'Startup failed',
+              details,
+              code: pretty.code,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {},
+                      pretty.allowReport);
+          } else {
+            terminate({
+              message: 'Startup failed',
+              details: err.message,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {});
+          }
+        } catch (err) {
+            // nop
+        }
+      })
+      .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
+  }
+
+  private isUACEnabled(): Promise<boolean> {
+    if (!isWindows()) {
+      return Promise.resolve(true);
+    }
+
+    const getSystemPolicyValue = (key: string) => {
+      try {
+        const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+                                       'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+                                       key);
+        return Promise.resolve({ key, type: res.type, value: res.value});
+      } catch (err) {
+        // We couldn't retrieve the value, log this and resolve positively
+        //  as the user might have a version of Windows that does not use
+        //  the key we're looking for.
+        log('debug', 'failed to check UAC settings', err);
+        return Promise.resolve(undefined);
+      }
+    };
+
+    return Promise.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
+      getSystemPolicyValue('ConsentPromptBehaviorUser')])
+      .then(res => {
+        res.forEach(value => {
+          if (value !== undefined) {
+            log('debug', 'UAC settings found', `${value.key}: ${value.value}`);
+          }
+        });
+        const adminConsent = res[0];
+        return ((adminConsent.type === 'REG_DWORD') && (adminConsent.value === 0))
+          ? Promise.resolve(false)
+          : Promise.resolve(true);
+      })
+      // Perfectly ok not to have the registry keys.
+      .catch(err => Promise.resolve(true));
+  }
+
+  private identifyInstallType(): Promise<void> {
+
+    /**
+     * we are checking to see if an uninstaller exists as if it does, it means it was installed via our installer.
+     * if it doesn't, then something else installed it. Maybe GOG, or EPIC, or something.
+     *
+     * TODO: we want to further check managed types to distiguish between anything that isn't us.
+     * Quick research says we need to file pattern match the install directory to see what files gog or epic adds etc.
+     * This should determine where it's from
+     *
+     * GOG
+     *
+     * Maybe the existance of: (the number being the gog product id)
+     * 'goggame-galaxyFileList.ini'
+     * 'goggame-2053394557.info'
+     * 'goggame-2053394557.hashdb'
+     *
+     * EPIC
+     *
+     *
+     */
+
+    return fs.statAsync(path.join(getVortexPath('application'), 'Uninstall Vortex.exe'))
+      .then(() => {
+        this.mStore.dispatch(setInstallType('regular'));
+      })
+      .catch(() => {
+        this.mStore.dispatch(setInstallType('managed'));
+      });
+  }
+
+  private warnAdmin(): Promise<void> {
+    const state: IState = this.mStore.getState();
+    return timeout(Promise.resolve(isAdmin()), 1000)
+      .then(admin => {
+        if ((admin === undefined) || !admin) {
+          return Promise.resolve();
+        }
+        log('warn', 'running as administrator');
+        if (state.app.warnedAdmin > 0) {
+          return Promise.resolve();
+        }
+        return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
+          title: 'Admin rights detected',
+          message:
+              `Vortex has detected that it is being run with administrator rights. It is strongly
+              advised to not run any application with admin rights as adverse effects may include
+              permission issues or even security risks. Continue at your own risk`
+              + (!uacEnabled
+                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your
+                  operating system.  We strongly recommend you re-enable these to avoid file permissions
+                  issues and potential security risks.`
+                : ''),
+          buttons: [
+            'Quit',
+            'Ignore',
+          ],
+          noLink: true,
+        }).then(result => {
+          if (result.response === 0) {
+            app.quit();
+          } else {
+            this.mStore.dispatch(setWarnedAdmin(1));
+            return Promise.resolve();
+          }
+        }));
+      });
+  }
+
+  private checkUpgrade(): Promise<void> {
+    const currentVersion = getApplication().version;
+    return this.migrateIfNecessary(currentVersion)
+      .then(() => {
+        this.mStore.dispatch(setApplicationVersion(currentVersion));
+        return Promise.resolve();
+      });
+  }
+
+  private migrateIfNecessary(currentVersion: string): Promise<void> {
+    const state: IState = this.mStore.getState();
+    const lastVersion = state.app.appVersion || '0.0.0';
+
+    if (this.mFirstStart || (process.env.NODE_ENV === 'development')) {
+      // don't check version change in development builds or on first start
+      return Promise.resolve();
+    }
+
+    if (isMajorDowngrade(lastVersion, currentVersion)) {
+      if (dialog.showMessageBoxSync(getVisibleWindow(), {
+        type: 'warning',
+        title: 'Downgrade detected',
+        message: `You're using a version of Vortex that is older than the version you ran previously.
+        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this
+        older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
+        buttons: [
+          'Quit',
+          'Continue at your own risk',
+        ],
+        noLink: true,
+      }) === 0) {
+        app.quit();
+        return Promise.reject(new UserCanceled());
+      }
+    } else if (semver.gt(currentVersion, lastVersion)) {
+      log('info', 'Vortex was updated, checking for necessary migrations');
+      return migrate(this.mStore, getVisibleWindow())
+        .then(() => {
+          return Promise.resolve();
+        })
+        .catch(err => !(err instanceof UserCanceled)
+                   && !(err instanceof ProcessCanceled), (err: Error) => {
+          dialog.showErrorBox(
+            'Migration failed',
+            'The migration from the previous Vortex release failed. '
+            + 'Please resolve the errors you got, then try again.');
+          app.exit(1);
+          return Promise.reject(new ProcessCanceled('Migration failed'));
+        });
+    }
+    return Promise.resolve();
+  }
+
+  private splitPath(statePath: string): string[] {
+    return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/g, '$1'));
+  }
+
+  private handleGet(getPaths: string[] | boolean, dbpath: string): Promise<void> {
+    if (typeof(getPaths) === 'boolean') {
+      fs.writeSync(1, 'Usage: vortex --get <path>\n');
+      return;
+    }
+
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+        return persist.getAllKeys();
+      })
+      .then(keys => {
+        return Promise.all(getPaths.map(getPath => {
+          const pathArray = this.splitPath(getPath);
+          const matches = keys
+            .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
+          return Promise.all(matches.map(match => persist.getItem(match)
+            .then(value => `${match.join('.')} = ${value}`)))
+            .then(output => { process.stdout.write(output.join('\n') + '\n'); })
+            .catch(err => { process.stderr.write(err.message + '\n'); });
+        }))
+          .then(() => null);
+      })
+      .catch(err => {
+        process.stderr.write(err.message + '\n');
+      })
+      .finally(() => {
+        persist.close();
+      });
+  }
+
+  private handleSet(setParameters: ISetItem[], dbpath: string): Promise<void> {
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+
+        return Promise.all(setParameters.map((setParameter: ISetItem) => {
+          const pathArray = this.splitPath(setParameter.key);
+
+          return persist.getItem(pathArray)
+            .catch(() => undefined)
+            .then(oldValue => {
+              const newValue = setParameter.value.length === 0
+                ? undefined
+                : (oldValue === undefined) || (typeof (oldValue) === 'object')
+                  ? JSON.parse(setParameter.value)
+                  : oldValue.constructor(setParameter.value);
+              return persist.setItem(pathArray, newValue);
+            })
+            .then(() => { process.stdout.write('changed\n'); })
+            .catch(err => {
+              process.stderr.write(err.message + '\n');
+            })
+        }))
+          .then(() => null);
+      })
+      .catch(err => {
+        process.stderr.write(err.message + '\n');
+      })
+      .finally(() => {
+        persist.close();
+      });
+  }
+
+  private handleDel(delPaths: string[], dbpath: string): Promise<void> {
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+        return persist.getAllKeys();
+      })
+      .then(keys => {
+        return Promise.all(delPaths.map(delPath => {
+          const pathArray = this.splitPath(delPath);
+          const matches = keys
+            .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
+          return Promise.all(matches.map(match => persist.removeItem(match)
+            .then(() => process.stdout.write(`removed ${match.join('.')}\n`))
+            .catch(err => { process.stderr.write(err.message + '\n'); })));
+        }))
+          .then(() => null);
+      })
+      .catch(err => {
+        process.stderr.write(err.message + '\n')
+      })
+      .finally(() => {
+        persist.close();
+      });
+  }
+
+  private createTray(): Promise<void> {
+    const TrayIcon = require('./TrayIcon').default;
+    this.mTray = new TrayIcon(this.mExtensions.getApi());
+
+    // Initialize macOS Dock manager
+    this.mDockManager = new MacOSDockManager(this.mExtensions.getApi());
+    this.mDockManager.initialize();
+
+    // Initialize macOS Window manager
+    this.mWindowManager = new MacOSWindowManager();
+    this.mWindowManager.initialize();
+
+    // Initialize macOS Notification manager
+    this.mNotificationManager = new MacOSNotificationManager();
+    this.mNotificationManager.initialize();
+
+    // Initialize macOS Quick Look manager
+    this.mQuickLookManager = new MacOSQuickLookManager();
+    this.mQuickLookManager.initialize();
+
+    // Initialize macOS Services manager
+    this.mServicesManager = new MacOSServicesManager();
+    this.mServicesManager.initialize();
+
+    // Initialize macOS Handoff manager
+    this.mHandoffManager = new MacOSHandoffManager();
+    this.mHandoffManager.initialize();
+
+    // Initialize macOS Shortcuts manager
+    this.mShortcutsManager = new MacOSShortcutsManager();
+    this.mShortcutsManager.initialize();
+
+    return Promise.resolve();
+  }
+
+  private connectTrayAndWindow() {
+    if (this.mTray.initialized) {
+      this.mMainWindow.connectToTray(this.mTray);
+    }
+  }
+
+  private multiUserPath() {
+    if (isWindows()) {
+      const muPath = path.join(process.env.ProgramData, 'vortex');
+      try {
+        fs.ensureDirSync(muPath);
+      } catch (err) {
+        // not sure why this would happen, ensureDir isn't supposed to report a problem if
+        // the directory exists, but there was a single report of EEXIST in this place.
+        // Probably a bug related to the filesystem used in C:\ProgramData, we had similar
+        // problems with OneDrive paths
+        if (err.code !== 'EEXIST') {
+          throw err;
+        }
+      }
+      return muPath;
+    } else {
+      log('error', 'Multi-User mode not implemented outside windows');
+      return app.getPath('userData');
+    }
+  }
+
+  private createStore(restoreBackup?: string, mergeBackup?: string,
+                      repair?: boolean): Promise<void> {
+    const newStore = createVortexStore(this.sanityCheckCB);
+    const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
+    let backups: string[];
+
+    const updateBackups = () => fs.ensureDirAsync(backupPath)
+      .then(() => fs.readdirAsync(backupPath))
+      .filter((fileName: string) =>
+        fileName.startsWith('backup') && path.extname(fileName) === '.json')
+      .then(backupsIn => { backups = backupsIn; })
+      .catch(err => {
+        log('error', 'failed to read backups', err.message);
+        backups = [];
+      });
+
+    const deleteBackups = () => promiseMap(backups, backupName =>
+      fs.removeAsync(path.join(backupPath, backupName))
+        .catch(() => undefined))
+      .then(() => null);
+
+    // storing the last version that ran in the startup.json settings file.
+    // We have that same information in the leveldb store but what if we need
+    // to react to an upgrade before the state is loaded?
+    // In development of 1.4 I assumed we had a case where this was necessary.
+    // Turned out it wasn't, still feel it's sensible to have this
+    // information available asap
+    startupSettings.storeVersion = getApplication().version;
+
+    // 1. load only user settings to determine if we're in multi-user mode
+    // 2. load app settings to determine which extensions to load
+    // 3. load extensions, then load all settings, including extensions
+    return LevelPersist.create(path.join(this.mBasePath, currentStatePath),
+                               undefined,
+                               repair ?? false)
+      .then(levelPersistor => {
+        this.mLevelPersistors.push(levelPersistor);
+        return insertPersistor(
+          'user', new SubPersistor(levelPersistor, 'user'));
+      })
+      .catch((err) => {
+        if (err instanceof DataInvalid) {
+          const failedPersistor = this.mLevelPersistors.pop();
+          return failedPersistor.close()
+            .then(() => Promise.reject(err));
+        } else {
+          return Promise.reject(err);
+        }
+      })
+      .then(() => {
+        let dataPath = app.getPath('userData');
+        const { multiUser } = newStore.getState().user;
+        if (this.mArgs.userData !== undefined) {
+          dataPath = this.mArgs.userData;
+        } else if (multiUser) {
+          dataPath = this.multiUserPath();
+        }
+        setVortexPath('userData', dataPath);
+        this.mBasePath = dataPath;
+        let created = false;
+        try {
+          fs.statSync(dataPath);
+        } catch (err) {
+          fs.ensureDirSync(dataPath);
+          created = true;
+        }
+        if (multiUser && created) {
+          permissions.allow(dataPath, 'group', 'rwx');
+        }
+        fs.ensureDirSync(path.join(dataPath, 'temp'));
+
+        log('info', `using ${dataPath} as the storage directory`);
+        if (multiUser || (this.mArgs.userData !== undefined)) {
+          log('info', 'all further logging will happen in', path.join(dataPath, 'vortex.log'));
+          setLogPath(dataPath);
+          log('info', '--------------------------');
+          log('info', 'Vortex Version', getApplication().version);
+          return LevelPersist.create(
+            path.join(dataPath, currentStatePath),
+            undefined,
+            repair ?? false,
+          )
+            .then(levelPersistor => {
+              this.mLevelPersistors.push(levelPersistor);
+            });
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        log('debug', 'reading app state');
+        return insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app'));
+      })
+      .then(() => {
+        if (newStore.getState().app.instanceId === undefined) {
+          this.mFirstStart = true;
+          const newId = uuid.v4();
+          log('debug', 'first startup, generated instance id', { instanceId: newId });
+          newStore.dispatch(setInstanceId(newId));
+        } else {
+          log('debug', 'startup instance', { instanceId: newStore.getState().app.instanceId });
+        }
+        const ExtensionManager = require('../util/ExtensionManager').default;
+        this.mExtensions = new ExtensionManager(newStore);
+        if (this.mExtensions.hasOutdatedExtensions) {
+          log('debug', 'relaunching to remove outdated extensions');
+          finalizeStoreWrite().then(() => relaunch());
+
+          // relaunching the process happens asynchronously but we don't want to any further work
+          // before that
+          return new Promise(() => null);
+        }
+        const reducer = require('../reducers/index').default;
+        newStore.replaceReducer(reducer(this.mExtensions.getReducers(), querySanitize));
+        return promiseMapSeries(allHives(this.mExtensions), hive =>
+          insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
+      })
+      .then(() => {
+        log('debug', 'checking if state db needs to be upgraded');
+        return importState(this.mBasePath);
+      })
+      .then(oldState => {
+        // mark as imported first, otherwise we risk importing again, overwriting data.
+        // this way we risk not importing but since the old state is still there, that
+        // can be repaired
+        return oldState !== undefined ?
+          markImported(this.mBasePath)
+            .then(() => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: oldState,
+              });
+            }) :
+          Promise.resolve();
+      })
+      .then(() => {
+        log('debug', 'updating state backups');
+        return updateBackups();
+      })
+      .then(() => {
+        if (restoreBackup !== undefined) {
+          log('info', 'restoring state backup', restoreBackup);
+          return fs.readFileAsync(restoreBackup, { encoding: 'utf-8' })
+            .then(backupState => {
+              newStore.dispatch({
+                type: '__hydrate_replace',
+                payload: JSON.parse(backupState),
+              });
+            })
+            .then(() => deleteBackups())
+            .then(() => updateBackups())
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.reject(err);
+              }
+              terminate({
+                message: 'Failed to restore backup',
+                details: (err.code !== 'ENOENT')
+                  ? err.message
+                  : 'Specified backup file doesn\'t exist',
+                path: restoreBackup,
+              }, {}, false);
+            });
+        } else if (mergeBackup !== undefined) {
+          log('info', 'merging state backup', mergeBackup);
+          return fs.readFileAsync(mergeBackup, { encoding: 'utf-8' })
+            .then(backupState => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: JSON.parse(backupState),
+              });
+            })
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.reject(err);
+              }
+              terminate({
+                message: 'Failed to merge backup',
+                details: (err.code !== 'ENOENT')
+                  ? err.message
+                  : 'Specified backup file doesn\'t exist',
+                path: mergeBackup,
+              }, {}, false);
+            });
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        const hydrateHandler = (stepIn: IPresetStep): Promise<void> => {
+          newStore.dispatch({
+            type: '__hydrate',
+            payload: (stepIn as IPresetStepHydrateState).state,
+          });
+
+          return Promise.resolve();
+        }
+        presetManager.on('hydrate', hydrateHandler);
+        presetManager.now('hydrate', hydrateHandler);
+      })
+      .then(() => {
+        this.mStore = newStore;
+
+        let sendState: Buffer;
+
+        (global as any).getReduxStateMsgpack = (idx: number) => {
+          const msgpack: typeof msgpackT = require('@msgpack/msgpack');
+          if ((sendState === undefined) || (idx === 0)) {
+            sendState = Buffer.from(msgpack.encode(
+              replaceRecursive(this.mStore.getState(), undefined, '__UNDEFINED__')));
+          }
+          const res = sendState.slice(idx * STATE_CHUNK_SIZE, (idx + 1) * STATE_CHUNK_SIZE);
+          return res.toString('base64');
+        };
+
+        this.mExtensions.setStore(newStore);
+        log('debug', 'setting up extended store');
+        return extendStore(newStore, this.mExtensions);
+      })
+      .then(() => {
+        if (backups.length > 0) {
+          const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
+          const mostRecent = sorted[0];
+          const timestamp = path.basename(mostRecent, '.json').replace('backup_', '');
+          const date = new Date(+timestamp);
+          const dateString = `${date.toDateString()} `
+            + `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+          const replace = { date: dateString };
+          this.mStore.dispatch(addNotification({
+            type: 'info',
+            message: 'Found an application state backup. Created on: {{date}}',
+            actions: [
+              { title: 'Restore', action: () => {
+                this.mStore.dispatch(showDialog('question', 'Restoring Application State', {
+                  bbcode: 'You are attempting to restore an application state backup which will revert any '
+                        + 'state changes you have made since the backup was created.[br][/br][br][/br]'
+                        + 'Please note that this operation will NOT uninstall/remove any mods you '
+                        + 'may have downloaded/installed since the backup was created, however Vortex '
+                        + 'may "forget" some changes:[list]'
+                        + '[*] Which download archive belongs to which mod installation, exhibiting '
+                        + 'itself as "duplicate" entries of the same mod (archive entry and installed mod entry).'
+                        + '[*] The state of an installed mod - reverting it to a disabled state.'
+                        + '[*] Any conflict rules you had defined after the state backup.'
+                        + '[*] Any other configuration changes you may have made.'
+                        + '[/list][br][/br]'
+                        + 'Are you sure you wish to restore the backed up state ?',
+                }, [
+                  { label: 'Cancel' },
+                  { label: 'Restore', action: () => {
+                    log('info', 'sorted backups', sorted);
+                    spawnSelf(['--restore', path.join(backupPath, mostRecent)]);
+                    app.exit();
+                  } },
+                ]));
+              } },
+              { title: 'Delete', action: dismiss => {
+                deleteBackups();
+                dismiss();
+              } },
+            ],
+            replace,
+          }));
+        } else if (!repair) {
+          // we started without any problems, save this application state
+          return createFullStateBackup('startup', this.mStore)
+            .then(() => Promise.resolve())
+            .catch(err => log('error', 'Failed to create startup state backup', err.message));
+        }
+        return Promise.resolve();
+      })
+      .then(() => this.mExtensions.doOnce());
+  }
+
+  private sanityCheckCB = (err: StateError) => {
+    err['attachLogOnReport'] = true;
+    showError(this.mStore.dispatch,
+              'An invalid state change was prevented, this was probably caused by a bug', err);
+  }
+
+  private initDevel(): Promise<void> {
+    if (process.env.NODE_ENV === 'development') {
+      const {installDevelExtensions} = require('../util/devel') as typeof develT;
+      return installDevelExtensions();
+    } else {
+      return Promise.resolve();
+    }
+  }
+
+  private showMainWindow(startMinimized: boolean) {
+    if (this.mMainWindow === null) {
+      // ??? renderer has signaled it's done loading before we even started it?
+      // that can't be right...
+      app.exit();
+      return;
+    }
+    const windowMetrics = this.mStore.getState().settings.window;
+    const maximized: boolean = windowMetrics.maximized || false;
+    try {
+      this.mMainWindow.show(maximized, startMinimized);
+    } catch (err) {
+      if (this.mMainWindow === null) {
+        // It's possible for the user to forcefully close Vortex just
+        //  as it attempts to show the main window and obviously cause
+        //  the app to crash if we don't handle the exception.
+        log('error', 'failed to show main window', err);
+        app.exit();
+        return;
+      } else {
+        throw err;
+      }
+    }
+    setWindow(this.mMainWindow.getHandle());
+  }
+
+  private testUserEnvironment(): Promise<void> {
+    // Should be used to test the user's environment for known
+    //  issues before starting up Vortex.
+    // On Windows:
+    //  - Ensure we're able to retrieve the user's documents folder.
+    if (isWindows()) {
+      try {
+        const documentsFolder = app.getPath('documents');
+        return (documentsFolder !== '')
+          ? Promise.resolve()
+          : Promise.reject(new DocumentsPathMissing());
+      } catch (err) {
+        return Promise.reject(new DocumentsPathMissing());
+      }
+    } else {
+      // No tests needed.
+      return Promise.resolve();
+    }
+  }
+
+  private validateFiles(): Promise<void> {
+    return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
+      .then(validation => {
+        if ((validation.changed.length > 0)
+            || (validation.missing.length > 0)) {
+          log('info', 'Files were manipulated', validation);
+          return dialog.showMessageBox(null, {
+            type: 'error',
+            title: 'Installation corrupted',
+            message: 'Your Vortex installation has been corrupted. '
+              + 'This could be the result of a virus or manual manipulation. '
+              + 'Vortex might still appear to work (partially) but we suggest '
+              + 'you reinstall it. For more information please refer to Vortex\'s log files.',
+            noLink: true,
+            buttons: ['Quit', 'Ignore'],
+          })
+            .then(dialogReturn => {
+              const { response } = dialogReturn;
+              if (response === 0) {
+                app.quit();
+              } else {
+                disableErrorReport();
+                return Promise.resolve();
+              }
+            });
+        } else {
+          return Promise.resolve();
+        }
+      });
+  }
+
+  private applyArguments(args: IParameters) {
+    if (args.download || args.install || args.installArchive) {
+      const prom: Promise<void> = (this.mMainWindow === undefined)
+        // give the main instance a moment to fully start up
+        ? promiseDelay(2000)
+        : Promise.resolve(undefined);
+
+      prom.then(() => {
+        if (this.mMainWindow !== undefined) {
+          if (args.download || args.install) {
+            this.mMainWindow.sendExternalURL(args.download || args.install, args.install !== undefined);
+          }
+          if (args.installArchive) {
+            this.mMainWindow.installModFromArchive(args.installArchive);
+          }
+        } else {
+          // TODO: this instructions aren't very correct because we know Vortex doesn't have
+          // a UI and needs to be shut down from the task manager
+          dialog.showErrorBox('Vortex unresponsive',
+                              'Vortex appears to be frozen, please close Vortex and try again');
+        }
+      });
+    } else {
+      if (this.mMainWindow !== undefined) {
+        // Vortex's executable has been run without download/install arguments;
+        //  this is potentially down to the user not realizing that Vortex is minimized
+        //  leading him to try to start up Vortex again - we just display the main
+        //  window in this case.
+        this.showMainWindow(args?.startMinimized);
+      }
+    }
+  }
+}
+
+export default Application;

@@ -7,13 +7,13 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
-import { activeGameId } from '../../../extensions/profile_management/activeGameId';
+import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { NoDeployment } from '../util/exceptions';
 
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -69,13 +69,13 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
           }
         });
       }))
-      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
-      .catch(err => err instanceof TemporaryError ?
+      .catch(UserCanceled, () => null)
+      .catch(TemporaryError, err =>
         onShowError('Failed to purge mods, please try again', err.message, false))
       .catch(NoDeployment, () => {
         onShowError('You need to select a deployment method in settings',
                     undefined, false);
-      } : Promise.reject(err))
+      })
       .catch(err => {
         if (err instanceof UserCanceled) {
           // not sure how we'd get here, UserCanceled is caught further up!

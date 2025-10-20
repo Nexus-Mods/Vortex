@@ -12,6 +12,7 @@ import { activeGameId } from '../../profile_management/activeGameId';
 
 // TODO: Remove Bluebird import - using native Promise;
 import update from 'immutability-helper';
+import { promiseMap } from '../../../util/promise-helpers';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Creatable } from 'react-select';

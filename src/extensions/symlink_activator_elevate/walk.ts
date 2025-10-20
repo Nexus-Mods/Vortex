@@ -4,6 +4,7 @@ import * as fs from 'fs-extra';
 
 // TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
+import { promiseMapSeries } from '../../../util/promise-helpers';
 
 function walk(target: string,
               callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
@@ -14,15 +15,15 @@ function walk(target: string,
       allFileNames = fileNames;
       return promiseMapSeries(fileNames, (statPath: string) => {
         const fullPath: string = path.join(target, statPath);
-        return Promise.resolve(fs.lstat(fullPath)).then(value => ({ isFulfilled: true, value })).catch(err => ({ isFulfilled: false, reason: err }));
+        return Promise.resolve(fs.lstat(fullPath)).then(value => ({ status: "fulfilled", value })).catch(err => ({ status: "rejected", reason: err }));
       });
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+    }).then((res: Array<{ status: string, value?: fs.Stats, reason?: any }>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
       const cbPromises: Array<Promise<any>> = [];
       res.forEach((stat, idx) => {
-        if (!stat.status === "fulfilled") {
+        if (stat.status !== "fulfilled") {
           return;
         }
         const fullPath: string = path.join(target, allFileNames[idx]);

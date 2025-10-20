@@ -1,5 +1,6 @@
 // TODO: Remove Bluebird import - using native Promise;
 import path from 'path';
+import { promiseEach, promiseReduce } from '../../util/promise-helpers';
 import { fs } from '../..';
 
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
@@ -119,9 +120,12 @@ function validateTools(api: IExtensionApi, starters: IStarterInfo[], gameMode: s
       ? iter.exePath
       : path.join(discovery.path, iter.exePath);
     return fs.statAsync(exePath)
-      .then(() => accum.push(iter.id))
-      .catch(() => Promise.resolve())
-      .then(() => Promise.resolve(accum));
+      .then(() => {
+        accum.push(iter.id);
+        return Promise.resolve(accum);
+      })
+      .catch(() => Promise.resolve(accum))
+      .then(res => Promise.resolve(res));
   }, []);
 }
 

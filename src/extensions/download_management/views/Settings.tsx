@@ -21,7 +21,7 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { isWindows } from '../../../util/platform';
-import { installPath } from '../../../extensions/mod_management/selectors';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
@@ -36,7 +36,7 @@ import getDownloadPath, { getDownloadPathPattern } from '../util/getDownloadPath
 
 import getText from '../texts';
 
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as process from 'process';
 import * as React from 'react';
@@ -471,7 +471,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                            onSetDownloadPath(this.state.downloadPath);
                            this.context.api.events.emit('did-move-downloads');
                          })
-                         .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
+                         .catch(UserCanceled, () => null)
                          .catch(CleanupFailedException, err => {
                            deleteOldDestination = false;
                            onSetTransfer(undefined);
@@ -548,7 +548,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                                  onSetTransfer(undefined);
                                  this.nextState.busy = undefined;
                                })
-                               .catch(err => { if (err instanceof UserCanceled) {
+                               .catch(UserCanceled, () => {
                                  this.nextState.busy = undefined;
                                })
                                .catch(err => {
@@ -711,7 +711,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const modsInstallPath = installPath(state);
+  const modsInstallPath = selectors.installPath(state);
   const isPremium = getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false);
   return {
     parallelDownloads: isPremium ? state.settings.downloads.maxParallelDownloads : 1,

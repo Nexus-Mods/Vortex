@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "rootDir": "./src",
+    "outDir": "./out-core-only",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo-core-only",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "jsx": "react",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
+    "types": ["node", "react", "react-dom"]
+  },
+  "include": [
+    "src/types/IState.ts",
+    "src/types/IExtensionContext.ts",
+    "src/types/IRegisteredExtension.ts",
+    "src/types/shared/**/*.ts",
+    "src/types/features/**/*.ts"
+  ],
+  "exclude": [
+    "src/util/bbcode/**/*",
+    "src/util/StyleManager.ts"
+  ]
+}

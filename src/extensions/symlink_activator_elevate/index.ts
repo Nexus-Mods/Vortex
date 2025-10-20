@@ -14,8 +14,7 @@ import { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
-import { activeGameId } from '../profile_management/activeGameId';
-import { gameName } from '../gamemode_management/selectors';
+import { activeGameId, gameName } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { getGame } from '../gamemode_management/util/getGame';
@@ -31,7 +30,7 @@ import { remoteCode } from './remoteCode';
 import Settings from './Settings';
 import walk from './walk';
 
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 import JsonSocket from 'json-socket';
 import * as net from 'net';
@@ -211,7 +210,7 @@ class DeploymentMethod extends LinkingDeployment {
     this.mOpenRequests = {};
     return this.closeServer()
         .then(() => this.startElevated())
-        .catch(((err) => {
+        .tapCatch((err) => {
           log('info', 'elevated process failed', { error: err.message });
           this.context.onComplete();
         })
@@ -402,7 +401,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   private startElevated(): Promise<void> {
     return this.startElevatedImpl()
-      .catch(() => {
+      .tapCatch(() => {
         this.api.store.dispatch(clearUIBlocker('elevating'));
       });
   }
@@ -495,12 +494,12 @@ class DeploymentMethod extends LinkingDeployment {
 
       const remoteProm = useTask
         ? Promise.resolve()
-        : promiseDelay(0).then(() => runElevated(ipcPath, remoteCode, {}))
-        .then(tmpPath => {
+        : Promise.delay(0).then(() => runElevated(ipcPath, remoteCode, {}))
+        .tap(tmpPath => {
           this.mTmpFilePath = tmpPath;
           log('debug', 'started elevated process');
         })
-        .catch(() => {
+        .tapCatch(() => {
           this.api.store.dispatch(clearUIBlocker('elevating'));
           elevating = false;
           log('error', 'failed to run remote process');
@@ -534,10 +533,10 @@ class DeploymentMethod extends LinkingDeployment {
         //  for ERROR_CANCELLED, which in this case is raised if the user
         //  selects to deny elevation when prompted.
         //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
-        .catch(err => { if (err.code === 5) { return Promise.reject(new UserCanceled()); } else { return Promise.reject(err); }})
-        .catch(err => { if (err.systemCode === 1223) { return Promise.reject(new UserCanceled()); } else { return Promise.reject(err); }})
+        .catch({ code: 5 }, () => reject(new UserCanceled()))
+        .catch({ systemCode: 1223 }, () => reject(new UserCanceled()))
         // Just in case this is still used somewhere - doesn't look like it though.
-        .catch(err => { if (err.errno === 1223) { return Promise.reject(new UserCanceled()); } else { return Promise.reject(err); }})
+        .catch({ errno: 1223 }, () => reject(new UserCanceled()))
         .catch(err => reject(err));
     });
   }
@@ -617,7 +616,7 @@ function baseFunc(moduleRoot: string, ipcPath: string,
                   main: (ipc, req: NodeRequireFunction) => void | Promise<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
-    console.error('❌ Elevated code failed', error.stack);
+    console.error('Elevated code failed', error.stack);
   };
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
@@ -653,7 +652,7 @@ function baseFunc(moduleRoot: string, ipcPath: string,
       if (err.code !== 'EPIPE') {
         // will anyone ever see this?
         // tslint:disable-next-line:no-console
-        console.error('❌ Connection failed', err.message);
+        console.error('Connection failed', err.message);
       }
     });
 }

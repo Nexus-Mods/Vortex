@@ -1,6 +1,7 @@
 import { IPersistor, PersistorKey } from '../types/IExtensionContext';
 
 // TODO: Remove Bluebird import - using native Promise;
+import { promiseFilter, promiseMap } from './promise-helpers';
 
 class SubPersistor implements IPersistor {
   public getAllKVs: () => Promise<Array<{ key: string[], value: string }>> = undefined;
@@ -14,9 +15,9 @@ class SubPersistor implements IPersistor {
 
     if (wrapped.getAllKVs !== undefined) {
       this.getAllKVs = () => this.mWrapped.getAllKVs(hive)
-        .filter((kv: { key: PersistorKey, value: string }) => kv.key[0] === hive)
-        .map((kv: { key: PersistorKey, value: string }) =>
-          ({ key: kv.key.slice(1), value: kv.value }));
+        .then(kvs => promiseFilter(kvs, (kv: { key: PersistorKey, value: string }) => Promise.resolve(kv.key[0] === hive)))
+        .then(filtered => promiseMap(filtered, (kv: { key: PersistorKey, value: string }) =>
+          Promise.resolve({ key: kv.key.slice(1), value: kv.value })));
     }
   }
 

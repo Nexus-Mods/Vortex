@@ -3,7 +3,7 @@ import { terminate } from '../util/errorHandling';
 import { log } from '../util/log';
 
 // TODO: Remove Bluebird import - using native Promise;
-import { promiseMapSeries } from './bluebird-migration-helpers.local';
+import { promiseMap, promiseMapSeries, promiseFilter } from './promise-helpers';
 import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any, hive: string) {
@@ -68,8 +68,8 @@ class ReduxPersistor<T> {
     const kvProm: Promise<Array<{ key: PersistorKey, value: string }>> =
       (persistor.getAllKVs !== undefined)
         ? persistor.getAllKVs()
-          .map((kv: { key: PersistorKey, value: string }) =>
-            ({ key: kv.key, value: this.deserialize(kv.value) }))
+          .then(kvs => promiseMap(kvs, (kv: { key: PersistorKey, value: string }) =>
+            Promise.resolve({ key: kv.key, value: this.deserialize(kv.value) })))
         : persistor.getAllKeys()
           .then(keys =>
             promiseMap(keys, key => persistor.getItem(key)
@@ -86,7 +86,7 @@ class ReduxPersistor<T> {
                 }
                 return Promise.reject(err);
               })))
-          .filter(kvPair => kvPair !== undefined);
+          .then(kvs => promiseFilter(kvs, kvPair => Promise.resolve(kvPair !== undefined)));
 
     return kvProm
       .then(kvPairs => {

@@ -1,0 +1,232 @@
+name: Package macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version to release (eg: 'v1.0.0')"
+        required: true
+        type: string
+      create-artifacts:
+        description: "Create artifacts?"
+        required: true
+        type: boolean
+        default: true
+      codesign:
+        description: "Codesign?"
+        required: false
+        type: boolean
+        default: false
+      notarize:
+        description: "Notarize?"
+        required: false
+        type: boolean
+        default: false
+      release:
+        description: "Create a draft release?"
+        required: false
+        type: boolean
+        default: true
+      staging-release:
+        description: "Create a draft staging release?"
+        required: false
+        type: boolean
+        default: true
+
+env:
+  APPLE_ID: ${{ secrets.APPLE_ID }}
+  APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands
+      DEBUG: electron-builder # gives electron more verbose logs
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+        architecture: [x64, arm64]
+
+    steps:
+      - name: Show Inputs
+        run: echo "${{ toJSON(github.event.inputs) }}"
+
+      - name: Set Outputs
+        id: setOutputs
+        shell: bash
+        env:
+          InputVersion: ${{ inputs.version }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          semverRegex='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+          tagVersion=$(echo "$InputVersion" | sed 's/^v//')
+          rawVersion=$(echo "$InputVersion" | sed 's/^v//')
+          # validation
+          if ! echo "$rawVersion" | grep -qE "$semverRegex"; then
+              echo "Invalid version format. Must be semver."
+              exit 1
+          fi
+          echo "tagVersion=v$tagVersion" >> $GITHUB_OUTPUT
+          echo "rawVersion=$rawVersion" >> $GITHUB_OUTPUT
+          echo "artifactNameDMG=vortex-$rawVersion-mac-$ARCHITECTURE.dmg" >> $GITHUB_OUTPUT
+          echo "artifactNameZIP=vortex-$rawVersion-mac-$ARCHITECTURE.zip" >> $GITHUB_OUTPUT
+          echo "epicBuildString=$rawVersion+$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: 'YYYY-MM-DD HHmm'
+
+      - name: Use current time
+        env:
+          TIME: "${{ steps.current-time.outputs.time }}"
+          R_TIME: "${{ steps.current-time.outputs.readableTime }}"
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+          YEAR: "${{ steps.current-time.outputs.year }}"
+          DAY: "${{ steps.current-time.outputs.day }}"
+        run: echo $TIME $R_TIME $F_TIME $YEAR $DAY
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "yarn"
+          architecture: ${{ matrix.architecture }}
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --network-timeout 600000 install
+
+      - name: Install Xcode command line tools
+        run: |
+          sudo xcode-select --install || true
+          sudo xcodebuild -runFirstLaunch
+
+      - name: Build API
+        run: yarn --non-interactive build_api
+
+      - name: Build Install
+        run: yarn --non-interactive _install_app
+
+      - name: Build Subprojects
+        run: yarn --non-interactive subprojects_app
+
+      - name: Build Assets
+        run: yarn --non-interactive _assets_app
+
+      - name: Webpack
+        run: yarn build_dist
+
+      - name: Package (without codesigning)
+        if: ${{ inputs.codesign != true }}
+        run: yarn package
+
+      - name: Package (with codesigning)
+        if: ${{ inputs.codesign == true }}
+        run: yarn package
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Notarize
+        if: ${{ inputs.notarize == true }}
+        run: |
+          # Create ZIP for notarization
+          ditto -c -k --keepParent dist/mac/Vortex.app dist/mac/Vortex.zip
+          
+          # Submit for notarization
+          xcrun notarytool submit dist/mac/Vortex.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          
+          # Staple the notarization ticket
+          xcrun stapler staple dist/mac/Vortex.app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Extract Sourcemaps
+        run: yarn extract_sourcemaps
+
+      - name: Test
+        run: yarn test
+
+      - name: Verify Code Signing
+        run: |
+          codesign --verify --deep --strict --verbose=2 dist/mac/Vortex.app
+
+      - name: Verify Notarization
+        if: ${{ inputs.notarize == true }}
+        run: |
+          spctl --assess --type exec --verbose dist/mac/Vortex.app
+
+      - name: Create SHA256 Checksums
+        run: |
+          shasum -a 256 dist/mac/*.dmg > dist/mac/checksums.txt
+          shasum -a 256 dist/mac/*.zip >> dist/mac/checksums.txt
+
+      - name: Release
+        uses: softprops/action-gh-release@v2.2.2
+        if: ${{ inputs.release == true }}
+        with:
+          files: |
+            ./dist/mac/*.dmg
+            ./dist/mac/*.zip
+            ./dist/mac/checksums.txt
+          prerelease: true
+          draft: true
+          name: ${{ steps.setOutputs.outputs.rawVersion }}-macOS-${{ matrix.architecture }}
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}-macOS-${{ matrix.architecture }}
+
+      - name: Staging Release
+        uses: softprops/action-gh-release@v2.2.2
+        if: ${{ inputs.staging-release == true }}
+        with:
+          files: |
+            ./dist/mac/*.dmg
+            ./dist/mac/*.zip
+            ./dist/mac/checksums.txt
+          prerelease: true
+          draft: true
+          name: ${{ steps.setOutputs.outputs.rawVersion }}-macOS-${{ matrix.architecture }}
+          tag_name: ${{ steps.setOutputs.outputs.tagVersion }}-macOS-${{ matrix.architecture }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repository: "Nexus-Mods/Vortex-Staging"
+
+      - name: Create DMG Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ inputs.create-artifacts == true }}
+        with:
+          name: ${{ steps.setOutputs.outputs.artifactNameDMG }}
+          path: ./dist/mac/*.dmg
+          if-no-files-found: error
+
+      - name: Create ZIP Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ inputs.create-artifacts == true }}
+        with:
+          name: ${{ steps.setOutputs.outputs.artifactNameZIP }}
+          path: ./dist/mac/*.zip
+          if-no-files-found: error
+
+      - name: Create Checksums Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ inputs.create-artifacts == true }}
+        with:
+          name: vortex-${{ steps.setOutputs.outputs.rawVersion }}-mac-${{ matrix.architecture }}-checksums
+          path: ./dist/mac/checksums.txt
+          if-no-files-found: error

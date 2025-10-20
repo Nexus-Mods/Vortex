@@ -5,6 +5,7 @@ import { ILog, ISession } from '../types/ISession';
 
 // TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
+import { promiseMapSeries, promiseFilter } from '../../../util/promise-helpers';
 import getVortexPath from '../../../util/getVortexPath';
 
 const lineRE = /^(\S+) \[([A-Z]*)\] (.*)\r?/;
@@ -27,7 +28,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
   const logPath = getVortexPath('userData');
 
   return Promise.resolve(fs.readdirAsync(logPath))
-    .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
+    .then(files => promiseFilter(files, (fileName: string) => Promise.resolve(fileName.match(/vortex[0-9]?\.log/) !== null)))
     .then((logFileNames: string[]) => {
       logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
       return promiseMapSeries(logFileNames, (logFileName: string) =>
@@ -53,5 +54,5 @@ export function loadVortexLogs(): Promise<ISession[]> {
           undefined) as ISession;
       });
     })
-    .filter((session: ISession) => session !== undefined);
+    .then(sessions => promiseFilter(sessions, (session: ISession) => Promise.resolve(session !== undefined)));
 }

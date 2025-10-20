@@ -67,6 +67,20 @@ export {
   writeSync,
 } from 'original-fs';
 
+/**
+ * Check if a file or directory exists synchronously
+ * @param filePath The path to check
+ * @returns boolean indicating if the path exists
+ */
+export function existsSync(filePath: string): boolean {
+  try {
+    statSync(filePath);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 export interface ILinkFileOptions {
   // Used to dictate whether error dialogs should
   //  be displayed upon error repeat.

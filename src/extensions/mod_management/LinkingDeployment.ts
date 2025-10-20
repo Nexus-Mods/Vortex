@@ -1,5 +1,5 @@
 import {addNotification} from '../../actions/notifications';
-import {IExtensionApi} from '../../types/IExtensionApi';
+import {IExtensionApi} from '../../types/IExtensionContext';
 import { DirectoryCleaningMode, IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { getGame, UserCanceled } from '../../util/api';
@@ -7,7 +7,7 @@ import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { isWindows } from '../../util/platform';
-import { activeGameId } from '../profile_management/activeGameId';
+import { activeGameId } from '../../util/selectors';
 import { truthy } from '../../util/util';
 
 import {
@@ -17,7 +17,7 @@ import {
   IUnavailableReason,
 } from './types/IDeploymentMethod';
 
-import { promiseEach, promiseMap } from '../../util/bluebird-migration-helpers.local';
+import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -172,7 +172,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const initialDeployment = {...context.previousDeployment};
 
-    return promiseMap(removed, key =>
+    return Promise.map(removed, key =>
       this.removeDeployedFile(installationPath, dataPath, key, true)
         .catch(err => {
           log('warn', 'failed to remove deployed file', {
@@ -181,7 +181,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           });
           ++errorCount;
         }))
-      .then(() => promiseMap(sourceChanged, (key: string, idx: number) =>
+      .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
         this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
@@ -191,7 +191,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             ++errorCount;
             sourceChanged.splice(idx, 1);
           })))
-      .then(() => promiseMap(contentChanged, (key: string, idx: number) =>
+      .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
         this.removeDeployedFile(installationPath, dataPath, key, false)
           .catch(err => {
             log('warn', 'failed to remove deployed file', {
@@ -202,51 +202,26 @@ abstract class LinkingActivator implements IDeploymentMethod {
             contentChanged.splice(idx, 1);
           })))
         // then, (re-)link all files that were added
-      .then(async () => {
-        // Size-aware adaptive concurrency for added files
-        const addedMeta = await promiseMap(added, async (key) => {
-          const src = context.newDeployment[key]?.source;
-          let size = 0;
-          try { size = (await fs.statAsync(src)).size || 0; } catch (_) { /* ignore */ }
-          return { key, size };
-        }, { concurrency: 64 });
-
-        const small = addedMeta.filter(m => m.size <= 256 * 1024).map(m => m.key);
-        const medium = addedMeta.filter(m => m.size > 256 * 1024 && m.size <= 8 * 1024 * 1024).map(m => m.key);
-        const large = addedMeta.filter(m => m.size > 8 * 1024 * 1024).map(m => m.key);
-
-        const linkOne = async (key: string) =>
-          this.deployFile(key, installationPath, dataPath, false, dirTags)
-            .catch(err => {
-              log('warn', 'failed to link', {
-                link: context.newDeployment[key].relPath,
-                source: context.newDeployment[key].source,
-                error: err.message,
-              });
-              if (err.code !== 'ENOENT') {
-                ++errorCount;
-              }
-            })
-            .then(() => progress());
-
-        await promiseMap(small, linkOne, { concurrency: 64 });
-        await promiseMap(medium, linkOne, { concurrency: 16 });
-        await promiseMap(large, linkOne, { concurrency: 4 });
-      })
+      .then(() => Promise.map(
+        added,
+        key => this.deployFile(key, installationPath, dataPath, false, dirTags)
+          .catch(err => {
+            log('warn', 'failed to link', {
+              link: context.newDeployment[key].relPath,
+              source: context.newDeployment[key].source,
+              error: err.message,
+            });
+            if (err.code !== 'ENOENT') {
+                        // if the source file doesn't exist it must have been deleted
+                        // in the mean time. That's not really our problem.
+              ++errorCount;
+            }
+          })
+          .then(() => progress()), { concurrency: 100 }))
         // then update modified files
-      .then(async () => {
-        const changed = ([] as string[]).concat(sourceChanged, contentChanged);
-        const changedMeta = await promiseMap(changed, async (key) => {
-          const src = context.newDeployment[key]?.source;
-          let size = 0;
-          try { size = (await fs.statAsync(src)).size || 0; } catch (_) { /* ignore */ }
-          return { key, size };
-        }, { concurrency: 64 });
-        const small = changedMeta.filter(m => m.size <= 256 * 1024).map(m => m.key);
-        const medium = changedMeta.filter(m => m.size > 256 * 1024 && m.size <= 8 * 1024 * 1024).map(m => m.key);
-        const large = changedMeta.filter(m => m.size > 8 * 1024 * 1024).map(m => m.key);
-
-        const linkOne = async (key: string) =>
+      .then(() => Promise.map(
+        [].concat(sourceChanged, contentChanged),
+        (key: string) =>
           this.deployFile(key, installationPath, dataPath, true, dirTags)
             .catch(err => {
               log('warn', 'failed to link', {
@@ -257,13 +232,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
               if (err.code !== 'ENOENT') {
                 ++errorCount;
               }
-            })
-            .then(() => progress());
-
-        await promiseMap(small, linkOne, { concurrency: 64 });
-        await promiseMap(medium, linkOne, { concurrency: 16 });
-        await promiseMap(large, linkOne, { concurrency: 4 });
-      })
+            }).then(() => progress()), { concurrency: 100 }))
       .then(() => {
         if (errorCount > 0) {
           this.mApi.store.dispatch(addNotification({
@@ -285,7 +254,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           : game.requiresCleanup;
         if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
           this.postLinkPurge(dataPath, false, false, directoryCleaning)
-            .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
+            .catch(UserCanceled, () => null)
             .catch(err => {
               this.mApi.showErrorNotification('Failed to clean up',
                                               err, { message: dataPath });
@@ -297,7 +266,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         return Object.keys(context.previousDeployment)
           .map(key => context.previousDeployment[key]);
       })
-      .catch(() => {
+      .tapCatch(() => {
         if (this.mContext !== undefined) {
             // Not sure how we would manage to get here with an undefined
             //  deployment context but it _can_ happen, and it is masking
@@ -346,8 +315,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         });
       }, { skipHidden: false }))
-      .catch(err => { if (err.code === 'ENOTFOUND') { return Promise.resolve(null); } else { return Promise.reject(err); }})
-      .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve(null); } else { return Promise.reject(err); }});
+      .catch({ code: 'ENOTFOUND' }, () => null)
+      .catch({ code: 'ENOENT' }, () => null);
   }
 
   public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
@@ -415,7 +384,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
     const changes: IFileChange[] = [];
 
-    return promiseMap(activation ?? [], fileEntry => {
+    return Promise.map(activation ?? [], fileEntry => {
       const fileDataPath = (truthy(fileEntry.target)
         ? [dataPath, fileEntry.target, fileEntry.relPath]
         : [dataPath, fileEntry.relPath]
@@ -706,7 +675,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         const dirs = allEntries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
         queue = queue.then(() =>
-          promiseEach(dirs, dir =>
+          Promise.each(dirs, dir =>
             this.postLinkPurge(dir.filePath, doRemove,
                                restoreBackups, directoryCleaning, false)
               .then(removed => {
@@ -720,10 +689,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
               if (files.length > 0) {
                 empty = false;
                 return (restoreBackups)
-                  ? promiseMap(
+                  ? Promise.map(
                     files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
                     entry => this.restoreBackup(entry.filePath))
-                    .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(undefined); } else { return Promise.reject(err); }})
+                    .catch(UserCanceled, () => undefined)
                     .then(() => undefined)
                   : Promise.resolve();
               } else {
@@ -768,10 +737,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return fs.renameAsync(backupPath, targetPath)
       // where has it gone? Oh well, doesn't matter. We wouldn't even be trying to restore
       // it if it had been removed a bit earlier
-      .catch(err => { if (err.code === 'ENOENT') { return Promise.resolve(null); } else { return Promise.reject(err); }})
+      .catch({ code: 'ENOENT' }, () => null)
       // targetPath exists - user is potentially using another mod manager
       // or has manipulated the files manually - let him decide what to do.
-      .catch(err => { if (err.code === 'EEXIST') {
+      .catch({ code: 'EEXIST' }, () => {
         return this.mApi.showDialog('question', 'Confirm', {
           text: 'Vortex is attempting to restore the below game file using '
             + 'a backup it generated during a deployment event, but the game '
@@ -790,7 +759,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             .then(() => this.restoreBackup(backupPath))
           : fs.removeAsync(backupPath));
       })
-      .catch((err) => { if (err instanceof UserCanceled) {
+      .catch(UserCanceled, cancelErr => {
         // TODO:
         // this dialog may show up multiple times for the same file because
         // the purge process for different mod types may come across the same directory if
@@ -807,44 +776,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
         ]).then(res => (res.action === 'Really cancel')
           ? Promise.reject(cancelErr)
           : this.restoreBackup(backupPath));
-      } else { return Promise.reject(err); } });
-    }
+      });
+  }
 }
 
 export default LinkingActivator;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

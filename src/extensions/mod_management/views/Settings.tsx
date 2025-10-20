@@ -20,11 +20,7 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { isWindows } from '../../../util/platform';
-import { activeGameId } from '../../../extensions/profile_management/activeGameId';
-import { currentGame } from '../../../extensions/gamemode_management/selectors';
-import { installPath, currentActivator } from '../selectors';
-import { modPathsForGame } from '../selectors';
-import { currentGameDiscovery } from '../../gamemode_management/selectors';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
@@ -39,7 +35,6 @@ import { setTransferMods } from '../actions/transactions';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
-import allTypesSupported from '../util/allTypesSupported';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 
 import { modPathsForGame } from '../selectors';
@@ -47,7 +42,7 @@ import { STAGING_DIR_TAG } from '../stagingDirectory';
 import getText from '../texts';
 
 import * as remote from '@electron/remote';
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import {
@@ -443,11 +438,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
       })
-      .catch(err => err instanceof TemporaryError ? {
+      .catch(TemporaryError, err => {
         onShowError('Failed to move directories, please try again', err, false);
-      } : Promise.reject(err))
-      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
-      .catch(err => err instanceof CleanupFailedException ? {
+      })
+      .catch(UserCanceled, () => null)
+      .catch(CleanupFailedException, err => {
         deleteOldDestination = false;
         onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
@@ -525,7 +520,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onSetTransfer(gameMode, undefined);
               this.nextState.busy = undefined;
             })
-            .catch(err => { if (err instanceof UserCanceled) {
+            .catch(UserCanceled, () => {
               this.nextState.busy = undefined;
             })
             .catch(err => {
@@ -659,11 +654,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         this.nextState.changingActivator = false;
       })
       .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
-      .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
-      .catch(err => err instanceof TemporaryError ? {
+      .catch(UserCanceled, () => null)
+      .catch(TemporaryError, err => {
         onShowError('Failed to purge previous deployment, please try again',
                     err, false);
-      } : Promise.reject(err))
+      })
       .catch(err => {
         if ((err.code === undefined) && (err.errno !== undefined)) {
           // unresolved windows error code
@@ -843,59 +838,170 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private suggestPath = () => {
     const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
-    promiseJoin(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
+    Promise.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
         if (stats[0].dev === stats[1].dev) {
-          suggestion = path.join('{USERDATA}', 'mods');
+          suggestion = path.join('{USERDATA}', '{game}', 'mods');
         } else {
-          suggestion = path.join('{GAME}', 'mods');
+          const volume = winapi.GetVolumePathName(modPaths['']);
+          suggestion = path.join(volume, suggestInstallPathDirectory, '{game}');
         }
-        suggestInstallPathDirectory(suggestion);
+        this.changePath(suggestion);
       })
+      .catch(UserCanceled, () => null)
       .catch(err => {
-        onShowError('Failed to suggest install path', err);
+        onShowError('Failed to suggest path', err);
       });
+  }
+
+  private changePathEvt = (evt) => {
+    const target: HTMLInputElement = evt.target as HTMLInputElement;
+    this.changePath(target.value);
+  }
+
+  private changePath = (value: string) => {
+    this.nextState.installPath = value;
+  }
+
+  private openUrl = (evt) => {
+    const url = evt.currentTarget.getAttribute('data-url');
+    opn(url).catch(() => undefined);
+  }
+
+  private browsePath = () => {
+    this.context.api.selectDir({})
+      .then((selectedPath: string) => {
+        if (selectedPath) {
+          this.changePath(selectedPath);
+        }
+      });
+  }
+
+  private renderActivators(activators: IDeploymentMethod[], currentActivator: string): JSX.Element {
+    const { t } = this.props;
+    const { changingActivator } = this.state;
+
+    let content: JSX.Element;
+    let activatorIdx: number = -1;
+
+    const changed = currentActivator !== this.props.currentActivator;
+
+    if ((activators !== undefined) && (activators.length > 0)) {
+      if (currentActivator !== undefined) {
+        activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
+      }
+
+      content = (
+        <div>
+          <FormControl
+            componentClass='select'
+            value={currentActivator}
+            onChange={this.selectActivator}
+          >
+            {activators.map(this.renderActivatorOption)}
+          </FormControl>
+        </div>
+      );
+    } else {
+      content = (
+        <ControlLabel>
+          <Alert bsStyle='danger'>
+            <h4 style={{ marginBottom: 0 }}>{t('No deployment method available.')}</h4>
+            <p style={{ marginTop: 0 }}>{t('See notification for more information.')}</p>
+          </Alert>
+        </ControlLabel>
+      );
+    }
+
+    return (
+      <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
+        <InputGroup>
+          {content}
+          <InputGroup.Button>
+            <BSButton
+              disabled={!changed || changingActivator}
+              onClick={this.applyActivator}
+            >
+              {changingActivator ? <Spinner /> : t('Apply')}
+            </BSButton>
+          </InputGroup.Button>
+        </InputGroup>
+        { activatorIdx !== -1 ? (
+          <HelpBlock>
+            {t(activators[activatorIdx].description)}
+            <More id='more-activator-detail' name={activators[activatorIdx].name}>
+              {activators[activatorIdx].detailedDescription(t)}
+            </More>
+          </HelpBlock>
+        ) : null }
+      </FormGroup>
+    );
+  }
+
+  private renderActivatorOption = (activator: IDeploymentMethod): JSX.Element => {
+    const { t } = this.props;
+    return (
+      <option key={activator.id} value={activator.id}>{t(activator.name)}</option>
+    );
+  }
+
+  private selectActivator = (evt) => {
+    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    this.nextState.currentActivator = target.value;
   }
 }
 
+const emptyArray = [];
+
 function mapStateToProps(state: IState): IConnectedProps {
-  const gameMode = activeGameId(state);
-  const game = currentGame(state);
   const discovery = currentGameDiscovery(state);
-  const installPath = installPath(state, gameMode);
-  const downloadsPath = state.settings.downloads.path;
-  const currentActivator = currentActivator(state, gameMode);
-  const modActivity = state.session.base.activity.mods || [];
-  const modPaths = modPathsForGame(state, gameMode);
-  const instanceId = state.app.instanceId;
-  const installPathMode = state.settings.mods.installPathMode;
+  const game = currentGame(state);
+
+  const gameMode = getSafe(discovery, ['id'], getSafe(game, ['id'], undefined));
+  const downloadsPath = selectors.downloadPath(state);
 
   return {
-    game,
     discovery,
+    game,
     gameMode,
-    installPath,
+    installPath: state.settings.mods.installPath[gameMode],
     downloadsPath,
-    currentActivator,
-    modActivity,
-    modPaths,
-    instanceId,
-    installPathMode,
+    currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
+    modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
+    modPaths: modPathsForGame(state, gameMode),
+    instanceId: state.app.instanceId,
+    installPathMode: state.settings.mods.installPathMode,
     suggestInstallPathDirectory: state.settings.mods.suggestInstallPathDirectory,
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<IState, void, Redux.Action>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onSetInstallPath: (gameMode, path) => dispatch(setInstallPath(gameMode, path)),
-    onSetActivator: (gameMode, id) => dispatch(setActivator(gameMode, id)),
-    onSetTransfer: (gameMode, dest) => dispatch(setTransferMods(gameMode, dest)),
-    onShowDialog: (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message, details, allowReport, isBBCode) =>
-      dispatch(showError({ message, details, allowReport, isBBCode })),
-    onSetInstallPathMode: (installPathMode) => dispatch(setInstallPathMode(installPathMode)),
+    onSetInstallPath: (gameMode: string, newPath: string): void => {
+      if (newPath !== undefined) {
+        dispatch(setInstallPath(gameMode, newPath));
+      }
+    },
+    onSetTransfer: (gameMode: string, dest: string): void => {
+      dispatch(setTransferMods(gameMode, dest));
+    },
+    onSetActivator: (gameMode: string, id: string): void => {
+      dispatch(setActivator(gameMode, id));
+    },
+    onSetInstallPathMode: (installPathMode: InstallPathMode) => {
+      dispatch(setInstallPathMode(installPathMode));
+    },
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
+    onShowError: (message: string, details: string | Error,
+                  allowReport?: boolean, isBBCode?: boolean): void => {
+      showError(dispatch, message, details, { allowReport, isBBCode });
+    },
   };
 }
 
-export default translate(['common', 'settings'])(connect(mapStateToProps, mapDispatchToProps)(Settings));
+export default
+  translate(['common'])(
+    connect(mapStateToProps, mapDispatchToProps)(Settings),
+  ) as React.ComponentClass<IBaseProps>;

@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "rootDir": "./src",
+    "outDir": "./out-minimal-core",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo-minimal-core",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "jsx": "react",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
+    "types": ["node", "react", "react-dom"]
+  },
+  "files": [
+    "src/types/IState.ts",
+    "src/types/IExtensionContext.ts",
+    "src/types/IRegisteredExtension.ts",
+    "src/types/shared/category.ts",
+    "src/types/shared/download.ts",
+    "src/types/shared/extension.ts",
+    "src/types/shared/gamemode.ts",
+    "src/types/shared/history.ts",
+    "src/types/shared/mod.ts",
+    "src/types/shared/profile.ts"
+  ],
+  "exclude": [
+    "src/util/bbcode/**/*",
+    "src/util/StyleManager.ts",
+    "src/types/IDialog.ts",
+    "src/types/api.ts"
+  ]
+}

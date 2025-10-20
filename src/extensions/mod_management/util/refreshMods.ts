@@ -9,7 +9,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { setModArchiveId } from '../actions/mods';
 import {IMod} from '../types/IMod';
 
-// TODO: Remove Bluebird import - using native Promise;
+import Promise from 'bluebird';
 import * as path from 'path';
 
 /**
@@ -81,7 +81,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
         { label: 'Apply Changes' },
       ]).then(res => {
         if (res.action === 'Apply Changes') {
-          return promiseMap(addedMods, (modName: string) => {
+          return Promise.map(addedMods, (modName: string) => {
             const fullPath: string = path.join(installPath, modName);
             return fs.statAsync(fullPath)
               .then((stat: fs.Stats) => {
@@ -98,7 +98,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
                   });
                 }
               })
-              .catch(err => { if (err.code === 'ENOENT') { return fs.statAsync(fullPath + '.installing'); } else { return Promise.reject(err); }})
+              .catch({ code: 'ENOENT' }, () => fs.statAsync(fullPath + '.installing')
                 .then(() =>
                   // since we're removing the '.installing' extension above we might be discovering
                   // a mod here that was not installed successfully but doesn't have an entry in the

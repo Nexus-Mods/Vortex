@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "rootDir": "./src",
+    "outDir": "./out-stack-limit",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo-stack-limit",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "jsx": "react",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
+    "types": ["node", "react", "react-dom"]
+  },
+  "files": [
+    "typings.custom/index.d.ts",
+    "src/main.ts",
+    "src/index.ts",
+    "src/renderer.tsx",
+    "src/extensions/index.ts",
+    "src/util/macOSPathNormalization.ts"
+  ]
+}

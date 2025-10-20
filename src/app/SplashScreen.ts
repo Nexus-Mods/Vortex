@@ -1,5 +1,6 @@
 // TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
+import { promiseDelay } from '../util/promise-helpers';
 import { pathToFileURL } from 'url';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';

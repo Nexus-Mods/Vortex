@@ -17,6 +17,7 @@ import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/I
 
 // TODO: Remove Bluebird import - using native Promise;
 import * as path from 'path';
+import { promiseDelay } from '../../util/promise-helpers';
 import getVortexPath from '../../util/getVortexPath';
 
 class DeploymendMethod extends LinkingDeployment {

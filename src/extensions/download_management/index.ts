@@ -11,9 +11,7 @@ import { log } from '../../util/log';
 import { isWindows } from '../../util/platform';
 import presetManager from '../../util/PresetManager';
 import ReduxProp from '../../util/ReduxProp';
-import { activeDownloads } from './selectors';  // Import directly
-import { activeGameId } from '../profile_management/activeGameId';
-import { downloadPath, downloadPathForGame } from './selectors';  // Import directly from local selectors
+import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, sum, toPromise, truthy } from '../../util/util';
 
@@ -49,9 +47,9 @@ import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as RemoteT from '@electron/remote';
-// TODO: Remove Bluebird import - using native Promise;
+import { promiseFilter, promiseMap } from '../../util/promise-helpers';
 import * as _ from 'lodash';
-import { addToArchive } from '../../util/archive';
+import Zip = require('node-7z');
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
@@ -61,7 +59,7 @@ import lazyRequire from '../../util/lazyRequire';
 import setDownloadGames from './util/setDownloadGames';
 import { ensureLoggedIn } from '../nexus_integration/util';
 import NXMUrl from '../nexus_integration/NXMUrl';
-import { knownGames } from '../gamemode_management/selectors';
+import { knownGames } from '../../util/selectors';
 import { convertNXMIdReverse, convertGameIdReverse } from '../nexus_integration/util/convertGameId';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
@@ -102,10 +100,10 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
                           confirmElevation: () => Promise<void>) {
   return fs.ensureDirWritableAsync(downloadPath, confirmElevation)
     .then(() => fs.readdirAsync(downloadPath))
-    .filter((filePath: string) => knownArchiveExt(filePath))
-    .filter((filePath: string) =>
+    .then(files => promiseFilter(files, (filePath: string) => Promise.resolve(knownArchiveExt(filePath))))
+    .then(files => promiseFilter(files, (filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
-        .then(stat => !stat.isDirectory()).catch(() => false))
+        .then(stat => !stat.isDirectory()).catch(() => Promise.resolve(false))))
     .then((downloadNames: string[]) => {
       const dlsNormalized = downloadNames.map(normalize);
       const addedDLs = downloadNames.filter((name: string, idx: number) =>
@@ -266,12 +264,12 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   downloads = state.persistent.downloads.files;
 
   if (gameId === undefined) {
-    gameId = activeGameId(state);
+    gameId = selectors.activeGameId(state);
     if (gameId === undefined) {
       return Promise.resolve();
     }
   }
-  const currentDownloadPath = downloadPathForGame(state, gameId);
+  const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
 
   let nameIdMap: {[name: string]: string} = {};
 
@@ -317,7 +315,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
                                   { label: 'Allow access', action: () => resolve() },
                                 ]);
                               }))
-        .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(null); } else { return Promise.reject(err); }})
+        .catch(UserCanceled, () => null)
         .catch(err => {
           api.showErrorNotification('Failed to refresh download directory', err, {
             allowReport: err.code !== 'EPERM',
@@ -338,8 +336,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   return ensureDownloadsDirectory(api)
-    .catch(err => { if (err instanceof ProcessCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
-    .catch(err => { if (err instanceof UserCanceled) { return Promise.resolve(); } else { return Promise.reject(err); }})
+    .catch(ProcessCanceled, () => Promise.resolve())
+    .catch(UserCanceled, () => Promise.resolve())
     .catch(err => {
       const errTitle = (err.code === 'EPERM')
         ? 'Insufficient permissions'
@@ -412,7 +410,7 @@ function processInstallError(api: IExtensionApi,
 function postImport(api: IExtensionApi, destination: string,
                     fileSize: number, silent: boolean): Promise<string> {
   const store = api.store;
-  const gameMode = activeGameId(store.getState());
+  const gameMode = selectors.activeGameId(store.getState());
   if (gameMode === undefined) {
     return Promise.reject(new Error('no active game'));
   }
@@ -431,49 +429,25 @@ function postImport(api: IExtensionApi, destination: string,
     })
     .then(() => {
       if (!silent) {
-        let notified = false;
-        const tryNotify = () => {
-          if (notified) return;
-          const curState = api.getState();
-          const automationDisabled = !curState.settings?.automation?.install;
-          const dl = curState.persistent.downloads.files[dlId];
-          const isFinished = dl?.state === 'finished';
-          const hasContent = (dl?.size ?? 0) > 0;
-          const hasHash = typeof dl?.fileMD5 === 'string' && dl.fileMD5.length > 0;
-          if (automationDisabled && isFinished && hasContent && hasHash) {
-            notified = true;
-            api.sendNotification({
-              id: `ready-to-install-${dlId}`,
-              type: 'success',
-              title: 'File imported',
-              group: 'download-finished',
-              message: fileName,
-              actions: [
-                {
-                  title: 'Install All', action: dismiss => {
-                    api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
-                      if (err) {
-                        processInstallError(api, err, dlId, fileName);
-                      }
-                    });
-                    dismiss();
-                  },
-                },
-              ],
-            });
-          }
-        };
-
-        // Try immediately (in case hashing already happened)
-        tryNotify();
-
-        // Also send once the hash is calculated for this import
-        const hashListener = (fp: string, md5Hash: string, fileSize: number) => {
-          if (path.basename(fp) !== fileName) return;
-          api.events.off('filehash-calculated', hashListener);
-          tryNotify();
-        };
-        api.events.on('filehash-calculated', hashListener);
+        api.sendNotification({
+          id: `ready-to-install-${dlId}`,
+          type: 'success',
+          title: 'File imported',
+          group: 'download-finished',
+          message: fileName,
+          actions: [
+            {
+              title: 'Install All', action: dismiss => {
+                api.events.emit('start-install-download', dlId, undefined, (err, mId) => {
+                  if (err) {
+                    processInstallError(api, err, dlId, fileName);
+                  }
+                });
+                dismiss();
+              },
+            },
+          ],
+        });
       }
 
       return dlId;
@@ -522,6 +496,7 @@ function move(api: IExtensionApi,
 function importDirectory(api: IExtensionApi,
                          source: string, destination: string,
                          silent: boolean) {
+  const zipper = new Zip();
 
   const notiId = silent ? undefined : api.sendNotification({
     type: 'activity',
@@ -533,7 +508,7 @@ function importDirectory(api: IExtensionApi,
   addLocalInProgress.add(fileName);
 
   return fs.readdirAsync(source)
-    .then(files => addToArchive(destination, files.map(name => path.join(source, name))))
+    .then(files => zipper.add(destination, files.map(name => path.join(source, name))))
     .then(() => fs.statAsync(destination))
     .then((stat: fs.Stats) => postImport(api, destination, stat.size, silent))
     .catch(err => {
@@ -552,7 +527,7 @@ function importDirectory(api: IExtensionApi,
 function genImportDownloadsHandler(api: IExtensionApi) {
   return (downloadPaths: string[], cb?: (dlIds: string[]) => void, silent?: boolean) => {
     const state = api.getState();
-    const gameMode = activeGameId(state);
+    const gameMode = selectors.activeGameId(state);
 
     if (gameMode === undefined) {
       log('warn', 'can\'t import download(s) when no game is active', downloadPaths);
@@ -560,8 +535,8 @@ function genImportDownloadsHandler(api: IExtensionApi) {
     }
 
     log('debug', 'importing download(s)', downloadPaths);
-    const downloadPath = downloadPathForGame(state, gameMode);
-    promiseMap(downloadPaths, dlPath => {
+    const downloadPath = selectors.downloadPathForGame(state, gameMode);
+    Promise.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
       let destination = path.join(downloadPath, fileName);
       return fs.statAsync(dlPath)
@@ -573,7 +548,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             return move(api, dlPath, destination, silent ?? false);
           }
         })
-        .then(((dlId: string) => {
+        .tap((dlId: string) => {
           log('info', 'imported archives', { count: downloadPaths.length });
           return dlId;
         })
@@ -594,7 +569,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
-  const gameMode = activeGameId(state);
+  const gameMode = selectors.activeGameId(state);
   if (gameMode === undefined) {
     return Promise.resolve(result);
   }
@@ -675,7 +650,7 @@ function updateShutdown(downloads: { [key: string]: IDownload }) {
 function toggleShutdown(api: IExtensionApi) {
   if (shutdownPending) {
     shutdownPending = false;
-    updateShutdown(activeDownloads(api.getState()));
+    updateShutdown(selectors.activeDownloads(api.getState()));
   } else {
     api.showDialog('question', 'Confirm Shutdown', {
       text: 'Your computer will be shut down 30 seconds after the last download finished. '
@@ -686,7 +661,7 @@ function toggleShutdown(api: IExtensionApi) {
       {
         label: 'Schedule Shutdown', action: () => {
           shutdownPending = true;
-          updateShutdown(activeDownloads(api.getState()));
+          updateShutdown(selectors.activeDownloads(api.getState()));
         },
       },
     ]);
@@ -728,11 +703,11 @@ function checkForUnfinalized(api: IExtensionApi,
 
             progress('...');
 
-            promiseMap(unfinalized, id => {
+            Promise.map(unfinalized, id => {
               const gameId = Array.isArray(downloads[id].game)
                 ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
                 : gameMode;
-              const downloadPath = downloadPathForGame(api.getState(), gameId);
+              const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
               const filePath = path.join(downloadPath, downloads[id].localPath);
               progress(downloads[id].localPath);
               if (downloads[id].state === 'finalizing') {
@@ -780,9 +755,6 @@ function removeDownloadsWithoutFile(store: Redux.Store,
     .forEach(dlId => {
       store.dispatch(removeDownload(dlId));
     });
-  }
-      store.dispatch(removeDownload(dlId));
-    });
 }
 
 function processInterruptedDownloads(api: IExtensionApi,
@@ -798,7 +770,7 @@ function processInterruptedDownloads(api: IExtensionApi,
         ? convertGameIdReverse(knownGames(api.getState()), downloads[id].game[0])
         : gameMode;
 
-      const downloadPath = downloadPathForGame(api.getState(), gameId);
+      const downloadPath = selectors.downloadPathForGame(api.getState(), gameId);
       if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
         fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
           .then(() => {
@@ -868,7 +840,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   const downloadPathForGame = (gameId: string) =>
-    downloadPathForGame(context.api.getState(), gameId);
+    selectors.downloadPathForGame(context.api.getState(), gameId);
 
   const downloadColumns = (props: () => IDownloadViewProps) =>
     downloadAttributes(context.api, props, withAddInProgress);
@@ -942,7 +914,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAction('download-actions', 100, ShutdownButton, {}, () => ({
     t: context.api.translate,
     shutdownPending,
-    activeDownloads: activeDownloads(context.api.getState()),
+    activeDownloads: selectors.activeDownloads(context.api.getState()),
     toggleShutdown: () => toggleShutdown(context.api),
   }), () => isWindows());
 
@@ -969,7 +941,7 @@ function init(context: IExtensionContextExt): boolean {
                                 if (install && (err === null)) {
                                   context.api.events.emit('start-install-download', dlId);
                                 }
-                              }, 'always');
+                              });
     });
 
     context.api.registerProtocol('https', false, (url, install) => {
@@ -978,7 +950,7 @@ function init(context: IExtensionContextExt): boolean {
                                 if (install && (err === null)) {
                                   context.api.events.emit('start-install-download', dlId);
                                 }
-                              }, 'always');
+                              });
     });
 
     context.api.events.on('will-move-downloads', () => {
@@ -1004,10 +976,10 @@ function init(context: IExtensionContextExt): boolean {
 
                                 const state: IState = context.api.store.getState();
 
-                                updateShutdown(activeDownloads(state));
+                                updateShutdown(selectors.activeDownloads(state));
 
-                                promiseMap(filtered, dlId => {
-                                  const downloadPath = downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+                                Promise.map(filtered, dlId => {
+                                  const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
                                   if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
@@ -1111,7 +1083,7 @@ function init(context: IExtensionContextExt): boolean {
         : 1;
 
       manager = new DownloadManagerImpl(
-        downloadPath(store.getState()),
+        selectors.downloadPath(store.getState()),
         maxParallelDownloads,
         store.getState().settings.downloads.maxChunks, (speed: number) => {
           if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
@@ -1145,7 +1117,7 @@ function init(context: IExtensionContextExt): boolean {
       observer = observeImpl(context.api, manager);
 
       const downloads = state.persistent.downloads?.files ?? {};
-      const gameMode = activeGameId(state);
+      const gameMode = selectors.activeGameId(state);
 
       processInterruptedDownloads(context.api, downloads, gameMode);
       checkForUnfinalized(context.api, downloads, gameMode);
@@ -1219,33 +1191,18 @@ function init(context: IExtensionContextExt): boolean {
             'start-download', [step.url], {}, undefined, cb, 'always', {
               allowInstall: false,
             })))
-          .catch(err => {
+          .tapCatch(err => {
             log('error', 'download failed', { url: step.url, error: err.message });
           })
           .then((dlId: string) => {
-            // The start-download promise resolves when the download operation concludes
-            // (either finished, paused with unfinished chunks, redirect, or failed).
-            // Only trigger installation once we receive a did-finish-download with status 'finished'.
-            log('info', 'download completion signal received', { dlId });
+            log('info', 'download finished', { dlId });
             return new Promise((resolve) => {
-              const finishListener = (id: string, status: string) => {
-                if (id !== dlId) { return; }
-                // Stop listening once we handle this download id
-                context.api.events.off('did-finish-download', finishListener);
-                if (status === 'finished') {
-                  if (isCollection) {
-                    onDidInstallCollection(dlId, resolve);
-                  } else {
-                    onDidInstallDependencies(dlId, resolve);
-                  }
-                  context.api.events.emit('start-install-download', dlId);
-                } else {
-                  // Do not install on 'failed' or 'redirect' outcomes
-                  log('debug', 'skip install due to non-finished status', { dlId, status });
-                  resolve();
-                }
-              };
-              context.api.events.on('did-finish-download', finishListener);
+              if (isCollection) {
+                onDidInstallCollection(dlId, resolve);
+              } else {
+                onDidInstallDependencies(dlId, resolve);
+              }
+              context.api.events.emit('start-install-download', dlId);
             });
           });
       });
