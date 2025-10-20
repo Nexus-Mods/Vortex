@@ -278,11 +278,11 @@ function checkPhaseCompletion(phaseMods: any[]): {
   };
 }
 
-function getActiveCollectionSession(state: any, sourceModId: string): any | null {
+function getActiveCollectionSession(state: any, sourceModId?: string): any | null {
   const collectionsState = getSafe(state, ['session', 'collections'], undefined);
   const activeSession = collectionsState?.activeSession;
 
-  if (!activeSession || activeSession.collectionId !== sourceModId) {
+  if (!activeSession && sourceModId && activeSession.collectionId !== sourceModId) {
     return null;
   }
 
@@ -318,14 +318,19 @@ function findCollectionByDownload(
     return null;
   }
 
-  const mods = state.persistent.mods[gameId] || {};
-  for (const mod of Object.values(mods)) {
-    if (mod.type === 'collection' && mod.rules) {
-      const matchingRule = mod.rules.find((rule: IModRule) =>
-        rule.reference.tag === referenceTag || rule.reference.md5Hint === download.fileMD5);
-      if (matchingRule) {
-        return { collectionMod: mod, matchingRule, gameId };
-      }
+  // Get the current active collection installation
+  const activeCollection = getActiveCollectionSession(state);
+  if (!activeCollection?.collectionId) {
+    log('debug', 'No active collection installation found', { downloadId });
+    return null;
+  }
+
+  const mod = state.persistent.mods[gameId][activeCollection.collectionId] || null;
+  if (mod && mod.type === 'collection' && mod.rules) {
+    const matchingRule = mod.rules.find((rule: IModRule) =>
+      rule.reference.tag === referenceTag || rule.reference.md5Hint === download.fileMD5);
+    if (matchingRule) {
+      return { collectionMod: mod, matchingRule, gameId };
     }
   }
 
@@ -489,19 +494,19 @@ class InstallManager {
     });
   }
 
-  private handleDownloadFinished(api: IExtensionApi, downloadId: string) {
+  private handleDownloadFinished(api: IExtensionApi, downloadId: string): boolean {
     const state = api.getState();
     const download = state.persistent.downloads.files[downloadId];
-    
+
     if (!download || download.state !== 'finished') {
       log('debug', 'Skipping download - not found or not finished', { downloadId, state: download?.state });
-      return;
+      return false;
     }
 
     // Check if this download is part of a collection installation
     const collectionInfo = findCollectionByDownload(state, download, downloadId);
     if (!collectionInfo) {
-      return;
+      return false;
     }
 
     const { collectionMod, matchingRule, gameId } = collectionInfo;
@@ -513,7 +518,7 @@ class InstallManager {
 
     if (!isInstallingDependencies && !hasPhaseState) {
       log('debug', 'Collection is not currently installing (no active dependency install or phase state)', { collectionId, downloadId });
-      return;
+      return false;
     }
 
     // Create a dependency object and queue the installation
@@ -543,6 +548,7 @@ class InstallManager {
       matchingRule.type === 'recommends',
       dependency.phase
     );
+    return true;
   }
 
   private handleDownloadFailed(api: IExtensionApi, downloadId: string) {
@@ -2100,8 +2106,12 @@ class InstallManager {
         log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
         if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
-          this.handleDownloadFinished(api, downloadId);
-          anyQueued = true;
+          const success = this.handleDownloadFinished(api, downloadId);
+          if (success) {
+            anyQueued = true;
+          } else {
+            log('debug', 'Requeue failed - collection not currently installing', { downloadId });
+          }
         } else if (!hasPendingOrActive && existingMod) {
           const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
           this.mPendingInstalls.delete(installKey);
