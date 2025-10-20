@@ -279,12 +279,38 @@ class StyleManager {
       extension: path.extname(filePath || ''),
       currentPartials: this.mPartials.length
     });
+    
+    // Enhanced logging for macOS theme diagnostics
+    if (process.platform === 'darwin' && filePath && filePath.includes('macos-tahoe')) {
+      log('info', '🔍 macOS Theme Diagnostics - StyleManager.setSheet', {
+        timestamp: new Date().toISOString(),
+        key,
+        filePath,
+        fileExists: filePath ? fs.existsSync(filePath) : false,
+        isAbsolute: path.isAbsolute(filePath || ''),
+        extension: path.extname(filePath || ''),
+        themePath: filePath ? path.dirname(filePath) : 'N/A'
+      });
+    }
+    
     try {
       const statProm = () => (filePath === undefined)
         ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
           ? Promise.allSettled([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
             .then(results => {
+              // Enhanced logging for macOS theme diagnostics
+              if (process.platform === 'darwin' && filePath && filePath.includes('macos-tahoe')) {
+                log('info', '🔍 macOS Theme Diagnostics - StyleManager.setSheet file resolution', {
+                  timestamp: new Date().toISOString(),
+                  filePath,
+                  scssResult: results[0]?.status,
+                  cssResult: results[1]?.status,
+                  scssError: results[0]?.status === 'rejected' ? results[0]?.reason?.message : 'N/A',
+                  cssError: results[1]?.status === 'rejected' ? results[1]?.reason?.message : 'N/A'
+                });
+              }
+              
               // Check if at least one of the promises fulfilled
               if (results.some(result => result.status === 'fulfilled')) {
                 return null;
@@ -334,6 +360,18 @@ class StyleManager {
             filePath,
             error: err.message
           });
+          
+          // Enhanced error logging for macOS theme diagnostics
+          if (process.platform === 'darwin' && filePath && filePath.includes('macos-tahoe')) {
+            log('error', '❌ macOS Theme Diagnostics - StyleManager.setSheet FAILED', {
+              timestamp: new Date().toISOString(),
+              key,
+              filePath,
+              errorMessage: err.message,
+              errorStack: err.stack,
+              fileExists: filePath ? fs.existsSync(filePath) : false
+            });
+          }
         });
     } catch (err) {
       log('warn', 'StyleManager setSheet - exception during setSheet', { 
@@ -341,6 +379,17 @@ class StyleManager {
         path: filePath, 
         err: err.message 
       });
+      
+      // Enhanced error logging for macOS theme diagnostics
+      if (process.platform === 'darwin' && filePath && filePath.includes('macos-tahoe')) {
+        log('error', '💥 macOS Theme Diagnostics - StyleManager.setSheet EXCEPTION', {
+          timestamp: new Date().toISOString(),
+          key,
+          filePath,
+          errorMessage: err.message,
+          errorStack: err.stack
+        });
+      }
     }
   }
 
@@ -370,6 +419,20 @@ class StyleManager {
       excludedPartials: this.mPartials.filter(partial => partial.file === undefined)
     });
 
+    // Enhanced logging for macOS theme diagnostics
+    if (process.platform === 'darwin') {
+      const macOSStylesheets = stylesheets.filter(s => s.includes('macos-tahoe'));
+      if (macOSStylesheets.length > 0) {
+        log('info', '🔍 macOS Theme Diagnostics - StyleManager.render', {
+          timestamp: new Date().toISOString(),
+          platform: process.platform,
+          macOSStylesheets,
+          totalStylesheets: stylesheets.length,
+          allStylesheets: stylesheets
+        });
+      }
+    }
+
     return new Promise<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send('__renderSASS', stylesheets);
@@ -378,7 +441,44 @@ class StyleManager {
         log('debug', 'StyleManager render - received CSS', {
           cssLength: css?.length || 0
         });
+        
+        // Enhanced logging for macOS theme diagnostics
+        if (process.platform === 'darwin') {
+          const hasMacOSTheme = stylesheets.some(s => s.includes('macos-tahoe'));
+          if (hasMacOSTheme) {
+            log('info', '✅ macOS Theme Diagnostics - StyleManager.render SUCCESS', {
+              timestamp: new Date().toISOString(),
+              platform: process.platform,
+              cssLength: css?.length || 0,
+              hasMacOSTheme
+            });
+          }
+        }
+        
         this.applyCSS(css);
+      })
+      .catch((err) => {
+        log('error', 'StyleManager render - FAILED', {
+          errorMessage: err.message,
+          errorStack: err.stack
+        });
+        
+        // Enhanced error logging for macOS theme diagnostics
+        if (process.platform === 'darwin') {
+          const hasMacOSTheme = stylesheets.some(s => s.includes('macos-tahoe'));
+          if (hasMacOSTheme) {
+            log('error', '❌ macOS Theme Diagnostics - StyleManager.render FAILED', {
+              timestamp: new Date().toISOString(),
+              platform: process.platform,
+              errorMessage: err.message,
+              errorStack: err.stack,
+              hasMacOSTheme,
+              stylesheets
+            });
+          }
+        }
+        
+        throw err;
       });
   }
 
