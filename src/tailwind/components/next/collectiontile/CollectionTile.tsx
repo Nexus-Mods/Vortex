@@ -7,6 +7,8 @@
 import * as React from 'react';
 import { Button } from '../button/Button';
 import { Typography } from '../typography/Typography';
+import { Icon } from '../icon';
+import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
 
 export interface CollectionTileProps {
   // Data
@@ -145,7 +147,8 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
 
                 {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
-                  <div className="tw:w-4 tw:h-4 tw:relative" />
+
+                  <Icon path="mdiThumbUp" size="sm"  />                  
                   <Typography
                     as="div"
                     typographyType="body-xs"
@@ -159,7 +162,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
 
                 {/* Size */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
-                  <div className="tw:w-4 tw:h-4 tw:relative tw:overflow-hidden" />
+                  <Icon path={nxmFileSize} size="sm" />
                   <Typography
                     as="div"
                     typographyType="body-xs"
@@ -172,7 +175,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
 
                 {/* Mod count */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
-                  <div className="tw:w-4 tw:h-4 tw:relative" />
+                  <Icon path={nxmMod} size="sm" />
                   <Typography
                     as="div"
                     typographyType="body-xs"

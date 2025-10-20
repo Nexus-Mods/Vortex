@@ -8,8 +8,8 @@
 import * as React from 'react';
 import { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentProps, MutableRefObject, ReactNode, Ref } from 'react';
 
-import { Icon } from './Icon';
-import { Link } from './Link';
+import { Icon } from '../icon';
+import { Link } from '../link';
 import { Typography } from '../typography/Typography';
 import { TypographyProps } from '../typography/Typography';
 import { XOr, joinClasses } from '../utils';
