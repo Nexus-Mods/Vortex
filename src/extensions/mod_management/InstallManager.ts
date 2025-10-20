@@ -282,7 +282,7 @@ function getActiveCollectionSession(state: any, sourceModId?: string): any | nul
   const collectionsState = getSafe(state, ['session', 'collections'], undefined);
   const activeSession = collectionsState?.activeSession;
 
-  if (!activeSession && sourceModId && activeSession.collectionId !== sourceModId) {
+  if (!activeSession || (sourceModId && activeSession.collectionId !== sourceModId)) {
     return null;
   }
 
