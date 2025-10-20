@@ -593,6 +593,31 @@ class InstallManager {
     }
   }
 
+  private handleDownloadSkipped(api: IExtensionApi, sourceModId: string, dep: IDependency) {
+    if (!sourceModId || !dep) {
+      return;
+    }
+
+    // Check if we're currently in collection installation for this collection
+    const isInstallingCollection = !!this.mDependencyInstalls[sourceModId] || this.mInstallPhaseState.has(sourceModId);
+    if (!isInstallingCollection) {
+      log('debug', 'Collection is not currently installing - ignoring skipped download', { sourceModId });
+      return;
+    }
+
+    const downloads = api.getState().persistent.downloads.files;
+    const dlId = dep.download ?? findDownloadByReferenceTag(downloads, dep.reference);
+    if (dlId != null) {
+      // Remove any active or pending installation for this dependency
+      const installKey = this.generateDependencyInstallKey(sourceModId, dlId);
+      this.mPendingInstalls.delete(installKey);
+      this.mActiveInstalls.delete(installKey);
+    }
+
+    // See if we can advance the phase
+    this.maybeAdvancePhase(sourceModId, api);
+  }
+
   /**
    * Get information about all currently active installations
    */
@@ -2066,13 +2091,24 @@ class InstallManager {
       log('debug', 'Download state check', { downloadId, downloadState });
       if (downloads[downloadId].state === 'finished') {
         const hasPendingOrActive = this.hasActiveOrPendingInstallation(sourceModId, downloadId);
-        log('debug', 'Requeue check', { downloadId, hasPendingOrActive });
-        if (!hasPendingOrActive) {
+
+        // Check if mod is already installed
+        const gameId = activeGameId(api.getState());
+        const mods = api.getState().persistent.mods[gameId] ?? {};
+        const existingMod = mod.rule?.reference && findModByRef(mod.rule.reference, mods);
+
+        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
+        if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
           this.handleDownloadFinished(api, downloadId);
           anyQueued = true;
+        } else if (!hasPendingOrActive && existingMod) {
+          const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
+          this.mPendingInstalls.delete(installKey);
+          this.mActiveInstalls.delete(installKey);
+          api.events.emit('did-install-mod', gameId, downloadId, existingMod.id, existingMod.attributes);
         } else {
-          log('debug', 'Download blocked by pending/active installation', { downloadId });
+          log('debug', 'Download already has pending/active installation', { downloadId });
         }
       } else {
         log('debug', 'Download not in finished state', { downloadId, state: downloadState });
@@ -2183,6 +2219,11 @@ class InstallManager {
 
   private startPendingForPhase(sourceModId: string, phase: number) {
     const state = this.mInstallPhaseState.get(sourceModId);
+    if (!state) {
+      // Phase state was cleaned up, nothing to start
+      return;
+    }
+
     const tasks = state.pendingByPhase.get(phase) ?? [];
 
     if (tasks.length === 0) {
@@ -2195,6 +2236,11 @@ class InstallManager {
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
     const state = this.mInstallPhaseState.get(sourceModId);
+    if (!state) {
+      // Phase state was cleaned up, nothing to advance
+      return;
+    }
+
     if (state.allowedPhase === undefined) {
       log('debug', 'phase gating: awaiting first finished phase', { sourceModId });
       return;
@@ -4184,6 +4230,12 @@ class InstallManager {
         }
       }
       return dlPromise
+        .catch(UserCanceled, err => {
+          if (err.skipped) {
+            this.handleDownloadSkipped(api, sourceModId, dep);
+          } 
+          return Bluebird.reject(err);
+        })
         .catch(AlreadyDownloaded, err => {
           if (err.downloadId !== undefined) {
             return Bluebird.resolve(err.downloadId);
@@ -5062,9 +5114,11 @@ class InstallManager {
   /**
    * Find any download that matches the given mod reference using all available methods
    */
-  private findDownloadForMod(reference: any, downloads: any): string | null {
+  private findDownloadForMod(reference: IModReference, downloads: { [id: string]: IDownload }): string | null {
+    const relevantDownloads = Object.fromEntries(Object.entries(downloads)
+      .filter(([dlId, dl]) => dl.state === 'finished' && dl.game.includes(reference.gameId)));
     // Try the primary lookup first
-    const downloadId = findDownloadByRef(reference, downloads);
+    const downloadId = findDownloadByRef(reference, relevantDownloads);
     if (downloadId) {
       return downloadId;
     }
@@ -5072,9 +5126,9 @@ class InstallManager {
     // Try filename match
     const targetFilename = reference?.logicalFileName;
     if (targetFilename) {
-      const altDownloadId = Object.keys(downloads).find(dlId => {
-        const download = downloads[dlId];
-        return download.localPath && download.localPath.endsWith(targetFilename) && 
+      const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+        const download = relevantDownloads[dlId];
+        return download.localPath && download.localPath.endsWith(targetFilename) &&
                download.state === 'finished';
       });
       if (altDownloadId) {
@@ -5086,8 +5140,8 @@ class InstallManager {
     if (reference?.repo) {
       const { modId, fileId } = reference.repo;
       if (modId && fileId) {
-        const altDownloadId = Object.keys(downloads).find(dlId => {
-          const download = downloads[dlId];
+        const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+          const download = relevantDownloads[dlId];
           return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
                  download.modInfo?.nexus?.fileId?.toString() === fileId.toString() &&
                  download.state === 'finished';
@@ -5099,8 +5153,8 @@ class InstallManager {
 
       // Try modId only
       if (modId) {
-        const altDownloadId = Object.keys(downloads).find(dlId => {
-          const download = downloads[dlId];
+        const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+          const download = relevantDownloads[dlId];
           return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
                  download.state === 'finished';
         });
@@ -5112,14 +5166,19 @@ class InstallManager {
 
     // Try testRefByIdentifiers
     if (reference) {
-      const altDownloadId = Object.keys(downloads).find(dlId => {
-        const download = downloads[dlId];
+      const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
+        const download = relevantDownloads[dlId];
         if (download.state !== 'finished') {
           return false;
         }
-        
+
+        const nameSet = new Set<string>();
+        const fileIdsSet = new Set<string>();
+        fileIdsSet.add(download.modInfo?.nexus?.ids?.fileId?.toString?.());
+        nameSet.add(download.localPath ? path.basename(download.localPath, path.extname(download.localPath)) : undefined);
         const identifiers = {
-          name: download.localPath ? require('path').basename(download.localPath, require('path').extname(download.localPath)) : undefined,
+          fileNames: Array.from(nameSet).filter(truthy) as string[],
+          fileIds: Array.from(fileIdsSet).filter(truthy) as string[],
           gameId: download.modInfo?.nexus?.ids?.gameId || download.modInfo?.gameId,
           modId: download.modInfo?.nexus?.ids?.modId,
           fileId: download.modInfo?.nexus?.ids?.fileId
