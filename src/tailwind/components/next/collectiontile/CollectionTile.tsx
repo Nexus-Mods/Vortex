@@ -63,7 +63,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
   const displayTags = tags.slice(0, 2);
 
   return (
-    <div className={`tw:w-full tw:max-w-[465px] tw:h-[275px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
+    <div className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
       {/* Main content area */}
       <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
         <div className="tw:self-stretch tw:flex tw:flex-1 tw:justify-between tw:items-start">
@@ -81,7 +81,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
           <div className="tw:flex-1 tw:self-stretch tw:flex tw:flex-col tw:justify-start tw:items-start">
 
             {/* Header: Title + Author */}
-            <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-1">
+            <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-0">
               <Typography
                 as="div"
                 className="tw:line-clamp-1 tw:font-semibold tw:break-words"
@@ -116,7 +116,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
             {/* Tags section */}
             {displayTags.length > 0 && (
               <div className="tw:self-stretch tw:pl-3 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
-                <div className="tw:self-stretch tw:py-1 tw:border-t tw:border-b tw:border-stroke-neutral-translucent-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
+                <div className="tw:self-stretch tw:py-1.5 tw:border-t tw:border-b tw:border-stroke-neutral-translucent-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
                   {displayTags.map((tag, index) => {
                     const tagText = getTagText(tag);
                     return (
@@ -144,7 +144,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
 
             {/* Stats section */}
             <div className="tw:self-stretch tw:pl-3 tw:inline-flex tw:justify-start tw:items-center tw:gap-5">
-              <div className="tw:flex-1 tw:py-1 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
+              <div className="tw:flex-1 tw:py-1.5 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
 
                 {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
@@ -205,7 +205,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
       </div>
 
       {/* Action bar */}
-      <div className="tw:self-stretch tw:px-3 tw:py-2 tw:bg-surface-high tw:rounded-bl tw:rounded-br tw:inline-flex tw:justify-start tw:items-center tw:gap-2">
+      <div className="tw:self-stretch tw:p-3 tw:bg-surface-high tw:rounded-bl tw:rounded-br tw:inline-flex tw:justify-start tw:items-center tw:gap-2">
         <Button
           buttonType="primary"
           size="sm"
