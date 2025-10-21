@@ -14,3 +14,6 @@ export * from './controls/api';
 export * from './views/api';
 export { actions, Promise, fs, log, selectors, types, util };
 export { ComponentEx, PureComponentEx } from './util/ComponentEx';
+
+// Tailwind component library (namespaced to avoid conflicts)
+export { Tailwind } from './tailwind';

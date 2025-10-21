@@ -181,7 +181,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         <FlexLayout.Fixed>
           {t('Drag dashlets to rearrange and drag the borders to resize')}
         </FlexLayout.Fixed>
-        <FlexLayout.Flex/>
+        <FlexLayout.Flex />
         <FlexLayout.Fixed>
           <DropdownButton
             id='add-widget-button'
@@ -329,6 +329,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate([ 'common' ])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      Dashboard)) as React.ComponentClass<{}>;
+export default translate(['common'])(
+  connect(mapStateToProps, mapDispatchToProps)(
+    Dashboard)) as React.ComponentClass<{}>;

@@ -1,6 +1,25 @@
 import { EndorsedStatus, ICollection, ICollectionManifest, IDownloadURL, IFeedbackResponse, IFileInfo, IIssue, IRevision } from '@nexusmods/nexus-api';
 import { IMod } from '../../mod_management/types/IMod';
 
+export type SortField = 'createdAt' | 'endorsements' | 'recentRating' | 'downloads';
+export type SortDirection = 'ASC' | 'DESC';
+
+export interface ICollectionSearchOptions {
+  gameId: string;
+  count?: number;
+  offset?: number;
+  sort?: {
+    field: SortField;
+    direction: SortDirection;
+  };
+  search?: string;
+}
+
+export interface ICollectionSearchResult {
+  nodes: ICollection[];
+  totalCount: number;
+}
+
 export interface INexusAPIExtension {
   nexusCheckModsVersion?: (gameId: string, mods: { [modId: string]: IMod }, forceFull: boolean | 'silent') => void;
   nexusDownload?:
@@ -8,6 +27,7 @@ export interface INexusAPIExtension {
       => PromiseLike<string>;
   nexusGetCollection?: (slug: string) => PromiseLike<ICollection>;
   nexusGetCollections?: (gameId: string) => PromiseLike<ICollection[]>;
+  nexusSearchCollections?: (options: ICollectionSearchOptions) => PromiseLike<ICollectionSearchResult>;
   nexusGetMyCollections?:
     (gameId: string, count?: number, offset?: number) => PromiseLike<IRevision[]>;
   nexusResolveCollectionUrl?: (apiLink: string) => PromiseLike<IDownloadURL[]>;

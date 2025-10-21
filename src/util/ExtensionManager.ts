@@ -2508,7 +2508,8 @@ class ExtensionManager {
       'history_management',
       'analytics',
       'onboarding_dashlet',
-      'mod_spotlights_dashlet'
+      'mod_spotlights_dashlet',
+      'tailwind_dev'
     ];
 
     require('./extensionRequire').default(() => this.extensions);
