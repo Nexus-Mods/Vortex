@@ -11,6 +11,73 @@ import { IProfile, IState } from '../../types/IState';
 import { getBatchContext, IBatchContext } from '../../util/BatchContext';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { NotificationAggregator } from './NotificationAggregator';
+import {
+  DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
+  UserCanceled
+} from '../../util/CustomErrors';
+import {
+  createErrorReport, didIgnoreError,
+  isOutdated, withContext
+} from '../../util/errorHandling';
+import * as fs from '../../util/fs';
+import { TFunction } from '../../util/i18n';
+import { log } from '../../util/log';
+import { prettifyNodeErrorMessage } from '../../util/message';
+import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
+import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
+import walk from '../../util/walk';
+
+import calculateFolderSize from '../../util/calculateFolderSize';
+
+import { getCollectionActiveSession, getCollectionSessionById } from '../collections_integration/selectors';
+import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
+import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
+import { IDownload } from '../download_management/types/IDownload';
+import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
+import getDownloadGames from '../download_management/util/getDownloadGames';
+
+import { IModType } from '../gamemode_management/types/IModType';
+import { getGame } from '../gamemode_management/util/getGame';
+import modName, { renderModReference } from '../mod_management/util/modName';
+import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
+import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
+
+import {
+  addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
+  setModAttributes,
+  setModType
+} from './actions/mods';
+import { Dependency, IDependency, IDependencyError, IModInfoEx } from './types/IDependency';
+import { IInstallContext } from './types/IInstallContext';
+import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
+import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
+import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
+import { InstallFunc } from './types/InstallFunc';
+import { ISupportedResult, TestSupported } from './types/TestSupported';
+import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
+import filterModInfo from './util/filterModInfo';
+import metaLookupMatch from './util/metaLookupMatch';
+import queryGameId from './util/queryGameId';
+import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual, testRefByIdentifiers } from './util/testModReference';
+
+import { MAX_VARIANT_NAME, MIN_VARIANT_NAME, VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME } from './constants';
+import InstallContext from './InstallContext';
+import makeListInstaller from './listInstaller';
+import deriveModInstallName from './modIdManager';
+import { STAGING_DIR_TAG } from './stagingDirectory';
+
+import { HTTPError } from '@nexusmods/nexus-api';
+import Bluebird from 'bluebird';
+import * as _ from 'lodash';
+import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import Zip = require('node-7z');
+import * as os from 'os';
+import * as path from 'path';
+import * as Redux from 'redux';
+
+import { generate as shortid } from 'shortid';
+import { IInstallOptions } from './types/IInstallOptions';
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -88,72 +155,6 @@ class DynamicDownloadConcurrencyLimiter {
   }
 }
 
-import {
-  DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
-  UserCanceled
-} from '../../util/CustomErrors';
-import {
-  createErrorReport, didIgnoreError,
-  isOutdated, withContext
-} from '../../util/errorHandling';
-import * as fs from '../../util/fs';
-import { TFunction } from '../../util/i18n';
-import { log } from '../../util/log';
-import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
-import { getSafe } from '../../util/storeHelper';
-import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
-import walk from '../../util/walk';
-
-import calculateFolderSize from '../../util/calculateFolderSize';
-
-import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
-import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
-import { IDownload } from '../download_management/types/IDownload';
-import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
-import getDownloadGames from '../download_management/util/getDownloadGames';
-
-import { IModType } from '../gamemode_management/types/IModType';
-import { getGame } from '../gamemode_management/util/getGame';
-import modName, { renderModReference } from '../mod_management/util/modName';
-import { convertGameIdReverse } from '../nexus_integration/util/convertGameId';
-import { setModEnabled, setModsEnabled } from '../profile_management/actions/profiles';
-
-import {
-  addModRule, removeModRule, setFileOverride, setINITweakEnabled, setModAttribute,
-  setModAttributes,
-  setModType
-} from './actions/mods';
-import { Dependency, IDependency, IDependencyError, IModInfoEx } from './types/IDependency';
-import { IInstallContext } from './types/IInstallContext';
-import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
-import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
-import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
-import { InstallFunc } from './types/InstallFunc';
-import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
-import filterModInfo from './util/filterModInfo';
-import metaLookupMatch from './util/metaLookupMatch';
-import queryGameId from './util/queryGameId';
-import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual, testRefByIdentifiers } from './util/testModReference';
-
-import { MAX_VARIANT_NAME, MIN_VARIANT_NAME, VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME } from './constants';
-import InstallContext from './InstallContext';
-import makeListInstaller from './listInstaller';
-import deriveModInstallName from './modIdManager';
-import { STAGING_DIR_TAG } from './stagingDirectory';
-
-import { HTTPError } from '@nexusmods/nexus-api';
-import Bluebird from 'bluebird';
-import * as _ from 'lodash';
-import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import Zip = require('node-7z');
-import * as os from 'os';
-import * as path from 'path';
-import * as Redux from 'redux';
-
-import { generate as shortid } from 'shortid';
-import { IInstallOptions } from './types/IInstallOptions';
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -278,17 +279,6 @@ function checkPhaseCompletion(phaseMods: any[]): {
   };
 }
 
-function getActiveCollectionSession(state: any, sourceModId?: string): any | null {
-  const collectionsState = getSafe(state, ['session', 'collections'], undefined);
-  const activeSession = collectionsState?.activeSession;
-
-  if (!activeSession || (sourceModId && activeSession.collectionId !== sourceModId)) {
-    return null;
-  }
-
-  return activeSession;
-}
-
 function withActivityTracking<T>(
   api: IExtensionApi,
   activityType: string,
@@ -319,7 +309,7 @@ function findCollectionByDownload(
   }
 
   // Get the current active collection installation
-  const activeCollection = getActiveCollectionSession(state);
+  const activeCollection = getCollectionActiveSession(state);
   if (!activeCollection?.collectionId) {
     log('debug', 'No active collection installation found', { downloadId });
     return null;
@@ -1981,7 +1971,7 @@ class InstallManager {
     modsNeedingRequeue: number;
   } {
     const state = api.getState();
-    const activeCollectionSession = getActiveCollectionSession(state, sourceModId);
+    const activeCollectionSession = getCollectionSessionById(state, sourceModId);
 
     if (!activeCollectionSession) {
       return { phaseComplete: true, needsRequeue: false, allMods: [], downloadedCount: 0, modsNeedingRequeue: 0 };
@@ -4345,7 +4335,7 @@ class InstallManager {
       const lowestPhase = phaseNumbers[0];
 
       // Check collection session to determine actual current phase
-      const activeCollectionSession = getActiveCollectionSession(api.getState(), sourceModId);
+      const activeCollectionSession = getCollectionSessionById(api.getState(), sourceModId);
 
       if (activeCollectionSession) {
         // Determine the highest completed phase from the collection session
