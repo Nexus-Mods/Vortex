@@ -79,8 +79,9 @@ function init(context: IExtensionContext): boolean {
 
       //showConsentDialog();
 
-      if (enabled() && current) {
-        // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
+      if (enabled() && current && !previous) {
+        // If the setting is set to true, and I just logged in (transition from no user to user),
+        // skip the Dialog and just turn on Analytics
         startAnalytics()
       } else if (enabled() === undefined && !!current) {
         // If I was not logged it, and the tracking is undefined ask me for the tracking
@@ -119,7 +120,7 @@ function init(context: IExtensionContext): boolean {
         // Development environment uses dev token, production uses prod token
         const isProduction = process.env.NODE_ENV !== 'development';
 
-        AnalyticsMixpanel.start(userInfo, isProduction);
+        AnalyticsMixpanel.start(userInfo, true);
 
         // Send app_launched event
         AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
