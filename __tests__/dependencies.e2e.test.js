@@ -666,6 +666,17 @@ describe('Collections End-to-End Test - Real Implementation', () => {
       // Add collection mod to state
       api.state.persistent.mods[gameId][collectionId] = collectionMod;
 
+      // Set up active collection session - CRITICAL for InstallManager to link downloads to collection
+      if (!api.state.session) {
+        api.state.session = {};
+      }
+      if (!api.state.session.collections) {
+        api.state.session.collections = {};
+      }
+      api.state.session.collections.activeSession = {
+        collectionId: collectionId,
+        mods: {}
+      };
 
       // Get the active profile
       const profile = api.state.persistent.profiles[profileId];
