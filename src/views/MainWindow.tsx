@@ -44,6 +44,7 @@ import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import type { ComponentType } from 'react';
 import { Button as ReactButton, Nav } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
@@ -475,6 +476,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default
+const ConnectedMainWindow: React.ComponentType<IBaseProps> =
   connect(mapStateToProps, mapDispatchToProps)(
     MainWindow as React.ComponentClass<IBaseProps>);
+
+export default ConnectedMainWindow;

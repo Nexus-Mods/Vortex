@@ -74,7 +74,7 @@ export {
  */
 export function existsSync(filePath: string): boolean {
   try {
-    statSync(filePath);
+    nodeFS.statSync(filePath);
     return true;
   } catch (err) {
     return false;
@@ -656,13 +656,13 @@ function copyFileCloneFallback(
       const ensureNotExists = overwrite
         ? Promise.resolve()
         : Promise.resolve(fs.pathExists(dest))
-            .then(exists => {
-              if (exists) {
-                const err: any = new Error('destination exists');
-                err.code = 'EEXIST';
-                throw err;
-              }
-            });
+          .then(exists => {
+            if (exists) {
+              const err: any = new Error('destination exists');
+              err.code = 'EEXIST';
+              throw err;
+            }
+          });
       return ensureNotExists
         .then(() => nodeFS.promises.copyFile(
           src,
@@ -687,8 +687,8 @@ function copyInt(
   stackErr: Error,
   tries: number) {
   return simfail(() => (process.platform === 'darwin'
-      ? copyFileCloneFallback(src, dest, options)
-      : Promise.resolve(fs.copy(src, dest, options))))
+    ? copyFileCloneFallback(src, dest, options)
+    : Promise.resolve(fs.copy(src, dest, options))))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options?.showDialogCallback,
                    { extraRetryErrors: ['EEXIST'] })

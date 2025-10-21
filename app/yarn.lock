@@ -1102,14 +1102,14 @@ wide-align@^1.1.0, wide-align@^1.1.5:
   dependencies:
     string-width "^1.0.2 || 2 || 3 || 4"
 
-winapi-bindings@Nexus-Mods/node-winapi-bindings, "winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3935f9603e5e8d2f18336ce0398043fd4a231d6c":
-  version "2.6.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/3935f9603e5e8d2f18336ce0398043fd4a231d6c#16c78dc4b3f8922144f3ad18a4fecc8bc73b215c"
+winapi-bindings@Nexus-Mods/node-winapi-bindings:
+  version "2.7.2"
+  resolved "git+ssh://git@github.com/Nexus-Mods/node-winapi-bindings.git#8558bf0d118c8bdff501a4123c716d7a071eb006"
   dependencies:
     autogypi "^0.2.2"
-    node-addon-api "^3.1.0"
-    node-gyp "^9.0.0"
-    prebuild-install "7.1.0"
+    node-addon-api "^8.0.0"
+    node-gyp "^10.0.0"
+    prebuild-install "^7.1.2"
 
 wrappy@1:
   version "1.0.2"

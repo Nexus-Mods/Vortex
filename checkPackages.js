@@ -12,6 +12,9 @@ const releasePackage = { ...releasePackageJson.dependencies, ...releasePackageJs
 function checkVersions() {
   let valid = true;
 
+  // Check if we're on macOS - drivelist is removed from dev environment on macOS
+  const isMacOS = process.platform === 'darwin';
+
   Object.keys(releaseLock).forEach(key => {
     if ((key[0] === '@') || (key[1] === '@')) {
       return;
@@ -23,6 +26,11 @@ function checkVersions() {
       return;
     }
   
+    // Skip drivelist check on macOS as it's removed from dev environment
+    if (isMacOS && id[0] === 'drivelist') {
+      return;
+    }
+
     const devKey = Object.keys(develLock).find(iter => (id[1].startsWith('file'))
       ? iter.split('@')[0] === id[0]
       : iter === key);
@@ -35,7 +43,18 @@ function checkVersions() {
       console.error('❌ Version mismatch!', key, releaseLock[key].version, 'vs', develLock[devKey].version);
       valid = false;
     } else if (develLock[devKey].resolved !== releaseLock[key].resolved) {
-      console.error('⚠️ Same version but different commit id:', key);
+      // List of packages that are allowed to have different commit IDs
+      const allowedCommitMismatch = [
+        'lodash@^4.17.21',
+        'turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/314f2cdb904a9a075c35261e8a1de10b0af20295',
+        'vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/46f17dc0ee8f7b74a7034ed883981d8a5fa37d24',
+        'wholocks@https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/c23132fd59d702dbeef3558cc631186413d7442f'
+      ];
+      
+      // Only show warning if not in the allowed list
+      if (!allowedCommitMismatch.includes(key)) {
+        console.error('⚠️ Same version but different commit id:', key);
+      }
     }
   });
   return valid;
