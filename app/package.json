@@ -95,6 +95,7 @@
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
+    "tailwindcss": "^4.1.15",
     "tmp": "^0.1.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "universal-analytics": "^0.4.23",

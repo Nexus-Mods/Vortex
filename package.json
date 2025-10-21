@@ -227,7 +227,7 @@
     "resolve-url-loader": "^5.0.0-beta.1",
     "rm-local-modules": "^0.0.2",
     "sass-loader": "^8.0.0",
-    "tailwindcss": "4",
+    "tailwindcss": "^4.1.15",
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
