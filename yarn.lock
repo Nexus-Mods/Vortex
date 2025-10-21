@@ -12198,9 +12198,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1-r12"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/da6e56a1b51486c5c2a5fe0f90c64e19827a94c2"
+vortex-api@Nexus-Mods/vortex-api#18467-collections-stability:
+  version "1.9.1-r13"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/8d79325e2ce32b0aadc6c55ac93deeb6a41a5ac6"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"
