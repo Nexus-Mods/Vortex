@@ -14,6 +14,7 @@
     "@electron/remote": "^2.0.12",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
+    "@tailwindcss/cli": "^4.1.15",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
@@ -95,6 +96,7 @@
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
+    "tailwindcss": "^4.1.15",
     "tmp": "^0.1.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "universal-analytics": "^0.4.23",
@@ -113,7 +115,5 @@
   "resolutions": {
     "node-gyp": "^10.0.0"
   },
-  "devDependencies": {
-    "tailwindcss": "^4.1.15"
-  }
+  "devDependencies": {}
 }
