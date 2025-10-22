@@ -1696,8 +1696,8 @@
     "@tybys/wasm-util" "^0.10.1"
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
-  version "1.4.32"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/a965ef5aabef1e047ac846c86735d86061dd02c3"
+  version "1.4.35"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/7f2c674bae56d6db8221ed802e8b0efbecac8e2b"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -12553,8 +12553,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1-r15"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/2b90f3c19cfe6cc4e7bdf53957a4cf4206938587"
+  version "1.9.1-r18"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/1794819d6746bb281a7620bdf6b937973dc8c6a5"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

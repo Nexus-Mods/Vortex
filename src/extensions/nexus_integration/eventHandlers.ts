@@ -23,7 +23,7 @@ import { IModListItem } from '../news_dashlet/types';
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId, convertGameIdReverse } from './util/convertGameId';
-import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
+import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO, COLLECTION_SEARCH_QUERY } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL, USERINFO_ENDPOINT } from './constants';
@@ -31,6 +31,9 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, 
          resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
 import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
+                ICollectionQuery,
+                ICollectionSearchOptions,
+                ICollectionSearchResult,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
                 IIssue, IModInfo, IRating, IRevision, IUserInfo, NexusError,
@@ -537,109 +540,19 @@ export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
       });
 }
 
-export function onSearchCollections(api: IExtensionApi, nexus: Nexus) {
-  return (options: {
-    gameId: string;
-    count?: number;
-    offset?: number;
-    sort?: { field: string; direction: string };
-    search?: string;
-  }): Promise<{ nodes: ICollection[]; totalCount: number }> => {
-    const {
-      gameId,
-      count = 20,
-      offset = 0,
-      sort = { field: 'endorsements', direction: 'DESC' },
-      search,
-    } = options;
 
-    // Convert internal game ID to Nexus domain name
-    const game = gameById(api.store.getState(), gameId);
-    const gameDomain = nexusGameId(game, gameId);
-
-    // Build the sort parameter based on the field
-    const sortParam: any = {};
-    sortParam[sort.field] = { direction: sort.direction };
-
-    // Build filter with gameDomain and optional search
-    const filter: any = {
-      collectionStatus: [
-        { op: 'EQUALS', value: 'listed' },
-      ],
-      gameDomain: [{ op: 'EQUALS', value: gameDomain }],
-      categoryName: [{ op: 'NOT_EQUALS', value: 'Wabbajack Mod List' }],
-      op: 'AND',
-    };
-
-    // Add generalSearch if search query is provided
-    if (search && search.trim()) {
-      filter.generalSearch = [{ op: 'WILDCARD', value: search.trim() }];
-    }
-
-    // Build variables for the collectionsV2 query
-    const variables = {
-      count,
-      offset,
-      filter,
-      sort: sortParam,
-    };
-
-    // Use the internal requestGraph method to make a direct GraphQL call
-    // This is a workaround until the nexus-api package supports collectionsV2
-    return Promise.resolve((nexus as any).requestGraph(
-      'collectionsV2',
-      {
-        count: { type: 'Int', optional: true },
-        filter: { type: 'CollectionsSearchFilter', optional: true },
-        offset: { type: 'Int', optional: true },
-        sort: { type: '[CollectionsSearchSort!]', optional: true },
-      },
-      {
-        totalCount: true,
-        nodes: {
-          id: true,
-          name: true,
-          slug: true,
-          collectionStatus: true,
-          endorsements: true,
-          recentRating: true,
-          recentRatingCount: true,
-          totalDownloads: true,
-          summary: true,
-          category: {
-            name: true,
-          },
-          game: {
-            domainName: true,
-            name: true,
-          },
-          latestPublishedRevision: {
-            adultContent: true,
-            modCount: true,
-            totalSize: true,
-          },
-          tileImage: {
-            thumbnailUrl: { $filter: { size: 'med' } },
-          },
-          user: {
-            avatar: true,
-            memberId: true,
-            name: true,
-          },
-        },
-      },
-      variables,
-      (nexus as any).args({ path: (nexus as any).filter({}) })
-    ))
-      .then((result: any) => ({
-        nodes: result.nodes || [],
-        totalCount: result.totalCount || 0,
-      }))
-      .catch(err => {
-        api.showErrorNotification('Failed to search collections', err);
-        return Promise.resolve({ nodes: [], totalCount: 0 });
-      });
-  };
+/**
+ * Search for collections using the GraphQL API
+ *
+ * @param {Nexus} nexus - The Nexus API instance
+ * @param {types.ICollectionSearchOptions} options - Search options (gameId, filters, sort, etc.)
+ * @return {Promise<types.ICollectionSearchResult>} Search results with nodes and totalCount
+ */
+export function onSearchCollections(
+  api: IExtensionApi,
+  nexus: Nexus
+): (options: ICollectionSearchOptions) => Promise<ICollectionSearchResult> {
+  return (options) => { return Promise.resolve(nexus.searchCollectionsGraph(COLLECTION_SEARCH_QUERY, options)); };
 }
 
 export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
