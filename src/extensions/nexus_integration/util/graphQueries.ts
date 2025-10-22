@@ -139,7 +139,9 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   },
   tileImage: {
     url: true,
-    thumbnailUrl: true,
+    thumbnailUrl: {
+      $filter: { size: 'med' }
+    }
   },
   user: {
     avatar: true,
