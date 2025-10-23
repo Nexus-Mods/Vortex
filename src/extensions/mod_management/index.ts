@@ -16,7 +16,6 @@ import {ITestResult} from '../../types/ITestResult';
 import { IDeployOptions } from './types/IDeployOptions';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
-import { toPromise } from '../../util/util';
 import { waitForCondition} from '../../util/waitForCondition';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -39,6 +38,7 @@ import {
   profileById,
   getCollectionActiveSession,
   getCollectionModByReference,
+  getCollectionCurrentPhase,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
@@ -1772,19 +1772,13 @@ function init(context: IExtensionContext): boolean {
     context.api.onAsync('schedule-phase-deployment', (modDeployInfo: ISchedulePhaseDeploymentForMod) => {
       // Handle the scheduled phase deployment for the mod
       const state: IState = context.api.store.getState();
-      const { modId, gameId, archivePath, modReference } = modDeployInfo;
       const activeCollection = getCollectionActiveSession(state);
-      if (activeCollection === undefined || modDeployInfo.modReference == null) {
+      if (activeCollection == null) {
         return Promise.resolve();
       }
-      const collectionModInfo: ICollectionModInstallInfo = getCollectionModByReference(state, modReference);
-      if (collectionModInfo != null && !installManager.isPhaseDeployed(collectionModInfo.modId, (collectionModInfo.rule.extra.phase || 1) - 1)) {
-        return toPromise(cb => context.api.events.emit('deploy-mods', cb))
-          .tap(() => {
-            installManager.markPhaseDeployed(collectionModInfo.modId, (collectionModInfo.rule.extra.phase || 1) - 1);
-          });
-      }
-      return Promise.resolve();
+      const currentPhase = getCollectionCurrentPhase(state);
+      installManager.scheduleDeployOnPhaseSettled(context.api, activeCollection.collectionId, currentPhase, true);
+      return installManager.awaitScheduledDeployment(activeCollection.collectionId, currentPhase);
     });
 
     history.init();

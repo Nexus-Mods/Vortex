@@ -30,7 +30,7 @@ import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
 
-import { getCollectionActiveSession, getCollectionSessionById } from '../collections_integration/selectors';
+import { getCollectionActiveSession, getCollectionModsByPhase, getCollectionSessionById, isCollectionPhaseComplete } from '../collections_integration/selectors';
 import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
@@ -1806,10 +1806,9 @@ class InstallManager {
     downloadsFinished: Set<number>;
     pendingByPhase: Map<number, Array<() => void>>;
     activeByPhase: Map<number, number>;
-    scheduledDeploy: Set<number>;
     deployedPhases: Set<number>;
     reQueueAttempted?: Map<number, number>;
-    deploymentPromises?: Promise<void>[];
+    deploymentPromises?: Map<number, Promise<void>>;
     isDeploying?: boolean;  // Flag to track if deployment is in progress
   }> = new Map();
 
@@ -1820,8 +1819,8 @@ class InstallManager {
         downloadsFinished: new Set<number>(),
         pendingByPhase: new Map<number, Array<() => void>>(),
         activeByPhase: new Map<number, number>(),
-        scheduledDeploy: new Set<number>(),
         deployedPhases: new Set<number>(),
+        deploymentPromises: new Map<number, Promise<void>>(),
       });
     }
   }
@@ -1850,8 +1849,8 @@ class InstallManager {
         phaseState.activeByPhase.forEach(count => totalActive += count);
 
         // Check for queued deployments
-        const deploymentPromises = phaseState.deploymentPromises || [];
-        const hasQueuedDeployments = deploymentPromises.length > 0;
+        const deploymentPromises = phaseState.deploymentPromises || new Map<number, Promise<void>>();
+        const hasQueuedDeployments = deploymentPromises.size > 0;
 
         if (totalPending === 0 && totalActive === 0 && !hasQueuedDeployments) {
           // All phases are settled and no deployments queued
@@ -1866,6 +1865,10 @@ class InstallManager {
             }
           });
 
+          const currentPhaseComplete = isCollectionPhaseComplete(api.getState(), phaseState.allowedPhase ?? 0);
+          if (currentPhaseComplete && deploymentPromises.size === 0) {
+            this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseState.allowedPhase ?? 0);
+          }
           setTimeout(poll, POLL_MS);
         }
       };
@@ -1874,12 +1877,13 @@ class InstallManager {
     });
   }
 
-  private pollPhaseSettlement(api: IExtensionApi, sourceModId: string, options: {
+  public pollPhaseSettlement(api: IExtensionApi, sourceModId: string, options: {
     phase?: number;           // Specific phase to poll (for deploy)
     deployOnSettle?: boolean;  // Whether to deploy when settled
   }): Bluebird<void> {
     const POLL_MS = 500;
 
+    let hasDeployed = false;
     return new Bluebird<void>((resolve) => {
       const poll = () => {
         const phaseState = this.mInstallPhaseState.get(sourceModId);
@@ -1896,8 +1900,6 @@ class InstallManager {
 
         // Determine which phase we're checking
         const checkPhase = options.phase ?? phaseState.allowedPhase ?? 0;
-        const active = phaseState.activeByPhase.get(checkPhase) ?? 0;
-        const pending = (phaseState.pendingByPhase.get(checkPhase) ?? []).length;
 
         // log('debug', 'Polling phase settlement', {
         //   sourceModId,
@@ -1915,29 +1917,23 @@ class InstallManager {
         // Check if phase is settled FIRST (before requeue to avoid deadlock)
         // Deploy when phase is complete AND no active installations
         const phaseLogicallyComplete = collectionStatus.phaseComplete;
-        const installationsComplete = active === 0 && pending === 0;
+        const installationsComplete = isCollectionPhaseComplete(api.getState(), checkPhase);
 
-        if (phaseLogicallyComplete && installationsComplete) {
-          // Mark phase as deployed for progression purposes
-          if (phaseState) {
-            phaseState.deployedPhases.add(checkPhase);
-          }
-
-          if (options.deployOnSettle) {
+        if (phaseLogicallyComplete) {
+          if (options.deployOnSettle && !hasDeployed) {
             // Set deployment flag to block new installations during deployment
             if (phaseState) {
               phaseState.isDeploying = true;
             }
 
             // Deploy mods for this phase
-            //toPromise(cb => api.events.emit('deploy-mods', cb))
-            Promise.resolve()
+            toPromise(cb => api.events.emit('deploy-mods', cb))
               .then(() => {
                 if (phaseState) {
                   phaseState.isDeploying = false;
                   // Start any installations that were queued during deployment
-                  this.startPendingForPhase(sourceModId, checkPhase);
-                  this.maybeAdvancePhase(sourceModId, api);
+                  hasDeployed = true;
+                  setTimeout(poll, POLL_MS);
                 }
                 resolve();
               })
@@ -1954,6 +1950,19 @@ class InstallManager {
                 }
                 resolve(); // Resolve anyway to avoid hanging
               });
+          } else {
+            if (installationsComplete && phaseLogicallyComplete) {
+              if (phaseState) {
+                phaseState.isDeploying = false;
+                // Start any installations that were queued during deployment
+                phaseState.deployedPhases.add(checkPhase);
+                this.startPendingForPhase(sourceModId, checkPhase);
+                this.maybeAdvancePhase(sourceModId, api);
+              }
+              resolve();
+            } else {
+              setTimeout(poll, POLL_MS);
+            }
           }
         } else if (installationsComplete && (!phaseLogicallyComplete || collectionStatus.needsRequeue || collectionStatus.downloadedCount > 0)) {
           // Requeue downloaded mods if phase is not complete and there are no active installations
@@ -2173,8 +2182,18 @@ class InstallManager {
     phaseState.deployedPhases.add(phase);
   }
 
+  public awaitScheduledDeployment(sourceModId: string, phase: number): Promise<void> {
+    this.ensurePhaseState(sourceModId);
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const deploymentPromise = phaseState.deploymentPromises?.get(phase);
+    if (deploymentPromise) {
+      return deploymentPromise;
+    }
+    return Promise.resolve();
+  }
+
   // Schedule a deploy once all installers for a specific phase have finished
-  private scheduleDeployOnPhaseSettled(api: IExtensionApi, sourceModId: string, phase: number) {
+  public scheduleDeployOnPhaseSettled(api: IExtensionApi, sourceModId: string, phase: number, deployOnSettle?: boolean) {
     this.ensurePhaseState(sourceModId);
     const state = this.mInstallPhaseState.get(sourceModId);
 
@@ -2183,17 +2202,16 @@ class InstallManager {
       return;
     }
 
-    if (state.scheduledDeploy.has(phase)) {
-      return; // already scheduled
+    if (state.deploymentPromises?.has(phase)) {
+      return;
     }
-    state.scheduledDeploy.add(phase);
 
     // Track deployment promise so we can wait for it before cleanup
     // Convert Bluebird to native Promise for compatibility
     const deploymentPromise = new Promise<void>((resolve) => {
       this.pollPhaseSettlement(api, sourceModId, {
         phase,
-        deployOnSettle: true
+        deployOnSettle: deployOnSettle ?? false,
       })
       .catch(err => {
         log('warn', 'Error during scheduled phase deployment', { sourceModId, phase, error: err?.message });
@@ -2202,10 +2220,7 @@ class InstallManager {
         // Remove this promise from the array when it completes
         const phaseState = this.mInstallPhaseState.get(sourceModId);
         if (phaseState?.deploymentPromises) {
-          const index = phaseState.deploymentPromises.indexOf(deploymentPromise);
-          if (index !== -1) {
-            phaseState.deploymentPromises.splice(index, 1);
-          }
+          phaseState.deploymentPromises.delete(phase);
         }
         resolve();
       });
@@ -2213,9 +2228,9 @@ class InstallManager {
 
     // Add to tracked deployment promises
     if (!state.deploymentPromises) {
-      state.deploymentPromises = [];
+      state.deploymentPromises = new Map<number, Promise<void>>();
     }
-    state.deploymentPromises.push(deploymentPromise);
+    state.deploymentPromises.set(phase, deploymentPromise);
   }
 
   // Called when downloads for a phase have been queued/processed
@@ -2294,9 +2309,10 @@ class InstallManager {
       const currIdx = finished.findIndex(p => p === curr);
       // Only advance past curr if the current phase has been deployed
       if (!state.deployedPhases.has(curr)) {
-        log('debug', 'phase gating: waiting for current phase deployment', { sourceModId, currPhase: curr });
-        // Even though we can't advance past this phase, we should start any pending installations
-        // for this phase to avoid deadlocks where downloaded mods prevent deployment
+        log('debug', 'phase gating: phase complete but not deployed, scheduling deployment', { sourceModId, currPhase: curr });
+        // Schedule deployment to mark the phase as deployed when it settles
+        this.scheduleDeployOnPhaseSettled(api, sourceModId, curr);
+        // Start any pending installations for this phase to avoid deadlocks
         this.startPendingForPhase(sourceModId, curr);
         break;
       }
@@ -4396,14 +4412,6 @@ class InstallManager {
           // When setting allowed phase, mark all previous phases as downloads finished
           for (let p = 0; p < effectiveStartPhase; p++) {
             phaseState.downloadsFinished.add(p);
-          }
-
-          // Mark all completed phases as deployed so we don't wait for them
-          for (let p = 0; p <= highestCompletedPhase; p++) {
-            if (allPhases.has(p)) {
-              phaseState.deployedPhases.add(p);
-              phaseState.downloadsFinished.add(p);
-            }
           }
         }
       } else if (phaseState.allowedPhase === undefined) {
