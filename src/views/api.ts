@@ -3,4 +3,6 @@ import MainPage from './MainPage';
 
 import { MainContext } from './MainWindow';
 
-export {DNDContainer, MainContext, MainPage};
+export {
+  DNDContainer, MainContext, MainPage
+};

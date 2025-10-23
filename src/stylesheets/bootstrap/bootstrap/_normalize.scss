@@ -248,13 +248,20 @@ samp {
 // 2. Correct font properties not being inherited.
 // 3. Address margins set differently in Firefox 4+, Safari, and Chrome.
 //
+// Note: Removed `button` from the color: inherit rule to allow Tailwind color
+//       utilities to work properly on button elements.
+//
 
-button,
 input,
 optgroup,
 select,
 textarea {
   color: inherit; // 1
+  font: inherit; // 2
+  margin: 0; // 3
+}
+
+button {
   font: inherit; // 2
   margin: 0; // 3
 }

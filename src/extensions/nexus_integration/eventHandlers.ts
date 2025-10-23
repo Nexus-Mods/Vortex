@@ -23,7 +23,7 @@ import { IModListItem } from '../news_dashlet/types';
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId, convertGameIdReverse } from './util/convertGameId';
-import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO } from './util/graphQueries';
+import { FULL_COLLECTION_INFO, FULL_REVISION_INFO, CURRENT_REVISION_INFO, COLLECTION_SEARCH_QUERY } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { NEXUS_BASE_URL, NEXUS_NEXT_URL, USERINFO_ENDPOINT } from './constants';
@@ -31,6 +31,9 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, 
          resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
 import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
+                ICollectionQuery,
+                ICollectionSearchOptions,
+                ICollectionSearchResult,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
                 IIssue, IModInfo, IRating, IRevision, IUserInfo, NexusError,
@@ -535,6 +538,21 @@ export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
         api.showErrorNotification('Failed to get list of collections', err);
         return Promise.resolve(undefined);
       });
+}
+
+
+/**
+ * Search for collections using the GraphQL API
+ *
+ * @param {Nexus} nexus - The Nexus API instance
+ * @param {types.ICollectionSearchOptions} options - Search options (gameId, filters, sort, etc.)
+ * @return {Promise<types.ICollectionSearchResult>} Search results with nodes and totalCount
+ */
+export function onSearchCollections(
+  api: IExtensionApi,
+  nexus: Nexus
+): (options: ICollectionSearchOptions) => Promise<ICollectionSearchResult> {
+  return (options) => { return Promise.resolve(nexus.searchCollectionsGraph(COLLECTION_SEARCH_QUERY, options)); };
 }
 
 export function onResolveCollectionUrl(api: IExtensionApi, nexus: Nexus)
