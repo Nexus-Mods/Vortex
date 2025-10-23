@@ -16,6 +16,7 @@ import {ITestResult} from '../../types/ITestResult';
 import { IDeployOptions } from './types/IDeployOptions';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import { toPromise } from '../../util/util';
 import { waitForCondition} from '../../util/waitForCondition';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -36,6 +37,8 @@ import {
   installPathForGame,
   modPathsForGame,
   profileById,
+  getCollectionActiveSession,
+  getCollectionModByReference,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
@@ -64,6 +67,7 @@ import {IMod, IModReference} from './types/IMod';
 import {InstallFunc} from './types/InstallFunc';
 import {IRemoveModOptions} from './types/IRemoveModOptions';
 import {IResolvedMerger} from './types/IResolvedMerger';
+import {ISchedulePhaseDeploymentForMod} from './types/ISchedulePhaseDeploymentForMod';
 import {TestSupported} from './types/TestSupported';
 import { fallbackPurge, loadActivation,
         saveActivation, withActivationLock } from './util/activationStore';
@@ -110,6 +114,7 @@ import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
 import { types } from '../..';
+import { ICollectionModInstallInfo } from '../collections_integration/types';
 
 interface IAppContext {
   isProfileChanging: boolean
@@ -1763,6 +1768,24 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     once(context.api);
+
+    context.api.onAsync('schedule-phase-deployment', (modDeployInfo: ISchedulePhaseDeploymentForMod) => {
+      // Handle the scheduled phase deployment for the mod
+      const state: IState = context.api.store.getState();
+      const { modId, gameId, archivePath, modReference } = modDeployInfo;
+      const activeCollection = getCollectionActiveSession(state);
+      if (activeCollection === undefined || modDeployInfo.modReference == null) {
+        return Promise.resolve();
+      }
+      const collectionModInfo: ICollectionModInstallInfo = getCollectionModByReference(state, modReference);
+      if (collectionModInfo != null && !installManager.isPhaseDeployed(collectionModInfo.modId, (collectionModInfo.rule.extra.phase || 1) - 1)) {
+        return toPromise(cb => context.api.events.emit('deploy-mods', cb))
+          .tap(() => {
+            installManager.markPhaseDeployed(collectionModInfo.modId, (collectionModInfo.rule.extra.phase || 1) - 1);
+          });
+      }
+      return Promise.resolve();
+    });
 
     history.init();
   });

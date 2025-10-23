@@ -12554,7 +12554,7 @@ void-elements@3.1.0:
 
 vortex-api@Nexus-Mods/vortex-api#18467-collections-stability:
   version "1.9.1-r22"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/654a586fa805c7925903884d9195b969c84fea1c"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/e87302b00871dd6a4efa459c74bbbdf584b23871"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

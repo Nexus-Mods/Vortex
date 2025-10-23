@@ -53,7 +53,7 @@ import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
 import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
-import { InstallFunc } from './types/InstallFunc';
+import { IInstallationDetails, InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
@@ -785,7 +785,7 @@ class InstallManager {
         }
 
         const { installer, requiredFiles } = supportedInstaller;
-        const collectionInstallState = getActiveCollectionSession(api.getState(), undefined);
+        const collectionInstallState = getCollectionActiveSession(api.getState());
         const overrideInstructionsFilePresentInArchive = fileList.some(file =>
           path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
         const details: IInstallationDetails = collectionInstallState ? null : {
@@ -843,7 +843,8 @@ class InstallManager {
     unattended?: boolean,
     forceInstaller?: string,
     allowAutoDeploy?: boolean,
-    sourceModId?: string): void {
+    sourceModId?: string,
+    modReference?: IModReference): void {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || 'direct-install-' + shortid();
@@ -1174,9 +1175,12 @@ class InstallManager {
             log('info', 'installing to', { modId, destinationPath });
             installContext.setInstallPathCB(modId, destinationPath);
             tempPath = destinationPath + '.installing';
+            const details: IInstallationDetails = {
+              modReference,
+            };
             return this.installInner(api, archivePath,
               tempPath, destinationPath, installGameId, installContext,
-              installationZip, forceInstaller, fullInfo.choices, fileList, unattended);
+              installationZip, forceInstaller, fullInfo.choices, fileList, unattended, details);
           })
           .then(result => {
             const state: IState = api.store.getState();
@@ -1926,7 +1930,8 @@ class InstallManager {
             }
 
             // Deploy mods for this phase
-            toPromise(cb => api.events.emit('deploy-mods', cb))
+            //toPromise(cb => api.events.emit('deploy-mods', cb))
+            Promise.resolve()
               .then(() => {
                 if (phaseState) {
                   phaseState.isDeploying = false;
@@ -2157,6 +2162,17 @@ class InstallManager {
     }
   }
 
+  public isPhaseDeployed(sourceModId: string, phase: number): boolean {
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    return phaseState?.deployedPhases.has(phase) ?? false;
+  }
+
+  public markPhaseDeployed(sourceModId: string, phase: number): void {
+    this.ensurePhaseState(sourceModId);
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    phaseState.deployedPhases.add(phase);
+  }
+
   // Schedule a deploy once all installers for a specific phase have finished
   private scheduleDeployOnPhaseSettled(api: IExtensionApi, sourceModId: string, phase: number) {
     this.ensurePhaseState(sourceModId);
@@ -2324,15 +2340,15 @@ class InstallManager {
         }
 
         // Schedule deployment polling for the newly allowed phase if it has downloads finished
-        if (state.downloadsFinished.has(curr)) {
-          log('debug', 'Advanced to new phase, scheduling deployment polling', { sourceModId, newPhase: curr });
-          // Schedule deployment polling for the newly allowed phase
-          if (api) {
-            this.scheduleDeployOnPhaseSettled(api, sourceModId, curr);
-          } else {
-            log('warn', 'Cannot schedule deployment polling - API not provided to maybeAdvancePhase', { sourceModId, phase: curr });
-          }
-        }
+        // if (state.downloadsFinished.has(curr)) {
+        //   log('debug', 'Advanced to new phase, scheduling deployment polling', { sourceModId, newPhase: curr });
+        //   // Schedule deployment polling for the newly allowed phase
+        //   if (api) {
+        //     this.scheduleDeployOnPhaseSettled(api, sourceModId, curr);
+        //   } else {
+        //     log('warn', 'Cannot schedule deployment polling - API not provided to maybeAdvancePhase', { sourceModId, phase: curr });
+        //   }
+        // }
         continue;
       }
       break;
@@ -2384,7 +2400,8 @@ class InstallManager {
     forceInstaller?: string,
     installChoices?: any,
     extractList?: IFileListItem[],
-    unattended?: boolean): Bluebird<IInstallResult> {
+    unattended?: boolean,
+    details?: IInstallationDetails): Bluebird<IInstallResult> {
     const fileList: string[] = [];
     let phase = 'Extracting';
 
@@ -2509,8 +2526,9 @@ class InstallManager {
         const { installer, requiredFiles } = supportedInstaller;
         const overrideInstructionsFilePresentInArchive = fileList.some(file =>
           path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
-        const details: IInstallationDetails = {
+        const innerDetails: IInstallationDetails = {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
+          modReference: details?.modReference,
         }
         log('debug', 'invoking installer',
           { installer: installer.id, enforced: forceInstaller !== undefined });
@@ -2523,7 +2541,7 @@ class InstallManager {
           installChoices,
           unattended,
           archivePath,
-          details,
+          innerDetails,
         );
         if (!installerResult.instructions) {
           return installerResult;
@@ -4175,7 +4193,7 @@ class InstallManager {
               recommended, () =>
               this.installModAsync(dep.reference, api, downloadId,
                 { choices: dep.installerChoices, patches: dep.patches }, dep.fileList,
-                gameId, silent, sourceModId)).then(res => resolve(res))
+                gameId, silent, sourceModId,)).then(res => resolve(res))
               .catch(err => {
                 if (err instanceof UserCanceled) {
                   err.skipped = true;
@@ -4429,10 +4447,10 @@ class InstallManager {
             // Schedule a deploy for this phase once its installers settle; don't block download progression
             const phaseNum = depList[0]?.phase ?? 0;
             const phaseState = this.mInstallPhaseState.get(sourceModId);
-            // Only schedule deploy polling for the current allowed phase to maintain sequential processing
-            if (phaseState && (phaseState.allowedPhase !== undefined) && (phaseNum === phaseState.allowedPhase)) {
-              this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum);
-            }
+            // // Only schedule deploy polling for the current allowed phase to maintain sequential processing
+            // if (phaseState && (phaseState.allowedPhase !== undefined) && (phaseNum === phaseState.allowedPhase)) {
+            //   this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum);
+            // }
             return updated;
           })
           .then((updated: IDependency[]) => [].concat(prev, updated));
@@ -4985,7 +5003,7 @@ class InstallManager {
     }
   }
 
-  private installModAsync(requirement: IReference,
+  private installModAsync(requirement: IModReference,
     api: IExtensionApi,
     downloadId: string,
     modInfo?: any,
@@ -5034,7 +5052,7 @@ class InstallManager {
           } else {
             return reject(error);
           }
-        }, forceGameId, fileList, silent, undefined, false, sourceModId);
+        }, forceGameId, fileList, silent, undefined, false, sourceModId, requirement);
     });
   }
 

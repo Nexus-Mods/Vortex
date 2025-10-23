@@ -6,7 +6,7 @@ import {
   CollectionModStatus,
 } from './types';
 
-import { IState } from '../../types/IState';
+import { IDownload, IMod, IState } from '../../types/IState';
 
 /**
  * Selectors for the installTracking reducer
@@ -102,6 +102,43 @@ export const getCollectionActiveSessionMods = (state: any): { [ruleId: string]: 
 export const getCollectionActiveSessionMod = (state: any, ruleId: string): ICollectionModInstallInfo | undefined => {
   const mods = getCollectionActiveSessionMods(state);
   return mods[ruleId];
+};
+
+/**
+ * Search for a mod in the active collection by mod reference details
+ * This is useful when you have deployment information and need to find the corresponding collection rule
+ * @param searchParams Object containing mod identifiers to search by
+ * @returns The mod installation info or undefined if not found
+ */
+export const getCollectionModByReference = (
+  state: any,
+  searchParams: {
+    modId?: string;
+    fileMD5?: string;
+    fileId?: string;
+    logicalFileName?: string;
+  }
+): ICollectionModInstallInfo | undefined => {
+  const mods = getCollectionActiveSessionMods(state);
+
+  // First try to find by modId if provided (most direct match)
+  if (searchParams.modId) {
+    const byModId = Object.values(mods).find(mod => mod.modId === searchParams.modId);
+    if (byModId) return byModId;
+  }
+
+  // Fall back to searching by rule reference fields
+  return Object.values(mods).find(mod => {
+    const ref = mod.rule?.reference;
+    if (!ref) return false;
+
+    // Check each available identifier
+    if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
+    if (searchParams.fileId && ref.id === searchParams.fileId) return true;
+    if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName) return true;
+
+    return false;
+  });
 };
 
 /**

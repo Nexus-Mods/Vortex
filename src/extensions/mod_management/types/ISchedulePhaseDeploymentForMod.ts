@@ -1,3 +1,5 @@
+import { IModReference } from './IMod';
+
 /**
  * Thanks to the headless installer, we can now proceed with mod installations
  *  without deploying them right away. Unfortunately this only works when a
@@ -12,4 +14,6 @@ export interface ISchedulePhaseDeploymentForMod {
   gameId: string;
   /** The path to the mod archive (if applicable) */
   archivePath?: string;
+  /** The reference information for the mod being installed */
+  modReference?: IModReference;
 }
