@@ -12557,9 +12557,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-vortex-api@Nexus-Mods/vortex-api#18593-fix-instructions-override-stop-patterns-hijacking:
+vortex-api@Nexus-Mods/vortex-api:
   version "1.9.1-r21"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/02e18e0b4d1a8c08edd541b75f18fdda69ba86d5"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/7e0b385a796da4a98ad1d1a0492135ecc1c4966f"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"
