@@ -96,6 +96,10 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   overallRating: true,
   overallRatingCount: true,
   viewerIsBlocked: true,
+  permissions: {
+    global: true,
+    key: true,
+  },
   recentRating: true,
   recentRatingCount: true,
 };
