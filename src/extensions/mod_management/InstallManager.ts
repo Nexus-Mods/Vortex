@@ -155,7 +155,6 @@ class DynamicDownloadConcurrencyLimiter {
   }
 }
 
-
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
     super(`Archive is broken: ${message}`);
@@ -786,7 +785,12 @@ class InstallManager {
         }
 
         const { installer, requiredFiles } = supportedInstaller;
-
+        const collectionInstallState = getActiveCollectionSession(api.getState(), undefined);
+        const overrideInstructionsFilePresentInArchive = fileList.some(file =>
+          path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+        const details: IInstallationDetails = collectionInstallState ? null : {
+          hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
+        }
         return installer.install(
           fileList, tempPath, gameId,
           (perc: number) => {
@@ -795,7 +799,8 @@ class InstallManager {
           },
           installChoices,
           unattended,
-          archivePath);
+          archivePath,
+          details);
       });
 
   }
@@ -2502,6 +2507,11 @@ class InstallManager {
         }
 
         const { installer, requiredFiles } = supportedInstaller;
+        const overrideInstructionsFilePresentInArchive = fileList.some(file =>
+          path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
+        const details: IInstallationDetails = {
+          hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
+        }
         log('debug', 'invoking installer',
           { installer: installer.id, enforced: forceInstaller !== undefined });
         const installerResult = await installer.install(
@@ -2512,13 +2522,12 @@ class InstallManager {
           },
           installChoices,
           unattended,
-          archivePath
+          archivePath,
+          details,
         );
         if (!installerResult.instructions) {
           return installerResult;
         }
-        const overrideInstructionsFilePresentInArchive = fileList.some(file =>
-          path.basename(file) === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
 
         const overrideCopyInstructionExists = installerResult.instructions.some(instr =>
           instr.type === 'copy' && instr.source === VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME);
