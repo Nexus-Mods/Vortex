@@ -16,6 +16,7 @@ import * as button from './components/next/button';
 import * as icon from './components/next/icon';
 import * as link from './components/next/link';
 import * as collectiontile from './components/next/collectiontile';
+import * as form from './components/next/form';
 import * as iconPaths from './lib/icon-paths';
 
 /**
@@ -27,12 +28,15 @@ import * as iconPaths from './lib/icon-paths';
  * - Icon: Icon component supporting MDI and Nexus custom icons
  * - Link: Link wrapper component for Electron
  * - CollectionTile: Collection card component
+ * - FormField: Form field wrapper with labels, hints, and validation
+ * - Input: Input component with validation and accessibility features
+ * - Select: Select dropdown with custom styling and icon
  *
  * Icon Paths:
  * - nxm*: 34 custom Nexus Mods icons (nxmVortex, nxmCollection, etc.)
  *
  * Types:
- * - ButtonType, IconSize, IconProps, etc.
+ * - ButtonType, IconSize, IconProps, FormFieldProps, InputProps, SelectProps, etc.
  */
 export const Tailwind = {
   // Typography components and types
@@ -49,6 +53,9 @@ export const Tailwind = {
 
   // Collection tile component
   ...collectiontile,
+
+  // Form components (FormField, Input)
+  ...form,
 
   // Icon paths (nxm* icons)
   ...iconPaths,
@@ -79,3 +86,11 @@ export type {
   // CollectionTile types
   CollectionTileProps,
 } from './components/next/collectiontile/CollectionTile';
+
+export type {
+  // Form types
+  FormFieldProps,
+  BaseFormFieldProps,
+  InputProps,
+  SelectProps,
+} from './components/next/form';
