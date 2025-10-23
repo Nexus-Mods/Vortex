@@ -29,6 +29,7 @@ import {
   getStopPatterns,
   initGameSupport,
   hasActiveFomodDialog,
+  uniPatterns,
 } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
 
@@ -47,6 +48,7 @@ import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
+import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
 const fomodProcessLimiter = new ConcurrencyLimiter(5);
 
@@ -1442,14 +1444,16 @@ function init(context: IExtensionContext): boolean {
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
 
   const installWrap = async (useAppContainer, files, scriptPath, gameId,
-                             progressDelegate, choicesIn, unattended) => {
+                             progressDelegate, choicesIn, unattended, archivePath, details: IInstallationDetails) => {
     const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
     const shouldBypassDialog = canBeUnattended && (unattended === true);
     const instanceId = shortid();
     const coreDelegates = new Core(context.api, gameId, shouldBypassDialog, instanceId);
-    const stopPatterns = getStopPatterns(gameId, getGame(gameId));
-    const pluginPath = getPluginPath(gameId);
+    // When override instructions file is present, use only the universal stop patterns and null pluginPath
+    // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
+    const stopPatterns = details.hasInstructionsOverrideFile ? uniPatterns : getStopPatterns(gameId, getGame(gameId));
+    const pluginPath = details.hasInstructionsOverrideFile ? null : getPluginPath(gameId);
 
     if (useAppContainer) {
       log('info', 'granting app container access to',
@@ -1466,7 +1470,7 @@ function init(context: IExtensionContext): boolean {
     const invokeInstall = async (validate: boolean) => {
       const result = await install(
         useAppContainer, files, stopPatterns, pluginPath,
-        scriptPath, fomodChoices, validate, progressDelegate, coreDelegates, 
+        scriptPath, fomodChoices, validate, progressDelegate, coreDelegates,
         context.api.store);
 
       const state = context.api.store.getState();
@@ -1776,7 +1780,7 @@ function init(context: IExtensionContext): boolean {
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return '<None>';
       }
-      return (choices.options || []).reduce((prev, step) => {
+      return (choices.value?.options || choices.options || []).reduce((prev, step) => {
         prev.push(...step.groups
           .filter(group => group.choices.length > 0)
           .map(group =>

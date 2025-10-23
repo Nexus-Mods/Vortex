@@ -2480,6 +2480,7 @@ class ExtensionManager {
       'file_based_loadorder',
       'mod_management',
       'category_management',
+      'collections_integration',
       'profile_management',
       'nexus_integration',
       'download_management',

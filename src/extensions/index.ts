@@ -6,6 +6,7 @@ import {} from './analytics';
 import {} from './announcement_dashlet';
 import {} from './browser';
 import {} from './category_management';
+import {} from './collections_integration';
 import {} from './dashboard';
 import {} from './diagnostics_files';
 import {} from './download_management';

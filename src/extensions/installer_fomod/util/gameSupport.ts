@@ -28,7 +28,7 @@ const gamebryoPatterns: string[] = [
   'fomod/ModuleConfig.xml$',
 ].concat(gamebryoTopLevel.map(toWordExp));
 
-const uniPatterns: string[] = ['fomod'].map(toWordExp);
+export const uniPatterns: string[] = ['fomod'].map(toWordExp);
 
 function stopPatterns(gameMode: string) {
   switch (gameMode) {

@@ -11,6 +11,7 @@ import {
   resolveCategoryName,
   resolveCategoryPath
 } from '../extensions/category_management/util/retrieveCategoryPath';
+import { generateCollectionSessionId, modRuleId } from '../extensions/collections_integration/util';
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
@@ -120,6 +121,7 @@ export {
   findModByRef,
   GameNotFound,
   GameStoreHelper,
+  generateCollectionSessionId,
   getActivator,
   getApplication,
   getCurrentActivator,
@@ -154,6 +156,7 @@ export {
   makeRemoteCall,
   makeUnique,
   makeUniqueByKey,
+  modRuleId,
   MissingInterpreter,
   nexusGameId,
   nexusModsURL,
