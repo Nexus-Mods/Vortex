@@ -128,7 +128,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       <Modal bsSize='lg' show={visible} onHide={this.props.onHide}>
         <Modal.Header>
           <Modal.Title>
-            {t('Diagnostics Files')}
+            {t('View Logs')}
           </Modal.Title>
         </Modal.Header>
         {body}
