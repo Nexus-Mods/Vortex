@@ -53,10 +53,10 @@ export const Select = ({
           aria-describedby={!!errorMessage ? `${id}_error` : hints.length > 0 ? `${id}_hints` : undefined}
           aria-invalid={!!errorMessage || undefined}
           className={joinClasses([
-            'tw:border-neutral-subdued tw:bg-surface-low tw:text-base tw:text-neutral-strong tw:group tw:relative tw:w-full tw:appearance-none tw:rounded tw:border tw:py-2 tw:pl-4 tw:pr-12',
-            !!errorMessage ? 'tw:border-danger-strong tw:hover:border-neutral-subdued' : 'tw:border-neutral-subdued',
-            'tw:hover:border-white',
-            'tw:focus:bg-surface-low tw:focus:border-white tw:focus-visible:outline-offset-1',
+            'tw:bg-surface-low tw:typography-body-lg tw:text-neutral-strong tw:group tw:relative tw:w-full tw:appearance-none tw:rounded tw:border tw:py-2 tw:pl-4 tw:pr-12',
+            !!errorMessage ? 'tw:border-danger-strong tw:hover:border-stroke-neutral-translucent-subdued' : 'tw:border-stroke-neutral-translucent-subdued',
+            'tw:hover:border-stroke-neutral-translucent-strong',
+            'tw:focus:bg-surface-low tw:focus:border-stroke-neutral-translucent-strong tw:focus-visible:outline-offset-1',
           ])}
           disabled={disabled}
           id={id}

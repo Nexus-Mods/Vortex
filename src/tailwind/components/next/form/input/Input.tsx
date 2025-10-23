@@ -73,16 +73,16 @@ export const Input = ({
         aria-invalid={!!errorMessage || undefined}
         className={joinClasses(
           [
-            'tw:text-neutral-strong tw:typography-body-lg tw:placeholder:text-neutral-subdued tw:min-h-9 tw:w-full tw:rounded tw:border tw:px-3 tw:transition-colors',
+            'tw:text-neutral-strong tw:typography-body-lg tw:placeholder:text-neutral-subdued tw:min-h-9 tw:rounded tw:border tw:px-3 tw:transition-colors',
             ...(typeof errorMessage === 'string'
               ? ['tw:bg-surface-translucent-mid tw:border-danger-strong']
               : [
-                  'tw:bg-translucent-dark-400 tw:border-stroke-subdued',
+                  'tw:bg-translucent-dark-400 tw:border-stroke-neutral-translucent-subdued',
                   ...(readOnly || disabled
                     ? ['']
                     : [
-                        'tw:focus:bg-surface-translucent-mid tw:focus:border-stroke-strong',
-                        'tw:hover:bg-surface-translucent-low tw:hover:border-stroke-moderate',
+                        'tw:focus:bg-surface-translucent-mid tw:focus:border-stroke-neutral-translucent-strong',
+                        'tw:hover:bg-surface-translucent-low tw:hover:border-stroke-neutral-translucent-moderate',
                       ]),
                 ]),
             className,
