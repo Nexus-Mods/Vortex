@@ -257,7 +257,20 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   return new Promise<void>((resolve) => {
     const defaultPath = discovery?.path;
 
-    api.selectDir(defaultPath !== undefined ? { defaultPath } : {})
+    // Check for test path stored in global (for automated testing)
+    const testPath = (global as any).__VORTEX_TEST_GAME_PATH__;
+
+    // If test path is set, use it; otherwise open the dialog
+    const pathPromise = testPath !== undefined
+      ? Promise.resolve(testPath)
+      : api.selectDir(defaultPath !== undefined ? { defaultPath } : {});
+
+    // Clear the global after using it
+    if (testPath !== undefined) {
+      delete (global as any).__VORTEX_TEST_GAME_PATH__;
+    }
+
+    pathPromise
       .then(result => {
         if (result !== undefined) {
           findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
