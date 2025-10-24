@@ -64,6 +64,10 @@ All components are available under the `Tailwind` namespace:
 - `Tailwind.Typography` - Typography component
 - `Tailwind.Link` - Link wrapper
 - `Tailwind.CollectionTile` - Collection card
+- `Tailwind.FormField` - Form field wrapper with labels and validation
+- `Tailwind.FormFieldWrap` - Helper for spacing multiple form fields
+- `Tailwind.Input` - Input component with validation
+- `Tailwind.Select` - Select dropdown with custom styling
 - `Tailwind.nxm*` - All 34 Nexus icon paths (e.g., `Tailwind.nxmVortex`)
 
 ### Type Exports
@@ -86,6 +90,7 @@ Components are organized by domain/feature:
 - `icon/` - Icon rendering system (MDI + Nexus custom icons)
 - `link/` - Link component for navigation
 - `collectiontile/` - Collection card components for browsing
+- `form/` - Form components (FormField wrapper, Input component)
 
 ## Adaptations Made
 
@@ -482,6 +487,200 @@ import { CollectionTile } from '../../../tailwind/next/collectiontile';
 
 **Note:** Icons are placeholder divs (no actual icons rendered). Avatar uses simple img tag or colored circle if no avatar provided.
 
+### Form
+
+Located in `form/` with subcomponents in `formfield/`, `input/`, and `select/`
+
+**Files:**
+- `formfield/FormField.tsx` - Form field wrapper component
+- `formfield/index.ts` - FormField exports
+- `input/Input.tsx` - Input component
+- `input/InputDemo.tsx` - Demo showcasing all input variants
+- `input/index.ts` - Input exports
+- `select/Select.tsx` - Select dropdown component
+- `select/SelectDemo.tsx` - Demo showcasing all select variants
+- `select/index.ts` - Select exports
+- `index.ts` - Main form exports
+
+**Dependencies:**
+- Uses Typography from `../typography`
+- Uses Icon from `../icon` (Select dropdown icon)
+- Uses shared utilities from `../utils`
+- Input and Select components use FormField wrapper
+- Select uses mdiMenuDown icon from @mdi/js
+
+**Features:**
+- **FormField wrapper**: Labels (visible/hidden), hints (single/multiple), error messages, character counter
+- **Input types**: text, email, password, url, number, time, date
+- **Select dropdown**: Custom styled select with dropdown icon, supports optgroup
+- **Validation states**: Error messages with red border styling
+- **Accessibility**: `aria-describedby`, `aria-invalid`, `sr-only` labels
+- **Character counter**: Shows remaining characters with color-coded warnings (Input only)
+- **Required fields**: Automatic "(Required)" label suffix
+- **States**: Disabled, read-only, with placeholder, with value
+- **FormFieldWrap**: Helper component for vertical spacing between form fields
+
+**Usage:**
+
+```tsx
+import { Input } from '../../../tailwind/components/next/form/input';
+
+// Basic input
+<Input
+  id="username"
+  label="Username"
+  type="text"
+  placeholder="Enter username..."
+/>
+
+// With validation
+<Input
+  id="email"
+  label="Email Address"
+  type="email"
+  required
+  errorMessage="Please enter a valid email address"
+/>
+
+// With hints
+<Input
+  id="password"
+  label="Password"
+  type="password"
+  hints={[
+    'Must be at least 8 characters',
+    'Must contain uppercase and lowercase',
+    'Must contain at least one number',
+  ]}
+/>
+
+// With character counter
+<Input
+  id="bio"
+  label="Bio"
+  type="text"
+  maxLength={200}
+  placeholder="Tell us about yourself..."
+  hints="Keep it short and sweet"
+/>
+
+// Multiple fields with spacing
+import { FormFieldWrap } from '../../../tailwind/components/next/form/formfield';
+
+<FormFieldWrap>
+  <Input id="firstName" label="First Name" type="text" required />
+  <Input id="lastName" label="Last Name" type="text" required />
+  <Input id="email" label="Email" type="email" required />
+</FormFieldWrap>
+
+// Using Tailwind namespace
+import { Tailwind } from 'vortex-api';
+
+<Tailwind.FormFieldWrap>
+  <Tailwind.Input id="name" label="Name" type="text" />
+  <Tailwind.Input id="email" label="Email" type="email" />
+</Tailwind.FormFieldWrap>
+
+// Select dropdown
+import { Select } from '../../../tailwind/components/next/form/select';
+
+<Select id="country" label="Country">
+  <option value="">Select a country...</option>
+  <option value="us">United States</option>
+  <option value="uk">United Kingdom</option>
+  <option value="ca">Canada</option>
+</Select>
+
+// Select with validation
+<Select
+  id="role"
+  label="Role"
+  required
+  errorMessage="Please select a role"
+>
+  <option value="">Select role...</option>
+  <option value="admin">Admin</option>
+  <option value="user">User</option>
+</Select>
+
+// Select with hints
+<Select
+  id="language"
+  label="Language"
+  hints="Choose your preferred language"
+>
+  <option value="en">English</option>
+  <option value="es">Spanish</option>
+  <option value="fr">French</option>
+</Select>
+
+// Select with optgroups
+<Select id="game" label="Select Game">
+  <optgroup label="Bethesda Games">
+    <option value="skyrim">Skyrim</option>
+    <option value="fallout4">Fallout 4</option>
+  </optgroup>
+  <optgroup label="CD Projekt Games">
+    <option value="witcher3">The Witcher 3</option>
+    <option value="cyberpunk">Cyberpunk 2077</option>
+  </optgroup>
+</Select>
+
+// Using Tailwind namespace
+<Tailwind.Select id="priority" label="Priority">
+  <option value="high">High</option>
+  <option value="medium">Medium</option>
+  <option value="low">Low</option>
+</Tailwind.Select>
+```
+
+**Demo:** See `InputDemo` and `SelectDemo` components showcasing all input and select variants
+
+**Props:**
+
+**FormField:**
+- `label` (string) - Field label text
+- `hideLabel` (boolean) - Hides label visually (still accessible to screen readers)
+- `hints` (string | string[]) - Helper text shown below input
+- `hintsTypographyType` (TypographyTypes) - Typography size for hints (default: 'body-md')
+- `errorMessage` (string) - Error message (applies error styling to input)
+- `showRequiredLabel` (boolean) - Shows "(Required)" suffix in label
+- `disabled` (boolean) - Disables the field
+- `maxLength` (number) - Shows character counter with remaining count
+- `inputLength` (number) - Current input length (for character counter)
+
+**Input:**
+- Extends all `FormField` props
+- Extends all native HTML `input` attributes
+- `type` ('text' | 'email' | 'password' | 'url' | 'number' | 'time' | 'date')
+- `fieldClassName` (string) - Additional className for FormField wrapper
+- `value` (string | number) - Controlled input value
+- `defaultValue` (string | number) - Uncontrolled initial value
+- `readOnly` (boolean) - Makes input read-only
+
+**Select:**
+- Extends all `FormField` props
+- Extends all native HTML `select` attributes
+- `children` (ReactNode) - `<option>` and `<optgroup>` elements
+- Supports `value`, `defaultValue`, `onChange`, `multiple`, etc.
+- Custom dropdown icon (mdiMenuDown) with hover/focus states
+- Styled appearance with `tw:appearance-none` for custom design
+
+**Colors Used (Input & Select):**
+- `--color-neutral-strong` - Input/select text
+- `--color-neutral-moderate` - Character counter (normal)
+- `--color-neutral-subdued` - Placeholder text, hint text, dropdown icon
+- `--color-danger-strong` - Error border, error text, character counter (critical)
+- `--color-warning-strong` - Character counter (warning threshold)
+- `--color-surface-translucent-mid` - Focus background (Input), error background
+- `--color-surface-translucent-low` - Hover background (Input)
+- `--color-surface-low` - Select background
+- `--color-translucent-dark-400` - Default input background
+- `--color-stroke-subdued` - Default border
+- `--color-stroke-strong` - Focus border
+- `--color-stroke-moderate` - Hover border
+- `--color-pure-white` - Select hover/focus border, dropdown icon hover/focus
+
 ## Testing
 
 After making changes:
@@ -496,6 +695,7 @@ After making changes:
 - [x] Extract common utilities to a shared location (`utils.ts`)
 - [x] Implement proper Icon component with MDI path support
 - [x] Add icon rendering to Button component (left/right icons)
+- [x] Add Input component with FormField wrapper
 - [ ] Add loading spinner animation to Button component
-- [ ] Add more components from the web team (Input, Card, etc.)
+- [ ] Add more components from the web team (Textarea, Select, Checkbox, etc.)
 - [ ] Implement TypographyLink component

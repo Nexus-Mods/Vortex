@@ -3,7 +3,6 @@ import { showDialog } from '../actions/notifications';
 import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import Spinner from '../controls/Spinner';
 import { IconButton } from '../controls/TooltipControls';
-import { AppStartGameEvent } from '../extensions/analytics/mixpanel/MixpanelEvents';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
@@ -261,12 +260,6 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     //   enabled_mods: numberOfEnabledModsExcludingCollections,
     //   enabled_collections: numberOfEnabledCollections
     // });
-
-    this.context.api.events.emit('mixpanel-track-event', new AppStartGameEvent(
-      profile.gameId,
-      numberOfEnabledModsExcludingCollections,
-      numberOfEnabledCollections
-    ));
 
     StarterInfo.run(starter, this.context.api, onShowError);
   }

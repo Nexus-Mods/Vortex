@@ -80,12 +80,13 @@ import { runElevated, runThreaded } from 'vortex-run';
 import getTextModManagement from '../extensions/mod_management/texts';
 import getTextProfileManagement from '../extensions/profile_management/texts';
 import { CollectionsDownloadCompletedEvent,
+  CollectionsDownloadClickedEvent,
   CollectionsDownloadFailedEvent,
   CollectionsDownloadCancelledEvent,
   CollectionsInstallationStartedEvent, 
   CollectionsInstallationCompletedEvent,
   CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent
+  CollectionsInstallationCancelledEvent,
 } from '../extensions/analytics/mixpanel/MixpanelEvents';
 
 export * from './network';
@@ -204,7 +205,8 @@ export {
   CollectionsInstallationStartedEvent,
   CollectionsInstallationCompletedEvent,
   CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent
+  CollectionsInstallationCancelledEvent,
+  CollectionsDownloadClickedEvent
 };
 
 // getText functions are rolled up into one function
