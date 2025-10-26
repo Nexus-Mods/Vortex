@@ -33,7 +33,7 @@ const SORT_OPTIONS: ISortOption[] = [
 
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
-  const { t } = useTranslation(['collections', 'common']);
+  const { t } = useTranslation(['collection', 'common']);
   const gameId = useSelector((state: IState) => activeGameId(state));
 
   const [collections, setCollections] = React.useState<ICollection[]>([]);
@@ -185,7 +185,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage id='browse-collections-page'>
         <MainPage.Body>
           <div className="tw:p-5 tw:text-center">
-            <p>{t('Please select a game to browse collections.')}</p>
+            <p>{t('collection:browse.selectGame')}</p>
           </div>
         </MainPage.Body>
       </MainPage>
@@ -197,7 +197,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage id='browse-collections-page'>
         <MainPage.Body>
           <div className="tw:p-5 tw:text-center">
-            <p>{t('Loading collections...')}</p>
+            <p>{t('collection:browse.loading')}</p>
           </div>
         </MainPage.Body>
       </MainPage>
@@ -209,7 +209,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage id='browse-collections-page'>
         <MainPage.Body>
           <div className="tw:p-5 tw:text-red-600">
-            <p><strong>{t('Error loading collections:')}</strong></p>
+            <p><strong>{t('collection:browse.error')}</strong></p>
             <p>{error.message}</p>
           </div>
         </MainPage.Body>
@@ -222,7 +222,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage id='browse-collections-page'>
         <MainPage.Body>
           <div className="tw:p-5 tw:text-center">
-            <p>{t('No collections found for this game.')}</p>
+            <p>{t('collection:browse.noCollections')}</p>
           </div>
         </MainPage.Body>
       </MainPage>
@@ -234,7 +234,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage.Body style={{ overflowY: 'auto' }}>
         <div className="tw:h-full tw:p-5">
 
-          <h2>{t('Browse Collections ({{total}})', { total: numeral(allCollectionsTotal).format('0,0') })}</h2>
+          <h2>{t('collection:browse.title', { total: numeral(allCollectionsTotal).format('0,0') })}</h2>
 
           {/* Search Bar */}
           <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
@@ -243,7 +243,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               type="text"
               onChange={(e) => setSearchQuery(e.target.value)}
               value={searchQuery}
-              placeholder={t('Search collections...')}
+              placeholder={t('collection:browse.searchPlaceholder')}
               onKeyDown={handleKeyDown}
               className='tw:max-w-64'
             />
@@ -254,20 +254,20 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               filled="strong"
               onClick={handleSearch}
             >
-              {t('Search')}
+              {t('common:actions.search')}
             </Tailwind.Button>
           </div>
 
           {/* Results count and sort */}
           <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
             <Tailwind.Typography typographyType="body-md" appearance="moderate" isTranslucent>
-              {t('{{total}} results', { total: numeral(totalCount).format('0,0') })}
+              {t('collection:browse.resultsCount', { total: numeral(totalCount).format('0,0') })}
             </Tailwind.Typography>
 
 
             <Tailwind.Select
               id="sort-select"
-              label={t('Sort by')}
+              label={t('collection:browse.sortBy')}
               hideLabel={true}
               value={SORT_OPTIONS.indexOf(sortBy)}
               onChange={(e) => setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])}
@@ -382,7 +382,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               {/* Direct Page Input */}
               <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
                 <Tailwind.Typography typographyType="body-md" appearance="subdued">
-                  {t('Go to:')}
+                  {t('collection:pagination.goTo')}
                 </Tailwind.Typography>
                 <Tailwind.Input
                   type="number"
@@ -391,7 +391,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   onKeyDown={handlePageInputKeyDown}
                   className="tw:min-w-10 tw:text-center"
                   id="page-input"
-                  label={t('Page number')}
+                  label={t('collection:pagination.pageNumber')}
                   hideLabel={true}
                   min={1}
                   max={totalPages}
@@ -402,7 +402,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   filled="weak"
                   onClick={handleGoToPage}
                 >
-                  {t('Go')}
+                  {t('collection:pagination.go')}
                 </Tailwind.Button>
 
               </div>
