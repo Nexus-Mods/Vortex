@@ -1,0 +1,17 @@
+{
+  "browse": {
+    "title": "Browse Collections ({{total}})",
+    "selectGame": "Please select a game to browse collections.",
+    "loading": "Loading collections...",
+    "error": "Error loading collections:",
+    "noCollections": "No collections found for this game.",
+    "searchPlaceholder": "Search collections...",
+    "resultsCount": "{{total}} results",
+    "sortBy": "Sort by"
+  },
+  "pagination": {
+    "goTo": "Go to:",
+    "pageNumber": "Page number",
+    "go": "Go"
+  }
+}
