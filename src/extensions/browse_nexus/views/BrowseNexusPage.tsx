@@ -1,5 +1,5 @@
 import { ICollection, ICollectionSearchOptions, CollectionSortField, SortDirection } from '@nexusmods/nexus-api';
-import numeral = require('numeral');
+import numeral from 'numeral';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
@@ -46,6 +46,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [activeSearch, setActiveSearch] = React.useState<string>(''); // The search term actually being used
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [pageInput, setPageInput] = React.useState<string>('1');
+  const [selectedTab, setSelectedTab] = React.useState<string>('collections');
   const itemsPerPage = 20;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -234,9 +235,21 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage.Body style={{ overflowY: 'auto' }}>
         <div className="tw:h-full tw:p-5">
 
-          <h2>{t('collection:browse.title', { total: numeral(allCollectionsTotal).format('0,0') })}</h2>
+          <Tailwind.TabProvider
+            tab={selectedTab}
+            tabListId="browse-nexus-tabs"
+            onSetSelectedTab={setSelectedTab}
+          >
+            <Tailwind.TabBar className="tw:mb-5">
+              <Tailwind.TabButton
+                name={t('collection:browse.tabs.collections')}
+                count={allCollectionsTotal}
+              />
+              <Tailwind.TabButton name={t('collection:browse.tabs.mods')} />
+            </Tailwind.TabBar>
 
-          {/* Search Bar */}
+            <Tailwind.TabPanel name={t('collection:browse.tabs.collections')}>
+              {/* Search Bar */}
           <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
 
             <Tailwind.Input
@@ -408,6 +421,41 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               </div>
             </div>
           )}
+            </Tailwind.TabPanel>
+
+            <Tailwind.TabPanel name={t('collection:browse.tabs.mods')}>
+              <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-16">
+                {/* Icon */}
+                <Tailwind.Icon path="mdiClockOutline" size='xl' className="tw:w-9 tw:h-9 tw:text-neutral-subdued" />
+
+                {/* Heading */}
+                <Tailwind.Typography typographyType="body-xl" appearance="subdued" className='tw:font-semibold'>
+                  {t('collection:browse.modsComingSoon.title')}
+                </Tailwind.Typography>
+
+                {/* Description */}
+                <Tailwind.Typography typographyType="body-lg" appearance="subdued" className="tw:text-center">
+                  {t('collection:browse.modsComingSoon.description')}
+                </Tailwind.Typography>
+
+                {/* Button */}
+                <Tailwind.Button
+                  buttonType="tertiary"
+                  size="sm"
+                  filled="weak"
+                  leftIconPath="mdiOpenInNew"
+                  onClick={() => {
+                    const game = getGame(gameId);
+                    const domainName = nexusGameId(game, gameId);
+                    const nexusUrl = `https://www.nexusmods.com/games/${domainName}/mods`;
+                    opn(nexusUrl).catch(() => undefined);
+                  }}
+                >
+                  {t('collection:browse.modsComingSoon.openWebsite')}
+                </Tailwind.Button>
+              </div>
+            </Tailwind.TabPanel>
+          </Tailwind.TabProvider>
         </div>
       </MainPage.Body>
     </MainPage>

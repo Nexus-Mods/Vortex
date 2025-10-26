@@ -7,7 +7,16 @@
     "noCollections": "No collections found for this game.",
     "searchPlaceholder": "Search collections...",
     "resultsCount": "{{total}} results",
-    "sortBy": "Sort by"
+    "sortBy": "Sort by",
+    "tabs": {
+      "collections": "Collections",
+      "mods": "Mods"
+    },
+    "modsComingSoon": {
+      "title": "Mod browsing is coming soon",
+      "description": "You'll soon be able to browse mods directly in Vortex. Until then, visit Nexus Mods to discover and download mods.",
+      "openWebsite": "Open Nexus Mods Website"
+    }
   },
   "pagination": {
     "goTo": "Go to:",

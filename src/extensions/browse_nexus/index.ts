@@ -9,7 +9,7 @@ import BrowseNexusPage from './views/BrowseNexusPage';
 
 function init(context: IExtensionContext): boolean {
   // Register the Browse page
-  context.registerMainPage('search', 'Browse', BrowseNexusPage, {
+  context.registerMainPage('search', 'Browse Nexus Mods', BrowseNexusPage, {
     hotkey: 'B',
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,

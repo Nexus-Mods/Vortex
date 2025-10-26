@@ -68,6 +68,11 @@ All components are available under the `Tailwind` namespace:
 - `Tailwind.FormFieldWrap` - Helper for spacing multiple form fields
 - `Tailwind.Input` - Input component with validation
 - `Tailwind.Select` - Select dropdown with custom styling
+- `Tailwind.TabProvider` - Tabs context provider
+- `Tailwind.TabBar` - Tabs container
+- `Tailwind.TabButton` - Selectable tab
+- `Tailwind.TabLink` - Link tab (non-selectable)
+- `Tailwind.TabPanel` - Tab content panel
 - `Tailwind.nxm*` - All 34 Nexus icon paths (e.g., `Tailwind.nxmVortex`)
 
 ### Type Exports
@@ -106,6 +111,33 @@ All Tailwind classes use the `tw:` prefix to avoid conflicts with existing Boots
 <div className="tw:text-neutral-strong">
 ```
 
+**CRITICAL: Prefix Syntax with Variants**
+
+With the `tw:` prefix in Tailwind v4, the prefix must come **FIRST**, then the variant, then the utility:
+
+```tsx
+// ❌ WRONG - This will NOT work:
+<button className="hover:tw:text-neutral-moderate">
+
+// ✅ CORRECT - Prefix comes first:
+<button className="tw:hover:text-neutral-moderate">
+
+// Pattern: [prefix]:[variant]:[utility]
+// Examples:
+tw:hover:bg-surface-high
+tw:focus:border-primary-moderate
+tw:disabled:opacity-40
+tw:aria-selected:text-neutral-strong
+```
+
+**Common Mistakes to Avoid:**
+- `hover:tw:*` ❌ → `tw:hover:*` ✅
+- `focus:tw:*` ❌ → `tw:focus:*` ✅
+- `disabled:tw:*` ❌ → `tw:disabled:*` ✅
+- `group-hover:tw:*` ❌ → `tw:group-hover:*` ✅
+
+**Note**: Named group variants like `group/name` and `group-hover/name:tw:*` are not supported with our prefix setup. Use standard `:hover` selectors instead.
+
 ### 2. **Dependencies**
 Web-specific dependencies have been replaced or adapted:
 - `@/utils/join-classes` → **Shared `utils.ts`** at `src/tailwind/components/next/utils.ts`
@@ -129,16 +161,31 @@ Custom classes are defined in `src/stylesheets/tailwind-v4.css`:
 - `.tw\:hover-dark-overlay` - Dark hover effect overlay
 
 ### 4. **Colors**
-Semantic colors defined in `@theme`:
+Semantic colors defined in `@theme` in `src/stylesheets/tailwind-v4.css`:
+
+**Neutral Colors:**
 - `--color-neutral-inverted`, `--color-neutral-strong`, `--color-neutral-moderate`, `--color-neutral-subdued`, `--color-neutral-weak`
 - `--color-neutral-800` - For filled buttons
-- `--color-translucent-*` - For dark backgrounds
-- `--color-primary-moderate`, `--color-primary-400` - Primary button and element colors
-- `--color-stroke-moderate`, `--color-stroke-strong` - Border colors
-- `--color-stroke-neutral-translucent-weak`, `--color-stroke-neutral-translucent-moderate` - Translucent borders
+
+**Stroke/Border Colors:**
+- `--color-stroke-moderate` - #d4d4d8 (Neutral-300) - **Use for borders and dividers**
+- `--color-stroke-strong` - #a1a1aa (Neutral-400)
+- `--color-stroke-neutral-translucent-weak` - rgba(255, 255, 255, 0.1)
+- `--color-stroke-neutral-translucent-subdued` - rgba(255, 255, 255, 0.2)
+- `--color-stroke-neutral-translucent-moderate` - rgba(255, 255, 255, 0.3)
+- `--color-stroke-neutral-translucent-strong` - rgba(255, 255, 255, 0.6)
+
+**⚠️ Note**: There is **NO** `--color-stroke-subdued` - use `stroke-moderate` or `stroke-neutral-translucent-subdued` instead.
+
+**Surface Colors:**
 - `--color-surface-mid`, `--color-surface-high` - Card and panel backgrounds
+- `--color-surface-low` - Select/input backgrounds
+- `--color-translucent-*` - For dark backgrounds
+
+**Semantic Colors:**
+- `--color-primary-moderate`, `--color-primary-400` - Primary button and element colors
 - `--color-info-strong` - Informational tag color
-- `--color-danger-400` - Warning/adult tag color
+- `--color-danger-400`, `--color-danger-strong` - Warning/error colors
 - `--color-success-moderate` - Success button color
 - `--color-premium-moderate` - Premium button color
 
@@ -681,6 +728,150 @@ import { Select } from '../../../tailwind/components/next/form/select';
 - `--color-stroke-moderate` - Hover border
 - `--color-pure-white` - Select hover/focus border, dropdown icon hover/focus
 
+### Tabs
+
+Located in `tabs/` with subcomponents in `tab-bar/`, `tab/`, and `tab-panel/`
+
+**Files:**
+- `tabs/tabs.context.tsx` - TabProvider and useTabContext hook
+- `tabs/tab-bar/TabBar.tsx` - Container with tablist role
+- `tabs/tab/Tab.tsx` - TabButton, TabLink, and TabContent components
+- `tabs/tab-panel/TabPanel.tsx` - Content panel (show/hide)
+- `tabs/TabsDemo.tsx` - Demo showcasing all tab features
+- `tabs/index.ts` - Main tabs exports
+
+**Dependencies:**
+- Uses Typography from `../typography`
+- Uses shared utilities from `../utils` (joinClasses, getTabId)
+- Uses `numeral` library for formatting count badges
+- Uses React Context for state management
+
+**Features:**
+- **Context-based state management**: TabProvider wrapper required
+- **Two tab types**: TabButton (selectable) and TabLink (focusable, for navigation)
+- **Keyboard navigation**: Arrow Left/Right, Home, End keys with wrapping
+- **Count badges**: Optional number display with formatting
+- **Accessibility**: Full ARIA support (roles, aria-controls, aria-selected)
+- **Focus management**: Automatic focus handling for keyboard users
+- **Horizontal scrolling**: Custom scrollbar for overflow tabs
+
+**Architecture:**
+The tabs system uses React Context to manage state across all tab components:
+1. **TabProvider**: Context provider that wraps the entire tab system
+2. **TabBar**: Container with `role="tablist"` and bottom border
+3. **TabButton**: Selectable tab that changes content when clicked
+4. **TabLink**: Focusable tab that acts as a link (doesn't change content)
+5. **TabPanel**: Content panel that shows/hides based on selected tab
+
+**Usage:**
+
+```tsx
+import { Tailwind } from 'vortex-api';
+
+const { TabProvider, TabBar, TabButton, TabLink, TabPanel } = Tailwind;
+
+function MyTabs() {
+  const [selectedTab, setSelectedTab] = useState('overview');
+
+  return (
+    <TabProvider
+      tab={selectedTab}
+      tabListId="my-tabs"
+      onSetSelectedTab={setSelectedTab}
+    >
+      <TabBar>
+        <TabButton name="Overview" />
+        <TabButton name="Files" count={42} />
+        <TabButton name="Settings" />
+        <TabLink name="Docs" href="https://nexusmods.com" />
+      </TabBar>
+
+      <TabPanel name="Overview">
+        <p>Overview content...</p>
+      </TabPanel>
+
+      <TabPanel name="Files">
+        <p>Files content with 42 items...</p>
+      </TabPanel>
+
+      <TabPanel name="Settings">
+        <p>Settings content...</p>
+      </TabPanel>
+    </TabProvider>
+  );
+}
+```
+
+**TabButton vs TabLink:**
+- **TabButton**: Changes content when clicked, selectable, `type="button"`
+- **TabLink**: Navigates to URL when clicked, not selectable, `<a>` element
+- Both are focusable with keyboard navigation (Arrow keys)
+
+**Keyboard Navigation:**
+- **Arrow Left/Right**: Navigate between tabs (wraps around)
+- **Home**: Jump to first tab
+- **End**: Jump to last tab
+- **Tab button behavior**: Selecting with arrows changes content
+- **Link tab behavior**: Focusing with arrows doesn't change content (must click)
+
+**Count Badges:**
+```tsx
+// With count badge
+<TabButton name="Comments" count={1543} />
+// Displays as: "Comments 1,543" (formatted with locale separators)
+
+// Without count badge
+<TabButton name="Overview" />
+```
+
+**Props:**
+
+**TabProvider:**
+- `tab` (string, required) - Currently selected tab name
+- `tabListId` (string, required) - Unique ID for this tab list
+- `onSetSelectedTab` (function, optional) - Callback when tab changes
+- `children` (ReactNode) - Tab components
+
+**TabBar:**
+- `children` (ReactNode) - Tab components (TabButton, TabLink)
+- `className` (string, optional) - Additional CSS classes
+
+**TabButton:**
+- `name` (string, required) - Tab display name (used as ID via getTabId)
+- `count` (number, optional) - Count badge number
+- `disabled` (boolean, optional) - Disable the tab
+- `className` (string, optional) - Additional CSS classes
+- Extends all native `<button>` attributes
+
+**TabLink:**
+- `name` (string, required) - Tab display name
+- `count` (number, optional) - Count badge number
+- `href` (string) - Link URL
+- `target` (string, optional) - Link target (_blank, etc.)
+- `className` (string, optional) - Additional CSS classes
+- Extends all native `<a>` attributes
+
+**TabPanel:**
+- `name` (string, required) - Panel name (matches tab name)
+- `children` (ReactNode) - Panel content
+
+**Demo:** See `TabsDemo` component showcasing all features
+
+**Colors Used:**
+- `--color-neutral-subdued` - Default tab text, scrollbar
+- `--color-neutral-moderate` - Hover tab text, scrollbar hover
+- `--color-neutral-strong` - Selected tab text
+- `--color-primary-moderate` - Selected tab border
+- `--color-surface-mid` - Count badge background
+- `--color-surface-high` - Count badge hover/selected background
+- `--color-stroke-subdued` - TabBar bottom border
+
+**Custom CSS:**
+- `.tw\:scrollbar` - Custom scrollbar for horizontal overflow in TabBar
+
+**React 16 Compatibility:**
+The tabs system has been adapted for React 16 compatibility by replacing the React 19 `use()` hook with `useContext()`.
+
 ## Testing
 
 After making changes:
@@ -696,6 +887,8 @@ After making changes:
 - [x] Implement proper Icon component with MDI path support
 - [x] Add icon rendering to Button component (left/right icons)
 - [x] Add Input component with FormField wrapper
+- [x] Add Select dropdown component
+- [x] Add Tabs component system with keyboard navigation
 - [ ] Add loading spinner animation to Button component
-- [ ] Add more components from the web team (Textarea, Select, Checkbox, etc.)
+- [ ] Add more components from the web team (Textarea, Checkbox, Radio, Toggle, etc.)
 - [ ] Implement TypographyLink component

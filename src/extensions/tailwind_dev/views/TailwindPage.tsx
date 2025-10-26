@@ -11,6 +11,7 @@ import { TypographyDemo } from '../../../tailwind/components/next/typography/Typ
 import { ButtonDemo } from '../../../tailwind/components/next/button/ButtonDemo';
 import { CollectionTileDemo } from '../../../tailwind/components/next/collectiontile/CollectionTileDemo';
 import { InputDemo, SelectDemo } from '../../../tailwind/components/next/form';
+import { TabsDemo } from '../../../tailwind/components/next/tabs/TabsDemo';
 
 interface ITailwindPageProps {
   // Props passed from extension context
@@ -50,6 +51,12 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
 
             {/* Select Demo from web team */}
             <SelectDemo />
+
+            {/* Divider */}
+            <div style={{ margin: '60px 0', borderTop: '2px solid #e5e7eb' }} />
+
+            {/* Tabs Demo from web team */}
+            <TabsDemo />
 
             {/* Divider */}
             <div style={{ margin: '60px 0', borderTop: '2px solid #e5e7eb' }} />

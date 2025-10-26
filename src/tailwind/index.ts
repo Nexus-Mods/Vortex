@@ -17,6 +17,7 @@ import * as icon from './components/next/icon';
 import * as link from './components/next/link';
 import * as collectiontile from './components/next/collectiontile';
 import * as form from './components/next/form';
+import * as tabs from './components/next/tabs';
 import * as iconPaths from './lib/icon-paths';
 
 /**
@@ -31,12 +32,13 @@ import * as iconPaths from './lib/icon-paths';
  * - FormField: Form field wrapper with labels, hints, and validation
  * - Input: Input component with validation and accessibility features
  * - Select: Select dropdown with custom styling and icon
+ * - Tabs: Complete tabbed interface system with keyboard navigation
  *
  * Icon Paths:
  * - nxm*: 34 custom Nexus Mods icons (nxmVortex, nxmCollection, etc.)
  *
  * Types:
- * - ButtonType, IconSize, IconProps, FormFieldProps, InputProps, SelectProps, etc.
+ * - ButtonType, IconSize, IconProps, FormFieldProps, InputProps, SelectProps, TabsState, etc.
  */
 export const Tailwind = {
   // Typography components and types
@@ -54,8 +56,11 @@ export const Tailwind = {
   // Collection tile component
   ...collectiontile,
 
-  // Form components (FormField, Input)
+  // Form components (FormField, Input, Select)
   ...form,
+
+  // Tabs components (TabProvider, TabBar, TabButton, TabLink, TabPanel)
+  ...tabs,
 
   // Icon paths (nxm* icons)
   ...iconPaths,
@@ -94,3 +99,11 @@ export type {
   InputProps,
   SelectProps,
 } from './components/next/form';
+
+export type {
+  // Tabs types
+  TabsState,
+  TabProviderProps,
+  TabButtonProps,
+  TabLinkProps,
+} from './components/next/tabs';

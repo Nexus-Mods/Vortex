@@ -563,3 +563,29 @@
 .tw\:hover-dark-overlay:hover::before {
   opacity: 1;
 }
+
+/* Scrollbar utility classes for tabs and overflow containers */
+
+/* Custom scrollbar styling for horizontal/vertical overflow */
+.tw\:scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-subdued) transparent;
+}
+
+.tw\:scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tw\:scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tw\:scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-subdued);
+  border-radius: 4px;
+}
+
+.tw\:scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-neutral-moderate);
+}
