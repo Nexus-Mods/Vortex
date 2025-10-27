@@ -3,6 +3,8 @@ import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IOAuthCredentials, IModFile, IModFileQuery, IModFiles, IModQuery, ITrackResponse,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
+  ICollectionSearchOptions,
+  ICollectionSearchResult,
 } from '@nexusmods/nexus-api';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
@@ -77,6 +79,26 @@ interface IUserInfo {
 }
 
 let cancelLogin: () => void;
+
+
+
+
+/**
+ * Search for collections using the GraphQL API
+ *
+ * @param {Nexus} nexus - The Nexus API instance
+ * @param {ICollectionQuery} query - GraphQL query for collection fields
+ * @param {types.ICollectionSearchOptions} options - Search options (gameId, filters, sort, etc.)
+ * @return {Promise<types.ICollectionSearchResult>} Search results with nodes and totalCount
+ */
+export function searchCollections(
+  nexus: Nexus,
+  query: ICollectionQuery,
+  options: ICollectionSearchOptions,
+): Promise<ICollectionSearchResult> {
+  return Promise.resolve(nexus.searchCollectionsGraph(query, options));
+}
+
 
 export function onCancelLoginImpl(api: IExtensionApi) {
   if (cancelLogin !== undefined) {

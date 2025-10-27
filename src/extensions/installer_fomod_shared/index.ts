@@ -22,15 +22,15 @@ function init(context: IExtensionContext): boolean {
     icon: 'inspect',
     placement: 'detail',
     calc: (mod: IMod) => {
-      const choices = getSafe<IChoiceType | undefined>(mod.attributes, ['installerChoices'], undefined);
+      const choices = getSafe(mod.attributes, ['installerChoices'], undefined);
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return '<None>';
       }
-      return (choices.options || []).reduce((prev, step) => {
-        const values = step.groups
+      return (choices.value?.options || choices.options || []).reduce((prev, step) => {
+        prev.push(...step.groups
           .filter(group => group.choices.length > 0)
-          .map(group => `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`)
-        prev.push(...values);
+          .map(group =>
+            `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
         return prev;
       }, Array<string>());
     },

@@ -108,3 +108,44 @@ export const FULL_REVISION_INFO: IRevisionQuery = {
 export const CURRENT_REVISION_INFO: ICollectionQuery = {
   currentRevision: FULL_REVISION_INFO,
 };
+
+export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
+  id: true,
+  name: true,
+  slug: true,
+  collectionStatus: true,
+  endorsements: true,
+  totalDownloads: true,
+  summary: true,
+  badges: {
+    name: true,
+    description: true
+  },
+  permissions: {
+    global: true,
+    key: true
+  },
+  category: {
+    name: true
+  },
+  game: {
+    domainName: true,
+    name: true
+  },
+  latestPublishedRevision: {
+    adultContent: true,
+    modCount: true,
+    totalSize: true,
+  },
+  tileImage: {
+    url: true,
+    thumbnailUrl: {
+      $filter: { size: 'med' }
+    }
+  },
+  user: {
+    avatar: true,
+    memberId: true,
+    name: true
+  },
+};
