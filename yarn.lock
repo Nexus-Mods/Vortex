@@ -1664,6 +1664,14 @@
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.8.0.tgz#4210deb771ee3912964f14a15ddfb5ff877e70b9"
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
+"@nexusmods/modinstaller@file:../../fomod-installer/ModInstaller.Native.TypeScript/nexusmods-modinstaller-v2.0.42.tgz":
+  version "2.0.42"
+  resolved "file:../../fomod-installer/ModInstaller.Native.TypeScript/nexusmods-modinstaller-v2.0.42.tgz#9a49cd6d08d0466553583bf2f2149d66b7f63ff8"
+
+"@nexusmods/modinstaller@file:D:\\Git\\fomod-installer\\ModInstaller.Native.TypeScript\\nexusmods-modinstaller-v2.0.43.tgz":
+  version "2.0.43"
+  resolved "file:D:\\Git\\fomod-installer\\ModInstaller.Native.TypeScript\\nexusmods-modinstaller-v2.0.43.tgz#46f2b940bd3dc808b379b9d7ab431d34adc65f56"
+
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
   version "1.4.29"
   resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6cdaa78b5462d301ed303f92c8712d3411a2c5b8"

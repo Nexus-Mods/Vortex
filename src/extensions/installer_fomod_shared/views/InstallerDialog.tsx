@@ -18,7 +18,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import {
-  Button, Checkbox, ControlLabel, Form, FormGroup, Pager,
+  Button, Checkbox, ControlLabel, Form, FormGroup,
   ProgressBar, Radio,
 } from 'react-bootstrap';
 import { pathToFileURL } from 'url';
@@ -29,7 +29,7 @@ interface IGroupProps {
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (image: string, description: string) => void;
+  onShowDescription: (image: string | undefined, description: string | undefined) => void;
 }
 
 interface IGroupState {
@@ -45,7 +45,7 @@ interface IGroupState {
 const nop = () => undefined;
 
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
-  private mValidate: (selected: number[]) => string;
+  private mValidate: ((selected: number[]) => string | undefined) = (selected: number[]) => undefined;
   constructor(props: IGroupProps) {
     super(props);
     this.state = {
@@ -59,7 +59,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
     const {group, onSelect} = this.props;
     const {confirmedUpdate, localUpdate, sentUpdate, selectedPlugins} = this.state;
-    const valid: string = this.validateFunc(group.type)(selectedPlugins);
+    const valid = this.validateFunc(group.type)(selectedPlugins);
     if ((selectedPlugins !== oldState.selectedPlugins)
         && (localUpdate > sentUpdate)
         // if the confirmation is still pending, don't send now
@@ -83,7 +83,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
         // while confirmation was pending, the user made further changes, validate them now
         const { group, onSelect } = newProps;
         const { selectedPlugins } = this.state;
-        const valid: string = this.validateFunc(group.type)(selectedPlugins);
+        const valid = this.validateFunc(group.type)(selectedPlugins);
         onSelect(group.id, selectedPlugins, valid === undefined);
         this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
       }
@@ -126,7 +126,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       .map(plugin => plugin.id);
   }
 
-  private validateFunc(type: GroupType): (selected: number[]) => string {
+  private validateFunc(type: GroupType): (selected: number[]) => string | undefined {
     const { t } = this.props;
     switch (type) {
       case 'SelectAtLeastOne': return (selected: number[]) => (selected.length === 0)
@@ -139,7 +139,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
   }
 
-  private renderNoneOption = (): JSX.Element => {
+  private renderNoneOption = (): JSX.Element | null => {
     const {t, disabled, group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
@@ -259,7 +259,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       }));
     } else if (this.state.selectedPlugins.indexOf(pluginId) === -1) {
       this.setState(update(this.state, {
-        selectedPlugins: { $set: [].concat(this.state.selectedPlugins, [pluginId]) },
+        selectedPlugins: { $set: Array<number>().concat(this.state.selectedPlugins, [pluginId]) },
         localUpdate: { $set: Date.now() },
       }));
     } else {
@@ -283,13 +283,13 @@ interface IStepProps {
   t: TFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (image: string, description: string) => void;
+  onShowDescription: (image: string | undefined, description: string | undefined) => void;
   disabled: boolean;
 }
 
 function Step(props: IStepProps) {
   let groupsSorted: IGroup[];
-  if (props.step.optionalFileGroups.group === undefined) {
+  if (props.step.optionalFileGroups?.group === undefined) {
     return null;
   }
   if (props.step.optionalFileGroups.order === 'Explicit') {
@@ -330,8 +330,8 @@ interface IConnectedProps {
 
 interface IDialogState {
   invalidGroups: string[];
-  currentImage: string;
-  currentDescription: string;
+  currentImage: string | undefined;
+  currentDescription: string | undefined;
   waiting: boolean;
 }
 
@@ -355,7 +355,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       this.setState(this.initDescription(nextProps));
     }
   }
-  public render(): JSX.Element {
+  public render(): JSX.Element | null {
     const { t, installerInfo, installerState, activeInstanceId } = this.props;
     const { currentDescription, waiting } = this.state;
 
@@ -369,7 +369,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
     const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
-    let lastVisible: IInstallStep;
+    let lastVisible: IInstallStep | undefined;
     steps.forEach((step: IInstallStep, i: number) => {
       if ((i < idx) && step.visible) {
         lastVisible = step;
@@ -390,7 +390,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
           <IconButton
             id='fomod-cancel'
             className='close-button'
-            tooltip={t('Cancel')}
+            tooltip={t!('Cancel')}
             icon='close'
             onClick={this.cancel}
           />
@@ -399,7 +399,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
           <FlexLayout type='row' style={{ position: 'relative' }}>
             <FlexLayout.Flex fill style={{ overflowY: 'auto' }}>
               <Step
-                t={t}
+                t={t!}
                 step={steps[idx]}
                 onSelect={this.select}
                 onShowDescription={this.showDescription}
@@ -424,7 +424,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
               lastVisible !== undefined
                 ? (
                   <Button onClick={this.prev} disabled={waiting}>
-                    {waiting ? <Spinner /> : lastVisible.name || t('Previous')}
+                    {waiting ? <Spinner /> : lastVisible.name || t!('Previous')}
                   </Button>
                 ) : null
             }</div>
@@ -435,11 +435,11 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
               nextVisible !== undefined
                 ? (
                   <Button disabled={nextDisabled || waiting} onClick={this.next}>
-                    {waiting ? <Spinner /> : (nextVisible.name || t('Next'))}
+                    {waiting ? <Spinner /> : (nextVisible.name || t!('Next'))}
                   </Button>
                 ) : (
                   <Button disabled={nextDisabled || waiting} onClick={this.next}>
-                    {t('Finish')}
+                    {t!('Finish')}
                   </Button>
                 )
             }</div>
@@ -448,7 +448,6 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       </Modal>
     );
   }
-  private nop = () => undefined;
 
   private select = (groupId: number, plugins: number[], valid: boolean) => {
     const { events } = this.context.api;
@@ -479,33 +478,33 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         url={pathToFileURL(path.join(dataPath, image)).href}
         className='installer-image'
         overlayClass='installer-zoom'
-        container={null}
+        container={undefined}
       />
     );
   }
 
   private initDescription(props: IProps): IDialogState {
-    const ret = (option) => ({
+    const ret = (option: IPlugin | undefined) : IDialogState => ({
       invalidGroups: [],
-      currentImage: option.image,
-      currentDescription: option.description,
+      currentImage: option?.image,
+      currentDescription: option?.description,
       waiting: false,
     });
 
     if (!truthy(props.installerState)) {
-      return ret({});
+      return ret(undefined);
     }
     const { currentStep, installSteps } = props.installerState;
 
     const selOption = (installSteps[currentStep]?.optionalFileGroups?.group?.[0]?.options ?? [])
       .find(opt => opt.selected);
-    return ret(selOption || {});
+    return ret(selOption || undefined);
   }
 
-  private showDescription = (image: string, description: string) => {
+  private showDescription = (image: string | undefined, description: string | undefined) => {
     this.setState(update(this.state, {
-      currentDescription: { $set: description },
-      currentImage: { $set: image },
+      currentDescription: { $set: description || '' },
+      currentImage: { $set: image || '' },
     }));
   }
   private prev = () => {
@@ -528,8 +527,9 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     events.emit(`fomod-installer-continue-${activeInstanceId}`, 'forward', this.props.installerState.currentStep);
   }
   private cancel = () => {
+    const { events } = this.context.api;
     const { activeInstanceId } = this.props;
-    this.context.api.events.emit(`fomod-installer-cancel-${activeInstanceId}`);
+    events.emit(`fomod-installer-cancel-${activeInstanceId}`);
   }
 }
 

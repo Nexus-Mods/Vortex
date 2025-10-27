@@ -24,7 +24,7 @@ export const gameProfiles =
                          .map((id: string) => profiles[id]);
                    });
 
-export const activeProfile = (state): IProfile => {
+export const activeProfile = (state): IProfile | undefined => {
   const profileId = getSafe(state, ['settings', 'profiles', 'activeProfileId'], undefined);
   return getSafe(state, ['persistent', 'profiles', profileId], undefined);
 };

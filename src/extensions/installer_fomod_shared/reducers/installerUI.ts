@@ -24,7 +24,7 @@ export const installerUIReducer: IReducerSpec = {
       return setSafe(state, ['instances', instanceId, 'state'], dialogState);
     },
     [actions.setInstallerDataPath as any]: (state, payload) => {
-      const { path, instanceId } = payload;
+      const { instanceId, path } = payload;
       return setSafe(state, ['instances', instanceId, 'dataPath'], path);
     }
   },

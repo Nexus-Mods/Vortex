@@ -239,6 +239,7 @@
   "dependencies": {
     "@electron/remote": "^2.0.12",
     "@msgpack/msgpack": "^2.7.0",
+    "@nexusmods/modinstaller": "file:D:\\Git\\fomod-installer\\ModInstaller.Native.TypeScript\\nexusmods-modinstaller-v2.0.43.tgz",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",

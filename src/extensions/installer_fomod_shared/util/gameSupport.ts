@@ -6,6 +6,7 @@ import getVortexPath from '../../../util/getVortexPath';
 import { discoveryByGame } from '../../gamemode_management/selectors';
 import { makeOverlayableDictionary } from '../../../util/util';
 import { IExtensionApi } from '../../../types/IExtensionContext';
+import { types } from 'vortex-api';
 
 function bethIni(gamePath: string, iniName: string) {
   return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
@@ -32,15 +33,15 @@ const uniPatterns: string[] = ['fomod'].map(toWordExp);
 
 function stopPatterns(gameMode: string) {
   switch (gameMode) {
-    case 'fallout3': return [].concat(uniPatterns, gamebryoPatterns, ['fose'].map(toWordExp));
-    case 'falloutnv': return [].concat(uniPatterns, gamebryoPatterns, ['nvse'].map(toWordExp));
-    case 'fallout4': return [].concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
-    case 'fallout4vr': return [].concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
-    case 'oblivion': return [].concat(uniPatterns, gamebryoPatterns, ['obse'].map(toWordExp));
-    case 'morrowind': return [].concat(uniPatterns, gamebryoPatterns, ['mwse'].map(toWordExp));
-    case 'skyrim': return [].concat(uniPatterns, gamebryoPatterns,
+    case 'fallout3': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['fose'].map(toWordExp));
+    case 'falloutnv': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['nvse'].map(toWordExp));
+    case 'fallout4': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
+    case 'fallout4vr': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
+    case 'oblivion': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['obse'].map(toWordExp));
+    case 'morrowind': return Array<string>().concat(uniPatterns, gamebryoPatterns, ['mwse'].map(toWordExp));
+    case 'skyrim': return Array<string>().concat(uniPatterns, gamebryoPatterns,
                                     ['skse', 'SkyProc Patchers'].map(toWordExp));
-    case 'skyrimse': return [].concat(uniPatterns, gamebryoPatterns,
+    case 'skyrimse': return Array<string>().concat(uniPatterns, gamebryoPatterns,
                                       ['skse'].map(toWordExp));
     case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
                                  'usershader', 'usertexture'].map(toWordExp).concat(uniPatterns);
@@ -90,7 +91,7 @@ function stopPatterns(gameMode: string) {
               'tables', 'text', 'textures'].map(toWordExp);
     case 'thesims4':
       return ['[^/]*\\.package$', '[^/]*\\.ts4script$', '[^/]*\\.py[co]?$'];
-    default: return [].concat(uniPatterns);
+    default: return Array<string>().concat(uniPatterns);
   }
 }
 
@@ -320,7 +321,7 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
       iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
     },
   },
-}, (gameId: string) => {
+}, (gameId: string) : string => {
   const discovery = discoveryForGame(gameId);
   if ((discovery?.path !== undefined)
       && (gameId === 'enderalspecialedition')
@@ -328,14 +329,14 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
     return 'enderalseOverlay';
   }
   else {
-    return discovery?.store;
+    return discovery?.store!;
   }
 });
 
-let discoveryForGame: (gameId: string) => IDiscoveryResult = () => undefined;
+let discoveryForGame: (gameId: string) => IDiscoveryResult | undefined = () => undefined;
 
 export function initGameSupport(api: IExtensionApi) {
-  discoveryForGame = (gameId: string) => discoveryByGame(api.store.getState(), gameId);
+  discoveryForGame = (gameId: string) => discoveryByGame(api.store?.getState(), gameId);
 }
 
 export function getIniFilePath(gameMode: string): string {
@@ -359,8 +360,8 @@ export function getNativePlugins(gameMode: string): string[] {
 }
 
 // Helper function to check if there's an active FOMOD dialog
-export function hasActiveFomodDialog(store): boolean {
-  const state = store.getState();
+export function hasActiveFomodDialog(store: types.ThunkStore<any> | undefined): boolean {
+  const state = store?.getState();
   const activeInstanceId = state?.session?.fomod?.installer?.dialog?.activeInstanceId;
   if (!activeInstanceId) {
     return false;

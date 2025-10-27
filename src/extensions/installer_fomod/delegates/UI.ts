@@ -3,12 +3,12 @@ import { log } from '../../../util/log';
 import {showError} from '../../../util/message';
 import { truthy } from '../../../util/util';
 
-import {endDialog, setDialogState, startDialog} from '../actions/installerUI';
-import {IInstallerInfo, IInstallerState, IReportError, StateCallback} from '../types/interface';
+import {endDialog, setDialogState, startDialog} from '../../installer_fomod_shared/actions/installerUI';
+import {IInstallerInfo, IInstallerState, IReportError, StateCallback} from '../../installer_fomod_shared/types/interface';
 
 import DelegateBase from './DelegateBase';
 
-import { hasActiveFomodDialog } from '../util/gameSupport';
+import { hasActiveFomodDialog } from '../../installer_fomod_shared/util/gameSupport';
 import { inspect } from 'util';
 
 interface QueuedDialogRequest {

@@ -11,30 +11,24 @@ import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../ut
 import Debouncer from '../../util/Debouncer';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
 import { delayed, toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
-import { IMod } from '../mod_management/types/IMod';
 
-import { clearDialog, endDialog, setInstallerDataPath } from './actions/installerUI';
+import { setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
 import { setInstallerSandbox } from './actions/settings';
 import Core from './delegates/Core';
-import { installerUIReducer } from './reducers/installerUI';
 import { settingsReducer } from './reducers/settings';
-import { IGroupList, IInstallerState } from './types/interface';
+import { IGroupList, IInstallerState } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
-  initGameSupport,
-  hasActiveFomodDialog,
-} from './util/gameSupport';
-import InstallerDialog from './views/InstallerDialog';
+} from '../installer_fomod_shared/util/gameSupport';
 
-import Workarounds from './views/Workarounds';
+import Workarounds from '../installer_fomod_shared/views/Workarounds';
 
-import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
+import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from '../installer_fomod_shared/constants';
 
 import Bluebird from 'bluebird';
 import { createIPC, killProcess } from 'fomod-installer';
@@ -1368,29 +1362,6 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
   }
 }
 
-async function testSupportedFallback(securityLevel: SecurityLevel,
-                                     files: string[])
-                                     : Promise<ISupportedResult> {
-  let connection: ConnectionIPC;
-  try {
-    connection = await createIsolatedConnection(securityLevel);
-
-    const res = await connection.sendMessage(
-      'TestSupported', { files, allowedTypes: ['Basic'] })
-    if (!res.supported) {
-      log('warn', 'fomod fallback installer not supported, that shouldn\'t happen');
-    }
-    return res;
-  } catch (err) {
-    throw transformError(err);
-  } finally {
-    // Clean up the isolated connection
-    if (connection) {
-      connection.quit();
-    }
-  }
-}
-
 async function install(securityLevel: SecurityLevel,
                        files: string[],
                        stopPatterns: string[],
@@ -1438,7 +1409,6 @@ function init(context: IExtensionContext): boolean {
   // Register .NET 9 Desktop Runtime check
   context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
 
-  initGameSupport(context.api);
   const osSupportsAppContainer = winapi?.SupportsAppContainer?.() ?? false;
 
   const installWrap = async (useAppContainer, files, scriptPath, gameId,
@@ -1457,7 +1427,7 @@ function init(context: IExtensionContext): boolean {
       winapi?.GrantAppContainer?.(
         `${CONTAINER_NAME}_${instanceId}`, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     }
-    context.api.store.dispatch(setInstallerDataPath(instanceId, scriptPath));
+    context.api.store.dispatch(setInstallerDataPath(scriptPath, instanceId));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
       ? (choicesIn.options ?? {})
@@ -1471,7 +1441,7 @@ function init(context: IExtensionContext): boolean {
 
       const state = context.api.store.getState();
       const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId];
+      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
 
       const choices = (dialogState?.installSteps === undefined)
         ? undefined
@@ -1753,40 +1723,13 @@ function init(context: IExtensionContext): boolean {
     };
   }
 
-  context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);
 
   context.registerInstaller('fomod', 20, wrapper('test', testSupportedScripted), wrapper('install', installWrap));
-  context.registerInstaller('fomod', 100, wrapper('test', testSupportedFallback), wrapper('install', installWrap));
-
-  context.registerDialog('fomod-installer', InstallerDialog);
 
   context.registerSettings('Workarounds', Workarounds, () => ({
     osSupportsAppContainer,
   }));
-
-  context.registerTableAttribute('mods', {
-    id: 'installer',
-    name: 'Installer',
-    description: 'Choices made in the installer',
-    icon: 'inspect',
-    placement: 'detail',
-    calc: (mod: IMod) => {
-      const choices = getSafe(mod.attributes, ['installerChoices'], undefined);
-      if ((choices === undefined) || (choices.type !== 'fomod')) {
-        return '<None>';
-      }
-      return (choices.options || []).reduce((prev, step) => {
-        prev.push(...step.groups
-          .filter(group => group.choices.length > 0)
-          .map(group =>
-            `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
-        return prev;
-      }, []);
-    },
-    edit: {},
-    isDefaultVisible: false,
-  });
 
   // This attribute extractor is reading and parsing xml files just for the sake
   //  of finding the fomod's name - it's not worth the hassle.

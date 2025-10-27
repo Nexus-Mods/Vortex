@@ -71,3 +71,20 @@ export interface IReportError {
   message: string;
   details: string;
 }
+
+
+export type IChoices = {
+    name: string;
+    groups: {
+        name: string;
+        choices: {
+            name: string;
+            idx: number;
+        }[];
+    }[];
+}[] | undefined
+
+export type IChoiceType = {
+  type: string;
+  options: IChoices;
+}
