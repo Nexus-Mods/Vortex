@@ -162,11 +162,20 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
       fallbackLng: 'en',
       fallbackNS: 'common',
 
-      ns: ['common'],
+      ns: [
+        'common',
+        'collection',
+        'mod_management',
+        'download_management',
+        'profile_management',
+        'nexus_integration',
+        'gamemode_management',
+        'extension_manager',
+      ],
       defaultNS: 'common',
 
-      nsSeparator: ':::',
-      keySeparator: '::',
+      nsSeparator: ':',
+      keySeparator: '.',
 
       debug: false,
       postProcess: (process.env.HIGHLIGHT_I18N === 'true') ? 'HighlightPP' : false,

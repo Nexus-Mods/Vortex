@@ -2510,7 +2510,8 @@ class ExtensionManager {
       'analytics',
       'onboarding_dashlet',
       'mod_spotlights_dashlet',
-      'tailwind_dev'
+      'tailwind_dev',
+      'browse_nexus'
     ];
 
     require('./extensionRequire').default(() => this.extensions);

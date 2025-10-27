@@ -130,6 +130,7 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   },
   game: {
     domainName: true,
+    id: true,
     name: true
   },
   latestPublishedRevision: {

@@ -65,7 +65,7 @@ const getSizes = ({
   size,
 }: Pick<Required<BaseButtonProps>, 'size'> & Pick<BaseButtonProps, 'isResponsive'>) => {
   const md = {
-    buttonClass: 'tw:min-h-9 tw:px-3 tw:min-w-24',
+    buttonClass: 'tw:min-h-9 tw:px-3 tw:min-w-8',
     iconClassName: 'tw:size-5',
     iconWrapperClassName: '[&>svg]:tw:max-w-5! [&>svg]:tw:max-h-5!',
     spacing: 'tw:gap-x-1.5',
@@ -127,20 +127,20 @@ const getButtonClasses = ({
     case 'primary':
       classes.push(
         'tw:bg-primary-moderate tw:text-neutral-inverted',
-        canHover ? 'hover:tw:bg-primary-subdued' : ''
+        canHover ? 'tw:hover:bg-primary-subdued' : ''
       );
       break;
     case 'secondary':
-      classes.push('tw:border tw:border-stroke-moderate', canHover ? 'hover:tw:border-stroke-strong' : '');
+      classes.push('tw:border tw:border-stroke-neutral-translucent-moderate', canHover ? 'tw:hover:border-stroke-neutral-translucent-strong' : '');
 
       if (filled) {
         classes.push(
           ...(filled === 'strong'
             ? ['tw:bg-neutral-strong tw:text-neutral-inverted', canHover ? 'tw:hover-dark-overlay' : '']
-            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong hover:tw:bg-surface-high' : '']),
+            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'tw:hover:text-neutral-strong tw:hover:bg-surface-high' : '']),
         );
       } else {
-        classes.push('tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong' : '');
+        classes.push('tw:text-neutral-moderate', canHover ? 'tw:hover:text-neutral-strong' : '');
       }
 
       break;
@@ -149,22 +149,22 @@ const getButtonClasses = ({
         classes.push(
           ...(filled === 'strong'
             ? ['tw:bg-neutral-strong tw:text-neutral-inverted', canHover ? 'tw:hover-dark-overlay' : '']
-            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong hover:tw:bg-surface-high' : '']),
+            : ['tw:bg-surface-mid tw:text-neutral-moderate', canHover ? 'tw:hover:text-neutral-strong tw:hover:bg-surface-high' : '']),
         );
       } else {
-        classes.push('tw:text-neutral-moderate', canHover ? 'hover:tw:text-neutral-strong' : '');
+        classes.push('tw:text-neutral-moderate', canHover ? 'tw:hover:text-neutral-strong' : '');
       }
       break;
     case 'success':
       classes.push(
         'tw:bg-success-moderate tw:text-neutral-inverted',
-        canHover ? 'hover:tw:bg-success-subdued' : ''
+        canHover ? 'tw:hover:bg-success-subdued' : ''
       );
       break;
     case 'premium':
       classes.push(
         'tw:bg-premium-moderate tw:text-neutral-strong',
-        canHover ? 'hover:tw:bg-premium-subdued' : ''
+        canHover ? 'tw:hover:bg-premium-subdued' : ''
       );
       break;
   }

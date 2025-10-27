@@ -188,12 +188,48 @@ Use `yarn buildext` to build individual extensions during development.
 
 ### Technology Stack
 - **Electron 37.4.0** with Node.js integration
-- **React 16** with TypeScript
-- **Redux** for state management  
+- **React 16.12.0** with TypeScript ⚠️ **Upgrade needed** - See React Upgrade Plan below
+- **Redux** for state management
 - **Bootstrap/SASS** for styling
 - **Jest** for testing
 - **ESLint** for code quality
 - **Yarn 1.x** for package management
+
+### React Upgrade Plan
+
+**Current Status**: React 16.12.0 (December 2019) - 5 years behind
+
+**Priority**: Medium - Plan for upgrade after current sprint completes
+
+**Why Upgrade?**
+- React 16 maintenance ended in 2020 (no security updates)
+- Modern libraries require React 17+
+- Missing React 18 features: automatic batching, concurrent rendering, better TypeScript support
+
+**Migration Path**:
+1. **Phase 1: Dependency Audit**
+   - Update react-bootstrap from 0.33.0 → 2.x (React 18 compatible)
+   - Update react-select from 1.2.1 → 5.x
+   - Update react-datepicker from 3.3.0 → 4.x+
+   - Check custom forks (react-sortable-tree, etc.)
+
+2. **Phase 2: React 17 (Intermediate Step)**
+   - Easier migration path with minimal breaking changes
+   - Test thoroughly with existing codebase
+   - Identify class component issues
+
+3. **Phase 3: React 18 (Final Target)**
+   - Enable new concurrent features
+   - Update TypeScript types
+   - Full test suite validation
+   - Internal user testing before release
+
+**Blockers**:
+- react-bootstrap 0.33.0 is incompatible with React 18
+- react-select 1.2.1 is 7 major versions behind
+- Large codebase with class components may need refactoring
+
+**Timing**: Schedule after Electron 37 stabilization is complete and current feature work (collections browsing) ships
 
 ### Development vs Production
 Development builds are faster to compile but slower at runtime. Production builds use Webpack to bundle everything for optimal runtime performance but take longer to build.

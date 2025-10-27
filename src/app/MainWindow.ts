@@ -187,6 +187,9 @@ class MainWindow {
       if (details.disposition === 'background-tab') {
         return { action: 'deny' };
       }
+      // Open in external browser (for links with target="_blank")
+      opn(details.url).catch(() => null);
+      return { action: 'deny' };
     });
 
     this.mWindow.webContents.on('will-navigate', (event, url) => {
