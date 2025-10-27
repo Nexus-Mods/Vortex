@@ -10,6 +10,7 @@ import DelegateBase from './DelegateBase';
 
 import { hasActiveFomodDialog } from '../util/gameSupport';
 import { inspect } from 'util';
+import { UserCanceled } from '../../../util/CustomErrors';
 
 interface QueuedDialogRequest {
   info: IInstallerInfo;
@@ -139,7 +140,9 @@ class DialogQueue {
 
   onDialogEnd(store: any): void {
     const activeInstanceId = store.getState()?.session?.fomod?.installer?.dialog?.activeInstanceId;
-    endDialog(activeInstanceId);
+    store.dispatch(endDialog(activeInstanceId));
+    // Remove the active dialog from the queue if it exists
+    this.queue = this.queue.filter(request => request.instanceId !== activeInstanceId);
 
     // Process next request after a brief delay
     setTimeout(() => {
