@@ -91,6 +91,11 @@ interface IActiveInstallation {
   baseName: string;
 }
 
+interface IDeploymentDetails {
+  deploymentPromise: Promise<void>;
+  deployOnSettle: boolean;
+}
+
 // Function to get current download manager free slots
 function getDownloadFreeSlots(api: IExtensionApi): Promise<number> {
   return new Promise((resolve) => {
@@ -1808,7 +1813,7 @@ class InstallManager {
     activeByPhase: Map<number, number>;
     deployedPhases: Set<number>;
     reQueueAttempted?: Map<number, number>;
-    deploymentPromises?: Map<number, Promise<void>>;
+    deploymentPromises?: Map<number, IDeploymentDetails>;
     isDeploying?: boolean;  // Flag to track if deployment is in progress
   }> = new Map();
 
@@ -1820,7 +1825,7 @@ class InstallManager {
         pendingByPhase: new Map<number, Array<() => void>>(),
         activeByPhase: new Map<number, number>(),
         deployedPhases: new Set<number>(),
-        deploymentPromises: new Map<number, Promise<void>>(),
+        deploymentPromises: new Map<number, IDeploymentDetails>(),
       });
     }
   }
@@ -1879,7 +1884,6 @@ class InstallManager {
 
   public pollPhaseSettlement(api: IExtensionApi, sourceModId: string, options: {
     phase?: number;           // Specific phase to poll (for deploy)
-    deployOnSettle?: boolean;  // Whether to deploy when settled
   }): Bluebird<void> {
     const POLL_MS = 500;
 
@@ -1919,8 +1923,9 @@ class InstallManager {
         const phaseLogicallyComplete = collectionStatus.phaseComplete;
         const installationsComplete = isCollectionPhaseComplete(api.getState(), checkPhase);
 
+        const existing = phaseState?.deploymentPromises.get(checkPhase);
         if (phaseLogicallyComplete) {
-          if (options.deployOnSettle && !hasDeployed) {
+          if ((existing?.deployOnSettle) && !hasDeployed) {
             // Set deployment flag to block new installations during deployment
             if (phaseState) {
               phaseState.isDeploying = true;
@@ -2187,7 +2192,7 @@ class InstallManager {
     const phaseState = this.mInstallPhaseState.get(sourceModId);
     const deploymentPromise = phaseState.deploymentPromises?.get(phase);
     if (deploymentPromise) {
-      return deploymentPromise;
+      return deploymentPromise.deploymentPromise;
     }
     return Promise.resolve();
   }
@@ -2203,16 +2208,23 @@ class InstallManager {
     }
 
     if (state.deploymentPromises?.has(phase)) {
+      if (deployOnSettle) {
+        // Update to ensure deployment occurs on settle
+        const existing = state.deploymentPromises.get(phase);
+        if (existing && !existing.deployOnSettle) {
+          state.deploymentPromises.set(phase, {
+            deploymentPromise: existing.deploymentPromise,
+            deployOnSettle: true
+          });
+        }
+      }
       return;
     }
 
     // Track deployment promise so we can wait for it before cleanup
     // Convert Bluebird to native Promise for compatibility
     const deploymentPromise = new Promise<void>((resolve) => {
-      this.pollPhaseSettlement(api, sourceModId, {
-        phase,
-        deployOnSettle: deployOnSettle ?? false,
-      })
+      this.pollPhaseSettlement(api, sourceModId, { phase })
       .catch(err => {
         log('warn', 'Error during scheduled phase deployment', { sourceModId, phase, error: err?.message });
       })
@@ -2228,9 +2240,9 @@ class InstallManager {
 
     // Add to tracked deployment promises
     if (!state.deploymentPromises) {
-      state.deploymentPromises = new Map<number, Promise<void>>();
+      state.deploymentPromises = new Map<number, IDeploymentDetails>();
     }
-    state.deploymentPromises.set(phase, deploymentPromise);
+    state.deploymentPromises.set(phase, { deploymentPromise, deployOnSettle: deployOnSettle ?? false });
   }
 
   // Called when downloads for a phase have been queued/processed
