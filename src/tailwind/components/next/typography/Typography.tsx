@@ -105,10 +105,10 @@ export const Typography: React.ComponentType<TypographyProps> = ({
   const appearanceClasses: Record<Exclude<TypographyProps['appearance'], undefined>, string> = {
     none: '',
     inverted: isTranslucent ? 'tw:text-translucent-dark-950' : 'tw:text-neutral-inverted',
-    moderate: isTranslucent ? 'tw:text-translucent-moderate' : 'tw:text-neutral-moderate',
-    strong: isTranslucent ? 'tw:text-translucent-strong' : 'tw:text-neutral-strong',
-    subdued: isTranslucent ? 'tw:text-translucent-subdued' : 'tw:text-neutral-subdued',
-    weak: isTranslucent ? 'tw:text-translucent-weak' : 'tw:text-neutral-weak',
+    moderate: isTranslucent ? 'tw:text-neutral-translucent-moderate' : 'tw:text-neutral-moderate',
+    strong: isTranslucent ? 'tw:text-neutral-translucent-strong' : 'tw:text-neutral-strong',
+    subdued: isTranslucent ? 'tw:text-neutral-translucent-subdued' : 'tw:text-neutral-subdued',
+    weak: isTranslucent ? 'tw:text-neutral-translucent-weak' : 'tw:text-neutral-weak',
   };
   /* eslint-enable sort-keys */
 
