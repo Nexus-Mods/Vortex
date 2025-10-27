@@ -85,7 +85,7 @@ describe('Phased Installer', () => {
       expect(state.downloadsFinished).toBeInstanceOf(Set);
       expect(state.pendingByPhase).toBeInstanceOf(Map);
       expect(state.activeByPhase).toBeInstanceOf(Map);
-      expect(state.scheduledDeploy).toBeInstanceOf(Set);
+      expect(state.deploymentPromises).toBeInstanceOf(Map);
       expect(state.deployedPhases).toBeInstanceOf(Set);
     });
 
