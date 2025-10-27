@@ -175,16 +175,19 @@ class UI extends DelegateBase {
   private mCancelCB: () => void;
   private mInstanceId: string;
   private static dialogQueue = DialogQueue.getInstance();
+  private mOnFinishCallbacks: Array<() => void> = [];
 
   get instanceId(): string {
     return this.mInstanceId;
   }
 
-  constructor(api: IExtensionApi, gameId: string, unattended: boolean, instanceId: string) {
+  constructor(api: IExtensionApi, gameId: string, unattended: boolean, instanceId: string, onFinishCallbacks?: Array<() => void>) {
     super(api);
 
     this.mUnattended = unattended;
     this.mInstanceId = instanceId;
+
+    this.mOnFinishCallbacks = onFinishCallbacks ?? [];
 
     // Use bound methods to avoid conflicts between multiple instances
     this.onDialogSelect = this.onDialogSelect.bind(this);
@@ -303,8 +306,18 @@ class UI extends DelegateBase {
   }
 
   private onDialogContinue = (direction, currentStepId: number) => {
+    if (direction === 'finish') {
+      this.mOnFinishCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (err) {
+          log('error', 'FOMOD onFinish callback failed', { error: err.message });
+        }
+      });
+    }
+    const dir = direction === 'finish' ? 'forward' : direction;
     if (this.mContinueCB !== undefined) {
-      this.mContinueCB({ direction, currentStepId });
+      this.mContinueCB({ direction: dir, currentStepId });
     }
   }
 
