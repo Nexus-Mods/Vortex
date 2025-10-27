@@ -1464,8 +1464,20 @@ function init(context: IExtensionContext): boolean {
     context.api.store.dispatch(setInstallerDataPath(instanceId, scriptPath));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
-      ? (choicesIn.options ?? {})
-      : undefined;
+    ? (choicesIn.options ?? {})
+    : undefined;
+    
+    const hasModuleConfig = files.some(file => path.basename(file).toLowerCase() === 'moduleconfig.xml');
+    if (hasModuleConfig && !shouldBypassDialog) {
+      // This mod will require user interaction, we need to make sure
+      //  the the previous phase is deployed.
+      await context.api.emitAndAwait('schedule-phase-deployment', {
+        modReference: details.modReference,
+        gameId,
+        modId: path.basename(scriptPath, '.installing'),
+        archivePath,
+      });
+    }
 
     const invokeInstall = async (validate: boolean) => {
       const result = await install(
