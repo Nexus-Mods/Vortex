@@ -218,11 +218,21 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (content.bbcode !== undefined) {
+      // BBCode content is always raw text, not translation keys
+      // Bypass i18next entirely to avoid key separator parsing
+      let bbcodeContent = content.bbcode;
+
+      // Manual parameter interpolation
+      if (content.parameters) {
+        Object.keys(content.parameters).forEach(key => {
+          const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+          bbcodeContent = bbcodeContent.replace(regex, String(content.parameters[key]));
+        });
+      }
+
       controls.push({ id: 'bbcode', control: (
         <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
-          {bbcode(t(content.bbcode,
-                    { replace: content.parameters, count: content.parameters?.count }),
-            content.options?.bbcodeContext)}
+          {bbcode(bbcodeContent, content.options?.bbcodeContext)}
         </div>
       ) });
     }
