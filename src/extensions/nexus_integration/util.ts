@@ -585,6 +585,10 @@ export function getCollectionInfo(nexus: Nexus,
     id: true,
     collection: {
       viewerIsBlocked: true,
+      permissions: {
+        global: true,
+        key: true,
+      },
       category: {
         id: true,
         name: true,
@@ -1189,6 +1193,10 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
   return BluebirdPromise.all(collectionIds.map(modId => {
     const query: Partial<ICollectionQuery> = {
       viewerIsBlocked: true,
+      permissions: {
+        global: true,
+        key: true,
+      },
       revisions: {
         revisionNumber: true,
         id: true,
