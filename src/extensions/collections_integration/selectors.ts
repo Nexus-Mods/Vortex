@@ -54,6 +54,10 @@ export const getCollectionSessionHistory = (state: any): { [sessionId: string]: 
  * @returns The session or undefined if not found
  */
 export const getCollectionSessionById = (state: any, sessionId: string): ICollectionInstallSession | undefined => {
+  const activeSession = getCollectionActiveSession(state);
+  if (activeSession?.sessionId === sessionId) {
+    return activeSession;
+  }
   const history = getCollectionSessionHistory(state);
   return history[sessionId];
 };
