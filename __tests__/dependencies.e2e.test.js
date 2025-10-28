@@ -52,6 +52,13 @@ jest.mock('../src/actions/notifications', () => {
   };
 });
 
+jest.mock('../src/util/log', () => {
+  const vortexApi = require('vortex-api');
+  return {
+    log: jest.fn((level, message, meta) => vortexApi.log(level, message, meta))
+  };
+});
+
 jest.mock('../src/extensions/gamemode_management/util/getGame', () => {
   const { createMockApiMethods } = require('vortex-api');
   const methods = createMockApiMethods();
@@ -97,6 +104,59 @@ jest.mock('../src/util/selectors', () => {
     lastActiveProfileForGame: jest.fn((...args) => getSelectors().lastActiveProfileForGame(...args)),
     profileById: jest.fn((...args) => getSelectors().profileById(...args)),
     currentProfile: jest.fn((...args) => getSelectors().currentProfile(...args)),
+  };
+});
+
+// Mock collections_integration selectors using vortex-api mock
+jest.mock('../src/extensions/collections_integration/selectors', () => {
+  const getVortexApi = () => require('vortex-api');
+
+  return {
+    getCollectionActiveSession: jest.fn((state) => state?.session?.collections?.activeSession || null),
+    getCollectionInstallProgress: jest.fn((...args) => getVortexApi().selectors.getCollectionInstallProgress(...args)),
+    getCollectionModsByPhase: jest.fn(() => ({})),
+    getCollectionSessionById: jest.fn(),
+    isCollectionInstalling: jest.fn(() => false),
+    isCollectionPhaseComplete: jest.fn(() => false)
+  };
+});
+
+// Mock profile actions to prevent operations after test teardown
+jest.mock('../src/extensions/profile_management/actions/profiles', () => {
+  // Use lazy loading to avoid importing during teardown
+  let cachedOriginal = null;
+  const getOriginal = () => {
+    if (!cachedOriginal && !global.suppressLogging) {
+      cachedOriginal = jest.requireActual('../src/extensions/profile_management/actions/profiles');
+    }
+    return cachedOriginal;
+  };
+
+  // Wrap each action to check suppressLogging flag
+  const wrapAction = (actionName) => {
+    return (...args) => {
+      if (global.suppressLogging) {
+        // Return a no-op action that won't cause imports after teardown
+        return { type: 'SUPPRESSED', payload: null };
+      }
+      const original = getOriginal();
+      return original?.[actionName]?.(...args) || { type: 'NO_OP', payload: null };
+    };
+  };
+
+  return {
+    forgetMod: wrapAction('forgetMod'),
+    setModEnabled: wrapAction('setModEnabled'),
+    setModAttribute: wrapAction('setModAttribute'),
+    setFeature: wrapAction('setFeature'),
+    // setModsEnabled is a function, not an action creator
+    setModsEnabled: jest.fn(() => {
+      if (global.suppressLogging) {
+        return Promise.resolve();
+      }
+      // Mock implementation - just resolve successfully
+      return Promise.resolve();
+    }),
   };
 });
 
@@ -260,6 +320,10 @@ describe('Collections End-to-End Test - Real Implementation', () => {
   });
 
   beforeEach(() => {
+    // Reset global counters for each test
+    global.modsInstalled = 0;
+    global.suppressLogging = false;
+
     api = new TestAPI();
   });
 
