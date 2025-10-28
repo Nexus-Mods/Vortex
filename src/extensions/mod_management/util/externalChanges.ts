@@ -4,7 +4,7 @@ import { IDeployedFile, IDeploymentMethod,
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
-import { activeGameId, activeProfile, profileById } from '../../../util/selectors';
+import { activeGameId, activeProfile, getCollectionActiveSession, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { setdefault, truthy } from '../../../util/util';
 
@@ -154,6 +154,20 @@ export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntr
   };
 }
 
+function defaultCollectionAction(typeId: string, input: IFileChange): IFileEntry {
+  const action: FileAction = {
+    refchange: 'newest',
+    valchange: 'nop',
+    deleted: 'restore',
+    srcdeleted: 'drop',
+  }[input.changeType] as FileAction;
+
+  return {
+    ...changeToEntry(typeId, input),
+    action,
+  };
+}
+
 function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
   const action: FileAction = {
     refchange: 'drop',
@@ -212,19 +226,30 @@ export function dealWithExternalChanges(api: IExtensionApi,
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
     .then((changes: { [typeId: string]: IFileChange[] }) => {
       const automaticActions: IFileEntry[] = [];
-
+      const isInstallingCollection = getCollectionActiveSession(api.store.getState()) !== undefined;
       const userChanges = Object.keys(changes).reduce((prev, typeId) => {
-        const { merged, rest } = changes[typeId].reduce((prevInner, change) => {
-          if (path.basename(change.source).startsWith(MERGED_PATH)) {
+        const { merged, rest, collection } = changes[typeId].reduce((prevInner, change) => {
+          const isMerged = path.basename(change.source).startsWith(MERGED_PATH);
+          if (isMerged) {
             prevInner.merged.push(change);
-          } else {
-            prevInner.rest.push(change);
+            return prevInner;
           }
+          if (isInstallingCollection) {
+            prevInner.collection.push(change);
+            return prevInner;
+          }
+
+          prevInner.rest.push(change);
+
           return prevInner;
-        }, { merged: [], rest: [] });
+        }, { merged: [], rest: [], collection: [] });
 
         if (merged.length > 0) {
           automaticActions.push(...merged.map(change => defaultMergedAction(typeId, change)));
+        }
+
+        if (isInstallingCollection && collection.length > 0) {
+          automaticActions.push(...collection.map(change => defaultCollectionAction(typeId, change)));
         }
 
         if (rest.length > 0) {
