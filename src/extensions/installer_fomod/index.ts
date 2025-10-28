@@ -27,7 +27,7 @@ import {
   uniPatterns,
 } from '../installer_fomod_shared/util/gameSupport';
 
-import Workarounds from '../installer_fomod_shared/views/Workarounds';
+import Workarounds from './views/Workarounds';
 
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from '../installer_fomod_shared/constants';
 

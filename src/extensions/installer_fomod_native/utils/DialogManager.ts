@@ -1,4 +1,4 @@
-import { types as vetypes } from '@nexusmods/modinstaller';
+import { types as vetypes } from 'fomod-installer-native';
 
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
@@ -17,9 +17,6 @@ import {
   IInstallStep,
 } from '../../installer_fomod_shared/types/interface';
 
-import DelegateBase from '../delegates/DelegateBase';
-
-
 /**
  * UI Delegate for native FOMOD installer
  * Manages dialog state and user interactions through Redux store
@@ -29,7 +26,9 @@ import DelegateBase from '../delegates/DelegateBase';
  * - Callbacks have simpler signatures (no wrapper objects)
  * - Still uses Redux for UI state management (shared with IPC version)
  */
-export class DialogManager extends DelegateBase {
+export class DialogManager {
+  private mApi: IExtensionApi;
+
   private mSelectCB: vetypes.SelectCallback | undefined;
   private mContinueCB: vetypes.ContinueCallback | undefined;
   private mCancelCB: vetypes.CancelCallback | undefined;
@@ -41,8 +40,12 @@ export class DialogManager extends DelegateBase {
     return this.mInstanceId;
   }
 
+  get api(): IExtensionApi {
+    return this.mApi;
+  }
+
   constructor(api: IExtensionApi, unattended: boolean, instanceId: string) {
-    super(api);
+    this.mApi = api;
 
     this.mUnattended = unattended;
     this.mInstanceId = instanceId;

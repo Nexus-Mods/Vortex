@@ -1,7 +1,7 @@
 import Toggle from '../../../controls/Toggle';
 import { IState } from '../../../types/IState';
 
-import { setInstallerSandbox } from '../../installer_fomod/actions/settings';
+import { setInstallerSandbox } from '../actions/settings';
 
 import React, { useContext } from 'react';
 import { Alert, ControlLabel, FormGroup } from 'react-bootstrap';

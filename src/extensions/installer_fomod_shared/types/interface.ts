@@ -72,7 +72,6 @@ export interface IReportError {
   details: string;
 }
 
-
 export type IChoices = {
     name: string;
     groups: {

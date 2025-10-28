@@ -1686,14 +1686,6 @@
   resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.8.0.tgz#4210deb771ee3912964f14a15ddfb5ff877e70b9"
   integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
 
-"@nexusmods/modinstaller@file:../../fomod-installer/ModInstaller.Native.TypeScript/nexusmods-modinstaller-v2.0.42.tgz":
-  version "2.0.42"
-  resolved "file:../../fomod-installer/ModInstaller.Native.TypeScript/nexusmods-modinstaller-v2.0.42.tgz#9a49cd6d08d0466553583bf2f2149d66b7f63ff8"
-
-"@nexusmods/modinstaller@file:D:\\Git\\fomod-installer\\ModInstaller.Native.TypeScript\\nexusmods-modinstaller-v2.0.43.tgz":
-  version "2.0.43"
-  resolved "file:D:\\Git\\fomod-installer\\ModInstaller.Native.TypeScript\\nexusmods-modinstaller-v2.0.43.tgz#46f2b940bd3dc808b379b9d7ab431d34adc65f56"
-
 "@napi-rs/wasm-runtime@^1.0.7":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@napi-rs/wasm-runtime/-/wasm-runtime-1.0.7.tgz#dcfea99a75f06209a235f3d941e3460a51e9b14c"
@@ -6451,6 +6443,16 @@ fn.name@1.x.x:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
+
+"fomod-installer-ipc@file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript":
+  version "0.10.0"
+  dependencies:
+    async "^3.2.2"
+    copyfiles "*"
+    fs-extra "^10.1.0"
+
+"fomod-installer-native@file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript":
+  version "0.10.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
   version "0.10.1"

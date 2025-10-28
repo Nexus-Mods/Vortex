@@ -1,7 +1,7 @@
 import path from 'path';
 import { Dirent, readdirSync, readFileSync } from 'node:fs';
 import { FileHandle, open, readdir } from 'node:fs/promises';
-import { NativeModInstaller, types as vetypes, allocWithoutOwnership } from '@nexusmods/modinstaller';
+import { NativeModInstaller, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
 import { hasLoadOrder } from './utils/guards';
 import { IExtensionApi, IInstallResult, IState, ISupportedResult } from '../../types/api';
 import { getApplication, getGame } from '../../util/api';

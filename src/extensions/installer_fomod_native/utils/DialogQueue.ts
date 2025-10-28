@@ -1,9 +1,8 @@
-import { log } from '../../../util/log';
-import { types as vetypes } from '@nexusmods/modinstaller';
-
+import { types as vetypes } from 'fomod-installer-native';
 import { DialogManager } from './DialogManager';
 import { endDialog } from '../../installer_fomod_shared/actions/installerUI';
 import { hasActiveFomodDialog } from '../../installer_fomod_shared/util/gameSupport';
+import { log } from '../../../util/log';
 
 interface QueuedDialogRequest {
   moduleName: string;

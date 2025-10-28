@@ -198,3 +198,7 @@
 	path = extensions/titlebar-launcher
 	url = https://github.com/Nexus-Mods/extension-titlebar-launcher.git
 	branch = master
+[submodule "extensions/fomod-installer"]
+	path = extensions/fomod-installer
+	url = https://github.com/Nexus-Mods/fomod-installer
+	branch = 18465-native-port
