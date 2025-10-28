@@ -10,6 +10,7 @@ import DelegateBase from './DelegateBase';
 
 import { hasActiveFomodDialog } from '../util/gameSupport';
 import { inspect } from 'util';
+import { UserCanceled } from '../../../util/CustomErrors';
 
 interface QueuedDialogRequest {
   info: IInstallerInfo;
@@ -139,7 +140,9 @@ class DialogQueue {
 
   onDialogEnd(store: any): void {
     const activeInstanceId = store.getState()?.session?.fomod?.installer?.dialog?.activeInstanceId;
-    endDialog(activeInstanceId);
+    store.dispatch(endDialog(activeInstanceId));
+    // Remove the active dialog from the queue if it exists
+    this.queue = this.queue.filter(request => request.instanceId !== activeInstanceId);
 
     // Process next request after a brief delay
     setTimeout(() => {
@@ -175,16 +178,19 @@ class UI extends DelegateBase {
   private mCancelCB: () => void;
   private mInstanceId: string;
   private static dialogQueue = DialogQueue.getInstance();
+  private mOnFinishCallbacks: Array<() => void> = [];
 
   get instanceId(): string {
     return this.mInstanceId;
   }
 
-  constructor(api: IExtensionApi, gameId: string, unattended: boolean, instanceId: string) {
+  constructor(api: IExtensionApi, gameId: string, unattended: boolean, instanceId: string, onFinishCallbacks?: Array<() => void>) {
     super(api);
 
     this.mUnattended = unattended;
     this.mInstanceId = instanceId;
+
+    this.mOnFinishCallbacks = onFinishCallbacks ?? [];
 
     // Use bound methods to avoid conflicts between multiple instances
     this.onDialogSelect = this.onDialogSelect.bind(this);
@@ -303,8 +309,18 @@ class UI extends DelegateBase {
   }
 
   private onDialogContinue = (direction, currentStepId: number) => {
+    if (direction === 'finish') {
+      this.mOnFinishCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (err) {
+          log('error', 'FOMOD onFinish callback failed', { error: err.message });
+        }
+      });
+    }
+    const dir = direction === 'finish' ? 'forward' : direction;
     if (this.mContinueCB !== undefined) {
-      this.mContinueCB({ direction, currentStepId });
+      this.mContinueCB({ direction: dir, currentStepId });
     }
   }
 
