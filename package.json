@@ -54,7 +54,7 @@
     "preinstall": "git submodule update --init --recursive && yarn build-preinstall",
     "build-preinstall": "yarn build-fomod-ipc && yarn build-fomod-native",
     "build-fomod-ipc": "cd extensions/fomod-installer/src/ModInstaller.IPC.TypeScript && yarn install && yarn build && cd ../../../../",
-    "build-fomod-native": "cd extensions/fomod-installer/src/ModInstaller.Native.TypeScript && yarn install && yarn build && cd ../../../../",
+    "build-fomod-native": "cd extensions/fomod-installer/src/ModInstaller.Native.TypeScript && yarn build-native && yarn install && yarn build && cd ../../../../",
     "postinstall": "node postinstall.js",
     "test": "jest --no-cache",
     "lint": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet",
