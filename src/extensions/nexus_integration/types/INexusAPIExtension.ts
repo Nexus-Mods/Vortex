@@ -1,4 +1,4 @@
-import { EndorsedStatus, ICollection, ICollectionManifest, ICollectionQuery, ICollectionSearchOptions, ICollectionSearchResult, IDownloadURL, IFeedbackResponse, IFileInfo, IIssue, IRevision } from '@nexusmods/nexus-api';
+import { EndorsedStatus, IModFileContentPage, ICollection, ICollectionManifest, ICollectionQuery, ICollectionSearchOptions, ICollectionSearchResult, IDownloadURL, IFeedbackResponse, IFileInfo, IIssue, IModFileContentPageQuery, IModFileContentSearchFilter, IRevision } from '@nexusmods/nexus-api';
 import { IMod } from '../../mod_management/types/IMod';
 
 export interface INexusAPIExtension {
@@ -38,4 +38,6 @@ export interface INexusAPIExtension {
   nexusDownloadUpdate?: (source: string, gameId: string, modId: string,
     fileId: string, versionPattern: string,
     campaign: string, referenceTag?: string) => PromiseLike<{ error: Error, dlId?: string }>;
+  nexusModFileContents?: (query: IModFileContentPageQuery, filter?: IModFileContentSearchFilter,
+    offset?: number, count?: number) => PromiseLike<Partial<IModFileContentPage>>;
 }
