@@ -30,7 +30,7 @@ import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
 
-import { getCollectionActiveSession, getCollectionModsByPhase, getCollectionSessionById, isCollectionPhaseComplete } from '../collections_integration/selectors';
+import { getCollectionActiveSession, getCollectionInstallProgress, getCollectionModsByPhase, getCollectionSessionById, isCollectionInstalling, isCollectionPhaseComplete } from '../collections_integration/selectors';
 import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
@@ -78,6 +78,7 @@ import * as Redux from 'redux';
 
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
+import { generateCollectionSessionId } from '../collections_integration/util';
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -257,30 +258,6 @@ function getReadyDownloadId(
 
 function getModsByPhase(allMods: any[], phase: number): any[] {
   return allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
-}
-
-function getRequiredMods(mods: any[]): any[] {
-  return mods.filter((mod: any) => mod.type === 'requires');
-}
-
-function isModCompleted(mod: any): boolean {
-  return ['installed', 'failed', 'skipped'].includes(mod.status);
-}
-
-function checkPhaseCompletion(phaseMods: any[]): {
-  isComplete: boolean;
-  completed: number;
-  total: number;
-} {
-  const requiredMods = getRequiredMods(phaseMods);
-  const completedCount = requiredMods.filter(isModCompleted).length;
-  const totalCount = requiredMods.length;
-
-  return {
-    isComplete: completedCount >= totalCount,
-    completed: completedCount,
-    total: totalCount
-  };
 }
 
 function withActivityTracking<T>(
@@ -1847,31 +1824,24 @@ class InstallManager {
           return resolve();
         }
 
-        // Count total pending and active across all phases
-        let totalPending = 0;
-        let totalActive = 0;
-        phaseState.pendingByPhase.forEach(queue => totalPending += queue.length);
-        phaseState.activeByPhase.forEach(count => totalActive += count);
+        const collectionInstallProgress = getCollectionInstallProgress(api.getState());
 
         // Check for queued deployments
         const deploymentPromises = phaseState.deploymentPromises || new Map<number, Promise<void>>();
         const hasQueuedDeployments = deploymentPromises.size > 0;
 
-        if (totalPending === 0 && totalActive === 0 && !hasQueuedDeployments) {
-          // All phases are settled and no deployments queued
+        if (collectionInstallProgress.isComplete) {
           log('debug', 'All phases complete', { sourceModId });
           return resolve();
         } else {
-          // Continue polling until all phases are complete
-          const pendingByPhaseDetail: { [phase: number]: number } = {};
-          phaseState.pendingByPhase.forEach((queue, phase) => {
-            if (queue.length > 0) {
-              pendingByPhaseDetail[phase] = queue.length;
-            }
-          });
-
           const currentPhaseComplete = isCollectionPhaseComplete(api.getState(), phaseState.allowedPhase ?? 0);
-          if (currentPhaseComplete && deploymentPromises.size === 0) {
+          const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, phaseState.allowedPhase ?? 0);
+          if (!currentPhaseComplete && (collectionStatus.needsRequeue) && !this.hasActiveOrPendingInstallation(sourceModId)) {
+            // Requeue downloaded mods if phase is not complete and there are no active installations
+            // This handles cases where downloads finish after installations start, or MD5 lookups complete late
+            this.reQueueDownloadedMods(api, sourceModId, collectionStatus.allMods, phaseState.allowedPhase ?? 0);
+          }
+          if (!hasQueuedDeployments && !this.hasActiveOrPendingInstallation(sourceModId)) {
             this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseState.allowedPhase ?? 0);
           }
           setTimeout(poll, POLL_MS);
@@ -1917,67 +1887,56 @@ class InstallManager {
 
         // Check collection completion status
         const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, checkPhase);
-
-        // Check if phase is settled FIRST (before requeue to avoid deadlock)
-        // Deploy when phase is complete AND no active installations
-        const phaseLogicallyComplete = collectionStatus.phaseComplete;
-        const installationsComplete = isCollectionPhaseComplete(api.getState(), checkPhase);
-
         const existing = phaseState?.deploymentPromises.get(checkPhase);
-        if (phaseLogicallyComplete) {
-          if ((existing?.deployOnSettle) && !hasDeployed) {
-            // Set deployment flag to block new installations during deployment
-            if (phaseState) {
-              phaseState.isDeploying = true;
-            }
+        if ((existing?.deployOnSettle) && !hasDeployed) {
+          // Set deployment flag to block new installations during deployment
+          if (phaseState) {
+            phaseState.isDeploying = true;
+          }
 
-            // Deploy mods for this phase
-            toPromise(cb => api.events.emit('deploy-mods', cb))
-              .then(() => {
-                if (phaseState) {
-                  phaseState.isDeploying = false;
-                  // Start any installations that were queued during deployment
-                  hasDeployed = true;
-                  setTimeout(poll, POLL_MS);
-                }
-                resolve();
-              })
-              .catch(err => {
-                log('warn', 'deploy-mods failed after phase settle', {
-                  sourceModId,
-                  phase: checkPhase,
-                  error: err?.message
-                });
-                if (phaseState) {
-                  phaseState.isDeploying = false;
-                  // Start any installations that were queued during deployment, even if deployment failed
-                  this.startPendingForPhase(sourceModId, checkPhase);
-                }
-                resolve(); // Resolve anyway to avoid hanging
-              });
-          } else {
-            if (installationsComplete && phaseLogicallyComplete) {
+          // Deploy mods for this phase
+          toPromise(cb => api.events.emit('deploy-mods', cb))
+            .then(() => {
               if (phaseState) {
                 phaseState.isDeploying = false;
                 // Start any installations that were queued during deployment
-                phaseState.deployedPhases.add(checkPhase);
-                this.startPendingForPhase(sourceModId, checkPhase);
-                this.maybeAdvancePhase(sourceModId, api);
+                hasDeployed = true;
+                setTimeout(poll, POLL_MS);
               }
               resolve();
-            } else {
-              setTimeout(poll, POLL_MS);
-            }
-          }
-        } else if (installationsComplete && (!phaseLogicallyComplete || collectionStatus.needsRequeue || collectionStatus.downloadedCount > 0)) {
-          // Requeue downloaded mods if phase is not complete and there are no active installations
-          // This handles cases where downloads finish after installations start, or MD5 lookups complete late
-          this.reQueueDownloadedMods(api, sourceModId, collectionStatus.allMods, checkPhase);
-          // Continue polling after re-queue
-          setTimeout(poll, POLL_MS);
+            })
+            .catch(err => {
+              log('warn', 'deploy-mods failed after phase settle', {
+                sourceModId,
+                phase: checkPhase,
+                error: err?.message
+              });
+              if (phaseState) {
+                phaseState.isDeploying = false;
+                // Start any installations that were queued during deployment, even if deployment failed
+                this.startPendingForPhase(sourceModId, checkPhase);
+              }
+              resolve(); // Resolve anyway to avoid hanging
+            });
         } else {
-          // Continue polling
-          setTimeout(poll, POLL_MS);
+          if (collectionStatus.phaseComplete) {
+            if (phaseState) {
+              phaseState.isDeploying = false;
+              // Start any installations that were queued during deployment
+              phaseState.deployedPhases.add(checkPhase);
+              this.startPendingForPhase(sourceModId, checkPhase);
+              this.maybeAdvancePhase(sourceModId, api);
+            }
+            resolve();
+          } else if (!collectionStatus.phaseComplete && (collectionStatus.needsRequeue) && !this.hasActiveOrPendingInstallation(sourceModId)) {
+              // Requeue downloaded mods if phase is not complete and there are no active installations
+              // This handles cases where downloads finish after installations start, or MD5 lookups complete late
+              this.reQueueDownloadedMods(api, sourceModId, collectionStatus.allMods, checkPhase);
+              // Continue polling after re-queue
+              setTimeout(poll, POLL_MS);
+          } else {
+            setTimeout(poll, POLL_MS);
+          }
         }
       };
 
@@ -1995,7 +1954,9 @@ class InstallManager {
     modsNeedingRequeue: number;
   } {
     const state = api.getState();
-    const activeCollectionSession = getCollectionSessionById(state, sourceModId);
+    const profile = activeProfile(state);
+    const sessionId = generateCollectionSessionId(sourceModId, profile?.id);
+    const activeCollectionSession = getCollectionSessionById(state, sessionId);
 
     if (!activeCollectionSession) {
       return { phaseComplete: true, needsRequeue: false, allMods: [], downloadedCount: 0, modsNeedingRequeue: 0 };
@@ -2005,13 +1966,12 @@ class InstallManager {
     const allMods = Object.values(mods);
     const currentPhaseMods = getModsByPhase(allMods, phase);
 
-    const phaseCompletionResult = checkPhaseCompletion(currentPhaseMods);
-    const { isComplete: phaseComplete } = phaseCompletionResult;
+    const phaseComplete = isCollectionPhaseComplete(api.getState(), phase);
 
     // Only count downloaded mods from the current phase being checked
     const allDownloadedMods = currentPhaseMods.filter((mod: any) => mod.status === 'downloaded');
     const downloadedCount = allDownloadedMods.length;
-    
+
     // Debug: Show status distribution
     const statusCounts = {};
     allMods.forEach((mod: any) => {
@@ -2041,8 +2001,11 @@ class InstallManager {
   }
 
   // Helper to check if an archiveId has pending or active installations
-  private hasActiveOrPendingInstallation(sourceModId: string, archiveId: string): boolean {
+  private hasActiveOrPendingInstallation(sourceModId: string, archiveId?: string): boolean {
     let hasPending = false;
+    if (!archiveId) {
+      return this.mPendingInstalls.size > 0 || this.mActiveInstalls.size > 0;
+    }
     const installKey = this.generateDependencyInstallKey(sourceModId, archiveId);
     if (this.mPendingInstalls.get(installKey)) {
       hasPending = true;
@@ -2143,11 +2106,10 @@ class InstallManager {
     if (anyMarkedSkipped) {
       const phasesToCheck = Array.from(downloadedPhases).filter(p => p <= (phaseState.allowedPhase ?? 0));
       phasesToCheck.forEach(checkPhase => {
-        const phaseMods = getModsByPhase(allMods, checkPhase);
-        const completion = checkPhaseCompletion(phaseMods);
+        const completion = isCollectionPhaseComplete(api.getState(), checkPhase);
 
         // If all required mods are complete and phase not already deployed, schedule deployment
-        if (completion.isComplete && !phaseState.deployedPhases.has(checkPhase)) {
+        if (completion && !phaseState.deployedPhases.has(checkPhase)) {
           // Schedule deployment which will mark the phase as deployed when it completes
           this.scheduleDeployOnPhaseSettled(api, sourceModId, checkPhase);
         }
@@ -3209,7 +3171,7 @@ class InstallManager {
     return new Bluebird<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mods: IMod[] = Object.values(state.persistent.mods[gameId])
-        .filter(mod => modIds.includes(mod.id));
+        .filter(mod => modIds.includes(mod.id) && mod.state === 'installed');
       if (mods.length === 0) {
         // Technically for this to happen the timing must be *perfect*,
         //  the replace query dialog will only show if we manage to confirm that
@@ -4406,10 +4368,9 @@ class InstallManager {
         // Find the highest phase where all required mods are complete
         let highestCompletedPhase = -1;
         Array.from(allPhases).sort((a, b) => a - b).forEach(phase => {
-          const phaseMods = getModsByPhase(allMods, phase);
-          const completion = checkPhaseCompletion(phaseMods);
+          const isPhaseComplete = isCollectionPhaseComplete(api.getState(), phase);
 
-          if (completion.isComplete && completion.total > 0) {
+          if (isPhaseComplete) {
             highestCompletedPhase = phase;
           }
         });
