@@ -7,6 +7,9 @@ const Bluebird = require('bluebird');
 // We need to mock the util object with storeHelper functions
 const storeHelper = require('../src/util/storeHelper');
 
+global.modsInstalled = 0;
+global.suppressLogging = false;
+
 // Polyfill for Node.js functions not available in jsdom
 if (typeof global.setImmediate === 'undefined') {
   global.setImmediate = (callback, ...args) => {
@@ -598,7 +601,7 @@ class MockTestAPI {
           progressCB(numBytes, numBytes);
         }
       } catch (err) {
-        console.warn(`⚠️ Could not stat file for MD5: ${filePath}`);
+        // File not found or error - return 0 bytes
       }
 
       return Promise.resolve({ md5sum, numBytes });
@@ -807,9 +810,12 @@ class MockTestAPI {
 
     // Notification methods
     this.showErrorNotification = (title, message, details) => {
-      console.error(`❌ Error: ${title} - ${message}`, details);
-      if (message && message.stack) {
-        console.error(`   📋 Stack trace:`, message.stack);
+      // Suppress error notifications after tests complete
+      if (!global.suppressLogging) {
+        console.error(`❌ Error: ${title} - ${message}`, details);
+        if (message && message.stack) {
+          console.error(`   📋 Stack trace:`, message.stack);
+        }
       }
       return Promise.resolve();
     };
@@ -940,7 +946,27 @@ const vortexApi = {
       return fs.existsSync(filePath);
     },
   },
-  log: (level, message, meta) => console.log(`[${level}] ${message}`, meta || ''),
+  log: (level, message, meta) => {
+    // Suppress logging after tests complete to avoid Jest warnings
+    if (!global.suppressLogging) {
+      // Use console.error for error level logs, console.log for others
+      const logFn = level === 'error' ? console.error : console.log;
+      logFn(`[${level}] ${message}`, meta || '');
+
+      // Debug: Show what we're checking for installation messages
+      if (message.includes('Installation') || message.includes('install')) {
+        console.log(`🔍 Message check: "${message}", exact match: ${message === 'Installation completed successfully'}, has meta: ${!!meta}, has modId: ${!!(meta && meta.modId)}, current count: ${global.modsInstalled || 0}`);
+      }
+    }
+
+    // Increment counter when installation completes successfully
+    if (message === 'Installation completed successfully' && meta && meta.modId) {
+      global.modsInstalled = (global.modsInstalled || 0) + 1;
+      if (!global.suppressLogging) {
+        console.log(`✅ Incremented modsInstalled to ${global.modsInstalled} for mod ${meta.modId}`);
+      }
+    }
+  },
   selectors: {
     installPathForGame: (state, gameId) => {
       return global.testInstallPath || '/tmp/vortex-test/installs';
@@ -988,6 +1014,48 @@ const vortexApi = {
       }];
     },
     lastActiveProfileForGame: (state, gameId) => 'default',
+    // Collection selectors
+    getCollectionInstallProgress: (state) => {
+      const session = state?.session?.collections?.activeSession;
+      if (!session) {
+        return null;
+      }
+
+      const totalRequired = session.totalRequired || 25;
+      const totalOptional = session.totalOptional || 0;
+      const downloadedCount = session.downloadedCount || 0;
+      const installedCount = session.installedCount || global.modsInstalled || 0;
+      const failedCount = session.failedCount || 0;
+      const skippedCount = session.skippedCount || 0;
+
+      const downloadProgress = totalRequired > 0
+        ? Math.round((downloadedCount / totalRequired) * 100)
+        : 0;
+
+      const installProgress = totalRequired > 0
+        ? Math.round((installedCount / totalRequired) * 100)
+        : 0;
+
+      // isComplete is true ONLY when compatibility info has been added (debug log emitted)
+      const isComplete = global.modsInstalled >= totalRequired;
+
+      // Suppress logging once installation is complete to avoid Jest warnings about logging after tests
+      if (isComplete && !global.suppressLogging) {
+        global.suppressLogging = true;
+      }
+
+      return {
+        totalRequired,
+        totalOptional,
+        downloadedCount,
+        installedCount,
+        failedCount,
+        skippedCount,
+        downloadProgress,
+        installProgress,
+        isComplete,
+      };
+    },
   },
   genMd5Hash,
   createMockApiMethods,

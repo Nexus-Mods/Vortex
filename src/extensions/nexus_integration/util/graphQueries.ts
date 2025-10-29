@@ -96,6 +96,10 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   overallRating: true,
   overallRatingCount: true,
   viewerIsBlocked: true,
+  permissions: {
+    global: true,
+    key: true,
+  },
   recentRating: true,
   recentRatingCount: true,
 };
@@ -130,6 +134,7 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   },
   game: {
     domainName: true,
+    id: true,
     name: true
   },
   latestPublishedRevision: {

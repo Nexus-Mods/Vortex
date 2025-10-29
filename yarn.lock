@@ -1696,8 +1696,8 @@
     "@tybys/wasm-util" "^0.10.1"
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
-  version "1.4.35"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/7f2c674bae56d6db8221ed802e8b0efbecac8e2b"
+  version "1.4.38"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/0ab68267f586991e7f8b67d3607fba8c5f9be5fb"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
@@ -11142,9 +11142,9 @@ set-blocking@^2.0.0, set-blocking@~2.0.0:
   integrity sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==
 
 set-cookie-parser@^2.4.6:
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/set-cookie-parser/-/set-cookie-parser-2.7.1.tgz#3016f150072202dfbe90fadee053573cc89d2943"
-  integrity sha512-IOc8uWeOZgnb3ptbCURJWNjWUPcO3ZnTTdzsurqERrP6nPyv+paC55vJM0LpOlT2ne+Ix+9+CRG1MNLlyZ4GjQ==
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/set-cookie-parser/-/set-cookie-parser-2.7.2.tgz#ccd08673a9ae5d2e44ea2a2de25089e67c7edf68"
+  integrity sha512-oeM1lpU/UvhTxw+g3cIfxXHyJRc/uidd3yK1P242gzHds0udQBYzs3y8j4gCCW+ZJ7ad0yctld8RYO+bdurlvw==
 
 set-function-length@^1.2.2:
   version "1.2.2"
@@ -12568,8 +12568,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1-r21"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/7e0b385a796da4a98ad1d1a0492135ecc1c4966f"
+  version "1.9.1-r28"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/d8a302c90ddf44d3b266702d39a3d18e9404345e"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

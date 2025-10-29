@@ -36,6 +36,9 @@ import {
   installPathForGame,
   modPathsForGame,
   profileById,
+  getCollectionActiveSession,
+  getCollectionModByReference,
+  getCollectionCurrentPhase,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
@@ -64,6 +67,7 @@ import {IMod, IModReference} from './types/IMod';
 import {InstallFunc} from './types/InstallFunc';
 import {IRemoveModOptions} from './types/IRemoveModOptions';
 import {IResolvedMerger} from './types/IResolvedMerger';
+import {ISchedulePhaseDeploymentForMod} from './types/ISchedulePhaseDeploymentForMod';
 import {TestSupported} from './types/TestSupported';
 import { fallbackPurge, loadActivation,
         saveActivation, withActivationLock } from './util/activationStore';
@@ -110,6 +114,7 @@ import React from 'react';
 import * as Redux from 'redux';
 import shortid = require('shortid');
 import { types } from '../..';
+import { ICollectionModInstallInfo } from '../collections_integration/types';
 
 interface IAppContext {
   isProfileChanging: boolean
@@ -1763,6 +1768,18 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     once(context.api);
+
+    context.api.onAsync('schedule-phase-deployment', (modDeployInfo: ISchedulePhaseDeploymentForMod) => {
+      // Handle the scheduled phase deployment for the mod
+      const state: IState = context.api.store.getState();
+      const activeCollection = getCollectionActiveSession(state);
+      if (activeCollection == null) {
+        return Promise.resolve();
+      }
+      const currentPhase = getCollectionCurrentPhase(state);
+      installManager.scheduleDeployOnPhaseSettled(context.api, activeCollection.collectionId, currentPhase, true);
+      return installManager.awaitScheduledDeployment(activeCollection.collectionId, currentPhase);
+    });
 
     history.init();
   });

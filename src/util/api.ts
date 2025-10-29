@@ -11,6 +11,7 @@ import {
   resolveCategoryName,
   resolveCategoryPath
 } from '../extensions/category_management/util/retrieveCategoryPath';
+import { generateCollectionSessionId, modRuleId } from '../extensions/collections_integration/util';
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
@@ -80,12 +81,13 @@ import { runElevated, runThreaded } from 'vortex-run';
 import getTextModManagement from '../extensions/mod_management/texts';
 import getTextProfileManagement from '../extensions/profile_management/texts';
 import { CollectionsDownloadCompletedEvent,
+  CollectionsDownloadClickedEvent,
   CollectionsDownloadFailedEvent,
   CollectionsDownloadCancelledEvent,
   CollectionsInstallationStartedEvent, 
   CollectionsInstallationCompletedEvent,
   CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent
+  CollectionsInstallationCancelledEvent,
 } from '../extensions/analytics/mixpanel/MixpanelEvents';
 
 export * from './network';
@@ -120,6 +122,7 @@ export {
   findModByRef,
   GameNotFound,
   GameStoreHelper,
+  generateCollectionSessionId,
   getActivator,
   getApplication,
   getCurrentActivator,
@@ -154,6 +157,7 @@ export {
   makeRemoteCall,
   makeUnique,
   makeUniqueByKey,
+  modRuleId,
   MissingInterpreter,
   nexusGameId,
   nexusModsURL,
@@ -204,7 +208,8 @@ export {
   CollectionsInstallationStartedEvent,
   CollectionsInstallationCompletedEvent,
   CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent
+  CollectionsInstallationCancelledEvent,
+  CollectionsDownloadClickedEvent
 };
 
 // getText functions are rolled up into one function

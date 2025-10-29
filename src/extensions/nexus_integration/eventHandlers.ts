@@ -36,8 +36,8 @@ import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
                 ICollectionSearchResult,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
-                IIssue, IModInfo, IRating, IRevision, IUserInfo, NexusError,
-                ProtocolError,
+                IIssue, IModFileContentPage, IModInfo, IRating, IRevision, IUserInfo, NexusError,
+                ProtocolError, IModFileContentPageQuery, IModFileContentSearchFilter,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as path from 'path';
@@ -673,6 +673,18 @@ export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
           allowReport: false,
         });
         return Promise.resolve([]);
+      });
+  };
+}
+
+export function onModFileContents(api: IExtensionApi, nexus: Nexus) : (...args: any[]) => Promise<Partial<IModFileContentPage>> {
+  return (query: IModFileContentPageQuery, filter?: IModFileContentSearchFilter, offset?: number, count?: number) => {
+    return Promise.resolve(nexus.modFileContents(query, filter, offset, count))
+      .catch(err => {
+        api.showErrorNotification('Failed to get mod file contents', err, {
+          allowReport: false,
+        });
+        return Promise.resolve({});
       });
   };
 }

@@ -24,7 +24,7 @@ export interface CollectionTileProps {
   stats: {
     endorsements: number;
     modCount: number;
-    size: string;  // e.g., '540MB'
+    size: number;  // e.g., '540MB'
   };
   description: string;
   version?: string;
@@ -156,7 +156,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    { numeral(stats.endorsements).format('0.0a') }
+                    { numeral(stats.endorsements).format('0 a') }
                   </Typography>
                 </div>
 
@@ -170,7 +170,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {numeral(stats.size).format('0.0b')}
+                    {numeral(stats.size).format('0.0 b')}
                   </Typography>
                 </div>
 

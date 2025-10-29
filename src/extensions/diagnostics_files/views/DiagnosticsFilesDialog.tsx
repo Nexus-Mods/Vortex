@@ -24,6 +24,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import lazyRequire from '../../../util/lazyRequire';
+import { util } from '../../..';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -72,12 +73,14 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     if (!this.props.visible && nextProps.visible) {
       this.setState(update(this.state, {
         sessionIdx: { $set: -1 },
-        show: { $set: {
-          error: true,
-          warn: true,
-          info: true,
-          debug: false,
-        } },
+        show: {
+          $set: {
+            error: true,
+            warn: true,
+            info: true,
+            debug: false,
+          }
+        },
       }));
 
       this.updateLogs();
@@ -128,11 +131,17 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       <Modal bsSize='lg' show={visible} onHide={this.props.onHide}>
         <Modal.Header>
           <Modal.Title>
-            {t('Diagnostics Files')}
+            {t('View Logs')}
           </Modal.Title>
         </Modal.Header>
         {body}
         <Modal.Footer>
+          <Button
+            id='open-log-folder'
+            onClick={this.openLogFolder}
+          >
+            {t('Open Log Folder')}
+          </Button>
           <Button
             id='close'
             onClick={this.props.onHide}
@@ -154,7 +163,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     let isCrashed = '';
     if ((session.from === undefined)
-        && !session.logs[session.logs.length - 1].text.endsWith('clean application end')) {
+      && !session.logs[session.logs.length - 1].text.endsWith('clean application end')) {
       isCrashed = ` - ${t('Crashed')}!`;
     }
 
@@ -212,8 +221,8 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
               {t(type.toUpperCase())}
             </Checkbox>
           </div>
-        )) }
-        <FlexLayout.Flex/>
+        ))}
+        <FlexLayout.Flex />
         <Button onClick={this.copyToClipboard}>
           {t('Copy to Clipboard')}
         </Button>
@@ -222,7 +231,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
             id={`report-log-${sessionIdx}`}
             onClick={this.reportLog}
           >
-          {t('Report')}
+            {t('Report')}
           </Button>
         ) : null}
       </FlexLayout>
@@ -300,6 +309,11 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       .map(line => `${line.time} - ${line.type}: ${line.text}`)
       .join(os.EOL);
     remote.clipboard.writeText(filteredLog);
+  }
+
+  private openLogFolder = () => {
+    const logPath = getVortexPath('userData');
+    util.opn(logPath);
   }
 
   private reportLog = (evt) => {

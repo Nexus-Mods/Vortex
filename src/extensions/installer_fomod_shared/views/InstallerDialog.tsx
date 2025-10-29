@@ -519,12 +519,16 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
   private next = () => {
     const { events } = this.context.api;
-    const { activeInstanceId } = this.props;
+    const { activeInstanceId, installerState } = this.props;
     this.setState(update(this.state, {
       waiting: { $set: true },
     }));
 
-    events.emit(`fomod-installer-continue-${activeInstanceId}`, 'forward', this.props.installerState.currentStep);
+    const idx = installerState.currentStep;
+    const steps = installerState.installSteps;
+    const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
+    const direction = nextVisible ? 'forward' : 'finish';
+    events.emit(`fomod-installer-continue-${activeInstanceId}`, direction, this.props.installerState.currentStep);
   }
   private cancel = () => {
     const { events } = this.context.api;

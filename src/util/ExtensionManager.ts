@@ -2480,6 +2480,7 @@ class ExtensionManager {
       'file_based_loadorder',
       'mod_management',
       'category_management',
+      'collections_integration',
       'profile_management',
       'nexus_integration',
       'download_management',
@@ -2511,7 +2512,8 @@ class ExtensionManager {
       'analytics',
       'onboarding_dashlet',
       'mod_spotlights_dashlet',
-      'tailwind_dev'
+      'tailwind_dev',
+      'browse_nexus'
     ];
 
     require('./extensionRequire').default(() => this.extensions);

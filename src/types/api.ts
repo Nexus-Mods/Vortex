@@ -27,6 +27,12 @@ export { IStarterInfo } from '../util/StarterInfo';
 
 export { IRegisteredExtension } from '../util/ExtensionManager';
 
+export {
+  ICollectionInstallState,
+  ICollectionModInstallInfo,
+  ICollectionInstallSession,
+  CollectionModStatus,
+} from '../extensions/collections_integration/types';
 export { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 export {
   LoadOrder,

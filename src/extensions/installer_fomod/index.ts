@@ -1419,7 +1419,30 @@ function init(context: IExtensionContext): boolean {
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
     const shouldBypassDialog = canBeUnattended && (unattended === true);
     const instanceId = shortid();
-    const coreDelegates = new Core(context.api, gameId, shouldBypassDialog, instanceId);
+    let choices;
+
+    const onFinish = () => {
+      const state = context.api.store.getState();
+      const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
+      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
+
+      choices = (dialogState?.installSteps === undefined)
+        ? undefined
+        : dialogState.installSteps.map(step => {
+          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+          return {
+            name: step.name,
+            groups: (ofg.group || []).map(group => ({
+              name: group.name,
+              choices: group.options
+                .filter(opt => opt.selected)
+                .map(opt => ({ name: opt.name, idx: opt.id })),
+            })),
+          };
+        });
+    };
+
+    const coreDelegates = new Core(context.api, gameId, shouldBypassDialog, instanceId, [onFinish]);
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
     // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
     const stopPatterns = details.hasInstructionsOverrideFile ? uniPatterns : getStopPatterns(gameId, getGame(gameId));
@@ -1434,8 +1457,20 @@ function init(context: IExtensionContext): boolean {
     context.api.store.dispatch(setInstallerDataPath(scriptPath, instanceId));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
-      ? (choicesIn.options ?? {})
-      : undefined;
+    ? (choicesIn.options ?? {})
+    : undefined;
+    
+    const hasModuleConfig = files.some(file => path.basename(file).toLowerCase() === 'moduleconfig.xml');
+    if (hasModuleConfig && !shouldBypassDialog) {
+      // This mod will require user interaction, we need to make sure
+      //  the the previous phase is deployed.
+      await context.api.emitAndAwait('schedule-phase-deployment', {
+        modReference: details.modReference,
+        gameId,
+        modId: path.basename(scriptPath, '.installing'),
+        archivePath,
+      });
+    }
 
     const invokeInstall = async (validate: boolean) => {
       const result = await install(
@@ -1443,31 +1478,12 @@ function init(context: IExtensionContext): boolean {
         scriptPath, fomodChoices, validate, progressDelegate, coreDelegates,
         context.api.store);
 
-      const state = context.api.store.getState();
-      const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
-
-      const choices = (dialogState?.installSteps === undefined)
-        ? undefined
-        : dialogState.installSteps.map(step => {
-          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-          return {
-            name: step.name,
-            groups: (ofg.group || []).map(group => ({
-              name: group.name,
-              choices: group.options
-                .filter(opt => opt.selected)
-                .map(opt => ({ name: opt.name, idx: opt.id })),
-            })),
-          };
-        });
-
       result.instructions.push({
         type: 'attribute',
         key: 'installerChoices',
         value: {
           type: 'fomod',
-          options: choices,
+          options: choices ?? fomodChoices,
         },
       });
       return result;
