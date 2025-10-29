@@ -84,7 +84,7 @@
     "react-sortable-tree": "Nexus-Mods/react-sortable-tree",
     "recharts": "^1.8.5",
     "redux": "^4.0.4",
-    "redux-act": "^1.7.7",
+    "redux-act": "^1.8.0",
     "redux-batched-actions": "^0.5.0",
     "redux-thunk": "^2.3.0",
     "relaxed-json": "^1.0.3",
