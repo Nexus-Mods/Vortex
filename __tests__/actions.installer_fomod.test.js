@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/installer_fomod/actions/installerUI';
+import * as actions from '../src/extensions/installer_fomod_shared/actions/installerUI';
 
 
 describe('startDialog', () => {
