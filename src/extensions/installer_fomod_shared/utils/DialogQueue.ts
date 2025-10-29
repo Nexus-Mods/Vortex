@@ -1,24 +1,26 @@
-import { types as vetypes } from 'fomod-installer-native';
-import { DialogManager } from './DialogManager';
-import { endDialog } from '../../installer_fomod_shared/actions/installerUI';
-import { hasActiveFomodDialog } from '../../installer_fomod_shared/util/gameSupport';
 import { log } from '../../../util/log';
 
-interface QueuedDialogRequest {
-  moduleName: string;
-  image: vetypes.IHeaderImage;
-  selectCallback: vetypes.SelectCallback;
-  contCallback: vetypes.ContinueCallback;
-  cancelCallback: vetypes.CancelCallback;
+import { endDialog } from '../actions/installerUI';
+import { IInstallerInfo } from '../types/interface';
+import { IExtensionApi } from '../../../types/api';
+
+import { hasActiveFomodDialog } from './gameSupport';
+
+export interface IDialogManager {
+  startDialogImmediate(info: IInstallerInfo, callback: (err: any) => void): void;
   instanceId: string;
-  timestamp: number;
-  uiInstance: DialogManager;
+  api: IExtensionApi;
 }
 
-/**
- * Shared static queue across all DialogManager instances to prevent race conditions
- * Ensures only one FOMOD dialog is active at a time
- */
+interface QueuedDialogRequest {
+  info: IInstallerInfo;
+  instanceId: string;
+  callback: (err) => void;
+  timestamp: number;
+  uiInstance: IDialogManager;
+}
+
+// Shared static queue across all UI instances to prevent race conditions
 export class DialogQueue {
   private static instance: DialogQueue;
   private queue: QueuedDialogRequest[] = [];
@@ -49,7 +51,7 @@ export class DialogQueue {
         if (this.queue[0] && this.queue[0].uiInstance && this.queue[0].uiInstance.api) {
           const store = this.queue[0].uiInstance.api.store;
 
-          this.processNext(store).catch((err) => {
+          this.processNext(store).catch(err => {
             log('error', 'Periodic queue processing failed', { error: err.message });
           });
         }
@@ -65,30 +67,22 @@ export class DialogQueue {
   }
 
   async addRequest(
-    moduleName: string,
-    image: vetypes.IHeaderImage,
-    selectCallback: vetypes.SelectCallback,
-    contCallback: vetypes.ContinueCallback,
-    cancelCallback: vetypes.CancelCallback,
-    uiInstance: DialogManager,
-    store: any
-  ): Promise<void> {
+    info: IInstallerInfo,
+    callback: (err) => void,
+    uiInstance: IDialogManager): Promise<void> {
     this.queue.push({
-      moduleName,
-      image,
-      selectCallback,
-      contCallback,
-      cancelCallback,
+      info,
+      callback,
       timestamp: Date.now(),
       uiInstance,
-      instanceId: uiInstance.instanceId,
+      instanceId: uiInstance.instanceId
     });
 
     // Trigger queue processing immediately if no dialog is active
-    if (!hasActiveFomodDialog(store)) {
+    if (!hasActiveFomodDialog(uiInstance.api.store)) {
       log('debug', 'No active dialog detected, triggering immediate queue processing');
       setTimeout(() => {
-        this.processNext(store).catch((err) => {
+        this.processNext(uiInstance.api.store).catch(err => {
           log('error', 'Failed to process queue immediately', { error: err.message });
         });
       }, 10);
@@ -107,19 +101,38 @@ export class DialogQueue {
         const request = this.queue.shift();
         if (request) {
           try {
-            request.uiInstance.startDialogImmediate(
-              request.moduleName,
-              request.image,
-              request.selectCallback,
-              request.contCallback,
-              request.cancelCallback
-            );
-          } catch (err) {
-            log('error', 'Dialog failed to start', {
-              moduleName: request.moduleName,
-              error: err.message,
+            request.uiInstance.startDialogImmediate(request.info, (err) => {
+              if (err) {
+                log('error', 'Dialog failed to start', {
+                  moduleName: request.info.moduleName,
+                  error: err.message,
+                  errorCode: err.code
+                });
+
+                // Check if this is an installer executable failure
+                if (err.message.includes('ModInstallerIPC.exe') ||
+                    err.message.includes('FOMOD installer executable') ||
+                    err.message.includes('Failed to resolve full path') ||
+                    err.message.includes('exited with code') ||
+                    err.code === 'ENOENT' ||
+                    err.code === 'EACCES') {
+                  log('warn', 'FOMOD installer executable failure detected in queue processing', {
+                    moduleName: request.info.moduleName,
+                    error: err.message,
+                    code: err.code
+                  });
+                }
+
+                this.onDialogEnd(store);
+              }
+
+              request.callback(err);
             });
+          } catch (err) {
             this.onDialogEnd(store);
+            request.callback(err);
+            // Try next request after a brief delay
+            setTimeout(() => this.processNext(store), 100);
           }
         }
       }
@@ -129,16 +142,15 @@ export class DialogQueue {
   }
 
   onDialogEnd(store: any): void {
-    const state = store.getState();
-    const activeInstanceId = state?.session?.fomod?.installer?.dialog?.activeInstanceId;
-    if (activeInstanceId) {
-      store.dispatch(endDialog(activeInstanceId));
-    }
+    const activeInstanceId = store.getState()?.session?.fomod?.installer?.dialog?.activeInstanceId;
+    store.dispatch(endDialog(activeInstanceId));
+    // Remove the active dialog from the queue if it exists
+    this.queue = this.queue.filter(request => request.instanceId !== activeInstanceId);
 
     // Process next request after a brief delay
     setTimeout(() => {
       log('debug', 'Triggering queue processing after dialog end');
-      this.processNext(store).catch((err) => {
+      this.processNext(store).catch(err => {
         log('error', 'Failed to process dialog queue after dialog end', { error: err.message });
       });
     }, 50);
@@ -152,8 +164,12 @@ export class DialogQueue {
   }
 
   clear(): void {
-    // Clear all queued requests
+    // Notify all queued requests
+    this.queue.forEach(request => {
+      request.callback(new Error('Dialog queue cleared'));
+    });
     this.queue = [];
     this.processing = false;
   }
+
 }

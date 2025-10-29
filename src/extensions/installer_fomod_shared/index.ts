@@ -3,7 +3,7 @@ import InstallerDialog from './views/InstallerDialog';
 import { IChoiceType } from '../installer_fomod_shared/types/interface';
 import {
   initGameSupport,
-} from '../installer_fomod_shared/util/gameSupport';
+} from './utils/gameSupport';
 import { IExtensionContext, IMod } from '../../types/api';
 import { getSafe } from '../../util/api';
 import { installerUIReducer } from './reducers/installerUI';
@@ -22,11 +22,12 @@ function init(context: IExtensionContext): boolean {
     icon: 'inspect',
     placement: 'detail',
     calc: (mod: IMod) => {
-      const choices = getSafe(mod.attributes, ['installerChoices'], undefined);
+      // TODO: Typing
+      const choices = getSafe<IChoiceType | undefined>(mod.attributes, ['installerChoices'], undefined);
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return '<None>';
       }
-      return (choices.value?.options || choices.options || []).reduce((prev, step) => {
+      return (choices.options || []).reduce((prev, step) => {
         prev.push(...step.groups
           .filter(group => group.choices.length > 0)
           .map(group =>

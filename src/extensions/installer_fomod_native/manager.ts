@@ -1,29 +1,42 @@
 import path from 'path';
 import { Dirent, readdirSync, readFileSync } from 'node:fs';
 import { FileHandle, open, readdir } from 'node:fs/promises';
-import { NativeModInstaller, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
+import { NativeModInstaller, testSupported, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
 import { hasLoadOrder } from './utils/guards';
 import { IExtensionApi, IInstallResult, IState, ISupportedResult } from '../../types/api';
 import { getApplication, getGame } from '../../util/api';
 import { selectors } from '../..';
 import { DialogManager } from './utils/DialogManager';
 
-export class VortexModInstaller {
-  private static _instance: VortexModInstaller | undefined;
-
-  public static async getInstance(api: IExtensionApi): Promise<VortexModInstaller> {
-    if (!VortexModInstaller._instance) {
-      VortexModInstaller._instance = new VortexModInstaller(api);
+export class VortexModTester {
+  /**
+   * Calls FOMOD's testSupport and converts the result to Vortex data
+   */
+  public testSupport = (files: string[], allowedTypes: string[]): Promise<ISupportedResult> => {
+    try {
+    const result = testSupported(files, allowedTypes);
+    return Promise.resolve({
+      supported: result.supported,
+      requiredFiles: result.requiredFiles,
+    });
+    } catch (error) {
+      return Promise.resolve({
+        supported: false,
+        requiredFiles: [],
+      });
     }
+  };
+}
 
-    return VortexModInstaller._instance;
-  }
-
+export class VortexModInstaller {
   private modInstaller: NativeModInstaller;
   private api: IExtensionApi;
-  private DialogManager: DialogManager | undefined;
+  private instanceId: string;
+  private shouldBypassDialog: boolean;
+  private onFinish: () => void;
+  private DialogManager: DialogManager;
 
-  public constructor(api: IExtensionApi) {
+  public constructor(api: IExtensionApi, instanceId: string, shouldBypassDialog: boolean, onFinish: () => void) {
     this.modInstaller = new NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
@@ -38,47 +51,15 @@ export class VortexModInstaller {
     );
 
     this.api = api;
+    this.instanceId = instanceId;
+    this.shouldBypassDialog = shouldBypassDialog;
+    this.onFinish = onFinish;
   }
-
-  /**
-   * Calls FOMOD's testSupport and converts the result to Vortex data
-   */
-  public testSupport = (files: string[], allowedTypes: string[]): Promise<ISupportedResult> => {
-    try {
-    const result = this.modInstaller.testSupported(files, allowedTypes);
-    return Promise.resolve({
-      supported: result.supported,
-      requiredFiles: result.requiredFiles,
-    });
-    } catch (error) {
-      return Promise.resolve({
-        supported: false,
-        requiredFiles: [],
-      });
-    }
-  };
-
-  public startDialogManager = (instanceId: string, shouldBypassDialog: boolean): void => {
-    this.DialogManager = new DialogManager(this.api, shouldBypassDialog, instanceId);
-  };
-
-  public endDialogManager = (): void => {
-    if (!this.DialogManager) {
-      throw new Error('DialogManager not initialized');
-    }
-
-    this.DialogManager.detach();
-    this.DialogManager = undefined;
-  };
 
   /**
    * Calls FOMOD's install and converts the result to Vortex data
    */
   public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<IInstallResult> => {
-    if (!this.DialogManager) {
-      return Promise.reject(new Error('DialogManager not initialized'));
-    }
-    
     try {
       const resultRaw = await this.modInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
       return resultRaw as any;
@@ -165,9 +146,7 @@ export class VortexModInstaller {
     contCallback: vetypes.ContinueCallback,
     cancelCallback: vetypes.CancelCallback
   ): Promise<void> => {
-    if (!this.DialogManager) {
-      throw new Error('DialogManager not initialized');
-    }
+    this.DialogManager = new DialogManager(this.api, this.shouldBypassDialog, this.instanceId);
     await this.DialogManager.startDialog(moduleName, image, selectCallback, contCallback, cancelCallback);
   };
 
@@ -179,7 +158,13 @@ export class VortexModInstaller {
     if (!this.DialogManager) {
       throw new Error('DialogManager not initialized');
     }
+
+    this.onFinish();
+
     await this.DialogManager.endDialog();
+
+    this.DialogManager.detach();
+    this.DialogManager = undefined;
   };
 
   /**

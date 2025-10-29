@@ -4,7 +4,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 
-import { DialogQueue } from './DialogQueue';
+import { DialogQueue, IDialogManager } from '../../installer_fomod_shared/utils/DialogQueue';
 
 import {
   endDialog,
@@ -12,9 +12,11 @@ import {
   startDialog,
 } from '../../installer_fomod_shared/actions/installerUI';
 import {
+  Direction,
   IInstallerInfo,
   IInstallerState,
   IInstallStep,
+  StateCallback,
 } from '../../installer_fomod_shared/types/interface';
 
 /**
@@ -26,7 +28,9 @@ import {
  * - Callbacks have simpler signatures (no wrapper objects)
  * - Still uses Redux for UI state management (shared with IPC version)
  */
-export class DialogManager {
+export class DialogManager implements IDialogManager {
+  private static dialogQueue = DialogQueue.getInstance();
+
   private mApi: IExtensionApi;
 
   private mSelectCB: vetypes.SelectCallback | undefined;
@@ -34,7 +38,6 @@ export class DialogManager {
   private mCancelCB: vetypes.CancelCallback | undefined;
   private mUnattended: boolean;
   private mInstanceId: string;
-  private static dialogQueue = DialogQueue.getInstance();
 
   get instanceId(): string {
     return this.mInstanceId;
@@ -104,50 +107,43 @@ export class DialogManager {
     this.mContinueCB = contCallback;
     this.mCancelCB = cancelCallback;
 
-    await DialogManager.dialogQueue.addRequest(
+    const selectWrapped: StateCallback = (params) => selectCallback(params.stepId, params.groupId, params.plugins);
+    const contWrapped: (direction: Direction) => void = (direction) => contCallback(direction === 'forward', 0);
+    const cancelWrapped: () => void = () => cancelCallback();
+
+    const info: IInstallerInfo = {
       moduleName,
       image,
-      selectCallback,
-      contCallback,
-      cancelCallback,
-      this,
-      this.api.store
+      select: selectWrapped,
+      cont: contWrapped,
+      cancel: cancelWrapped,
+    };
+
+    const errorCallback = (_err: Error) => {};
+
+    await DialogManager.dialogQueue.addRequest(
+      info,
+      errorCallback,
+      this
     );
   };
 
   /**
    * Immediately start dialog (called by queue processor)
    */
-  public startDialogImmediate = (
-    moduleName: string,
-    image: vetypes.IHeaderImage,
-    selectCallback: vetypes.SelectCallback,
-    contCallback: vetypes.ContinueCallback,
-    cancelCallback: vetypes.CancelCallback
-  ) => {
+  public startDialogImmediate = (info: IInstallerInfo, callback: (err: any) => void) => {
     try {
       // Store callbacks for later use
-      this.mSelectCB = selectCallback;
-      this.mContinueCB = contCallback;
-      this.mCancelCB = cancelCallback;
+      this.mSelectCB = (stepId, groupId, pluginIds) => info.select({stepId, groupId, plugins: pluginIds});
+      this.mContinueCB = (forward, currentStepId) => info.cont(forward ? 'forward' : 'back');
+      this.mCancelCB = () => info.cancel();
 
       if (!this.mUnattended) {
-        // Convert native types to shared types for Redux
-        const info: IInstallerInfo = {
-          moduleName,
-          image: {
-            path: image.path,
-            showFade: image.showFade,
-            height: image.height,
-          },
-          // Note: select, cont, cancel are not needed here as we handle callbacks internally
-        };
-
         this.api.store.dispatch(startDialog(info, this.mInstanceId));
       }
     } catch (err) {
       log('error', 'Failed to start FOMOD dialog', {
-        moduleName,
+        moduleName: info.moduleName,
         error: err.message,
       });
       showError(this.api.store.dispatch, 'start installer dialog failed', err);
@@ -183,7 +179,7 @@ export class DialogManager {
 
       // Auto-continue in unattended mode
       if (this.mUnattended && this.mContinueCB !== undefined) {
-        this.mContinueCB(true, currentStep); // forward = true
+        this.mContinueCB(true, currentStep);
       }
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed', err);
@@ -227,12 +223,11 @@ export class DialogManager {
    */
   private onDialogSelect = (stepId: string, groupId: string, pluginIds: string[]) => {
     if (this.mSelectCB !== undefined) {
-      // Native callback signature: (stepId: number, groupId: number, optionId: number[])
-      this.mSelectCB(
-        parseInt(stepId, 10),
-        parseInt(groupId, 10),
-        pluginIds.map((id) => parseInt(id, 10))
-      );
+      const stepIdNum = parseInt(stepId, 10);
+      const groupIdNum = parseInt(groupId, 10);
+      const pluginIdsNum = pluginIds.map((id) => parseInt(id, 10));
+
+      this.mSelectCB(stepIdNum, groupIdNum, pluginIdsNum);
     }
   };
 
@@ -241,8 +236,9 @@ export class DialogManager {
    */
   private onDialogContinue = (direction: string, currentStepId: number) => {
     if (this.mContinueCB !== undefined) {
-      // Native callback signature: (forward: boolean, currentStepId: number)
-      const forward = direction === 'forward';
+      // I hate you, 'finish', you little shit
+      const forward = direction === 'forward' || direction === 'finish';
+
       this.mContinueCB(forward, currentStepId);
     }
   };

@@ -20,12 +20,12 @@ import { setInstallerDataPath } from '../installer_fomod_shared/actions/installe
 import { setInstallerSandbox } from './actions/settings';
 import Core from './delegates/Core';
 import { settingsReducer } from './reducers/settings';
-import { IGroupList, IInstallerState } from '../installer_fomod_shared/types/interface';
+import { IChoices, IGroupList, IInstallerState } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
   uniPatterns,
-} from '../installer_fomod_shared/util/gameSupport';
+} from '../installer_fomod_shared/utils/gameSupport';
 
 import Workarounds from './views/Workarounds';
 
@@ -1419,27 +1419,37 @@ function init(context: IExtensionContext): boolean {
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
     const shouldBypassDialog = canBeUnattended && (unattended === true);
     const instanceId = shortid();
-    let choices;
 
+    let choicesResolve: (value: IChoices | undefined) => void;
+    let choicesReject: (reason?: any) => void;
+    const choicesPromise = new Promise<IChoices | undefined>((res, rej) => {
+      choicesResolve = res;
+      choicesReject = rej;
+    });
     const onFinish = () => {
-      const state = context.api.store.getState();
-      const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
+      try {
+        const state = context.api.store.getState();
+        const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
+        const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
 
-      choices = (dialogState?.installSteps === undefined)
-        ? undefined
-        : dialogState.installSteps.map(step => {
-          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-          return {
-            name: step.name,
-            groups: (ofg.group || []).map(group => ({
-              name: group.name,
-              choices: group.options
-                .filter(opt => opt.selected)
-                .map(opt => ({ name: opt.name, idx: opt.id })),
-            })),
-          };
-        });
+        const choices = (dialogState?.installSteps === undefined)
+          ? undefined
+          : dialogState.installSteps.map(step => {
+            const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+            return {
+              name: step.name,
+              groups: (ofg.group || []).map(group => ({
+                name: group.name,
+                choices: group.options
+                  .filter(opt => opt.selected)
+                  .map(opt => ({ name: opt.name, idx: opt.id })),
+              })),
+            };
+          });
+        choicesResolve(choices);
+      } catch (error) {
+        choicesReject(error);
+      }
     };
 
     const coreDelegates = new Core(context.api, gameId, shouldBypassDialog, instanceId, [onFinish]);
@@ -1478,6 +1488,7 @@ function init(context: IExtensionContext): boolean {
         scriptPath, fomodChoices, validate, progressDelegate, coreDelegates,
         context.api.store);
 
+      const choices = await choicesPromise;
       result.instructions.push({
         type: 'attribute',
         key: 'installerChoices',

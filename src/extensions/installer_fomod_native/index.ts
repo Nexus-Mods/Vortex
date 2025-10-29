@@ -1,18 +1,19 @@
 import { method as toBluebird } from 'bluebird';
 import { generate as shortid } from 'shortid';
 
-import { VortexModInstaller } from "./manager";
+import { VortexModInstaller, VortexModTester } from "./manager";
 
-import { endDialog, setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
+import { setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
 import { IGroupList, IInstallerState, IChoices } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
-} from '../installer_fomod_shared/util/gameSupport';
+} from '../installer_fomod_shared/utils/gameSupport';
 import { IExtensionContext } from '../../types/api';
 import { getGame } from '../../util/api';
 
 function init(context: IExtensionContext): boolean {
+  const modTester = new VortexModTester();
 
   const install = async (
         files: string[],
@@ -37,58 +38,76 @@ function init(context: IExtensionContext): boolean {
       ? (choicesIn.options ?? {})
       : undefined;
 
-    const modInstaller = await VortexModInstaller.getInstance(context.api);
+    let choicesResolve: (value: IChoices | undefined) => void;
+    let choicesReject: (reason?: any) => void;
+    const choicesPromise = new Promise<IChoices | undefined>((res, rej) => {
+      choicesResolve = res;
+      choicesReject = rej;
+    });
+    const onFinish = () => {
+      try {
+        const state = context.api.store.getState();
+        const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
+        const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
+
+        const choices = (dialogState?.installSteps === undefined)
+          ? undefined
+          : dialogState.installSteps.map(step => {
+            const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+            return {
+              name: step.name,
+              groups: (ofg.group || []).map(group => ({
+                name: group.name,
+                choices: group.options
+                  .filter(opt => opt.selected)
+                  .map(opt => ({ name: opt.name, idx: opt.id })),
+              })),
+            };
+          });
+        choicesResolve(choices);
+      } catch (error) {
+        choicesReject(error);
+      }
+    };
     
     const invokeInstall = async (validate: boolean) => {
+      const modInstaller = new VortexModInstaller(context.api, instanceId, shouldBypassDialog, onFinish);
       const result = await modInstaller.installAsync(
         files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate);
 
-      const state = context.api.store?.getState();
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[instanceId].state;
-
-      const choices: IChoices = (dialogState?.installSteps === undefined)
-        ? undefined
-        : dialogState.installSteps.map(step => {
-          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-          return {
-            name: step.name,
-            groups: (ofg.group || []).map(group => ({
-              name: group.name,
-              choices: group.options
-                .filter(opt => opt.selected)
-                .map(opt => ({ name: opt.name, idx: opt.id })),
-            })),
-          };
-        });
-
+      const choices = await choicesPromise;
       result.instructions.push({
         type: 'attribute',
         key: 'installerChoices',
         value: {
           type: 'fomod',
-          options: choices,
+          options: choices ?? fomodChoices,
         },
       });
       return result;
     };
 
     try {
-      modInstaller.startDialogManager(instanceId, shouldBypassDialog);
       const result = await invokeInstall(true);
-      modInstaller.endDialogManager();
       return result;
     } catch (err) {
-      /*
-      // Don't immediately close dialog on error - other installations might be using it
-      // The finally block will handle safe cleanup
-      if (err.name === 'System.Xml.XmlException') {
+      // Native implementation throws JavaScript errors, not C# error objects
+      // Check if this is an XML validation error by examining the error message/stack
+      const isValidationError = err instanceof Error && (
+        err.message?.includes('Invalid XML') ||
+        err.message?.includes('XmlException') ||
+        err.message?.includes('validation') ||
+        err.stack?.includes('Validate')
+      );
+
+      if (isValidationError) {
         const res = await context.api.showDialog('error', 'Invalid fomod', {
           text: 'This fomod failed validation. Vortex tends to be stricter validating installers '
               + 'than other tools to ensure mods actually work as expected.\n'
               + 'You can try installing it anyway but we strongly suggest you test if it '
               + 'actually works correctly afterwards - and you should still inform the mod author '
               + 'about this issue.',
-          message: err.message,
+          message: err.message || 'Unknown validation error',
         }, [
           { label: 'Cancel' },
           { label: 'Ignore' },
@@ -96,18 +115,19 @@ function init(context: IExtensionContext): boolean {
 
         if (res.action === 'Ignore') {
           try {
+            // Retry installation with validation disabled
             return await invokeInstall(false);
           } catch (innerErr) {
-            const err2 = transformError(innerErr);
-            err2['allowReport'] = false;
-            return Promise.reject(err2);
+            // If it still fails without validation, don't allow error reporting
+            if (innerErr instanceof Error) {
+              innerErr['allowReport'] = false;
+            }
+            return Promise.reject(innerErr);
           }
         }
       }
 
-      return Promise.reject(transformError(err));
-      */
-
+      // For all other errors, reject with the original error
       return Promise.reject(err);
     }
   };
@@ -116,8 +136,7 @@ function init(context: IExtensionContext): boolean {
     /*id:*/ `fomod`,
     /*priority:*/ 10,
     /*testSupported:*/ toBluebird(async (files: string[], gameId: string) => {
-      const modInstaller = await VortexModInstaller.getInstance(context.api);
-      const result = await modInstaller.testSupport(files, ['XmlScript']);
+      const result = await modTester.testSupport(files, ['Basic']);
       return result;
     }),
     /*install:*/ toBluebird(install)
@@ -127,8 +146,7 @@ function init(context: IExtensionContext): boolean {
     /*id:*/ `fomod`,
     /*priority:*/ 100,
     /*testSupported:*/ toBluebird(async (files: string[], gameId: string) => {
-      const modInstaller = await VortexModInstaller.getInstance(context.api);
-      const result = await modInstaller.testSupport(files, ['Basic']);
+      const result = await modTester.testSupport(files, ['Basic']);
       return result;
     }),
     /*install:*/ toBluebird(install)
