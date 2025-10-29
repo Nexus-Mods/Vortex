@@ -951,6 +951,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
+    nexusModFileContents: eh.onModFileContents(api, nexus),
   };
 }
 
