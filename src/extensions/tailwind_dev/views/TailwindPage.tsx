@@ -12,9 +12,11 @@ import { ButtonDemo } from '../../../tailwind/components/next/button/ButtonDemo'
 import { CollectionTileDemo } from '../../../tailwind/components/next/collectiontile/CollectionTileDemo';
 import { InputDemo, SelectDemo } from '../../../tailwind/components/next/form';
 import { TabsDemo } from '../../../tailwind/components/next/tabs/TabsDemo';
+import { IExtensionApi } from '../../../types/api';
 
 interface ITailwindPageProps {
   // Props passed from extension context
+  api: IExtensionApi;
 }
 
 class TailwindPage extends React.Component<ITailwindPageProps> {
@@ -62,7 +64,7 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
             <div style={{ margin: '60px 0', borderTop: '2px solid #e5e7eb' }} />
 
             {/* CollectionTile Demo from web team */}
-            <CollectionTileDemo />
+            <CollectionTileDemo api={this.props.api} />
           </div>
         </MainPage.Body>
       </MainPage>
