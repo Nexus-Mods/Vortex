@@ -3,7 +3,7 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import { truthy } from '../../../util/util';
 
-import { endDialog, setDialogState, startDialog } from '../../installer_fomod_shared/actions/installerUI';
+import { clearDialog, setDialogState, startDialog } from '../../installer_fomod_shared/actions/installerUI';
 import { IInstallerInfo, IInstallerState, IReportError, StateCallback } from '../../installer_fomod_shared/types/interface';
 
 import DelegateBase from './DelegateBase';
@@ -13,24 +13,19 @@ import { DialogQueue, IDialogManager } from '../../installer_fomod_shared/utils/
 
 class UI extends DelegateBase implements IDialogManager {
   private mStateCB: StateCallback;
-  private mUnattended: boolean;
-  private mContinueCB: (direction) => void;
+  private mContinueCB: (direction, currentStepId) => void;
   private mCancelCB: () => void;
   private mInstanceId: string;
   private static dialogQueue = DialogQueue.getInstance();
-  private mOnFinishCallbacks: Array<() => void> = [];
 
   get instanceId(): string {
     return this.mInstanceId;
   }
 
-  constructor(api: IExtensionApi, gameId: string, unattended: boolean, instanceId: string, onFinishCallbacks?: Array<() => void>) {
+  constructor(api: IExtensionApi, instanceId: string) {
     super(api);
 
-    this.mUnattended = unattended;
     this.mInstanceId = instanceId;
-
-    this.mOnFinishCallbacks = onFinishCallbacks ?? [];
 
     // Use bound methods to avoid conflicts between multiple instances
     this.onDialogSelect = this.onDialogSelect.bind(this);
@@ -48,6 +43,8 @@ class UI extends DelegateBase implements IDialogManager {
 
   public detach() {
     log('debug', 'Detaching UI instance', { instanceId: this.mInstanceId });
+
+    this.api.store.dispatch(clearDialog(this.mInstanceId));
 
     this.api.events
       .removeListener(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
@@ -74,9 +71,7 @@ class UI extends DelegateBase implements IDialogManager {
 
   public startDialogImmediate = (info: IInstallerInfo, callback: (err) => void) => {
     try {
-      if (!this.mUnattended) {
-        this.api.store.dispatch(startDialog(info, this.mInstanceId));
-      }
+      this.api.store.dispatch(startDialog(info, this.mInstanceId));
       callback(null);
     } catch (err) {
       log('error', 'Failed to start FOMOD dialog', {
@@ -90,7 +85,6 @@ class UI extends DelegateBase implements IDialogManager {
 
   public endDialog = (dummy, callback: (err) => void) => {
     try {
-      this.api.store.dispatch(endDialog(this.mInstanceId));
       callback(null);
 
       // Process any queued dialog requests
@@ -108,11 +102,6 @@ class UI extends DelegateBase implements IDialogManager {
   public updateState = (state: IInstallerState, callback: (err) => void) => {
     try {
       this.api.store.dispatch(setDialogState(state, this.mInstanceId));
-      if (this.mUnattended) {
-        if (this.mContinueCB !== undefined) {
-          this.mContinueCB({ direction: 'forward' });
-        }
-      }
       callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed',
@@ -149,18 +138,9 @@ class UI extends DelegateBase implements IDialogManager {
   }
 
   private onDialogContinue = (direction, currentStepId: number) => {
-    if (direction === 'finish') {
-      this.mOnFinishCallbacks.forEach(callback => {
-        try {
-          callback();
-        } catch (err) {
-          log('error', 'FOMOD onFinish callback failed', { error: err.message });
-        }
-      });
-    }
     const dir = direction === 'finish' ? 'forward' : direction;
     if (this.mContinueCB !== undefined) {
-      this.mContinueCB({ direction: dir, currentStepId });
+      this.mContinueCB(dir, currentStepId);
     }
   }
 

@@ -57,7 +57,7 @@ export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
   select?: StateCallback;
-  cont?: (direction: Direction) => void;
+  cont?: (direction: Direction, currentStepId: number) => void;
   cancel?: () => void;
 }
 

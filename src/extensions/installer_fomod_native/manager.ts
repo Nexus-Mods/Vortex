@@ -32,11 +32,9 @@ export class VortexModInstaller {
   private modInstaller: NativeModInstaller;
   private api: IExtensionApi;
   private instanceId: string;
-  private shouldBypassDialog: boolean;
-  private onFinish: () => void;
   private DialogManager: DialogManager;
 
-  public constructor(api: IExtensionApi, instanceId: string, shouldBypassDialog: boolean, onFinish: () => void) {
+  public constructor(api: IExtensionApi, instanceId: string) {
     this.modInstaller = new NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
@@ -52,8 +50,6 @@ export class VortexModInstaller {
 
     this.api = api;
     this.instanceId = instanceId;
-    this.shouldBypassDialog = shouldBypassDialog;
-    this.onFinish = onFinish;
   }
 
   /**
@@ -146,7 +142,7 @@ export class VortexModInstaller {
     contCallback: vetypes.ContinueCallback,
     cancelCallback: vetypes.CancelCallback
   ): Promise<void> => {
-    this.DialogManager = new DialogManager(this.api, this.shouldBypassDialog, this.instanceId);
+    this.DialogManager = new DialogManager(this.api, this.instanceId);
     await this.DialogManager.startDialog(moduleName, image, selectCallback, contCallback, cancelCallback);
   };
 
@@ -158,8 +154,6 @@ export class VortexModInstaller {
     if (!this.DialogManager) {
       throw new Error('DialogManager not initialized');
     }
-
-    this.onFinish();
 
     await this.DialogManager.endDialog();
 

@@ -3,7 +3,7 @@ import { generate as shortid } from 'shortid';
 
 import { VortexModInstaller, VortexModTester } from "./manager";
 
-import { setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
+import { clearDialog, setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
 import { IGroupList, IInstallerState, IChoices } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
@@ -25,9 +25,7 @@ function init(context: IExtensionContext): boolean {
         archivePath?: string
       ) => {
 
-    const canBeUnattended = (choicesIn !== undefined) && (choicesIn.type === 'fomod');
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
-    const shouldBypassDialog = canBeUnattended && (unattended === true);
     const instanceId = shortid();
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
     const pluginPath = getPluginPath(gameId);
@@ -37,45 +35,30 @@ function init(context: IExtensionContext): boolean {
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
       ? (choicesIn.options ?? {})
       : undefined;
-
-    let choicesResolve: (value: IChoices | undefined) => void;
-    let choicesReject: (reason?: any) => void;
-    const choicesPromise = new Promise<IChoices | undefined>((res, rej) => {
-      choicesResolve = res;
-      choicesReject = rej;
-    });
-    const onFinish = () => {
-      try {
-        const state = context.api.store.getState();
-        const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-        const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
-
-        const choices = (dialogState?.installSteps === undefined)
-          ? undefined
-          : dialogState.installSteps.map(step => {
-            const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-            return {
-              name: step.name,
-              groups: (ofg.group || []).map(group => ({
-                name: group.name,
-                choices: group.options
-                  .filter(opt => opt.selected)
-                  .map(opt => ({ name: opt.name, idx: opt.id })),
-              })),
-            };
-          });
-        choicesResolve(choices);
-      } catch (error) {
-        choicesReject(error);
-      }
-    };
     
     const invokeInstall = async (validate: boolean) => {
-      const modInstaller = new VortexModInstaller(context.api, instanceId, shouldBypassDialog, onFinish);
+      const modInstaller = new VortexModInstaller(context.api, instanceId);
       const result = await modInstaller.installAsync(
         files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate);
 
-      const choices = await choicesPromise;
+      const state = context.api.store.getState();
+      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[instanceId].state;
+
+      const choices = (dialogState?.installSteps === undefined)
+        ? undefined
+        : dialogState.installSteps.map(step => {
+          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+          return {
+            name: step.name,
+            groups: (ofg.group || []).map(group => ({
+              name: group.name,
+              choices: group.options
+                .filter(opt => opt.selected)
+                .map(opt => ({ name: opt.name, idx: opt.id })),
+            })),
+          };
+        });
+
       result.instructions.push({
         type: 'attribute',
         key: 'installerChoices',
@@ -129,6 +112,8 @@ function init(context: IExtensionContext): boolean {
 
       // For all other errors, reject with the original error
       return Promise.reject(err);
+    } finally {
+      context.api.store.dispatch(clearDialog(instanceId));
     }
   };
 

@@ -36,7 +36,6 @@ export class DialogManager implements IDialogManager {
   private mSelectCB: vetypes.SelectCallback | undefined;
   private mContinueCB: vetypes.ContinueCallback | undefined;
   private mCancelCB: vetypes.CancelCallback | undefined;
-  private mUnattended: boolean;
   private mInstanceId: string;
 
   get instanceId(): string {
@@ -47,10 +46,9 @@ export class DialogManager implements IDialogManager {
     return this.mApi;
   }
 
-  constructor(api: IExtensionApi, unattended: boolean, instanceId: string) {
+  constructor(api: IExtensionApi, instanceId: string) {
     this.mApi = api;
 
-    this.mUnattended = unattended;
     this.mInstanceId = instanceId;
 
     // Bind methods to avoid conflicts between multiple instances
@@ -108,7 +106,7 @@ export class DialogManager implements IDialogManager {
     this.mCancelCB = cancelCallback;
 
     const selectWrapped: StateCallback = (params) => selectCallback(params.stepId, params.groupId, params.plugins);
-    const contWrapped: (direction: Direction) => void = (direction) => contCallback(direction === 'forward', 0);
+    const contWrapped: (direction: Direction, currentStepId: number) => void = (direction, currentStepId) => contCallback(direction === 'forward', currentStepId);
     const cancelWrapped: () => void = () => cancelCallback();
 
     const info: IInstallerInfo = {
@@ -135,12 +133,10 @@ export class DialogManager implements IDialogManager {
     try {
       // Store callbacks for later use
       this.mSelectCB = (stepId, groupId, pluginIds) => info.select({stepId, groupId, plugins: pluginIds});
-      this.mContinueCB = (forward, currentStepId) => info.cont(forward ? 'forward' : 'back');
+      this.mContinueCB = (forward, currentStepId) => info.cont(forward ? 'forward' : 'back', currentStepId);
       this.mCancelCB = () => info.cancel();
 
-      if (!this.mUnattended) {
-        this.api.store.dispatch(startDialog(info, this.mInstanceId));
-      }
+      this.api.store.dispatch(startDialog(info, this.mInstanceId));
     } catch (err) {
       log('error', 'Failed to start FOMOD dialog', {
         moduleName: info.moduleName,
@@ -176,11 +172,6 @@ export class DialogManager implements IDialogManager {
       };
 
       this.api.store.dispatch(setDialogState(state, this.mInstanceId));
-
-      // Auto-continue in unattended mode
-      if (this.mUnattended && this.mContinueCB !== undefined) {
-        this.mContinueCB(true, currentStep);
-      }
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed', err);
       throw err;
