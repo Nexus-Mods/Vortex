@@ -37,7 +37,11 @@ describe('endDialog', () => {
     let result = installerUIReducer.reducers.END_FOMOD_DIALOG(input, { instanceId });
     expect(result).toEqual({
       activeInstanceId: null,
-      instances: {}
+      instances: {
+        [instanceId]: {
+          info: null
+        }
+      }
     });
   });
 });
