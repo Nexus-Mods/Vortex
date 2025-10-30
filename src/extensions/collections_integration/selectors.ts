@@ -6,7 +6,10 @@ import {
   CollectionModStatus,
 } from './types';
 
+import { modsForActiveGame, modsForGame } from '../mod_management/selectors';
+
 import { IDownload, IMod, IState } from '../../types/IState';
+import { activeDownloads } from '../download_management/selectors';
 
 /**
  * Selectors for the installTracking reducer
@@ -254,6 +257,24 @@ export const getCollectionInstallProgress = createSelector(
       installProgress,
       isComplete,
     };
+  }
+);
+
+export const isCollectionModPresent = createSelector(
+  [
+    (state: IState, collectionSlug: string) => modsForActiveGame(state),
+    (state: IState, collectionSlug: string) => activeDownloads(state),
+    (state: IState, collectionSlug: string) => collectionSlug,
+  ],
+  (mods: { [modId: string]: IMod }, downloads: { [downloadId: string]: IDownload }, collectionSlug: string): boolean => {
+    const hasDownload = Object.values(downloads).some(dl => {
+      return dl && dl.modInfo && dl.modInfo.attributes?.collectionSlug === collectionSlug;
+    });
+    const hasMod = Object.values(mods).some(mod =>
+      ['downloaded', 'installed'].includes(mod.state) && 
+      mod.attributes?.collectionSlug === collectionSlug
+    );
+    return hasDownload || hasMod;
   }
 );
 

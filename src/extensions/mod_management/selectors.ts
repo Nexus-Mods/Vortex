@@ -1,4 +1,4 @@
-import { IDiscoveryResult, IState } from '../../types/IState';
+import { IDiscoveryResult, IMod, IState } from '../../types/IState';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
@@ -87,5 +87,20 @@ export const modPathsForGame = createSelector(
       return undefined;
     }
     return game.getModPaths(discovery.path);
+  },
+);
+
+export const modsForGame = (state: IState, gameId: string): { [modId: string]: IMod } => {
+  if (gameId === undefined) {
+    return {};
+  }
+  return state.persistent.mods?.[gameId] || {};
+}
+
+export const modsForActiveGame = createSelector(
+  activeGameId,
+  (state: IState) => state,
+  (activeGameId: string, state: IState) => {
+    return modsForGame(state, activeGameId);
   },
 );

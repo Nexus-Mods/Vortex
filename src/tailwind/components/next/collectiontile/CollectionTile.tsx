@@ -10,10 +10,22 @@ import { Typography } from '../typography/Typography';
 import { Icon } from '../icon';
 import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
 import numeral from 'numeral'; 
+import { IExtensionApi } from '../../../../types/IExtensionContext';
+import { isCollectionModPresent, activeDownloads } from '../../../../util/selectors';
+import { useSelector } from 'react-redux';
+import { IDownload } from '../../../../types/IState';
+import Debouncer from '../../../../util/Debouncer';
+
+const debouncer = new Debouncer((func: () => void) => {
+  func?.();
+  return Promise.resolve();
+}, 5000);
 
 export interface CollectionTileProps {
   // Data
   id: string;
+  slug: string;
+  gameId: string;
   title: string;
   author: {
     name: string;
@@ -37,7 +49,10 @@ export interface CollectionTileProps {
   className?: string;
 }
 
-export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
+export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IExtensionApi }> = ({
+  api,
+  slug,
+  gameId,
   title,
   author,
   coverImage,
@@ -48,6 +63,10 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
   onViewPage,
   className,
 }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [canBeAdded, setCanBeAdded] = React.useState(true);
+  const [tooltip, setTooltip] = React.useState<string>('Add this collection');
+  const [pending, setPending] = React.useState(false);
   // Helper to extract tag text from string or object
   const getTagText = (tag: any): string => {
     if (typeof tag === 'string') {
@@ -59,11 +78,41 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
     return String(tag);
   };
 
+  const addCollectionDebounced = () => {
+    debouncer.schedule(() => setPending(false), () => {
+      onAddCollection?.();
+    });
+  };
+
+  React.useEffect(() => {
+    const collectionModInstalled = isCollectionModPresent(
+      api.getState(),
+      slug,
+    );
+    setCanBeAdded(!collectionModInstalled);
+    setTooltip(collectionModInstalled || pending ? 'Collection already added' : 'Add this collection');
+  }, [api, slug, isHovered, pending]);
+
   // Take max 2 tags
   const displayTags = tags.slice(0, 2);
-
+  const addCollection = React.useCallback(() => {
+    if (!pending && canBeAdded) {
+      setPending(true);
+      addCollectionDebounced();
+    }
+  }, [onAddCollection, canBeAdded, pending]);
+  const mouseEnter = React.useCallback(() => {
+    setIsHovered(true);
+  }, []);
+  const mouseLeave = React.useCallback(() => {
+    setIsHovered(false);
+  }, []);
   return (
-    <div className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}>
+    <div
+      className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}
+      onMouseEnter={mouseEnter}
+      onMouseLeave={mouseLeave}
+    >
       {/* Main content area */}
       <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
         <div className="tw:self-stretch tw:flex tw:flex-1 tw:justify-between tw:items-start">
@@ -207,9 +256,11 @@ export const CollectionTile: React.ComponentType<CollectionTileProps> = ({
       {/* Action bar */}
       <div className="tw:self-stretch tw:p-3 tw:bg-surface-high tw:rounded-bl tw:rounded-br tw:inline-flex tw:justify-start tw:items-center tw:gap-2">
         <Button
+          title={tooltip}
+          disabled={!canBeAdded || pending}
           buttonType="primary"
           size="sm"
-          onClick={onAddCollection}
+          onClick={addCollection}
         >
           Add collection
         </Button>

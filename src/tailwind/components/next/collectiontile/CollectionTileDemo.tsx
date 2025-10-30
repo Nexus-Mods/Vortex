@@ -7,7 +7,10 @@ import * as React from 'react';
 import { CollectionTile } from './CollectionTile';
 import { Typography } from '../typography/Typography';
 
-export const CollectionTileDemo: React.ComponentType = () => {
+export interface ICollectionTileDemoProps {
+  api: any;
+}
+export const CollectionTileDemo: React.ComponentType<ICollectionTileDemoProps> = ({ api }) => {
   const handleAddCollection = (title: string) => {
     console.log('Add collection:', title);
   };
@@ -16,9 +19,13 @@ export const CollectionTileDemo: React.ComponentType = () => {
     console.log('View page:', title);
   };
 
+  const gameId = 'stardewvalley';
+
   const mockCollections = [
     {
       id: '1',
+      gameId,
+      slug: 'ultimate-civil-war-reloaded',
       title: 'Ultimate Civil War Reloaded',
       author: {
         name: 'RyukanoHi',
@@ -36,6 +43,8 @@ export const CollectionTileDemo: React.ComponentType = () => {
     },
     {
       id: '2',
+      gameId,
+      slug: 'immersive-graphics-overhaul',
       title: 'Immersive Graphics Overhaul',
       author: {
         name: 'GraphicsMod',
@@ -52,7 +61,9 @@ export const CollectionTileDemo: React.ComponentType = () => {
     },
     {
       id: '3',
+      gameId,
       title: 'Quest Expansion Pack',
+      slug: 'quest-expansion-pack',
       author: {
         name: 'QuestMaster',
         avatar: undefined,
@@ -108,6 +119,7 @@ export const CollectionTileDemo: React.ComponentType = () => {
               {...collection}
               onAddCollection={() => handleAddCollection(collection.title)}
               onViewPage={() => handleViewPage(collection.title)}
+              api={api}
             />
           ))}
         </div>
