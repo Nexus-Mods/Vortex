@@ -1339,6 +1339,7 @@ async function createIsolatedConnection(securityLevel: SecurityLevel): Promise<C
 
 async function testSupportedScripted(securityLevel: SecurityLevel,
                                      files: string[],
+                                     _gameId: string,
                                      _archivePath: string,
                                      details?: ITestSupportedDetails)
                                      : Promise<ISupportedResult> {
@@ -1363,7 +1364,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
       if (connection) {
         connection.quit();
       }
-      return testSupportedScripted(securityLevel - 1, files, _archivePath, details);
+      return testSupportedScripted(securityLevel - 1, files, _gameId, _archivePath, details);
     }
     throw transformError(err);
   } finally {

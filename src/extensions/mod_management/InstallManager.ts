@@ -3516,7 +3516,7 @@ class InstallManager {
             installer: this.mInstallers[offset],
             requiredFiles: testResult.requiredFiles,
           })
-          : this.getInstaller(fileList, gameId, archivePath, offset + 1);
+          : this.getInstaller(fileList, gameId, archivePath, offset + 1, details);
       });
   }
 
