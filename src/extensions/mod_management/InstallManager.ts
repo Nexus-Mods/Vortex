@@ -1825,12 +1825,21 @@ class InstallManager {
         }
 
         const collectionInstallProgress = getCollectionInstallProgress(api.getState());
+        if (!collectionInstallProgress) {
+          const activeCollection = getCollectionActiveSession(api.getState());
+          if (!activeCollection) {
+            log('debug', 'No active collection session, all phases considered complete', { sourceModId });
+            delete this.mDependencyInstalls[sourceModId];
+            this.cleanupPendingInstalls(sourceModId, true);
+            return resolve();
+          }
+        }
 
         // Check for queued deployments
         const deploymentPromises = phaseState.deploymentPromises || new Map<number, Promise<void>>();
         const hasQueuedDeployments = deploymentPromises.size > 0;
 
-        if (collectionInstallProgress.isComplete) {
+        if (collectionInstallProgress?.isComplete) {
           log('debug', 'All phases complete', { sourceModId });
           return resolve();
         } else {
@@ -4018,6 +4027,7 @@ class InstallManager {
       });
       queuedDownloads = [];
 
+      delete this.mDependencyInstalls[sourceModId];
       this.cleanupPendingInstalls(sourceModId, true);
     };
 
