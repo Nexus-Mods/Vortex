@@ -38,6 +38,10 @@ export interface CollectionTileProps {
   };
   description: string;
   version?: string;
+  badges?: Array<{
+    name: string;
+    description: string;
+  }>;
 
   // Actions
   onAddCollection?: () => void;
@@ -57,6 +61,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
   tags,
   stats,
   description,
+  badges,
   onAddCollection,
   onViewPage,
   className,
@@ -105,6 +110,12 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
   const mouseLeave = React.useCallback(() => {
     setIsHovered(false);
   }, []);
+
+  // Check if "Easy install" badge exists
+  const hasEasyInstallBadge = badges?.some(badge =>
+    badge.name.toLowerCase() === 'easy install'
+  );
+
   return (
     <div
       className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}
@@ -117,11 +128,33 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
 
           {/* Left: Image */}
           <div className="tw:w-[175px] tw:h-[219px] tw:relative tw:shrink-0">
-            <img
-              className="tw:w-[166px] tw:h-[208px] tw:absolute tw:top-0 tw:left-0 tw:rounded-sm tw:object-cover"
-              src={coverImage}
-              alt={title}
-            />
+
+            <div className="tw:absolute tw:top-0 tw:left-0">
+
+              <img
+                className="tw:w-[166px] tw:h-52 tw:rounded-sm tw:object-cover"
+                src={coverImage}
+                alt={title}
+              />
+
+              {/* Easy Install Badge - conditionally shown */}
+              {/* {hasEasyInstallBadge && (
+                <div className="tw:absolute tw:inset-x-0 tw:bottom-0 tw:z-10">
+                  <Typography
+                    as="p"
+                    typographyType="title-xs"
+                    appearance="none"
+                    className="tw:flex tw:items-center tw:gap-x-0.5 tw:px-1.5 tw:py-0.5 tw:bg-info-weak tw:text-info-50"
+                  >
+                    <Icon path="mdiStar" size="xs" />
+                    <span className="tw:px-0.5 tw:leading-5">Easy install</span>
+                  </Typography>
+                </div>
+              )} */}
+
+            </div>
+
+
           </div>
 
           {/* Right: Details */}
@@ -131,7 +164,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
             <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-0">
               <Typography
                 as="div"
-                className="tw:line-clamp-1 tw:font-semibold tw:break-words"
+                className="tw:line-clamp-1 tw:font-semibold tw:wrap-break-word"
                 appearance="strong"
                 typographyType="body-xl"
               >
@@ -196,14 +229,14 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                 {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
 
-                  <Icon path="mdiThumbUp" size="sm"  />                  
+                  <Icon path="mdiThumbUp" size="sm" />
                   <Typography
                     as="div"
                     typographyType="body-xs"
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    { numeral(stats.endorsements).format('0 a') }
+                    {numeral(stats.endorsements).format('0 a')}
                   </Typography>
                 </div>
 
@@ -230,7 +263,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    { numeral(stats.modCount).format('0,0') }
+                    {numeral(stats.modCount).format('0,0')}
                   </Typography>
                 </div>
               </div>
@@ -242,7 +275,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                 as="div"
                 typographyType="body-md"
                 appearance="subdued"
-                className="tw:line-clamp-4 tw:break-words tw:leading-tight"
+                className="tw:line-clamp-4 tw:wrap-break-word tw:leading-tight"
               >
                 {description}
               </Typography>

@@ -431,7 +431,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
   if (overwritten.length > 0) {
     const profile = profileById(api.getState(), profileId);
     const renderEntry = (api.events.listenerCount('display-report') > 0)
-      ? (mod: IMod) => renderModName(mod) + ` [url="cb://report/${mod.id}"](${t('Review')})[/url]`
+      ? (mod: IMod) => renderModName(mod) + ` [url=cb://report/${mod.id}]${t('Review')}[/url]`
       : (mod: IMod) => renderModName(mod);
 
     api.sendNotification({
