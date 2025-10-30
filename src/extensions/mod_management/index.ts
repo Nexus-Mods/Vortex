@@ -8,15 +8,15 @@ import {
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
-import {IGame} from '../../types/IGame';
+import { IGame } from '../../types/IGame';
 import { INotification } from '../../types/INotification';
-import {IDiscoveryResult, IState} from '../../types/IState';
+import { IDiscoveryResult, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
-import {ITestResult} from '../../types/ITestResult';
+import { ITestResult } from '../../types/ITestResult';
 import { IDeployOptions } from './types/IDeployOptions';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
-import { waitForCondition} from '../../util/waitForCondition';
+import { waitForCondition } from '../../util/waitForCondition';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
@@ -40,43 +40,47 @@ import {
   getCollectionModByReference,
   getCollectionCurrentPhase,
 } from '../../util/selectors';
-import {getSafe} from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 import { batchDispatch, isChildPath, truthy, wrapExtCBAsync } from '../../util/util';
 import { setAutoDeployment } from '../settings_interface/actions/automation';
 
 import { setDialogVisible } from '../../actions';
-import {setDownloadModInfo} from '../download_management/actions/state';
-import {getGame} from '../gamemode_management/util/getGame';
+import { setDownloadModInfo } from '../download_management/actions/state';
+import { getGame } from '../gamemode_management/util/getGame';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import { IEnableOptions, setModEnabled, forgetMod } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
-import {cacheModReference, removeMod, setModAttribute} from './actions/mods';
+import { cacheModReference, removeMod, setModAttribute } from './actions/mods';
 import { setDeploymentProblem } from './actions/session';
-import {setTransferMods} from './actions/transactions';
-import {deploymentReducer} from './reducers/deployment';
-import {modsReducer} from './reducers/mods';
-import {sessionReducer} from './reducers/session';
-import {settingsReducer} from './reducers/settings';
-import {transactionsReducer} from './reducers/transactions';
-import {IDeployedFile, IDeploymentMethod, IUnavailableReason} from './types/IDeploymentMethod';
-import {IFileMerge} from './types/IFileMerge';
+import { setTransferMods } from './actions/transactions';
+import { deploymentReducer } from './reducers/deployment';
+import { modsReducer } from './reducers/mods';
+import { sessionReducer } from './reducers/session';
+import { settingsReducer } from './reducers/settings';
+import { transactionsReducer } from './reducers/transactions';
+import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from './types/IDeploymentMethod';
+import { IFileMerge } from './types/IFileMerge';
 import { IInstallOptions } from './types/IInstallOptions';
-import {IMod, IModReference} from './types/IMod';
-import {InstallFunc} from './types/InstallFunc';
-import {IRemoveModOptions} from './types/IRemoveModOptions';
-import {IResolvedMerger} from './types/IResolvedMerger';
-import {ISchedulePhaseDeploymentForMod} from './types/ISchedulePhaseDeploymentForMod';
-import {TestSupported} from './types/TestSupported';
-import { fallbackPurge, loadActivation,
-        saveActivation, withActivationLock } from './util/activationStore';
+import { IMod, IModReference } from './types/IMod';
+import { InstallFunc } from './types/InstallFunc';
+import { IRemoveModOptions } from './types/IRemoveModOptions';
+import { IResolvedMerger } from './types/IResolvedMerger';
+import { ISchedulePhaseDeploymentForMod } from './types/ISchedulePhaseDeploymentForMod';
+import { TestSupported } from './types/TestSupported';
+import {
+  fallbackPurge, loadActivation,
+  saveActivation, withActivationLock
+} from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import BlacklistSet from './util/BlacklistSet';
 import * as basicInstaller from './util/basicInstaller';
 import { genSubDirFunc, purgeMods, purgeModsInPath } from './util/deploy';
-import { getAllActivators, getCurrentActivator, getSelectedActivator,
-         getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
+import {
+  getAllActivators, getCurrentActivator, getSelectedActivator,
+  getSupportedActivators, registerDeploymentMethod
+} from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
 import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
@@ -87,18 +91,20 @@ import sortMods, { CycleError } from './util/sort';
 import { setResolvedCB } from './util/testModReference';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
-import {} from './views/ExternalChangeDialog';
+import { } from './views/ExternalChangeDialog';
 import { IDuplicatesMap, IRemoveDuplicateMap } from './views/DuplicatesDialog';
-import {} from './views/FixDeploymentDialog';
-import {} from './views/ModList';
-import {} from './views/Settings';
+import { } from './views/FixDeploymentDialog';
+import { } from './views/ModList';
+import { } from './views/Settings';
 import URLInput from './views/URLInput';
 import Workarounds from './views/Workarounds';
 
 import { opn } from '../../util/api';
 
-import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
-         onRemoveMod, onRemoveMods, onStartInstallDownload } from './eventHandlers';
+import {
+  onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
+  onRemoveMod, onRemoveMods, onStartInstallDownload
+} from './eventHandlers';
 import InstallManager from './InstallManager';
 import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
@@ -138,11 +144,11 @@ const installers: IInstaller[] = [];
 const mergers: IFileMerge[] = [];
 
 function registerInstaller(id: string,
-                           priority: number,
-                           testSupported: TestSupported,
-                           install: InstallFunc,
-                           extPath?: string,
-                           ext?: any) {
+  priority: number,
+  testSupported: TestSupported,
+  install: InstallFunc,
+  extPath?: string,
+  ext?: any) {
   installers.push({
     id,
     priority,
@@ -183,10 +189,12 @@ function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
       + 'rules causing the cycle, otherwise your mods can\'t be '
       + 'applied in the right order.',
     links: cycles.map((cycle, idx) => (
-      { label: cycle.join(', '), action: () => {
-        api.closeDialog(id);
-        api.events.emit('edit-mod-cycle', gameId, cycle);
-      } }
+      {
+        label: cycle.join(', '), action: () => {
+          api.closeDialog(id);
+          api.events.emit('edit-mod-cycle', gameId, cycle);
+        }
+      }
     )),
   }, [
     { label: 'Close' },
@@ -194,16 +202,16 @@ function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
 }
 
 function deployModType(api: IExtensionApi,
-                       activator: IDeploymentMethod,
-                       game: IGame,
-                       sortedModList: IMod[],
-                       typeId: string,
-                       stagingPath: string,
-                       targetPath: string,
-                       overwritten: IMod[],
-                       mergeResult: { [modType: string]: IMergeResultByType },
-                       lastDeployment: IDeployedFile[],
-                       onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
+  activator: IDeploymentMethod,
+  game: IGame,
+  sortedModList: IMod[],
+  typeId: string,
+  stagingPath: string,
+  targetPath: string,
+  overwritten: IMod[],
+  mergeResult: { [modType: string]: IMergeResultByType },
+  lastDeployment: IDeployedFile[],
+  onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
   log('debug', 'Deploying mod type',
     { typeId, path: targetPath, count: lastDeployment.length });
@@ -213,15 +221,15 @@ function deployModType(api: IExtensionApi,
     .then(normalizeIn => {
       normalize = normalizeIn;
       return deployMods(api,
-                        game.id,
-                        stagingPath, targetPath,
-                        filteredModList,
-                        activator, lastDeployment,
-                        typeId,
-                        new BlacklistSet(mergeResult[typeId]?.usedInMerge ?? [], game, normalize),
-                        genSubDirFunc(game, getModType(typeId)),
-                        onProgress);
-      })
+        game.id,
+        stagingPath, targetPath,
+        filteredModList,
+        activator, lastDeployment,
+        typeId,
+        new BlacklistSet(mergeResult[typeId]?.usedInMerge ?? [], game, normalize),
+        genSubDirFunc(game, getModType(typeId)),
+        onProgress);
+    })
     .then((newActivation: IDeployedFile[]) => {
       const mergedMap = mergeResult[typeId]?.mergeInfluences;
       if (!!mergedMap && (Object.keys(mergedMap).length > 0)) {
@@ -250,15 +258,15 @@ function deployModType(api: IExtensionApi,
 }
 
 function deployAllModTypes(api: IExtensionApi,
-                           activator: IDeploymentMethod,
-                           profile: IProfile,
-                           sortedModList: IMod[],
-                           stagingPath: string,
-                           mergeResult: { [modType: string]: IMergeResultByType },
-                           modPaths: { [typeId: string]: string },
-                           lastDeployment: { [typeId: string]: IDeployedFile[] },
-                           newDeployment: { [typeId: string]: IDeployedFile[] },
-                           onProgress: (text: string, perc: number) => void) {
+  activator: IDeploymentMethod,
+  profile: IProfile,
+  sortedModList: IMod[],
+  stagingPath: string,
+  mergeResult: { [modType: string]: IMergeResultByType },
+  modPaths: { [typeId: string]: string },
+  lastDeployment: { [typeId: string]: IDeployedFile[] },
+  newDeployment: { [typeId: string]: IDeployedFile[] },
+  onProgress: (text: string, perc: number) => void) {
   const game = getGame(profile.gameId);
   const overwritten: IMod[] = [];
 
@@ -297,7 +305,7 @@ function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
 }
 
 function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
-                                mods: { [modId: string]: IMod }) {
+  mods: { [modId: string]: IMod }) {
   const enabledModIds = Object.keys(profile.modState ?? {})
     .filter(modId => profile.modState[modId].enabled);
 
@@ -324,15 +332,17 @@ function checkIncompatibilities(api: IExtensionApi, profile: IProfile,
       type: 'warning',
       message: 'Incompatible mods enabled',
       actions: [
-        { title: 'Show', action: () => {
-          api.showDialog('info', 'Incompatible mods', {
-            md: 'You have mods enabled that are marked as being incompatible with each other:\n'
-              + incompatibilities.map(inc =>
+        {
+          title: 'Show', action: () => {
+            api.showDialog('info', 'Incompatible mods', {
+              md: 'You have mods enabled that are marked as being incompatible with each other:\n'
+                + incompatibilities.map(inc =>
                   `* "${renderModName(inc.left)}" _${t('incompatible with')}_ "${renderModName(inc.right)}"`).join('\n'),
-          }, [
-            { label: 'Close' },
-          ]);
-        } },
+            }, [
+              { label: 'Close' },
+            ]);
+          }
+        },
       ],
     });
     return Promise.reject(new ProcessCanceled('Incompatible mods'));
@@ -352,7 +362,7 @@ function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: strin
   return sortMods(profile.gameId, unsorted, api)
     .catch(CycleError, err => Promise.reject(
       new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. '
-                          + err.message)));
+        + err.message)));
 }
 
 interface IMergeResultByType {
@@ -361,13 +371,13 @@ interface IMergeResultByType {
 }
 
 function doMergeMods(api: IExtensionApi,
-                     game: IGame,
-                     gameDiscovery: IDiscoveryResult,
-                     stagingPath: string,
-                     sortedModList: IMod[],
-                     modPaths: { [typeId: string]: string },
-                     lastDeployment: { [typeId: string]: IDeployedFile[] }):
-    Promise<{ [typeId: string]: IMergeResultByType }> {
+  game: IGame,
+  gameDiscovery: IDiscoveryResult,
+  stagingPath: string,
+  sortedModList: IMod[],
+  modPaths: { [typeId: string]: string },
+  lastDeployment: { [typeId: string]: IDeployedFile[] }):
+  Promise<{ [typeId: string]: IMergeResultByType }> {
 
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
@@ -380,7 +390,7 @@ function doMergeMods(api: IExtensionApi,
   // all mod types that require merging
   const mergeModTypes = Object.keys(modPaths)
     .filter(modType => (fileMergers.find(merger => merger.modType === modType) !== undefined)
-                    || ((modType === '') && (game.mergeArchive !== undefined)));
+      || ((modType === '') && (game.mergeArchive !== undefined)));
 
   const result: { [typeId: string]: IMergeResultByType } = Object.keys(modPaths)
     .reduce((prev, modType) => {
@@ -431,7 +441,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
   if (overwritten.length > 0) {
     const profile = profileById(api.getState(), profileId);
     const renderEntry = (api.events.listenerCount('display-report') > 0)
-      ? (mod: IMod) => renderModName(mod) + ` [url=cb://report/${mod.id}]${t('Review')}[/url]`
+      ? (mod: IMod) => renderModName(mod) + ` [url="cb://report/${mod.id}"]${t('Review')}[/url]`
       : (mod: IMod) => renderModName(mod);
 
     api.sendNotification({
@@ -454,7 +464,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
                 value: true,
               })),
               options: {
-                translated: true,
+                translated: false,
                 bbcodeContext: {
                   callbacks: {
                     report: (modId: string) => {
@@ -467,18 +477,18 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
                 },
               },
             }, [
-                { label: 'Disable selected' },
-                { label: 'Close', default: true },
-              ]).then(result => {
-                if (result.action === 'Disable selected') {
-                  Object.keys(result.input)
-                    .filter(modId => result.input[modId])
-                    .forEach(modId => {
-                      api.store.dispatch(setModEnabled(profileId, modId, false));
-                    });
-                  dismiss();
-                }
-              });
+              { label: 'Disable selected' },
+              { label: 'Close', default: true },
+            ]).then(result => {
+              if (result.action === 'Disable selected') {
+                Object.keys(result.input)
+                  .filter(modId => result.input[modId])
+                  .forEach(modId => {
+                    api.store.dispatch(setModEnabled(profileId, modId, false));
+                  });
+                dismiss();
+              }
+            });
           },
         },
       ],
@@ -494,7 +504,7 @@ function deployableModTypes(modPaths: { [typeId: string]: string }) {
 
 function genUpdateModDeployment() {
   return (api: IExtensionApi, manual: boolean, profileId?: string,
-          progressCB?: (text: string, percent: number) => void): Promise<void> => {
+    progressCB?: (text: string, percent: number) => void): Promise<void> => {
     const t = api.translate;
 
     const notification: INotification = {
@@ -537,7 +547,7 @@ function genUpdateModDeployment() {
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
     if ((game === undefined)
-        || (gameDiscovery?.path === undefined)) {
+      || (gameDiscovery?.path === undefined)) {
       const err = new Error('Game no longer available');
       err['attachLogOnReport'] = true;
       return Promise.reject(err);
@@ -562,14 +572,14 @@ function genUpdateModDeployment() {
                 reason: err.errors[0].description(t),
               },
             }), {
-              id: 'deployment-not-possible',
-              allowReport: false,
-            });
+            id: 'deployment-not-possible',
+            allowReport: false,
+          });
         } else if (err.warnings.length > 0) {
           api.sendNotification({
             type: 'warning',
             message: t('Deployment method "{{method}}" does not support '
-                        + 'all mod types: {{reason}}', {
+              + 'all mod types: {{reason}}', {
               replace: {
                 method: selectedActivator.name,
                 reason: err.warnings[0].description(t),
@@ -617,8 +627,8 @@ function genUpdateModDeployment() {
         progress(t('Loading deployment manifest'), 0);
 
         return Promise.each(deployableModTypes(modPaths), typeId =>
-            loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, activator)
-              .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
+          loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, activator)
+            .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
           .tap(() => progress(t('Running pre-deployment events'), 2))
           .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
           .then(() => {
@@ -645,7 +655,7 @@ function genUpdateModDeployment() {
             }))
           .tap(() => progress(t('Merging mods'), 35))
           .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList,
-                                  modPaths, lastDeployment)
+            modPaths, lastDeployment)
             .then(mergeResultIn => mergeResult = mergeResultIn))
           .tap(() => progress(t('Starting deployment'), 35))
           .then(() => {
@@ -656,9 +666,9 @@ function genUpdateModDeployment() {
               .filter(typeId => !truthy(modPaths[typeId]));
             return validateDeploymentTarget(api, undiscovered)
               .then(() => deployAllModTypes(api, activator, profile, sortedModList,
-                                            stagingPath, mergeResult,
-                                            modPaths, lastDeployment,
-                                            newDeployment, deployProgress));
+                stagingPath, mergeResult,
+                modPaths, lastDeployment,
+                newDeployment, deployProgress));
           });
       })
         // at this point the deployment lock gets released so another deployment
@@ -718,7 +728,7 @@ function genUpdateModDeployment() {
           const isFSErr = ['EMFILE'].includes(err.code);
           if (isFSErr) {
             err.message = 'A filesystem error prevented deploying some files. '
-                        + 'please try deploying again.\n' + err.message;
+              + 'please try deploying again.\n' + err.message;
           }
           return api.showErrorNotification('Failed to deploy mods', err, {
             allowReport: (err.code !== 'EPERM') && !isFSErr && (err.allowReport !== false),
@@ -728,15 +738,15 @@ function genUpdateModDeployment() {
           api.store.dispatch(stopActivity('mods', 'deployment'));
           api.dismissNotification(notification.id);
         }));
-    };
+  };
 }
 
 function doSaveActivation(api: IExtensionApi, gameId: string, typeId: string,
-                          deployPath: string, stagingPath: string,
-                          files: IDeployedFile[], activatorId: string) {
+  deployPath: string, stagingPath: string,
+  files: IDeployedFile[], activatorId: string) {
   const state: IState = api.store.getState();
   return saveActivation(gameId, typeId, state.app.instanceId, deployPath,
-                        stagingPath, files, activatorId)
+    stagingPath, files, activatorId)
     .catch(err => {
       const canceled = err instanceof UserCanceled;
       let text = canceled
@@ -744,16 +754,16 @@ function doSaveActivation(api: IExtensionApi, gameId: string, typeId: string,
         : 'Saving the manifest failed (see error below).';
 
       text += 'This could lead to errors '
-          + '(e.g. orphaned files in the game directory, external changes not being detected) '
-          + 'later on. Please either retry or immediately "purge" after this and try '
-          + 'deploying again.';
+        + '(e.g. orphaned files in the game directory, external changes not being detected) '
+        + 'later on. Please either retry or immediately "purge" after this and try '
+        + 'deploying again.';
       return api.showDialog('error', 'Saving manifest failed', {
         text,
         message: canceled ? undefined : err.stack,
       }, [
-          { label: 'Retry' },
-          { label: 'Ignore' },
-        ])
+        { label: 'Retry' },
+        { label: 'Ignore' },
+      ])
         .then(result => (result.action === 'Retry')
           ? doSaveActivation(api, gameId, typeId, deployPath, stagingPath, files, activatorId)
           : Promise.resolve());
@@ -825,8 +835,8 @@ function genWebsiteAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       return React.createElement(URLInput, { t, mod, gameId }, []);
     },
     calc: (mod: IMod) => (mod.attributes?.source === 'website')
-        ? (mod.attributes?.url ?? null)
-        : undefined,
+      ? (mod.attributes?.url ?? null)
+      : undefined,
     placement: 'detail',
     isToggleable: false,
     edit: {},
@@ -1023,7 +1033,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => (mod !== undefined)
         ? (enable !== false)
           ? activator.activate(modPath, mod.installationPath, subdir(mod),
-                               new BlacklistSet(mod.fileOverrides ?? [], game, normalize))
+            new BlacklistSet(mod.fileOverrides ?? [], game, normalize))
           : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
@@ -1080,7 +1090,7 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
     title: 'More', action: (dismiss) => {
       api.showDialog('question', 'Deployment necessary', {
         text: 'Recent changes to the active mods are currently pending, '
-            + 'a deployment must be run to apply the latest changes to your game.',
+          + 'a deployment must be run to apply the latest changes to your game.',
         checkboxes: [
           { id: 'enable-auto-deployment', text: 'Enable automatic deployment', value: false },
         ],
@@ -1088,15 +1098,15 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
         { label: 'Later' },
         { label: 'Deploy' },
       ])
-      .then((res) => {
-        if (res.input['enable-auto-deployment']) {
-          api.store.dispatch(setAutoDeployment(true));
-        }
-        if (res.action === 'Deploy') {
-          dismiss();
-          deploy();
-        }
-      });
+        .then((res) => {
+          if (res.input['enable-auto-deployment']) {
+            api.store.dispatch(setAutoDeployment(true));
+          }
+          if (res.action === 'Deploy') {
+            dismiss();
+            deploy();
+          }
+        });
     },
   };
   const actions = autoDeploy
@@ -1119,21 +1129,21 @@ function once(api: IExtensionApi) {
 
   if (installManager === undefined) {
     installManager = new InstallManager(api,
-        (gameId: string) => installPathForGame(store.getState(), gameId));
+      (gameId: string) => installPathForGame(store.getState(), gameId));
     installers.forEach((installer: IInstaller) => {
       installManager.addInstaller(installer.id, installer.priority, installer.testSupported,
-                                  installer.install);
+        installer.install);
     });
   }
 
   const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
-      (manual: boolean, profileId: string, progressCB) =>
-        updateModDeployment(api, manual, profileId, progressCB), 2000);
+    (manual: boolean, profileId: string, progressCB) =>
+      updateModDeployment(api, manual, profileId, progressCB), 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
-                                progressCB?: (text: string, percent: number) => void,
-                                deployOptions?: IDeployOptions) => { // Can't believe that 7+ years in, we still didn't have deployment options defined.
+    progressCB?: (text: string, percent: number) => void,
+    deployOptions?: IDeployOptions) => { // Can't believe that 7+ years in, we still didn't have deployment options defined.
     if (!(callback as any).called) {
       if (deployOptions?.manual === true) {
         deploymentTimer.runNow(callback, true, profileId, progressCB);
@@ -1196,7 +1206,7 @@ function once(api: IExtensionApi) {
   api.events.on('mods-enabled', onModsEnabled(api, deploymentTimer));
 
   api.events.on('gamemode-activated',
-      (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
+    (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
 
   api.events.on('install-dependencies',
     (profileId: string, gameId: string, modIds: string[], silent?: boolean) => {
@@ -1253,15 +1263,15 @@ function once(api: IExtensionApi) {
   });
 
   api.onStateChange(
-      ['settings', 'mods', 'installPath'],
-      (previous, current) => onPathsChanged(api, previous, current));
+    ['settings', 'mods', 'installPath'],
+    (previous, current) => onPathsChanged(api, previous, current));
 
   api.onStateChange(
-      ['persistent', 'mods'],
-      (previous, current) => onModsChanged(api, previous, current));
+    ['persistent', 'mods'],
+    (previous, current) => onModsChanged(api, previous, current));
 
   api.onStateChange(
-      ['persistent', 'deployment', 'needToDeploy'],
+    ['persistent', 'deployment', 'needToDeploy'],
     (previous, current) => {
       const gameMode = activeGameId(store.getState());
       if (previous[gameMode] !== current[gameMode]) {
@@ -1279,44 +1289,44 @@ function once(api: IExtensionApi) {
   );
 
   api.events.on('start-install', (archivePath: string,
-                                  callback?: (error, id: string) => void) => {
+    callback?: (error, id: string) => void) => {
     const { enable } = api.store.getState().settings.automation;
-    installManager.install(null, archivePath, [ activeGameId(store.getState()) ],
-          api, {
-            download: {
-              localPath: path.basename(archivePath),
-            },
-          },
-          true, enable, callback);
+    installManager.install(null, archivePath, [activeGameId(store.getState())],
+      api, {
+      download: {
+        localPath: path.basename(archivePath),
+      },
+    },
+      true, enable, callback);
   });
 
   api.events.on(
     'start-install-download',
     (downloadId: string, optionsIn?: IInstallOptions | boolean,
-     callback?: (error, id: string) => void) => {
+      callback?: (error, id: string) => void) => {
       const options = optionsIn === undefined
         ? {}
-        : (typeof(optionsIn) === 'boolean')
+        : (typeof (optionsIn) === 'boolean')
           ? { allowAutoEnable: optionsIn }
           : optionsIn;
       onStartInstallDownload(api, installManager, downloadId, options, callback);
     });
 
   api.events.on(
-      'remove-mod',
-      (gameId: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
-          onRemoveMod(api, getAllActivators(), gameId, modId, cb, options));
+    'remove-mod',
+    (gameId: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
+      onRemoveMod(api, getAllActivators(), gameId, modId, cb, options));
 
   api.events.on('remove-mods',
-       (gameId: string, modIds: string[], cb?: (error: Error) => void,
-        options?: IRemoveModOptions) => {
+    (gameId: string, modIds: string[], cb?: (error: Error) => void,
+      options?: IRemoveModOptions) => {
       onRemoveMods(api, getAllActivators(), gameId, modIds, cb, options);
     });
 
   api.events.on('create-mod',
-      (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
-        onAddMod(api, gameMode, mod, callback);
-      });
+    (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
+      onAddMod(api, gameMode, mod, callback);
+    });
 
   api.events.on('profile-will-change', () => {
     // when the profile changes there is a good chance the cycle warning doesn't apply and if
@@ -1331,7 +1341,7 @@ function once(api: IExtensionApi) {
 
   api.events.on('simulate-installer',
     (gameId: string, archiveId: string, options: IInstallOptions,
-     cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
+      cb: (instructions: IInstallResult, tempPath: string) => Promise<void>) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
       const rawGameId = Array.isArray(download?.game) ? download.game[0] : download?.game;
@@ -1341,9 +1351,9 @@ function once(api: IExtensionApi) {
       const archivePath: string = path.join(downloadPath, download.localPath);
       const tempPath = path.join(getVortexPath('temp'), `simulating_${archiveId}`);
       return installManager.simulate(api, gameId, archivePath, tempPath,
-                                     options.fileList, true, options.choices, () => {
-                                       // nop
-                                     })
+        options.fileList, true, options.choices, () => {
+          // nop
+        })
         .then(instructions => cb(instructions, tempPath))
         .then(() => fs.removeAsync(tempPath))
         .catch(err => {
@@ -1385,7 +1395,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     description: {
       short: 'Folder transfer was interrupted',
       long: 'An attempt to move the staging folder was interrupted. You should let '
-          + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
+        + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
     automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
       return fs.removeAsync(transferDestination)
@@ -1468,7 +1478,7 @@ function getDuplicateMods(api: IExtensionApi): IDuplicatesMap {
   const duplicates = mods.reduce((accum, m1) => {
     const name = renderModName(m1)
     if (!truthy(m1.archiveId)
-        || arcIdsChecked.includes(m1.archiveId)) {
+      || arcIdsChecked.includes(m1.archiveId)) {
       return accum;
     }
 
@@ -1560,8 +1570,8 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
       },
     };
   } else if ((discovery !== undefined)
-          && (discovery.path !== undefined)
-          && isChildPath(instPath, discovery.path)) {
+    && (discovery.path !== undefined)
+    && isChildPath(instPath, discovery.path)) {
     result = {
       severity: 'warning',
       description: {
@@ -1639,16 +1649,16 @@ function init(context: IExtensionContext): boolean {
 
       const hasUnfulfilled = (modId: string) => (mods[modId].rules ?? [])
         .find(rule => !rule.ignored
-            && (rule.type === 'recommends')
-            // if idHint is undefined this rule has never been fulfilled,
-            && (!rule.reference.idHint
+          && (rule.type === 'recommends')
+          // if idHint is undefined this rule has never been fulfilled,
+          && (!rule.reference.idHint
             // if the mod can't be found by idHint it probably was removed
-              || (mods[rule.reference.idHint] === undefined)));
-      
+            || (mods[rule.reference.idHint] === undefined)));
+
       const unfulfilled = modIds.find(hasUnfulfilled);
-      
+
       return (unfulfilled !== undefined)
-          || 'No unfulfilled recommendations';
+        || 'No unfulfilled recommendations';
     });
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
@@ -1665,11 +1675,11 @@ function init(context: IExtensionContext): boolean {
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
   context.registerSettings('Mods', LazyComponent(() => require('./views/Settings')),
-                           () => ({activators: getAllActivators()}), undefined, 75);
+    () => ({ activators: getAllActivators() }), undefined, 75);
   context.registerSettings('Workarounds', Workarounds, undefined, undefined, 1000);
 
   context.registerDialog('external-changes',
-                         LazyComponent(() => require('./views/ExternalChangeDialog')));
+    LazyComponent(() => require('./views/ExternalChangeDialog')));
   context.registerDialog('fix-deployment',
     LazyComponent(() => require('./views/FixDeploymentDialog')), () => {
       // nop
@@ -1757,7 +1767,7 @@ function init(context: IExtensionContext): boolean {
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 
   context.registerStartHook(100, 'check-deployment',
-                            input => preStartDeployHook(context.api, input));
+    input => preStartDeployHook(context.api, input));
 
   const history = new ModHistory(context.api);
 
