@@ -54,7 +54,7 @@ import { IInstallResult, IInstruction, InstructionType } from './types/IInstallR
 import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { IInstallationDetails, InstallFunc } from './types/InstallFunc';
-import { ISupportedResult, TestSupported } from './types/TestSupported';
+import { ISupportedResult, ITestSupportedDetails, TestSupported } from './types/TestSupported';
 import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import metaLookupMatch from './util/metaLookupMatch';
@@ -758,6 +758,7 @@ class InstallManager {
         if (truthy(extractList) && extractList.length > 0) {
           return makeListInstaller(extractList, tempPath);
         } else {
+          // TODO: add installer details to the simulate installer function
           return this.getInstaller(fileList, gameId, archivePath);
         }
       })
@@ -2489,13 +2490,25 @@ class InstallManager {
         // process.noAsar = false;
       })
       .then(() => {
+        const hasFomodSegment = (file: string) => {
+          const segments = file.split(path.sep);
+          return segments.includes('fomod');
+        };
+        const hasCSScripts = fileList.some(file => hasFomodSegment(file) && ['script.cs'].includes(path.basename(file).toLowerCase()));
+        const hasXmlConfigXML = fileList.some(file => hasFomodSegment(file) && ['moduleconfig.xml', 'script.xml'].includes(path.basename(file).toLowerCase()));
+        const testDetails: ITestSupportedDetails = {
+          hasCSScripts,
+          hasXmlConfigXML,
+        };
         if (truthy(extractList) && extractList.length > 0) {
-          return makeListInstaller(extractList, tempPath);
+          return makeListInstaller(extractList, tempPath)
+            .then((supportedInstaller: ISupportedInstaller) => Promise.resolve({ ...supportedInstaller, ...testDetails }));
         } else if (forceInstaller === undefined) {
-          return this.getInstaller(fileList, gameId, archivePath);
+          return this.getInstaller(fileList, gameId, archivePath, undefined, testDetails)
+            .then((supportedInstaller: ISupportedInstaller) => Promise.resolve({ ...supportedInstaller, ...testDetails }));
         } else {
           const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
-          return forced.testSupported(fileList, gameId, archivePath)
+          return forced.testSupported(fileList, gameId, archivePath, testDetails)
             .then((testResult: ISupportedResult) => {
               if (!testResult.supported) {
                 return undefined;
@@ -2503,6 +2516,7 @@ class InstallManager {
                 return {
                   installer: forced,
                   requiredFiles: testResult.requiredFiles,
+                  ...testDetails,
                 };
               }
             });
@@ -2519,6 +2533,8 @@ class InstallManager {
         const innerDetails: IInstallationDetails = {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
           modReference: details?.modReference,
+          hasCSScripts: supportedInstaller?.hasCSScripts,
+          hasXmlConfigXML: supportedInstaller?.hasXmlConfigXML,
         }
         log('debug', 'invoking installer',
           { installer: installer.id, enforced: forceInstaller !== undefined });
@@ -3484,12 +3500,13 @@ class InstallManager {
     gameId: string,
     archivePath: string,
     offsetIn?: number,
+    details?: ITestSupportedDetails
   ): Bluebird<ISupportedInstaller> {
     const offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Bluebird.resolve(undefined);
     }
-    return Bluebird.resolve(this.mInstallers[offset].testSupported(fileList, gameId, archivePath))
+    return Bluebird.resolve(this.mInstallers[offset].testSupported(fileList, gameId, archivePath, details))
       .then((testResult: ISupportedResult) => {
         if (testResult === undefined) {
           log('error', 'Buggy installer', this.mInstallers[offset].id);
