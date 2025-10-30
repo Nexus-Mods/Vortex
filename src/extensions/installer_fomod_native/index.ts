@@ -11,6 +11,8 @@ import {
 } from '../installer_fomod_shared/utils/gameSupport';
 import { IExtensionContext } from '../../types/api';
 import { getGame } from '../../util/api';
+import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
+import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
 function init(context: IExtensionContext): boolean {
   const modTester = new VortexModTester();
@@ -120,8 +122,14 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 10,
-    /*testSupported:*/ toBluebird(async (files: string[], gameId: string) => {
-      const result = await modTester.testSupport(files, ['Basic']);
+    /*testSupported:*/ toBluebird(async (files: string[], _gameId: string, _archivePath: string, details?: ITestSupportedDetails) => {
+      if (details !== undefined && (details.hasXmlConfigXML === false || details.hasCSScripts === false)) {
+        return { 
+          supported: false,
+          requiredFiles: []
+        };
+      }
+      const result = await modTester.testSupport(files, ['XmlScript']);
       return result;
     }),
     /*install:*/ toBluebird(install)
@@ -130,7 +138,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 100,
-    /*testSupported:*/ toBluebird(async (files: string[], gameId: string) => {
+    /*testSupported:*/ toBluebird(async (files: string[], _gameId: string, _archivePath: string, details?: ITestSupportedDetails) => {
       const result = await modTester.testSupport(files, ['Basic']);
       return result;
     }),

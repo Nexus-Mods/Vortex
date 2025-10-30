@@ -42,6 +42,7 @@ import { execFile, spawn } from 'child_process';
 import { SITE_ID } from '../gamemode_management/constants';
 import { downloadPathForGame } from '../download_management/selectors';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
+import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
 const fomodProcessLimiter = new ConcurrencyLimiter(5);
@@ -1337,8 +1338,17 @@ async function createIsolatedConnection(securityLevel: SecurityLevel): Promise<C
 }
 
 async function testSupportedScripted(securityLevel: SecurityLevel,
-                                     files: string[])
+                                     files: string[],
+                                     _archivePath: string,
+                                     details?: ITestSupportedDetails)
                                      : Promise<ISupportedResult> {
+  if (details !== undefined && details.hasCSScripts === false) {
+    return { 
+      supported: false,
+      requiredFiles: []
+    };
+  }
+
   let connection: ConnectionIPC;
   try {
     connection = await createIsolatedConnection(securityLevel);
@@ -1353,7 +1363,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
       if (connection) {
         connection.quit();
       }
-      return testSupportedScripted(securityLevel - 1, files);
+      return testSupportedScripted(securityLevel - 1, files, _archivePath, details);
     }
     throw transformError(err);
   } finally {
