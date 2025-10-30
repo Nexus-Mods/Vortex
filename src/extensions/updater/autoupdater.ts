@@ -202,7 +202,7 @@ function setupAutoUpdate(api: IExtensionApi) {
           type: 'warning',
           title: 'Downgrade available',
           message: `${updateInfo.version} is available.`,
-          noDismiss: true,
+          noDismiss: false,
           actions: [          
             { title: 'More Info', action: () => {
               api.showDialog('info', `Downgrade warning`, {
