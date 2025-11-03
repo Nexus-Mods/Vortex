@@ -26,6 +26,7 @@ export interface IDownloadOptions {
  * @interface IDownload
  */
 export interface IDownload {
+  id: string;
   /**
    * current state of the download
    *

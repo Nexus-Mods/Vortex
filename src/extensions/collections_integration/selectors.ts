@@ -120,6 +120,7 @@ export const getCollectionActiveSessionMod = (state: any, ruleId: string): IColl
 export const getCollectionModByReference = (
   state: any,
   searchParams: {
+    tag?: string;
     modId?: string;
     fileMD5?: string;
     fileId?: string;
@@ -140,6 +141,7 @@ export const getCollectionModByReference = (
     if (!ref) return false;
 
     // Check each available identifier
+    if (searchParams.tag && ref.tag === searchParams.tag) return true;
     if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
     if (searchParams.fileId && ref.id === searchParams.fileId) return true;
     if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName) return true;
