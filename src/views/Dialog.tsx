@@ -444,11 +444,16 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderCheckbox = (checkbox: ICheckbox, content: IDialogContent) => {
     const { t } = this.props;
+    const translated = content.options?.translated !== false;
     const text = checkbox.bbcode !== undefined
-      ? bbcode(t(checkbox.bbcode,
-                 { replace: content.parameters, count: content.parameters?.count }),
+      ? bbcode(translated
+                 ? t(checkbox.bbcode,
+                    { replace: content.parameters, count: content.parameters?.count })
+                 : checkbox.bbcode,
                content.options?.bbcodeContext)
-      : t(checkbox.text, { replace: content.parameters, count: content.parameters?.count });
+      : (translated
+          ? t(checkbox.text, { replace: content.parameters, count: content.parameters?.count })
+          : checkbox.text);
     return (
       <Checkbox
         id={checkbox.id}
