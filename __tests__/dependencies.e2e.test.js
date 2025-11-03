@@ -114,6 +114,7 @@ jest.mock('../src/extensions/collections_integration/selectors', () => {
   return {
     getCollectionActiveSession: jest.fn((state) => state?.session?.collections?.activeSession || null),
     getCollectionInstallProgress: jest.fn((...args) => getVortexApi().selectors.getCollectionInstallProgress(...args)),
+    getCollectionModByReference: jest.fn((...args) => getVortexApi().selectors.getCollectionModByReference(...args)),
     getCollectionModsByPhase: jest.fn(() => ({})),
     getCollectionSessionById: jest.fn(),
     isCollectionInstalling: jest.fn(() => false),
