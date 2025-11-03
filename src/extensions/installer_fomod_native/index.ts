@@ -1,4 +1,5 @@
 import { method as toBluebird } from 'bluebird';
+import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
 import { VortexModInstaller, VortexModTester } from "./manager";
@@ -24,7 +25,8 @@ function init(context: IExtensionContext): boolean {
         _progressDelegate: any,
         choicesIn?: any,
         unattended?: boolean,
-        archivePath?: string
+        archivePath?: string,
+        details?: IInstallationDetails
       ) => {
 
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
@@ -73,6 +75,18 @@ function init(context: IExtensionContext): boolean {
     };
 
     try {
+      const canBeUnattended = fomodChoices != null;
+      const shouldBypassDialog = unattended === true && canBeUnattended;
+      if (details?.hasXmlConfigXML && !shouldBypassDialog) {
+        // This mod will require user interaction, we need to make sure
+        //  the the previous phase is deployed.
+        await context.api.emitAndAwait('schedule-phase-deployment', {
+          modReference: details.modReference,
+          gameId,
+          modId: path.basename(scriptPath, '.installing'),
+          archivePath,
+        });
+      }
       const result = await invokeInstall(true);
       return result;
     } catch (err) {
