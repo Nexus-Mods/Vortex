@@ -111,8 +111,8 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
     setIsHovered(false);
   }, []);
 
-  // Check if "Easy install" badge exists
-  const hasEasyInstallBadge = badges?.some(badge =>
+  // Find the "Easy install" badge (if it exists)
+  const easyInstallBadge = badges?.find(badge =>
     badge.name.toLowerCase() === 'easy install'
   );
 
@@ -138,8 +138,8 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
               />
 
               {/* Easy Install Badge - conditionally shown */}
-              {/* {hasEasyInstallBadge && (
-                <div className="tw:absolute tw:inset-x-0 tw:bottom-0 tw:z-10">
+              {easyInstallBadge && (
+                <div className="tw:absolute tw:rounded-b-sm tw:inset-x-0 tw:bottom-0 tw:z-10">
                   <Typography
                     as="p"
                     typographyType="title-xs"
@@ -147,10 +147,10 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     className="tw:flex tw:items-center tw:gap-x-0.5 tw:px-1.5 tw:py-0.5 tw:bg-info-weak tw:text-info-50"
                   >
                     <Icon path="mdiStar" size="xs" />
-                    <span className="tw:px-0.5 tw:leading-5">Easy install</span>
+                    <span className="tw:px-0.5 tw:leading-5" title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
                   </Typography>
                 </div>
-              )} */}
+              )}
 
             </div>
 
@@ -207,7 +207,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                           appearance="none"
                           className={`tw:justify-center tw:tracking-tight ${tagText.toLowerCase() === 'adult'
                             ? 'tw:text-danger-strong'
-                            : 'tw:text-info-strong'
+                            : 'tw:text-neutral-moderate'
                             }`}
                         >
                           {tagText}
