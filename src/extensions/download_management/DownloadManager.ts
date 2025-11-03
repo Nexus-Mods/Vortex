@@ -25,7 +25,6 @@ import * as https from 'https';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as stream from 'stream';
-import * as url from 'url';
 import * as zlib from 'zlib';
 import { IExtensionApi } from '../../types/api';
 
@@ -301,16 +300,35 @@ class DownloadWorker {
     }
   }
 
-  private startDownload = (job: IDownloadJob, jobUrl: string, electronCookies: Electron.Cookie[]) => {
+  private startDownload = (job: IDownloadJob, jobUrl: string | URL, electronCookies: Electron.Cookie[]) => {
     if (this.mEnded) {
       // worker was canceled while the url was still being resolved
       return;
     }
 
+    let jobUrlString: string;
+    if (!jobUrl) {
+      const errorMsg = 'No URL provided for this download';
+      log('error', 'URL validation failed in startDownload', {
+        workerId: job.workerId || 'unknown',
+        jobUrlType: typeof jobUrl,
+        jobUrlValue: jobUrl
+      });
+      this.handleError(new Error(errorMsg));
+      return;
+    } else if (typeof jobUrl === 'string') {
+      jobUrlString = jobUrl;
+    } else if (jobUrl instanceof URL) {
+      jobUrlString = jobUrl.href;
+    } else {
+      // Try to convert to string as last resort
+      jobUrlString = String(jobUrl);
+    }
+
     let parsed: URL;
     let referer: string;
     try {
-      const [urlIn, refererIn] = jobUrl.split('<');
+      const [urlIn, refererIn] = jobUrlString.split('<');
       // at some point in the past we'd encode the uri here which apparently led to double-encoded
       // uris. Then we'd decode it which led to the request failing if there were characters in
       // the url that required encoding.
@@ -318,9 +336,17 @@ class DownloadWorker {
       // the callers whether the url is encoded or not
       parsed = new URL(urlIn);
       referer = refererIn;
-      jobUrl = urlIn;
+      jobUrlString = urlIn;
     } catch (err) {
-      this.handleError(new Error('No valid URL for this download'));
+      const errorMsg = `Invalid URL format: ${err.message} (URL: ${jobUrlString}, original type: ${typeof jobUrl})`;
+      log('error', 'URL parsing failed in startDownload', {
+        workerId: job.workerId || 'unknown',
+        jobUrl: jobUrlString,
+        originalJobUrlType: typeof jobUrl,
+        originalError: err.message,
+        stack: err.stack
+      });
+      this.handleError(new Error(errorMsg));
       return;
     }
 
@@ -370,14 +396,14 @@ class DownloadWorker {
         let recodedURI: string;
         try {
           // Only re-encode if the URL appears to need it
-          if (jobUrl.includes('%')) {
-            recodedURI = jobUrl; // Already encoded
+          if (jobUrlString.includes('%')) {
+            recodedURI = jobUrlString; // Already encoded
           } else {
-            recodedURI = encodeURI(jobUrl); // Encode special characters
+            recodedURI = encodeURI(jobUrlString); // Encode special characters
           }
         } catch (err) {
-          log('warn', 'URL encoding failed, using original', { url: jobUrl, error: err.message });
-          recodedURI = jobUrl;
+          log('warn', 'URL encoding failed, using original', { url: jobUrlString, error: err.message });
+          recodedURI = jobUrlString;
         }
         this.handleResponse(res, recodedURI);
         let str: stream.Readable = res;
@@ -651,7 +677,13 @@ class DownloadWorker {
     if (response.statusCode >= 300) {
       if (([301, 302, 303, 307, 308].includes(response.statusCode))
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
-        const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
+        const location = response.headers['location'] as string;
+        let newUrl: string;
+        try {
+          newUrl = new URL(location).href;
+        } catch {
+          newUrl = new URL(location, jobUrl).href;
+        }
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
         this.mJob.url = () => Bluebird.resolve(newUrl);
         this.mRedirected = true;
@@ -1269,6 +1301,14 @@ class DownloadManager {
               ? fileName
               : decodeURI(path.basename(new URL(urlIn).pathname));
           }
+          if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
+            log('error', 'URL resolution returned empty or invalid URL list', {
+              downloadId: download.id,
+              originalUrls: download.urls,
+              resolvedUrlCount: resolved.urls?.length || 0
+            });
+            return Bluebird.reject(new ProcessCanceled('Failed to resolve download URL'));
+          }
           return resolved.urls[0];
         }),
       confirmedOffset: 0,
@@ -1718,7 +1758,17 @@ class DownloadManager {
           state: 'init',
           options: download.options,
           extraCookies,
-          url: () => download.resolvedUrls().then(resolved => resolved.urls[0]),
+          url: () => download.resolvedUrls().then(resolved => {
+            if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
+              log('error', 'URL resolution returned empty or invalid URL list for chunk', {
+                downloadId: download.id,
+                originalUrls: download.urls,
+                resolvedUrlCount: resolved.urls?.length || 0
+              });
+              return Bluebird.reject(new ProcessCanceled('Failed to resolve download URL'));
+            }
+            return resolved.urls[0];
+          }),
         });
         offset += chunkSize;
       }
@@ -1747,6 +1797,14 @@ class DownloadManager {
           fileNameFromURL = decodeURI(path.basename(new URL(resolved.urls[0]).pathname));
         }
 
+        if (!resolved.urls || resolved.urls.length === 0 || !resolved.urls[0]) {
+          log('error', 'URL resolution returned empty or invalid URL list in toJob', {
+            downloadId: download.id,
+            originalUrls: download.urls,
+            resolvedUrlCount: resolved.urls?.length || 0
+          });
+          return Bluebird.reject(new ProcessCanceled('Failed to resolve download URL'));
+        }
         return resolved.urls[0];
       }),
       confirmedOffset: chunk.offset,

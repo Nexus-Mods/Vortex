@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 
 import MainPage from '../../../views/MainPage';
 import Tailwind from '../../../tailwind';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, isCollectionModPresent } from '../../../util/selectors';
 import { IState } from '../../../types/IState';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import opn from '../../../util/opn';
@@ -314,6 +314,9 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   return (
                     <Tailwind.CollectionTile
                       key={collection.id}
+                      api={api}
+                      slug={collection.slug}
+                      gameId={gameId}
                       id={collection.id.toString()}
                       title={collection.name}
                       author={{
@@ -329,6 +332,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       }}
                       description={(collection as any).summary || 'No description available.'}
                       version={latestRevision?.revisionNumber?.toString()}
+                      badges={(collection as any).badges}
                       onAddCollection={() => handleAddCollection(collection)}
                       onViewPage={() => handleViewOnNexus(collection)}
                       className="tw:max-w-none"

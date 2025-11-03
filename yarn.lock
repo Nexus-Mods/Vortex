@@ -10571,7 +10571,7 @@ reduce-function-call@^1.0.1:
   dependencies:
     balanced-match "^1.0.0"
 
-redux-act@^1.7.7:
+redux-act@^1.8.0:
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/redux-act/-/redux-act-1.8.0.tgz#5394a9433b36937d1a1da11aca6547d97d10ab00"
   integrity sha512-xW3FIco/VwJGMW3eCD3JGAxyozNC4k35qrWM5lEQf9T2pfv3leDC+3vQ8WdHZjcrol/jjWAeJ+ULqrscuDqlKg==
@@ -12568,8 +12568,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1-r29"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/9a0a0d8133a927b93024ebc812992afd6415a2ed"
+  version "1.9.1-r30"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/36dbf6ac635ded2cf79e911fe5771d6898c89655"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

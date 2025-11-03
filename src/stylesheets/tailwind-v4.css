@@ -471,18 +471,24 @@
 
 /* Title styles */
 .tw\:typography-title-md {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .tw\:typography-title-sm {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .tw\:typography-title-xs {
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1.5;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* Body styles */

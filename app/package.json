@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
+    "@mdi/js": "6.6.96",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "@tailwindcss/cli": "^4.1.15",
@@ -85,7 +86,7 @@
     "react-sortable-tree": "Nexus-Mods/react-sortable-tree",
     "recharts": "^1.8.5",
     "redux": "^4.0.4",
-    "redux-act": "^1.7.7",
+    "redux-act": "^1.8.0",
     "redux-batched-actions": "^0.5.0",
     "redux-thunk": "^2.3.0",
     "relaxed-json": "^1.0.3",
