@@ -76,7 +76,7 @@ describe('initDownload', () => {
     const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, games: ['game'] });
     _.unset(result, ['files', 'id', 'fileTime']);
     expect(result).toEqual({ files: { id: {
-      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: ['game'],
+      id: 'id', chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: ['game'],
     } } });
   });
   it('terminates if the id exists', () => {

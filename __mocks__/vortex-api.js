@@ -1056,6 +1056,38 @@ const vortexApi = {
         isComplete,
       };
     },
+    getCollectionModByReference: (state, searchParams) => {
+      const session = state?.session?.collections?.activeSession;
+      if (!session || !session.mods) {
+        return undefined;
+      }
+
+      const mods = session.mods;
+
+      // First try to find by modId if provided (most direct match)
+      if (searchParams.modId) {
+        const byModId = Object.values(mods).find(mod => mod.modId === searchParams.modId);
+        if (byModId) return byModId;
+      }
+
+      // Fall back to searching by rule reference fields
+      return Object.values(mods).find(mod => {
+        const ref = mod.rule?.reference;
+        if (!ref) return false;
+
+        // Check each available identifier
+        if (searchParams.tag && ref.tag === searchParams.tag) return true;
+        if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5) return true;
+        if (searchParams.fileId && ref.fileId === searchParams.fileId) return true;
+        if (searchParams.logicalFileName && ref.logicalFileName === searchParams.logicalFileName) return true;
+
+        return false;
+      });
+    },
+    getCollectionActiveSessionMods: (state) => {
+      const session = state?.session?.collections?.activeSession;
+      return session?.mods || {};
+    },
   },
   genMd5Hash,
   createMockApiMethods,
