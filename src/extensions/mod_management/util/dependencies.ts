@@ -330,14 +330,19 @@ async function gatherDependenciesGraph(
   api: IExtensionApi,
   gameMode: string,
   recommendations: boolean,
+  addToCache?: (download: IDownload) => void
 ): Promise<IDependencyNode> {
   const state = api.getState();
   const downloads = state.persistent.downloads.files;
   const mods = state.persistent.mods[gameMode] ?? {};
 
-  const download = findDownloadByRef(rule.reference, downloads);
-  if (!download) {
+  const downloadId = findDownloadByRef(rule.reference, downloads);
+  if (!downloadId) {
     log('debug', 'no download found', { ref: rule.reference.logicalFileName });
+  } else {
+    if (addToCache) {
+      addToCache(downloads[downloadId]);
+    }
   }
   if (rule.reference.fileMD5 !== undefined) {
     api.lookupModMeta({
@@ -360,7 +365,7 @@ async function gatherDependenciesGraph(
   const limit = new ConcurrencyLimiter(20);
 
   try {
-    if (!download) {
+    if (!downloadId) {
       urlFromHint = await lookupDownloadHint(api, rule.downloadHint);
       if (urlFromHint) {
         log('info', 'url from dependency', { urlFromHint, md5: rule.reference.fileMD5 });
@@ -382,7 +387,7 @@ async function gatherDependenciesGraph(
       : [];
 
     const node: IDependencyNode = {
-      download,
+      download: downloadId,
       mod,
       reference: rule.reference,
       lookupResults: lookupResults.map(iter => makeLookupResult(iter, urlFromHint)),
@@ -462,6 +467,7 @@ function gatherDependencies(
   api: IExtensionApi,
   recommendations: boolean,
   progressCB?: (percent: number) => void,
+  addToCache?: (download: IDownload) => void
 ): Bluebird<IDependency[]> {
   const state = api.getState();
   const gameMode: string = activeGameId(state);
@@ -483,7 +489,7 @@ function gatherDependencies(
 
   // for each requirement, look up the reference and recursively their dependencies
   return Bluebird.all(requirements.map((rule: IModRule) => Bluebird.resolve(limit.do(() =>
-    gatherDependenciesGraph(rule, api, gameMode, recommendations)))
+    gatherDependenciesGraph(rule, api, gameMode, recommendations, addToCache)))
     .then((node: IDependencyNode) => {
       onProgress();
       return Bluebird.resolve(node);

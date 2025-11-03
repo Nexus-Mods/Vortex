@@ -359,7 +359,7 @@ export function retrieveModInfo(
         return;
       }
       log('warn', 'An error occurred looking up a mod', {
-        error: errorFromNexus(err),
+        error: JSON.stringify(errorFromNexus(err)),
         gameId,
         modId: nexusModId,
       });

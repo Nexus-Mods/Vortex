@@ -18,6 +18,7 @@ export const stateReducer: IReducerSpec = {
     [action.initDownload as any]: (state, payload) => {
       if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       const downloadObj = {
+        id: payload.id,
         state: 'init',
         game: payload.games,
         urls: payload.urls,

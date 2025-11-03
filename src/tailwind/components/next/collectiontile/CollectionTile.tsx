@@ -12,14 +12,12 @@ import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
 import numeral from 'numeral'; 
 import { IExtensionApi } from '../../../../types/IExtensionContext';
 import { isCollectionModPresent, activeDownloads } from '../../../../util/selectors';
-import { useSelector } from 'react-redux';
-import { IDownload } from '../../../../types/IState';
 import Debouncer from '../../../../util/Debouncer';
 
 const debouncer = new Debouncer((func: () => void) => {
   func?.();
-  return Promise.resolve();
-}, 5000);
+  return new Promise<void>((resolve) => setTimeout(resolve, 5000));
+}, 5000, false, true);
 
 export interface CollectionTileProps {
   // Data

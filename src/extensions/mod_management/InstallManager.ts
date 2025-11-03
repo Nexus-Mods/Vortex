@@ -30,7 +30,7 @@ import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
 
-import { getCollectionActiveSession, getCollectionInstallProgress, getCollectionModsByPhase, getCollectionSessionById, isCollectionInstalling, isCollectionPhaseComplete } from '../collections_integration/selectors';
+import { getCollectionActiveSession, getCollectionInstallProgress, getCollectionModByReference, getCollectionModsByPhase, getCollectionSessionById, isCollectionInstalling, isCollectionPhaseComplete } from '../collections_integration/selectors';
 import { resolveCategoryId } from '../category_management/util/retrieveCategoryPath';
 import { AlreadyDownloaded, DownloadIsHTML } from '../download_management/DownloadManager';
 import { IDownload } from '../download_management/types/IDownload';
@@ -296,17 +296,18 @@ function findCollectionByDownload(
     return null;
   }
 
-  const mod = state.persistent.mods[gameId][activeCollection.collectionId] || null;
-  if (mod && mod.type === 'collection' && mod.rules) {
-    const matchingRule = mod.rules.find((rule: IModRule) =>
-      rule.reference.tag === referenceTag || rule.reference.md5Hint === download.fileMD5);
-    if (matchingRule) {
-      return { collectionMod: mod, matchingRule, gameId };
-    }
+  const matchingRule = getCollectionModByReference(state, {
+    tag: referenceTag,
+    fileMD5: download.fileMD5,
+    fileId: download.modInfo?.fileId,
+    logicalFileName: download.localPath,
+  });
+  if (!matchingRule) {
+    log('debug', 'No matching rule found in collection for download', { downloadId, referenceTag });
+    return null;
   }
 
-  log('debug', 'No collection found with matching rule for download', { downloadId, referenceTag });
-  return null;
+  return { collectionMod: state.persistent.mods[gameId][activeCollection.collectionId], matchingRule: matchingRule.rule, gameId };
 }
 
 /**
@@ -360,6 +361,7 @@ function validateVariantName(t: TFunction, content: IDialogContent): IConditionR
  * @class InstallManager
  */
 class InstallManager {
+  private static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
   private mDependencyInstalls: { [modId: string]: () => void } = {};
@@ -385,7 +387,7 @@ class InstallManager {
   private static readonly MAX_DEPENDENCY_RETRIES = 3;
 
   // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(5);
+  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(InstallManager.MAX_SIMULTANEOUS_INSTALLS);
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
@@ -482,7 +484,9 @@ class InstallManager {
 
     const { collectionMod, matchingRule, gameId } = collectionInfo;
     const collectionId = collectionMod.id;
-    log('debug', 'Found collection for download', { downloadId, collectionId });
+    if (process.env.NODE_ENV !== 'production') {
+      log('debug', 'Found collection for download', { downloadId, collectionId });
+    }
 
     const isInstallingDependencies = !!this.mDependencyInstalls[collectionId];
     const hasPhaseState = this.mInstallPhaseState.has(collectionId);
@@ -490,6 +494,19 @@ class InstallManager {
     if (!isInstallingDependencies && !hasPhaseState) {
       log('debug', 'Collection is not currently installing (no active dependency install or phase state)', { collectionId, downloadId });
       return false;
+    }
+
+    if (hasPhaseState) {
+      const phaseState = this.mInstallPhaseState.get(collectionId);
+      if (phaseState) {
+        // Add this download to the cache
+        if (download.modInfo?.referenceTag) {
+          phaseState.downloadLookupCache.byTag.set(download.modInfo.referenceTag, downloadId);
+        }
+        if (download.fileMD5) {
+          phaseState.downloadLookupCache.byMd5.set(download.fileMD5, downloadId);
+        }
+      }
     }
 
     // Create a dependency object and queue the installation
@@ -1792,6 +1809,10 @@ class InstallManager {
     reQueueAttempted?: Map<number, number>;
     deploymentPromises?: Map<number, IDeploymentDetails>;
     isDeploying?: boolean;  // Flag to track if deployment is in progress
+    downloadLookupCache?: {  // Performance optimization: cache download lookups to avoid O(n*m)
+      byTag: Map<string, string>;
+      byMd5: Map<string, string>;
+    };
   }> = new Map();
 
   private ensurePhaseState(sourceModId: string) {
@@ -1803,6 +1824,10 @@ class InstallManager {
         activeByPhase: new Map<number, number>(),
         deployedPhases: new Set<number>(),
         deploymentPromises: new Map<number, IDeploymentDetails>(),
+        downloadLookupCache: {
+          byTag: new Map<string, string>(),
+          byMd5: new Map<string, string>(),
+        },
       });
     }
   }
@@ -1992,16 +2017,43 @@ class InstallManager {
     const downloads = api.getState().persistent.downloads.files;
     let modsNeedingRequeue = 0;
 
-    allDownloadedMods.forEach((mod: any) => {
-      // Try to find a ready download for this mod
-      const downloadId = getReadyDownloadId(
-        downloads,
-        mod.rule?.reference,
-        (id) => this.hasActiveOrPendingInstallation(sourceModId, id)
-      );
+    const phaseState = this.mInstallPhaseState.get(sourceModId);
+    const cache = phaseState?.downloadLookupCache;
 
+    allDownloadedMods.forEach((mod: any) => {
+      const reference = mod.rule?.reference;
+      if (!reference) {
+        return;
+      }
+
+      let downloadId = null;
+
+      if (cache) {
+        // Use cache for fast lookup
+        if (reference.tag && cache.byTag.has(reference.tag)) {
+          downloadId = cache.byTag.get(reference.tag);
+        } else if (reference.md5Hint && cache.byMd5.has(reference.md5Hint)) {
+          downloadId = cache.byMd5.get(reference.md5Hint);
+        }
+        if (downloadId && this.hasActiveOrPendingInstallation(sourceModId, downloadId)) {
+          downloadId = null; // Invalidate if already installing
+        }
+      } else {
+        // Fallback to slow O(n) lookup if cache doesn't exist yet
+        // This shouldn't happen often since cache is built as downloads finish
+        downloadId = getReadyDownloadId(
+          downloads,
+          reference,
+          (id) => this.hasActiveOrPendingInstallation(sourceModId, id)
+        );
+      }
+
+      // If found, check if it's ready and not being installed
       if (downloadId) {
-        modsNeedingRequeue++;
+        const download = downloads[downloadId];
+        if (download?.state === 'finished' && !this.hasActiveOrPendingInstallation(sourceModId, downloadId) || this.mActiveInstalls.size === 0 && this.mPendingInstalls.size > 0) {
+          modsNeedingRequeue++;
+        }
       }
     });
 
@@ -4658,6 +4710,30 @@ class InstallManager {
     }
   }
 
+  private addToPhaseStateCache = (api: IExtensionApi) => {
+    return (download: IDownload) => {
+      const activeCollectionSession = getCollectionActiveSession(api.getState());
+      if (activeCollectionSession == null) {
+        return;
+      }
+      this.ensurePhaseState(activeCollectionSession.collectionId);
+      const phaseState = this.mInstallPhaseState.get(activeCollectionSession.collectionId);
+      if (phaseState === undefined) {
+        return;
+      }
+      const cache = phaseState?.downloadLookupCache;
+      if (cache === undefined) {
+        return;
+      }
+      if (download.modInfo?.referenceTag !== undefined) {
+        cache.byTag.set(download.modInfo.referenceTag, download.id);
+      }
+      if (download.fileMD5 !== undefined) {
+        cache.byMd5.set(download.fileMD5, download.id);
+      }
+    }
+  };
+
   private installDependenciesImpl(api: IExtensionApi,
     profile: IProfile,
     gameId: string,
@@ -4701,7 +4777,7 @@ class InstallManager {
     api.store.dispatch(startActivity('dependencies', 'gathering'));
 
     log('debug', 'installing dependencies', { modId, name });
-    return gatherDependencies(filteredRules, api, false, progress)
+    return gatherDependencies(filteredRules, api, false, progress, this.addToPhaseStateCache(api))
       .then((dependencies: IDependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         api.dismissNotification(notificationId);
@@ -4842,7 +4918,7 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     api.store.dispatch(startActivity('dependencies', 'gathering'));
-    return gatherDependencies(filteredRules, api, true, undefined)
+    return gatherDependencies(filteredRules, api, true, undefined, this.addToPhaseStateCache(api))
       .then((dependencies: Dependency[]) => {
         api.store.dispatch(stopActivity('dependencies', 'gathering'));
         if (dependencies.length === 0) {
