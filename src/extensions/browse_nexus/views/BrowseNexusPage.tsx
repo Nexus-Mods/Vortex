@@ -332,6 +332,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       }}
                       description={(collection as any).summary || 'No description available.'}
                       version={latestRevision?.revisionNumber?.toString()}
+                      badges={(collection as any).badges}
                       onAddCollection={() => handleAddCollection(collection)}
                       onViewPage={() => handleViewOnNexus(collection)}
                       className="tw:max-w-none"
