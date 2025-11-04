@@ -254,14 +254,34 @@ function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   const downloadPath = selectors.downloadPathForGame(state, gameId);
   let downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
 
-  const invalid = Object.keys(downloads)
+  const incomplete = Object.keys(downloads)
     .filter(dlId => (['finished', 'paused'].includes(downloads[dlId].state))
       && (!truthy(downloads[dlId].localPath) || downloads[dlId].size === 0));
+  const invalid = Object.keys(downloads)
+    .filter(dlId => !archiveExtLookup.has(path.extname(downloads[dlId].localPath || '').toLowerCase()));
+  const removeSet = new Set<string>(incomplete.concat(invalid));
   const batched = [];
-  return Promise.all(invalid.map(async dlId => {
+  return Promise.all(Array.from(removeSet).map(async dlId => {
     await fs.removeAsync(path.join(downloadPath, downloads[dlId].localPath)).catch(() => null);
-    batched.push(removeDownload(dlId));
+    batched.push(removeDownloadSilent(dlId));
   })).then(() => batchDispatch(api.store, batched));
+}
+
+function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
+  const state: IState = api.store.getState();
+  gameId = gameId || selectors.activeGameId(state);
+  if (!gameId) {
+    return Promise.resolve();
+  }
+  const downloadPath = selectors.downloadPathForGame(state, gameId);
+  return fs.readdirAsync(downloadPath)
+    .then((files: string[]) => {
+      return Promise.all(files.map(fileName => {
+        if (!knownArchiveExt(fileName)) {
+          return fs.removeAsync(path.join(downloadPath, fileName)).catch(() => null);
+        }
+      }));
+    });
 }
 
 function updateDownloadPath(api: IExtensionApi, gameId?: string) {
@@ -278,6 +298,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   let downloads = {};
   let downloadChangeHandler: (evt: string, fileName: string) => void;
   return (removeInvalidDownloads(api, gameId) as any)
+    .then(() => removeInvalidFileExts(api, gameId))
     .then(() => getNormalizeFunc(currentDownloadPath, {separators: false, relative: false}))
     .then(normalize => {
       downloads = api.getState().persistent.downloads.files;
