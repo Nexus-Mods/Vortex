@@ -19,6 +19,7 @@ const verifyModules = [
   ['drivelist', path.join('build', 'Release', 'drivelist.node'), true],
   ['diskusage', path.join('build', 'Release', 'diskusage.node'), true],
   ['fomod-installer', path.join('dist', 'ModInstallerIPC.exe'), false],
+  ['fomod-installer-native', path.join('dist', 'ModInstaller.Native.dll'), false],
 ];
 
 if (process.platform === 'win32') {

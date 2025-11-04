@@ -1,7 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {getSafe} from '../../../util/storeHelper';
 
-import { getNativePlugins } from '../util/gameSupport';
 import DelegateBase from './DelegateBase';
 
 class Plugins extends DelegateBase {

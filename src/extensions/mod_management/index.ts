@@ -99,6 +99,7 @@ import { } from './views/Settings';
 import URLInput from './views/URLInput';
 import Workarounds from './views/Workarounds';
 
+import extendApi from './util/extendAPI';
 import { opn } from '../../util/api';
 
 import {
@@ -676,7 +677,10 @@ function genUpdateModDeployment() {
         .tap(() => progress(t('Running post-deployment events'), 99))
         .then(() => api.emitAndAwait('did-deploy', profile.id, newDeployment,
           (title: string) => progress(title, 99)))
-        .tap(() => progress(t('Preparing game settings'), 100))
+        .tap(() => {
+          api.events.emit('mods-did-deploy', profile.id, newDeployment);
+          progress(t('Preparing game settings'), 100);
+        })
         .then(() => bakeSettings(api, profile, sortedModList))
         // finally wrapping up
         .then(() => {
@@ -1779,17 +1783,7 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     once(context.api);
 
-    context.api.onAsync('schedule-phase-deployment', (modDeployInfo: ISchedulePhaseDeploymentForMod) => {
-      // Handle the scheduled phase deployment for the mod
-      const state: IState = context.api.store.getState();
-      const activeCollection = getCollectionActiveSession(state);
-      if (activeCollection == null) {
-        return Promise.resolve();
-      }
-      const currentPhase = getCollectionCurrentPhase(state);
-      installManager.scheduleDeployOnPhaseSettled(context.api, activeCollection.collectionId, currentPhase, true);
-      return installManager.awaitScheduledDeployment(activeCollection.collectionId, currentPhase);
-    });
+    Object.assign(context.api.ext, extendApi(context.api, installManager));
 
     history.init();
   });

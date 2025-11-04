@@ -9,6 +9,8 @@ export interface IInstallationDetails {
   //  when instructions are being overridden by an instructions override file.
   hasInstructionsOverrideFile?: boolean;
   modReference?: IModReference;
+  hasXmlConfigXML?: boolean;
+  hasCSScripts?: boolean;
 }
 
 export type InstallFunc =

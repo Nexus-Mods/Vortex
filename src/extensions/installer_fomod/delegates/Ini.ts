@@ -5,7 +5,7 @@ import {isNullOrWhitespace} from '../../../util/util';
 
 import {IGameStored} from '../../gamemode_management/types/IGameStored';
 
-import { getIniFilePath } from '../util/gameSupport';
+import { getIniFilePath } from '../../installer_fomod_shared/utils/gameSupport';
 
 import DelegateBase from './DelegateBase';
 

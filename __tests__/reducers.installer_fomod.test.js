@@ -1,4 +1,4 @@
-import { installerUIReducer } from '../src/extensions/installer_fomod/reducers/installerUI';
+import { installerUIReducer } from '../src/extensions/installer_fomod_shared/reducers/installerUI';
 
 describe('startDialog', () => {
   it('starts the installer dialog', () => {
@@ -37,7 +37,11 @@ describe('endDialog', () => {
     let result = installerUIReducer.reducers.END_FOMOD_DIALOG(input, { instanceId });
     expect(result).toEqual({
       activeInstanceId: null,
-      instances: {}
+      instances: {
+        [instanceId]: {
+          info: null
+        }
+      }
     });
   });
 });

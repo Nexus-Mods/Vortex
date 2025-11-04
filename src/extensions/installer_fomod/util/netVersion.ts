@@ -55,7 +55,7 @@ function getRegValue(key: string, expectedType: string): any {
   }
 }
 
-export function getNetVersion(): string {
+export function getNetVersion(): string | undefined {
   const release = getRegValue('Release', 'REG_DWORD');
   const found = KNOWN_RELEASES.find(iter => release >= iter.release);
   return found !== undefined

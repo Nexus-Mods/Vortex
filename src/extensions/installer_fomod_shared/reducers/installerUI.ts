@@ -13,18 +13,19 @@ export const installerUIReducer: IReducerSpec = {
     [actions.endDialog as any]: (state, payload) => {
       const { instanceId } = payload;
       const newState = setSafe(state, ['activeInstanceId'], null);
-      return deleteOrNop(newState, ['instances', instanceId]);
+      const newState2 = setSafe(newState, ['instances', instanceId, 'info'], null);
+      return deleteOrNop(newState2, ['instances', instanceId, 'dataPath']);
     },
     [actions.clearDialog as any]: (state, payload) => {
       const { instanceId } = payload;
-      return deleteOrNop(state, ['instances', instanceId, 'state']);
+      return deleteOrNop(state, ['instances', instanceId]);
     },
     [actions.setDialogState as any]: (state, payload) => {
       const { instanceId, dialogState } = payload;
       return setSafe(state, ['instances', instanceId, 'state'], dialogState);
     },
     [actions.setInstallerDataPath as any]: (state, payload) => {
-      const { path, instanceId } = payload;
+      const { instanceId, path } = payload;
       return setSafe(state, ['instances', instanceId, 'dataPath'], path);
     }
   },

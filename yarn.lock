@@ -6444,6 +6444,16 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
+"fomod-installer-ipc@file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript":
+  version "0.10.1"
+  dependencies:
+    async "^3.2.2"
+    copyfiles "*"
+    fs-extra "^10.1.0"
+
+"fomod-installer-native@file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript":
+  version "0.10.0"
+
 fomod-installer@Nexus-Mods/fomod-installer:
   version "0.10.1"
   resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bf96e8a0bf4fdd2bda3a570f1db3c69a6321905a"
@@ -12558,8 +12568,8 @@ void-elements@3.1.0:
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
 vortex-api@Nexus-Mods/vortex-api:
-  version "1.9.1-r30"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/36dbf6ac635ded2cf79e911fe5771d6898c89655"
+  version "1.9.1-r31"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/f3e459e0daeee07aa7f16e468328c9122f386d75"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"

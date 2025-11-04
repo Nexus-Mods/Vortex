@@ -2494,6 +2494,8 @@ class ExtensionManager {
       'null_activator',
       'updater',
       'installer_fomod',
+      'installer_fomod_native',
+      'installer_fomod_shared',
       'installer_nested_fomod',
       'instructions_overlay',
       'settings_metaserver',

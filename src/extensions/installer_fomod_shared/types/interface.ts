@@ -57,7 +57,7 @@ export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
   select?: StateCallback;
-  cont?: (direction: Direction) => void;
+  cont?: (direction: Direction, currentStepId: number) => void;
   cancel?: () => void;
 }
 
@@ -70,4 +70,20 @@ export interface IReportError {
   title: string;
   message: string;
   details: string;
+}
+
+export type IChoices = {
+    name: string;
+    groups: {
+        name: string;
+        choices: {
+            name: string;
+            idx: number;
+        }[];
+    }[];
+}[] | undefined
+
+export type IChoiceType = {
+  type: string;
+  options: IChoices;
 }
