@@ -49,6 +49,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [selectedTab, setSelectedTab] = React.useState<string>('collections');
   const itemsPerPage = 20;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
     setActiveSearch(searchQuery);
@@ -127,6 +128,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     setCurrentPage(1);
     setPageInput('1');
   }, [sortBy, activeSearch]);
+
+  // Scroll to top when page changes
+  React.useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
 
   const formatFileSize = (bytes: string): string => {
     const size = parseInt(bytes, 10);
@@ -235,7 +243,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   return (
     <MainPage id='browse-collections-page'>
       <MainPage.Body style={{ overflowY: 'auto' }}>
-        <div className="tw:h-full tw:p-5">
+        <div className="tw:h-full tw:p-5" ref={(node) => {
+          if (node) {
+            scrollContainerRef.current = node.parentElement as HTMLDivElement;
+          }
+        }}>
 
           <Tailwind.TabProvider
             tab={selectedTab}
