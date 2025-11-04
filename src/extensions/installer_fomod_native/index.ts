@@ -1,17 +1,16 @@
 import { method as toBluebird } from 'bluebird';
-import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
 import { VortexModInstaller, VortexModTester } from "./manager";
 
 import { clearDialog, setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
-import { IGroupList, IInstallerState, IChoices } from '../installer_fomod_shared/types/interface';
+import { IGroupList, IInstallerState } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
 } from '../installer_fomod_shared/utils/gameSupport';
-import { IExtensionContext } from '../../types/api';
-import { getGame } from '../../util/api';
+import { IExtensionContext, IInstallResult, IInstruction, InstructionType } from '../../types/api';
+import { getGame, ProcessCanceled } from '../../util/api';
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
@@ -45,6 +44,10 @@ function init(context: IExtensionContext): boolean {
       const result = await modInstaller.installAsync(
         files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate);
 
+      if (result === null) {
+        throw new ProcessCanceled("Installation cancelled by user");
+      }
+
       const state = context.api.store.getState();
       const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[instanceId].state;
 
@@ -63,7 +66,21 @@ function init(context: IExtensionContext): boolean {
           };
         });
 
-      result.instructions.push({
+        const transformedResult: IInstallResult = {
+          instructions: result.instructions.reduce<IInstruction[]>((map, current) => {
+            const currentWithoutType = (({ type, data, ...props }) => props)(current);
+            const type = current.type as InstructionType;
+            const data = Buffer.from(current.data);
+            map.push({
+              type: type,
+              data: data,
+              ...currentWithoutType
+            });
+          return map;
+          }, []),
+        };
+
+      transformedResult.instructions.push({
         type: 'attribute',
         key: 'installerChoices',
         value: {
@@ -71,7 +88,7 @@ function init(context: IExtensionContext): boolean {
           options: choices ?? fomodChoices,
         },
       });
-      return result;
+      return transformedResult;
     };
 
     try {

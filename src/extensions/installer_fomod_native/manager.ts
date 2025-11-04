@@ -55,14 +55,11 @@ export class VortexModInstaller {
   /**
    * Calls FOMOD's install and converts the result to Vortex data
    */
-  public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<IInstallResult> => {
+  public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<vetypes.InstallResult | null> => {
     try {
-      const resultRaw = await this.modInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
-      return resultRaw as any;
+      return await this.modInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
     } catch (error) {
-      return {
-        instructions: [],
-      };
+      return null;
     }
   };
 
