@@ -1,7 +1,6 @@
 /* eslint-disable */
 import {
-  addLocalDownload, removeDownload, setDownloadHashByFile,
-  setDownloadModInfo,
+  removeDownload, setDownloadModInfo,
   startActivity, stopActivity
 } from '../../actions';
 import { IConditionResult, IDialogContent, showDialog, dismissNotification } from '../../actions/notifications';
@@ -25,7 +24,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeGameId, activeProfile, downloadPathForGame, gameProfiles, installPathForGame, knownGames, lastActiveProfileForGame, profileById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { batchDispatch, isPathValid, makeQueue, setdefault, toPromise, truthy } from '../../util/util';
+import { batchDispatch, isPathValid, setdefault, toPromise, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import calculateFolderSize from '../../util/calculateFolderSize';
@@ -68,9 +67,9 @@ import deriveModInstallName from './modIdManager';
 import { STAGING_DIR_TAG } from './stagingDirectory';
 
 import { HTTPError } from '@nexusmods/nexus-api';
-import Bluebird from 'bluebird';
+import Bluebird, { method as toBluebird } from 'bluebird';
 import * as _ from 'lodash';
-import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import { IHashResult, ILookupResult, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
@@ -79,6 +78,7 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
 import { generateCollectionSessionId } from '../collections_integration/util';
+import { th } from 'date-fns/locale';
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -434,7 +434,8 @@ class InstallManager {
                 modName(collection), filtered, instPath, true))
           );
         }
-      });
+      }
+    );
 
     api.onAsync('cancel-dependency-install', (modId: string) => {
       this.mDependencyInstalls[modId]?.();
@@ -2476,7 +2477,7 @@ class InstallManager {
     }
 
     return extractProm
-      .then(({ code, errors }: { code: number, errors: string[] }) => {
+      .then(async ({ code, errors }: { code: number, errors: string[] }) => {
         log('debug', 'extraction completed', {
           archivePath: path.basename(archivePath),
           extractionTimeMs: Date.now() - (extractProm as any).startTime
@@ -2489,52 +2490,46 @@ class InstallManager {
           log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
           const critical = errors.find(this.isCritical);
           if (critical !== undefined) {
-            return Bluebird.reject(new ArchiveBrokenError(critical));
+            throw new ArchiveBrokenError(critical);
           }
-          return this.queryContinue(api, errors, archivePath);
-        } else {
-          return Bluebird.resolve();
+          await this.queryContinue(api, errors, archivePath);
         }
       })
-      .catch(ArchiveBrokenError, err => {
+      .catch(ArchiveBrokenError, async err => {
         if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
           // hmm, it was supposed to support the file type though...
-          return Bluebird.reject(err);
+          throw err;
         }
 
         if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
           // User just tried to install the staging/downloads folder tag file as a mod...
           //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
-          return api.showDialog('question', 'Not a mod', {
+          await api.showDialog('question', 'Not a mod', {
             text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
               + 'This file is generated and used by Vortex internally and should not be installed '
               + 'in this way.',
             message: archivePath,
           }, [
             { label: 'Ok' },
-          ]).then(() => Bluebird.reject(new ProcessCanceled('Not a mod')));
+          ]);
+          throw new ProcessCanceled('Not a mod');
         }
 
         // this is really a completely separate process from the "regular" mod installation
-        return api.showDialog('question', 'Not an archive', {
+        const dialogResult = await api.showDialog('question', 'Not an archive', {
           text: 'Vortex is designed to install mods from archives but this doesn\'t look '
             + 'like one. Do you want to create a mod containing just this file?',
           message: archivePath,
         }, [
           { label: 'Cancel' },
           { label: 'Create Mod' },
-        ]).then(result => {
-          if (result.action === 'Cancel') {
-            return Bluebird.reject(new UserCanceled());
-          }
-
-          return fs.ensureDirAsync(tempPath)
-            .then(() => fs.copyAsync(archivePath,
-              path.join(tempPath, path.basename(archivePath))));
-        });
+        ]);
+        if (dialogResult.action === 'Cancel') {
+          throw new UserCanceled();
+        }
       })
-      .then(() => walk(tempPath,
-        (iterPath, stats) => {
+      .then(async () => {
+        await walk(tempPath, toBluebird(async (iterPath, stats) => {
           if (stats.isFile()) {
             fileList.push(path.relative(tempPath, iterPath));
           } else {
@@ -2543,12 +2538,12 @@ class InstallManager {
             // management...
             fileList.push(path.relative(tempPath, iterPath) + path.sep);
           }
-          return Bluebird.resolve();
-        }))
+        }));
+      })
       .finally(() => {
         // process.noAsar = false;
       })
-      .then(() => {
+      .then(async () => {
         const hasFomodSegment = (file: string) => {
           const segments = file.toLowerCase().split(path.sep);
           return segments.includes('fomod');
@@ -2559,26 +2554,56 @@ class InstallManager {
           hasCSScripts,
           hasXmlConfigXML,
         };
+
+        if (hasCSScripts) {
+          const modName = details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
+          const t = api.translate;
+          
+          const no = t('Cancel installation');
+          const yes = t('Install anyway (unsafe)');
+          //const yesForAll = t(`Install anyway (unsafe). Don't ask again for the current session`);
+          const dialogResult = await api.showDialog?.(
+            'question',
+            t(`Unsafe Mod Detected`),
+            {
+              message: t(
+                `"{{modName}}" contains C# scripts that can run code on your computer.\n` +
+                `These scripts give the mod full access to your system and can cause serious harm, including data loss or security breaches.\n` +
+                `Unless you personally reviewed and trust the source, we strongly recommend you do not install this mod.\n` +
+                `Are you sure you want to continue?`,
+                { replace: { modName: modName } }
+              ),
+            },
+            [{ label: no }, { label: yes }, /*{ label: yesForAll }*/]
+          );
+          switch (dialogResult?.action) {
+            case no:
+              throw new ProcessCanceled('User declined to install mod with C# scripts');
+              //throw new UserCanceled();
+            //case yesForAll:
+            //  break;
+          }
+        }
+
         if (truthy(extractList) && extractList.length > 0) {
-          return makeListInstaller(extractList, tempPath)
-            .then((supportedInstaller: ISupportedInstaller) => Promise.resolve({ ...supportedInstaller, ...testDetails }));
+          const supportedInstaller = await makeListInstaller(extractList, tempPath);
+          return { ...supportedInstaller, ...testDetails };
         } else if (forceInstaller === undefined) {
-          return this.getInstaller(fileList, gameId, archivePath, undefined, testDetails)
-            .then((supportedInstaller: ISupportedInstaller) => Promise.resolve({ ...supportedInstaller, ...testDetails }));
+          const supportedInstaller = await this.getInstaller(fileList, gameId, archivePath, undefined, testDetails);
+          return { ...supportedInstaller, ...testDetails };
         } else {
           const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
-          return forced.testSupported(fileList, gameId, archivePath, testDetails)
-            .then((testResult: ISupportedResult) => {
-              if (!testResult.supported) {
-                return undefined;
-              } else {
-                return {
-                  installer: forced,
-                  requiredFiles: testResult.requiredFiles,
-                  ...testDetails,
-                };
-              }
-            });
+          const testResult = await forced.testSupported(fileList, gameId, archivePath, testDetails);
+
+          if (!testResult.supported) {
+            return undefined;
+          } else {
+            return {
+              installer: forced,
+              requiredFiles: testResult.requiredFiles,
+              ...testDetails,
+            };
+          }
         }
       })
       .then(async supportedInstaller => {

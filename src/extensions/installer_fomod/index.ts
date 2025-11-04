@@ -1339,10 +1339,17 @@ async function createIsolatedConnection(securityLevel: SecurityLevel): Promise<C
 
 async function testSupportedScripted(securityLevel: SecurityLevel,
                                      files: string[],
-                                     _gameId: string,
+                                     gameId: string,
                                      _archivePath: string,
                                      details?: ITestSupportedDetails)
                                      : Promise<ISupportedResult> {
+  if (gameId !== 'oblivion' && gameId !== 'fallout3') {
+    return { 
+      supported: false,
+      requiredFiles: []
+    };
+  }
+
   if (details !== undefined && details.hasCSScripts === false) {
     return { 
       supported: false,
@@ -1364,7 +1371,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
       if (connection) {
         connection.quit();
       }
-      return testSupportedScripted(securityLevel - 1, files, _gameId, _archivePath, details);
+      return testSupportedScripted(securityLevel - 1, files, gameId, _archivePath, details);
     }
     throw transformError(err);
   } finally {
