@@ -32,7 +32,7 @@ import Workarounds from './views/Workarounds';
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from '../installer_fomod_shared/constants';
 
 import Bluebird from 'bluebird';
-import { createIPC, killProcess } from 'fomod-installer';
+import { createIPC, killProcess } from 'fomod-installer-ipc';
 import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
