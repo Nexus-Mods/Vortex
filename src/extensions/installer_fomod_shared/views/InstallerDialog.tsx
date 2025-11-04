@@ -67,31 +67,29 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       onSelect(group.id, selectedPlugins, valid === undefined);
       this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
     }
-  }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IGroupProps) {
-    if (!_.isEqual(this.props.group, newProps.group)) {
+    if (!_.isEqual(oldProps.group, this.props.group)) {
       // based on the rules of the fomod, us selecting an option may make other options
       // unavailable. However, for usability reasons, we don't undo user selections if the user
       // has made further changes since last sending an update
       if (this.state.sentUpdate >= this.state.localUpdate) {
         this.setState(update(this.state, {
-          selectedPlugins: { $set: this.getSelectedPlugins(newProps) },
+          selectedPlugins: { $set: this.getSelectedPlugins(this.props) },
           confirmedUpdate: { $set: Date.now() },
         }));
       } else if (this.state.localUpdate > this.state.sentUpdate) {
         // while confirmation was pending, the user made further changes, validate them now
-        const { group, onSelect } = newProps;
+        const { group, onSelect } = this.props;
         const { selectedPlugins } = this.state;
         const valid = this.validateFunc(group.type)(selectedPlugins);
         onSelect(group.id, selectedPlugins, valid === undefined);
         this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
       }
-      this.mValidate = this.validateFunc(newProps.group.type);
+      this.mValidate = this.validateFunc(this.props.group.type);
     }
   }
 
-  public UNSAFE_componentWillMount() {
+  public componentDidMount() {
     const { group, onSelect } = this.props;
     const { selectedPlugins } = this.state;
     this.mValidate = this.validateFunc(group.type);
@@ -342,19 +340,21 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     super(props);
     this.state = this.initDescription(props);
   }
-  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
+
+  public componentDidUpdate(prevProps: IProps) {
     if (
       // when initiating the dialog
-      ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
+      ((prevProps.installerState === undefined) && (this.props.installerState !== undefined))
       // and any time we change to a different page (forward or backwards)
-      || ((this.props.installerState !== undefined)
-          && (nextProps.installerState !== undefined)
-          && ((this.props.installerInfo !== nextProps.installerInfo)
-            || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
+      || ((prevProps.installerState !== undefined)
+          && (this.props.installerState !== undefined)
+          && ((prevProps.installerInfo !== this.props.installerInfo)
+            || (prevProps.installerState.currentStep !== this.props.installerState.currentStep)))) {
       // fully update the description
-      this.setState(this.initDescription(nextProps));
+      this.setState(this.initDescription(this.props));
     }
   }
+
   public render(): JSX.Element | null {
     const { t, installerInfo, installerState, activeInstanceId } = this.props;
     const { currentDescription, waiting } = this.state;
@@ -543,7 +543,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const instanceData = state.session.fomod.installer.dialog.instances?.[activeInstanceId];
 
   return {
-    dataPath: state.session.fomod.installer.dialog.dataPath || undefined,
+    dataPath: instanceData?.dataPath || undefined,
     installerInfo: instanceData?.info,
     installerState: instanceData?.state,
     activeInstanceId,

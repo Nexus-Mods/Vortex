@@ -355,7 +355,6 @@ export function getPluginPath(gameMode: string): string {
 }
 
 export function getNativePlugins(gameMode: string): string[] {
-  const x = gameSupport.get(gameMode, 'nativePlugins');
   return gameSupport.get(gameMode, 'nativePlugins') ?? [];
 }
 
@@ -365,7 +364,8 @@ export function hasActiveFomodDialog(store: types.ThunkStore<any> | undefined): 
   const activeInstanceId = state?.session?.fomod?.installer?.dialog?.activeInstanceId;
   if (!activeInstanceId) {
     return false;
-  } else {
-    return true;
   }
+  // Also verify that the dialog has installer state - otherwise it won't render
+  const instanceData = state?.session?.fomod?.installer?.dialog?.instances?.[activeInstanceId];
+  return instanceData?.state !== undefined && instanceData?.state !== null;
 }

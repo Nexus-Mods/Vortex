@@ -80,12 +80,7 @@ function init(context: IExtensionContext): boolean {
       if (details?.hasXmlConfigXML && !shouldBypassDialog) {
         // This mod will require user interaction, we need to make sure
         //  the the previous phase is deployed.
-        await context.api.emitAndAwait('schedule-phase-deployment', {
-          modReference: details.modReference,
-          gameId,
-          modId: path.basename(scriptPath, '.installing'),
-          archivePath,
-        });
+        await context.api.ext.awaitNextPhaseDeployment?.();
       }
       const result = await invokeInstall(true);
       return result;
