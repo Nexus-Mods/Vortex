@@ -38,7 +38,6 @@ This alpha release brings massive performance improvements, a brand new collecti
 - Notifications automatically clear when you switch games
 - Download progress indicators are now accurate
 - UI remains responsive even during heavy download/install activity
-- Fixed frustrating "stuck at 99%" issue in collection installs
 
 **✨ Quality of Life Improvements**
 - Fixed collections not showing as complete when finished
@@ -108,6 +107,7 @@ This alpha release brings massive performance improvements, a brand new collecti
 - Notifications automatically clear on game change ([#18399](https://github.com/Nexus-Mods/Vortex/issues/18399))
 - Converted appropriate notifications to toast format ([#18307](https://github.com/Nexus-Mods/Vortex/issues/18307))
 - Feedback button now links to Google Form ([#18446](https://github.com/Nexus-Mods/Vortex/issues/18446))
+- Various UI/UX fixes for Collections ([#18686](https://github.com/Nexus-Mods/Vortex/issues/18686))
 
 #### Game Extensions
 
