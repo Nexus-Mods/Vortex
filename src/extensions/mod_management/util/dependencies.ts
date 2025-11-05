@@ -286,6 +286,8 @@ export function findDownloadByRef(reference: IReference,
 
   try {
     const fuzzy = isFuzzyVersion(reference.versionMatch);
+    const fileExpression = (reference?.fileExpression || reference?.logicalFileName);
+    const bundled = fileExpression && fileExpression.toLowerCase().startsWith('bundled');
 
     const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
       const download: IDownload = downloads[dlId];
@@ -307,7 +309,9 @@ export function findDownloadByRef(reference: IReference,
         fileNames: Array.from(nameSet).filter(truthy),
         gameId: download.game[0],
       }
-      return testModReference(lookup, reference, undefined, fuzzy) || testRefByIdentifiers(identifiers, reference);
+      return fuzzy || bundled
+        ? testModReference(lookup, reference, undefined, fuzzy) 
+        : testModReference(lookup, reference, undefined, fuzzy) || testRefByIdentifiers(identifiers, reference);
     })
       .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
     return existing[0];
