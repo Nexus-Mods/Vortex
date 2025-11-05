@@ -25,7 +25,7 @@ async function setDownloadGames(
 
   const state = api.getState();
   const download = state.persistent.downloads.files[dlId];
-
+  gameIds = gameIds.filter(x => truthy(x));
   if ((download?.localPath === undefined)
       || (gameIds.length === 0)
       || (gameIds[0] === undefined)) {

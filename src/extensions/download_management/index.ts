@@ -1063,7 +1063,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
 
     context.api.onAsync('set-download-games', (dlId: string, gameIds: string[], fromMetadata?: boolean) =>
-      setDownloadGames(context.api, dlId, gameIds, withAddInProgress, fromMetadata === true));
+      setDownloadGames(context.api, dlId, gameIds.filter(x => !!x), withAddInProgress, fromMetadata === true));
 
     // This debouncer is only needed to avoid a race condition caused primarily by the
     //  testDownloadPath functionality, where the update downloads function gets called twice

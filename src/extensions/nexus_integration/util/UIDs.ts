@@ -49,16 +49,24 @@ export function makeModAndFileUIDs(gameId: string, modId: string, fileId: string
     log('debug', 'makeModAndFileUIDs', JSON.stringify(repoInfo));
   }
 
-  // Early return if mId or fId is missing or invalid
-  if (!repoInfo.modId || !repoInfo.fileId
+  // Early return if gameId, modId or fileId is missing or invalid
+  if (!repoInfo.gameId || !repoInfo.modId || !repoInfo.fileId
     || isNaN(parseInt(repoInfo.modId, 10))
     || isNaN(parseInt(repoInfo.fileId, 10))
   ) {
     return { modUID: undefined, fileUID: undefined };
-  } else {
-    return {
-      modUID: makeModUID(repoInfo),
-      fileUID: makeFileUID(repoInfo)
-    };
   }
+
+  const gameIdNum = /^\d+$/.test(repoInfo.gameId)
+    ? parseInt(repoInfo.gameId, 10)
+    : gameNum(repoInfo.gameId);
+
+  if (gameIdNum === undefined || isNaN(gameIdNum)) {
+    return { modUID: undefined, fileUID: undefined };
+  }
+
+  return {
+    modUID: makeModUID(repoInfo),
+    fileUID: makeFileUID(repoInfo)
+  };
 }
