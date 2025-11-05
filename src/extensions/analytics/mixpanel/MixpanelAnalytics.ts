@@ -137,7 +137,9 @@ class MixpanelAnalytics {
    */
   public trackEvent(event: MixpanelEvent) {
     if (!this.isUserSet()) {
-      analyticsServiceLog('mixpanel', 'warn', 'trackEvent called but user not set', { eventName: event.eventName });
+      // Silently ignore when analytics is disabled (user opted out)
+      // This is expected behavior, not an error condition
+      analyticsServiceLog('mixpanel', 'debug', 'Event not tracked (analytics disabled)', { eventName: event.eventName });
       return;
     }
 
