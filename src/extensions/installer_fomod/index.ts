@@ -1343,7 +1343,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
                                      _archivePath: string,
                                      details?: ITestSupportedDetails)
                                      : Promise<ISupportedResult> {
-  if (gameId !== 'oblivion' && gameId !== 'fallout3') {
+  if (!['oblivion', 'fallout3', 'falloutnv'].includes(gameId)) {
     return { 
       supported: false,
       requiredFiles: []
@@ -1363,7 +1363,7 @@ async function testSupportedScripted(securityLevel: SecurityLevel,
 
     log('debug', '[installer] test supported');
     const res: ISupportedResult = await connection.sendMessage(
-      'TestSupported', { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+      'TestSupported', { files, allowedTypes: ['CSharpScript'] });
     log('debug', '[installer] test supported result', JSON.stringify(res));
     return res;
   } catch (err) {
