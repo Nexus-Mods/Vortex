@@ -12559,9 +12559,9 @@ void-elements@3.1.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-3.1.0.tgz#614f7fbf8d801f0bb5f0661f5b2f5785750e4f09"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-vortex-api@Nexus-Mods/vortex-api#18709-collection-rule-export-import-improvements:
+vortex-api@Nexus-Mods/vortex-api:
   version "1.9.1-r32"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/5d9027fa2dc714bdb2c9759e1c1a1de5880aac3a"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/ed52605f14065029d16b4e0679bdbca1ce1fc0a2"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"
