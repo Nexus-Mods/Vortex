@@ -755,11 +755,110 @@ export function semverCoerce(input: string, options?: semver.CoerceOptions): sem
   return res;
 }
 
+// Queue for managing large batch dispatches to prevent interleaving
+let batchQueue: Promise<void> = Promise.resolve();
+
+// Cache chunk sizes by action type to avoid repeated calculation overhead
+const chunkSizeCache = new Map<string, number>();
+
+/**
+ * Calculate appropriate chunk size based on estimated payload size
+ * Uses caching to minimize overhead for repeated action types
+ *
+ * Electron IPC has practical limits around 10-20MB of JSON payload
+ * We target ~2MB chunks to be conservative and allow for JSON overhead
+ */
+function calculateChunkSize(actions: Redux.Action[]): number {
+  if (actions.length === 0) {
+    return 100;
+  }
+
+  // Try to get cached chunk size for this action type
+  const firstActionType = actions[0]?.type;
+  if (firstActionType && chunkSizeCache.has(firstActionType)) {
+    return chunkSizeCache.get(firstActionType);
+  }
+
+  // Sample first few actions to estimate average size
+  const sampleSize = Math.min(10, actions.length);
+  let totalSize = 0;
+
+  for (let i = 0; i < sampleSize; i++) {
+    try {
+      // Estimate size via JSON serialization
+      totalSize += JSON.stringify(actions[i]).length;
+    } catch (err) {
+      // If serialization fails, use conservative estimate
+      log('warn', 'failed to estimate action size for chunking', err);
+      return 50;
+    }
+  }
+
+  const avgActionSize = totalSize / sampleSize;
+
+  // Target chunk size of ~2MB (in characters, roughly equivalent to bytes for ASCII)
+  const TARGET_CHUNK_SIZE_MB = 2;
+  const TARGET_CHUNK_SIZE_CHARS = TARGET_CHUNK_SIZE_MB * 1024 * 1024;
+
+  // Calculate how many actions fit in target size
+  const calculatedChunkSize = Math.floor(TARGET_CHUNK_SIZE_CHARS / avgActionSize);
+
+  // Clamp between reasonable bounds
+  // Min 10: Avoid too many chunks for very large actions
+  // Max 500: Avoid huge chunks if actions are tiny
+  const chunkSize = Math.max(10, Math.min(500, calculatedChunkSize));
+
+  // Cache the result for this action type
+  if (firstActionType) {
+    chunkSizeCache.set(firstActionType, chunkSize);
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    log('debug', 'calculated dynamic chunk size', {
+      actionType: firstActionType,
+      totalActions: actions.length,
+      avgActionSizeKB: (avgActionSize / 1024).toFixed(2),
+      chunkSize,
+      estimatedChunkSizeMB: ((chunkSize * avgActionSize) / (1024 * 1024)).toFixed(2),
+      cached: false
+    });
+  }
+
+  return chunkSize;
+}
+
 // TODO: support thunk actions?
 export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
   const dispatch = store['dispatch'] ?? store;
-  if (actions.length > 0) {
+  if (actions.length === 0) {
+    return;
+  }
+
+  // Use dynamic chunk sizing based on action payload size (with caching)
+  const chunkSize = calculateChunkSize(actions);
+
+  if (actions.length <= chunkSize) {
+    // Small batch, dispatch normally without queuing overhead
     dispatch(batch(actions));
+  } else {
+    // Large batch, chunk it with queuing to prevent interleaving
+    // Queue ensures all chunks from this batch complete before next batch starts
+    batchQueue = batchQueue.then(() => {
+      if (process.env.NODE_ENV === 'development') {
+        log('debug', 'dispatching chunked batch', {
+          total: actions.length,
+          chunkSize,
+          chunks: Math.ceil(actions.length / chunkSize)
+        });
+      }
+
+      for (let i = 0; i < actions.length; i += chunkSize) {
+        const chunk = actions.slice(i, i + chunkSize);
+        dispatch(batch(chunk));
+      }
+    }).catch(err => {
+      log('error', 'failed to dispatch chunked batch', err);
+    });
   }
 }
 
