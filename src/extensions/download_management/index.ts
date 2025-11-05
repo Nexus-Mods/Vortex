@@ -281,7 +281,8 @@ function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
           return fs.removeAsync(path.join(downloadPath, fileName)).catch(() => null);
         }
       }));
-    });
+    })
+    .catch((err) => ['ENOENT', 'EACCES', 'EPERM'].includes(err.code) ? null : log('warn', 'failed to remove invalid download files', err));
 }
 
 function updateDownloadPath(api: IExtensionApi, gameId?: string) {
