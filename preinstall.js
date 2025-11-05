@@ -1,0 +1,149 @@
+
+// Preinstall script for Vortex
+// Handles git submodule initialization and building FOMOD installer dependencies
+
+const { spawn } = require('child_process');
+const path = require('path');
+
+const packageManager = 'yarn';
+
+/**
+ * Determine if this is a production build
+ * @returns {boolean}
+ */
+function isProductionBuild() {
+  return process.env.NODE_ENV === 'production' ||
+         ['package', 'dist', 'ci'].includes(process.env.npm_lifecycle_event);
+}
+
+/**
+ * Get the build configuration (Debug or Release)
+ * @returns {string}
+ */
+function getBuildConfiguration() {
+  return isProductionBuild() ? 'Release' : 'Debug';
+}
+
+/**
+ * Runs a command and returns a promise that resolves when the command completes
+ * @param {string} command - The command to run
+ * @param {string[]} args - Command arguments
+ * @param {object} options - Spawn options
+ * @returns {Promise<void>}
+ */
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    console.log(`Running: ${command} ${args.join(' ')}`);
+    const proc = spawn(command, args, {
+      shell: true,
+      stdio: 'inherit',
+      ...options
+    });
+
+    proc.on('exit', (code) => {
+      if (code !== 0) {
+        reject(new Error(`Command failed with exit code ${code}: ${command} ${args.join(' ')}`));
+      } else {
+        resolve();
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Initialize and update git submodules
+ * @returns {Promise<void>}
+ */
+async function updateSubmodules() {
+  console.log('Initializing git submodules...');
+  try {
+    await runCommand('git', ['submodule', 'update', '--init', '--recursive'], {
+      cwd: __dirname
+    });
+    console.log('Git submodules updated successfully');
+  } catch (err) {
+    console.error('Failed to update git submodules:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Build FOMOD IPC TypeScript project
+ * @returns {Promise<void>}
+ */
+async function buildFomodIPC() {
+  console.log('Building FOMOD IPC TypeScript...');
+  const fomodIPCPath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.IPC.TypeScript');
+
+  try {
+    const pkgcli = process.platform === 'win32' ? `${packageManager}.cmd` : packageManager;
+
+    // Install dependencies
+    await runCommand(pkgcli, ['install'], { cwd: fomodIPCPath });
+
+    // Build project
+    await runCommand(pkgcli, ['build'], { cwd: fomodIPCPath });
+
+    console.log('FOMOD IPC built successfully');
+  } catch (err) {
+    console.error('Failed to build FOMOD IPC:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Build FOMOD Native TypeScript project
+ * @returns {Promise<void>}
+ */
+async function buildFomodNative() {
+  const buildConfig = getBuildConfiguration();
+  console.log(`Building FOMOD Native TypeScript (${buildConfig})...`);
+  const fomodNativePath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.Native.TypeScript');
+
+  try {
+    const pkgcli = process.platform === 'win32' ? `${packageManager}.cmd` : packageManager;
+
+    // Build native components with configuration
+    await runCommand(pkgcli, ['build-native', buildConfig], { cwd: fomodNativePath });
+
+    // Install dependencies
+    await runCommand(pkgcli, ['install'], { cwd: fomodNativePath });
+
+    // Build project with configuration
+    await runCommand(pkgcli, ['build', buildConfig], { cwd: fomodNativePath });
+
+    console.log(`FOMOD Native built successfully (${buildConfig})`);
+  } catch (err) {
+    console.error('Failed to build FOMOD Native:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Main preinstall routine
+ */
+async function main() {
+  console.log('Starting preinstall script...');
+
+  try {
+    // Update git submodules
+    await updateSubmodules();
+
+    // Build FOMOD IPC
+    await buildFomodIPC();
+
+    // Build FOMOD Native
+    await buildFomodNative();
+
+    console.log('Preinstall completed successfully');
+  } catch (err) {
+    console.error('Preinstall failed:', err.message);
+    process.exit(1);
+  }
+}
+
+main();
