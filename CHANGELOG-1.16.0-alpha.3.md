@@ -38,5 +38,6 @@ This alpha release focuses on stability, reliability, and completing the FOMOD n
 - Fixed downloads folder cleanup ([#18720](https://github.com/Nexus-Mods/Vortex/issues/18720))
 - Fixed download reference false positives for fuzzy/bundled mods ([#18719](https://github.com/Nexus-Mods/Vortex/issues/18719))
 - Added C# script execution warning ([#18667](https://github.com/Nexus-Mods/Vortex/issues/18667))
+- Fix ability to export "dead" collection rules when uploading a new revision ([#18709](https://github.com/Nexus-Mods/Vortex/issues/18709))
 
 [1.16.0-alpha.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.0-alpha.3
