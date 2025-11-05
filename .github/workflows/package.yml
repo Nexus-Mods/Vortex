@@ -31,7 +31,8 @@ on:
 jobs:       
   build: 
     runs-on: windows-latest 
-    env: 
+    env:
+      NO_PARALLEL: true
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}

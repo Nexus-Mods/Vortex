@@ -262,7 +262,7 @@ function main(args) {
           }
         })
         ;
-  }, { concurrency: args.noparallel ? 1 : 10 }))
+  }, { concurrency: args.noparallel || process.env.NO_PARALLEL ? 1 : 10 }))
   .then(() => failed ? 1 : 0);
 }
 
