@@ -1166,6 +1166,9 @@ class DownloadManager {
         this.mBusyWorkers[chunk.workerId].cancel();
       }
     });
+
+    this.cleanupOrphanedPlaceholder(download);
+
     // remove from queue
     this.mQueue = this.mQueue.filter(
       (value: IRunningDownload) => value.id !== id);
@@ -1335,7 +1338,46 @@ class DownloadManager {
         chunk.state = 'paused';
       }
     }
+
+    this.cleanupOrphanedPlaceholder(download);
+
     download.failedCB(err);
+  }
+
+  private cleanupOrphanedPlaceholder = (download: IRunningDownload) => {
+    if (download.size === 0 || download.received < download.size) {
+      log('debug', 'cleaning up orphaned placeholder file', {
+        id: download.id,
+        tempName: download.tempName,
+        received: download.received,
+      });
+
+      if (download.assembler !== undefined && !download.assembler.isClosed()) {
+        download.assembler.close()
+          .catch(() => null)
+          .then(() => {
+            return fs.removeAsync(download.tempName)
+              .catch(err => {
+                if (err.code !== 'ENOENT') {
+                  log('warn', 'failed to remove orphaned placeholder', {
+                    file: download.tempName,
+                    error: err.message,
+                  });
+                }
+              });
+          });
+      } else {
+        fs.removeAsync(download.tempName)
+          .catch(err => {
+            if (err.code !== 'ENOENT') {
+              log('warn', 'failed to remove orphaned placeholder', {
+                file: download.tempName,
+                error: err.message,
+              });
+            }
+          });
+      }
+    }
   }
 
   private tickQueue(verbose: boolean = true) {
@@ -1888,6 +1930,46 @@ class DownloadManager {
       let finalPath = download.tempName;
       download.assembler.close()
         .then(() => {
+          // If file has no extension, detect it from magic header and rename
+          const currentExt = path.extname(download.tempName);
+          if (currentExt === '') {
+            log('info', 'download has no extension, detecting from magic header', {
+              id: download.id,
+              tempName: download.tempName,
+            });
+
+            return Bluebird.resolve(this.detectFileExtensionFromMagic(download.tempName))
+              .then((detectedExt: string | null) => {
+                if (detectedExt) {
+                  const newPath = download.tempName + detectedExt;
+                  log('info', 'renaming file with detected extension', {
+                    from: download.tempName,
+                    to: newPath,
+                    extension: detectedExt,
+                  });
+
+                  return fs.renameAsync(download.tempName, newPath)
+                    .then(() => {
+                      download.tempName = newPath;
+                      finalPath = newPath;
+                    })
+                    .catch(err => {
+                      log('error', 'failed to rename file with detected extension', {
+                        error: err.message,
+                        from: download.tempName,
+                        to: newPath,
+                      });
+                      // Continue without renaming
+                    });
+                } else {
+                  log('warn', 'could not detect file type for extensionless file', {
+                    file: download.tempName,
+                  });
+                }
+              });
+          }
+        })
+        .then(() => {
           if (download.finalName !== undefined) {
             return download.finalName
             .then((resolvedPath: string) => {
@@ -1945,6 +2027,86 @@ class DownloadManager {
 
   private sanitizeFilename(input: string): string {
     return input.replace(INVALID_FILENAME_RE, '_');
+  }
+
+  private async detectFileExtensionFromMagic(filePath: string): Promise<string | null> {
+    try {
+      const fd = await fs.openAsync(filePath, 'r');
+      const buffer = Buffer.alloc(16); // Read first 16 bytes for magic detection
+
+      try {
+        await fs.readAsync(fd, buffer, 0, 16, 0);
+      } finally {
+        await fs.closeAsync(fd);
+      }
+
+      // ZIP/FOMOD (PK signature) - .zip, .fomod, .dazip all use ZIP format
+      if (buffer[0] === 0x50 && buffer[1] === 0x4B) {
+        if (buffer[2] === 0x03 && buffer[3] === 0x04) {
+          return '.zip'; // Standard ZIP
+        } else if (buffer[2] === 0x05 && buffer[3] === 0x06) {
+          return '.zip'; // Empty ZIP
+        } else if (buffer[2] === 0x07 && buffer[3] === 0x08) {
+          return '.zip'; // Spanned ZIP
+        }
+      }
+
+      // RAR v4.x and earlier (Rar!\x1A\x07\x00)
+      if (buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72 &&
+          buffer[3] === 0x21 && buffer[4] === 0x1A && buffer[5] === 0x07 && buffer[6] === 0x00) {
+        return '.rar';
+      }
+
+      // RAR v5+ (Rar!\x1A\x07\x01\x00)
+      if (buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72 &&
+          buffer[3] === 0x21 && buffer[4] === 0x1A && buffer[5] === 0x07 && buffer[6] === 0x01) {
+        return '.rar';
+      }
+
+      // 7z (37 7A BC AF 27 1C)
+      if (buffer[0] === 0x37 && buffer[1] === 0x7A && buffer[2] === 0xBC &&
+          buffer[3] === 0xAF && buffer[4] === 0x27 && buffer[5] === 0x1C) {
+        return '.7z';
+      }
+
+      // GZIP (1F 8B) - .gz, .gzip
+      if (buffer[0] === 0x1F && buffer[1] === 0x8B) {
+        return '.gz';
+      }
+
+      // BZIP2 (42 5A 68) - .bz2, .bzip2
+      if (buffer[0] === 0x42 && buffer[1] === 0x5A && buffer[2] === 0x68) {
+        return '.bz2';
+      }
+
+      // XZ (FD 37 7A 58 5A 00) - .xz
+      if (buffer[0] === 0xFD && buffer[1] === 0x37 && buffer[2] === 0x7A &&
+          buffer[3] === 0x58 && buffer[4] === 0x5A && buffer[5] === 0x00) {
+        return '.xz';
+      }
+
+      // Z compressed (1F 9D) - .z
+      if (buffer[0] === 0x1F && buffer[1] === 0x9D) {
+        return '.z';
+      }
+
+      // Split archives typically use same magic as their base format
+      // .z01 (ZIP split), .r00 (RAR split), .001 (7z/generic split)
+      // These will be detected by their base format magic
+
+      log('debug', 'could not detect archive type from magic header', {
+        filePath,
+        firstBytes: buffer.slice(0, 8).toString('hex'),
+      });
+
+      return null;
+    } catch (err) {
+      log('warn', 'failed to read file for magic header detection', {
+        filePath,
+        error: err.message,
+      });
+      return null;
+    }
   }
 
   /**
