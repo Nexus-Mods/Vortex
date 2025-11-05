@@ -47,12 +47,31 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [pageInput, setPageInput] = React.useState<string>('1');
   const [selectedTab, setSelectedTab] = React.useState<string>('collections');
+  const [refreshTrigger, setRefreshTrigger] = React.useState<number>(0);
+  const [searchValidationError, setSearchValidationError] = React.useState<string>('');
   const itemsPerPage = 20;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
+    // Clear any previous validation errors
+    setSearchValidationError('');
+
+    // If search query is too short (1 character), show validation error
+    if (searchQuery.length === 1) {
+      setSearchValidationError(t('collection:browse.searchTooShort'));
+      return;
+    }
+
+    // If search query is empty, clear the search
+    // If search query is 2+ characters, perform the search
     setActiveSearch(searchQuery);
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setError(null);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -119,10 +138,18 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
         setLoading(false);
       })
       .catch((err: Error) => {
-        setError(err);
+        // Provide user-friendly error message for wildcard search requirement
+        if (err.message && err.message.includes('Wildcard value must have 2 or more characters')) {
+          const friendlyError = new Error(t('collection:browse.searchTooShort'));
+          setError(friendlyError);
+          // Also clear the invalid search so user can try again
+          setActiveSearch('');
+        } else {
+          setError(err);
+        }
         setLoading(false);
       });
-  }, [gameId, sortBy, activeSearch, currentPage, api]);
+  }, [gameId, sortBy, activeSearch, currentPage, api, refreshTrigger]);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -203,43 +230,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     );
   }
 
-  if (loading) {
-    return (
-      <MainPage id='browse-collections-page'>
-        <MainPage.Body>
-          <div className="tw:p-5 tw:text-center">
-            <p>{t('collection:browse.loading')}</p>
-          </div>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
-  if (error) {
-    return (
-      <MainPage id='browse-collections-page'>
-        <MainPage.Body>
-          <div className="tw:p-5 tw:text-red-600">
-            <p><strong>{t('collection:browse.error')}</strong></p>
-            <p>{error.message}</p>
-          </div>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
-  if (collections.length === 0) {
-    return (
-      <MainPage id='browse-collections-page'>
-        <MainPage.Body>
-          <div className="tw:p-5 tw:text-center">
-            <p>{t('collection:browse.noCollections')}</p>
-          </div>
-        </MainPage.Body>
-      </MainPage>
-    );
-  }
-
   return (
     <MainPage id='browse-collections-page'>
       <MainPage.Body style={{ overflowY: 'auto' }}>
@@ -265,14 +255,22 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
             <Tailwind.TabPanel name={t('collection:browse.tabs.collections')}>
               {/* Search Bar */}
               <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
-
                 <Tailwind.Input
                   type="text"
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    // Clear validation error when user types
+                    if (searchValidationError) {
+                      setSearchValidationError('');
+                    }
+                  }}
                   value={searchQuery}
                   placeholder={t('collection:browse.searchPlaceholder')}
                   onKeyDown={handleKeyDown}
-                  className='tw:max-w-64'
+                  fieldClassName='tw:w-64 tw:shrink-0'
+                  errorMessage={searchValidationError || undefined}
+                  hideLabel={true}
+                  label={t('collection:browse.searchPlaceholder')}
                 />
 
                 <Tailwind.Button
@@ -283,8 +281,48 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 >
                   {t('common:actions.search')}
                 </Tailwind.Button>
+
+                <Tailwind.Button
+                  buttonType="tertiary"
+                  size="md"
+                  filled="weak"
+                  onClick={handleRefresh}
+                  leftIconPath="mdiRefresh"
+                >
+                  {t('collection:browse.refresh')}
+                </Tailwind.Button>
               </div>
 
+              {/* Conditional Content */}
+              {loading ? (
+                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
+                  <div className="tw:text-center">
+                    <Tailwind.Typography typographyType="body-lg" appearance="subdued">
+                      {t('collection:browse.loading')}
+                    </Tailwind.Typography>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
+                  <div className="tw:text-center">
+                    <Tailwind.Typography typographyType="body-lg" appearance="none" className="tw:mb-2 tw:text-danger-moderate">
+                      {t('collection:browse.error')}
+                    </Tailwind.Typography>
+                    <Tailwind.Typography typographyType="body-md" appearance="subdued">
+                      {error.message}
+                    </Tailwind.Typography>
+                  </div>
+                </div>
+              ) : collections.length === 0 ? (
+                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
+                  <div className="tw:text-center">
+                    <Tailwind.Typography typographyType="body-lg" appearance="subdued">
+                      {t('collection:browse.noCollections')}
+                    </Tailwind.Typography>
+                  </div>
+                </div>
+              ) : (
+                <>
               {/* Results count and sort */}
               <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
                 <Tailwind.Typography typographyType="body-md" appearance="moderate" isTranslucent>
@@ -438,6 +476,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
                   </div>
                 </div>
+              )}
+                </>
               )}
             </Tailwind.TabPanel>
 

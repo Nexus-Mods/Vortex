@@ -6,8 +6,10 @@
     "error": "Error loading collections:",
     "noCollections": "No collections found for this game.",
     "searchPlaceholder": "Search collections...",
+    "searchTooShort": "Search requires at least 2 characters. Please enter more text or clear the search.",
     "resultsCount": "{{total}} results",
     "sortBy": "Sort by",
+    "refresh": "Refresh",
     "tabs": {
       "collections": "Collections",
       "mods": "Mods"
