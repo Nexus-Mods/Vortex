@@ -70,7 +70,7 @@ function init(context: IExtensionContext): boolean {
           instructions: result.instructions.reduce<IInstruction[]>((map, current) => {
             const currentWithoutType = (({ type, data, ...props }) => props)(current);
             const type = current.type as InstructionType;
-            const data = Buffer.from(current.data);
+            const data = current.data ? Buffer.from(current.data) : undefined;
             map.push({
               type: type,
               data: data,
