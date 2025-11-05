@@ -569,7 +569,7 @@ function transformGraphQLFileToIFileInfo(graphqlFile: any): IFileInfo {
     size_kb: Math.round((graphqlFile.sizeInBytes || graphqlFile.size || 0) / 1024),
     uploaded_timestamp: graphqlFile.uploadedTimestamp || graphqlFile.date,
     changelog_html: graphqlFile.changelogHtml || '',
-    file_name: graphqlFile.name,
+    file_name: graphqlFile.uri,
     description: graphqlFile.description || '',
     content_preview_link: '', // Default value
     external_virus_scan_url: '', // Default value

@@ -446,8 +446,8 @@ const ATTRIBUTES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
   const nexusChangelog = input.nexus?.fileInfo?.changelog_html;
 
-  const modName = decodeHTML(input.download?.modInfo?.nexus?.modInfo?.name);
-  const fileName = decodeHTML(input.download?.modInfo?.nexus?.fileInfo?.name);
+  const modName = decodeHTML(input.download?.modInfo?.nexus?.modInfo?.name ?? input.download?.modInfo?.name);
+  const fileName = decodeHTML(input.download?.modInfo?.nexus?.fileInfo?.name ?? input.download?.localPath ?? input.meta?.fileName);
   const fuzzRatio = ((modName !== undefined) && (fileName !== undefined))
     ? fuzz.ratio(modName, fileName)
     : 100;
