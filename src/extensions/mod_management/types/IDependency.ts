@@ -1,6 +1,7 @@
 import Promise from 'bluebird';
 import {ILookupResult, IModInfo} from 'modmeta-db';
 import { IFileListItem, IMod, IModReference } from './IMod';
+import { IModFileContent, IModFileContentPage } from '@nexusmods/nexus-api';
 
 export interface IModInfoEx extends IModInfo {
   referer?: string | (() => Promise<string>);
@@ -19,7 +20,10 @@ export interface IDependency {
   installerChoices?: any;
   patches?: any;
   mod?: IMod;
-  extra?: { [key: string]: any };
+  extra?: {
+    fileNodes?: IModFileContent[];
+    [key: string]: any;
+  };
   phase?: number;
 }
 

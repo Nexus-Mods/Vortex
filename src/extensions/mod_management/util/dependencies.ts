@@ -19,6 +19,11 @@ import { ILookupResult, IReference, IRule } from 'modmeta-db';
 import normalizeUrl from 'normalize-url';
 import * as semver from 'semver';
 import testModReference, { IModLookupInfo, isFuzzyVersion, testRefByIdentifiers } from './testModReference';
+import { nexusGames } from '../../nexus_integration/util';
+import { convertGameIdReverse, nexusGameId } from '../../nexus_integration/util/convertGameId';
+import { getGame } from '../../../util/api';
+import { IGame } from '../../../types/IGame';
+import { IModFileContent } from '@nexusmods/nexus-api';
 
 interface IBrowserResult {
   url: string | (() => Bluebird<string>);
@@ -512,7 +517,108 @@ function gatherDependencies(
       // this filters out the duplicates including their subtrees,
       // then converts IDependencyNodes to IDependencies
       flatten(nodes).map(node => _.omit(node, ['dependencies', 'redundant'])),
-    );
+    )
+    .then((deps: IDependency[]) => addFileContents(api, deps, gameMode));
+}
+
+export async function addFileContents(
+  api: IExtensionApi,
+  dependencies: IDependency[],
+  gameId: string
+): Promise<IDependency[]> {
+  const fileIdsMap = new Map<number, IDependency[]>();
+  const game: IGame = getGame(gameId);
+  const domainName = nexusGameId(game, gameId);
+  const numericGameId = nexusGames().find(g => domainName === g.domain_name)?.id;
+  if (numericGameId == null) {
+    return dependencies;
+  }
+
+  dependencies.forEach(dep => {
+    let fileId = dep.reference?.repo?.fileId;
+    if (!fileId) {
+      fileId = dep.lookupResults?.[0]?.value?.details?.fileId;
+    }
+
+    if (fileId) {
+      const numericFileId = typeof fileId === 'number' ? fileId : parseInt(fileId, 10);
+      if (!isNaN(numericFileId)) {
+        if (!fileIdsMap.has(numericFileId)) {
+          fileIdsMap.set(numericFileId, []);
+        }
+        fileIdsMap.get(numericFileId).push(dep);
+      }
+    }
+  });
+
+  if (fileIdsMap.size === 0) {
+    return dependencies;
+  }
+
+  const fileIds = Array.from(fileIdsMap.keys());
+
+  try {
+  const result = await api.ext.nexusModFileContents({
+    nodes: {
+      id: true,
+      gameId: true,
+      modId: true,
+      fileId: true,
+      filePath: true,
+      fileName: true,
+      fileExtension: true,
+      fileSize: true,
+    },
+  }, {
+    op: 'AND',
+    filter: [
+      { gameId: [{ value: numericGameId, op: 'EQUALS' }] },
+      {
+        op: 'OR',
+        filter: fileIds.map(id => ({ 
+          fileId: [{ value: id, op: 'EQUALS' }] 
+        })),
+      },
+    ],
+  });
+
+    const fileContentsMap = new Map<number, IModFileContent[]>();
+    if (result?.nodes) {
+      result.nodes.forEach(node => {
+        if (!fileContentsMap.has(node.fileId)) {
+          fileContentsMap.set(node.fileId, []);
+        }
+        fileContentsMap.get(node.fileId).push(node);
+      });
+    }
+
+    return dependencies.map(dep => {
+      let fileId = dep.reference?.repo?.fileId;
+      if (!fileId) {
+        fileId = dep.lookupResults?.[0]?.value?.details?.fileId;
+      }
+
+      const numericFileId = typeof fileId === 'number' ? fileId : parseInt(fileId, 10);
+      const fileNodes = !isNaN(numericFileId) && fileContentsMap.has(numericFileId)
+        ? fileContentsMap.get(numericFileId)
+        : [];
+
+      return {
+        ...dep,
+        extra: {
+          ...dep.extra,
+          fileNodes,
+        },
+      };
+    });
+  } catch (err) {
+    log('error', 'Failed to fetch file contents for dependencies', {
+      error: err.message,
+      fileIds,
+      gameId,
+    });
+    return dependencies;
+  }
 }
 
 export default gatherDependencies;
