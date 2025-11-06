@@ -3,7 +3,7 @@ import update from 'immutability-helper';
 import * as actions from '../actions/installerUI';
 import { IFOMODStateDialog } from '../types/interface';
 
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { IReducerSpec } from '../../../types/api';
 import { createReducer, ReducerHandler } from '../../../util/reducers';
 
 const defaults: IFOMODStateDialog = {
@@ -59,7 +59,10 @@ createReducer(actions.setDialogState, (state, payload) => {
   });
 }, reducers);
 
-export const installerUIReducer: IReducerSpec<IFOMODStateDialog> = {
+const reducer: IReducerSpec<IFOMODStateDialog> = {
   reducers,
   defaults,
 };
+
+// Needed because the API expects the generic IReducerSpec
+export const installerUIReducer = reducer as unknown as IReducerSpec;
