@@ -1,12 +1,10 @@
 import InstallerDialog from './views/InstallerDialog';
+import { installerUIReducer } from './reducers/installerUI';
+import { initGameSupport } from './utils/gameSupport';
+import { IChoiceType } from './types/interface';
 
-import { IChoiceType } from '../installer_fomod_shared/types/interface';
-import {
-  initGameSupport,
-} from './utils/gameSupport';
 import { IExtensionContext, IMod } from '../../types/api';
 import { getSafe } from '../../util/api';
-import { installerUIReducer } from './reducers/installerUI';
 
 function init(context: IExtensionContext): boolean {
   initGameSupport(context.api);
@@ -22,7 +20,6 @@ function init(context: IExtensionContext): boolean {
     icon: 'inspect',
     placement: 'detail',
     calc: (mod: IMod) => {
-      // TODO: Typing
       const choices = getSafe<IChoiceType | undefined>(mod.attributes, ['installerChoices'], undefined);
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return '<None>';

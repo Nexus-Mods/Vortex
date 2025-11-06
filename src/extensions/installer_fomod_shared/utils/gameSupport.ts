@@ -6,7 +6,6 @@ import getVortexPath from '../../../util/getVortexPath';
 import { discoveryByGame } from '../../gamemode_management/selectors';
 import { makeOverlayableDictionary } from '../../../util/util';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { types } from 'vortex-api';
 
 function bethIni(gamePath: string, iniName: string) {
   return path.join(getVortexPath('documents'), 'My Games', gamePath, iniName + '.ini');
@@ -356,16 +355,4 @@ export function getPluginPath(gameMode: string): string {
 
 export function getNativePlugins(gameMode: string): string[] {
   return gameSupport.get(gameMode, 'nativePlugins') ?? [];
-}
-
-// Helper function to check if there's an active FOMOD dialog
-export function hasActiveFomodDialog(store: types.ThunkStore<any> | undefined): boolean {
-  const state = store?.getState();
-  const activeInstanceId = state?.session?.fomod?.installer?.dialog?.activeInstanceId;
-  if (!activeInstanceId) {
-    return false;
-  }
-  // Also verify that the dialog has installer state - otherwise it won't render
-  const instanceData = state?.session?.fomod?.installer?.dialog?.instances?.[activeInstanceId];
-  return instanceData?.state !== undefined && instanceData?.state !== null;
 }

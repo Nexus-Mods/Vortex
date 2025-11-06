@@ -56,9 +56,16 @@ export type StateCallback = (parameters: IStateParameters) => void;
 export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
+  dataPath: string;
   select?: StateCallback;
   cont?: (direction: Direction, currentStepId: number) => void;
   cancel?: () => void;
+}
+
+export interface IInstallerInfoState {
+  moduleName: string;
+  image: IHeaderImage;
+  dataPath: string;
 }
 
 export interface IInstallerState {
@@ -86,4 +93,22 @@ export type IChoices = {
 export type IChoiceType = {
   type: string;
   options: IChoices;
+}
+
+export interface IFOMODStateInstance {
+  info: IInstallerInfoState | undefined;
+  state: IInstallerState | undefined;
+}
+
+export interface IFOMODStateDialog {
+  instances?: { [key: string]: IFOMODStateInstance };
+  activeInstanceId?: string | null;
+}
+
+export interface IFOMODStateInstaller {
+  dialog?: IFOMODStateDialog;
+}
+
+export interface IFOMODState {
+  installer?: IFOMODStateInstaller;
 }

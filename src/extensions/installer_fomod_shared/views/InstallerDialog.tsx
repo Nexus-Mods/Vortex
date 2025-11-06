@@ -3,25 +3,27 @@ import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import ZoomableImage from '../../../controls/ZoomableImage';
+import { IState } from '../../../types/api';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import { pushSafe, removeValue } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 
 import {
-  GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
+  GroupType, IGroup, IInstallerInfo, IInstallerState, IInstallStep,
   IPlugin, OrderType,
 } from '../types/interface';
 
 import { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
-import * as path from 'path';
 import * as React from 'react';
 import {
   Button, Checkbox, ControlLabel, Form, FormGroup,
   ProgressBar, Radio,
 } from 'react-bootstrap';
 import { pathToFileURL } from 'url';
+import { hasSessionFOMOD } from '../utils/guards';
+import path from 'path';
 
 interface IGroupProps {
   t: TFunction;
@@ -314,16 +316,10 @@ function Step(props: IStepProps) {
   );
 }
 
-interface IInstallerInfo {
-  moduleName: string;
-  image: IHeaderImage;
-}
-
 interface IConnectedProps {
-  dataPath: string;
-  installerInfo: IInstallerInfo;
-  installerState: IInstallerState;
-  activeInstanceId: string | null;
+  installerInfo: IInstallerInfo | undefined;
+  installerState: IInstallerState | undefined;
+  activeInstanceId: string | undefined;
 }
 
 interface IDialogState {
@@ -365,7 +361,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
     // Use default values if installerInfo is missing
     const moduleName = installerInfo?.moduleName || 'FOMOD Installer';
-    const hasImage = installerInfo?.image != null;
+    const hasImage = installerInfo?.image?.path;
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
     const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
@@ -464,18 +460,18 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
 
   private renderImage = () => {
-    const { dataPath, installerInfo } = this.props;
+    const { installerInfo } = this.props;
     const { currentImage } = this.state;
 
     const image = currentImage || installerInfo?.image?.path;
 
-    if (!truthy(dataPath) || !truthy(image)) {
+    if (!truthy(installerInfo?.dataPath) || !truthy(image)) {
       return null;
     }
 
     return (
       <ZoomableImage
-        url={pathToFileURL(path.join(dataPath, image)).href}
+        url={pathToFileURL(path.join(installerInfo.dataPath, image)).href}
         className='installer-image'
         overlayClass='installer-zoom'
         container={undefined}
@@ -537,13 +533,20 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
+  if (!state || !hasSessionFOMOD(state.session)) {
+    return {
+      installerInfo: undefined,
+      installerState: undefined,
+      activeInstanceId: undefined,
+    };
+  }
+
   // Use instance-specific state if available, fall back to legacy state for compatibility
-  const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-  const instanceData = state.session.fomod.installer.dialog.instances?.[activeInstanceId];
+  const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
+  const instanceData = state.session.fomod.installer?.dialog?.instances?.[activeInstanceId];
 
   return {
-    dataPath: instanceData?.dataPath || undefined,
     installerInfo: instanceData?.info,
     installerState: instanceData?.state,
     activeInstanceId,

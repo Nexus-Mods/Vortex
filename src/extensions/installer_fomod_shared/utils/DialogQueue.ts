@@ -1,21 +1,19 @@
 import { log } from '../../../util/log';
 
-import { endDialog } from '../actions/installerUI';
-import { IInstallerInfo } from '../types/interface';
 import { IExtensionApi } from '../../../types/api';
 
-import { hasActiveFomodDialog } from './gameSupport';
+import { hasActiveFomodDialog } from './helpers';
+import { hasSessionFOMOD } from './guards';
 
 export interface IDialogManager {
-  startDialogImmediate(info: IInstallerInfo, callback: (err: any) => void): void;
+  startDialogImmediate(): void;
+  cancelDialogImmediate(): void;
   instanceId: string;
   api: IExtensionApi;
 }
 
 interface QueuedDialogRequest {
-  info: IInstallerInfo;
   instanceId: string;
-  callback: (err) => void;
   timestamp: number;
   uiInstance: IDialogManager;
 }
@@ -27,36 +25,33 @@ export class DialogQueue {
   private processing: boolean = false;
   private periodicChecker: NodeJS.Timeout | null = null;
 
-  private constructor() {
-    this.startPeriodicChecker();
+  private constructor(api: IExtensionApi) {
+    this.startPeriodicChecker(api);
   }
 
-  static getInstance(): DialogQueue {
-    if (!DialogQueue.instance) {
-      DialogQueue.instance = new DialogQueue();
-    }
-    return DialogQueue.instance;
-  }
-
-  private startPeriodicChecker(): void {
-    // Check every 3 seconds for stuck queues
+  private startPeriodicChecker(api: IExtensionApi): void {
+    // Check every 5s seconds for stuck queues
     this.periodicChecker = setInterval(() => {
-      if (this.queue.length > 0 && !this.processing) {
-        log('debug', 'Periodic queue check detected unprocessed items', {
-          queueLength: this.queue.length,
-          processing: this.processing,
-        });
+      const state = api.getState();
+      if (!state || !hasSessionFOMOD(state.session)) {
+        return false;
+      }
 
-        // Try to get store from the first queue item's UI instance
-        if (this.queue[0] && this.queue[0].uiInstance && this.queue[0].uiInstance.api) {
-          const store = this.queue[0].uiInstance.api.store;
+      const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
+      // If the current active dialog is stale, cancel it and remove it from the queue
+      // Should only happen if UpdateState wasn't called for some reason
+      for (const request of this.queue) {
+        if (request.instanceId !== activeInstanceId) {
+          continue;
+        }
 
-          this.processNext(store).catch(err => {
-            log('error', 'Periodic queue processing failed', { error: err.message });
-          });
+        if (request.timestamp + 5000 < Date.now()) { // 5 seconds
+          log('warn', 'Removing stale dialog request from queue', { instanceId: request.instanceId });
+          request.uiInstance.cancelDialogImmediate();
+          this.queue = this.queue.filter(r => r !== request);
         }
       }
-    }, 3000);
+    }, 5000); // 5 seconds
   }
 
   destroy(): void {
@@ -66,30 +61,22 @@ export class DialogQueue {
     }
   }
 
-  async addRequest(
-    info: IInstallerInfo,
-    callback: (err) => void,
-    uiInstance: IDialogManager): Promise<void> {
+  public static getInstance(api: IExtensionApi): DialogQueue {
+    if (!DialogQueue.instance) {
+      DialogQueue.instance = new DialogQueue(api);
+    }
+    return DialogQueue.instance;
+  }
+
+  public async enqueueDialog(uiInstance: IDialogManager): Promise<void> {
     this.queue.push({
-      info,
-      callback,
       timestamp: Date.now(),
       uiInstance,
       instanceId: uiInstance.instanceId
     });
-
-    // Trigger queue processing immediately if no dialog is active
-    if (!hasActiveFomodDialog(uiInstance.api.store)) {
-      log('debug', 'No active dialog detected, triggering immediate queue processing');
-      setTimeout(() => {
-        this.processNext(uiInstance.api.store).catch(err => {
-          log('error', 'Failed to process queue immediately', { error: err.message });
-        });
-      }, 10);
-    }
   }
 
-  async processNext(store: any): Promise<void> {
+  public async processNext(api: IExtensionApi): Promise<void> {
     if (this.processing || this.queue.length === 0) {
       return;
     }
@@ -97,79 +84,38 @@ export class DialogQueue {
     this.processing = true;
 
     try {
-      if (this.queue.length > 0 && !hasActiveFomodDialog(store)) {
-        const request = this.queue.shift();
-        if (request) {
-          try {
-            request.uiInstance.startDialogImmediate(request.info, (err) => {
-              if (err) {
-                log('error', 'Dialog failed to start', {
-                  moduleName: request.info.moduleName,
-                  error: err.message,
-                  errorCode: err.code
-                });
-
-                // Check if this is an installer executable failure
-                if (err.message.includes('ModInstallerIPC.exe') ||
-                    err.message.includes('FOMOD installer executable') ||
-                    err.message.includes('Failed to resolve full path') ||
-                    err.message.includes('exited with code') ||
-                    err.code === 'ENOENT' ||
-                    err.code === 'EACCES') {
-                  log('warn', 'FOMOD installer executable failure detected in queue processing', {
-                    moduleName: request.info.moduleName,
-                    error: err.message,
-                    code: err.code
-                  });
-                }
-
-                this.onDialogEnd(store);
-              }
-
-              request.callback(err);
-            });
-          } catch (err) {
-            this.onDialogEnd(store);
-            request.callback(err);
-            // Try next request after a brief delay
-            setTimeout(() => this.processNext(store), 100);
-          }
-        }
+      // Double-check no dialog became active while we were waiting
+      if (hasActiveFomodDialog(api)) {
+        return;
       }
+
+      const request = this.queue.shift();
+      if (!request) {
+        return;
+      }
+
+      request.uiInstance.startDialogImmediate();
     } finally {
       this.processing = false;
     }
   }
 
-  onDialogEnd(store: any): void {
-    const activeInstanceId = store.getState()?.session?.fomod?.installer?.dialog?.activeInstanceId;
-    store.dispatch(endDialog(activeInstanceId));
-    // Remove the active dialog from the queue if it exists
-    this.queue = this.queue.filter(request => request.instanceId !== activeInstanceId);
-
-    // Process next request after a brief delay
-    setTimeout(() => {
-      log('debug', 'Triggering queue processing after dialog end');
-      this.processNext(store).catch(err => {
-        log('error', 'Failed to process dialog queue after dialog end', { error: err.message });
-      });
-    }, 50);
+  public onDialogEnd(api: IExtensionApi): void {
+    // Process next queued dialog
+    this.processNext(api).catch(err => {
+      log('error', 'Failed to process next dialog', { error: err.message });
+    });
   }
 
-  getStatus(): any {
+  public getStatus() {
     return {
       queueLength: this.queue.length,
       isProcessing: this.processing,
     };
   }
 
-  clear(): void {
-    // Notify all queued requests
-    this.queue.forEach(request => {
-      request.callback(new Error('Dialog queue cleared'));
-    });
+  public clear(): void {
     this.queue = [];
     this.processing = false;
   }
-
 }
