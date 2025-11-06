@@ -19,7 +19,7 @@ export interface IMOTMEntryExt extends IMOTMEntry {
   
   /**
    * Generated YouTube embed link
-   * @example https://www.youtube.com/embed/abc123
+   * @example https://www.youtube-nocookie.com/embed/abc123
    */
   link: string;
   

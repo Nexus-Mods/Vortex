@@ -3,12 +3,17 @@ import * as React from 'react';
 
 class YoutubeTag extends Tag {
   public toHTML(): string[] {
-    return [`<iframe src="https://www.youtube.com/embed/${this.getContent()}"/>`];
+    return [`<iframe src="https://www.youtube-nocookie.com/embed/${this.getContent()}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; web-share" title="YouTube video player"/>`];
   }
 
   public toReact() {
     return (
-      <iframe src={`https://www.youtube.com/embed/${this.getContent()}`}/>
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${this.getContent()}`}
+        referrerPolicy="strict-origin-when-cross-origin"
+        allow="encrypted-media; web-share"
+        title="YouTube video player"
+      />
     );
   }
 }

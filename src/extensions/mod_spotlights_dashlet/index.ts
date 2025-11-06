@@ -21,8 +21,7 @@ const DEBUG_MODE: boolean = false;
  */
 const DEPRECATED_MODS_OF_THE_MONTH_FILENAME = 'modsofthemonth.json';
 
-const YOUTUBE_EMBED_URL = `https://www.youtube.com/embed/`;
-const YOUTUBE_OPTS = `enablejsapi=1&origin=vortex.app&widget_referrer=vortex.app`;
+const YOUTUBE_EMBED_URL = `https://www.youtube-nocookie.com/embed/`;
 
 const MOD_SPOTLIGHTS_FILENAME = 'modspotlights.json';
 
@@ -83,7 +82,7 @@ function decorateData<T extends ModSpotlightEntry>(data: T[]): ModSpotlightEntry
   for (const entry of data) {
     decorated.push({
       ...entry,
-      link: `${YOUTUBE_EMBED_URL}${entry.videoid}?${YOUTUBE_OPTS}`
+      link: `${YOUTUBE_EMBED_URL}${entry.videoid}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1`
     });
   }
   return decorated;
