@@ -63,6 +63,9 @@ nul
 # Claude Code directory
 .claude
 
+# Serena (AI agent) memory files
+.serena
+
 # playright stuff
 playwright/playwright-report/
 playwright/run-*
