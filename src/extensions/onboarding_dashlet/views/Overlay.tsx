@@ -29,6 +29,7 @@ export function Overlay(props: {
       <iframe
         {...{
           src: url,
+          sandbox: 'allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox',
           width: '100%',
           height: '335',
           referrerPolicy: 'strict-origin-when-cross-origin',
