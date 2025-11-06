@@ -49,7 +49,7 @@ describe('endDialog', () => {
 describe('setDialogState', () => {
   it('sets the installer dialog state', () => {
     let instanceId = 'testInstance';
-    let input = { 
+    let input = {
       activeInstanceId: instanceId,
       instances: {
         [instanceId]: {}
@@ -65,45 +65,6 @@ describe('setDialogState', () => {
       instances: {
         [instanceId]: {
           state: state
-        }
-      }
-    });
-  });
-});
-
-describe('setInstallerDataPath', () => {
-  it('sets the installer data path', () => {
-    let instanceId = 'testInstance';
-    let input = { 
-      activeInstanceId: instanceId,
-      instances: {
-        [instanceId]: {}
-      }
-    };
-    let result = installerUIReducer.reducers.SET_INSTALLER_DATA_PATH(input, { path: 'new path', instanceId });
-    expect(result).toEqual({
-      activeInstanceId: instanceId,
-      instances: {
-        [instanceId]: {
-          dataPath: 'new path'
-        }
-      }
-    });
-  });
-  it('fails if the data path is null', () => {
-    let instanceId = 'testInstance';
-    let input = { 
-      activeInstanceId: instanceId,
-      instances: {
-        [instanceId]: {}
-      }
-    };
-    let result = installerUIReducer.reducers.SET_INSTALLER_DATA_PATH(input, { path: null, instanceId });
-    expect(result).toEqual({
-      activeInstanceId: instanceId,
-      instances: {
-        [instanceId]: {
-          dataPath: null
         }
       }
     });

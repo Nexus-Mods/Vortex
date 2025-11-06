@@ -41,14 +41,3 @@ describe('setDialogState', () => {
     });
   });
 });
-
-describe('setInstallerDataPath', () => {
-  it('creates the correct action', () => {
-    let instanceId = 'testInstance';
-    expect(actions.setInstallerDataPath('path', instanceId)).toEqual({
-      error: false,
-      type: 'SET_INSTALLER_DATA_PATH',
-      payload: { path: 'path', instanceId: instanceId },
-    });
-  });
-});
