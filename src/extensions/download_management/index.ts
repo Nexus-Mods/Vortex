@@ -256,7 +256,7 @@ function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
 
   const incomplete = Object.keys(downloads)
     .filter(dlId => (['finished', 'paused'].includes(downloads[dlId].state))
-      && (!truthy(downloads[dlId].localPath) || downloads[dlId].size === 0));
+      && (!truthy(downloads[dlId].localPath) || downloads[dlId].received === 0 || downloads[dlId].size === 0));
   const invalid = Object.keys(downloads)
     .filter(dlId => !archiveExtLookup.has(path.extname(downloads[dlId].localPath || '').toLowerCase()));
   const removeSet = new Set<string>(incomplete.concat(invalid));
@@ -281,7 +281,8 @@ function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
           return fs.removeAsync(path.join(downloadPath, fileName)).catch(() => null);
         }
       }));
-    });
+    })
+    .catch((err) => ['ENOENT', 'EACCES', 'EPERM'].includes(err.code) ? null : log('warn', 'failed to remove invalid download files', err));
 }
 
 function updateDownloadPath(api: IExtensionApi, gameId?: string) {

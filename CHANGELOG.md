@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.16.0-alpha.2] - 2025-10-29
+## 1.16.0-alpha.3 - 2025-11-xx
+
+- Complete FOMOD Installer Native Port - Split FOMOD installer into shared logic and native implementation modules for better performance, reliability, and maintainability ([#18465](https://github.com/Nexus-Mods/Vortex/issues/18465))
+- Collection browsing UX fixes ([#18728](https://github.com/Nexus-Mods/Vortex/issues/18728))
+- Fixed Mixpanel event crash on mod install ([#18716](https://github.com/Nexus-Mods/Vortex/issues/18716))
+- Fixed downloads folder cleanup ([#18720](https://github.com/Nexus-Mods/Vortex/issues/18720))
+- Fixed download reference false positives for fuzzy/bundled mods ([#18719](https://github.com/Nexus-Mods/Vortex/issues/18719))
+- Added C# script execution warning ([#18667](https://github.com/Nexus-Mods/Vortex/issues/18667))
+- Fix ability to export "dead" collection rules when uploading a new revision ([#18709](https://github.com/Nexus-Mods/Vortex/issues/18709))
+
+## 1.16.0-alpha.2 - 2025-10-29
 
 _Major refactor release with Electron 37, .NET 9 upgrade, complete Download/Install pipeline overhaul, and new Collection Browsing feature_
 
@@ -51,6 +61,7 @@ _Major refactor release with Electron 37, .NET 9 upgrade, complete Download/Inst
 - Notifications automatically clear on game change ([#18399](https://github.com/Nexus-Mods/Vortex/issues/18399))
 - Converted appropriate notifications to toast format ([#18307](https://github.com/Nexus-Mods/Vortex/issues/18307))
 - Feedback button now links to Google Form ([#18446](https://github.com/Nexus-Mods/Vortex/issues/18446))
+- Various UI/UX fixes for Collections ([#18686](https://github.com/Nexus-Mods/Vortex/issues/18686))
 
 #### Game Extensions
 
