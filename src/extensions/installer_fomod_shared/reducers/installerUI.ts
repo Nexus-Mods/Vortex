@@ -4,11 +4,16 @@ import * as actions from '../actions/installerUI';
 import { IFOMODStateDialog } from '../types/interface';
 
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { createReducer } from '../../../util/reducers';
+import { createReducer, ReducerHandler } from '../../../util/reducers';
 
-type ActionType<P> = (state: IFOMODStateDialog, payload: P) => IFOMODStateDialog;
+const defaults: IFOMODStateDialog = {
+  activeInstanceId: null,
+  instances: {},
+};
 
-const startDialog: ActionType<actions.StartDialogPayload> = (state, payload) => {
+const reducers: { [key: string]: ReducerHandler<IFOMODStateDialog, any> } = {};
+
+createReducer(actions.startDialog, (state, payload) => {
   const { instanceId, info } = payload;
   const existingInstance = state.instances?.[instanceId];
 
@@ -20,9 +25,9 @@ const startDialog: ActionType<actions.StartDialogPayload> = (state, payload) => 
         : { $set: { info, state: undefined } }
     }
   });
-};
+}, reducers);
 
-const endDialog: ActionType<actions.EndDialogPayload> = (state, payload) => {
+createReducer(actions.endDialog, (state, payload) => {
   const { instanceId } = payload;
   return update(state, {
     activeInstanceId: { $set: null },
@@ -32,16 +37,16 @@ const endDialog: ActionType<actions.EndDialogPayload> = (state, payload) => {
       }
     }
   });
-};
+}, reducers);
 
-const clearDialog: ActionType<actions.ClearDialogPayload> = (state, payload) => {
+createReducer(actions.clearDialog, (state, payload) => {
   const { instanceId } = payload;
   return update(state, {
     instances: { $unset: [instanceId] }
   });
-};
+}, reducers);
 
-const setDialogState: ActionType<actions.SetDialogStatePayload> = (state, payload) => {
+createReducer(actions.setDialogState, (state, payload) => {
   const { instanceId, dialogState } = payload;
   const existingInstance = state.instances?.[instanceId];
 
@@ -52,23 +57,9 @@ const setDialogState: ActionType<actions.SetDialogStatePayload> = (state, payloa
         : { $set: { info: undefined, state: dialogState } }
     }
   });
-};
+}, reducers);
 
-const getReducers = () => {
-  const reducers: { [key: string]: ActionType<any> } = {};
-  createReducer(actions.startDialog, startDialog, reducers);
-  createReducer(actions.endDialog, endDialog, reducers);
-  createReducer(actions.clearDialog, clearDialog, reducers);
-  createReducer(actions.setDialogState, setDialogState, reducers);
-  return reducers;
-};
-
-const getDefaults = (): IFOMODStateDialog => ({
-  activeInstanceId: null,
-  instances: {},
-});
-
-export const installerUIReducer: IReducerSpec<IFOMODStateDialog>  = {
-  reducers: getReducers(),
-  defaults: getDefaults(),
+export const installerUIReducer: IReducerSpec<IFOMODStateDialog> = {
+  reducers,
+  defaults,
 };
