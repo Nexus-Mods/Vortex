@@ -277,12 +277,6 @@ function findCollectionByDownload(
   download: IDownload,
   downloadId: string
 ): { collectionMod: IMod; matchingRule: IModRule; gameId: string } | null {
-  const referenceTag = download.modInfo?.referenceTag;
-  if (!referenceTag) {
-    log('debug', 'Skipping download - no reference tag', { downloadId });
-    return null;
-  }
-
   const gameId = activeProfile(state)?.gameId;
   if (!gameId) {
     log('debug', 'No active game profile', { downloadId });
@@ -297,13 +291,13 @@ function findCollectionByDownload(
   }
 
   const matchingRule = getCollectionModByReference(state, {
-    tag: referenceTag,
+    tag: download.modInfo?.referenceTag,
     fileMD5: download.fileMD5,
     fileId: download.modInfo?.fileId,
     logicalFileName: download.localPath,
   });
   if (!matchingRule) {
-    log('debug', 'No matching rule found in collection for download', { downloadId, referenceTag });
+    log('debug', 'No matching rule found in collection for download', { downloadId });
     return null;
   }
 
