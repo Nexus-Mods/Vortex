@@ -38,6 +38,7 @@ export function Overlay(props: {
           allowFullScreen: true,
         } as any}
       />
+      <p className='youtube-privacy-notice'>{t('Playing this video will store cookies on your device')}</p>
       <div className='onboarding-overlay-button-container'>
         <Button className='onboarding-overlay-button' onClick={onCompleteStep}>
           <Icon

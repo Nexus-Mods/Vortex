@@ -69,6 +69,7 @@ function NavButton(props: IButtonProps) {
 function renderInfo(t: any, entry: ModSpotlightEntryExt) {
   return entry.id === 'placeholder' ? null : <div className='dashlet-mod-spotlights-info'>
     <p>{t('Here are some mods we think you should try out!')}</p>
+    <p className='youtube-privacy-notice'>{t('Playing this video will store cookies on your device')}</p>
   </div>
 }
 

@@ -8,12 +8,15 @@ class YoutubeTag extends Tag {
 
   public toReact() {
     return (
-      <iframe
-        src={`https://www.youtube-nocookie.com/embed/${this.getContent()}`}
-        referrerPolicy="strict-origin-when-cross-origin"
-        allow="encrypted-media; web-share"
-        title="YouTube video player"
-      />
+      <div className='youtube-embed-container'>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${this.getContent()}`}
+          referrerPolicy="strict-origin-when-cross-origin"
+          allow="encrypted-media; web-share"
+          title="YouTube video player"
+        />
+        <p className='youtube-privacy-notice'>Playing this video will store cookies on your device</p>
+      </div>
     );
   }
 }
