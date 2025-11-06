@@ -1,41 +1,22 @@
 import path from 'path';
 import { Dirent, readdirSync, readFileSync } from 'node:fs';
 import { FileHandle, open, readdir } from 'node:fs/promises';
-import { NativeModInstaller, testSupported, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
-import { hasLoadOrder } from './utils/guards';
-import { IExtensionApi, IInstallResult, IState, ISupportedResult } from '../../types/api';
-import { getApplication, getGame } from '../../util/api';
-import { selectors } from '../..';
-import { DialogManager } from './utils/DialogManager';
-
-export class VortexModTester {
-  /**
-   * Calls FOMOD's testSupport and converts the result to Vortex data
-   */
-  public testSupport = (files: string[], allowedTypes: string[]): Promise<ISupportedResult> => {
-    try {
-    const result = testSupported(files, allowedTypes);
-    return Promise.resolve({
-      supported: result.supported,
-      requiredFiles: result.requiredFiles,
-    });
-    } catch (error) {
-      return Promise.resolve({
-        supported: false,
-        requiredFiles: [],
-      });
-    }
-  };
-}
+import { NativeModInstaller, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
+import { hasLoadOrder } from './guards';
+import { IExtensionApi, IState } from '../../../types/api';
+import { getApplication, getGame } from '../../../util/api';
+import { log, selectors } from '../../..';
+import { DialogManager } from './DialogManager';
 
 export class VortexModInstaller {
-  private modInstaller: NativeModInstaller;
-  private api: IExtensionApi;
-  private instanceId: string;
-  private DialogManager: DialogManager;
+  private mModInstaller: NativeModInstaller;
+  private mApi: IExtensionApi;
+  private mInstanceId: string;
+  private mScriptPath: string;
+  private mDialogManager: DialogManager;
 
   public constructor(api: IExtensionApi, instanceId: string) {
-    this.modInstaller = new NativeModInstaller(
+    this.mModInstaller = new NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
       this.contextGetCurrentGameVersionAsync,
@@ -48,8 +29,13 @@ export class VortexModInstaller {
       this.readDirectoryList
     );
 
-    this.api = api;
-    this.instanceId = instanceId;
+    this.mApi = api;
+    this.mInstanceId = instanceId;
+  }
+
+  public dispose() {
+    this.mDialogManager?.dispose();
+    this.mDialogManager = undefined;
   }
 
   /**
@@ -57,7 +43,8 @@ export class VortexModInstaller {
    */
   public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<vetypes.InstallResult | null> => {
     try {
-      return await this.modInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
+      this.mScriptPath = scriptPath;
+      return await this.mModInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
     } catch (error) {
       return null;
     }
@@ -84,7 +71,7 @@ export class VortexModInstaller {
       return state.loadOrder[existingPluginName]?.enabled ?? false;
     }
 
-    const state = this.api.store.getState();
+    const state = this.mApi.store.getState();
 
     const pluginList = state.session.plugins?.pluginList ?? {};
     let plugins = Object.keys(pluginList);
@@ -106,7 +93,7 @@ export class VortexModInstaller {
    * Callback
    */
   private contextGetCurrentGameVersionAsync = async (): Promise<string> => {
-    const state = this.api.getState();
+    const state = this.mApi.getState();
     const game = selectors.currentGame(state);
     const discovery = selectors.currentGameDiscovery(state);
     const gameInfo = getGame(game.id);
@@ -119,7 +106,7 @@ export class VortexModInstaller {
    * Callback
    */
   private contextGetExtenderVersionAsync = async (): Promise<string> => {
-    const state = this.api.getState();
+    const state = this.mApi.getState();
     const game = selectors.currentGame(state);
     const discovery = selectors.currentGameDiscovery(state);
     const gameInfo = getGame(game.id);
@@ -139,8 +126,32 @@ export class VortexModInstaller {
     contCallback: vetypes.ContinueCallback,
     cancelCallback: vetypes.CancelCallback
   ): Promise<void> => {
-    this.DialogManager = new DialogManager(this.api, this.instanceId);
-    await this.DialogManager.startDialog(moduleName, image, selectCallback, contCallback, cancelCallback);
+    log('debug', 'Starting FOMOD dialog', { instanceId: this.mInstanceId });
+    this.mDialogManager = new DialogManager(this.mApi, this.mInstanceId, this.mScriptPath);
+    await this.mDialogManager.enqueueDialog(moduleName, image, selectCallback, contCallback, cancelCallback);
+  };
+
+  /**
+   * Callback for updating FOMOD dialog state
+   * Delegates to DialogManager instance
+   */
+  private uiUpdateState = async (installSteps: vetypes.IInstallStep[], currentStepId: number): Promise<void> => {
+    if (!this.mDialogManager) {
+      throw new Error('DialogManager not initialized');
+    }
+
+    // https://github.com/Nexus-Mods/NexusMods.App/blob/e6b99cff84443ce78081caefda7ffcd4ffc184a9/src/NexusMods.Games.FOMOD/CoreDelegates/UiDelegate.cs#L108-L109
+    if (currentStepId < 0 || currentStepId >= installSteps.length) {
+      return;
+      //throw new Error('Invalid current step ID');
+    }
+
+    log('debug', 'Updating FOMOD dialog state', {
+      instanceId: this.mInstanceId,
+      currentStepId,
+      totalSteps: installSteps.length,
+    });
+    await this.mDialogManager.updateDialogState(installSteps, currentStepId);
   };
 
   /**
@@ -148,25 +159,13 @@ export class VortexModInstaller {
    * Delegates to DialogManager instance
    */
   private uiEndDialog = async (): Promise<void> => {
-    if (!this.DialogManager) {
+    if (!this.mDialogManager) {
       throw new Error('DialogManager not initialized');
     }
 
-    await this.DialogManager.endDialog();
+    log('debug', 'Ending FOMOD dialog', { instanceId: this.mInstanceId });
 
-    this.DialogManager.detach();
-    this.DialogManager = undefined;
-  };
-
-  /**
-   * Callback for updating FOMOD dialog state
-   * Delegates to DialogManager instance
-   */
-  private uiUpdateState = async (installSteps: vetypes.IInstallStep[], currentStep: number): Promise<void> => {
-    if (!this.DialogManager) {
-      throw new Error('DialogManager not initialized');
-    }
-    await this.DialogManager.updateState(installSteps, currentStep);
+    await this.mDialogManager.endDialog();
   };
 
   /**

@@ -4,19 +4,21 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 
-import { DialogQueue, IDialogManager } from '../../installer_fomod_shared/utils/DialogQueue';
+import {
+  DialogQueue,
+  IDialogManager,
+} from '../../installer_fomod_shared/utils/DialogQueue';
 
 import {
+  clearDialog,
   endDialog,
   setDialogState,
   startDialog,
 } from '../../installer_fomod_shared/actions/installerUI';
 import {
-  Direction,
-  IInstallerInfo,
+  IHeaderImage,
   IInstallerState,
   IInstallStep,
-  StateCallback,
 } from '../../installer_fomod_shared/types/interface';
 
 /**
@@ -29,120 +31,103 @@ import {
  * - Still uses Redux for UI state management (shared with IPC version)
  */
 export class DialogManager implements IDialogManager {
-  private static dialogQueue = DialogQueue.getInstance();
-
   private mApi: IExtensionApi;
-
+  private mInstanceId: string;
+  
   private mSelectCB: vetypes.SelectCallback | undefined;
   private mContinueCB: vetypes.ContinueCallback | undefined;
   private mCancelCB: vetypes.CancelCallback | undefined;
-  private mInstanceId: string;
+  private mModuleName: string;
+  private mImage: IHeaderImage;
+  private mScriptPath: string;
 
-  get instanceId(): string {
+  public get instanceId(): string {
     return this.mInstanceId;
   }
 
-  get api(): IExtensionApi {
+  public get api(): IExtensionApi {
     return this.mApi;
   }
 
-  constructor(api: IExtensionApi, instanceId: string) {
+  public constructor(api: IExtensionApi, instanceId: string, scriptPath: string) {
     this.mApi = api;
-
     this.mInstanceId = instanceId;
-
-    // Bind methods to avoid conflicts between multiple instances
-    this.onDialogSelect = this.onDialogSelect.bind(this);
-    this.onDialogContinue = this.onDialogContinue.bind(this);
-    this.onDialogEnd = this.onDialogEnd.bind(this);
-
-    // Use instance-specific event names to avoid conflicts
-    api.events
-      .on(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
-      .on(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
-      .on(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
+    this.mScriptPath = scriptPath;
 
     log('debug', 'Created DialogManager instance', { instanceId: this.mInstanceId });
   }
 
-  public detach() {
-    log('debug', 'Detaching DialogManager instance', { instanceId: this.mInstanceId });
-
-    this.api.store.dispatch(endDialog(this.mInstanceId));
-
-    // Process any queued dialog requests
-    DialogManager.dialogQueue.onDialogEnd(this.api.store);
-
-    this.api.events
-      .removeListener(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
-      .removeListener(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
-      .removeListener(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
-
-    this.mContinueCB = this.mSelectCB = this.mCancelCB = undefined;
-
-    if (this.mInstanceId !== null) {
-      log('debug', 'Detaching DialogManager instance that had active dialog', {
-        instanceId: this.mInstanceId,
-        queueStatus: DialogManager.dialogQueue.getStatus(),
-      });
-
-      DialogManager.dialogQueue.onDialogEnd(this.api.store);
-    }
+  public dispose() {
+    this.mApi.store?.dispatch(clearDialog(this.mInstanceId));
   }
 
   /**
    * Start FOMOD dialog - queued to prevent multiple dialogs at once
    * This is the callback passed to the native ModInstaller
    */
-  public startDialog = async (
+  public enqueueDialog = async (
     moduleName: string,
     image: vetypes.IHeaderImage,
     selectCallback: vetypes.SelectCallback,
     contCallback: vetypes.ContinueCallback,
     cancelCallback: vetypes.CancelCallback
   ): Promise<void> => {
-    this.mSelectCB = selectCallback;
-    this.mContinueCB = contCallback;
-    this.mCancelCB = cancelCallback;
+    log('debug', 'Queuing FOMOD dialog', { instanceId: this.mInstanceId, moduleName });
+    
+    try {
+      this.mSelectCB = selectCallback;
+      this.mContinueCB = contCallback;
+      this.mCancelCB = cancelCallback;
+      this.mModuleName = moduleName;
+      this.mImage = image;
 
-    const selectWrapped: StateCallback = (params) => selectCallback(params.stepId, params.groupId, params.plugins);
-    const contWrapped: (direction: Direction, currentStepId: number) => void = (direction, currentStepId) => contCallback(direction === 'forward', currentStepId);
-    const cancelWrapped: () => void = () => cancelCallback();
-
-    const info: IInstallerInfo = {
-      moduleName,
-      image,
-      select: selectWrapped,
-      cont: contWrapped,
-      cancel: cancelWrapped,
-    };
-
-    const errorCallback = (_err: Error) => {};
-
-    await DialogManager.dialogQueue.addRequest(
-      info,
-      errorCallback,
-      this
-    );
+      const dialogQueue = DialogQueue.getInstance(this.mApi);
+      await dialogQueue.enqueueDialog(this);
+    } catch (err) {
+      log('error', 'Failed to queue FOMOD dialog', {
+        instanceId: this.mInstanceId,
+        moduleName,
+        image,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'queue installer dialog failed', err);
+      throw err;
+    }
   };
 
   /**
-   * Immediately start dialog (called by queue processor)
+   * Update dialog state with new steps
+   * This is the callback passed to the native ModInstaller
    */
-  public startDialogImmediate = (info: IInstallerInfo, callback: (err: any) => void) => {
-    try {
-      // Store callbacks for later use
-      this.mSelectCB = (stepId, groupId, pluginIds) => info.select({stepId, groupId, plugins: pluginIds});
-      this.mContinueCB = (forward, currentStepId) => info.cont(forward ? 'forward' : 'back', currentStepId);
-      this.mCancelCB = () => info.cancel();
+  public updateDialogState = async (
+    installSteps: vetypes.IInstallStep[],
+    currentStep: number
+  ): Promise<void> => {
+    log('debug', 'Updating FOMOD dialog state', {
+      instanceId: this.mInstanceId,
+      currentStep,
+      totalSteps: installSteps.length,
+    });
 
-      this.api.store.dispatch(startDialog(info, this.mInstanceId));
+    try {
+      // Convert native types to shared types for Redux
+      const state: IInstallerState = {
+        installSteps: installSteps.map((step) => convertInstallStep(step)),
+        currentStep,
+      };
+
+      this.mApi.store.dispatch(setDialogState(state, this.mInstanceId));
+
+      const dialogQueue = DialogQueue.getInstance(this.mApi);
+      await dialogQueue.processNext(this.mApi);
     } catch (err) {
-      log('error', 'Failed to start FOMOD dialog', {
-        moduleName: info.moduleName,
-        error: err.message,
+      log('error', 'Failed to update FOMOD dialog state', {
+        instanceId: this.mInstanceId,
+        currentStep,
+        installSteps,
+        error: err.message
       });
-      showError(this.api.store.dispatch, 'start installer dialog failed', err);
+      showError(this.mApi.store.dispatch, 'update installer dialog failed', err);
       throw err;
     }
   };
@@ -152,73 +137,91 @@ export class DialogManager implements IDialogManager {
    * This is the callback passed to the native ModInstaller
    */
   public endDialog = async (): Promise<void> => {
-    // Unset the callbacks to prevent memory leaks
-    this.mContinueCB = this.mSelectCB = this.mCancelCB = undefined;
-  };
+    log('debug', 'Ending FOMOD dialog', { instanceId: this.mInstanceId });
 
-  /**
-   * Update dialog state with new steps
-   * This is the callback passed to the native ModInstaller
-   */
-  public updateState = async (
-    installSteps: vetypes.IInstallStep[],
-    currentStep: number
-  ): Promise<void> => {
     try {
-      // Convert native types to shared types for Redux
-      const state: IInstallerState = {
-        installSteps: installSteps.map((step) => this.convertInstallStep(step)),
-        currentStep,
-      };
+      this.mApi.store.dispatch(endDialog(this.mInstanceId));
 
-      this.api.store.dispatch(setDialogState(state, this.mInstanceId));
+      this.mApi.events
+        .removeListener(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
+        .removeListener(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
+        .removeListener(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
+
+      this.mContinueCB = this.mSelectCB = this.mCancelCB = undefined;
+
+      const dialogQueue = DialogQueue.getInstance(this.mApi);
+      dialogQueue.onDialogEnd(this.mApi);
     } catch (err) {
-      showError(this.api.store.dispatch, 'update installer dialog failed', err);
+      log('error', 'Failed to end FOMOD dialog', {
+        instanceId: this.mInstanceId,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'end installer dialog failed', err);
       throw err;
     }
   };
 
   /**
-   * Convert native IInstallStep to shared IInstallStep format
+   * Immediately start dialog (called by queue processor)
    */
-  private convertInstallStep(nativeStep: vetypes.IInstallStep): IInstallStep {
-    return {
-      id: nativeStep.id,
-      name: nativeStep.name,
-      visible: nativeStep.visible,
-      optionalFileGroups: nativeStep.optionalFileGroups
-        ? {
-            group: nativeStep.optionalFileGroups.group.map((g) => ({
-              id: g.id,
-              name: g.name,
-              type: g.type,
-              options: g.options.map((opt) => ({
-                id: opt.id,
-                selected: opt.selected,
-                preset: opt.preset,
-                name: opt.name,
-                description: opt.description,
-                image: opt.image,
-                type: opt.type,
-                conditionMsg: opt.conditionMsg,
-              })),
-            })),
-            order: nativeStep.optionalFileGroups.order,
-          }
-        : undefined,
-    };
-  }
+  public startDialogImmediate = () => {
+    log('debug', 'Starting FOMOD dialog immediately', {
+      instanceId: this.mInstanceId,
+      moduleName: this.mModuleName,
+    });
+    
+    try {
+      this.mApi.events
+        .on(`fomod-installer-select-${this.mInstanceId}`, this.onDialogSelect)
+        .on(`fomod-installer-continue-${this.mInstanceId}`, this.onDialogContinue)
+        .on(`fomod-installer-cancel-${this.mInstanceId}`, this.onDialogEnd);
+      
+      this.mApi.store.dispatch(startDialog({
+        moduleName: this.mModuleName,
+        image: this.mImage,
+        dataPath: this.mScriptPath,
+      }, this.mInstanceId));
+    } catch (err) {
+      log('error', 'Failed to start FOMOD dialog immediately', {
+        instanceId: this.mInstanceId,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'start installer dialog failed', err);
+      throw err;
+    }
+  };
+
+  public cancelDialogImmediate = () => {
+    log('debug', 'Cancelling FOMOD dialog immediately', { instanceId: this.mInstanceId });
+    this.onDialogEnd();
+  };
 
   /**
    * Event handler: User selected options in the dialog
    */
   private onDialogSelect = (stepId: string, groupId: string, pluginIds: string[]) => {
-    if (this.mSelectCB !== undefined) {
+    log('debug', 'User selected options in FOMOD dialog', {
+      instanceId: this.mInstanceId,
+      stepId,
+      groupId,
+      pluginIds,
+    });
+
+    try {
       const stepIdNum = parseInt(stepId, 10);
       const groupIdNum = parseInt(groupId, 10);
       const pluginIdsNum = pluginIds.map((id) => parseInt(id, 10));
-
-      this.mSelectCB(stepIdNum, groupIdNum, pluginIdsNum);
+      this.mSelectCB?.(stepIdNum, groupIdNum, pluginIdsNum);
+    } catch (err) {
+      log('error', 'Failed to process FOMOD dialog selection', {
+        instanceId: this.mInstanceId,
+        stepId,
+        groupId,
+        pluginIds,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'select installer dialog failed', err);
+      throw err;
     }
   };
 
@@ -226,11 +229,25 @@ export class DialogManager implements IDialogManager {
    * Event handler: User clicked continue/back in the dialog
    */
   private onDialogContinue = (direction: string, currentStepId: number) => {
-    if (this.mContinueCB !== undefined) {
+    log('debug', 'User continued FOMOD dialog', {
+      instanceId: this.mInstanceId,
+      direction,
+      currentStepId,
+    });
+
+    try {
       // I hate you, 'finish', you little shit
       const forward = direction === 'forward' || direction === 'finish';
-
-      this.mContinueCB(forward, currentStepId);
+      this.mContinueCB?.(forward, currentStepId);
+    } catch (err) {
+      log('error', 'Failed to process FOMOD dialog continuation', {
+        instanceId: this.mInstanceId,
+        direction,
+        currentStepId,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'continue installer dialog failed', err);
+      throw err;
     }
   };
 
@@ -238,11 +255,54 @@ export class DialogManager implements IDialogManager {
    * Event handler: User cancelled the dialog
    */
   private onDialogEnd = () => {
-    if (this.mCancelCB !== undefined) {
-      this.mCancelCB();
-    }
+    log('debug', 'User cancelled FOMOD dialog', { instanceId: this.mInstanceId });
 
-    DialogManager.dialogQueue.onDialogEnd(this.api.store);
+    try {
+      this.mCancelCB?.();
+
+      this.mApi.store.dispatch(endDialog(this.mInstanceId));
+
+      const dialogQueue = DialogQueue.getInstance(this.mApi);
+      dialogQueue.onDialogEnd(this.mApi);
+    } catch (err) {
+      log('error', 'Failed to process FOMOD dialog cancellation', {
+        instanceId: this.mInstanceId,
+        error: err.message
+      });
+      showError(this.mApi.store.dispatch, 'cancel installer dialog failed', err);
+      throw err;
+    }
+  };
+}
+
+/**
+ * Convert native IInstallStep to shared IInstallStep format
+ */
+const convertInstallStep = (nativeStep: vetypes.IInstallStep): IInstallStep => {
+  return {
+    id: nativeStep.id,
+    name: nativeStep.name,
+    visible: nativeStep.visible,
+    optionalFileGroups: nativeStep.optionalFileGroups
+      ? {
+          group: nativeStep.optionalFileGroups.group.map((g) => ({
+            id: g.id,
+            name: g.name,
+            type: g.type,
+            options: g.options.map((opt) => ({
+              id: opt.id,
+              selected: opt.selected,
+              preset: opt.preset,
+              name: opt.name,
+              description: opt.description,
+              image: opt.image,
+              type: opt.type,
+              conditionMsg: opt.conditionMsg,
+            })),
+          })),
+          order: nativeStep.optionalFileGroups.order,
+        }
+      : undefined,
   };
 }
 

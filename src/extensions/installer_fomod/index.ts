@@ -16,20 +16,19 @@ import { delayed, toPromise, truthy} from '../../util/util';
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 
-import { setInstallerDataPath } from '../installer_fomod_shared/actions/installerUI';
 import { setInstallerSandbox } from './actions/settings';
 import Core from './delegates/Core';
 import { settingsReducer } from './reducers/settings';
-import { IChoices, IGroupList, IInstallerState } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
   uniPatterns,
 } from '../installer_fomod_shared/utils/gameSupport';
+import { getChoicesFromState } from '../installer_fomod_shared/utils/helpers';
 
 import Workarounds from './views/Workarounds';
 
-import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from '../installer_fomod_shared/constants';
+import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
 import Bluebird from 'bluebird';
 import { createIPC, killProcess } from 'fomod-installer-ipc';
@@ -1438,7 +1437,7 @@ function init(context: IExtensionContext): boolean {
     const shouldBypassDialog = canBeUnattended && (unattended === true);
     const instanceId = shortid();
 
-    const coreDelegates = new Core(context.api, gameId, instanceId);
+    const coreDelegates = new Core(context.api, gameId, instanceId, scriptPath);
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
     // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
     const stopPatterns = details.hasInstructionsOverrideFile ? uniPatterns : getStopPatterns(gameId, getGame(gameId));
@@ -1450,7 +1449,6 @@ function init(context: IExtensionContext): boolean {
       winapi?.GrantAppContainer?.(
         `${CONTAINER_NAME}_${instanceId}`, scriptPath, 'file_object', ['generic_read', 'list_directory']);
     }
-    context.api.store.dispatch(setInstallerDataPath(scriptPath, instanceId));
 
     const fomodChoices = (choicesIn !== undefined) && (choicesIn.type === 'fomod')
     ? (choicesIn.options ?? {})
@@ -1469,24 +1467,7 @@ function init(context: IExtensionContext): boolean {
         scriptPath, fomodChoices, validate, progressDelegate, coreDelegates,
         context.api.store);
 
-      const state = context.api.store.getState();
-      const activeInstanceId = state.session.fomod.installer.dialog.activeInstanceId;
-      const dialogState: IInstallerState = state.session.fomod.installer.dialog.instances[activeInstanceId].state;
-
-      const choices = (dialogState?.installSteps === undefined)
-        ? undefined
-        : dialogState.installSteps.map(step => {
-          const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-          return {
-            name: step.name,
-            groups: (ofg.group || []).map(group => ({
-              name: group.name,
-              choices: group.options
-                .filter(opt => opt.selected)
-                .map(opt => ({ name: opt.name, idx: opt.id })),
-            })),
-          };
-        });
+      const choices = getChoicesFromState(context.api, instanceId);
 
       result.instructions.push({
         type: 'attribute',

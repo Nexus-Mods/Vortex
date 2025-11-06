@@ -1,36 +1,68 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
-import { deleteOrNop, setSafe } from '../../../util/storeHelper';
+import update from 'immutability-helper';
 
 import * as actions from '../actions/installerUI';
+import { IFOMODStateDialog } from '../types/interface';
 
-export const installerUIReducer: IReducerSpec = {
-  reducers: {
-    [actions.startDialog as any]: (state, payload) => {
-      const { instanceId, info } = payload;
-      const newState = setSafe(state, ['activeInstanceId'], instanceId);
-      return setSafe(newState, ['instances', instanceId, 'info'], info);
-    },
-    [actions.endDialog as any]: (state, payload) => {
-      const { instanceId } = payload;
-      const newState = setSafe(state, ['activeInstanceId'], null);
-      const newState2 = setSafe(newState, ['instances', instanceId, 'info'], null);
-      return deleteOrNop(newState2, ['instances', instanceId, 'dataPath']);
-    },
-    [actions.clearDialog as any]: (state, payload) => {
-      const { instanceId } = payload;
-      return deleteOrNop(state, ['instances', instanceId]);
-    },
-    [actions.setDialogState as any]: (state, payload) => {
-      const { instanceId, dialogState } = payload;
-      return setSafe(state, ['instances', instanceId, 'state'], dialogState);
-    },
-    [actions.setInstallerDataPath as any]: (state, payload) => {
-      const { instanceId, path } = payload;
-      return setSafe(state, ['instances', instanceId, 'dataPath'], path);
-    }
-  },
-  defaults: {
-    activeInstanceId: null,
-    instances: {},
-  },
+import { IReducerSpec } from '../../../types/api';
+import { createReducer, ReducerHandler } from '../../../util/reducers';
+
+const defaults: IFOMODStateDialog = {
+  activeInstanceId: null,
+  instances: {},
 };
+
+const reducers: { [key: string]: ReducerHandler<IFOMODStateDialog, any> } = {};
+
+createReducer(actions.startDialog, (state, payload) => {
+  const { instanceId, info } = payload;
+  const existingInstance = state.instances?.[instanceId];
+
+  return update(state, {
+    activeInstanceId: { $set: instanceId },
+    instances: {
+      [instanceId]: existingInstance
+        ? { $merge: { info } }
+        : { $set: { info, state: undefined } }
+    }
+  });
+}, reducers);
+
+createReducer(actions.endDialog, (state, payload) => {
+  const { instanceId } = payload;
+  return update(state, {
+    activeInstanceId: { $set: null },
+    instances: {
+      [instanceId]: {
+        info: { $set: null }
+      }
+    }
+  });
+}, reducers);
+
+createReducer(actions.clearDialog, (state, payload) => {
+  const { instanceId } = payload;
+  return update(state, {
+    instances: { $unset: [instanceId] }
+  });
+}, reducers);
+
+createReducer(actions.setDialogState, (state, payload) => {
+  const { instanceId, dialogState } = payload;
+  const existingInstance = state.instances?.[instanceId];
+
+  return update(state, {
+    instances: {
+      [instanceId]: existingInstance
+        ? { $merge: { state: dialogState } }
+        : { $set: { info: undefined, state: dialogState } }
+    }
+  });
+}, reducers);
+
+const reducer: IReducerSpec<IFOMODStateDialog> = {
+  reducers,
+  defaults,
+};
+
+// Needed because the API expects the generic IReducerSpec
+export const installerUIReducer = reducer as unknown as IReducerSpec;
