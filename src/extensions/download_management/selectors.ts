@@ -26,6 +26,18 @@ export function downloadPathForGame(state: IState, gameId?: string) {
 }
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
+export const downloadsForGame = (state: IState, gameId: string) => {
+  return Object.keys(downloadFiles(state)).reduce((prev, id) => {
+    const download = downloadFiles(state)[id];
+    if (download.game.includes(gameId) && ['finished'].includes(download.state)) {
+      prev[id] = download;
+    }
+    return prev;
+  }, {} as { [dlId: string]: IDownload });
+};
+
+export const downloadsForActiveGame = (state: IState) => createSelector(
+    activeGameId, (inGameId: string) => downloadsForGame(state, inGameId));
 
 const ACTIVE_STATES: DownloadState[] = ['finalizing', 'started'];
 

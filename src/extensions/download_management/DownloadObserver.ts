@@ -173,7 +173,7 @@ export class DownloadObserver {
 
     // Only track analytics if we have valid Nexus metadata
     if (nexusIds) {
-      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+      const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId.toString(), nexusIds.modId, nexusIds.fileId);
       const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
       if ((err instanceof ProcessCanceled) || (err instanceof UserCanceled)) {
@@ -450,7 +450,7 @@ export class DownloadObserver {
             this.mApi.events.emit('analytics-track-mixpanel-event',
               new CollectionsDownloadCompletedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, download.size, duration_ms));
           } else if (nexusIds?.modId !== undefined && nexusIds?.fileId !== undefined) {
-            const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId, nexusIds.modId, nexusIds.fileId);
+            const { modUID, fileUID } = makeModAndFileUIDs(nexusIds.numericGameId.toString(), nexusIds.modId, nexusIds.fileId);
             this.mApi.events.emit('analytics-track-mixpanel-event',
               new ModsDownloadCompletedEvent(nexusIds.modId, nexusIds.fileId, nexusIds.numericGameId, modUID, fileUID, download.size, duration_ms));
           } else {
