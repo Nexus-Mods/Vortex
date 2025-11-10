@@ -2,18 +2,8 @@ import React from 'react';
 import { Button } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import Icon from '../../../controls/Icon';
-import Webview from '../../../controls/Webview';
-import opn from '../../../util/opn';
 import { completeStep } from '../actions';
 import { useTranslation } from 'react-i18next';
-const onNewWindow = (ytUrl: string) => {
-  // Small hack to avoid blank page when clicking the subscibe button
-  // the blank page is: `https://www.youtube.com/post_login`
-  ytUrl = ytUrl.indexOf('https://www.youtube.com/signin?') >= 0
-    ? 'https://www.youtube.com/channel/UCHkIcWk6R4p_O56foC-ISsw'
-    : ytUrl;
-  opn(ytUrl).catch(() => null);
-};
 
 export function Overlay(props: {
   url: string,
@@ -36,13 +26,20 @@ export function Overlay(props: {
       <p>
         {desc}
       </p>
-      <Webview
-        style={{ width: '100%', height: 335 }}
-        src={`${url}?autoplay=1`}
-        onNewWindow={onNewWindow}
-        title='YouTube video player'
-        allowFullScreen
+      <iframe
+        {...{
+          src: url,
+          sandbox: 'allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox',
+          width: '100%',
+          height: '335',
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          allow: 'encrypted-media; web-share; fullscreen',
+          title: 'YouTube video player',
+          style: { border: 0 },
+          allowFullScreen: true,
+        } as any}
       />
+      <p className='youtube-privacy-notice'>{t('Playing this video will store cookies on your device')}</p>
       <div className='onboarding-overlay-button-container'>
         <Button className='onboarding-overlay-button' onClick={onCompleteStep}>
           <Icon
