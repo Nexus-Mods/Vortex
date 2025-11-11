@@ -104,3 +104,11 @@ export const modsForActiveGame = createSelector(
     return modsForGame(state, activeGameId);
   },
 );
+
+export const getMod = createSelector(
+  modsForGame,
+  (state: IState, gameId: string, modId: string) => modId,
+  (mods: { [modId: string]: IMod }, modId: string) => {
+    return mods[modId];
+  },
+);
