@@ -2513,7 +2513,8 @@ class ExtensionManager {
       'onboarding_dashlet',
       'mod_spotlights_dashlet',
       'tailwind_dev',
-      'browse_nexus'
+      'browse_nexus',
+      'health_check',
     ];
 
     require('./extensionRequire').default(() => this.extensions);
