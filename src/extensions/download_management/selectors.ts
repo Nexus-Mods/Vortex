@@ -59,3 +59,16 @@ export const activeDownloads =
       }
       return prev;
     }, {}));
+
+export const getDownloadByIds = createSelector(
+  downloadFiles,
+  (state: IState, identifiers: { fileId: number, modId: number, gameId: string }) => identifiers,
+  (files: { [dlId: string]: IDownload }, identifiers: { fileId: number, modId: number, gameId: string }) => {
+    return Object.values(files).find(dl => {
+      if (dl.game.includes(identifiers.gameId) === false) {
+        return false;
+      }
+      return (dl.modInfo?.nexus?.ids?.fileId === identifiers.fileId)
+        && (dl.modInfo?.nexus?.ids?.modId === identifiers.modId);
+    });
+  });

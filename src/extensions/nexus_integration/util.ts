@@ -998,7 +998,7 @@ function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: strin
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusCollectionId: number = parseInt(mod.attributes.collectionId, 10);
+  const nexusCollectionId: number = mod.attributes.collectionId;
 
   store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'pending'));
   const game = gameById(api.store.getState(), gameId);
@@ -1019,7 +1019,7 @@ function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusModId: number = parseInt(mod.attributes.modId, 10);
+  const nexusModId: number = mod.attributes.modId;
   const version: string = getSafe(mod.attributes, ['version'], undefined)
                         || getSafe(mod.attributes, ['modVersion'], undefined);
 
