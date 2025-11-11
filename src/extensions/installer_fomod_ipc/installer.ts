@@ -30,8 +30,8 @@ export const install = async (
     // If we have fomod choices, automatically bypass the dialog regardless of unattended flag
     const shouldBypassDialog = canBeUnattended && (unattended === true);
 
-    const hasModuleConfig = files.some(file => path.basename(file).toLowerCase() === 'moduleconfig.xml');
-    if (hasModuleConfig && !shouldBypassDialog) {
+    const hasScript = files.some(file => path.basename(file).toLowerCase() === 'script.cs');
+    if (hasScript && !shouldBypassDialog) {
       // This mod will require user interaction, we need to make sure
       // the the previous phase is deployed.
       await api.ext.awaitNextPhaseDeployment?.();

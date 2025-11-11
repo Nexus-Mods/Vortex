@@ -31,7 +31,6 @@ import Workarounds from './views/Workarounds';
 import { CONTAINER_NAME, NET_CORE_DOWNLOAD, NET_CORE_DOWNLOAD_SITE } from './constants';
 
 import Bluebird from 'bluebird';
-import { createIPC, killProcess } from 'fomod-installer-ipc';
 import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
@@ -209,7 +208,7 @@ function killProcessForConnection(connectionId: string): boolean {
   if (proc) {
     try {
       log('debug', 'Killing process for connection', { connectionId, pid: proc.pid });
-      killProcess(proc.pid);
+      //killProcess(proc.pid);
       unregisterProcess(connectionId);
       return true;
     } catch (err) {
@@ -895,10 +894,10 @@ class ConnectionIPC {
           // Track the number of exit listeners before createIPC
           const listenerCountBefore = process.listenerCount('exit');
 
-          pid = await createIPC(
-            pipe, ipcId, onExit, onStdout,
-            securityLevel === SecurityLevel.Sandbox ? `${CONTAINER_NAME}_${pipeId}` : undefined,
-            false);
+          //pid = await createIPC(
+          //  pipe, ipcId, onExit, onStdout,
+          //  securityLevel === SecurityLevel.Sandbox ? `${CONTAINER_NAME}_${pipeId}` : undefined,
+          //  false);
             // securityLevel === SecurityLevel.LowIntegrity);
           log('debug', 'FOMOD IPC connection created successfully', { pid, connectionId });
 
@@ -919,7 +918,7 @@ class ConnectionIPC {
 
           // Register the process with our management system
           registerProcess(connectionId, pid, () => {
-            return killProcess(pid);
+            //return killProcess(pid);
           });
 
         } catch (ipcErr) {

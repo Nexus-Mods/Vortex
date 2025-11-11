@@ -79,13 +79,11 @@
     "confinement": "devmode"
   },
   "extraResources": [
-    "build/windowsdesktop-runtime-win-x64.exe",
     "build/VC_redist.x64.exe",
     "build/windowsdesktop-runtime-win-x64.exe",
     "locales"
   ],
   "files": [
-    "build/windowsdesktop-runtime-win-x64.exe",
     "build/VC_redist.x64.exe",
     "build/windowsdesktop-runtime-win-x64.exe",
     "**/*",
