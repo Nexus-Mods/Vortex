@@ -6444,14 +6444,14 @@ fn.name@1.x.x:
   resolved "https://registry.yarnpkg.com/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-"fomod-installer-ipc@file:extensions/fomod-installer/src/ModInstaller.IPC.TypeScript":
+"fomod-installer-ipc@file:./extensions/fomod-installer/src/ModInstaller.IPC.TypeScript":
   version "0.10.1"
   dependencies:
     async "^3.2.2"
     copyfiles "*"
     fs-extra "^10.1.0"
 
-"fomod-installer-native@file:extensions/fomod-installer/src/ModInstaller.Native.TypeScript":
+"fomod-installer-native@file:./extensions/fomod-installer/src/ModInstaller.Native.TypeScript":
   version "0.10.0"
 
 for-each@^0.3.3, for-each@^0.3.5:
