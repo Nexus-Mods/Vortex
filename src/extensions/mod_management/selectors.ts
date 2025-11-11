@@ -109,8 +109,11 @@ export const modsForActiveGame = createSelector(
 
 export const getMod = createSelector(
   modsForGame,
-  (state: IState, gameId: string, modId: string) => modId,
-  (mods: { [modId: string]: IMod }, modId: string) => {
+  (state: IState, gameId: string, modId: string | number) => modId,
+  (mods: { [modId: string]: IMod }, modId: string | number) => {
+    if (typeof modId === 'number') {
+      return Object.values(mods).find(mod => mod.attributes?.modId === modId);
+    }
     return mods[modId];
   },
 );

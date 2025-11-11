@@ -12561,7 +12561,7 @@ void-elements@3.1.0:
 
 vortex-api@Nexus-Mods/vortex-api#18586-fallout-nv-user-journey:
   version "1.9.1-r37"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/f3746adadadd697cb7249cd68d3ae4756814cd85"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/8b91d40034bf48596138f38f8beea902ad080729"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.4.0"
