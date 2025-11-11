@@ -69,7 +69,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
 
   protected getExecutablePaths(exeName: string): string[] {
     const paths = super.getExecutablePaths(exeName);
-    paths.push(path.join(getVortexPath('base'), 'resources', 'app.asar.unpacked', 'node_modules', 'fomod-installer-ipc', 'dist', exeName));
+    paths.push(path.join(getVortexPath('package_unpacked'), 'node_modules', 'fomod-installer-ipc', 'dist', exeName));
     return paths;
   }
 
