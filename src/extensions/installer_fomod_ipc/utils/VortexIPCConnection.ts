@@ -18,45 +18,51 @@ import { getVortexPath } from '../../../util/api';
  * - FOMOD-specific commands (testSupported, install)
  */
 export class VortexIPCConnection extends BaseIPCConnection {
-  private api: IExtensionApi | undefined;
 
   /**
    * Create a new Vortex IPC connection with fallback strategies
    *
+   * @param api Vortex API for showing dialogs and translations
    * @param strategies Array of transport-launcher pairs to try (in order)
    * @param connectionTimeout Timeout in milliseconds (default: 10000)
-   * @param api Optional Vortex API for showing dialogs and translations
+   * @param modName Optional mod name for dialog display purposes
    *
    * @example
-   * const connection = new VortexIPCConnection([
+   * const connection = new VortexIPCConnection(api, [
    *   { transport: namedPipeTransport, launcher: sandboxLauncher },
    *   { transport: tcpTransport, launcher: regularLauncher }
-   * ], 10000, api);
+   * ], 10000);
    */
   constructor(
+    api: IExtensionApi,
     strategies: ConnectionStrategy | ConnectionStrategy[],
     connectionTimeout: number = 10000,
-    api?: IExtensionApi
+    modName?: string
   ) {
     // Create timeout options with Vortex dialog integration
     const timeoutOptions: TimeoutOptions = {
       showDialog: !!api,
       onTimeoutDialog: api ? async (dialogId: string, command?: string) => {
-        const modName = ''; // Placeholder for mod name if needed
         const t = api.translate;
-        const cont = t('Continue Installation');
-        const cancel = t('Cancel');
 
-        const result = await api.showDialog?.('question', 'Installation Timeout', {
-          text: t(
-            `The installation of mod {{ modName }} is taking longer than expected.\n` +
-            `This may happen because the mod has a custom dialog that Vortex is not aware of.\n` +
-            `In this case, you may need to interact with the mod's installer manually outside of Vortex to proceed.`,
-            { replace: { modName: modName } }),
-          message: t('Would you like to continue with the installation, or cancel it?'),
-        }, [{ label: cont }, { label: cancel }], dialogId);
-
-        return result && result.action === cont;
+        const no = t('Cancel');
+        const yes = t('Continue Installation');
+        const dialogResult = await api.showDialog?.(
+          'question',
+          t('Installation Timeout'),
+          {
+            bbcode: t(
+              `The installation of mod "{{ modName }}" is taking longer than expected.[br][/br][br][/br]` +
+              `This may happen because the mod has a custom dialog that Vortex is not aware of.[br][/br]` +
+              `In this case, you may need to interact with the mod's installer manually outside of Vortex to proceed.[br][/br][br][/br]` +
+              `Would you like to continue with the installation, or cancel it?`,
+              { replace: { modName: modName } }
+            ),
+          },
+          [{ label: no }, { label: yes }, /*{ label: yesForAll }*/],
+          dialogId
+        );
+        return dialogResult?.action === yes;
       } : undefined,
       onDismissDialog: api ? (dialogId: string) => {
         api.closeDialog?.(dialogId);
@@ -64,7 +70,6 @@ export class VortexIPCConnection extends BaseIPCConnection {
     };
 
     super(strategies, connectionTimeout, timeoutOptions);
-    this.api = api;
   }
 
   protected getExecutablePaths(exeName: string): string[] {

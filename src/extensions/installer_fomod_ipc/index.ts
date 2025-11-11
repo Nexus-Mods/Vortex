@@ -1,14 +1,18 @@
 import { method as toBluebird } from 'bluebird';
+import { setLogger } from 'fomod-installer-ipc';
 import { testSupported } from './tester';
 import { install } from './installer';
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionContext } from '../../types/api';
+import { log as vortexLog } from '../../util/log';
 
 /**
  * Extension initialization
  */
 const main = (context: IExtensionContext): boolean => {
+
+  setLogger(vortexLog);
 
   context.registerInstaller(
     /*id:*/ `fomod`,
@@ -19,7 +23,7 @@ const main = (context: IExtensionContext): boolean => {
       _archivePath?: string,
       details?: ITestSupportedDetails
     ) => {
-      return await testSupported(files, gameId, details);
+      return await testSupported(context.api, files, gameId, details);
     }),
     /*install:*/ toBluebird(async (
         files: string[],
@@ -28,10 +32,10 @@ const main = (context: IExtensionContext): boolean => {
         _progressDelegate: unknown,
         choices?: unknown,
         unattended?: boolean,
-        _archivePath?: string,
+        archivePath?: string,
         details?: IInstallationDetails
       ) => {
-        return await install(files, destinationPath, gameId, choices, unattended, details, context.api);
+        return await install(context.api, files, destinationPath, gameId, choices, unattended, archivePath, details);
       }
     )
   );

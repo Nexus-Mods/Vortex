@@ -2,12 +2,13 @@ import { VortexIPCConnection } from './utils/VortexIPCConnection';
 import { createConnectionStrategies } from './utils/connectionStrategy';
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { log } from '../../util/log';
-import { ISupportedResult } from '../../types/IExtensionContext';
+import { IExtensionApi, ISupportedResult } from '../../types/api';
 
 /**
  * Test if files are supported by the FOMOD installer
  */
 export const testSupported = async (
+  api: IExtensionApi,
   files: string[],
   gameId: string,
   details?: ITestSupportedDetails
@@ -30,7 +31,7 @@ export const testSupported = async (
 
   try {
     const strategies = createConnectionStrategies();
-    connection = new VortexIPCConnection(strategies, 10000);
+    connection = new VortexIPCConnection(api, strategies, 10000);
     await connection.initialize();
 
     const result = await connection.testSupported(files, ['CSharpScript']);

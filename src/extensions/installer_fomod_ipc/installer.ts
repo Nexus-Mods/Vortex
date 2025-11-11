@@ -9,19 +9,20 @@ import { IChoices } from '../installer_fomod_shared/types/interface';
 import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_shared/utils/gameSupport';
 import { getGame } from '../../util/api';
 import { log } from '../../util/log';
-import { IInstallResult } from '../../types/IExtensionContext';
+import { IExtensionApi, IInstallResult } from '../../types/api';
 
 /**
  * Install a FOMOD mod
  */
 export const install = async (
+  api: IExtensionApi,
   files: string[],
   destinationPath: string,
   gameId: string,
   choices?: any,
   unattended?: boolean,
+  archivePath?: string,
   details?: IInstallationDetails,
-  api?: any
 ): Promise<IInstallResult> => {
   let connection: VortexIPCConnection | null = null;
 
@@ -38,7 +39,8 @@ export const install = async (
     }
 
     const strategies = createConnectionStrategies({ securityLevel: details?.isTrusted === true ? SecurityLevel.Regular : SecurityLevel.Sandbox, allowFallback: true });
-    connection = new VortexIPCConnection(strategies, 10000, api);
+    const modName = details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
+    connection = new VortexIPCConnection(api, strategies, 10000, modName);
     await connection.initialize();
 
     // Register core delegates
