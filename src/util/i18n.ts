@@ -171,6 +171,7 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
         'nexus_integration',
         'gamemode_management',
         'extension_manager',
+        'health_check',
       ],
       defaultNS: 'common',
 
