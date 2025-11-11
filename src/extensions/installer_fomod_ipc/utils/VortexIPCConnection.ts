@@ -5,6 +5,8 @@ import { fs } from '../../..';
 import { IExtensionApi } from '../../../types/api';
 import { log } from '../../../util/log';
 import { IChoices } from '../../installer_fomod_shared/types/interface';
+import path from 'path';
+import { getVortexPath } from '../../../util/api';
 
 /**
  * Vortex-specific IPC connection implementation
@@ -63,6 +65,12 @@ export class VortexIPCConnection extends BaseIPCConnection {
 
     super(strategies, connectionTimeout, timeoutOptions);
     this.api = api;
+  }
+
+  protected getExecutablePaths(exeName: string): string[] {
+    const paths = super.getExecutablePaths(exeName);
+    paths.push(path.join(getVortexPath('base'), 'resources', 'app.asar.unpacked', 'node_modules', 'fomod-installer-ipc', 'dist', exeName));
+    return paths;
   }
 
   /**
