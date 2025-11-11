@@ -58,7 +58,8 @@ import gatherDependencies, { findDownloadByRef, findModByRef, lookupFromDownload
 import filterModInfo from './util/filterModInfo';
 import metaLookupMatch from './util/metaLookupMatch';
 import queryGameId from './util/queryGameId';
-import testModReference, { idOnlyRef, isFuzzyVersion, referenceEqual, testRefByIdentifiers } from './util/testModReference';
+import testModReference, { downloadToModRef, idOnlyRef, isFuzzyVersion, referenceEqual, testRefByIdentifiers } from './util/testModReference';
+import { getCSharpScriptAllowListForGame } from './util/cSharpScriptAllowList';
 
 import { MAX_VARIANT_NAME, MIN_VARIANT_NAME, VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME } from './constants';
 import InstallContext from './InstallContext';
@@ -78,7 +79,6 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { IInstallOptions } from './types/IInstallOptions';
 import { generateCollectionSessionId } from '../collections_integration/util';
-import { th } from 'date-fns/locale';
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -277,12 +277,6 @@ function findCollectionByDownload(
   download: IDownload,
   downloadId: string
 ): { collectionMod: IMod; matchingRule: IModRule; gameId: string } | null {
-  const referenceTag = download.modInfo?.referenceTag;
-  if (!referenceTag) {
-    log('debug', 'Skipping download - no reference tag', { downloadId });
-    return null;
-  }
-
   const gameId = activeProfile(state)?.gameId;
   if (!gameId) {
     log('debug', 'No active game profile', { downloadId });
@@ -297,13 +291,13 @@ function findCollectionByDownload(
   }
 
   const matchingRule = getCollectionModByReference(state, {
-    tag: referenceTag,
+    tag: download.modInfo?.referenceTag,
     fileMD5: download.fileMD5,
     fileId: download.modInfo?.fileId,
     logicalFileName: download.localPath,
   });
   if (!matchingRule) {
-    log('debug', 'No matching rule found in collection for download', { downloadId, referenceTag });
+    log('debug', 'No matching rule found in collection for download', { downloadId });
     return null;
   }
 
@@ -882,14 +876,20 @@ class InstallManager {
       this.mActiveInstalls.delete(installId);
     };
 
-    if (archiveId && archiveId !== null) {
+    if (archiveId != null) {
       const download = api.getState().persistent.downloads.files[archiveId];
       if (download && download.state !== 'finished') {
         const error = new Error(`Cannot install: download not finished (state: ${download.state})`);
         trackedCallback(error, undefined);
         return;
+      } else {
+        modReference = modReference || downloadToModRef(download);
       }
     }
+
+    const details: IInstallationDetails = {
+      modReference,
+    };
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit.do(() => {
@@ -1176,9 +1176,6 @@ class InstallManager {
             log('info', 'installing to', { modId, destinationPath });
             installContext.setInstallPathCB(modId, destinationPath);
             tempPath = destinationPath + '.installing';
-            const details: IInstallationDetails = {
-              modReference,
-            };
             return this.installInner(api, archivePath,
               tempPath, destinationPath, installGameId, installContext,
               installationZip, forceInstaller, fullInfo.choices, fileList, unattended, details);
@@ -1224,7 +1221,7 @@ class InstallManager {
             const startTime = Date.now();
             return this.processInstructions(api, installContext, archivePath, tempPath, destinationPath,
               installGameId, modId, result,
-              fullInfo.choices, unattended)
+              fullInfo.choices, unattended, details)
               .tap(() => {
                 const endTime = Date.now();
                 log('debug', 'processed instructions', { installId: activeInstall.installId, duration: endTime - startTime });
@@ -1977,6 +1974,10 @@ class InstallManager {
               // Continue polling after re-queue
               setTimeout(poll, POLL_MS);
           } else {
+            if (this.mActiveInstalls.size === 0 && this.mPendingInstalls.size > 0) {
+              // Start any pending installations if none are active
+              this.startPendingForPhase(sourceModId, checkPhase);
+            }
             setTimeout(poll, POLL_MS);
           }
         }
@@ -2555,7 +2556,8 @@ class InstallManager {
           hasXmlConfigXML,
         };
 
-        if (hasCSScripts) {
+        const allowList = getCSharpScriptAllowListForGame(gameId);
+        if (hasCSScripts && !allowList.has(details?.modReference?.repo?.modId || '')) {
           const modName = details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
           const t = api.translate;
           
@@ -2566,10 +2568,10 @@ class InstallManager {
             'question',
             t(`Unsafe Mod Detected`),
             {
-              message: t(
-                `"{{modName}}" contains C# scripts that can run code on your computer.\n` +
-                `These scripts give the mod full access to your system and can cause serious harm, including data loss or security breaches.\n` +
-                `Unless you personally reviewed and trust the source, we strongly recommend you do not install this mod.\n` +
+              bbcode: t(
+                `"{{modName}}" contains C# scripts that can run code on your computer.[br][/br][br][/br]` +
+                `These scripts give the mod full access to your system and can cause serious harm, including data loss or security breaches.[br][/br]` +
+                `Unless you personally reviewed and trust the source, we strongly recommend you do not install this mod.[br][/br][br][/br]` +
                 `Are you sure you want to continue?`,
                 { replace: { modName: modName } }
               ),
@@ -2849,7 +2851,7 @@ class InstallManager {
   private processSubmodule(api: IExtensionApi, installContext: InstallContext, submodule: IInstruction[],
     destinationPath: string,
     gameId: string, modId: string,
-    choices: any, unattended: boolean): Bluebird<void> {
+    choices: any, unattended: boolean, details: IInstallationDetails): Bluebird<void> {
     return Bluebird.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + shortid() + '.installing';
@@ -2860,10 +2862,10 @@ class InstallManager {
         const submoduleZip = new Zip();
         return this.installInner(api, mod.path, tempPath, destinationPath,
           gameId, subContext, submoduleZip, undefined,
-          choices, undefined, unattended)
+          choices, undefined, unattended, details)
           .then((resultInner) => this.processInstructions(
             api, installContext, mod.path, tempPath, destinationPath,
-            gameId, modId, resultInner, choices, unattended))
+            gameId, modId, resultInner, choices, unattended, details))
           .then(() => {
             if (mod.submoduleType !== undefined) {
               api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
@@ -2973,7 +2975,7 @@ class InstallManager {
     tempPath: string, destinationPath: string,
     gameId: string, modId: string,
     result: { instructions: IInstruction[], overrideInstructions?: IInstruction[] },
-    choices: any, unattended: boolean) {
+    choices: any, unattended: boolean, details: IInstallationDetails) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
       // wrong. Not necessarily a "user canceled" but the error handling happened
@@ -3099,7 +3101,7 @@ class InstallManager {
         gameId, modId))
       .then(() => this.processSubmodule(api, installContext, instructionGroups.submodule,
         destinationPath, gameId, modId,
-        choices, unattended))
+        choices, unattended, details))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
         gameId, modId))
@@ -5276,8 +5278,8 @@ class InstallManager {
       if (modId && fileId) {
         const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
           const download = relevantDownloads[dlId];
-          return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
-                 download.modInfo?.nexus?.fileId?.toString() === fileId.toString() &&
+          return download.modInfo?.nexus?.ids?.modId?.toString() === modId.toString() &&
+                 download.modInfo?.nexus?.ids?.fileId?.toString() === fileId.toString() &&
                  download.state === 'finished';
         });
         if (altDownloadId) {
@@ -5289,7 +5291,7 @@ class InstallManager {
       if (modId) {
         const altDownloadId = Object.keys(relevantDownloads).find(dlId => {
           const download = relevantDownloads[dlId];
-          return download.modInfo?.nexus?.modId?.toString() === modId.toString() &&
+          return download.modInfo?.nexus?.ids?.modId?.toString() === modId.toString() &&
                  download.state === 'finished';
         });
         if (altDownloadId) {
