@@ -19,7 +19,7 @@ import {} from './gameversion_management';
 import {} from './hardlink_activator';
 import {} from './history_management';
 import {} from './ini_prep';
-import {} from './installer_fomod';
+import {} from './installer_fomod_ipc';
 import {} from './installer_fomod_native';
 import {} from './installer_fomod_shared';
 import {} from './installer_nested_fomod';
