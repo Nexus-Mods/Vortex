@@ -4,6 +4,7 @@ import { truthy } from '../../../util/util';
 import { log } from '../../../util/log';
 
 import { IMod, IModReference, IFileListItem } from '../types/IMod';
+import { IDownload } from '../../download_management/types/IDownload';
 
 import * as _ from 'lodash';
 import minimatch from 'minimatch';
@@ -45,6 +46,36 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
     return lhs.id === rhs.id;
   }
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
+}
+
+/**
+ * Converts an IDownload object to an IModReference object.
+ * Extracts relevant metadata from the download's modInfo structure to populate
+ * the reference fields used for mod matching and dependency resolution.
+ *
+ * @param download - The download object to convert
+ * @returns IModReference object with populated fields from the download
+ */
+export function downloadToModRef(download: IDownload): IModReference {
+  // Extract modId and fileId from nested structures
+  // Priority: nexus.ids (preferred) -> meta.details (fallback)
+  const modId = download.modInfo?.nexus?.ids?.modId?.toString()
+    ?? download.modInfo?.meta?.details?.modId;
+  const fileId = download.modInfo?.nexus?.ids?.fileId?.toString()
+    ?? download.modInfo?.meta?.details?.fileId;
+
+  const ref: IModReference = {
+    archiveId: download.id,
+    repo: download.modInfo?.source ? {
+      repository: download.modInfo.source,
+      modId: modId,
+      fileId: fileId,
+    } : undefined,
+    fileMD5: download.fileMD5,
+    gameId: download.game?.[0],
+    logicalFileName: download.modInfo?.meta?.logicalFileName ?? download.localPath,
+  };
+  return ref;
 }
 
 export function sanitizeExpression(fileName: string): string {

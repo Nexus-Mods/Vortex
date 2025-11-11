@@ -88,8 +88,14 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
   };
 
   React.useEffect(() => {
+    const state = api?.getState?.();
+    if (!state) {
+      // No state available means we're likely in demo mode, so skip checks.
+      //  Need a better mock for the api.
+      return;
+    }
     const collectionModInstalled = isCollectionModPresent(
-      api.getState(),
+      state,
       slug,
     );
     setCanBeAdded(!collectionModInstalled);
