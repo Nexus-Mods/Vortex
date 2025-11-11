@@ -11,6 +11,7 @@ export interface IInstallationDetails {
   modReference?: IModReference;
   hasXmlConfigXML?: boolean;
   hasCSScripts?: boolean;
+  isTrusted?: boolean;
 }
 
 export type InstallFunc =

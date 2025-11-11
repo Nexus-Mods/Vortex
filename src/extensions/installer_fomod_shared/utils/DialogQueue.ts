@@ -21,11 +21,14 @@ interface QueuedDialogRequest {
 // Shared static queue across all UI instances to prevent race conditions
 export class DialogQueue {
   private static instance: DialogQueue;
+
+  private api: IExtensionApi;
   private queue: QueuedDialogRequest[] = [];
   private processing: boolean = false;
   private periodicChecker: NodeJS.Timeout | null = null;
 
   private constructor(api: IExtensionApi) {
+    this.api = api;
     this.startPeriodicChecker(api);
   }
 
@@ -68,7 +71,7 @@ export class DialogQueue {
     return DialogQueue.instance;
   }
 
-  public async enqueueDialog(uiInstance: IDialogManager): Promise<void> {
+  public enqueueDialog(uiInstance: IDialogManager): void {
     this.queue.push({
       timestamp: Date.now(),
       uiInstance,
@@ -76,7 +79,7 @@ export class DialogQueue {
     });
   }
 
-  public async processNext(api: IExtensionApi): Promise<void> {
+  public processNext(): void {
     if (this.processing || this.queue.length === 0) {
       return;
     }
@@ -85,7 +88,7 @@ export class DialogQueue {
 
     try {
       // Double-check no dialog became active while we were waiting
-      if (hasActiveFomodDialog(api)) {
+      if (hasActiveFomodDialog(this.api)) {
         return;
       }
 
@@ -100,11 +103,15 @@ export class DialogQueue {
     }
   }
 
-  public onDialogEnd(api: IExtensionApi): void {
+  public onDialogEnd(instanceId: string): void {
+    // Remove from queue if still present
+    const request = this.queue.find(r => r.instanceId === instanceId);
+    if (request) {
+      this.queue = this.queue.filter(r => r !== request);
+    }
+
     // Process next queued dialog
-    this.processNext(api).catch(err => {
-      log('error', 'Failed to process next dialog', { error: err.message });
-    });
+    this.processNext();
   }
 
   public getStatus() {

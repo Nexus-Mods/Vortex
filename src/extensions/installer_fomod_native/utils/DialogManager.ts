@@ -65,13 +65,13 @@ export class DialogManager implements IDialogManager {
    * Start FOMOD dialog - queued to prevent multiple dialogs at once
    * This is the callback passed to the native ModInstaller
    */
-  public enqueueDialog = async (
+  public enqueueDialog = (
     moduleName: string,
     image: vetypes.IHeaderImage,
     selectCallback: vetypes.SelectCallback,
     contCallback: vetypes.ContinueCallback,
     cancelCallback: vetypes.CancelCallback
-  ): Promise<void> => {
+  ): void => {
     log('debug', 'Queuing FOMOD dialog', { instanceId: this.mInstanceId, moduleName });
     
     try {
@@ -82,7 +82,7 @@ export class DialogManager implements IDialogManager {
       this.mImage = image;
 
       const dialogQueue = DialogQueue.getInstance(this.mApi);
-      await dialogQueue.enqueueDialog(this);
+      dialogQueue.enqueueDialog(this);
     } catch (err) {
       log('error', 'Failed to queue FOMOD dialog', {
         instanceId: this.mInstanceId,
@@ -99,10 +99,10 @@ export class DialogManager implements IDialogManager {
    * Update dialog state with new steps
    * This is the callback passed to the native ModInstaller
    */
-  public updateDialogState = async (
+  public updateDialogState = (
     installSteps: vetypes.IInstallStep[],
     currentStep: number
-  ): Promise<void> => {
+  ): void => {
     log('debug', 'Updating FOMOD dialog state', {
       instanceId: this.mInstanceId,
       currentStep,
@@ -119,7 +119,7 @@ export class DialogManager implements IDialogManager {
       this.mApi.store.dispatch(setDialogState(state, this.mInstanceId));
 
       const dialogQueue = DialogQueue.getInstance(this.mApi);
-      await dialogQueue.processNext(this.mApi);
+      dialogQueue.processNext();
     } catch (err) {
       log('error', 'Failed to update FOMOD dialog state', {
         instanceId: this.mInstanceId,
@@ -136,7 +136,7 @@ export class DialogManager implements IDialogManager {
    * End FOMOD dialog
    * This is the callback passed to the native ModInstaller
    */
-  public endDialog = async (): Promise<void> => {
+  public endDialog = (): void => {
     log('debug', 'Ending FOMOD dialog', { instanceId: this.mInstanceId });
 
     try {
@@ -150,7 +150,7 @@ export class DialogManager implements IDialogManager {
       this.mContinueCB = this.mSelectCB = this.mCancelCB = undefined;
 
       const dialogQueue = DialogQueue.getInstance(this.mApi);
-      dialogQueue.onDialogEnd(this.mApi);
+      dialogQueue.onDialogEnd(this.mInstanceId);
     } catch (err) {
       log('error', 'Failed to end FOMOD dialog', {
         instanceId: this.mInstanceId,
@@ -263,7 +263,7 @@ export class DialogManager implements IDialogManager {
       this.mApi.store.dispatch(endDialog(this.mInstanceId));
 
       const dialogQueue = DialogQueue.getInstance(this.mApi);
-      dialogQueue.onDialogEnd(this.mApi);
+      dialogQueue.onDialogEnd(this.mInstanceId);
     } catch (err) {
       log('error', 'Failed to process FOMOD dialog cancellation', {
         instanceId: this.mInstanceId,

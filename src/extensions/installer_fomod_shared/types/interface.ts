@@ -112,3 +112,7 @@ export interface IFOMODStateInstaller {
 export interface IFOMODState {
   installer?: IFOMODStateInstaller;
 }
+
+export interface IPluginState {
+  pluginList: { [key: string]: IPlugin };
+}

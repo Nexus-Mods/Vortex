@@ -1974,6 +1974,10 @@ class InstallManager {
               // Continue polling after re-queue
               setTimeout(poll, POLL_MS);
           } else {
+            if (this.mActiveInstalls.size === 0 && this.mPendingInstalls.size > 0) {
+              // Start any pending installations if none are active
+              this.startPendingForPhase(sourceModId, checkPhase);
+            }
             setTimeout(poll, POLL_MS);
           }
         }

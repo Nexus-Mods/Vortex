@@ -6,6 +6,7 @@ import { IChoices } from '../installer_fomod_shared/types/interface';
 import {
   getPluginPath,
   getStopPatterns,
+  uniPatterns,
 } from '../installer_fomod_shared/utils/gameSupport';
 import { getChoicesFromState } from '../installer_fomod_shared/utils/helpers';
 
@@ -31,10 +32,13 @@ export const install = async (
     : undefined;
 
   const invokeInstall = async (validate: boolean) => {
-    const stopPatterns = getStopPatterns(gameId, getGame(gameId));
-    const pluginPath = getPluginPath(gameId);
+    // When override instructions file is present, use only the universal stop patterns and null pluginPath
+    // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
+    const stopPatterns = details.hasInstructionsOverrideFile ? uniPatterns : getStopPatterns(gameId, getGame(gameId));
+    const pluginPath = details.hasInstructionsOverrideFile ? null : getPluginPath(gameId);
 
-    const modInstaller = new VortexModInstaller(api, instanceId);
+    const modInstaller = await VortexModInstaller.create(api, instanceId);
+
     const result = await modInstaller.installAsync(
       files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate);
 
