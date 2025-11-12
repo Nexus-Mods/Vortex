@@ -51,65 +51,89 @@ const spawnRetry = async (api: IExtensionApi, command: string, args: string[], t
   }
 }
 
-let dotNetResolve: (() => void) | undefined;
-const dotNetAssert = new Promise<void>((resolve) => {
+let dotNetResolve: ((value: void) => void) | undefined;
+let dotNetReject: ((reason: any) => void) | undefined;
+const dotNetAssert = new Promise<void>((resolve, reject) => {
   dotNetResolve = resolve;
+  dotNetReject = reject;
 });
 
-const onFoundDotNet = () => {
+const onDotNetSuccess = () => {
   dotNetResolve?.();
-  dotNetResolve = undefined; // Prevent multiple calls
+  dotNetResolve = undefined;
+  dotNetReject = undefined;
+};
+
+const onDotNetFailure = (error: any) => {
+  dotNetReject?.(error);
+  dotNetResolve = undefined;
+  dotNetReject = undefined;
 };
 
 const installDotNet = async (api: IExtensionApi, repair: boolean): Promise<void> => {
-  const dlId: string = await toPromise(cb =>
-    api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
+  try {
+    const dlId: string = await toPromise(cb =>
+      api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
 
-  if (dlId === undefined) {
-    log('warn', 'failed to download .NET');
-    // trigger a new check
-    return Promise.resolve();
+    if (dlId === undefined) {
+      const error = new Error('Failed to download .NET Desktop Runtime 9');
+      log('warn', 'failed to download .NET');
+      onDotNetFailure(error);
+      throw error;
+    }
+
+    const state = api.getState();
+    const download = state.persistent.downloads.files[dlId];
+
+    if (download?.state !== 'finished') {
+      const error = new Error('.NET download not finished');
+      log('warn', '.NET download not finished');
+      onDotNetFailure(error);
+      throw error;
+    }
+
+    const downloadsPath = downloadPathForGame(state, SITE_ID);
+    if (!download?.localPath) {
+      const error = new Error('No downloads path for game');
+      log('error', 'No downloads path for game', { gameId: SITE_ID });
+      onDotNetFailure(error);
+      throw error;
+    }
+
+    const fullPath = path.join(downloadsPath, download.localPath);
+
+    api.showDialog?.('info', 'Microsoft .NET Desktop Runtime 9 is being installed', {
+      bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
+      + '[br][/br][br][/br]'
+          + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
+    }, [
+      { label: 'Ok' },
+    ]);
+
+    const args = ['/passive', '/norestart'];
+    if (repair) {
+      args.push('/repair');
+    }
+
+    log('info', 'spawning dotnet installer', { fullPath, args });
+    await spawnRetry(api, fullPath, args);
+
+    // Installation completed successfully
+    log('info', '.NET Desktop Runtime 9 installed successfully');
+    onDotNetSuccess();
+  } catch (err) {
+    log('error', 'Failed to install .NET Desktop Runtime 9', err);
+    onDotNetFailure(err);
+    throw err;
   }
-
-  const state = api.getState();
-  const download = state.persistent.downloads.files[dlId];
-
-  if (download?.state !== 'finished') {
-    log('warn', '.NET download not finished');
-    // trigger a new check
-    return Promise.resolve();
-  }
-
-  const downloadsPath = downloadPathForGame(state, SITE_ID);
-  if (!download?.localPath) {
-    log('error', 'No downloads path for game', { gameId: SITE_ID });
-    return Promise.resolve();
-  }
-
-  const fullPath = path.join(downloadsPath, download.localPath);
-
-  api.showDialog?.('info', 'Microsoft .NET Desktop Runtime 9 is being installed', {
-    bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
-    + '[br][/br][br][/br]'
-        + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
-  }, [
-    { label: 'Ok' },
-  ]);
-
-  const args = ['/passive', '/norestart'];
-  if (repair) {
-    args.push('/repair');
-  }
-
-  log('info', 'spawning dotnet installer', { fullPath, args });
-  return spawnRetry(api, fullPath, args);
 }
 
 const checkNetInstall = (api: IExtensionApi): Bluebird<ITestResult> => {
   return Bluebird.resolve((async () => {
     if (process.platform !== 'win32') {
       // currently only supported/tested on windows
-      onFoundDotNet();
+      const error = new Error('.NET installation check is only supported on Windows');
+      onDotNetFailure(error);
       return undefined!;
     }
 
@@ -122,7 +146,8 @@ const checkNetInstall = (api: IExtensionApi): Bluebird<ITestResult> => {
 
 
     if (exitCode === 0) {
-      onFoundDotNet();
+      // .NET is already installed
+      onDotNetSuccess();
       return undefined!;
     }
 
