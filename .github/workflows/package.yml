@@ -32,7 +32,7 @@ jobs:
   build: 
     runs-on: windows-latest 
     env:
-      NO_PARALLEL: true
+      LOW_PARALLEL: true
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}

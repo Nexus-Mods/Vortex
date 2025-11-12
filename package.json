@@ -17,7 +17,7 @@
     "watch_tailwind": "tailwindcss -i src/stylesheets/tailwind-v4.css -o out/assets/css/tailwind-v4.css --watch",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
-    "subprojects_app_ci": "node BuildSubprojects.js app --noparallel",
+    "subprojects_app_ci": "node BuildSubprojects.js app --lowparallel",
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
