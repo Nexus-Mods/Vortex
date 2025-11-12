@@ -32,7 +32,7 @@ jobs:
   build: 
     runs-on: windows-latest 
     env:
-      NO_PARALLEL: true
+      LOW_PARALLEL: true
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
       ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
@@ -125,7 +125,7 @@ jobs:
         run: yarn --non-interactive _install_app 
        
       - name: Build Extensions (Submodules)
-        run: yarn --non-interactive subprojects_app 
+        run: yarn --non-interactive subprojects_app_ci 
        
       - name: Build Static Assets 
         run: yarn --non-interactive _assets_app 
