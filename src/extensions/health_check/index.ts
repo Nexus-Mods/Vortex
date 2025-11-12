@@ -8,6 +8,13 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import HealthCheckPage from './views/HealthCheckPage';
 
 function init(context: IExtensionContext): boolean {
+  
+// Only register this page in development mode
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  if (!isDevelopment) {
+    return false; // Don't initialize in production
+  }
 
   // Register the Health Check page
   context.registerMainPage('health', 'Health Check', HealthCheckPage, {

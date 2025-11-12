@@ -19,8 +19,8 @@ function HealthCheckPage() {
             <Typography as="p" typographyType='body-md' appearance='strong'>{t('health_check:description')}</Typography>
           </div>
 
+          {/* Auto-fix dependencies card for Premium users */}
           <div className="tw:flex tw:self-stretch tw:px-4 tw:py-3 tw:bg-linear-to-r tw:from-[#322551] tw:via-[#262035] tw:to-[#322551] tw:rounded-sm tw:shadow-lg tw:border-t tw:border-b tw:border-premium-600/23 tw:justify-start tw:items-center tw:gap-3">
-
             <div className="tw:py-1 tw:flex tw:justify-start tw:items-center tw:gap-1">
               <Icon path='mdiLightningBolt' />
             </div>
@@ -35,7 +35,6 @@ function HealthCheckPage() {
                 <Typography as="div" typographyType="body-md" className="tw:self-stretch tw:justify-start tw:text-violet-200/95">You have Premium — available dependencies can be installed automatically.</Typography>
               </div>
             </div>
-
             <div data-filled="Strong" data-show-icon-left="true" data-show-icon-right="false" data-show-label="true" data-size="xs" data-state="Default" data-type="Secondary" className="tw:h-6 tw:px-1.5 tw:bg-Neutral-Strong tw:rounded tw:flex tw:justify-start tw:items-center tw:gap-0.5">
               <Button
                 buttonType="secondary"
@@ -47,6 +46,22 @@ function HealthCheckPage() {
             </div>
           </div>
 
+          {/* Mod dependency card  */}
+          <button className="tw:flex tw:self-stretch tw:px-4 tw:py-3 tw:bg-surface-mid tw:hover:bg-surface-high tw:rounded-sm tw:shadow-lg tw:justify-start tw:items-center tw:gap-3 tw:cursor-pointer tw:transition-colors duration-300">
+            <div className="tw:py-1 tw:flex tw:justify-start tw:items-center tw:gap-1">
+              <Icon path='mdiAlert' className='tw:text-warning-strong' />
+            </div>
+            <div className="tw:flex-1 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-3">
+              <div className="tw:self-stretch tw:flex tw:flex-col tw:justify-start tw:items-start">
+                <Typography as="div" typographyType="body-md" appearance="strong">Sprint Swim Redux SKSE requires an additional dependency.</Typography>
+                <Typography as="div" typographyType="body-sm" appearance="subdued">You must install the required mod for it to function properly.</Typography>
+              </div>
+            </div>
+            <div className="tw:py-1 tw:flex tw:justify-start tw:items-center tw:gap-1">
+              <Icon path='mdiChevronRight' className='tw:text-neutral-translucent-moderate' />
+            </div>
+          </button>
+          
         </div>
       </MainPage.Body>
     </MainPage>
