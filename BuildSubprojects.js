@@ -164,9 +164,9 @@ async function updateSourceMap(filePath) {
   await fs.promises.writeFile(filePath, dat);
 }
 
-function processCustom(project, buildType, feedback, lowparallel) {
+function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
-  let instArgs = lowparallel ? ['--network-concurrency', '2'] : [];
+  let instArgs = noparallel ? ['--network-concurrency', '1'] : [];
   let res = npm('install', instArgs, { cwd: project.path }, feedback)
       .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
@@ -192,14 +192,14 @@ function evalCondition(condition, context) {
   return script.runInNewContext({ ... context, process });
 }
 
-function processProject(project, buildType, feedback, lowparallel) {
+function processProject(project, buildType, feedback, noparallel) {
   if (!evalCondition(project.condition, { buildType })) {
     return Promise.reject(new ConditionNotMet());
   }
   if (project.type === 'install-module') {
     return processModule(project, buildType, feedback);
   } else if (project.type === 'build-copy') {
-    return processCustom(project, buildType, feedback, lowparallel);
+    return processCustom(project, buildType, feedback, noparallel);
   // } else if (project.type === 'electron-rebuild') {
   //   return processRebuild(project, buildType, feedback);
   }
@@ -245,7 +245,7 @@ function main(args) {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
             return Promise.reject(new Unchanged());
           }
-          return processProject(project, buildType, feedback, args.lowparallel);
+          return processProject(project, buildType, feedback, args.noparallel);
         })
         .then(() => {
           buildState[project.name] = Date.now();
@@ -262,7 +262,7 @@ function main(args) {
           }
         })
         ;
-  }, { concurrency: args.lowparallel || process.env.LOW_PARALLEL ? 2 : 10 }))
+  }, { concurrency: args.noparallel || process.env.NO_PARALLEL ? 1 : 10 }))
   .then(() => failed ? 1 : 0);
 }
 
