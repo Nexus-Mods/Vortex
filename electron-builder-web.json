@@ -13,7 +13,8 @@
     "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
-    "node_modules/fomod-installer/dist",
+    "node_modules/fomod-installer-native/dist",
+    "node_modules/fomod-installer-ipc/dist",
     "node_modules/json-socket",
     "assets/*.exe",
     "assets/css/**"

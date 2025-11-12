@@ -37,20 +37,38 @@ ignore:
     ExecWait '"$PLUGINSDIR\vc_redist.x64.exe" /passive /norestart'
   ${EndIf}
 
+  ; Native FOMOD installer
   AccessControl::GrantOnFile \
-    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer\dist" "(S-1-15-2-1)" "ListDirectory + GenericRead + GenericExecute"
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-native\dist" "(S-1-15-2-1)" "ListDirectory + GenericRead + GenericExecute"
   Pop $R0
   ${If} $R0 == error
     Pop $R0
-    MessageBox MB_OK `AccessControl error: $R0`
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-native (S-1-15-2-1): $R0"
   ${EndIf}
 
   AccessControl::GrantOnFile \
-    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer\dist" "(S-1-15-2-2)" "ListDirectory + GenericRead + GenericExecute"
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-native\dist" "(S-1-15-2-2)" "ListDirectory + GenericRead + GenericExecute"
   Pop $R0
   ${If} $R0 == error
     Pop $R0
-    MessageBox MB_OK `AccessControl error: $R0`
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-native (S-1-15-2-2): $R0"
+  ${EndIf}
+
+  ; IPC FOMOD installer
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-ipc\dist" "(S-1-15-2-1)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-ipc (S-1-15-2-1): $R0"
+  ${EndIf}
+
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-ipc\dist" "(S-1-15-2-2)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-ipc (S-1-15-2-2): $R0"
   ${EndIf}
 
 !macroend

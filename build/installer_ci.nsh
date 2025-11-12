@@ -22,6 +22,43 @@ ignore:
   File "${BUILD_RESOURCES_DIR}\windowsdesktop-runtime-win-x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
   ExecWait '"$TEMP\\windowsdesktop-runtime-win-x64.exe" /install /quiet /norestart'
+
+  ; Grant permissions to FOMOD installer directories for AppContainer sandboxing
+  ; SIDs: (S-1-15-2-1) = ALL_APP_PACKAGES, (S-1-15-2-2) = ALL_RESTRICTED_APP_PACKAGES
+
+  ; Native FOMOD installer
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-native\dist" "(S-1-15-2-1)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-native (S-1-15-2-1): $R0"
+  ${EndIf}
+
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-native\dist" "(S-1-15-2-2)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-native (S-1-15-2-2): $R0"
+  ${EndIf}
+
+  ; IPC FOMOD installer
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-ipc\dist" "(S-1-15-2-1)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-ipc (S-1-15-2-1): $R0"
+  ${EndIf}
+
+  AccessControl::GrantOnFile \
+    "$INSTDIR\resources\app.asar.unpacked\node_modules\fomod-installer-ipc\dist" "(S-1-15-2-2)" "ListDirectory + GenericRead + GenericExecute"
+  Pop $R0
+  ${If} $R0 == error
+    Pop $R0
+    DetailPrint "Warning: Could not grant permissions for fomod-installer-ipc (S-1-15-2-2): $R0"
+  ${EndIf}
 !macroend
 
 !macro customUnInstall
