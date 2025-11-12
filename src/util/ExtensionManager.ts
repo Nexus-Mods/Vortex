@@ -822,9 +822,20 @@ class ExtensionManager {
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
-      translate: (input, options?) => this.mTranslator !== undefined
-          ? this.mTranslator.t(input, options)
-          : (Array.isArray(input) ? input[0].toString() : input.toString()) as any,
+      translate: (input, options?) => {
+        if (this.mTranslator == null) {
+            return(Array.isArray(input) ? input[0].toString() : input.toString()) as any;
+        }
+        if (options == null) {
+          options = {};
+        }
+        // This is a namespace key, use new separators.
+        if (options?.isNamespaceKey) {
+          return this.mTranslator.t(input, options);
+        }
+        // Not a namespace key, use old separators.
+        return this.mTranslator.t(input, { ...options, keySeparator: '::', nsSeparator: ':::' });
+      },
       laterT: (input, options?) => new TString(input, options, 'common'),
       locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
