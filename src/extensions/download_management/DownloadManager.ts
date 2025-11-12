@@ -328,7 +328,18 @@ class DownloadWorker {
     let parsed: URL;
     let referer: string;
     try {
-      const [urlIn, refererIn] = jobUrlString.split('<');
+      let decodedUrl = jobUrlString;
+      try {
+        // Only decode if the URL contains encoded characters
+        if (jobUrlString.includes('%')) {
+          decodedUrl = decodeURIComponent(jobUrlString);
+        }
+      } catch (decodeErr) {
+        // Can't decode, use original
+        decodedUrl = jobUrlString;
+      }
+
+      const [urlIn, refererIn] = decodedUrl.split('<');
       // at some point in the past we'd encode the uri here which apparently led to double-encoded
       // uris. Then we'd decode it which led to the request failing if there were characters in
       // the url that required encoding.
