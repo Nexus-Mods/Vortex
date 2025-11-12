@@ -961,7 +961,11 @@ class InstallManager {
               return Promise.resolve(installGameId);
             }
             if (games.find(iter => iter.id === installGameId) === undefined) {
-              return Bluebird.reject(new ProcessCanceled(`Game not supported "${installGameId}"`));
+              // Game extension for this download is not installed, this is theoretically fine as
+              //  it may be a requirement which fits multiple game extensions. Assume the game extension
+              //  and/or user know what they're doing.
+              log('warn', 'Game extension for download not installed', { installGameId, modId } );
+              installGameId = currentProfile.gameId;
             }
             if (installGameId !== currentProfile?.gameId) {
               const installProfileId = lastActiveProfileForGame(state, installGameId);
