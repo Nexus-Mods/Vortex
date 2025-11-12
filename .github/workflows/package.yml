@@ -125,7 +125,7 @@ jobs:
         run: yarn --non-interactive _install_app 
        
       - name: Build Extensions (Submodules)
-        run: yarn --non-interactive subprojects_app 
+        run: yarn --non-interactive subprojects_app_ci 
        
       - name: Build Static Assets 
         run: yarn --non-interactive _assets_app 
