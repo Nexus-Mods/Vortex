@@ -40,7 +40,7 @@ export const install = async (
 
     const strategies = createConnectionStrategies({ securityLevel: details?.isTrusted === true ? SecurityLevel.Regular : SecurityLevel.Sandbox, allowFallback: true });
     const modName = details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
-    connection = new VortexIPCConnection(api, strategies, 10000, modName);
+    connection = new VortexIPCConnection(api, strategies, 30000, modName);
     await connection.initialize();
 
     // Register core delegates

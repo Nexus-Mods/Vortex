@@ -13,8 +13,9 @@
     "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
-    "node_modules/fomod-installer-native/dist",
-    "node_modules/fomod-installer-ipc/dist",
+    "node_modules/fomod-installer-native/dist/*.dll",
+    "node_modules/fomod-installer-native/dist/*.node",
+    "node_modules/fomod-installer-ipc/dist/*.exe",
     "node_modules/json-socket",
     "assets/*.exe",
     "assets/css/**"
@@ -65,7 +66,12 @@
     "!**/node_modules/bootstrap-sass/assets/fonts",
     "!**/node_modules/recharts/node_modules/d3-scale/img",
     "!**/node_modules/recharts/node_modules/d3-shape/img",
-    "!**/node_modules/d3-geo/img"
+    "!**/node_modules/d3-geo/img",
+    "!**/node_modules/fomod-installer-ipc/**/*",
+    "**/node_modules/fomod-installer-ipc/dist/*.exe",
+    "!**/node_modules/fomod-installer-native/**/*",
+    "**/node_modules/fomod-installer-native/dist/*.dll",
+    "**/node_modules/fomod-installer-native/dist/*.node"
   ],
   "buildDependenciesFromSource": false,
   "npmRebuild": false
