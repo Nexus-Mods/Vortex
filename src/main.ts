@@ -17,11 +17,14 @@ if (process.send) {
     }
   });
 }
+
 /**
  * entry point for the main process
  */
 import os from 'os';
+import { VORTEX_VERSION } from './constants';
 process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 2).toString();
+process.env['VORTEX_VERSION'] = VORTEX_VERSION;
 import './util/application.electron';
 import getVortexPath from './util/getVortexPath';
 
