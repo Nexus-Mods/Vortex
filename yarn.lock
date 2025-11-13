@@ -6446,8 +6446,6 @@ fn.name@1.x.x:
 
 "fomod-installer-ipc@file:./extensions/fomod-installer/src/ModInstaller.IPC.TypeScript":
   version "0.10.1"
-  dependencies:
-    winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "fomod-installer-native@file:./extensions/fomod-installer/src/ModInstaller.Native.TypeScript":
   version "0.10.0"

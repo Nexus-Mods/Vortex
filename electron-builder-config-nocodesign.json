@@ -124,10 +124,11 @@
     "!**/node_modules/zeromq/build/libzmq",
     "!**/node_modules/zeromq/prebuilds",
     "!**/node_modules/fomod-installer-ipc/**/*",
-    "**/node_modules/fomod-installer-ipc/dist/*.exe",
+    "**/node_modules/fomod-installer-ipc/dist/**/*",
+    "**/node_modules/fomod-installer-ipc/package.json",
     "!**/node_modules/fomod-installer-native/**/*",
-    "**/node_modules/fomod-installer-native/dist/*.dll",
-    "**/node_modules/fomod-installer-native/dist/*.node"
+    "**/node_modules/fomod-installer-native/dist/**/*",
+    "**/node_modules/fomod-installer-native/package.json"
   ],
   "buildDependenciesFromSource": false,
   "npmRebuild": false

@@ -24,6 +24,8 @@
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
     "package:nocodesign": "electron-builder --config electron-builder-config-nocodesign.json --publish never",
+    "download:prerequisites": "curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"build/VC_redist.x64.exe\" && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"build/windowsdesktop-runtime-win-x64.exe\"",
+    "build_dist:local": "yarn download:prerequisites && yarn --network-timeout 600000 install && yarn --non-interactive build_api && yarn --non-interactive _install_app && yarn --non-interactive subprojects_app && yarn --non-interactive _assets_app && yarn build_dist && yarn package:nocodesign",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package && yarn run extract_sourcemaps",
     "prepareci": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_ci && yarn run --non-interactive _assets_app",

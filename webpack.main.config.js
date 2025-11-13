@@ -66,5 +66,10 @@ module.exports = {
     ]
   },
   // we can't pack any node_modules, otherwise extensions can't load those modules
-  externals: nodeExternals(),
+  externals: [
+    nodeExternals(),
+    // Explicitly exclude local file: dependencies that must remain external
+    'fomod-installer-ipc',
+    'fomod-installer-native',
+  ],
 };
