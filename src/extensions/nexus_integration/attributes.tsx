@@ -69,8 +69,8 @@ function NexusId(props: INexusIdProps) {
     <NexusModIdDetail
       t={t}
       modId={mod.id}
-      nexusModId={mod.attributes?.modId}
-      nexusFileId={mod.attributes?.fileId}
+      nexusModId={mod.attributes?.modId?.toString()}
+      nexusFileId={mod.attributes?.fileId?.toString()}
       fileHash={mod.attributes?.fileMD5}
       archiveId={hasArchive ? mod.archiveId : undefined}
       activeGameId={gameMode}
@@ -91,7 +91,7 @@ function createEndorsedIcon(store: Redux.Store<any>,
                             mod: IMod,
                             onEndorse: EndorseMod,
                             t: TFunction) {
-  const nexusModId: string = mod.attributes?.modId ?? mod.attributes?.collectionId;
+  const nexusModId: string = mod.attributes?.modId?.toString() ?? mod.attributes?.collectionId?.toString();
   const version: string = mod.attributes?.version;
   const state: string = getSafe(mod, ['state'], undefined);
 

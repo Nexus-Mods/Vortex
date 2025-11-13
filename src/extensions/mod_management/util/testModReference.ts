@@ -3,7 +3,7 @@ import { truthy } from '../../../util/util';
 
 import { log } from '../../../util/log';
 
-import { IMod, IModReference, IFileListItem } from '../types/IMod';
+import { IMod, IModReference, IFileListItem, IModAttributes } from '../types/IMod';
 import { IDownload } from '../../download_management/types/IDownload';
 
 import * as _ from 'lodash';
@@ -30,6 +30,33 @@ export interface IModLookupInfo {
   installerChoices?: any;
   patches?: any;
   fileList?: IFileListItem[];
+}
+
+export function modAttributesToLookupInfo(mod: IMod | IModAttributes | IModLookupInfo): IModLookupInfo {
+  const gameAttrib = (mod as IModAttributes).game;
+  if (gameAttrib && Array.isArray(gameAttrib) && gameAttrib.length > 0) {
+    return mod as IModLookupInfo;
+  }
+  const attrs: IModAttributes = (mod as IMod).attributes ?? (mod as IModAttributes);
+  return {
+    id: (mod as IMod).id,
+    fileMD5: attrs.fileMD5,
+    fileSizeBytes: attrs.fileSize ?? 0,
+    fileName: attrs.fileName ?? attrs.modName ?? attrs.name,
+    name: attrs.modName ?? attrs.name,
+    logicalFileName: attrs.logicalFileName,
+    additionalLogicalFileNames: attrs.additionalLogicalFileNames,
+    customFileName: attrs.customFileName,
+    version: attrs.version ?? attrs.modVersion ?? '',
+    game: attrs.game,
+    fileId: attrs.fileId?.toString(),
+    modId: attrs.modId?.toString(),
+    source: attrs.source,
+    referenceTag: attrs.referenceTag,
+    installerChoices: attrs.installerChoices,
+    patches: attrs.patches,
+    fileList: attrs.fileList,
+  };
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -381,8 +408,8 @@ export function testModReference(mod: IMod | IModLookupInfo, reference: IModRefe
     return false;
   }
 
-  if ((mod as any).attributes) {
-    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id,
+  if ((mod as IMod).attributes) {
+    return testRef(modAttributesToLookupInfo(mod), mod.id,
                    reference, source, fuzzyVersion);
   } else {
     const lookup = mod as IModLookupInfo;

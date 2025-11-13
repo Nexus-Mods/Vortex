@@ -130,14 +130,10 @@ class Tracking {
           icon='track'
           className='btn-embed'
           stroke={
-            !this.mTrackedMods[nexusId]?.has?.(
-              parseInt(mod.attributes?.modId, 10).toString(),
-            )
+            !this.mTrackedMods[nexusId]?.has?.(mod.attributes?.modId?.toString())
           }
           hollow={
-            !this.mTrackedMods[nexusId]?.has?.(
-              parseInt(mod.attributes?.modId, 10).toString(),
-            )
+            !this.mTrackedMods[nexusId]?.has?.(mod.attributes?.modId?.toString())
           }
           tooltip={t('Mod Tracked')}
           data-modid={mod.attributes?.modId}

@@ -93,7 +93,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
                     state: 'installed',
                     attributes: {
                       name: modName,
-                      installTime: stat.ctime,
+                      installTime: new Date(stat.ctime).toString(),
                     },
                   });
                 }
