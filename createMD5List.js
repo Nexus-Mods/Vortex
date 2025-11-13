@@ -29,22 +29,35 @@ async function walk(base, rel) {
   return files;
 }
 
+// Process files in batches to avoid "too many open files" error
+async function processBatch(files, batchSize, processor) {
+  const results = [];
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 exports.default = async function(context) {
 
   console.log('createMD5List.js');
 
   const assetsPath = path.join(context.appOutDir, 'resources', 'app.asar.unpacked', 'assets');
 
-  const hashes = await Promise.all((await walk(context.appOutDir, ''))
-    .map(async relPath => {
-      const hash = crypto.createHash('md5');
-      const fileData = await fs.readFile(path.join(context.appOutDir, relPath));
-      const buf = hash
-        .update(fileData)
-        .digest();
-      console.log(`${relPath}:${buf.toString('hex')}`);
-      return `${relPath}:${buf.toString('hex')}`;
-    }));
+  const allFiles = await walk(context.appOutDir, '');
+  console.log(`Processing ${allFiles.length} files in batches of 100...`);
+
+  const hashes = await processBatch(allFiles, 100, async (relPath) => {
+    const hash = crypto.createHash('md5');
+    const fileData = await fs.readFile(path.join(context.appOutDir, relPath));
+    const buf = hash
+      .update(fileData)
+      .digest();
+    console.log(`${relPath}:${buf.toString('hex')}`);
+    return `${relPath}:${buf.toString('hex')}`;
+  });
 
   try {
     await fs.writeFile(path.join(assetsPath, 'md5sums.csv'), hashes.join('\n'));

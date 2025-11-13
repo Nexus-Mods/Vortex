@@ -62,7 +62,7 @@ class UI extends DelegateBase implements IDialogManager {
         queueStatus: dialogQueue.getStatus()
       });
 
-      dialogQueue.onDialogEnd(this.api);
+      dialogQueue.onDialogEnd(this.mInstanceId);
     }
   }
 
@@ -112,7 +112,7 @@ class UI extends DelegateBase implements IDialogManager {
     try {
       // Process any queued dialog requests
       const dialogQueue = DialogQueue.getInstance(this.api);
-      dialogQueue.onDialogEnd(this.api);
+      dialogQueue.onDialogEnd(this.mInstanceId);
       callback(null);
     } catch (err) {
       log('error', 'Failed to end FOMOD dialog', {
@@ -178,7 +178,7 @@ class UI extends DelegateBase implements IDialogManager {
     this.mCancelCB?.();
 
     const dialogQueue = DialogQueue.getInstance(this.api);
-    dialogQueue.onDialogEnd(this.api);
+    dialogQueue.onDialogEnd(this.mInstanceId);
   }
 }
 

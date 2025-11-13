@@ -16,16 +16,3 @@ export const hasPersistentLoadOrder = <T = any>(
   statePersistent: IStatePersistent
 ): statePersistent is IStatePersistentWithLoadOrder<T> =>
   nameof<IStatePersistentWithLoadOrder<T>>('loadOrder') in statePersistent;
-
-interface IStateWithLoadOrder extends IState {
-  loadOrder: {
-    [pluginId: string]: {
-      name?: string;
-      enabled?: boolean;
-      loadOrder: number;
-    };
-  };
-}
-
-export const hasLoadOrder = (state: IState): state is IStateWithLoadOrder =>
-  nameof<IStateWithLoadOrder>('loadOrder') in state;

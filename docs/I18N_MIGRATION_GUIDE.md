@@ -50,8 +50,8 @@ Edit `locales/en/{namespace}.json`:
 const { t } = useTranslation(['collection', 'common']);
 
 // Use the key:
-<p>{t('collection:browse.loading')}</p>
-<Button>{t('common:actions.search')}</Button>
+<p>{t('collection:browse.loading', { isNamespaceKey: true })}</p>
+<Button>{t('common:actions.search', { isNamespaceKey: true })}</Button>
 ```
 
 ### 5. Test
@@ -75,8 +75,8 @@ const { t } = useTranslation(['collections', 'common']);
 **After:**
 ```typescript
 const { t } = useTranslation(['collection', 'common']);
-<p>{t('collection:browse.loading')}</p>
-<Button>{t('common:actions.search')}</Button>
+<p>{t('collection:browse.loading', { isNamespaceKey: true })}</p>
+<Button>{t('common:actions.search', { isNamespaceKey: true })}</Button>
 ```
 
 ## Available Namespaces

@@ -29,18 +29,23 @@ createReducer(actions.startDialog, (state, payload) => {
 
 createReducer(actions.endDialog, (state, payload) => {
   const { instanceId } = payload;
+  const existingInstance = state.instances?.[instanceId];
+
   return update(state, {
     activeInstanceId: { $set: null },
-    instances: {
-      [instanceId]: {
-        info: { $set: null }
-      }
-    }
+    instances: existingInstance
+      ? {
+          [instanceId]: {
+            info: { $set: null }
+          }
+        }
+      : {}
   });
 }, reducers);
 
 createReducer(actions.clearDialog, (state, payload) => {
   const { instanceId } = payload;
+  
   return update(state, {
     instances: { $unset: [instanceId] }
   });

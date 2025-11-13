@@ -1,7 +1,8 @@
 import { method as toBluebird } from 'bluebird';
 
+import { testSupported } from "./tester";
 import { install } from "./installer";
-import { VortexModTester } from "./utils/VortexModTester";
+import { VortexModInstallerFileSystem } from "./utils/VortexModInstallerFileSystem";
 
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 
@@ -9,7 +10,8 @@ import { IExtensionContext } from '../../types/api';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
 const main = (context: IExtensionContext): boolean => {
-  const modTester = new VortexModTester();
+  const fileSystem = new VortexModInstallerFileSystem();
+  fileSystem.useLibraryFunctions();
 
   context.registerInstaller(
     /*id:*/ `fomod`,
@@ -20,14 +22,7 @@ const main = (context: IExtensionContext): boolean => {
       _archivePath: string,
       details?: ITestSupportedDetails
     ) => {
-      if (details && (details.hasXmlConfigXML === false || details.hasCSScripts === false)) {
-        return { 
-          supported: false,
-          requiredFiles: []
-        };
-      }
-      const result = await modTester.testSupport(files, ['XmlScript']);
-      return result;
+      return await testSupported(files, details, false);
     }),
     /*install:*/ toBluebird(async (
         files: string[],
@@ -51,10 +46,9 @@ const main = (context: IExtensionContext): boolean => {
       files: string[],
       _gameId: string,
       _archivePath: string,
-      _details?: ITestSupportedDetails
+      details?: ITestSupportedDetails
     ) => {
-      const result = await modTester.testSupport(files, ['Basic']);
-      return result;
+      return await testSupported(files, details, true);
     }),
     /*install:*/ toBluebird(async (
         files: string[],
