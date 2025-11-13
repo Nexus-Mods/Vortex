@@ -48,7 +48,7 @@ import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
 import { filteredEnvironment, isFunction, setdefault, timeout, toPromise, truthy, wrapExtCBAsync, wrapExtCBSync } from './util';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { ipcMain, ipcRenderer, OpenDialogOptions, SaveDialogOptions, WebContents } from 'electron';
 import { EventEmitter } from 'events';
@@ -684,7 +684,7 @@ class EventProxy extends EventEmitter {
           if (arg.__promise === undefined) {
             return arg;
           } else {
-            return new Promise((resolve, reject) => {
+            return new Bluebird((resolve, reject) => {
               this.mRemotePromises[arg.__promise] = { resolve, reject };
             });
           }
@@ -735,7 +735,7 @@ type CBFunc = (...args: any[]) =>  void;
 interface IStartHook {
   priority: number;
   id: string;
-  hook: (input: IRunParameters) => Promise<IRunParameters>;
+  hook: (input: IRunParameters) => Bluebird<IRunParameters>;
 }
 
 function convertMD5Result(input: ILookupResult): IModLookupResult {
@@ -744,7 +744,7 @@ function convertMD5Result(input: ILookupResult): IModLookupResult {
 
 interface IRepositoryLookup {
   preferOverMD5: boolean;
-  func: (id: IModRepoId) => Promise<IModLookupResult[]>;
+  func: (id: IModRepoId) => Bluebird<IModLookupResult[]>;
 }
 
 /**
@@ -780,7 +780,7 @@ class ExtensionManager {
   private mRepositoryLookup: { [repository: string]: IRepositoryLookup } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
-  private mModDBPromise: Promise<void>;
+  private mModDBPromise: Bluebird<void>;
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
@@ -795,7 +795,7 @@ class ExtensionManager {
   private mProgrammaticMetaServers: { [id: string]: modmetaT.IServer } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
-  private mUIStartedPromise: Promise<void>;
+  private mUIStartedPromise: Bluebird<void>;
   private mOutdated: string[] = [];
   private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
@@ -808,7 +808,7 @@ class ExtensionManager {
       this.mEventEmitter.setMaxListeners(100);
     }
 
-    this.mUIStartedPromise = new Promise(resolve => {
+    this.mUIStartedPromise = new Bluebird(resolve => {
       this.mOnUIStarted = resolve;
     });
 
@@ -906,22 +906,64 @@ class ExtensionManager {
     }
     if (process.type === 'renderer') {
       this.mStyleManager = new StyleManager(this.mApi);
+      // In renderer process, load extensions synchronously since files are already cached
+      this.mExtensions = this.prepareExtensions();
+      log('info', 'outdated extensions', { numOutdated: this.mOutdated.length });
+      if (this.mOutdated.length > 0) {
+        this.mOutdated.forEach(ext => {
+          log('info', 'extension older than bundled version, will be removed',
+            { name: ext });
+        });
+        return;
+      }
+      this.initExtensions();
+    } else {
+      // In main process, initialize mExtensions to empty array - will be populated by initializeAsync()
+      this.mExtensions = [];
+      // Extension loading moved to initializeAsync() for async file I/O in main process
     }
-    this.mExtensions = this.prepareExtensions();
+  }
 
-    log('info', 'outdated extensions', { numOutdated: this.mOutdated.length });
-    if (this.mOutdated.length > 0) {
-      this.mOutdated.forEach(ext => {
-        log('info', 'extension older than bundled version, will be removed',
-          { name: ext });
-        // if we get here in the renderer process, initStore is not defined.
-        // This should happen in the main process only
-        initStore?.dispatch?.(removeExtension(ext));
-      });
-      return;
+  /**
+   * Initialize extensions asynchronously. This method must be called after
+   * the constructor to load extensions from disk without blocking the UI thread.
+   *
+   * @param initStore Optional Redux store for handling outdated extensions
+   * @returns Bluebird that resolves when extensions are loaded and initialized
+   */
+  public async initializeAsync(initStore?: Redux.Store<any>) {
+    try {
+      log('debug', 'loading extensions asynchronously');
+      log('debug', 'CHECKPOINT 1: About to call prepareExtensionsAsync');
+      const extensions = await this.prepareExtensionsAsync();
+      log('debug', 'CHECKPOINT 2: prepareExtensionsAsync returned', { count: extensions.length });
+      log('debug', 'CHECKPOINT 3: About to assign mExtensions');
+      this.mExtensions = extensions;
+      log('debug', 'CHECKPOINT 4: mExtensions assigned');
+      log('debug', 'CHECKPOINT 5: About to read mOutdated.length');
+      const outdatedCount = this.mOutdated.length;
+      log('debug', 'CHECKPOINT 6: mOutdated.length read', { count: outdatedCount });
+      log('info', 'outdated extensions', { numOutdated: outdatedCount });
+      if (outdatedCount > 0) {
+        log('debug', 'CHECKPOINT 7: Processing outdated extensions');
+        this.mOutdated.forEach(ext => {
+          log('info', 'extension older than bundled version, will be removed',
+            { name: ext });
+          // if we get here in the renderer process, initStore is not defined.
+          // This should happen in the main process only
+          initStore?.dispatch?.(removeExtension(ext));
+        });
+        log('debug', 'CHECKPOINT 8: Returning early due to outdated extensions');
+        return;
+      }
+      log('debug', 'CHECKPOINT 9: About to call initExtensions');
+      this.initExtensions();
+      log('debug', 'CHECKPOINT 10: initExtensions completed');
+      log('debug', 'extensions initialized successfully');
+    } catch (err) {
+      log('error', 'failed to initialize extensions', { error: err.message, stack: err.stack });
+      throw err;
     }
-
-    this.initExtensions();
   }
 
   public get hasOutdatedExtensions() {
@@ -1140,6 +1182,11 @@ class ExtensionManager {
    * retrieve list of all reducers registered by extensions
    */
   public getReducers() {
+    // Guard: if extensions haven't been initialized yet, return empty array
+    if (this.mContextProxyHandler === undefined) {
+      log('warn', 'getReducers called before extensions initialized');
+      return [];
+    }
     const reducers = [];
     this.apply('registerReducer', (statePath: string[], reducer: IReducerSpec) => {
       reducers.push({ path: statePath, reducer });
@@ -1152,7 +1199,7 @@ class ExtensionManager {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
     this.apply('registerStartHook', (priority: number, id: string,
-                                     hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+                                     hook: (input: IRunParameters) => Bluebird<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
     this.apply('registerToolVariables', (func: ToolParameterCB) => {
@@ -1211,7 +1258,7 @@ class ExtensionManager {
    * call the "once" function for all extensions. This should really only be called
    * once.
    */
-  public doOnce(): Promise<void> {
+  public doOnce(): Bluebird<void> {
     const calls = this.mContextProxyHandler.getCalls(
       process.type === 'renderer' ? 'once' : 'onceMain');
 
@@ -1225,7 +1272,7 @@ class ExtensionManager {
         err, { allowReport });
     };
 
-    return Promise.mapSeries(calls, (call, idx) => {
+    return Bluebird.mapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
       const ext = this.mExtensions.find(iter => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
@@ -1233,7 +1280,7 @@ class ExtensionManager {
         this.mLoadingCallbacks.forEach(cb => {
           cb(call.extension, idx);
         });
-        const prom = call.arguments[0]() || Promise.resolve();
+        const prom = call.arguments[0]() || Bluebird.resolve();
 
         const start = Date.now();
         return timeout(prom, 60000, {
@@ -1298,8 +1345,8 @@ class ExtensionManager {
     }
   }
 
-  private queryLoadTimeout(extension: string): Promise<boolean> {
-    return Promise.resolve(showMessageBox({
+  private queryLoadTimeout(extension: string): Bluebird<boolean> {
+    return Bluebird.resolve(showMessageBox({
       type: 'warning',
       title: 'Extension slow',
       message: `An extension (${extension}) is taking unusually long to load. `
@@ -1310,7 +1357,7 @@ class ExtensionManager {
     .then(result => result.response === 1);
   }
 
-  private getModDB = (): Promise<modmetaT.ModDB> => {
+  private getModDB = (): Bluebird<modmetaT.ModDB> => {
     const gameMode = activeGameId(this.mApi.store.getState());
     const currentKey =
       getSafe(this.mApi.store.getState(),
@@ -1320,13 +1367,13 @@ class ExtensionManager {
 
     let onDone: () => void;
     if (this.mModDBPromise === undefined) {
-      this.mModDBPromise = new Promise<void>((resolve, reject) => {
+      this.mModDBPromise = new Bluebird<void>((resolve, reject) => {
         onDone = () => {
           this.mModDBPromise = undefined;
           resolve();
         };
       });
-      init = Promise.resolve();
+      init = Bluebird.resolve();
     } else {
       init = this.mModDBPromise;
     }
@@ -1343,10 +1390,10 @@ class ExtensionManager {
             .then(() => this.mModDB = undefined);
         }
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     })
       .then(() => (this.mModDB !== undefined)
-        ? Promise.resolve()
+        ? Bluebird.resolve()
         : this.connectMetaDB(gameMode, currentKey)
           .then(modDB => {
             this.mModDB = modDB;
@@ -1383,7 +1430,7 @@ class ExtensionManager {
       .sort((lhs, rhs) => (lhs.priority ?? 100) - (rhs.priority ?? 100));
   }
 
-  private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
+  private connectMetaDB(gameId: string, apiKey: string): Bluebird<modmetaT.ModDB> {
     const dbPath = path.join(getVortexPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
@@ -1399,7 +1446,7 @@ class ExtensionManager {
           .then(result => {
             if (result.action === 'Quit') {
               getApplication().quit();
-              return Promise.reject(new ProcessCanceled('meta db locked'));
+              return Bluebird.reject(new ProcessCanceled('meta db locked'));
             }
             return this.connectMetaDB(gameId, apiKey);
           });
@@ -1521,7 +1568,7 @@ class ExtensionManager {
   }
 
   private migrateExtensions() {
-    type MigrationFunc = (oldVersion: string) => Promise<void>;
+    type MigrationFunc = (oldVersion: string) => Bluebird<void>;
 
     const migrations: { [ext: string]: MigrationFunc[] } = {};
 
@@ -1544,7 +1591,7 @@ class ExtensionManager {
             if (migrations[ext.name] === undefined) {
               this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
-              Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
+              Bluebird.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
                   log('info', 'set extension version',
                       { name: ext.name, info: JSON.stringify(ext.info) });
@@ -1571,7 +1618,7 @@ class ExtensionManager {
     return getVortexPath(name as any);
   }
 
-  private selectFile(options: IOpenOptions): Promise<string> {
+  private selectFile(options: IOpenOptions): Bluebird<string> {
     const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
@@ -1579,13 +1626,13 @@ class ExtensionManager {
     if (options.create === true) {
       fullOptions.properties.push('promptToCreate');
     }
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
   }
 
-  private saveFile(options: ISaveOptions): Promise<string> {
+  private saveFile(options: ISaveOptions): Bluebird<string> {
     const fullOptions: SaveDialogOptions = {
       //..._.omit(options, ['create']),
       //properties: ['showOverwriteConfirmation'],
@@ -1594,7 +1641,7 @@ class ExtensionManager {
     //if (options === true) {
       //fullOptions.properties.push('showOverwriteConfirmation');
     //}
-    return Promise.resolve(showSaveDialog(fullOptions))
+    return Bluebird.resolve(showSaveDialog(fullOptions))
       .then(result => (result.filePath !== undefined)
         ? result.filePath
         : undefined);
@@ -1612,7 +1659,7 @@ class ExtensionManager {
         { name: 'Python', extensions: ['py'] },
       ],
     };
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1623,7 +1670,7 @@ class ExtensionManager {
       ..._.omit(options, ['create']),
       properties: ['openDirectory'],
     };
-    return Promise.resolve(showOpenDialog(fullOptions))
+    return Bluebird.resolve(showOpenDialog(fullOptions))
       .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
         ? result.filePaths[0]
         : undefined);
@@ -1645,7 +1692,7 @@ class ExtensionManager {
   private registerRepositoryLookup =
        (repository: string,
         preferOverMD5: boolean,
-        func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
+        func: (id: IModRepoId) => Bluebird<IModLookupResult[]>) => {
     this.mRepositoryLookup[repository] = { preferOverMD5, func };
   }
 
@@ -1659,7 +1706,7 @@ class ExtensionManager {
   }
 
   private lookupModReference =
-      (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
+      (reference: IModReference, options?: ILookupOptions): Bluebird<IModLookupResult[]> => {
     if (options === undefined) {
       options = {};
     }
@@ -1667,8 +1714,8 @@ class ExtensionManager {
     // Spammy debug log
     // log('debug', 'lookup mod reference', { reference });
 
-    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
-    let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
+    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Bluebird<IModLookupResult[]> };
+    let preMD5: Bluebird<IModLookupResult[]> = Bluebird.resolve([]);
     if (reference.repo !== undefined) {
       lookup = this.mRepositoryLookup[reference.repo.repository];
     }
@@ -1733,7 +1780,7 @@ class ExtensionManager {
   }
 
   private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
-      : Promise<ILookupResult[]> => {
+      : Bluebird<ILookupResult[]> => {
     if ((detail.fileName !== undefined) && (detail.fileSize === 0)) {
       log('error', 'trying to calculate hash for an empty file', {
         name: detail.fileName,
@@ -1741,23 +1788,23 @@ class ExtensionManager {
       });
       const err = new ProcessCanceled('trying to calculate hash for an empty file');
       err['fileName'] = detail.fileName;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     }
     let lookupId = this.modLookupId(detail);
     if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
-      return Promise.resolve(this.mModDBCache[lookupId]);
+      return Bluebird.resolve(this.mModDBCache[lookupId]);
     }
     let fileMD5 = detail.fileMD5;
     let fileSize = detail.fileSize;
 
     if ((fileMD5 === undefined) && (detail.filePath === undefined)) {
-      return Promise.resolve([]);
+      return Bluebird.resolve([]);
     }
 
-    let promise: Promise<void>;
+    let promise: Bluebird<void>;
 
     if (fileMD5 === undefined) {
       promise = this.genMd5Hash(detail.filePath).then((res: IHashResult) => {
@@ -1773,14 +1820,14 @@ class ExtensionManager {
       })
       .catch(err => {
         log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
-        return Promise.resolve();
+        return Bluebird.resolve();
       });
     } else {
-      promise = Promise.resolve();
+      promise = Bluebird.resolve();
     }
     // lookup id may be updated now
     if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
-      return Promise.resolve(this.mModDBCache[lookupId]);
+      return Bluebird.resolve(this.mModDBCache[lookupId]);
     }
     return promise
       .then(() => this.getModDB())
@@ -1790,7 +1837,7 @@ class ExtensionManager {
       .then((result: ILookupResult[]) => {
         const resultSorter = this.makeSorter(detail);
         this.mModDBCache[lookupId] = result.sort(resultSorter);
-        return Promise.resolve(this.mModDBCache[lookupId]);
+        return Bluebird.resolve(this.mModDBCache[lookupId]);
       });
   }
 
@@ -1840,7 +1887,7 @@ class ExtensionManager {
     };
   }
 
-  private saveModMeta = (modInfo: IModInfo): Promise<void> => {
+  private saveModMeta = (modInfo: IModInfo): Bluebird<void> => {
     const lookupId = this.modLookupId({
       fileMD5: modInfo.fileMD5,
       filePath: modInfo.fileName,
@@ -1850,14 +1897,14 @@ class ExtensionManager {
     delete this.mModDBCache[lookupId];
     return this.getModDB()
       .then(modDB => {
-        return new Promise<void>((resolve, reject) => {
+        return new Bluebird<void>((resolve, reject) => {
           modDB.insert([modInfo]);
           resolve();
         });
       });
   }
 
-  private genMd5Hash = (data: string | Buffer, progressFunc?: (progress: number, total: number) => void): Promise<IHashResult> => {
+  private genMd5Hash = (data: string | Buffer, progressFunc?: (progress: number, total: number) => void): Bluebird<IHashResult> => {
     let lastProgress: number = 0;
     const progressHash = (progress: number, total: number) => {
       progressFunc?.(progress, total);
@@ -1870,7 +1917,7 @@ class ExtensionManager {
         if (lastProgress === 0) {
           // Need to get the size from the file or buffer
           const sizePromise = Buffer.isBuffer(data)
-            ? Promise.resolve(data.length)
+            ? Bluebird.resolve(data.length)
             : fsVortex.statAsync(data as string).then(stats => stats.size).catch(() => 0);
 
           return sizePromise.then(numBytes => ({
@@ -1878,7 +1925,7 @@ class ExtensionManager {
             numBytes
           }));
         } else {
-          return Promise.resolve({
+          return Bluebird.resolve({
             md5sum: result,
             numBytes: lastProgress
           });
@@ -1888,7 +1935,7 @@ class ExtensionManager {
 
   private openArchive = (archivePath: string,
                          options?: IArchiveOptions,
-                         ext?: string): Promise<Archive> => {
+                         ext?: string): Bluebird<Archive> => {
     if (this.mArchiveHandlers === undefined) {
       // lazy loading the archive handlers
       this.mArchiveHandlers = {};
@@ -1899,25 +1946,25 @@ class ExtensionManager {
     }
     const creator = this.mArchiveHandlers[ext];
     if (creator === undefined) {
-      return Promise.reject(new NotSupportedError());
+      return Bluebird.reject(new NotSupportedError());
     }
     return creator(archivePath, options || {})
-      .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
+      .then((handler: IArchiveHandler) => Bluebird.resolve(new Archive(handler)));
   }
 
-  private applyStartHooks(input: IRunParameters): Promise<IRunParameters> {
+  private applyStartHooks(input: IRunParameters): Bluebird<IRunParameters> {
     let updated = input;
-    return Promise.each(this.mStartHooks, hook => hook.hook(updated)
+    return Bluebird.each(this.mStartHooks, hook => hook.hook(updated)
       .then((newParameters: IRunParameters) => {
         updated = newParameters;
       })
       .catch(UserCanceled, err => {
         log('debug', 'start canceled by user');
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       })
       .catch(ProcessCanceled, err => {
         log('debug', 'hook canceled start', err.message);
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       })
       .catch(err => {
         if (err instanceof UserCanceled) {
@@ -1927,22 +1974,22 @@ class ExtensionManager {
         } else {
           log('error', 'hook failed', err);
         }
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }))
     .then(() => updated);
   }
 
   private runExecutable =
-    (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+    (executable: string, args: string[], options: IRunOptions): Bluebird<void> => {
       if (!truthy(executable)) {
-        return Promise.reject(new ProcessCanceled('Executable not set'));
+        return Bluebird.reject(new ProcessCanceled('Executable not set'));
       }
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
         try {
           ({ executable, args, options } = interpreter({ executable, args, options }));
         } catch (err) {
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         }
       }
 
@@ -1966,9 +2013,9 @@ class ExtensionManager {
       return this.applyStartHooks({ executable, args, options })
         .then(updatedParameters => {
           ({ executable, args, options } = updatedParameters);
-          return Promise.resolve();
+          return Bluebird.resolve();
         })
-        .then(() => new Promise<void>((resolve, reject) => {
+        .then(() => new Bluebird<void>((resolve, reject) => {
           const runExe = options.shell
             ? `"${executable}"`
             : executable;
@@ -2102,19 +2149,19 @@ class ExtensionManager {
         .catch(ProcessCanceled, () => null)
         .catch({ code: 'EACCES' }, () =>
           this.runElevated(executable, cwd, args, env, options.onSpawned))
-        .catch({ code: 'ECANCELED' }, () => Promise.reject(new UserCanceled()))
-        .catch({ systemCode: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch({ code: 'ECANCELED' }, () => Bluebird.reject(new UserCanceled()))
+        .catch({ systemCode: 1223 }, () => Bluebird.reject(new UserCanceled()))
         // Is errno still used ? looks like shellEx call returns systemCode instead
-        .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch({ errno: 1223 }, () => Bluebird.reject(new UserCanceled()))
         .catch((err) => {
           if (err.message.toLowerCase().indexOf('the operation was canceled by the user') !== -1) {
             // This is more of a sanity check than anything else as one user report
             //  contained none of the properties we rely on to detect when a user
             //  cancels the UAC dialog.
             //  https://github.com/Nexus-Mods/Vortex/issues/8524
-            return Promise.reject(new UserCanceled());
+            return Bluebird.reject(new UserCanceled());
           }
-          return Promise.reject(err);
+          return Bluebird.reject(err);
         });
   }
 
@@ -2122,7 +2169,7 @@ class ExtensionManager {
                       env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
     const ipcPath = shortid();
     let tmpFilePath: string;
-    return new Promise((resolve, reject) => {
+    return new Bluebird((resolve, reject) => {
       this.startIPC(ipcPath, err => {
         if (err !== null) {
           reject(err);
@@ -2155,10 +2202,10 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
-    let queue = Promise.resolve();
+  private emitAndAwait = (event: string, ...args: any[]): Bluebird<any> => {
+    let queue = Bluebird.resolve();
     const results: any[] = [];
-    const enqueue = (prom: Promise<any>) => {
+    const enqueue = (prom: Bluebird<any>) => {
       if (prom !== undefined) {
         queue = queue.then(() => prom
           .then(res => {
@@ -2202,7 +2249,7 @@ class ExtensionManager {
     });
   }
 
-  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Promise<T>) => {
+  private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Bluebird<T>) => {
     return (...args: any[]) => {
       return this.emitAndAwait(`will-${eventName}`, ...args)
       .then(() => cb(...args))
@@ -2424,10 +2471,6 @@ class ExtensionManager {
           return prev;
         }
         try {
-          // first, mark this extension as loaded. If this is a user extension and there is an
-          // extension with the same name in the bundle we could otherwise end up loading the
-          // bundled one if this one fails to load which could be convenient but also massively
-          // confusing.
           const before = Date.now();
           const ext = this.loadDynamicExtension(
             path.join(extension.path, name), alreadyLoaded, extension.bundled);
@@ -2440,20 +2483,13 @@ class ExtensionManager {
             const loadTime = Date.now() - before;
             log('debug', 'loaded extension', { name, loadTime, location: extension.path });
             if (prev[ext.name] !== undefined) {
-              // loadDynamicExtension already handles the case where the same extension was found
-              // in a different directory, but if the same directory contains multiple copies
-              // of the same extension, we have to deal with that slightly differently
               log('warn', 'multiple copies of the same extension installed',
                   { first: ext.path, second: prev[ext.name].path });
 
               if ((ext.info === undefined)
                   || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
-                // the copy we loaded previously is newer so mark this one for removal and not
-                // load it
                 this.mOutdated.push(path.basename(ext.path));
               } else {
-                // this copy is actually the newer one so replace the one previously found and
-                // mark that for deletion
                 this.mOutdated.push(path.basename(prev[ext.name].path));
                 prev[ext.name] = ext;
               }
@@ -2471,12 +2507,93 @@ class ExtensionManager {
     return Object.values(res);
   }
 
+  private async loadDynamicExtensionsAsync(extension: { path: string, bundled: boolean },
+                                            loadedExtensions: Set<string>,
+                                            alreadyLoaded: IRegisteredExtension[]) {
+    const pathExists = await fs.pathExists(extension.path);
+    if (!pathExists) {
+      log('info', 'failed to load dynamic extensions, path doesn\'t exist', extension.path);
+      try {
+        await fs.mkdirs(extension.path);
+      } catch (err) {
+        log('warn', 'extension path missing and can\'t be created',
+            { path: extension.path, error: err.message});
+      }
+      return [];
+    }
+
+    const files = await fs.readdir(extension.path);
+
+    // Filter for directories using async stat calls
+    const directories = await Bluebird.filter(files, async (name: string) => {
+      try {
+        const stats = await fs.stat(path.join(extension.path, name));
+        return stats.isDirectory();
+      } catch (err) {
+        log('warn', 'failed to stat extension path', { name, error: err.message });
+        return false;
+      }
+    });
+
+    const res = await Bluebird.reduce(directories, async (prev: { [id: string]: IRegisteredExtension }, name: string) => {
+      if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
+        log('debug', 'extension disabled', { name });
+        return prev;
+      }
+      try {
+        // first, mark this extension as loaded. If this is a user extension and there is an
+        // extension with the same name in the bundle we could otherwise end up loading the
+        // bundled one if this one fails to load which could be convenient but also massively
+        // confusing.
+        const before = Date.now();
+        const ext = this.loadDynamicExtension(
+          path.join(extension.path, name), alreadyLoaded, extension.bundled);
+        if (ext !== undefined) {
+          if (this.mExtensionState?.[ext.name]?.enabled === false) {
+            log('debug', 'extension disabled', { name: ext.name });
+            return prev;
+          }
+          loadedExtensions.add(ext.name);
+          const loadTime = Date.now() - before;
+          log('debug', 'loaded extension', { name, loadTime, location: extension.path });
+          if (prev[ext.name] !== undefined) {
+            // loadDynamicExtension already handles the case where the same extension was found
+            // in a different directory, but if the same directory contains multiple copies
+            // of the same extension, we have to deal with that slightly differently
+            log('warn', 'multiple copies of the same extension installed',
+                { first: ext.path, second: prev[ext.name].path });
+
+            if ((ext.info === undefined)
+                || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
+              // the copy we loaded previously is newer so mark this one for removal and not
+              // load it
+              this.mOutdated.push(path.basename(ext.path));
+            } else {
+              // this copy is actually the newer one so replace the one previously found and
+              // mark that for deletion
+              this.mOutdated.push(path.basename(prev[ext.name].path));
+              prev[ext.name] = ext;
+            }
+          } else {
+            prev[ext.name] = ext;
+          }
+        }
+      } catch (err) {
+        log('warn', 'failed to load dynamic extension',
+            { name, error: err.message, stack: err.stack });
+        this.mLoadFailures[name] = [{ id: 'exception', args: { message: err.message } }];
+      }
+      return prev;
+    }, {});
+    return Object.values(res);
+  }
+
   /**
    * retrieves all extensions to the base functionality, both the static
    * and external ones.
-   * This loads external extensions from disc synchronously
+   * This loads external extensions from disc synchronously (for renderer process)
    *
-   * @returns {ExtensionInit[]}
+   * @returns {IRegisteredExtension[]}
    */
   private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
@@ -2547,6 +2664,98 @@ class ExtensionManager {
         dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
         return newExtensions;
       }));
+  }
+
+  /**
+   * retrieves all extensions to the base functionality, both the static
+   * and external ones.
+   * This loads external extensions from disc asynchronously
+   *
+   * @returns {Bluebird<IRegisteredExtension[]>}
+   */
+  private prepareExtensionsAsync(): Bluebird<IRegisteredExtension[]> {
+    const staticExtensions = [
+      'settings_interface',
+      'settings_application',
+      'about_dialog',
+      'diagnostics_files',
+      'dashboard',
+      'starter_dashlet',
+      'firststeps_dashlet',
+      'mod_load_order',
+      'file_based_loadorder',
+      'mod_management',
+      'category_management',
+      'collections_integration',
+      'profile_management',
+      'nexus_integration',
+      'download_management',
+      'gameversion_management',
+      'gamemode_management',
+      'announcement_dashlet',
+      'symlink_activator',
+      'symlink_activator_elevate',
+      'hardlink_activator',
+      'move_activator',
+      'null_activator',
+      'updater',
+      'installer_fomod_ipc',
+      'installer_fomod_native',
+      'installer_fomod_shared',
+      'installer_nested_fomod',
+      'instructions_overlay',
+      'settings_metaserver',
+      'test_runner',
+      'extension_manager',
+      'ini_prep',
+      'news_dashlet',
+      'sticky_mods',
+      'browser',
+      'recovery',
+      'file_preview',
+      'tool_variables_base',
+      'history_management',
+      'analytics',
+      'onboarding_dashlet',
+      'mod_spotlights_dashlet',
+      'tailwind_dev',
+      'browse_nexus'
+    ];
+
+    log('debug', 'PREPARE CHECKPOINT 1: Starting prepareExtensionsAsync');
+    require('./extensionRequire').default(() => this.extensions);
+    log('debug', 'PREPARE CHECKPOINT 2: extensionRequire configured');
+
+    const extensionPaths = ExtensionManager.getExtensionPaths();
+    log('debug', 'PREPARE CHECKPOINT 3: Got extension paths', { count: extensionPaths.length });
+    const loadedExtensions = new Set<string>();
+    const staticExts = staticExtensions
+      .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
+      .map((name: string) => ({
+          name,
+          namespace: name,
+          path: path.resolve(__dirname, '..', 'extensions', name),
+          initFunc: () => require(`../extensions/${name}/index`).default,
+          dynamic: false,
+        }));
+    log('debug', 'PREPARE CHECKPOINT 4: Static extensions prepared', { count: staticExts.length });
+
+    // Load dynamic extensions asynchronously using Bluebird.mapSeries to maintain order
+    log('debug', 'PREPARE CHECKPOINT 5: About to start Bluebird.reduce');
+    return Bluebird.reduce(extensionPaths, (dynamicallyLoaded: IRegisteredExtension[], extSpec) => {
+      log('debug', 'PREPARE CHECKPOINT 6: Processing extension path', { path: extSpec.path });
+      return this.loadDynamicExtensionsAsync(extSpec, loadedExtensions, dynamicallyLoaded)
+        .then(newExtensions => {
+          log('debug', 'PREPARE CHECKPOINT 7: Loaded extensions from path', { path: extSpec.path, count: newExtensions.length });
+          return dynamicallyLoaded.concat(newExtensions);
+        });
+    }, [])
+    .then(dynamicallyLoaded => {
+      log('debug', 'PREPARE CHECKPOINT 8: Bluebird.reduce completed', { dynamicCount: dynamicallyLoaded.length });
+      const result = staticExts.concat(dynamicallyLoaded);
+      log('debug', 'PREPARE CHECKPOINT 9: About to return final result', { totalCount: result.length });
+      return result;
+    });
   }
 }
 

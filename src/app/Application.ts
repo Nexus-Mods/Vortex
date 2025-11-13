@@ -43,7 +43,7 @@ import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import * as msgpackT from '@msgpack/msgpack';
-import Promise from 'bluebird';
+import Bluebird, { method as toBluebird} from 'bluebird';
 import crashDumpT from 'crash-dump';
 import { app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell } from 'electron';
 import contextMenu from 'electron-context-menu';
@@ -56,6 +56,7 @@ import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 import * as winapiT from 'winapi-bindings';
+import ExtensionManager from '../util/ExtensionManager';
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 const permissions = lazyRequire<typeof permissionsT>(() => require('permissions'));
@@ -181,7 +182,7 @@ class Application {
     });
   }
 
-  private startUi(): Promise<void> {
+  private startUi(): Bluebird<void> {
     const MainWindow = require('./MainWindow').default;
     this.mMainWindow = new MainWindow(this.mStore, this.mArgs.inspector);
     log('debug', 'creating main window');
@@ -199,11 +200,11 @@ class Application {
       if (didIgnoreError()) {
         webContents.send('did-ignore-error', true);
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     });
   }
 
-  private startSplash(): Promise<SplashScreenT> {
+  private startSplash(): Bluebird<SplashScreenT> {
     const SplashScreen = require('./SplashScreen').default;
     const splash: SplashScreenT = new SplashScreen();
     return splash.create(this.mArgs.disableGPU)
@@ -264,7 +265,7 @@ class Application {
         this.applyArguments(cfgFile);
       });
 
-      let startupMode: Promise<void>;
+      let startupMode: Bluebird<void>;
       if (args.get) {
         startupMode = this.handleGet(args.get, userData);
       } else if (args.set) {
@@ -309,7 +310,7 @@ class Application {
     };
   }
 
-  private regularStart(args: IParameters): Promise<void> {
+  private regularStart(args: IParameters): Bluebird<void> {
     let splash: SplashScreenT;
     return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
       .catch(() => null)
@@ -321,7 +322,7 @@ class Application {
       .then(() => this.testUserEnvironment())
       .then(() => this.validateFiles())
       .then(() => (args?.startMinimized === true)
-        ? Promise.resolve(undefined)
+        ? Bluebird.resolve(undefined)
         : this.startSplash())
       // start initialization
       .tap(splashIn => (splashIn !== undefined)
@@ -373,7 +374,7 @@ class Application {
       .tap(() => log('debug', 'starting user interface'))
       .then(() => {
         this.setupContextMenu();
-        return Promise.resolve();
+        return Bluebird.resolve();
       })
       .then(() => this.startUi())
       .tap(() => log('debug', 'setting up tray icon'))
@@ -388,7 +389,7 @@ class Application {
         this.connectTrayAndWindow();
         return (splash !== undefined)
           ? splash.fadeOut()
-          : Promise.resolve();
+          : Bluebird.resolve();
       })
       .tapCatch((err) => log('debug', 'quitting with exception', err.message))
       .catch(UserCanceled, () => app.exit())
@@ -451,9 +452,9 @@ class Application {
       .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
   }
 
-  private isUACEnabled(): Promise<boolean> {
+  private isUACEnabled(): Bluebird<boolean> {
     if (process.platform !== 'win32') {
-      return Promise.resolve(true);
+      return Bluebird.resolve(true);
     }
 
     const getSystemPolicyValue = (key: string) => {
@@ -461,17 +462,17 @@ class Application {
         const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
           key);
-        return Promise.resolve({ key, type: res.type, value: res.value });
+        return Bluebird.resolve({ key, type: res.type, value: res.value });
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
         //  as the user might have a version of Windows that does not use
         //  the key we're looking for.
         log('debug', 'failed to check UAC settings', err);
-        return Promise.resolve(undefined);
+        return Bluebird.resolve(undefined);
       }
     };
 
-    return Promise.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
+    return Bluebird.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
     getSystemPolicyValue('ConsentPromptBehaviorUser')])
       .then(res => {
         res.forEach(value => {
@@ -481,14 +482,14 @@ class Application {
         });
         const adminConsent = res[0];
         return ((adminConsent.type === 'REG_DWORD') && (adminConsent.value === 0))
-          ? Promise.resolve(false)
-          : Promise.resolve(true);
+          ? Bluebird.resolve(false)
+          : Bluebird.resolve(true);
       })
       // Perfectly ok not to have the registry keys.
-      .catch(err => Promise.resolve(true));
+      .catch(err => Bluebird.resolve(true));
   }
 
-  private identifyInstallType(): Promise<void> {
+  private identifyInstallType(): Bluebird<void> {
 
     /**
      * we are checking to see if an uninstaller exists as if it does, it means it was installed via our installer.
@@ -519,16 +520,16 @@ class Application {
       });
   }
 
-  private warnAdmin(): Promise<void> {
+  private warnAdmin(): Bluebird<void> {
     const state: IState = this.mStore.getState();
-    return timeout(Promise.resolve(isAdmin()), 1000)
+    return timeout(Bluebird.resolve(isAdmin()), 1000)
       .then(admin => {
         if ((admin === undefined) || !admin) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         log('warn', 'running as administrator');
         if (state.app.warnedAdmin > 0) {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
           title: 'Admin rights detected',
@@ -551,28 +552,28 @@ class Application {
             app.quit();
           } else {
             this.mStore.dispatch(setWarnedAdmin(1));
-            return Promise.resolve();
+            return Bluebird.resolve();
           }
         }));
       });
   }
 
-  private checkUpgrade(): Promise<void> {
+  private checkUpgrade(): Bluebird<void> {
     const currentVersion = getApplication().version;
     return this.migrateIfNecessary(currentVersion)
       .then(() => {
         this.mStore.dispatch(setApplicationVersion(currentVersion));
-        return Promise.resolve();
+        return Bluebird.resolve();
       });
   }
 
-  private migrateIfNecessary(currentVersion: string): Promise<void> {
+  private migrateIfNecessary(currentVersion: string): Bluebird<void> {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
 
     if (this.mFirstStart || (process.env.NODE_ENV === 'development')) {
       // don't check version change in development builds or on first start
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
@@ -589,13 +590,13 @@ class Application {
         noLink: true,
       }) === 0) {
         app.quit();
-        return Promise.reject(new UserCanceled());
+        return Bluebird.reject(new UserCanceled());
       }
     } else if (semver.gt(currentVersion, lastVersion)) {
       log('info', 'Vortex was updated, checking for necessary migrations');
       return migrate(this.mStore, getVisibleWindow())
         .then(() => {
-          return Promise.resolve();
+          return Bluebird.resolve();
         })
         .catch(err => !(err instanceof UserCanceled)
           && !(err instanceof ProcessCanceled), (err: Error) => {
@@ -604,17 +605,17 @@ class Application {
               'The migration from the previous Vortex release failed. '
               + 'Please resolve the errors you got, then try again.');
             app.exit(1);
-            return Promise.reject(new ProcessCanceled('Migration failed'));
+            return Bluebird.reject(new ProcessCanceled('Migration failed'));
           });
     }
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private splitPath(statePath: string): string[] {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/g, '$1'));
   }
 
-  private handleGet(getPaths: string[] | boolean, dbpath: string): Promise<void> {
+  private handleGet(getPaths: string[] | boolean, dbpath: string): Bluebird<void> {
     if (typeof (getPaths) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
       return;
@@ -628,11 +629,11 @@ class Application {
         return persist.getAllKeys();
       })
       .then(keys => {
-        return Promise.all(getPaths.map(getPath => {
+        return Bluebird.all(getPaths.map(getPath => {
           const pathArray = this.splitPath(getPath);
           const matches = keys
             .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
-          return Promise.all(matches.map(match => persist.getItem(match)
+          return Bluebird.all(matches.map(match => persist.getItem(match)
             .then(value => `${match.join('.')} = ${value}`)))
             .then(output => { process.stdout.write(output.join('\n') + '\n'); })
             .catch(err => { process.stderr.write(err.message + '\n'); });
@@ -647,14 +648,14 @@ class Application {
       });
   }
 
-  private handleSet(setParameters: ISetItem[], dbpath: string): Promise<void> {
+  private handleSet(setParameters: ISetItem[], dbpath: string): Bluebird<void> {
     let persist: LevelPersist;
 
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
 
-        return Promise.all(setParameters.map((setParameter: ISetItem) => {
+        return Bluebird.all(setParameters.map((setParameter: ISetItem) => {
           const pathArray = this.splitPath(setParameter.key);
 
           return persist.getItem(pathArray)
@@ -682,7 +683,7 @@ class Application {
       });
   }
 
-  private handleDel(delPaths: string[], dbpath: string): Promise<void> {
+  private handleDel(delPaths: string[], dbpath: string): Bluebird<void> {
     let persist: LevelPersist;
 
     return LevelPersist.create(dbpath)
@@ -691,11 +692,11 @@ class Application {
         return persist.getAllKeys();
       })
       .then(keys => {
-        return Promise.all(delPaths.map(delPath => {
+        return Bluebird.all(delPaths.map(delPath => {
           const pathArray = this.splitPath(delPath);
           const matches = keys
             .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
-          return Promise.all(matches.map(match => persist.removeItem(match)
+          return Bluebird.all(matches.map(match => persist.removeItem(match)
             .then(() => process.stdout.write(`removed ${match.join('.')}\n`))
             .catch(err => { process.stderr.write(err.message + '\n'); })));
         }))
@@ -709,10 +710,10 @@ class Application {
       });
   }
 
-  private createTray(): Promise<void> {
+  private createTray(): Bluebird<void> {
     const TrayIcon = require('./TrayIcon').default;
     this.mTray = new TrayIcon(this.mExtensions.getApi());
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 
   private connectTrayAndWindow() {
@@ -743,7 +744,7 @@ class Application {
   }
 
   private createStore(restoreBackup?: string, mergeBackup?: string,
-    repair?: boolean): Promise<void> {
+    repair?: boolean): Bluebird<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
@@ -758,7 +759,7 @@ class Application {
         backups = [];
       });
 
-    const deleteBackups = () => Promise.map(backups, backupName =>
+    const deleteBackups = () => Bluebird.map(backups, backupName =>
       fs.removeAsync(path.join(backupPath, backupName))
         .catch(() => undefined))
       .then(() => null);
@@ -785,7 +786,7 @@ class Application {
       .catch(DataInvalid, err => {
         const failedPersistor = this.mLevelPersistors.pop();
         return failedPersistor.close()
-          .then(() => Promise.reject(err));
+          .then(() => Bluebird.reject(err));
       })
       .then(() => {
         let dataPath = app.getPath('userData');
@@ -824,14 +825,14 @@ class Application {
               this.mLevelPersistors.push(levelPersistor);
             });
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
         log('debug', 'reading app state');
         return insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app'));
       })
-      .then(() => {
+      .then(toBluebird(async () => {
         if (newStore.getState().app.instanceId === undefined) {
           this.mFirstStart = true;
           const newId = uuid.v4();
@@ -840,19 +841,23 @@ class Application {
         } else {
           log('debug', 'startup instance', { instanceId: newStore.getState().app.instanceId });
         }
-        const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
+        log('debug', 'initializing extensions asynchronously');
+        await this.mExtensions.initializeAsync(newStore);
+        log('debug', 'finished initializing extensions');
+      }))
+      .then(() => {
         if (this.mExtensions.hasOutdatedExtensions) {
           log('debug', 'relaunching to remove outdated extensions');
           finalizeStoreWrite().then(() => relaunch());
 
           // relaunching the process happens asynchronously but we don't want to any further work
           // before that
-          return new Promise(() => null);
+          return new Bluebird(() => null);
         }
         const reducer = require('../reducers/index').default;
         newStore.replaceReducer(reducer(this.mExtensions.getReducers(), querySanitize));
-        return Promise.mapSeries(allHives(this.mExtensions), hive =>
+        return Bluebird.mapSeries(allHives(this.mExtensions), hive =>
           insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
       .then(() => {
@@ -871,7 +876,7 @@ class Application {
                 payload: oldState,
               });
             }) :
-          Promise.resolve();
+          Bluebird.resolve();
       })
       .then(() => {
         log('debug', 'updating state backups');
@@ -891,7 +896,7 @@ class Application {
             .then(() => updateBackups())
             .catch(err => {
               if (err instanceof UserCanceled) {
-                return Promise.reject(err);
+                return Bluebird.reject(err);
               }
               terminate({
                 message: 'Failed to restore backup',
@@ -912,7 +917,7 @@ class Application {
             })
             .catch(err => {
               if (err instanceof UserCanceled) {
-                return Promise.reject(err);
+                return Bluebird.reject(err);
               }
               terminate({
                 message: 'Failed to merge backup',
@@ -923,17 +928,17 @@ class Application {
               }, {}, false);
             });
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       })
       .then(() => {
-        const hydrateHandler = (stepIn: IPresetStep): Promise<void> => {
+        const hydrateHandler = (stepIn: IPresetStep): Bluebird<void> => {
           newStore.dispatch({
             type: '__hydrate',
             payload: (stepIn as IPresetStepHydrateState).state,
           });
 
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
         presetManager.on('hydrate', hydrateHandler);
         presetManager.now('hydrate', hydrateHandler);
@@ -1009,10 +1014,10 @@ class Application {
         } else if (!repair) {
           // we started without any problems, save this application state
           return createFullStateBackup('startup', this.mStore)
-            .then(() => Promise.resolve())
+            .then(() => Bluebird.resolve())
             .catch(err => log('error', 'Failed to create startup state backup', err.message));
         }
-        return Promise.resolve();
+        return Bluebird.resolve();
       })
       .then(() => this.mExtensions.doOnce());
   }
@@ -1023,12 +1028,12 @@ class Application {
       'An invalid state change was prevented, this was probably caused by a bug', err);
   }
 
-  private initDevel(): Promise<void> {
+  private initDevel(): Bluebird<void> {
     if (process.env.NODE_ENV === 'development') {
       const { installDevelExtensions } = require('../util/devel') as typeof develT;
       return installDevelExtensions();
     } else {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   }
 
@@ -1058,7 +1063,7 @@ class Application {
     setWindow(this.mMainWindow.getHandle());
   }
 
-  private testUserEnvironment(): Promise<void> {
+  private testUserEnvironment(): Bluebird<void> {
     // Should be used to test the user's environment for known
     //  issues before starting up Vortex.
     // On Windows:
@@ -1067,19 +1072,19 @@ class Application {
       try {
         const documentsFolder = app.getPath('documents');
         return (documentsFolder !== '')
-          ? Promise.resolve()
-          : Promise.reject(new DocumentsPathMissing());
+          ? Bluebird.resolve()
+          : Bluebird.reject(new DocumentsPathMissing());
       } catch (err) {
-        return Promise.reject(new DocumentsPathMissing());
+        return Bluebird.reject(new DocumentsPathMissing());
       }
     } else {
       // No tests needed.
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   }
 
-  private validateFiles(): Promise<void> {
-    return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
+  private validateFiles(): Bluebird<void> {
+    return Bluebird.resolve(validateFiles(getVortexPath('assets_unpacked')))
       .then(validation => {
         if ((validation.changed.length > 0)
           || (validation.missing.length > 0)) {
@@ -1100,21 +1105,21 @@ class Application {
                 app.quit();
               } else {
                 disableErrorReport();
-                return Promise.resolve();
+                return Bluebird.resolve();
               }
             });
         } else {
-          return Promise.resolve();
+          return Bluebird.resolve();
         }
       });
   }
 
   private applyArguments(args: IParameters) {
     if (args.download || args.install || args.installArchive) {
-      const prom: Promise<void> = (this.mMainWindow === undefined)
+      const prom: Bluebird<void> = (this.mMainWindow === undefined)
         // give the main instance a moment to fully start up
-        ? Promise.delay(2000)
-        : Promise.resolve(undefined);
+        ? Bluebird.delay(2000)
+        : Bluebird.resolve(undefined);
 
       prom.then(() => {
         if (this.mMainWindow !== undefined) {
