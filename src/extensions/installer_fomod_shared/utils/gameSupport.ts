@@ -1,7 +1,7 @@
 import { IGame } from '../../../types/IGame';
 
 import * as path from 'path';
-import { IDiscoveryResult } from '../../../types/IState';
+import { IDiscoveryResult, IState } from '../../../types/IState';
 import getVortexPath from '../../../util/getVortexPath';
 import { makeOverlayableDictionary } from '../../../util/util';
 import { IExtensionApi } from '../../../types/IExtensionContext';
@@ -333,10 +333,13 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>({
 
 let discoveryForGame: (gameId: string) => IDiscoveryResult | undefined = () => undefined;
 
+type selectors = {
+  discoveryByGame: (state: IState, gameId: string) => IDiscoveryResult | undefined;
+};
 export function initGameSupport(api: IExtensionApi) {
   // Lazy import to avoid circular dependency during module loading
-  const { discoveryByGame } = require('../../gamemode_management/selectors');
-  discoveryForGame = (gameId: string) => discoveryByGame(api.store?.getState(), gameId);
+  const { discoveryByGame }: selectors = require('../../gamemode_management/selectors');
+  discoveryForGame = (gameId: string) => discoveryByGame(api.getState(), gameId);
 }
 
 export function getIniFilePath(gameMode: string): string {
