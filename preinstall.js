@@ -76,7 +76,8 @@ async function updateSubmodules() {
  * @returns {Promise<void>}
  */
 async function buildFomodIPC() {
-  console.log('Building FOMOD IPC TypeScript...');
+  const buildConfig = process.env.VORTEX_BUILD_CONFIG || getBuildConfiguration();
+  console.log(`Building FOMOD IPC TypeScript (${buildConfig})...`);
   const fomodIPCPath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.IPC.TypeScript');
 
   try {
@@ -86,7 +87,7 @@ async function buildFomodIPC() {
     await runCommand(pkgcli, ['install'], { cwd: fomodIPCPath });
 
     // Build project
-    await runCommand(pkgcli, ['build'], { cwd: fomodIPCPath });
+    await runCommand(pkgcli, ['build', buildConfig], { cwd: fomodIPCPath });
 
     console.log('FOMOD IPC built successfully');
   } catch (err) {
@@ -100,7 +101,7 @@ async function buildFomodIPC() {
  * @returns {Promise<void>}
  */
 async function buildFomodNative() {
-  const buildConfig = getBuildConfiguration();
+  const buildConfig = process.env.VORTEX_BUILD_CONFIG || getBuildConfiguration();
   console.log(`Building FOMOD Native TypeScript (${buildConfig})...`);
   const fomodNativePath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.Native.TypeScript');
 

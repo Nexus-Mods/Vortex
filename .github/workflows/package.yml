@@ -116,7 +116,7 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies 
-        run: yarn --frozen-lockfile --network-timeout 600000 install
+        run: yarn --non-interactive install:production
  
       - name: Build API 
         run: yarn --non-interactive build_api 
