@@ -1,7 +1,8 @@
-import { selectors } from '../../..';
-import { IState } from '../../../types/api';
+import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
+import { IState } from '../../../types/IState';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { getApplication, getGame, getSafe } from '../../../util/api';
+import { getApplication } from '../../../util/application';
+import { getGame } from '../../gamemode_management/util/getGame';
 import { hasLoadOrder, hasSessionPlugins } from '../utils/guards';
 
 /**
@@ -24,8 +25,8 @@ export class SharedDelegates {
 
   private async initialize() : Promise<void> {
     const state = this.mApi.getState();
-    const game = selectors.currentGame(state);
-    const discovery = selectors.currentGameDiscovery(state);
+    const game = currentGame(state);
+    const discovery = currentGameDiscovery(state);
     const gameInfo = getGame(game.id);
     this.mGameVersion = await gameInfo.getInstalledVersion(discovery);
   }

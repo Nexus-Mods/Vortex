@@ -38,7 +38,7 @@ import WindowControls from './WindowControls';
 import * as semver from 'semver';
 
 import { profileById } from '../util/selectors';
-import { getGame } from '../util/api';
+import { getGame } from '../extensions/gamemode_management/util/getGame';
 
 import update from 'immutability-helper';
 import * as _ from 'lodash';

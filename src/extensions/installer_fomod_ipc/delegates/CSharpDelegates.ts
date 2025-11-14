@@ -4,8 +4,10 @@ import turbowalk, { IEntry } from 'turbowalk';
 import IniParser, { WinapiFormat } from 'vortex-parse-ini';
 import { getIniFilePath } from '../../installer_fomod_shared/utils/gameSupport';
 import { IExtensionApi } from '../../../types/IExtensionContext';
-import { fs, selectors } from '../../..';
-import { getGame, showError } from '../../../util/api';
+import { statAsync, readFileAsync } from '../../../util/fs';
+import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
+import { getGame } from '../../gamemode_management/util/getGame';
+import { showError } from '../../../util/message';
 import { isNullOrWhitespace } from '../../../util/util';
 
 const extenderForGame = (gameId: string) => {
@@ -54,8 +56,8 @@ export class CSharpDelegates {
    */
   public async isExtenderPresent(): Promise<boolean> {
     const state = this.mApi.getState();
-    const game = selectors.currentGame(state);
-    const discovery = selectors.currentGameDiscovery(state);
+    const game = currentGame(state);
+    const discovery = currentGameDiscovery(state);
 
     const extender = extenderForGame(game.id);
     if (extender === undefined) {
@@ -68,7 +70,7 @@ export class CSharpDelegates {
 
     const sePath = path.join(discovery.path, `${extender}_loader.exe`);
     try {
-      await fs.statAsync(sePath);
+      await statAsync(sePath);
       return true;
     } catch (error) {
       return false;
@@ -81,7 +83,7 @@ export class CSharpDelegates {
   public async checkIfFileExists(fileName: string): Promise<boolean> {
     const fullPath = this.resolveFilePath(fileName);
     try {
-      await fs.statAsync(fullPath);
+      await statAsync(fullPath);
       return true;
     } catch (error) {
       return false;
@@ -95,7 +97,7 @@ export class CSharpDelegates {
     const fullPath = this.resolveFilePath(dataFile);
 
     try {
-      return await fs.readFileAsync(fullPath);
+      return await readFileAsync(fullPath);
     } catch (error) {
       throw error;
     }
@@ -119,7 +121,7 @@ export class CSharpDelegates {
    */
   public async getIniString(selectedFile: string, iniSection: string, iniKey: string) {
     const state = this.mApi.getState();
-    const game = selectors.currentGame(state);
+    const game = currentGame(state);
     const gameInfo = getGame(game.id);
 
     let iniValue: string;
@@ -147,7 +149,7 @@ export class CSharpDelegates {
    */
   public async getIniInt(selectedFile: string, iniSection: string, iniKey: string) {
     const state = this.mApi.getState();
-    const game = selectors.currentGame(state);
+    const game = currentGame(state);
     const gameInfo = getGame(game.id);
 
     let iniValue: number;
@@ -174,8 +176,8 @@ export class CSharpDelegates {
 
   private resolveFilePath(filePath: string): string {
     const state = this.mApi.getState();
-    const game = selectors.currentGame(state);
-    const discovery = selectors.currentGameDiscovery(state);
+    const game = currentGame(state);
+    const discovery = currentGameDiscovery(state);
     const gameInfo = getGame(game.id);
 
     if (!discovery?.path) {

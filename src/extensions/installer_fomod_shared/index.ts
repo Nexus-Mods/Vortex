@@ -1,17 +1,43 @@
-import InstallerDialog from './views/InstallerDialog';
-import { installerUIReducer } from './reducers/installerUI';
-import { initGameSupport } from './utils/gameSupport';
-import { IChoiceType } from './types/interface';
+import * as fs from 'fs';
+import * as path from 'path';
+const debugLog = (msg: string) => {
+  try {
+    const logPath = path.join(process.env.APPDATA || process.env.USERPROFILE || 'C:\\', 'vortex_fomod_debug.log');
+    fs.appendFileSync(logPath, `${new Date().toISOString()} ${msg}\n`);
+  } catch (err) {
+    // Ignore errors
+  }
+};
 
-import { IExtensionContext, IMod } from '../../types/api';
-import { getSafe } from '../../util/api';
+debugLog('[FOMOD_SHARED] ===== MODULE LOADING START =====');
+import InstallerDialog from './views/InstallerDialog';
+debugLog('[FOMOD_SHARED] InstallerDialog imported');
+import { installerUIReducer } from './reducers/installerUI';
+debugLog('[FOMOD_SHARED] installerUIReducer imported');
+import { initGameSupport } from './utils/gameSupport';
+debugLog('[FOMOD_SHARED] initGameSupport imported');
+import { IChoiceType } from './types/interface';
+debugLog('[FOMOD_SHARED] IChoiceType imported');
+
+import { IExtensionContext } from '../../types/IExtensionContext';
+import { IMod } from '../mod_management/types/IMod';
+debugLog('[FOMOD_SHARED] IMod and IExtensionContext imported');
+import { getSafe } from '../../util/storeHelper';
+debugLog('[FOMOD_SHARED] getSafe imported');
+import { log } from '../../util/log';
+debugLog('[FOMOD_SHARED] ===== MODULE LOADING COMPLETE =====');
 
 function init(context: IExtensionContext): boolean {
+  log('info', '========== [FOMOD_SHARED] Extension initialization STARTED ==========');
+
   initGameSupport(context.api);
+  log('info', '[FOMOD_SHARED] Game support initialized');
 
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
- 
+  log('info', '[FOMOD_SHARED] Reducer registered');
+
   context.registerDialog('fomod-installer', InstallerDialog);
+  log('info', '[FOMOD_SHARED] Dialog registered');
 
   context.registerTableAttribute('mods', {
     id: 'installer',
@@ -40,6 +66,8 @@ function init(context: IExtensionContext): boolean {
   //  of finding the fomod's name - it's not worth the hassle.
   // context.registerAttributeExtractor(75, processAttributes);
 
+  log('info', '[FOMOD_SHARED] Table attribute registered');
+  log('info', '========== [FOMOD_SHARED] Extension initialization COMPLETE ==========');
   return true;
 }
 

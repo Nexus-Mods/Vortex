@@ -7,7 +7,7 @@ import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 import { SharedDelegates } from '../installer_fomod_shared/delegates/SharedDelegates';
 import { IChoices } from '../installer_fomod_shared/types/interface';
 import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_shared/utils/gameSupport';
-import { getGame } from '../../util/api';
+import { getGame } from '../gamemode_management/util/getGame';
 import { log } from '../../util/log';
 import { IExtensionApi, IInstallResult } from '../../types/api';
 

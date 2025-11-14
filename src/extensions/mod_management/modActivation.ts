@@ -14,7 +14,7 @@ import { MERGED_PATH } from './modMerging';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import { UserCanceled } from '../../util/api';
+import { UserCanceled } from '../../util/CustomErrors';
 
 function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
   return fs.ensureDirWritableAsync(modPath, () => api.showDialog('question', 'Access Denied', {

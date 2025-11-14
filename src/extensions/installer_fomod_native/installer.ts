@@ -13,7 +13,8 @@ import { getChoicesFromState } from '../installer_fomod_shared/utils/helpers';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 
 import { IExtensionApi, IInstallResult, IInstruction, InstructionType } from '../../types/api';
-import { getGame, ProcessCanceled } from '../../util/api';
+import { getGame } from '../gamemode_management/util/getGame';
+import { ProcessCanceled } from '../../util/CustomErrors';
 
 export const install = async (
     api: IExtensionApi,

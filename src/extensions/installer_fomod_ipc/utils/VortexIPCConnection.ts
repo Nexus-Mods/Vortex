@@ -1,12 +1,12 @@
 import { BaseIPCConnection, ConnectionStrategy, TimeoutOptions } from 'fomod-installer-ipc';
 import { ISupportedResult } from '../../mod_management/types/TestSupported';
 import { IInstallResult } from '../../mod_management/types/IInstallResult';
-import { fs } from '../../..';
+import { statAsync } from '../../../util/fs';
 import { IExtensionApi } from '../../../types/api';
 import { log } from '../../../util/log';
 import { IChoices } from '../../installer_fomod_shared/types/interface';
 import path from 'path';
-import { getVortexPath } from '../../../util/api';
+import getVortexPath from '../../../util/getVortexPath';
 
 /**
  * Vortex-specific IPC connection implementation
@@ -90,7 +90,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
    */
   protected async fileExists(filePath: string): Promise<boolean> {
     try {
-      const stat = await fs.statAsync(filePath);
+      const stat = await statAsync(filePath);
       return stat.isFile();
     } catch (err) {
       return false;
