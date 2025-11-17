@@ -25,6 +25,7 @@
     "content-disposition": "^0.5.3",
     "content-type": "^1.0.4",
     "crash-dump": "Nexus-Mods/node-crash-dump",
+    "cross-env": "^6.0.3",
     "d3": "^5.14.1",
     "date-fns": "^2.8.0",
     "dayjs": "^1.11.10",
