@@ -116,7 +116,7 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies 
-        run: yarn --non-interactive install:production
+        run: yarn --non-interactive install
  
       - name: Build API 
         run: yarn --non-interactive build_api 
@@ -211,4 +211,5 @@ jobs:
           path: | 
             ./dist/vortex-setup-*.*.*.exe 
             ./dist/latest.yml 
+
           if-no-files-found: error 
