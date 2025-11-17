@@ -55,7 +55,7 @@
     "modules:reinstall": "node scripts/update-package-branches.js reinstall",
     "preinstall": "node preinstall.js",
     "postinstall": "node postinstall.js",
-    "install:production": "cross-env VORTEX_BUILD_CONFIG=Release yarn --frozen-lockfile --network-timeout 600000 install",
+    "install:debug": "cross-env VORTEX_BUILD_CONFIG=Debug yarn install",
     "test": "jest --no-cache",
     "lint": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet",
     "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
