@@ -8,23 +8,6 @@ const path = require('path');
 const packageManager = 'yarn';
 
 /**
- * Determine if this is a production build
- * @returns {boolean}
- */
-function isProductionBuild() {
-  return process.env.NODE_ENV === 'production' ||
-         ['package', 'dist', 'ci'].includes(process.env.npm_lifecycle_event);
-}
-
-/**
- * Get the build configuration (Debug or Release)
- * @returns {string}
- */
-function getBuildConfiguration() {
-  return isProductionBuild() ? 'Release' : 'Debug';
-}
-
-/**
  * Runs a command and returns a promise that resolves when the command completes
  * @param {string} command - The command to run
  * @param {string[]} args - Command arguments
@@ -76,7 +59,7 @@ async function updateSubmodules() {
  * @returns {Promise<void>}
  */
 async function buildFomodIPC() {
-  const buildConfig = process.env.VORTEX_BUILD_CONFIG || getBuildConfiguration();
+  const buildConfig = process.env.VORTEX_BUILD_CONFIG || 'Release';
   console.log(`Building FOMOD IPC TypeScript (${buildConfig})...`);
   const fomodIPCPath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.IPC.TypeScript');
 
@@ -101,7 +84,7 @@ async function buildFomodIPC() {
  * @returns {Promise<void>}
  */
 async function buildFomodNative() {
-  const buildConfig = process.env.VORTEX_BUILD_CONFIG || getBuildConfiguration();
+  const buildConfig = process.env.VORTEX_BUILD_CONFIG || 'Release';
   console.log(`Building FOMOD Native TypeScript (${buildConfig})...`);
   const fomodNativePath = path.join(__dirname, 'extensions', 'fomod-installer', 'src', 'ModInstaller.Native.TypeScript');
 
