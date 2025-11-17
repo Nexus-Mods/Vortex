@@ -39,7 +39,8 @@ jobs:
       ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
       NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true # Allows AddPAth and SetEnv commands 
-      CERT_PATH: Release      
+      CERT_PATH: Release
+      VORTEX_BUILD_CONFIG: Release # Could just use CERT_PATH but this is more explicit
       DEBUG: electron-builder # gives electron more verbose logs
       
     steps: 
