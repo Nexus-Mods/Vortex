@@ -176,10 +176,13 @@ const checkNetInstall = (api: IExtensionApi): Bluebird<ITestResult> => {
  */
 const main = (context: IExtensionContext): boolean => {
 
-  context.api.ext['awaitDotnetAssert'] = () => dotNetAssert;
-
   // Register .NET 9 Desktop Runtime check
   context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
+
+  // Set up API extension once initialization is complete
+  context.once(() => {
+    context.api.ext['awaitDotnetAssert'] = () => dotNetAssert;
+  });
 
   return true;
 }
