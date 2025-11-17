@@ -2546,6 +2546,7 @@ class ExtensionManager {
       'mod_spotlights_dashlet',
       'tailwind_dev',
       'browse_nexus',
+      'installer_dotnet',
       'installer_nested_fomod',
       'installer_fomod_shared',
       'installer_fomod_ipc',
