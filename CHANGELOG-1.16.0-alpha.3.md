@@ -40,6 +40,8 @@ None reported for this release.
 - Fixed Mixpanel event crash on mod install ([#18716](https://github.com/Nexus-Mods/Vortex/issues/18716))
 - Fixed downloads folder cleanup ([#18720](https://github.com/Nexus-Mods/Vortex/issues/18720))
 - Fixed download reference false positives for fuzzy/bundled mods ([#18719](https://github.com/Nexus-Mods/Vortex/issues/18719))
+- Fixed confirmedOffset + confirmedReceived for stalled/slow download workers ([#18827](https://github.com/Nexus-Mods/Vortex/issues/18827))
+- Fixed self copy check error on mod extraction ([#18810](https://github.com/Nexus-Mods/Vortex/issues/18810))
 - Fixed Game Not Supported Error when downloading a requirement from another game domain ([#18738](https://github.com/Nexus-Mods/Vortex/issues/18738))
 - Fixed text in dialogue not displaying properly ([#18768](https://github.com/Nexus-Mods/Vortex/issues/18768))
 - Fixed crash: HTTP (403) - Forbidden ([#18764](https://github.com/Nexus-Mods/Vortex/issues/18764))
