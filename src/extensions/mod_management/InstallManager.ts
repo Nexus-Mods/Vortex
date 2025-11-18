@@ -5232,8 +5232,6 @@ class InstallManager {
         }
       }, { concurrency: ioConcurrency });
 
-      // remove the temporary source files in parallel
-      await Bluebird.map(jobs, job => fs.unlinkAsync(job.src).catch(err => Bluebird.resolve()), { concurrency: ioConcurrency });
       if (missingFiles.size > 0) {
         api.showErrorNotification(api.translate('Invalid installer'),
           api.translate('The installer in "{{name}}" tried to install files that were '
