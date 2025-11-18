@@ -207,3 +207,10 @@ export class ThirdPartyError extends Error {
     this.name = this.constructor.name;
   }
 }
+
+export class SelfCopyCheckError extends Error {
+  constructor(src: string, dest: string, ino: BigInt) {
+    super(`Source "${src}" and destination "${dest}" are the same file (id "${ino}").`);
+    this.name = this.constructor.name;
+  }
+}

@@ -13,7 +13,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { ProcessCanceled, SelfCopyCheckError, UserCanceled } from './CustomErrors';
 import { createErrorReport, getVisibleWindow } from './errorHandling';
 import { TFunction } from './i18n';
 import lazyRequire from './lazyRequire';
@@ -550,8 +550,7 @@ function selfCopyCheck(src: string, dest: string) {
     }),
   ])
     .then((stats: fs.BigIntStats[]) => (stats[0].ino === stats[1].ino)
-        ? PromiseBB.reject(new Error(
-          `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
+        ? PromiseBB.reject(new SelfCopyCheckError(src, dest, stats[0].ino))
         : PromiseBB.resolve());
 }
 
@@ -589,7 +588,7 @@ export function copyAsync(src: string, dest: string,
                             showDialogCallback?: () => boolean }): PromiseBB<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
-  const check = (options !== undefined) && options.noSelfCopy
+  const check = options?.noSelfCopy
     ? PromiseBB.resolve()
     : selfCopyCheck(src, dest);
   return check

@@ -11,7 +11,7 @@ import { getBatchContext, IBatchContext } from '../../util/BatchContext';
 import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { NotificationAggregator } from './NotificationAggregator';
 import {
-  DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
+  DataInvalid, NotFound, ProcessCanceled, SelfCopyCheckError, SetupError, TemporaryError,
   UserCanceled
 } from '../../util/CustomErrors';
 import {
@@ -5194,6 +5194,17 @@ class InstallManager {
     const jobs: Array<{ src: string; dst: string; rel: string }> = [];
     const missingFiles = new Set<string>();
 
+    const copyAsyncWrap = async (src: string, dst: string) => {
+      try {
+        await fs.copyAsync(src, dst);
+      } catch (err) {
+        if (err instanceof SelfCopyCheckError) {
+          // File is already there - don't care
+          return;
+        }
+      }
+    }
+
     for (const copy of sorted) {
       const src = path.join(tempPath, copy.source);
       const dst = path.join(destinationPath, copy.destination);
@@ -5219,13 +5230,8 @@ class InstallManager {
             missingFiles.add(job.src);
             return;
           }
-          // common reasons: EXDEV (cross-device), EPERM/EACCES -> fallback to copy
-          if (err && (err.code === 'EXDEV' || err.code === 'EPERM' || err.code === 'EACCES' || err.code === 'ENOTSUP')) {
-            // copyAsync wraps efficient platform copy where available
-            await fs.copyAsync(job.src, job.dst, { noSelfCopy: true });
-          } else if (err && err.code === 'EEXIST') {
-            // destination exists; try overwrite by copying
-            await fs.copyAsync(job.src, job.dst, { noSelfCopy: true });
+          if (err?.code && ['EXDEV', 'EPERM', 'EACCES', 'ENOTSUP', 'EEXIST'].includes(err.code)) {
+            await copyAsyncWrap(job.src, job.dst);
           } else {
             throw err;
           }
