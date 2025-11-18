@@ -1,36 +1,19 @@
-import * as fs from 'fs';
-import * as path from 'path';
-const debugLog = (msg: string) => {
-  try {
-    const logPath = path.join(process.env.APPDATA || process.env.USERPROFILE || 'C:\\', 'vortex_fomod_debug.log');
-    fs.appendFileSync(logPath, `${new Date().toISOString()} ${msg}\n`);
-  } catch (err) {
-    // Ignore errors
-  }
-};
-
-debugLog('[FOMOD_NATIVE] ===== MODULE LOADING START =====');
 import { method as toBluebird } from 'bluebird';
-debugLog('[FOMOD_NATIVE] bluebird imported');
-
 import { testSupported } from "./tester";
-debugLog('[FOMOD_NATIVE] testSupported imported');
 import { install } from "./installer";
-debugLog('[FOMOD_NATIVE] install imported');
+import { VortexModInstallerLogger } from "./utils/VortexModInstallerLogger";
 import { VortexModInstallerFileSystem } from "./utils/VortexModInstallerFileSystem";
-debugLog('[FOMOD_NATIVE] VortexModInstallerFileSystem imported');
-
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
-
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 import { log } from '../../util/log';
 
+let logger: VortexModInstallerLogger | null = null;
+let fileSystem: VortexModInstallerFileSystem | null = null;
+
 const main = (context: IExtensionContext): boolean => {
-  debugLog('[FOMOD_NATIVE] main() function CALLED');
   log('info', '========== [FOMOD_NATIVE] Extension initialization STARTED ==========');
 
-  debugLog('[FOMOD_NATIVE] About to register installer (priority 10)');
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 10,
@@ -56,9 +39,7 @@ const main = (context: IExtensionContext): boolean => {
   }
   )
   );
-  debugLog('[FOMOD_NATIVE] Installer registered (priority 10)');
 
-  debugLog('[FOMOD_NATIVE] About to register installer (priority 100)');
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 100,
@@ -86,29 +67,13 @@ const main = (context: IExtensionContext): boolean => {
   );
 
   context.once(() => {
-    debugLog('[FOMOD_NATIVE] About to create VortexModInstallerFileSystem');
-    new Promise<void>((resolve, reject) => {
-      try {
-        const fileSystem = new VortexModInstallerFileSystem();
-        debugLog('[FOMOD_NATIVE] VortexModInstallerFileSystem created');
-        debugLog('[FOMOD_NATIVE] About to call useLibraryFunctions()');
-        fileSystem.useLibraryFunctions();
-        debugLog('[FOMOD_NATIVE] useLibraryFunctions() completed successfully');
-        resolve();
-      } catch (err) {
-        debugLog(`[FOMOD_NATIVE] ERROR in useLibraryFunctions(): ${err.message}`);
-        reject(err);
-      }
-  
-      log('info', '[FOMOD_NATIVE] VortexModInstallerFileSystem initialized');
-    });
-    
-  });
-  debugLog('[FOMOD_NATIVE] Installer registered (priority 100)');
+    logger = new VortexModInstallerLogger();
+    logger.useVortexFuntions();
 
-  log('info', '[FOMOD_NATIVE] Both installers registered (priority 10 and 100)');
-  debugLog('[FOMOD_NATIVE] About to return true from main()');
-  log('info', '========== [FOMOD_NATIVE] Extension initialization COMPLETE ==========');
+    fileSystem = new VortexModInstallerFileSystem();
+    fileSystem.useVortexFuntions();  
+  });
+
   return true;
 }
 
