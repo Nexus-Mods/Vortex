@@ -160,6 +160,7 @@ class DownloadWorker {
   private mGetAgent: (protocol: string) => http.Agent | https.Agent;
   private mURLResolve: Bluebird<void>;
   private mOnAbort: () => void;
+  private mInFlightWrites: number = 0; // Track writes sent to dataCB but not yet confirmed
 
   constructor(api: IExtensionApi,
               job: IDownloadJob,
@@ -272,6 +273,23 @@ class DownloadWorker {
     this.mResponse?.removeAllListeners?.('error');
     this.mRequest?.destroy?.();
     clearTimeout(this.mStallTimer);
+    const waitForInFlightWrites = () => {
+      return new Promise<void>((resolve) => {
+        if (this.mInFlightWrites === 0) {
+          resolve();
+          return;
+        }
+
+        const checkInterval = setInterval(() => {
+          if (this.mInFlightWrites === 0) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 50);
+      });
+    };
+
+    await waitForInFlightWrites();
 
     // Reset worker state for restart
     this.mBuffers = [];
@@ -527,18 +545,40 @@ class DownloadWorker {
       }
 
       log('info', 'download stalled, resetting connection',
-          { url: this.mUrl, id: this.mJob.workerId });
+          { url: this.mUrl, id: this.mJob.workerId, bufferedBytes: this.bufferLength });
       --this.mStallResets;
 
+      const buffersToWrite = this.mBuffers;
       this.mBuffers = [];
 
-      this.mRedirected = true;
-      this.mRequest.destroy();
-      setTimeout(() => {
-        this.mRedirected = false;
-        this.mEnded = false;
-        this.assignJob(this.mJob, this.mUrl);
-      }, 200);
+      if (buffersToWrite.length > 0) {
+        Bluebird.mapSeries(buffersToWrite, buf => this.doWriteBuffer(buf))
+          .then(() => {
+            this.mRedirected = true;
+            this.mRequest.destroy();
+            setTimeout(() => {
+              this.mRedirected = false;
+              this.mEnded = false;
+              this.assignJob(this.mJob, this.mUrl);
+            }, 200);
+          })
+          .catch(err => {
+            log('error', 'failed to write buffered data before stall restart', {
+              workerId: this.mJob.workerId,
+              error: err.message
+            });
+            this.handleError(err);
+          });
+      } else {
+        // No buffered data, restart immediately
+        this.mRedirected = true;
+        this.mRequest.destroy();
+        setTimeout(() => {
+          this.mRedirected = false;
+          this.mEnded = false;
+          this.assignJob(this.mJob, this.mUrl);
+        }, 200);
+      }
     } // the else case doesn't really make sense
   }
 
@@ -704,23 +744,39 @@ class DownloadWorker {
             .concat(response.headers['set-cookie']);
         }
 
-        // delay the new request a bit to ensure the old request is completely settled
-        // TODO: this is ugly and shouldn't be necessary if we made sure no state was neccessary to
-        //   shut down the old connection
-        setTimeout(() => {
-          ++this.mRedirectsFollowed;
-          this.mRedirected = false;
-          // any data we may have gotten with the old reply is useless
-          this.mJob.size += this.mJob.received;
-          this.mJob.confirmedSize = this.mJob.size;
-          this.mJob.offset -= this.mJob.received;
-          this.mJob.confirmedOffset -= this.mJob.confirmedReceived;
+        const waitForWrites = () => {
+          return new Promise<void>((resolve) => {
+            if (this.mInFlightWrites === 0) {
+              resolve();
+              return;
+            }
+            const checkInterval = setInterval(() => {
+              if (this.mInFlightWrites === 0) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 50);
+          });
+        };
 
-          this.mJob.received = this.mJob.confirmedReceived = 0;
-          this.mJob.state = 'running';
-          this.mEnded = false;
-          this.assignJob(this.mJob, newUrl);
-        }, 100);
+        // delay the new request a bit to ensure the old request is completely settled
+        waitForWrites().then(() => {
+          setTimeout(() => {
+            ++this.mRedirectsFollowed;
+            this.mRedirected = false;
+            const unconfirmedBytes = this.mJob.received - this.mJob.confirmedReceived;
+            if (unconfirmedBytes > 0) {
+              // Reset to last confirmed position
+              this.mJob.offset = this.mJob.confirmedOffset + this.mJob.confirmedReceived;
+              this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
+              this.mJob.received = this.mJob.confirmedReceived;
+            }
+
+            this.mJob.state = 'running';
+            this.mEnded = false;
+            this.assignJob(this.mJob, newUrl);
+          }, 100);
+        });
       } else {
         const err = new HTTPError(response.statusCode, response.statusMessage, jobUrl);
         err['attachLogOnReport'] = true;
@@ -807,11 +863,27 @@ class DownloadWorker {
 
   private doWriteBuffer = (buf: Buffer): Bluebird<void> => {
     const len = buf.length;
+    this.mInFlightWrites += len;
     const res = this.mJob.dataCB(this.mJob.offset, buf)
       .then(() => {
+        // Write confirmed - update confirmed counters and clear in-flight
+        this.mInFlightWrites -= len;
         this.mJob.confirmedReceived += len;
         this.mJob.confirmedOffset += len;
         this.mJob.confirmedSize -= len;
+        if (this.mInFlightWrites < 0) {
+          // sanity
+          this.mInFlightWrites = 0;
+        }
+      })
+      .catch(err => {
+        this.mInFlightWrites -= len;
+
+        if (this.mInFlightWrites < 0) {
+          // sanity
+          this.mInFlightWrites = 0;
+        }
+        return Bluebird.reject(err);
       });
 
     // need to update immediately, otherwise chunks might overwrite each other
@@ -840,6 +912,10 @@ class DownloadWorker {
       return Bluebird.mapSeries(bufs, buf => this.doWriteBuffer(buf))
         .then(() => {
           str?.resume?.();
+        })
+        .catch(err => {
+          str?.resume?.();
+          return Bluebird.reject(err);
         });
     }
 
@@ -1400,12 +1476,24 @@ class DownloadManager {
     let freeSpots = Math.max(this.mMaxWorkers - busyCount, 0);
 
     if (verbose && this.mQueue.length > 0) {
-      // Debug: Log the state of each download in the queue
-      
-      log('info', 'tick dl queue', { 
-        freeSpots, 
-        queueLength: this.mQueue.length, 
+      const queueDetails = this.mQueue.map(dl => ({
+        id: dl.id,
+        chunks: dl.chunks.map(c => ({
+          state: c.state,
+          workerId: c.workerId,
+          size: c.size,
+          received: c.received,
+          confirmedReceived: c.confirmedReceived
+        }))
+      }));
+
+      log('info', 'tick dl queue', {
+        freeSpots,
+        queueLength: this.mQueue.length,
         busyCount,
+        busyWorkers: busyWorkerIds.length,
+        slowWorkers: Object.keys(this.mSlowWorkers).length,
+        queueDetails
       });
     }
 
