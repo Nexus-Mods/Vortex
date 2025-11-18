@@ -190,7 +190,7 @@ class InstallContext implements IInstallContext {
   public setProgress(phase: string, percent?: number) {
     if ((percent === undefined)
       || (this.mLastPhase !== phase)
-      || (Math.abs(percent - (this.mLastProgress ?? 0)) >= 2)) {
+      || (Math.abs(percent - (this.mLastProgress ?? 0)) >= 5)) {
       this.mLastProgress = percent;
       this.mLastPhase = phase;
       this.mUpdateNotification(

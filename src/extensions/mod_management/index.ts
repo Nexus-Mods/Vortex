@@ -1166,7 +1166,7 @@ function once(api: IExtensionApi) {
     });
 
     return Promise.resolve();
-  }, 500, true, false);
+  }, 1000, true, false);
 
   api.onAsync('did-remove-mod', (
     gameMode: string,
