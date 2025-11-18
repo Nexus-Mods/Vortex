@@ -218,6 +218,28 @@ class DownloadWorker {
 
   public assignJob = (job: IDownloadJob, jobUrl: string) => {
     this.mDataHistory = [];
+    // Clear any buffered data from previous attempt to prevent duplicate writes
+    this.mBuffers = [];
+    this.mInFlightWrites = 0;
+
+    const needsReset = job.offset !== job.confirmedOffset ||
+                       job.size !== job.confirmedSize ||
+                       job.received !== job.confirmedReceived;
+    if (needsReset && job.confirmedSize > 0) {
+      // log('debug', 'resetting chunk to confirmed position before starting', {
+      //   id: job.workerId,
+      //   oldOffset: job.offset,
+      //   oldSize: job.size,
+      //   oldReceived: job.received,
+      //   confirmedOffset: job.confirmedOffset,
+      //   confirmedSize: job.confirmedSize,
+      //   confirmedReceived: job.confirmedReceived
+      // });
+      job.offset = job.confirmedOffset;
+      job.received = job.confirmedReceived;
+      job.size = job.confirmedSize;
+    }
+
     log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
     if (job.size <= 0) {
       this.handleComplete();
@@ -388,8 +410,14 @@ class DownloadWorker {
     const allCookies = this.formatCookies(electronCookies, this.mJob.extraCookies);
 
     try {
+      const rangeEnd = job.size > 0
+        ? job.offset + job.size - 1
+        : '';
+
       const headers = {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          Range: rangeEnd !== ''
+            ? `bytes=${job.offset}-${rangeEnd}`
+            : `bytes=${job.offset}-`,
           'User-Agent': this.mUserAgent,
           'Accept-Encoding': 'gzip, deflate',
           Cookie: allCookies,
@@ -639,6 +667,22 @@ class DownloadWorker {
         // Add a small delay before retrying to avoid hammering the server
         setTimeout(() => {
           if (!this.mEnded) {
+            // Reset to last confirmed position before retrying
+            const offsetDiff = this.mJob.offset - this.mJob.confirmedOffset;
+            if (offsetDiff > 0) {
+              log('debug', 'resetting to confirmed offset before retry', {
+                id: this.mJob.workerId,
+                optimisticOffset: this.mJob.offset,
+                confirmedOffset: this.mJob.confirmedOffset,
+                inFlightBytes: offsetDiff,
+                confirmedReceived: this.mJob.confirmedReceived,
+                confirmedSize: this.mJob.confirmedSize
+              });
+              this.mJob.offset = this.mJob.confirmedOffset;
+              this.mJob.received = this.mJob.confirmedReceived;
+              this.mJob.size = this.mJob.confirmedSize;
+            }
+
             this.mJob.url().then(jobUrl => {
               this.assignJob(this.mJob, jobUrl);
             })
@@ -651,7 +695,13 @@ class DownloadWorker {
         log('warn', 'maximum network retries exceeded for chunk', {
           id: this.mJob.workerId,
           retries: this.mNetworkRetries,
-          maxRetries: DownloadWorker.MAX_NETWORK_RETRIES
+          maxRetries: DownloadWorker.MAX_NETWORK_RETRIES,
+          remainingSize: this.mJob.size,
+          confirmedSize: this.mJob.confirmedSize,
+          offset: this.mJob.offset,
+          confirmedOffset: this.mJob.confirmedOffset,
+          received: this.mJob.received,
+          confirmedReceived: this.mJob.confirmedReceived
         });
         this.mEnded = true;
         this.mFinishCB(false);
@@ -1543,6 +1593,12 @@ class DownloadManager {
       if (finishedChunks.length === queueItem.chunks.length) {
         continue;
       }
+
+      const pausedChunks = queueItem.chunks.filter(chunk => chunk.state === 'paused');
+      pausedChunks.forEach(chunk => {
+        chunk.state = 'init';
+      });
+
       const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
 
       // Start as many chunks as we have free spots for this download
@@ -1591,13 +1647,17 @@ class DownloadManager {
         const hasActiveChunks = download.chunks.some(chunk =>
           chunk.state === 'running' || chunk.state === 'init'
         );
-        // Check if download has been sitting with only paused chunks for too long
-        const onlyPausedChunks = download.chunks.every(chunk =>
-          chunk.state === 'paused' || chunk.state === 'finished'
+        // Check if download has paused chunks that still have data to download
+        // These chunks need to remain in queue so tickQueue can restart them
+        // Use confirmedSize instead of size because size can be negative
+        const hasPausedChunksWithData = download.chunks.some(chunk =>
+          chunk.state === 'paused' && chunk.confirmedSize > 0
         );
 
-        const shouldRemove = allChunksFinished || (!hasActiveChunks && onlyPausedChunks);
-        
+        // Only remove if:
+        // 1. All chunks are finished, OR
+        // 2. No active chunks AND no paused chunks with remaining data
+        const shouldRemove = allChunksFinished || (!hasActiveChunks && !hasPausedChunksWithData);
         return !shouldRemove;
       });
     });
@@ -1881,7 +1941,7 @@ class DownloadManager {
       const chunkSize = Math.min(remainingSize,
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
-      let offset = this.mMinChunkSize + 1;
+      let offset = this.mMinChunkSize;
       while (offset < fileSize) {
         const previousChunk = download.chunks.find(chunk => chunk.extraCookies.length > 0);
         const extraCookies = (previousChunk !== undefined)
@@ -2011,11 +2071,9 @@ class DownloadManager {
     this.stopWorker(job.workerId);
 
     log('debug', 'stopping chunk worker',
-      { paused, id: job.workerId, offset: job.offset, size: job.size });
+      { paused, id: job.workerId, offset: job.offset, size: job.size, confirmedSize: job.confirmedSize });
 
-    // Treat negative sizes (like -1) as completed, not as error conditions
-    // Negative sizes typically indicate unknown/unlimited size that has completed
-    const hasRemainingData = job.size > 0;
+    const hasRemainingData = job.confirmedSize > 0;
 
     job.state = (paused || hasRemainingData) ? 'paused' : 'finished';
     if (!paused && hasRemainingData) {
@@ -2023,7 +2081,16 @@ class DownloadManager {
     }
 
     const activeChunk = download.chunks.find(
-      (chunk: IDownloadJob) => !['paused', 'finished'].includes(chunk.state));
+      (chunk: IDownloadJob) => {
+        if (chunk.state === 'running' || chunk.state === 'init') {
+          return true; // Definitely active
+        }
+        if (chunk.state === 'paused' && chunk.confirmedSize > 0) {
+          // Paused with remaining data - should be restarted, not considered complete
+          return true;
+        }
+        return false; // 'finished' or 'paused' with no remaining data
+      });
 
     if (activeChunk === undefined) {
       let finalPath = download.tempName;
