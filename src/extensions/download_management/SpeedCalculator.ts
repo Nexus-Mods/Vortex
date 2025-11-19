@@ -69,6 +69,13 @@ class SpeedCalculator {
     delete this.mCounters[id];
   }
 
+  public getLastActivity(id: number): number {
+    if (this.mCounters[id] === undefined) {
+      return Date.now(); // Counter stopped, return current time to avoid false positives
+    }
+    return this.mCounters[id].lastMeasure * 1000; // Convert seconds to milliseconds
+  }
+
   private moveHorizon() {
     const time = this.now();
     if (this.mTimeSlices.length > 0) {

@@ -29,7 +29,7 @@ function makeAddToHistory(api: IExtensionApi) {
     batchDispatch(api.store, actions);
     actions = [];
     return Promise.resolve();
-  }, 100, false, false);
+  }, 1000, false, false);
 
   return (stack: string, entry: IHistoryEvent) => {
     actions.push(addHistoryEvent(stack, {
