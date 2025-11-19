@@ -160,8 +160,8 @@ class DownloadWorker {
   private mResponse: http.IncomingMessage;
   private mWriting: boolean = false;
   private mRedirected: boolean = false;
-  private mStallTimer: NodeJS.Timeout;
-  private mStallResets: number = MAX_STALL_RESETS;
+  //private mStallTimer: NodeJS.Timeout;
+  //private mStallResets: number = MAX_STALL_RESETS;
   private mRedirectsFollowed: number = 0;
   private mNetworkRetries: number = 0; // Track network error retries
   private mThrottle: () => stream.Transform;
@@ -292,7 +292,7 @@ class DownloadWorker {
     // Clean up current request state
     this.mResponse?.removeAllListeners?.('error');
     this.mRequest?.destroy?.();
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     const waitForInFlightWrites = () => {
       return new Promise<void>((resolve) => {
         if (this.mInFlightWrites === 0) {
@@ -316,7 +316,7 @@ class DownloadWorker {
     this.mDataHistory = [];
     this.mWriting = false;
     this.mRedirected = false;
-    this.mStallResets = MAX_STALL_RESETS;
+    //this.mStallResets = MAX_STALL_RESETS;
 
     // Reset job to restart the chunk from beginning
     // confirmedReceived is reset to 0, which will force recalculation of offset and size in assignJob
@@ -443,7 +443,7 @@ class DownloadWorker {
         log('debug', 'downloading from',
           { address: `${res.socket.remoteAddress}:${res.socket.remotePort}` });
 
-        this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
+        //this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
         this.mResponse = res;
 
         let recodedURI: string;
@@ -490,17 +490,17 @@ class DownloadWorker {
           .on('data', (data: Buffer) => {
             if (this.mEnded) return;
 
-            clearTimeout(this.mStallTimer);
-            this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
-            this.mStallResets = MAX_STALL_RESETS;
+            //clearTimeout(this.mStallTimer);
+            //this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
+            //this.mStallResets = MAX_STALL_RESETS;
             this.handleData(data, str);
           })
           .on('error', err => {
-            clearTimeout(this.mStallTimer);
+            //clearTimeout(this.mStallTimer);
             this.handleError(err);
           })
           .on('end', () => {
-            clearTimeout(this.mStallTimer);
+            //clearTimeout(this.mStallTimer);
             if (!this.mRedirected && !this.mEnded) {
               this.handleComplete(str);
             }
@@ -517,7 +517,7 @@ class DownloadWorker {
             chunkOffset: job.offset,
             error: err.message 
           });
-          clearTimeout(this.mStallTimer);
+          //clearTimeout(this.mStallTimer);
           this.handleError(err);
         })
         .on('timeout', () => {
@@ -525,14 +525,14 @@ class DownloadWorker {
             workerId: job.workerId || 'unknown',
             chunkOffset: job.offset
           });
-          clearTimeout(this.mStallTimer);
+          //clearTimeout(this.mStallTimer);
           const timeoutError = new Error('Request timeout');
           timeoutError['code'] = 'ETIMEDOUT';
           this.handleError(timeoutError);
         })
         .end();
     } catch (err) {
-      clearTimeout(this.mStallTimer);
+      //clearTimeout(this.mStallTimer);
       this.handleError(err);
     }
   }
@@ -555,62 +555,59 @@ class DownloadWorker {
     return cookies.join('; ');
   }
 
-  public stalled = () => {
-    if (this.mEnded) {
-      return;
-    }
+  // public stalled = () => {
 
-    if (this.mRequest !== undefined) {
-      if (this.mStallResets <= 0) {
-        log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
-        const err = new StalledError();
-        err['allowReport'] = false;
-        return this.handleError(err);
-      }
+  //   if (this.mRequest !== undefined) {
+  //     if (this.mStallResets <= 0) {
+  //       log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
+  //       const err = new StalledError();
+  //       err['allowReport'] = false;
+  //       return this.handleError(err);
+  //     }
 
-      log('info', 'download stalled, resetting connection',
-          { url: this.mUrl, id: this.mJob.workerId, bufferedBytes: this.bufferLength });
-      --this.mStallResets;
+  //     log('info', 'download stalled, resetting connection',
+  //         { url: this.mUrl, id: this.mJob.workerId, bufferedBytes: this.bufferLength });
+  //     --this.mStallResets;
 
-      const buffersToWrite = this.mBuffers;
-      this.mBuffers = [];
+  //     const buffersToWrite = this.mBuffers;
+  //     this.mBuffers = [];
 
-      if (buffersToWrite.length > 0) {
-        Bluebird.mapSeries(buffersToWrite, buf => this.doWriteBuffer(buf))
-          .then(() => {
-            this.mRedirected = true;
-            this.mRequest.destroy();
-            setTimeout(() => {
-              this.mRedirected = false;
-              this.mEnded = false;
-              this.assignJob(this.mJob, this.mUrl);
-            }, 200);
-          })
-          .catch(err => {
-            log('error', 'failed to write buffered data before stall restart', {
-              workerId: this.mJob.workerId,
-              error: err.message
-            });
-            this.handleError(err);
-          });
-      } else {
-        // No buffered data, restart immediately
-        this.mRedirected = true;
-        this.mRequest.destroy();
-        setTimeout(() => {
-          this.mRedirected = false;
-          this.mEnded = false;
-          this.assignJob(this.mJob, this.mUrl);
-        }, 200);
-      }
-    } // the else case doesn't really make sense
-  }
+  //     if (buffersToWrite.length > 0) {
+  //       Bluebird.mapSeries(buffersToWrite, buf => this.doWriteBuffer(buf))
+  //         .then(() => {
+  //           this.mRedirected = true;
+  //           this.mRequest.destroy();
+  //           setTimeout(() => {
+  //             this.mRedirected = false;
+  //             this.mEnded = false;
+  //             this.assignJob(this.mJob, this.mUrl);
+  //           }, 200);
+  //         })
+  //         .catch(err => {
+  //           log('error', 'failed to write buffered data before stall restart', {
+  //             workerId: this.mJob.workerId,
+  //             error: err.message
+  //           });
+  //           this.handleError(err);
+  //         });
+  //     } else {
+  //       // No buffered data, restart immediately
+  //       this.mRedirected = true;
+  //       this.mRequest.destroy();
+  //       setTimeout(() => {
+  //         this.mRedirected = false;
+  //         this.mEnded = false;
+  //         this.assignJob(this.mJob, this.mUrl);
+  //       }, 200);
+  //     }
+  //   } // the else case doesn't really make sense
+  // }
 
   private handleError = (err) => {
     if (this.mEnded) {
       return;
     }
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     log('warn', 'chunk error',
         { 
           id: this.mJob.workerId, 
@@ -741,7 +738,7 @@ class DownloadWorker {
       log('debug', 'chunk completed but can\'t write it anymore', JSON.stringify(this.mJob));
       return;
     }
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     log('info', 'chunk completed', {
       id: this.mJob.workerId,
       numBuffers: this.mBuffers.length,
