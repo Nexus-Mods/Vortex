@@ -180,7 +180,23 @@ class InstallContext implements IInstallContext {
           const noti = this.outcomeNotification(
             this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
             mod !== undefined ? getModName(mod) : this.mIndicatorId, mod);
-          if (noti !== null) {
+          if (noti != null) {
+            // Route through aggregator if available and aggregating
+            if (this.mNotificationAggregator && this.mSourceModId) {
+              const aggregationId = `install-dependencies-${this.mSourceModId}`;
+              if (this.mNotificationAggregator.isAggregating(aggregationId)) {
+                this.mNotificationAggregator.addNotification(
+                  aggregationId,
+                  noti.type as ('error' | 'warning' | 'info'),
+                  noti.title,
+                  noti.message,
+                  mod !== undefined ? getModName(mod) : this.mIndicatorId,
+                  { allowReport: (noti as any).allowReport, actions: noti.actions }
+                );
+                return;
+              }
+            }
+            // Fallback to direct notification
             this.mAddNotification(noti);
           }
         }
@@ -232,7 +248,7 @@ class InstallContext implements IInstallContext {
   public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
     log('info', 'finish mod install', {
       id: this.mIndicatorId,
-      outcome: this.mInstallOutcome,
+      outcome,
     });
     if (outcome === 'ignore') {
       // nop
