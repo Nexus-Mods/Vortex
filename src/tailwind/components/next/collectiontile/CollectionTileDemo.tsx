@@ -120,6 +120,7 @@ export const CollectionTileDemo: React.ComponentType<ICollectionTileDemoProps> =
               onAddCollection={() => handleAddCollection(collection.title)}
               onViewPage={() => handleViewPage(collection.title)}
               api={api}
+              adultContent={collection.tags.includes('Adult')}
             />
           ))}
         </div>
