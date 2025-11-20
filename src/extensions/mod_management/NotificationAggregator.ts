@@ -64,7 +64,7 @@ export class NotificationAggregator {
     // Set up auto-flush timeout
     if (timeoutMs > 0) {
       this.mTimeouts[aggregationId] = setTimeout(() => {
-        this.flushAggregation(aggregationId);
+        this.flushPendingNotifications(aggregationId, timeoutMs);
       }, timeoutMs);
     }
   }
@@ -113,22 +113,90 @@ export class NotificationAggregator {
   }
 
   /**
-   * Flush all pending notifications for an aggregation session
+   * Flush pending notifications without stopping the aggregation
+   * Used by the auto-flush timeout to periodically flush notifications while keeping aggregation active
    * @param aggregationId The aggregation session to flush
+   * @param timeoutMs Timeout to set for the next auto-flush
    */
-  public flushAggregation(aggregationId: string): void {
+  private flushPendingNotifications(aggregationId: string, timeoutMs: number): void {
+    log('info', 'flushPendingNotifications called', {
+      aggregationId,
+      isActive: this.mActiveAggregations.has(aggregationId),
+      pendingCount: this.mPendingNotifications[aggregationId]?.length || 0
+    });
+
     if (!this.mActiveAggregations.has(aggregationId)) {
+      log('warn', 'flushPendingNotifications called for inactive aggregation', { aggregationId });
       return;
     }
 
     const pending = this.mPendingNotifications[aggregationId] || [];
     if (pending.length === 0) {
+      log('debug', 'no pending notifications to flush, scheduling next flush', { aggregationId });
+      // Reset timeout for next batch
+      this.mTimeouts[aggregationId] = setTimeout(() => {
+        this.flushPendingNotifications(aggregationId, timeoutMs);
+      }, timeoutMs);
+      return;
+    }
+
+    log('info', 'processing pending notifications without cleanup', {
+      aggregationId,
+      count: pending.length,
+      notifications: pending.map(n => ({ type: n.type, title: n.title, item: n.item }))
+    });
+
+    // Clear current pending notifications and process them
+    this.mPendingNotifications[aggregationId] = [];
+
+    // Process notifications asynchronously
+    this.processNotificationsAsync(pending, aggregationId)
+      .then(() => {
+        // Schedule next auto-flush if aggregation is still active
+        if (this.mActiveAggregations.has(aggregationId)) {
+          this.mTimeouts[aggregationId] = setTimeout(() => {
+            this.flushPendingNotifications(aggregationId, timeoutMs);
+          }, timeoutMs);
+        }
+      })
+      .catch(err => {
+        log('error', 'error processing notifications', { aggregationId, error: err.message });
+        // Schedule next auto-flush even on error
+        if (this.mActiveAggregations.has(aggregationId)) {
+          this.mTimeouts[aggregationId] = setTimeout(() => {
+            this.flushPendingNotifications(aggregationId, timeoutMs);
+          }, timeoutMs);
+        }
+      });
+  }
+
+  /**
+   * Flush all pending notifications for an aggregation session
+   * @param aggregationId The aggregation session to flush
+   */
+  public flushAggregation(aggregationId: string): void {
+    if (!this.mActiveAggregations.has(aggregationId)) {
+      log('warn', 'flushAggregation called for inactive aggregation', { aggregationId });
+      return;
+    }
+
+    const pending = this.mPendingNotifications[aggregationId] || [];
+    if (pending.length === 0) {
+      log('debug', 'no pending notifications to flush', { aggregationId });
       this.cleanupAggregation(aggregationId);
       return;
     }
 
-    this.processNotificationsAsync(pending, aggregationId);
-    this.cleanupAggregation(aggregationId);
+    // Wait for async processing to complete before cleaning up
+    this.processNotificationsAsync(pending, aggregationId)
+      .then(() => {
+        log('debug', 'notification processing complete, cleaning up', { aggregationId });
+        this.cleanupAggregation(aggregationId);
+      })
+      .catch(err => {
+        log('error', 'error processing notifications', { aggregationId, error: err.message });
+        this.cleanupAggregation(aggregationId);
+      });
   }
 
   private async processNotificationsAsync(notifications: IPendingNotification[], aggregationId: string): Promise<void> {

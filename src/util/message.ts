@@ -5,13 +5,12 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
-import { ArchiveBrokenError } from '../extensions/mod_management/InstallManager';
 import { NoDeployment } from '../extensions/mod_management/util/exceptions';
 import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
-import { HTTPError, StalledError, TemporaryError, ThirdPartyError } from './CustomErrors';
+import { HTTPError, StalledError, TemporaryError, ThirdPartyError, ArchiveBrokenError } from './CustomErrors';
 import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
