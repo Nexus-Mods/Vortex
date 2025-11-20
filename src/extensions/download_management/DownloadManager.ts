@@ -129,8 +129,16 @@ interface IRunningDownload {
 type FinishCallback = (paused: boolean, replaceFileName?: string) => void;
 
 /**
- * a download worker. A worker is started to download one chunk of a file,
+ * A download worker. A worker is started to download ${maxChunks} of a file,
  * they are currently not reused.
+ *
+ * Chunk Field Semantics:
+ * - confirmedOffset: Immutable starting byte offset (never changes after creation)
+ * - confirmedSize: Immutable total chunk size (never changes after creation)
+ * - confirmedReceived: Bytes confirmed written (increments on write, resets to 0 on chunk restart)
+ * - offset: Calculated as confirmedOffset + confirmedReceived (current write position)
+ * - size: Calculated as confirmedSize - confirmedReceived (remaining bytes to download)
+ * - received: Optimistic total received (includes in-flight writes)
  *
  * @class DownloadWorker
  */
@@ -152,8 +160,8 @@ class DownloadWorker {
   private mResponse: http.IncomingMessage;
   private mWriting: boolean = false;
   private mRedirected: boolean = false;
-  private mStallTimer: NodeJS.Timeout;
-  private mStallResets: number = MAX_STALL_RESETS;
+  //private mStallTimer: NodeJS.Timeout;
+  //private mStallResets: number = MAX_STALL_RESETS;
   private mRedirectsFollowed: number = 0;
   private mNetworkRetries: number = 0; // Track network error retries
   private mThrottle: () => stream.Transform;
@@ -218,6 +226,18 @@ class DownloadWorker {
 
   public assignJob = (job: IDownloadJob, jobUrl: string) => {
     this.mDataHistory = [];
+    // Clear any buffered data from previous attempt to prevent duplicate writes
+    this.mBuffers = [];
+    this.mInFlightWrites = 0;
+
+    // Calculate derived fields from immutable confirmed fields
+    // offset = confirmedOffset + confirmedReceived (current write position)
+    job.offset = job.confirmedOffset + job.confirmedReceived;
+    // size = confirmedSize - confirmedReceived (remaining data to download)
+    job.size = job.confirmedSize - job.confirmedReceived;
+    // received starts at optimistic confirmed value
+    job.received = job.confirmedReceived;
+
     log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
     if (job.size <= 0) {
       this.handleComplete();
@@ -272,7 +292,7 @@ class DownloadWorker {
     // Clean up current request state
     this.mResponse?.removeAllListeners?.('error');
     this.mRequest?.destroy?.();
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     const waitForInFlightWrites = () => {
       return new Promise<void>((resolve) => {
         if (this.mInFlightWrites === 0) {
@@ -296,9 +316,13 @@ class DownloadWorker {
     this.mDataHistory = [];
     this.mWriting = false;
     this.mRedirected = false;
-    this.mStallResets = MAX_STALL_RESETS;
+    //this.mStallResets = MAX_STALL_RESETS;
 
-    // Reset job state to what hasn't been confirmed yet
+    // Reset job to restart the chunk from beginning
+    // confirmedReceived is reset to 0, which will force recalculation of offset and size in assignJob
+    this.mJob.confirmedReceived = 0;
+
+    // Recalculate derived fields
     this.mJob.offset = this.mJob.confirmedOffset + this.mJob.confirmedReceived;
     this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
     this.mJob.received = 0;
@@ -389,7 +413,7 @@ class DownloadWorker {
 
     try {
       const headers = {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          Range: `bytes=${job.offset}-${job.offset + job.size - 1}`,
           'User-Agent': this.mUserAgent,
           'Accept-Encoding': 'gzip, deflate',
           Cookie: allCookies,
@@ -419,7 +443,7 @@ class DownloadWorker {
         log('debug', 'downloading from',
           { address: `${res.socket.remoteAddress}:${res.socket.remotePort}` });
 
-        this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
+        //this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
         this.mResponse = res;
 
         let recodedURI: string;
@@ -466,17 +490,17 @@ class DownloadWorker {
           .on('data', (data: Buffer) => {
             if (this.mEnded) return;
 
-            clearTimeout(this.mStallTimer);
-            this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
-            this.mStallResets = MAX_STALL_RESETS;
+            //clearTimeout(this.mStallTimer);
+            //this.mStallTimer = setTimeout(this.stalled, STALL_TIMEOUT);
+            //this.mStallResets = MAX_STALL_RESETS;
             this.handleData(data, str);
           })
           .on('error', err => {
-            clearTimeout(this.mStallTimer);
+            //clearTimeout(this.mStallTimer);
             this.handleError(err);
           })
           .on('end', () => {
-            clearTimeout(this.mStallTimer);
+            //clearTimeout(this.mStallTimer);
             if (!this.mRedirected && !this.mEnded) {
               this.handleComplete(str);
             }
@@ -493,7 +517,7 @@ class DownloadWorker {
             chunkOffset: job.offset,
             error: err.message 
           });
-          clearTimeout(this.mStallTimer);
+          //clearTimeout(this.mStallTimer);
           this.handleError(err);
         })
         .on('timeout', () => {
@@ -501,14 +525,14 @@ class DownloadWorker {
             workerId: job.workerId || 'unknown',
             chunkOffset: job.offset
           });
-          clearTimeout(this.mStallTimer);
+          //clearTimeout(this.mStallTimer);
           const timeoutError = new Error('Request timeout');
           timeoutError['code'] = 'ETIMEDOUT';
           this.handleError(timeoutError);
         })
         .end();
     } catch (err) {
-      clearTimeout(this.mStallTimer);
+      //clearTimeout(this.mStallTimer);
       this.handleError(err);
     }
   }
@@ -531,62 +555,59 @@ class DownloadWorker {
     return cookies.join('; ');
   }
 
-  public stalled = () => {
-    if (this.mEnded) {
-      return;
-    }
+  // public stalled = () => {
 
-    if (this.mRequest !== undefined) {
-      if (this.mStallResets <= 0) {
-        log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
-        const err = new StalledError();
-        err['allowReport'] = false;
-        return this.handleError(err);
-      }
+  //   if (this.mRequest !== undefined) {
+  //     if (this.mStallResets <= 0) {
+  //       log('warn', 'giving up on download after repeated stalling with no progress', this.mUrl);
+  //       const err = new StalledError();
+  //       err['allowReport'] = false;
+  //       return this.handleError(err);
+  //     }
 
-      log('info', 'download stalled, resetting connection',
-          { url: this.mUrl, id: this.mJob.workerId, bufferedBytes: this.bufferLength });
-      --this.mStallResets;
+  //     log('info', 'download stalled, resetting connection',
+  //         { url: this.mUrl, id: this.mJob.workerId, bufferedBytes: this.bufferLength });
+  //     --this.mStallResets;
 
-      const buffersToWrite = this.mBuffers;
-      this.mBuffers = [];
+  //     const buffersToWrite = this.mBuffers;
+  //     this.mBuffers = [];
 
-      if (buffersToWrite.length > 0) {
-        Bluebird.mapSeries(buffersToWrite, buf => this.doWriteBuffer(buf))
-          .then(() => {
-            this.mRedirected = true;
-            this.mRequest.destroy();
-            setTimeout(() => {
-              this.mRedirected = false;
-              this.mEnded = false;
-              this.assignJob(this.mJob, this.mUrl);
-            }, 200);
-          })
-          .catch(err => {
-            log('error', 'failed to write buffered data before stall restart', {
-              workerId: this.mJob.workerId,
-              error: err.message
-            });
-            this.handleError(err);
-          });
-      } else {
-        // No buffered data, restart immediately
-        this.mRedirected = true;
-        this.mRequest.destroy();
-        setTimeout(() => {
-          this.mRedirected = false;
-          this.mEnded = false;
-          this.assignJob(this.mJob, this.mUrl);
-        }, 200);
-      }
-    } // the else case doesn't really make sense
-  }
+  //     if (buffersToWrite.length > 0) {
+  //       Bluebird.mapSeries(buffersToWrite, buf => this.doWriteBuffer(buf))
+  //         .then(() => {
+  //           this.mRedirected = true;
+  //           this.mRequest.destroy();
+  //           setTimeout(() => {
+  //             this.mRedirected = false;
+  //             this.mEnded = false;
+  //             this.assignJob(this.mJob, this.mUrl);
+  //           }, 200);
+  //         })
+  //         .catch(err => {
+  //           log('error', 'failed to write buffered data before stall restart', {
+  //             workerId: this.mJob.workerId,
+  //             error: err.message
+  //           });
+  //           this.handleError(err);
+  //         });
+  //     } else {
+  //       // No buffered data, restart immediately
+  //       this.mRedirected = true;
+  //       this.mRequest.destroy();
+  //       setTimeout(() => {
+  //         this.mRedirected = false;
+  //         this.mEnded = false;
+  //         this.assignJob(this.mJob, this.mUrl);
+  //       }, 200);
+  //     }
+  //   } // the else case doesn't really make sense
+  // }
 
   private handleError = (err) => {
     if (this.mEnded) {
       return;
     }
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     log('warn', 'chunk error',
         { 
           id: this.mJob.workerId, 
@@ -639,6 +660,15 @@ class DownloadWorker {
         // Add a small delay before retrying to avoid hammering the server
         setTimeout(() => {
           if (!this.mEnded) {
+            // Reset derived fields to last confirmed position before retrying
+            // The confirmed fields (confirmedOffset, confirmedSize, confirmedReceived) remain unchanged
+            log('debug', 'resetting to confirmed position before retry', {
+              id: this.mJob.workerId,
+              confirmedOffset: this.mJob.confirmedOffset,
+              confirmedReceived: this.mJob.confirmedReceived,
+              confirmedSize: this.mJob.confirmedSize
+            });
+
             this.mJob.url().then(jobUrl => {
               this.assignJob(this.mJob, jobUrl);
             })
@@ -651,7 +681,13 @@ class DownloadWorker {
         log('warn', 'maximum network retries exceeded for chunk', {
           id: this.mJob.workerId,
           retries: this.mNetworkRetries,
-          maxRetries: DownloadWorker.MAX_NETWORK_RETRIES
+          maxRetries: DownloadWorker.MAX_NETWORK_RETRIES,
+          remainingSize: this.mJob.size,
+          confirmedSize: this.mJob.confirmedSize,
+          offset: this.mJob.offset,
+          confirmedOffset: this.mJob.confirmedOffset,
+          received: this.mJob.received,
+          confirmedReceived: this.mJob.confirmedReceived
         });
         this.mEnded = true;
         this.mFinishCB(false);
@@ -702,7 +738,7 @@ class DownloadWorker {
       log('debug', 'chunk completed but can\'t write it anymore', JSON.stringify(this.mJob));
       return;
     }
-    clearTimeout(this.mStallTimer);
+    //clearTimeout(this.mStallTimer);
     log('info', 'chunk completed', {
       id: this.mJob.workerId,
       numBuffers: this.mBuffers.length,
@@ -764,13 +800,10 @@ class DownloadWorker {
           setTimeout(() => {
             ++this.mRedirectsFollowed;
             this.mRedirected = false;
-            const unconfirmedBytes = this.mJob.received - this.mJob.confirmedReceived;
-            if (unconfirmedBytes > 0) {
-              // Reset to last confirmed position
-              this.mJob.offset = this.mJob.confirmedOffset + this.mJob.confirmedReceived;
-              this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
-              this.mJob.received = this.mJob.confirmedReceived;
-            }
+
+            // Reset optimistic received to confirmed position before redirect
+            // The confirmed fields remain unchanged, derived fields will be recalculated in assignJob
+            this.mJob.received = this.mJob.confirmedReceived;
 
             this.mJob.state = 'running';
             this.mEnded = false;
@@ -814,14 +847,21 @@ class DownloadWorker {
       } else {
         log('debug', 'download doesn\'t support partial requests');
         // download can't be resumed so the returned data will start at 0
+        // Reset confirmed fields to start from beginning
+        this.mJob.confirmedOffset = 0;
+        this.mJob.confirmedReceived = 0;
+        // Recalculate derived fields
         this.mJob.offset = 0;
+        this.mJob.received = 0;
       }
       if (chunkSize !== this.mJob.size) {
         // on the first request it's possible we requested more than the file size if
         // the file is smaller than the minimum size for chunking or - if the file isn't chunkable -
         // the request may be larger than what we requested initially.
-        // offset should always be 0 here
-        this.mJob.confirmedSize = this.mJob.size = chunkSize;
+        // offset should always be 0 here, so we can update confirmedSize directly
+        this.mJob.confirmedSize = chunkSize;
+        // Recalculate derived size field
+        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
       }
 
       let fileName;
@@ -863,14 +903,21 @@ class DownloadWorker {
 
   private doWriteBuffer = (buf: Buffer): Bluebird<void> => {
     const len = buf.length;
+    const writeOffset = this.mJob.offset;  // Capture offset before any updates
     this.mInFlightWrites += len;
-    const res = this.mJob.dataCB(this.mJob.offset, buf)
+
+    const res = this.mJob.dataCB(writeOffset, buf)
       .then(() => {
-        // Write confirmed - update confirmed counters and clear in-flight
+        // Write confirmed - update confirmed received counter
         this.mInFlightWrites -= len;
         this.mJob.confirmedReceived += len;
-        this.mJob.confirmedOffset += len;
-        this.mJob.confirmedSize -= len;
+
+        // Recalculate confirmed-based fields (these should already match the optimistic values)
+        // offset = confirmedOffset + confirmedReceived
+        this.mJob.offset = this.mJob.confirmedOffset + this.mJob.confirmedReceived;
+        // size = confirmedSize - confirmedReceived
+        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
+
         if (this.mInFlightWrites < 0) {
           // sanity
           this.mInFlightWrites = 0;
@@ -886,10 +933,12 @@ class DownloadWorker {
         return Bluebird.reject(err);
       });
 
-    // need to update immediately, otherwise chunks might overwrite each other
+    // Update optimistic fields immediately (before write confirmation)
+    // This ensures the next write uses the correct offset
     this.mJob.received += len;
-    this.mJob.offset += len;
-    this.mJob.size -= len;
+    this.mJob.offset += len;  // Optimistically advance offset for next write
+    this.mJob.size -= len;     // Optimistically reduce remaining size
+
     return res;
   }
 
@@ -1543,6 +1592,12 @@ class DownloadManager {
       if (finishedChunks.length === queueItem.chunks.length) {
         continue;
       }
+
+      const pausedChunks = queueItem.chunks.filter(chunk => chunk.state === 'paused');
+      pausedChunks.forEach(chunk => {
+        chunk.state = 'init';
+      });
+
       const unstartedChunks = queueItem.chunks.filter(chunk => chunk.state === 'init');
 
       // Start as many chunks as we have free spots for this download
@@ -1591,13 +1646,17 @@ class DownloadManager {
         const hasActiveChunks = download.chunks.some(chunk =>
           chunk.state === 'running' || chunk.state === 'init'
         );
-        // Check if download has been sitting with only paused chunks for too long
-        const onlyPausedChunks = download.chunks.every(chunk =>
-          chunk.state === 'paused' || chunk.state === 'finished'
+        // Check if download has paused chunks that still have data to download
+        // These chunks need to remain in queue so tickQueue can restart them
+        // size = confirmedSize - confirmedReceived (remaining bytes)
+        const hasPausedChunksWithData = download.chunks.some(chunk =>
+          chunk.state === 'paused' && chunk.size > 0
         );
 
-        const shouldRemove = allChunksFinished || (!hasActiveChunks && onlyPausedChunks);
-        
+        // Only remove if:
+        // 1. All chunks are finished, OR
+        // 2. No active chunks AND no paused chunks with remaining data
+        const shouldRemove = allChunksFinished || (!hasActiveChunks && !hasPausedChunksWithData);
         return !shouldRemove;
       });
     });
@@ -1818,6 +1877,15 @@ class DownloadManager {
       download.size = size;
       download.assembler.setTotalSize(size);
     }
+
+    // For single-chunk downloads, always recalculate the derived size field
+    // Note: confirmedSize may have already been updated by the worker in handleResponse
+    if (download.chunks.length === 1) {
+      download.chunks[0].confirmedSize = size;
+      // Recalculate derived size field
+      download.chunks[0].size = download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;
+    }
+
     if (chunkable || (download.chunkable === null) || (download.chunkable === undefined)) {
       download.chunkable = chunkable;
     }
@@ -1881,7 +1949,7 @@ class DownloadManager {
       const chunkSize = Math.min(remainingSize,
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
-      let offset = this.mMinChunkSize + 1;
+      let offset = this.mMinChunkSize;
       while (offset < fileSize) {
         const previousChunk = download.chunks.find(chunk => chunk.extraCookies.length > 0);
         const extraCookies = (previousChunk !== undefined)
@@ -1916,6 +1984,13 @@ class DownloadManager {
       log('debug', 'downloading file in chunks',
         { size: chunkSize, count: download.chunks.length, max: maxChunks, total: fileSize });
     } else {
+      // Single chunk download - always recalculate the derived size field
+      // Note: confirmedSize may have already been updated by the worker in handleResponse
+      if (download.chunks.length === 1) {
+        download.chunks[0].confirmedSize = fileSize;
+        // Recalculate derived size field
+        download.chunks[0].size = download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;
+      }
       log('debug', 'download not chunked (no server support or it\'s too small)',
         { name: download.finalName, size: fileSize });
     }
@@ -1932,6 +2007,11 @@ class DownloadManager {
 
   private toJob = (download: IRunningDownload, chunk: IChunk, first: boolean): IDownloadJob => {
     let fileNameFromURL: string;
+    // Initialize confirmed immutable fields from stored chunk
+    const confirmedOffset = chunk.offset;
+    const confirmedSize = chunk.size;
+    const confirmedReceived = chunk.received;
+
     const job: IDownloadJob = {
       url: () => download.resolvedUrls().then(resolved => {
         if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
@@ -1948,13 +2028,15 @@ class DownloadManager {
         }
         return resolved.urls[0];
       }),
-      confirmedOffset: chunk.offset,
-      confirmedSize: chunk.size,
-      confirmedReceived: chunk.received,
-      offset: chunk.offset,
+      // Immutable confirmed fields
+      confirmedOffset,
+      confirmedSize,
+      confirmedReceived,
+      // Derived fields calculated from confirmed fields
+      offset: confirmedOffset + confirmedReceived,
+      size: confirmedSize - confirmedReceived,
+      received: confirmedReceived,
       state: 'init',
-      size: chunk.size,
-      received: chunk.received,
       options: download.options,
       extraCookies: [],
       responseCB: first
@@ -2011,10 +2093,10 @@ class DownloadManager {
     this.stopWorker(job.workerId);
 
     log('debug', 'stopping chunk worker',
-      { paused, id: job.workerId, offset: job.offset, size: job.size });
+      { paused, id: job.workerId, offset: job.offset, size: job.size, confirmedSize: job.confirmedSize, confirmedReceived: job.confirmedReceived });
 
-    // Treat negative sizes (like -1) as completed, not as error conditions
-    // Negative sizes typically indicate unknown/unlimited size that has completed
+    // Check if there's remaining data to download
+    // size = confirmedSize - confirmedReceived (remaining bytes)
     const hasRemainingData = job.size > 0;
 
     job.state = (paused || hasRemainingData) ? 'paused' : 'finished';
@@ -2023,7 +2105,16 @@ class DownloadManager {
     }
 
     const activeChunk = download.chunks.find(
-      (chunk: IDownloadJob) => !['paused', 'finished'].includes(chunk.state));
+      (chunk: IDownloadJob) => {
+        if (chunk.state === 'running' || chunk.state === 'init') {
+          return true; // Definitely active
+        }
+        if (chunk.state === 'paused' && chunk.size > 0) {
+          // Paused with remaining data - should be restarted, not considered complete
+          return true;
+        }
+        return false; // 'finished' or 'paused' with no remaining data
+      });
 
     if (activeChunk === undefined) {
       let finalPath = download.tempName;
