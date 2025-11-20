@@ -12,10 +12,19 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive  # For your git submodules
-    
+
+    - name: Read Node.js version from package.json
+      id: node-version
+      shell: pwsh
+      run: |
+        $packageJson = Get-Content package.json | ConvertFrom-Json
+        $nodeVersion = $packageJson.engines.node
+        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+        echo "Using Node.js version: $nodeVersion"
+
     - uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
         cache: 'yarn'
         
     - uses: actions/setup-dotnet@v4

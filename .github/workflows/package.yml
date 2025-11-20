@@ -105,15 +105,24 @@ jobs:
         run: | 
           Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile "build\\windowsdesktop-runtime-win-x64.exe"
 
-      - name: Download CodeSignTool 
-        id: codesign 
-        shell: pwsh 
-        run: .\download-codesigntool.ps1 
-           
-      - name: Use Node.js 
-        uses: actions/setup-node@v4 
-        with: 
-          node-version: '22.14.0' 
+      - name: Download CodeSignTool
+        id: codesign
+        shell: pwsh
+        run: .\download-codesigntool.ps1
+
+      - name: Read Node.js version from package.json
+        id: node-version
+        shell: pwsh
+        run: |
+          $packageJson = Get-Content package.json | ConvertFrom-Json
+          $nodeVersion = $packageJson.engines.node
+          echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+          echo "Using Node.js version: $nodeVersion"
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: "yarn"
 
       - name: Install dependencies 
