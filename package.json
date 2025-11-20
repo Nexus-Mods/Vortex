@@ -353,5 +353,8 @@
     "@types/react-dom": "16.9.25",
     "**/dir-compare/minimatch": "3.0.5"
   },
-  "packageManager": "yarn@1.22.19"
+  "packageManager": "yarn@1.22.19",
+  "engines": {
+    "node": "22.19"
+  }
 }
