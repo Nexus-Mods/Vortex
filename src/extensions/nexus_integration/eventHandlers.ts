@@ -666,7 +666,8 @@ interface IDownloadResult {
 export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
                                 : (...args: any[]) => Promise<IFileInfo[]> {
   return (gameId: string, modId: number): Promise<IFileInfo[]> => {
-    return Promise.resolve(nexus.getModFiles(modId, gameId))
+    const domainGameId = nexusGameId(gameById(api.getState(), gameId), gameId);
+    return Promise.resolve(nexus.getModFiles(modId, domainGameId))
       .then(result => result.files)
       .catch(err => {
         api.showErrorNotification('Failed to get list of mod files', err, {

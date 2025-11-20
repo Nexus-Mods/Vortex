@@ -6,6 +6,109 @@ export type ModState =
   'downloading' | 'downloaded' | 'installing' | 'installed';
 
 /**
+ * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
+ */
+export interface ICollectionAttributes {
+  collectionId: number;
+  collectionSlug: string;
+  revisionId: number;
+  revisionNumber: number;
+  downloadGame: string;
+  customFileName?: string;
+  shortDescription?: string;
+  pictureUrl?: string;
+  uploader?: string;
+  uploaderId?: number;
+  uploaderAvatar?: string;
+  uploadedTimestamp?: number;
+  updatedTimestamp?: number;
+  rating?: {
+    average: number;
+    total: number;
+  };
+  recommendNewProfile?: boolean;
+  installInstructions?: string;
+  bugMessage?: string;
+  modSize?: number;
+}
+
+/**
+ * Common attributes shared by all mods
+ */
+export interface ICommonModAttributes {
+  // Basic mod information
+  author?: string;
+  version?: string;
+  modName?: string;
+  modVersion?: string;
+  name?: string;
+  description?: string;
+  shortDescription?: string;
+
+  // Source and download information
+  source?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileMD5?: string;
+  logicalFileName?: string;
+  additionalLogicalFileNames?: string[];
+  customFileName?: string;
+  downloadGame?: string;
+  game?: string[];
+  fileType?: string;
+
+  // Nexus Mods specific
+  modId?: number;
+  fileId?: number;
+  category?: string | number;
+  homepage?: string;
+  pictureUrl?: string;
+  uploader?: string;
+  uploaderUrl?: string;
+  uploaderId?: number;
+  uploadedTimestamp?: number;
+  updatedTimestamp?: number;
+
+  // Installation tracking
+  installTime?: string;
+  installedAsDependency?: boolean;
+  referenceTag?: string;
+
+  // Installer and patching
+  installerChoices?: any;
+  patches?: any;
+  fileList?: IFileListItem[];
+
+  // Version and updates
+  newestVersion?: string;
+  newestFileId?: number;
+
+  // Ratings and endorsements
+  allowRating?: boolean;
+  endorsement?: string;
+  endorsed?: string;
+
+  // Special mod types and flags
+  scriptExtender?: boolean;
+  is4GBPatcher?: boolean;
+  isPrimary?: number | boolean;
+
+  // Size information
+  modSize?: number;
+
+  // Messages and warnings
+  bugMessage?: string;
+}
+
+/**
+ * Comprehensive type for mod attributes that can be either common mod attributes,
+ * collection-specific attributes, or any custom attributes
+ */
+export type IModAttributes = Partial<ICommonModAttributes & ICollectionAttributes> & {
+  [key: string]: any;
+};
+
+/**
  * represents a mod in all states (being downloaded, downloaded, installed)
  *
  * @interface IMod
@@ -14,17 +117,33 @@ export interface IMod {
   id: string;
 
   state: ModState;
-  // mod type (empty string is the default)
-  // this type is primarily used to determine how and where to deploy the mod, it
-  // could be "enb" for example to tell vortex the mod needs to be installed to the game
-  // directory. Different games will have different types
+  /**
+   * mod type (empty string is the default)
+   * this type is primarily used to determine how and where to deploy the mod, it
+   * could be "enb" for example to tell vortex the mod needs to be installed to the game
+   * directory. Different games will have different types.
+   *
+   * Special types:
+   * - "" (empty string): Default mod type
+   * - "collection": Nexus Mods collection
+   * - "dinput": Direct input mod (e.g., 4GB patch)
+   * - "enb": ENB graphics mod
+   * - game-specific types defined by game extensions
+   */
   type: string;
   // id of the corresponding download
   archiveId?: string;
   // path to the installed mod (will usually be the same as id)
   installationPath: string;
-  // dictionary of extended information fields
-  attributes?: { [id: string]: any };
+  /**
+   * dictionary of extended information fields
+   *
+   * Type-safe access to common attributes and collection attributes:
+   * - Use ICommonModAttributes for standard mod properties (author, version, etc.)
+   * - Use ICollectionAttributes when type === "collection"
+   * - Index signature allows any custom attributes for game-specific extensions
+   */
+  attributes?: IModAttributes;
   // list of custom rules for this mod instance
   rules?: IModRule[];
   // list of enabled ini tweaks
