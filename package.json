@@ -276,7 +276,7 @@
     "fomod-installer-native": "file:./extensions/fomod-installer/src/ModInstaller.Native.TypeScript",
     "fs-extra": "^9.1.0",
     "fuzzball": "^1.3.0",
-    "glob": "^11.0.3",
+    "glob": "^11.1.0",
     "graphlib": "^2.1.7",
     "i18next": "^19.0.1",
     "i18next-fs-backend": "^2.1.1",
