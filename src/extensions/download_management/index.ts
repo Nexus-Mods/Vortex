@@ -61,6 +61,7 @@ import { ensureLoggedIn } from '../nexus_integration/util';
 import NXMUrl from '../nexus_integration/NXMUrl';
 import { knownGames } from '../../util/selectors';
 import { convertNXMIdReverse, convertGameIdReverse } from '../nexus_integration/util/convertGameId';
+import extendAPI from './util/extendApi';
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -969,6 +970,7 @@ function init(context: IExtensionContextExt): boolean {
     () => checkPendingTransfer(context.api));
 
   context.once(() => {
+    Object.assign(context.api.ext, extendAPI(context.api));
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;
     const observeImpl: typeof observe = require('./DownloadObserver').default;
 
