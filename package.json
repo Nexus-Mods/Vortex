@@ -218,7 +218,7 @@
     "minimist": "^1.2.6",
     "node-gyp": "^10.0.0",
     "prebuild-install": "^7.1.0",
-    "prettier": "^2.0.5",
+    "prettier": "3.6.2",
     "react-docgen-typescript-loader": "^3.6.0",
     "react-shallow-testutils": "^3.0.1",
     "react-test-renderer": "^16.12.0",
