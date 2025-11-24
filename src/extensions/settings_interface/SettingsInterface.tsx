@@ -24,7 +24,7 @@ import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLe
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
-import * as remoteT from '@electron/remote';
+import type * as remoteT from '@electron/remote';
 import Promise from 'bluebird';
 import { app } from 'electron';
 import * as path from 'path';

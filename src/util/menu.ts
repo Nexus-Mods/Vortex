@@ -4,7 +4,7 @@ import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import { webFrame } from 'electron';
 import * as path from 'path';
 import { setZoomFactor } from '../actions/window';

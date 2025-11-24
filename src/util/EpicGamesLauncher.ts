@@ -2,7 +2,7 @@ import { log } from './log';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import * as winapiT from 'winapi-bindings';
+import type * as winapiT from 'winapi-bindings';
 import * as fs from './fs';
 import { getSafe } from './storeHelper';
 

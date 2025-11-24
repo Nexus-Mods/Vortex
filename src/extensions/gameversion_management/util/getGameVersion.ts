@@ -4,7 +4,7 @@ import lazyRequire from '../../../util/lazyRequire';
 import { log } from '../../../util/log';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 
-import * as exeVersionT from 'exe-version';
+import type * as exeVersionT from 'exe-version';
 import path from 'path';
 
 const exeVersion: typeof exeVersionT = lazyRequire(() => require('exe-version'));

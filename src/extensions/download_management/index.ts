@@ -46,7 +46,7 @@ import downloadAttributes from './downloadAttributes';
 import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import Zip = require('node-7z');

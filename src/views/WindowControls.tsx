@@ -1,4 +1,4 @@
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import { BrowserWindow } from 'electron';
 import * as React from 'react';
 import { IconButton } from '../controls/TooltipControls';

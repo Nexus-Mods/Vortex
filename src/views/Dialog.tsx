@@ -15,7 +15,7 @@ import { TFunction } from '../util/i18n';
 import lazyRequire from '../util/lazyRequire';
 import { MutexWrapper } from '../util/MutexContext';
 
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import update from 'immutability-helper';
 import * as React from 'react';
 import {

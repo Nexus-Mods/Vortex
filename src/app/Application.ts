@@ -51,11 +51,11 @@ import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as os from 'os';
 import * as path from 'path';
-import * as permissionsT from 'permissions';
+import type * as permissionsT from 'permissions';
 import * as semver from 'semver';
-import * as uuidT from 'uuid';
+import type * as uuidT from 'uuid';
 
-import * as winapiT from 'winapi-bindings';
+import type * as winapiT from 'winapi-bindings';
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 const permissions = lazyRequire<typeof permissionsT>(() => require('permissions'));

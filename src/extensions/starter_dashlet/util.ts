@@ -15,7 +15,7 @@ import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
 import lazyRequire from '../../util/lazyRequire';
-import * as remoteT from '@electron/remote';
+import type * as remoteT from '@electron/remote';
 import { makeRemoteCallSync } from '../../util/electronRemote';
 const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
 

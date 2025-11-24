@@ -18,7 +18,7 @@ import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
 import rimraf from 'rimraf';
-import * as vortexRunT from 'vortex-run';
+import type * as vortexRunT from 'vortex-run';
 
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));
 
