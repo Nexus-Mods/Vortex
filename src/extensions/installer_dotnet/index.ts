@@ -1,5 +1,6 @@
 import path from 'path';
 import { execFile, spawn } from 'child_process';
+import { promisify } from 'util';
 import Bluebird from 'bluebird';
 import { NET_CORE_DOWNLOAD } from './constants';
 import { SITE_ID } from '../gamemode_management/constants';
@@ -8,6 +9,7 @@ import { ITestResult, IExtensionApi, IExtensionContext } from '../../types/api';
 import { getVortexPath, UserCanceled } from '../../util/api';
 import { delayed, toPromise } from '../../util/util';
 import { log } from '../../util/log';
+import { platform } from 'process';
 
 const spawnAsync = (command: string, args: string[]): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -70,13 +72,18 @@ const onDotNetFailure = (error: any) => {
   dotNetReject = undefined;
 };
 
-const installDotNet = async (api: IExtensionApi, repair: boolean): Promise<void> => {
+const installDotNet = async (api: IExtensionApi, repair: boolean, dotnetVersion: number): Promise<void> => {
+  if (process.platform !== "win32") {
+    const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
+    throw "Automatic installation of .NET is only supported on Windows";
+  }
+
   try {
     const dlId: string = await toPromise(cb =>
       api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
 
     if (dlId === undefined) {
-      const error = new Error('Failed to download .NET Desktop Runtime 9');
+      const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
       log('warn', 'failed to download .NET');
       onDotNetFailure(error);
       throw error;
@@ -102,10 +109,10 @@ const installDotNet = async (api: IExtensionApi, repair: boolean): Promise<void>
 
     const fullPath = path.join(downloadsPath, download.localPath);
 
-    api.showDialog?.('info', 'Microsoft .NET Desktop Runtime 9 is being installed', {
+    api.showDialog?.('info', `Microsoft .NET Desktop Runtime ${dotnetVersion} is being installed`, {
       bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
-      + '[br][/br][br][/br]'
-          + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
+        + '[br][/br][br][/br]'
+        + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
     }, [
       { label: 'Ok' },
     ]);
@@ -119,65 +126,117 @@ const installDotNet = async (api: IExtensionApi, repair: boolean): Promise<void>
     await spawnRetry(api, fullPath, args);
 
     // Installation completed successfully
-    log('info', '.NET Desktop Runtime 9 installed successfully');
+    log('info', `.NET Desktop Runtime ${dotnetVersion} installed successfully`);
     onDotNetSuccess();
   } catch (err) {
-    log('error', 'Failed to install .NET Desktop Runtime 9', err);
+    log('error', `Failed to install .NET Desktop Runtime ${dotnetVersion}`, err);
     onDotNetFailure(err);
     throw err;
   }
 }
 
-const checkNetInstall = (api: IExtensionApi): Bluebird<ITestResult> => {
-  return Bluebird.resolve((async () => {
-    if (process.platform !== 'win32') {
-      // currently only supported/tested on windows
-      const error = new Error('.NET installation check is only supported on Windows');
-      onDotNetFailure(error);
-      return undefined!;
-    }
+function execFileWrapper(file: string, args: string[] = []): Promise<{ stdout: string, stderr: string, exitCode: number }> {
+  return new Promise((resolve, reject) => {
+    const child = execFile(file, args);
 
-    const probeExe = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
-    let stderr: string = '';
-    const exitCode = await new Promise<number | null>((resolve) => {
-      const proc = execFile(probeExe).on('close', code => resolve(code));
-      proc.stderr?.on('data', dat => stderr += dat.toString());
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout?.on("data", data => {
+      stdout += data.toString();
     });
 
+    child.stderr?.on("data", data => {
+      stderr += data.toString();
+    });
 
-    if (exitCode === 0) {
-      // .NET is already installed
-      onDotNetSuccess();
-      return undefined!;
-    }
+    child.on("error", err => {
+      reject(err);
+    });
 
-    const result: ITestResult = {
+    child.on("close", exitCode => {
+      resolve({
+        stdout: stdout,
+        stderr: stderr,
+        exitCode: exitCode ?? 0
+      });
+    });
+  });
+}
+
+async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promise<ITestResult> {
+  let probeExecutable: string | null = null;
+
+  if (process.platform === "win32") {
+    probeExecutable = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+  } else if (process.platform === "linux") {
+    probeExecutable = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe');
+  } else {
+    const error = new Error(`.NET installation check is not supported on this platform ${process.platform}`);
+    onDotNetFailure(error);
+    return undefined!;
+  }
+
+  let stderr: string;
+  let exitCode: number;
+
+  try {
+    const result = await execFileWrapper(probeExecutable, [dotnetVersion.toString()]);
+    stderr = result.stderr;
+    exitCode = result.exitCode;
+  } catch (e) {
+    onDotNetFailure(e);
+    return undefined!;
+  }
+
+  if (exitCode === 0) {
+    // .NET is already installed
+    onDotNetSuccess();
+    return undefined!;
+  }
+
+  if (process.platform === "linux") {
+    return {
       description: {
-        short: 'Microsoft .NET Desktop Runtime 9 required',
-        long: 'Vortex requires .NET Desktop Runtime 9 to be installed to run FOMOD mod installers.'
+        short: `Microsoft .NET Desktop Runtime ${dotnetVersion} required`,
+        long: `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.`
           + '[br][/br][br][/br]'
-          + 'If you already have .NET Desktop Runtime 9 installed then there may be a problem with your installation and a reinstall might be needed.'
-          + '[br][/br][br][/br]'
-          + 'Click "Fix" below to install the required version.'
+          + `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.`
           + '[br][/br][br][/br]'
           + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
         replace: { stderr: stderr.replace(/\n/g, '[br][/br]') },
       },
-      automaticFix: () => Bluebird.resolve(installDotNet(api, false)),
-      severity: 'fatal',
-    };
+      severity: 'fatal'
+    }
+  }
 
-    return result;
-  })());
+  const result: ITestResult = {
+    description: {
+      short: `Microsoft .NET Desktop Runtime ${dotnetVersion} required`,
+      long: `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.`
+        + '[br][/br][br][/br]'
+        + `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.`
+        + '[br][/br][br][/br]'
+        + 'Click "Fix" below to install the required version.'
+        + '[br][/br][br][/br]'
+        + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+      replace: { stderr: stderr.replace(/\n/g, '[br][/br]') },
+    },
+    automaticFix: () => Bluebird.resolve(installDotNet(api, false, dotnetVersion)),
+    severity: 'fatal',
+  };
+
+  return result;
 }
 
 /**
  * Extension initialization
  */
 const main = (context: IExtensionContext): boolean => {
+  const dotnetVersion = 9;
 
-  // Register .NET 9 Desktop Runtime check
-  context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api)));
+  // Register .NET Desktop Runtime check
+  context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api, dotnetVersion)));
 
   // Set up API extension once initialization is complete
   context.once(() => {
