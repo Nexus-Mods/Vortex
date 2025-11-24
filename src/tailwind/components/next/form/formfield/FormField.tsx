@@ -96,7 +96,6 @@ export const FormField = ({
       ref={ref}
       className={joinClasses(['tw:min-w-0', className], { 'tw:opacity-40 tw:pointer-events-none': disabled })}
     >
-      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
       <label
         className={joinClasses(['tw:mb-2 tw:flex tw:gap-x-1 tw:text-sm'], { 'tw:sr-only': hideLabel })}
         htmlFor={id}
