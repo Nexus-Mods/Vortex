@@ -72,3 +72,6 @@ playwright/run-*
 playwright/test-results/
 playwright/.test-session
 playwright/.run-counter
+
+# JetBrains
+.idea/
