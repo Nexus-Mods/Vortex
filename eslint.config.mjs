@@ -1,9 +1,9 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
 import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
+import eslintReact from "@eslint-react/eslint-plugin";
 
 export default defineConfig([
   {
@@ -18,10 +18,9 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   {
-    // NOTE(erri120): use flat['jsx-runtime'] for React 17+
-    ...pluginReact.configs.flat.recommended,
+    ...eslintReact.configs["recommended-typescript"],
     settings: {
-      react: {
+      "react-x": {
         version: "16",
       },
     },
@@ -44,6 +43,13 @@ export default defineConfig([
       // 1) Pick one of these rules and remove it
       // 2) Fix all errors
       // 3) Repeat until there are no rules left
+      "@eslint-react/dom/no-find-dom-node": "warn",
+      "@eslint-react/dom/no-void-elements-with-children": "warn",
+      "@eslint-react/no-access-state-in-setstate": "warn",
+      "@eslint-react/no-class-component": "warn",
+      "@eslint-react/no-create-ref": "warn",
+      "@eslint-react/no-direct-mutation-state": "warn",
+      "@eslint-react/no-missing-key": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-array-constructor": "warn",
       "@typescript-eslint/no-empty-object-type": "warn",
@@ -81,13 +87,6 @@ export default defineConfig([
       "prefer-const": "warn",
       "prefer-rest-params": "warn",
       "prefer-spread": "warn",
-      "react/display-name": "warn",
-      "react/jsx-key": "warn",
-      "react/jsx-no-comment-textnodes": "warn",
-      "react/no-direct-mutation-state": "warn",
-      "react/no-find-dom-node": "warn",
-      "react/no-unescaped-entities": "warn",
-      "react/prop-types": "warn",
       "require-yield": "warn",
       "valid-typeof": "warn",
     },
