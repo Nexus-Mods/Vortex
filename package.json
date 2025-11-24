@@ -107,13 +107,6 @@
       "modules": true
     }
   },
-  "prettier": {
-    "printWidth": 80,
-    "trailingComma": "all",
-    "arrowParens": "avoid",
-    "singleQuote": true,
-    "jsxSingleQuote": true
-  },
   "publish": {
     "provider": "github"
   },
