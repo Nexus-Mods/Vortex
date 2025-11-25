@@ -3,6 +3,7 @@ import { IExtensionApi } from '../../../types/api';
 import { getCollectionActiveSession, getCollectionCurrentPhase } from '../../collections_integration/selectors';
 import { IModsAPIExtension } from '../types/IModsAPIExtension';
 import { log } from '../../../util/log';
+import { IDeployOptions } from '../types/IDeployOptions';
 
 function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPIExtension {
   const activeCollection = () => {
@@ -18,6 +19,7 @@ function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPI
 
   return {
     awaitNextPhaseDeployment: async () => {
+      // Await the deployment for the next phase of the active collection installation
       const collection = activeCollection();
       if (!collection) return;
 
@@ -33,7 +35,23 @@ function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPI
         log('info', 'no deployment promise returned');
         return;
       }
-    }
+    },
+
+    awaitModsDeployment: async (profileId?: string,
+      progressCB?: (text: string, percent: number) => void,
+      deployOptions?: IDeployOptions) => {
+      // Await the deployment of mods for the specified profile
+      return new Promise<void>((resolve, reject) => {
+        const callback = (err: Error) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        };
+        api.events.emit('deploy-mods', callback, profileId, progressCB, deployOptions);
+      });
+    },
   };
 }
 
