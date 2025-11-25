@@ -275,18 +275,36 @@ function withActivityTracking<T>(
 function findCollectionByDownload(
   state: IState,
   download: IDownload,
-  downloadId: string
+  sourceModId?: string
 ): { collectionMod: IMod; matchingRule: IModRule; gameId: string } | null {
   const gameId = activeProfile(state)?.gameId;
   if (!gameId) {
-    log('debug', 'No active game profile', { downloadId });
+    log('debug', 'No active game profile', { downloadId: download.id });
     return null;
+  }
+
+  if (sourceModId != null) {
+    const mods: { [modId: string]: IMod } = state.persistent.mods[gameId];
+    const collectionMod = mods?.[sourceModId];
+    if (!collectionMod || !download?.id) {
+      log('debug', 'No collection mod found for sourceModId', { downloadId: download.id, sourceModId });
+      return null;
+    }
+
+    const lookup = lookupFromDownload(download);
+    const matchingRule = collectionMod.rules.find(rule =>
+      testModReference(lookup, rule.reference)
+    );
+
+    if (matchingRule) {
+      return { collectionMod, matchingRule, gameId };
+    }
   }
 
   // Get the current active collection installation
   const activeCollection = getCollectionActiveSession(state);
   if (!activeCollection?.collectionId) {
-    log('debug', 'No active collection installation found', { downloadId });
+    log('debug', 'No active collection installation found', { downloadId: download.id });
     return null;
   }
 
@@ -297,7 +315,7 @@ function findCollectionByDownload(
     logicalFileName: download.localPath,
   });
   if (!matchingRule) {
-    log('debug', 'No matching rule found in collection for download', { downloadId });
+    log('debug', 'No matching rule found in collection for download', { downloadId: download.id });
     return null;
   }
 
@@ -455,14 +473,16 @@ class InstallManager {
 
     api.events.on('did-finish-download', (downloadId: string, state: string) => {
       if (state === 'finished') {
-        this.handleDownloadFinished(api, downloadId);
+        const context = getBatchContext('install-recommendations', '');
+        const sourceModId = context.get('sourceModId', null);
+        this.handleDownloadFinished(api, downloadId, sourceModId);
       } else if (state === 'failed') {
         this.handleDownloadFailed(api, downloadId);
       }
     });
   }
 
-  private handleDownloadFinished(api: IExtensionApi, downloadId: string): boolean {
+  private handleDownloadFinished(api: IExtensionApi, downloadId: string, sourceModId?: string): boolean {
     const state = api.getState();
     const download = state.persistent.downloads.files[downloadId];
 
@@ -472,7 +492,7 @@ class InstallManager {
     }
 
     // Check if this download is part of a collection installation
-    const collectionInfo = findCollectionByDownload(state, download, downloadId);
+    const collectionInfo = findCollectionByDownload(state, download, sourceModId);
     if (!collectionInfo) {
       return false;
     }
@@ -2157,7 +2177,7 @@ class InstallManager {
         log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
         if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
-          const success = this.handleDownloadFinished(api, downloadId);
+          const success = this.handleDownloadFinished(api, downloadId, sourceModId);
           if (success) {
             anyQueued = true;
           } else {
@@ -2389,7 +2409,7 @@ class InstallManager {
               );
 
               if (downloadId) {
-                this.handleDownloadFinished(api, downloadId);
+                this.handleDownloadFinished(api, downloadId, sourceModId);
               }
             }
           });
@@ -4041,7 +4061,7 @@ class InstallManager {
                 const rulePhase = rule.extra?.phase ?? 0;
                 // Only process downloads for the current allowed phase or earlier
                 if (rulePhase <= phaseState.allowedPhase) {
-                  this.handleDownloadFinished(api, downloadId);
+                  this.handleDownloadFinished(api, downloadId, sourceModId);
                   foundCount++;
                 }
               }
@@ -5001,6 +5021,7 @@ class InstallManager {
           success.filter(succ => succ.extra?.['instructions'] !== undefined).length);
         const remember = context.get<boolean>('remember', null);
         let queryProm: Bluebird<IDependency[]> = Bluebird.resolve(success);
+        context.set('sourceModId', modId);
 
         if (!silent || (error.length > 0)) {
           queryProm = this.installRecommendationsQueryMain(api, name, success, error, remember)
