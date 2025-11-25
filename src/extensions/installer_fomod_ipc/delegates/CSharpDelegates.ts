@@ -38,9 +38,9 @@ export class CSharpDelegates {
     this.parser = new IniParser(new WinapiFormat());
   }
 
-  public reportError(title: string, message: string, details: string) {
+  public reportError = (title: string, message: string, details: string) => {
     try {
-      let msg = message;
+      let msg = message ?? 'An error occurred in the FOMOD installer.';
       if (details) {
         msg += '\n' + details;
       }
@@ -54,7 +54,7 @@ export class CSharpDelegates {
   /**
    * Check if a script extender is present
    */
-  public async isExtenderPresent(): Promise<boolean> {
+  public isExtenderPresent = async (): Promise<boolean> => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const discovery = currentGameDiscovery(state);
@@ -80,7 +80,7 @@ export class CSharpDelegates {
   /**
    * Check if a file exists in the game directory
    */
-  public async checkIfFileExists(fileName: string): Promise<boolean> {
+  public checkIfFileExists = async (fileName: string): Promise<boolean> => {
     const fullPath = this.resolveFilePath(fileName);
     try {
       await statAsync(fullPath);
@@ -92,12 +92,20 @@ export class CSharpDelegates {
 
   /**
    * Get the contents of an existing data file
+   * Returns base64-encoded data in the format expected by the C# IPC server
    */
-  public async getExistingDataFile(dataFile: string): Promise<Buffer> {
+  public getExistingDataFile = async (dataFile: string): Promise<{ type: string, data: string }> => {
     const fullPath = this.resolveFilePath(dataFile);
 
     try {
-      return await readFileAsync(fullPath);
+      const buffer = await readFileAsync(fullPath);
+      // C# IPC server expects { type: "Buffer", data: "<base64-string>" }
+      // Node.js Buffer.toJSON() produces { type: "Buffer", data: [array of bytes] }
+      // which is incompatible with C#'s Convert.FromBase64String()
+      return {
+        type: 'Buffer',
+        data: buffer.toString('base64')
+      };
     } catch (error) {
       throw error;
     }
@@ -106,7 +114,7 @@ export class CSharpDelegates {
   /**
    * Get a list of files in a directory
    */
-  public async getExistingDataFileList(folderPath: string, searchFilter: string, isRecursive: boolean): Promise<string[]> {
+  public getExistingDataFileList = async (folderPath: string, searchFilter: string, isRecursive: boolean): Promise<string[]> => {
     const fullPath = this.resolveFilePath(folderPath);
 
     const filterFunc = isNullOrWhitespace(searchFilter)
@@ -119,7 +127,7 @@ export class CSharpDelegates {
   /**
    * Get a string value from an INI file
    */
-  public async getIniString(selectedFile: string, iniSection: string, iniKey: string) {
+  public getIniString = async (selectedFile: string, iniSection: string, iniKey: string) => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const gameInfo = getGame(game.id);
@@ -147,7 +155,7 @@ export class CSharpDelegates {
   /**
    * Get an integer value from an INI file
    */
-  public async getIniInt(selectedFile: string, iniSection: string, iniKey: string) {
+  public getIniInt = async (selectedFile: string, iniSection: string, iniKey: string) => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const gameInfo = getGame(game.id);
@@ -174,7 +182,7 @@ export class CSharpDelegates {
   }
 
 
-  private resolveFilePath(filePath: string): string {
+  private resolveFilePath = (filePath: string): string => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const discovery = currentGameDiscovery(state);

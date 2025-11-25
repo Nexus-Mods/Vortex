@@ -32,7 +32,7 @@ export class DialogQueue {
     this.startPeriodicChecker(api);
   }
 
-  private startPeriodicChecker(api: IExtensionApi): void {
+  private startPeriodicChecker = (api: IExtensionApi): void => {
     // Check every 5s seconds for stuck queues
     this.periodicChecker = setInterval(() => {
       const state = api.getState();
@@ -57,21 +57,21 @@ export class DialogQueue {
     }, 5000); // 5 seconds
   }
 
-  destroy(): void {
+  destroy = (): void => {
     if (this.periodicChecker) {
       clearInterval(this.periodicChecker);
       this.periodicChecker = null;
     }
   }
 
-  public static getInstance(api: IExtensionApi): DialogQueue {
+  public static getInstance = (api: IExtensionApi): DialogQueue => {
     if (!DialogQueue.instance) {
       DialogQueue.instance = new DialogQueue(api);
     }
     return DialogQueue.instance;
   }
 
-  public enqueueDialog(uiInstance: IDialogManager): void {
+  public enqueueDialog = (uiInstance: IDialogManager): void => {
     this.queue.push({
       timestamp: Date.now(),
       uiInstance,
@@ -79,7 +79,7 @@ export class DialogQueue {
     });
   }
 
-  public processNext(): void {
+  public processNext = (): void => {
     if (this.processing || this.queue.length === 0) {
       return;
     }
@@ -103,7 +103,7 @@ export class DialogQueue {
     }
   }
 
-  public onDialogEnd(instanceId: string): void {
+  public onDialogEnd = (instanceId: string): void => {
     // Remove from queue if still present
     const request = this.queue.find(r => r.instanceId === instanceId);
     if (request) {
@@ -114,14 +114,14 @@ export class DialogQueue {
     this.processNext();
   }
 
-  public getStatus() {
+  public getStatus = () => {
     return {
       queueLength: this.queue.length,
       isProcessing: this.processing,
     };
   }
 
-  public clear(): void {
+  public clear = (): void => {
     this.queue = [];
     this.processing = false;
   }
