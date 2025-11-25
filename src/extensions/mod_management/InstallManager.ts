@@ -474,7 +474,7 @@ class InstallManager {
     api.events.on('did-finish-download', (downloadId: string, state: string) => {
       if (state === 'finished') {
         const context = getBatchContext('install-recommendations', '');
-        const sourceModId = context.get('sourceModId', null);
+        const sourceModId = context?.get?.('sourceModId', null);
         this.handleDownloadFinished(api, downloadId, sourceModId);
       } else if (state === 'failed') {
         this.handleDownloadFailed(api, downloadId);
