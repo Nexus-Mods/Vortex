@@ -7,14 +7,13 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, SetupError, UserCanceled, ArchiveBrokenError } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { delayed, toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
-import { ArchiveBrokenError } from '../mod_management/InstallManager';
 
 import { setInstallerSandbox } from './actions/settings';
 import Core from './delegates/Core';

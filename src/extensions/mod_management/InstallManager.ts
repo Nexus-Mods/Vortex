@@ -12,7 +12,7 @@ import ConcurrencyLimiter from '../../util/ConcurrencyLimiter';
 import { NotificationAggregator } from './NotificationAggregator';
 import {
   DataInvalid, NotFound, ProcessCanceled, SelfCopyCheckError, SetupError, TemporaryError,
-  UserCanceled
+  UserCanceled, ArchiveBrokenError,
 } from '../../util/CustomErrors';
 import {
   createErrorReport, didIgnoreError,
@@ -158,14 +158,6 @@ class DynamicDownloadConcurrencyLimiter {
     if (this.mQueue.length > 0 && toProcess === 0) {
       setTimeout(() => this.process(), 500);
     }
-  }
-}
-
-export class ArchiveBrokenError extends Error {
-  constructor(message: string) {
-    super(`Archive is broken: ${message}`);
-
-    this.name = this.constructor.name;
   }
 }
 
@@ -361,9 +353,8 @@ class InstallManager {
   private mDependencyInstalls: { [modId: string]: () => void } = {};
   private mDependencyDownloadsLimit: DynamicDownloadConcurrencyLimiter;
 
-
   private mNotificationAggregator: NotificationAggregator;
-  private mNotificationAggregationTimeoutMS: number = 0;
+  private mNotificationAggregationTimeoutMS: number = 5000;
 
   // This limiter drives the DownloadManager to queue up new downloads.
   private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(10);
@@ -728,13 +719,13 @@ class InstallManager {
 
     let extractProm: Bluebird<any>;
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
-      extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
+      extractProm = Bluebird.reject(new ArchiveBrokenError(path.basename(archivePath), 'file type on avoidlist'));
     } else {
       extractProm = simulationZip.extractFull(archivePath, tempPath, { ssc: false },
         progress,
         () => this.queryPassword(api.store) as any)
         .catch((err: Error) => this.isCritical(err.message)
-          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          ? Bluebird.reject(new ArchiveBrokenError(path.basename(archivePath), err.message))
           : Bluebird.reject(err));
     }
 
@@ -747,7 +738,7 @@ class InstallManager {
           log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
           const critical = errors.find(this.isCritical);
           if (critical !== undefined) {
-            return Bluebird.reject(new ArchiveBrokenError(critical));
+            return Bluebird.reject(new ArchiveBrokenError(path.basename(archivePath), critical));
           }
           return this.queryContinue(api, errors, archivePath);
         } else {
@@ -1303,8 +1294,8 @@ class InstallManager {
             } else if (err instanceof ArchiveBrokenError) {
               return prom
                 .then(() => {
-                  callback?.(err, null);
                   if (unattended) {
+                    promiseCallback?.(err, null);
                     return Promise.resolve();
                   }
                   if (installContext !== undefined) {
@@ -1346,7 +1337,7 @@ class InstallManager {
                       message: err.message,
                     });
                   }
-                  callback?.(err, null);
+                  promiseCallback?.(err, null);
                 });
             } else if (err instanceof DataInvalid) {
               return prom
@@ -1361,7 +1352,7 @@ class InstallManager {
                       message: err.message,
                     });
                   }
-                  callback?.(err, null);
+                  promiseCallback?.(err, null);
                 });
             } else if (err['code'] === 'MODULE_NOT_FOUND') {
               const location = err['requireStack'] !== undefined
@@ -1377,7 +1368,7 @@ class InstallManager {
                 location,
                 message: err.message.split('\n')[0],
               });
-              callback?.(err, null);
+              promiseCallback?.(err, null);
             } else {
               return prom
                 .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
@@ -1406,7 +1397,7 @@ class InstallManager {
                       ? installContext.reportError('Installation failed', err, allowReport, replace)
                       : installContext.reportError('Installation failed', browserAssistantMsg, false);
                   }
-                  callback?.(err, modId);
+                  promiseCallback?.(err, modId);
                 });
             }
           })
@@ -1455,7 +1446,6 @@ class InstallManager {
                   });
                 }
               }
-
               this.mActiveInstalls.delete(installId);
               resolve(modId);
             }
@@ -1469,7 +1459,7 @@ class InstallManager {
           });
       });
     }).catch(err => {
-      callback?.(err, null);
+      trackedCallback?.(err, null);
     });
   }
 
@@ -2395,16 +2385,6 @@ class InstallManager {
           });
         }
 
-        // Schedule deployment polling for the newly allowed phase if it has downloads finished
-        // if (state.downloadsFinished.has(curr)) {
-        //   log('debug', 'Advanced to new phase, scheduling deployment polling', { sourceModId, newPhase: curr });
-        //   // Schedule deployment polling for the newly allowed phase
-        //   if (api) {
-        //     this.scheduleDeployOnPhaseSettled(api, sourceModId, curr);
-        //   } else {
-        //     log('warn', 'Cannot schedule deployment polling - API not provided to maybeAdvancePhase', { sourceModId, phase: curr });
-        //   }
-        // }
         continue;
       }
       break;
@@ -2415,7 +2395,7 @@ class InstallManager {
    * when installing a mod from a dependency rule we store the id of the installed mod
    * in the rule for quicker and consistent matching but if - at a later time - we
    * install those same dependencies again we have to unset those ids, otherwise the
-   * dependence installs would fail.
+   * dependency installs would fail.
    */
   private repairRules(api: IExtensionApi, mod: IMod, gameId: string) {
     const state: IState = api.store.getState();
@@ -2470,13 +2450,13 @@ class InstallManager {
     let extractProm: Bluebird<any>;
     const extractionStart = Date.now();
     if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
-      extractProm = Bluebird.reject(new ArchiveBrokenError('file type on avoidlist'));
+      extractProm = Bluebird.reject(new ArchiveBrokenError(path.basename(archivePath), 'file type on avoidlist'));
     } else {
       extractProm = installationZip.extractFull(archivePath, tempPath, { ssc: false },
         progress,
         () => this.queryPassword(api.store) as any)
         .catch((err: Error) => this.isCritical(err.message)
-          ? Bluebird.reject(new ArchiveBrokenError(err.message))
+          ? Bluebird.reject(new ArchiveBrokenError(path.basename(archivePath), err.message))
           : Bluebird.reject(err));
       (extractProm as any).startTime = extractionStart;
     }
@@ -2495,42 +2475,9 @@ class InstallManager {
           log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
           const critical = errors.find(this.isCritical);
           if (critical !== undefined) {
-            throw new ArchiveBrokenError(critical);
+            throw new ArchiveBrokenError(path.basename(archivePath), critical);
           }
           await this.queryContinue(api, errors, archivePath);
-        }
-      })
-      .catch(ArchiveBrokenError, async err => {
-        if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
-          // hmm, it was supposed to support the file type though...
-          throw err;
-        }
-
-        if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
-          // User just tried to install the staging/downloads folder tag file as a mod...
-          //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
-          await api.showDialog('question', 'Not a mod', {
-            text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
-              + 'This file is generated and used by Vortex internally and should not be installed '
-              + 'in this way.',
-            message: archivePath,
-          }, [
-            { label: 'Ok' },
-          ]);
-          throw new ProcessCanceled('Not a mod');
-        }
-
-        // this is really a completely separate process from the "regular" mod installation
-        const dialogResult = await api.showDialog('question', 'Not an archive', {
-          text: 'Vortex is designed to install mods from archives but this doesn\'t look '
-            + 'like one. Do you want to create a mod containing just this file?',
-          message: archivePath,
-        }, [
-          { label: 'Cancel' },
-          { label: 'Create Mod' },
-        ]);
-        if (dialogResult.action === 'Cancel') {
-          throw new UserCanceled();
         }
       })
       .then(async () => {
@@ -5198,7 +5145,7 @@ class InstallManager {
       try {
         await fs.copyAsync(src, dst);
       } catch (err) {
-        if (err instanceof SelfCopyCheckError) {
+        if (err instanceof SelfCopyCheckError || err.message?.includes('and destination must')) {
           // File is already there - don't care
           return;
         }
