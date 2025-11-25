@@ -35,6 +35,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
   const { t } = useTranslation(['collection', 'common']);
   const gameId = useSelector((state: IState) => activeGameId(state));
+  const adultContentFilter = useSelector((state: IState) => state.persistent['nexus']?.userInfo?.adult);
 
   const [collections, setCollections] = React.useState<ICollection[]>([]);
   const [totalCount, setTotalCount] = React.useState<number>(0);
@@ -124,6 +125,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       search: activeSearch || undefined,
       categoryName: [{ op: 'NOT_EQUALS', value: 'Wabbajack Mod List' }],
       collectionStatuses: ['listed'],
+      adultContent: adultContentFilter === true ? undefined : false,
     };
 
     // Fetch collections using the new search API with sorting and search
