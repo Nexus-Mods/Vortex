@@ -2,16 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <TargetFramework>net9.0</TargetFramework>
     <SelfContained>false</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>dotnetprobe</AssemblyName>
     <Version>1.0.0</Version>
     <Authors>Nexus Mods</Authors>
-    <Description>Probes for .NET 9.0 Desktop Runtime</Description>
+    <Description>Probes for the .NET Desktop Runtime</Description>
   </PropertyGroup>
 
 </Project>

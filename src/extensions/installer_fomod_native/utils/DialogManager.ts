@@ -57,7 +57,7 @@ export class DialogManager implements IDialogManager {
     log('debug', 'Created DialogManager instance', { instanceId: this.mInstanceId });
   }
 
-  public dispose() {
+  public dispose = () => {
     this.mApi.store?.dispatch(clearDialog(this.mInstanceId));
   }
 

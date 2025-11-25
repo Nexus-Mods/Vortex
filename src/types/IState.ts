@@ -2,7 +2,7 @@ import { IAttributeState } from './IAttributeState';
 import { IDialog } from './IDialog';
 import { INotification } from './INotification';
 
-import { ICollectionInstallState } from './api';
+import { ICollectionInstallState } from '../extensions/collections_integration/types';
 
 import { ICategoryDictionary } from '../extensions/category_management/types/ICategoryDictionary';
 import { IDownload } from '../extensions/download_management/types/IDownload';

@@ -1,6 +1,6 @@
 import { NativeModInstaller, types as vetypes } from 'fomod-installer-native';
 import { IExtensionApi, ISupportedResult } from '../../../types/api';
-import { log } from '../../..';
+import { log } from '../../../util/log';
 import { DialogManager } from './DialogManager';
 import { SharedDelegates } from '../../installer_fomod_shared/delegates/SharedDelegates';
 

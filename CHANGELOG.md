@@ -4,15 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.16.0-alpha.3 - 2025-11-xx
+## [1.16.0-alpha.3] - 2025-11-18
+
+_Stability-focused release with FOMOD native port completion, collection browsing improvements, and critical crash fixes_
 
 - Complete FOMOD Installer Native Port - Split FOMOD installer into shared logic and native implementation modules for better performance, reliability, and maintainability ([#18465](https://github.com/Nexus-Mods/Vortex/issues/18465))
 - Collection browsing UX fixes ([#18728](https://github.com/Nexus-Mods/Vortex/issues/18728))
+- Fixed collection browsing not scrolling back to top on pagination change ([#18726](https://github.com/Nexus-Mods/Vortex/issues/18726))
+- Fixed installation skip of manually downloaded mods that are missing the referenceTag when installing a collection ([#18736](https://github.com/Nexus-Mods/Vortex/issues/18736))
+- Fixed ability to export "dead" collection rules when uploading a new revision ([#18709](https://github.com/Nexus-Mods/Vortex/issues/18709))
 - Fixed Mixpanel event crash on mod install ([#18716](https://github.com/Nexus-Mods/Vortex/issues/18716))
 - Fixed downloads folder cleanup ([#18720](https://github.com/Nexus-Mods/Vortex/issues/18720))
 - Fixed download reference false positives for fuzzy/bundled mods ([#18719](https://github.com/Nexus-Mods/Vortex/issues/18719))
-- Added C# script execution warning ([#18667](https://github.com/Nexus-Mods/Vortex/issues/18667))
-- Fix ability to export "dead" collection rules when uploading a new revision ([#18709](https://github.com/Nexus-Mods/Vortex/issues/18709))
+- Fixed confirmedOffset + confirmedReceived for stalled/slow download workers ([#18827](https://github.com/Nexus-Mods/Vortex/issues/18827))
+- Fixed self copy check error on mod extraction ([#18810](https://github.com/Nexus-Mods/Vortex/issues/18810))
+- Fixed Game Not Supported Error when downloading a requirement from another game domain ([#18738](https://github.com/Nexus-Mods/Vortex/issues/18738))
+- Fixed text in dialogue not displaying properly ([#18768](https://github.com/Nexus-Mods/Vortex/issues/18768))
+- Fixed crash: HTTP (403) - Forbidden ([#18764](https://github.com/Nexus-Mods/Vortex/issues/18764))
+- Fixed YouTube embedded player sometimes not working ([#18707](https://github.com/Nexus-Mods/Vortex/issues/18707))
+- Fixed i18 functionality for string resources ([#18641](https://github.com/Nexus-Mods/Vortex/issues/18641))
 
 ## 1.16.0-alpha.2 - 2025-10-29
 
@@ -1045,6 +1055,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-alpha.3]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.3
 [1.16.0-alpha.2]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.2
 [1.15.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.2
 [1.15.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.1

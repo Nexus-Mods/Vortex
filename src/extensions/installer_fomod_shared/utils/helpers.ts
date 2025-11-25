@@ -1,6 +1,6 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { hasSessionFOMOD } from './guards';
-import { ProcessCanceled } from '../../../util/api';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import { IChoices, IGroupList } from '../types/interface';
 
 // Helper function to check if there's an active FOMOD dialog

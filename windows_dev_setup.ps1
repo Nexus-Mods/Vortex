@@ -1,17 +1,28 @@
 # Windows Development Environment Bootstrap
-# Installs: Git, Python 3.10, CMake, VS 2022 Build Tools + Windows SDK, NVM, Node 18.20.4, Yarn 1.x
+# Installs: Git, Python, CMake, VS Build Tools + Windows SDK, NVM, Node, Yarn
 # Then clones/updates Vortex repository
 
 #Requires -RunAsAdministrator
 
+
 # Configuration
-$NODE_VERSION = "22.19.0"
+$NODE_VERSION = "22.19"
+$YarnVersion = "1.22.19"
 $WindowsSDKVer = "19041"
 $RepoUrl = "https://github.com/Nexus-Mods/Vortex.git"
 $Branch = "master"
 $Directory = "C:\vortex"
 $RetryAttempts = 3
 $RetryDelay = 5
+
+if (Test-Path "$repoPath\package.json") {
+	$packageJson = Get-Content "$repoPath\package.json"
+	$j = $packageJson | ConvertFrom-Json
+
+	$NODE_VERSION = $j.engines.node
+	$rawYarnVersion = $j.packageManager
+	$YarnVersion = $rawYarnVersion.Split("@")[1]
+}
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
@@ -317,7 +328,7 @@ function Install-NVMAndNode {
         throw "NVM installation failed"
     }
     
-    # Install and activate Node.js 22.19.0
+    # Install and activate Node.js
     try {
         $nvmList = nvm list 2>&1 | Out-String
         if ($nvmList -notmatch $NODE_VERSION) {
@@ -353,12 +364,12 @@ function Install-NVMAndNode {
 }
 
 function Install-Yarn {
-    Write-Log "Installing Yarn 1.x..." "STEP"
+    Write-Log "Installing Yarn $YarnVersion" "STEP"
     
     try {
         $yarnVersion = yarn -v 2>&1
         if ($yarnVersion -match '^1\.') {
-            Write-Log "Yarn 1.x already installed: $yarnVersion" "SUCCESS"
+            Write-Log "Yarn $YarnVersion already installed: $yarnVersion" "SUCCESS"
             return
         }
     }
@@ -367,19 +378,19 @@ function Install-Yarn {
     Invoke-WithRetry -Operation "Yarn installation" -ScriptBlock {
         try {
             corepack enable | Out-Null
-            corepack prepare yarn@1.22.22 --activate | Out-Null
+            corepack prepare yarn@${YarnVersion} --activate | Out-Null
         }
         catch {
-            npm install -g yarn@1.22.22 | Out-Null
+            npm install -g yarn@${YarnVersion} | Out-Null
         }
         
         Start-Sleep -Seconds 2
         $version = yarn -v 2>&1
         if ($version -notmatch '^1\.') {
-            throw "Yarn 1.x installation verification failed"
+            throw "Yarn $YarnVersion installation verification failed"
         }
     }
-    
+
     Write-Log "Yarn installed: $(yarn -v)" "SUCCESS"
 }
 

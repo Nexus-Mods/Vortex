@@ -28,6 +28,7 @@ import { IChunk } from './types/IChunk';
 import { IDownload, IDownloadOptions } from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IStartDownloadOptions } from './types/IStartDownloadOptions';
 import { IDownloadRemoveOptions } from './types/IDownloadRemoveOptions';
 import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
@@ -42,7 +43,6 @@ import { generate as shortid } from 'shortid';
 import { getGames } from '../gamemode_management/util/getGame';
 import { util } from '../..';
 import { ModsDownloadCompletedEvent, ModsDownloadFailedEvent, ModsDownloadCancelledEvent, CollectionsDownloadCompletedEvent, CollectionsDownloadCancelledEvent, CollectionsDownloadFailedEvent } from '../analytics/mixpanel/MixpanelEvents';
-import { isArray } from 'lodash';
 import { nexusIdsFromDownloadId } from '../nexus_integration/selectors';
 import { makeModAndFileUIDs } from '../nexus_integration/util/UIDs';
 
@@ -71,14 +71,6 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   if (updates.length > 0) {
     util.batchDispatch(store.dispatch, updates);
   }
-}
-
-export interface IStartDownloadOptions {
-  // whether the download may be auto-installed if the user has that set up for mods (default: true)
-  // if set to 'force', the download will be installed independent of the user config
-  allowInstall?: boolean | 'force';
-  // whether the url should be opened in the embedded browser if it's html (default: true)
-  allowOpenHTML?: boolean;
 }
 
 /**

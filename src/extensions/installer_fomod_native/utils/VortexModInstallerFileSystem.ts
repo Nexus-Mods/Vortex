@@ -14,11 +14,11 @@ export class VortexModInstallerFileSystem {
     );
   }
 
-  public useVortexFuntions() {
+  public useVortexFuntions = () => {
     this.mFileSystem.setCallbacks();
   }
 
-  public useLibraryFunctions() {
+  public useLibraryFunctions = () => {
     NativeFileSystem.setDefaultCallbacks();
   }
 

@@ -137,7 +137,6 @@ class PackageUpdater {
    */
   getDependencyKey(moduleName) {
     const keyMap = {
-      'fomod-installer': 'fomod-installer',
       'winapi-bindings': 'winapi-bindings',
       'bsatk': 'bsatk',
       'esptk': 'esptk',

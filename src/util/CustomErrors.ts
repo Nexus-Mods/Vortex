@@ -207,3 +207,29 @@ export class ThirdPartyError extends Error {
     this.name = this.constructor.name;
   }
 }
+
+export class SelfCopyCheckError extends Error {
+  constructor(src: string, dest: string, ino: BigInt) {
+    super(`Source "${src}" and destination "${dest}" are the same file (id "${ino}").`);
+    this.name = this.constructor.name;
+  }
+}
+
+export class ArchiveBrokenError extends Error {
+  private mFileName: string;
+  constructor(fileNameOrMessage: string, message?: string) {
+    if (message == null) {
+      // Single argument: it's just a message
+      super(`Archive is broken: ${fileNameOrMessage}`);
+      this.mFileName = undefined;
+    } else {
+      super(`Archive is broken: ${message}`);
+      this.mFileName = fileNameOrMessage;
+    }
+    this.name = this.constructor.name;
+  }
+
+  public get fileName(): string {
+    return this.mFileName;
+  }
+}

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { IState } from '../../types/api';
+import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { ParserError } from '../announcement_dashlet/types';
