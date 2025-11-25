@@ -31,7 +31,7 @@ import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, 
          resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
 import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
-                ICollectionSearchOptions,
+                ICollectionSearchOptions, ICollectionQuery,
                 ICollectionSearchResult,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
@@ -40,7 +40,7 @@ import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
                 RateLimitError, TimeoutError, 
                 IPreferenceQuery,
                 IPreference} from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
 import { ITokenReply } from './util/oauth';
