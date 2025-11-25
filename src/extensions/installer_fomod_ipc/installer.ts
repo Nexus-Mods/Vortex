@@ -81,6 +81,17 @@ export const install = async (
 
     log('info', 'FOMOD installation completed', { gameId });
 
+    if (result.instructions !== undefined && Array.isArray(result.instructions)) {
+      for (const instruction of result.instructions) {
+        if (instruction.type === 'generatefile') {
+          var json = (instruction.data as any);
+          if (json.type && json.type === 'Buffer' && typeof json.data === 'string') {
+            instruction.data = Buffer.from(json.data, 'base64');
+          }
+        }
+      }
+    }
+
     result.instructions.push({
       type: 'attribute',
       key: 'installerChoices',
