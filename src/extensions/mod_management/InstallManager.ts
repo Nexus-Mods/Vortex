@@ -526,6 +526,7 @@ class InstallManager {
 
     // Create a dependency object and queue the installation
     const dependency: IDependency = {
+      extra: matchingRule.extra,
       reference: matchingRule.reference,
       lookupResults: [], // Will be populated if needed
       download: downloadId,
