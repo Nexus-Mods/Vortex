@@ -283,7 +283,8 @@ function findCollectionByDownload(
     return null;
   }
 
-  if (sourceModId != null) {
+  const activeCollection = getCollectionActiveSession(state);
+  if (sourceModId != null && activeCollection == null) {
     const mods: { [modId: string]: IMod } = state.persistent.mods[gameId];
     const collectionMod = mods?.[sourceModId];
     if (!collectionMod || !download?.id) {
@@ -302,7 +303,6 @@ function findCollectionByDownload(
   }
 
   // Get the current active collection installation
-  const activeCollection = getCollectionActiveSession(state);
   if (!activeCollection?.collectionId) {
     log('debug', 'No active collection installation found', { downloadId: download.id });
     return null;
