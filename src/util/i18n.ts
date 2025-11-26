@@ -174,8 +174,8 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
       ],
       defaultNS: 'common',
 
-      nsSeparator: ':',
-      keySeparator: '.',
+      nsSeparator: ':::',
+      keySeparator: '::',
 
       debug: false,
       postProcess: (process.env.HIGHLIGHT_I18N === 'true') ? 'HighlightPP' : false,
