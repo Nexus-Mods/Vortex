@@ -48,7 +48,7 @@ export const install = async (
     connection.registerCallback('getAppVersion', () => sharedDelegates.getAppVersion());
     connection.registerCallback('getCurrentGameVersion', () => sharedDelegates.getCurrentGameVersion());
     connection.registerCallback('getExtenderVersion', (extender: string) => sharedDelegates.getExtenderVersion(extender));
-    connection.registerCallback('getAllPlugins', (activeOnly: boolean) => sharedDelegates.getAllPlugins(activeOnly));
+    connection.registerCallback('getAll', (activeOnly: boolean) => sharedDelegates.getAllPlugins(activeOnly));
 
     const csharpDelegates = new CSharpDelegates(api);
     connection.registerCallback('isExtenderPresent', () => csharpDelegates.isExtenderPresent());
