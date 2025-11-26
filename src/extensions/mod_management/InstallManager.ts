@@ -1055,6 +1055,11 @@ class InstallManager {
                     if (choice.enable) {
                       enable = true;
                     }
+                    // When user chooses to replace or create a variant, clear any pre-set
+                    // installer options so they get a fresh installation experience
+                    delete fullInfo.choices;
+                    delete fullInfo.patches;
+                    fileList = undefined;
                     setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
                     rules = choice.rules || [];
                     fullInfo.previous = choice.attributes;
@@ -1117,9 +1122,9 @@ class InstallManager {
             }
           })
           .then(() => {
-            if ((existingMod !== undefined) && (fullInfo.choices === undefined)) {
-              fullInfo.choices = getSafe(existingMod, ['attributes', 'installerChoices'], undefined);
-            }
+            // Note: We intentionally do NOT copy installerChoices from existingMod here.
+            // When reinstalling or replacing a mod, the user should get a fresh installation
+            // experience with the installer dialogs shown again.
 
             if ((existingMod !== undefined) && (installProfile !== undefined)) {
               const wasEnabled = getSafe(installProfile.modState, [existingMod.id, 'enabled'], false);
