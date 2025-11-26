@@ -46,7 +46,7 @@ jobs:
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
-        if: runner.os == "Linux"
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y fontconfig
 
       - name: Install dependencies
@@ -56,7 +56,7 @@ jobs:
         run: yarn build
 
       - name: Test
-        if: runner.os == "Windows"
+        if: runner.os == 'Windows'
         run: yarn test
 
 
