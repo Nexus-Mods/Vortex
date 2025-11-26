@@ -1,5 +1,5 @@
 import { ILink, triggerDialogLink } from '../actions';
-import { closeDialog, DialogContentItem } from '../actions/notifications';
+import { closeDialog, closeDialogs, DialogContentItem } from '../actions/notifications';
 import Collapse from '../controls/Collapse';
 import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
 import Icon from '../controls/Icon';
@@ -73,6 +73,7 @@ interface IDialogConnectedProps {
 
 interface IDialogActionProps {
   onDismiss: (id: string, action: string, input: IDialogContent) => void;
+  onDismissMultiple: (ids: string[], action: string, input: IDialogContent) => void;
 }
 
 interface IComponentState {
@@ -646,7 +647,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private dismiss = (action: string) => {
-    const { dialogs, onDismiss } = this.props;
+    const { dialogs, onDismiss, onDismissMultiple } = this.props;
     const { dialogState } = this.state;
 
     const data = {};
@@ -673,7 +674,19 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       dialogState: { $set: undefined },
     }));
 
-    onDismiss(dialogs[0].id, action, data);
+    // If "remember" is checked, apply to all pending dialogs with the same title
+    const rememberChecked = data['remember'] === true;
+    if (rememberChecked && dialogs.length > 1) {
+      const currentDialog = dialogs[0];
+      // Find all pending dialogs with the same title (indicating same type of dialog)
+      const matchingDialogIds = dialogs
+        .filter(dialog => dialog.title === currentDialog.title)
+        .map(dialog => dialog.id);
+
+      onDismissMultiple(matchingDialogIds, action, data);
+    } else {
+      onDismiss(dialogs[0].id, action, data);
+    }
   }
 }
 
@@ -687,6 +700,8 @@ function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): 
   return {
     onDismiss: (id: string, action: string, input: any) =>
       dispatch(closeDialog(id, action, input)),
+    onDismissMultiple: (ids: string[], action: string, input: any) =>
+      dispatch(closeDialogs(ids, action, input)),
   };
 }
 
