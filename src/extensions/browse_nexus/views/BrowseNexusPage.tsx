@@ -34,14 +34,13 @@ const SORT_OPTIONS: ISortOption[] = [
 
 async function adultContentDialog(api: IExtensionApi, collection: ICollection, adultContent: boolean): Promise<boolean> {
   try {
-    const result = await api.showDialog('question', 'Adult Content Warning', {
-      bbcode: api.translate(`The collection "[b]{{collectionName}}[/b]" contains adult content.<br/><br/>`
-        + `Your current website preferences are set to hide such content when browsing Nexus Mods.<br/><br/>`
-        + `Do you wish to proceed and view this collection?`,
+    const result = await api.showDialog('question', 'Adult content warning', {
+      bbcode: api.translate(`The collection "[b]{{collectionName}}[/b]" has been classified as adult content because it contains: nudity, sexualisation, extreme violence and gore, or excessive profanity.<br/><br/>`
+        + `Your site preferences are set to hide adult content, you can update your preferences on the Nexus Mods website.`,        
         { replace: { collectionName: collection.name } }),
     }, [
       { label: api.translate('Cancel') },
-      { label: api.translate('View Collection') },
+      { label: api.translate('Open site preferences') },
     ])
     return result.action === 'Cancel' ? false : true;
   } catch (err) {
@@ -110,7 +109,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
       adultContentDialog(api, collection, false).then((proceed) => {
         if (proceed) {
-          handleViewOnNexus(collection);
+          handleViewNexusAdultPreferences();
         }
       });
     } else {
@@ -122,6 +121,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           }
         }, undefined, { allowInstall: 'force' });
     }
+  };  
+
+  const handleViewNexusAdultPreferences = () => {
+    const nexusUrl = `https://next.nexusmods.com/settings/content-blocking`;
+    opn(nexusUrl).catch(() => undefined);
   };
 
   const handleViewOnNexus = (collection: ICollection) => {
