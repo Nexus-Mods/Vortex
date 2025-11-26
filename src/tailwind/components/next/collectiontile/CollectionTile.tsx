@@ -9,15 +9,21 @@ import { Button } from '../button/Button';
 import { Typography } from '../typography/Typography';
 import { Icon } from '../icon';
 import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
-import numeral from 'numeral'; 
+import numeral from 'numeral';
 import { IExtensionApi } from '../../../../types/IExtensionContext';
-import { isCollectionModPresent, activeDownloads } from '../../../../util/selectors';
+import { isCollectionModPresent } from '../../../../util/selectors';
 import Debouncer from '../../../../util/Debouncer';
+import { delayed } from '../../../../util/util';
 
 const debouncer = new Debouncer((func: () => void) => {
   func?.();
-  return new Promise<void>((resolve) => setTimeout(resolve, 5000));
+  return delayed(5000);
 }, 5000, false, true);
+
+const userInfoDebouncer = new Debouncer((func: () => void) => {
+  func?.();
+  return Promise.resolve();
+}, 10000, false, true);
 
 export interface CollectionTileProps {
   // Data
@@ -54,7 +60,6 @@ export interface CollectionTileProps {
 export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IExtensionApi }> = ({
   api,
   slug,
-  gameId,
   title,
   author,
   coverImage,
@@ -98,9 +103,19 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
       state,
       slug,
     );
+
     setCanBeAdded(!collectionModInstalled);
     setTooltip(collectionModInstalled || pending ? 'Collection already added' : 'Add this collection');
-  }, [api, slug, isHovered, pending]);
+  }, [api, slug, pending, isHovered]);
+
+  // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
+  React.useEffect(() => {
+    if (isHovered && api?.events) {
+      userInfoDebouncer.schedule(undefined, () => {
+        api.events.emit('refresh-user-info');
+      });
+    }
+  }, [isHovered]);
 
   // Take max 2 tags
   const displayTags = tags.slice(0, 2);

@@ -4,7 +4,7 @@ import Nexus, {
   IOAuthCredentials, IModFile, IModFileQuery, IModFiles, IModQuery, ITrackResponse,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
   ICollectionSearchOptions,
-  ICollectionSearchResult,
+  ICollectionSearchResult, IPreference,
 } from '@nexusmods/nexus-api';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
@@ -1427,11 +1427,11 @@ function getAccountStatus(apiUserInfo:IUserInfo):IAccountStatus {
   else if(apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Premium;
   else if(apiUserInfo.membership_roles.includes('supporter') && !apiUserInfo.membership_roles.includes('premium') ) return IAccountStatus.Supporter;
   else return IAccountStatus.Free;
-} 
+}
 
-export function transformUserInfoFromApi(input: IUserInfo) {
+export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPreference }) {
 
-  const stateUserInfo:IValidateKeyDataV2 = {
+  const stateUserInfo: IValidateKeyDataV2 = {
     email: input.email,
     isPremium: input.membership_roles.includes('premium'),
     isSupporter: input.membership_roles.includes('supporter'),
@@ -1441,7 +1441,8 @@ export function transformUserInfoFromApi(input: IUserInfo) {
     isLifetime:  input.membership_roles.includes('lifetimepremium'),
     isBanned: input.group_id === 5,
     isClosed: input.group_id === 41 ,
-    status: getAccountStatus(input)
+    status: getAccountStatus(input),
+    ...input.preferences,
   };
   
   //log('info', 'transformUserInfoFromApi()', stateUserInfo);

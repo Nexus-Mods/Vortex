@@ -30,20 +30,22 @@ import { NEXUS_BASE_URL, NEXUS_NEXT_URL, USERINFO_ENDPOINT } from './constants';
 import { checkModVersionsImpl, endorseDirectImpl, endorseThing, ensureLoggedIn, processErrorMessage,
          resolveGraphError, startDownload, transformUserInfoFromApi, updateKey, updateToken } from './util';
 
-import Nexus, { EndorsedStatus, HTTPError, ICollection, ICollectionManifest,
-                ICollectionQuery,
-                ICollectionSearchOptions,
+import Nexus, { EndorsedStatus, ICollection, ICollectionManifest,
+                ICollectionSearchOptions, ICollectionQuery,
                 ICollectionSearchResult,
                 IDownloadURL, IFeedbackResponse,
                 IFileInfo,
-                IIssue, IModFileContentPage, IModInfo, IRating, IRevision, IUserInfo, NexusError,
-                ProtocolError, IModFileContentPageQuery, IModFileContentSearchFilter,
-                RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+                IIssue, IModFileContentPage, IModInfo, IRating, IRevision, NexusError,
+                IModFileContentPageQuery, IModFileContentSearchFilter,
+                RateLimitError, TimeoutError, 
+                IPreferenceQuery,
+                IPreference} from '@nexusmods/nexus-api';
 import Bluebird from 'bluebird';
 import * as path from 'path';
 import * as semver from 'semver';
 import { ITokenReply } from './util/oauth';
 import { isLoggedIn } from './selectors';
+import { IValidateKeyDataV2 } from './types/IValidateKeyData';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -701,6 +703,29 @@ export function onModFileContents(api: IExtensionApi, nexus: Nexus) : (...args: 
           allowReport: false,
         });
         return Bluebird.resolve({});
+      });
+  };
+}
+
+export function onGetUserKeyData(api: IExtensionApi) : (...args: any[]) => Promise<IValidateKeyDataV2> {
+  return () => {
+    // This doesn't have to be async, as the key data is already in the state
+    //  but we keep the Promise interface for consistency + in case we want to
+    //  make an async call in the future
+    const state: IState = api.getState();
+    const userKey = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
+    return Promise.resolve(userKey);
+  };
+}
+
+export function onGetPreferences(api: IExtensionApi, nexus: Nexus): (...args: any[]) => Promise<Partial<IPreference>> {
+  return (query: IPreferenceQuery) => {
+    return Promise.resolve(nexus.getPreferences(query))
+      .catch(err => {
+        api.showErrorNotification('Failed to get preferences', err, {
+          allowReport: false,
+        });
+        return Promise.resolve({});
       });
   };
 }
