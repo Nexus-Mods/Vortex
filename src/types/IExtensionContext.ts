@@ -52,6 +52,7 @@ import { ComplexActionCreator } from 'redux-act';
 import { ThunkDispatch } from 'redux-thunk';
 import { INexusAPIExtension } from '../extensions/nexus_integration/types/INexusAPIExtension';
 import { IModsAPIExtension } from '../extensions/mod_management/types/IModsAPIExtension';
+import { IDownloadsAPIExtension } from '../extensions/download_management/types/IDownloadsAPIExtension';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IQuery, InstructionType, IReference, InstallFunc,
@@ -404,7 +405,7 @@ export interface IApiFuncOptions {
   minArguments?: number;
 }
 
-export interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension {
+export interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, IDownloadsAPIExtension {
   ensureLoggedIn?: () => Promise<void>;
   awaitProfileSwitch?: () => Promise<string>;
   showOverlay?: (id: string, title: string,

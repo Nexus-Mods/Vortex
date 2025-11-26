@@ -1,10 +1,9 @@
 /* eslint-disable */
-import { DataInvalid, HTTPError, ProcessCanceled,
-         StalledError, UserCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import makeRemoteCall from '../../util/electronRemote';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { countIf, INVALID_FILENAME_RE, truthy } from '../../util/util';
+import { delayed, INVALID_FILENAME_RE, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadOptions } from './types/IDownload';
 import { IDownloadJob } from './types/IDownloadJob';
@@ -625,21 +624,25 @@ class DownloadWorker {
       this.mRequest.destroy();
     }
     
+    const is416Error = (err instanceof HTTPError) && err.statusCode === 416;
+
     // Check for network errors that should trigger a retry
     const isNetworkError = ['ESOCKETTIMEDOUT', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH', 'ETIMEDOUT'].includes(err.code)
       || err.message?.includes('socket hang up')
       || err.message?.includes('ECONNRESET')
       || err.message?.includes('ETIMEDOUT')
-      || err.message?.includes('Request timeout');
+      || err.message?.includes('Request timeout')
+      || is416Error; // HTTP 416 is also retriable
 
     // For timeout errors, be more permissive - retry even without progress for initial connection issues
-    const isTimeoutError = ['ETIMEDOUT', 'ESOCKETTIMEDOUT'].includes(err.code) 
+    const isTimeoutError = ['ETIMEDOUT', 'ESOCKETTIMEDOUT'].includes(err.code)
       || err.message?.includes('Request timeout')
       || err.message?.includes('ETIMEDOUT');
-    
+
     const shouldRetry = isNetworkError && !this.mEnded && (
       this.mDataHistory.length > 0 || // Made progress before error
-      isTimeoutError // Timeout errors should always retry
+      isTimeoutError ||                // Timeout errors should always retry
+      is416Error                       // HTTP 416 errors should retry (range issues)
     );
 
     if (shouldRetry) {
@@ -650,6 +653,7 @@ class DownloadWorker {
           id: this.mJob.workerId,
           errorCode: err.code,
           errorMessage: err.message,
+          httpStatusCode: (err instanceof HTTPError) ? err.statusCode : undefined,
           progressMade: this.mDataHistory.length > 0,
           isTimeoutError,
           retryAttempt: this.mNetworkRetries,
@@ -697,6 +701,7 @@ class DownloadWorker {
         id: this.mJob.workerId,
         errorCode: err.code,
         errorMessage: err.message,
+        httpStatusCode: (err instanceof HTTPError) ? err.statusCode : undefined,
         isNetworkError,
         isTimeoutError,
         shouldRetry,
@@ -1349,6 +1354,16 @@ class DownloadManager {
         }
       }
     });
+    // Close the assembler to release the file handle before pausing
+    // This prevents orphaned file handles when resuming
+    if (download.assemblerProm !== undefined) {
+      download.assemblerProm.then(assembler => {
+        if (!assembler.isClosed()) {
+          return assembler.close();
+        }
+      }).catch(() => null);
+    }
+
     // remove from queue
     this.mQueue = this.mQueue.filter(
       (value: IRunningDownload) => value.id !== id);
@@ -1878,9 +1893,10 @@ class DownloadManager {
       download.assembler.setTotalSize(size);
     }
 
-    // For single-chunk downloads, always recalculate the derived size field
+    // For single-chunk downloads, update confirmedSize only if download hasn't started yet
+    // Once download has started (confirmedReceived > 0), confirmedSize is immutable
     // Note: confirmedSize may have already been updated by the worker in handleResponse
-    if (download.chunks.length === 1) {
+    if (download.chunks.length === 1 && download.chunks[0].confirmedReceived === 0) {
       download.chunks[0].confirmedSize = size;
       // Recalculate derived size field
       download.chunks[0].size = download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;
@@ -1984,9 +2000,10 @@ class DownloadManager {
       log('debug', 'downloading file in chunks',
         { size: chunkSize, count: download.chunks.length, max: maxChunks, total: fileSize });
     } else {
-      // Single chunk download - always recalculate the derived size field
+      // Single chunk download - update confirmedSize only if download hasn't started yet
+      // Once download has started (confirmedReceived > 0), confirmedSize is immutable
       // Note: confirmedSize may have already been updated by the worker in handleResponse
-      if (download.chunks.length === 1) {
+      if (download.chunks.length === 1 && download.chunks[0].confirmedReceived === 0) {
         download.chunks[0].confirmedSize = fileSize;
         // Recalculate derived size field
         download.chunks[0].size = download.chunks[0].confirmedSize - download.chunks[0].confirmedReceived;

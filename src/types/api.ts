@@ -58,6 +58,9 @@ export { IModLookupInfo } from '../extensions/mod_management/util/testModReferen
 export { IMod, IModReference, IModRepoId, IModRule } from '../extensions/mod_management/types/IMod';
 export { IRemoveModOptions } from '../extensions/mod_management/types/IRemoveModOptions';
 export { IDeployOptions } from '../extensions/mod_management/types/IDeployOptions';
+export { InstallFunc, IInstallationDetails, ProgressDelegate } from
+  '../extensions/mod_management/types/InstallFunc';
+export { TestSupported, ITestSupportedDetails, ISupportedResult } from '../extensions/mod_management/types/TestSupported';
 export { IInstallResult } from '../extensions/mod_management/types/IInstallResult';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 export {

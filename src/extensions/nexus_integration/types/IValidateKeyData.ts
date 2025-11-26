@@ -1,3 +1,5 @@
+import { IPreference } from '@nexusmods/nexus-api';
+
 /**
  * Data retrieved with a correct API Key
  *
@@ -21,7 +23,7 @@ export enum IAccountStatus {
   Closed
 } 
 
-export interface IValidateKeyDataV2 extends IValidateKeyData {
+export interface IValidateKeyDataV2 extends IValidateKeyData, Partial<IPreference> {
   isLifetime?: boolean,
   isBanned?: boolean,
   isClosed?: boolean,

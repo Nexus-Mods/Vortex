@@ -13,6 +13,7 @@ import opn from '../../../util/opn';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from '../../nexus_integration/util/convertGameId';
 import { CollectionsDownloadClickedEvent } from '../../analytics/mixpanel/MixpanelEvents';
+import { UserCanceled } from '../../../util/api';
 
 interface IBrowseNexusPageProps {
   api: IExtensionApi;
@@ -31,11 +32,27 @@ const SORT_OPTIONS: ISortOption[] = [
   { field: 'downloads', direction: 'DESC', label: 'Most Downloaded' },
 ];
 
+async function adultContentDialog(api: IExtensionApi, collection: ICollection, adultContent: boolean): Promise<boolean> {
+  try {
+    const result = await api.showDialog('question', 'Adult content warning', {
+      bbcode: api.translate(`The collection "[b]{{collectionName}}[/b]" has been classified as adult content because it contains: nudity, sexualisation, extreme violence and gore, or excessive profanity.<br/><br/>`
+        + `Your site preferences are set to hide adult content, you can update your preferences on the Nexus Mods website.`,        
+        { replace: { collectionName: collection.name } }),
+    }, [
+      { label: api.translate('Cancel') },
+      { label: api.translate('Open site preferences') },
+    ])
+    return result.action === 'Cancel' ? false : true;
+  } catch (err) {
+    return adultContent;
+  }
+}
+
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
-  const { t } = useTranslation(['collection', 'common']);
+  const t = (input: string, options?) => api.translate(input, { isNamespaceKey: true, ns: ['collection', 'common'], ...options });
   const gameId = useSelector((state: IState) => activeGameId(state));
-
+  const adultContentFilter = useSelector((state: IState) => state.persistent['nexus']?.userInfo?.adult);
   const [collections, setCollections] = React.useState<ICollection[]>([]);
   const [totalCount, setTotalCount] = React.useState<number>(0);
   const [allCollectionsTotal, setAllCollectionsTotal] = React.useState<number>(0);
@@ -59,7 +76,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
     // If search query is too short (1 character), show validation error
     if (searchQuery.length === 1) {
-      setSearchValidationError(t('collection:browse.searchTooShort', { isNamespaceKey: true }));
+      setSearchValidationError(t('collection:browse.searchTooShort'));
       return;
     }
 
@@ -81,22 +98,34 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   };
 
   const handleAddCollection = (collection: ICollection) => {
-    const revisionNumber = (collection as any).latestPublishedRevision?.revisionNumber || 'latest';
+    const revisionNumber = collection.latestPublishedRevision?.revisionNumber || 'latest';
     // Use the game domain name from the collection data (already converted)
     const nxmUrl = `nxm://${collection.game.domainName}/collections/${collection.slug}/revisions/${revisionNumber}`;
-
 
     // Track the download click event
     api.events.emit('analytics-track-mixpanel-event',
       new CollectionsDownloadClickedEvent(collection.slug, collection.game.id));
 
-    // Use the Vortex API to handle the NXM link
-    api.events.emit('start-download', [nxmUrl], {}, undefined,
-      (err: Error) => {
-        if (err && !(err instanceof (api.ext as any).UserCanceled)) {
-          api.showErrorNotification('Failed to add collection', err);
+    if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
+      adultContentDialog(api, collection, false).then((proceed) => {
+        if (proceed) {
+          handleViewNexusAdultPreferences();
         }
-      }, undefined, { allowInstall: 'force' });
+      });
+    } else {
+      // Use the Vortex API to handle the NXM link
+      api.events.emit('start-download', [nxmUrl], {}, undefined,
+        (err: Error) => {
+          if (err && !(err instanceof UserCanceled)) {
+            api.showErrorNotification('Failed to add collection', err);
+          }
+        }, undefined, { allowInstall: 'force' });
+    }
+  };  
+
+  const handleViewNexusAdultPreferences = () => {
+    const nexusUrl = `https://next.nexusmods.com/settings/content-blocking`;
+    opn(nexusUrl).catch(() => undefined);
   };
 
   const handleViewOnNexus = (collection: ICollection) => {
@@ -140,7 +169,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       .catch((err: Error) => {
         // Provide user-friendly error message for wildcard search requirement
         if (err.message && err.message.includes('Wildcard value must have 2 or more characters')) {
-          const friendlyError = new Error(t('collection:browse.searchTooShort', { isNamespaceKey: true }));
+          const friendlyError = new Error(t('collection:browse.searchTooShort'));
           setError(friendlyError);
           // Also clear the invalid search so user can try again
           setActiveSearch('');
@@ -223,7 +252,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       <MainPage id='browse-collections-page'>
         <MainPage.Body>
           <div className="tw:p-5 tw:text-center">
-            <p>{t('collection:browse.selectGame', { isNamespaceKey: true })}</p>
+            <p>{t('collection:browse.selectGame')}</p>
           </div>
         </MainPage.Body>
       </MainPage>
@@ -246,13 +275,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           >
             <Tailwind.TabBar className="tw:mb-5">
               <Tailwind.TabButton
-                name={t('collection:browse.tabs.collections', { isNamespaceKey: true })}
+                name={t('collection:browse.tabs.collections')}
                 count={allCollectionsTotal}
               />
-              <Tailwind.TabButton name={t('collection:browse.tabs.mods', { isNamespaceKey: true })} />
+              <Tailwind.TabButton name={t('collection:browse.tabs.mods')} />
             </Tailwind.TabBar>
 
-            <Tailwind.TabPanel name={t('collection:browse.tabs.collections', { isNamespaceKey: true })}>
+            <Tailwind.TabPanel name={t('collection:browse.tabs.collections')}>
               {/* Search Bar */}
               <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
                 <Tailwind.Input
@@ -265,12 +294,12 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     }
                   }}
                   value={searchQuery}
-                  placeholder={t('collection:browse.searchPlaceholder', { isNamespaceKey: true })}
+                  placeholder={t('collection:browse.searchPlaceholder')}
                   onKeyDown={handleKeyDown}
                   fieldClassName='tw:w-64 tw:shrink-0'
                   errorMessage={searchValidationError || undefined}
                   hideLabel={true}
-                  label={t('collection:browse.searchPlaceholder', { isNamespaceKey: true })}
+                  label={t('collection:browse.searchPlaceholder')}
                 />
 
                 <Tailwind.Button
@@ -279,7 +308,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   filled="strong"
                   onClick={handleSearch}
                 >
-                  {t('common:actions.search', { isNamespaceKey: true })}
+                  {t('common:actions.search')}
                 </Tailwind.Button>
 
                 <Tailwind.Button
@@ -289,7 +318,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   onClick={handleRefresh}
                   leftIconPath="mdiRefresh"
                 >
-                  {t('collection:browse.refresh', { isNamespaceKey: true })}
+                  {t('collection:browse.refresh')}
                 </Tailwind.Button>
               </div>
 
@@ -298,7 +327,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography typographyType="body-lg" appearance="subdued">
-                      {t('collection:browse.loading', { isNamespaceKey: true })}
+                      {t('collection:browse.loading')}
                     </Tailwind.Typography>
                   </div>
                 </div>
@@ -306,7 +335,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography typographyType="body-lg" appearance="none" className="tw:mb-2 tw:text-danger-moderate">
-                      {t('collection:browse.error', { isNamespaceKey: true })}
+                      {t('collection:browse.error')}
                     </Tailwind.Typography>
                     <Tailwind.Typography typographyType="body-md" appearance="subdued">
                       {error.message}
@@ -317,7 +346,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography typographyType="body-lg" appearance="subdued">
-                      {t('collection:browse.noCollections', { isNamespaceKey: true })}
+                      {t('collection:browse.noCollections')}
                     </Tailwind.Typography>
                   </div>
                 </div>
@@ -326,13 +355,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               {/* Results count and sort */}
               <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
                 <Tailwind.Typography typographyType="body-md" appearance="moderate" isTranslucent>
-                  {t('collection:browse.resultsCount', { total: numeral(totalCount).format('0,0'), isNamespaceKey: true })}
+                  {t('collection:browse.resultsCount', { total: numeral(totalCount).format('0,0') })}
                 </Tailwind.Typography>
 
 
                 <Tailwind.Select
                   id="sort-select"
-                  label={t('collection:browse.sortBy', { isNamespaceKey: true })}
+                  label={t('collection:browse.sortBy')}
                   hideLabel={true}
                   value={SORT_OPTIONS.indexOf(sortBy)}
                   onChange={(e) => setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])}
@@ -451,7 +480,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   {/* Direct Page Input */}
                   <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
                     <Tailwind.Typography typographyType="body-md" appearance="subdued">
-                      {t('collection:pagination.goTo', { isNamespaceKey: true })}
+                      {t('collection:pagination.goTo')}
                     </Tailwind.Typography>
                     <Tailwind.Input
                       type="number"
@@ -460,7 +489,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       onKeyDown={handlePageInputKeyDown}
                       className="tw:min-w-10 tw:text-center"
                       id="page-input"
-                      label={t('collection:pagination.pageNumber', { isNamespaceKey: true })}
+                      label={t('collection:pagination.pageNumber')}
                       hideLabel={true}
                       min={1}
                       max={totalPages}
@@ -471,7 +500,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       filled="weak"
                       onClick={handleGoToPage}
                     >
-                      {t('collection:pagination.go', { isNamespaceKey: true })}
+                      {t('collection:pagination.go')}
                     </Tailwind.Button>
 
                   </div>
@@ -481,19 +510,19 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               )}
             </Tailwind.TabPanel>
 
-            <Tailwind.TabPanel name={t('collection:browse.tabs.mods', { isNamespaceKey: true })}>
+            <Tailwind.TabPanel name={t('collection:browse.tabs.mods')}>
               <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-16">
                 {/* Icon */}
                 <Tailwind.Icon path="mdiClockOutline" size='xl' className="tw:w-9 tw:h-9 tw:text-neutral-subdued" />
 
                 {/* Heading */}
                 <Tailwind.Typography typographyType="body-xl" appearance="subdued" className='tw:font-semibold'>
-                  {t('collection:browse.modsComingSoon.title', { isNamespaceKey: true })}
+                  {t('collection:browse.modsComingSoon.title')}
                 </Tailwind.Typography>
 
                 {/* Description */}
                 <Tailwind.Typography typographyType="body-lg" appearance="subdued" className="tw:text-center">
-                  {t('collection:browse.modsComingSoon.description', { isNamespaceKey: true })}
+                  {t('collection:browse.modsComingSoon.description')}
                 </Tailwind.Typography>
 
                 {/* Button */}
@@ -509,7 +538,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     opn(nexusUrl).catch(() => undefined);
                   }}
                 >
-                  {t('collection:browse.modsComingSoon.openWebsite', { isNamespaceKey: true })}
+                  {t('collection:browse.modsComingSoon.openWebsite')}
                 </Tailwind.Button>
               </div>
             </Tailwind.TabPanel>

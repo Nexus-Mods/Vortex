@@ -5,7 +5,7 @@ export interface IAllowListKey {
 }
 
 const allowList = new Map<IAllowListKey, Set<string>>([
-  [{ domainName: 'newvegas', numericGameId: 130, internalId: 'falloutnv' }, new Set(['42507'])],
+  [{ domainName: 'newvegas', numericGameId: 130, internalId: 'falloutnv' }, new Set(['42507', '67870'])],
   [{ domainName: 'fallout3', numericGameId: 120, internalId: 'fallout3' }, new Set([])],
   [{ domainName: 'oblivion', numericGameId: 101, internalId: 'oblivion' }, new Set([])],
 ]);
