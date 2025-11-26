@@ -226,7 +226,7 @@ class InstallContext implements IInstallContext {
       state: 'installing',
       attributes: {
         name: id,
-        installTime: new Date(),
+        installTime: new Date().toString(),
       },
     });
     this.mAddedId = id;

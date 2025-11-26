@@ -2,6 +2,8 @@ import { IDiscoveryResult, IMod, IState } from '../../types/IState';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
+import * as path from 'path';
+
 import { getGame } from '../gamemode_management/util/getGame';
 
 import getInstallPath from './util/getInstallPath';
@@ -102,5 +104,27 @@ export const modsForActiveGame = createSelector(
   (state: IState) => state,
   (activeGameId: string, state: IState) => {
     return modsForGame(state, activeGameId);
+  },
+);
+
+export const getMod = createSelector(
+  modsForGame,
+  (state: IState, gameId: string, modId: string | number) => modId,
+  (mods: { [modId: string]: IMod }, modId: string | number) => {
+    if (typeof modId === 'number') {
+      return Object.values(mods).find(mod => mod.attributes?.modId === modId);
+    }
+    return mods[modId];
+  },
+);
+
+export const getModInstallPath = createSelector(
+  getMod,
+  (state: IState, gameId: string) => installPathForGame(state, gameId),
+  (mod: IMod, gameInstallPath: string) => {
+    if (mod?.installationPath == null || gameInstallPath == null) {
+      return undefined;
+    }
+    return path.join(gameInstallPath, mod.installationPath);
   },
 );

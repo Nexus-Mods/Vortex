@@ -23,7 +23,7 @@ export class SharedDelegates {
     this.mApi = api;
   }
 
-  private async initialize() : Promise<void> {
+  private initialize = async (): Promise<void> => {
     const state = this.mApi.getState();
     const game = currentGame(state);
     const discovery = currentGameDiscovery(state);
@@ -34,7 +34,7 @@ export class SharedDelegates {
   /**
    * Get the application version
    */
-  public getAppVersion(): string {
+  public getAppVersion = (): string => {
     try {
       return getApplication().version;
     } catch (error) {
@@ -45,7 +45,7 @@ export class SharedDelegates {
   /**
    * Get the current game version
    */
-  public getCurrentGameVersion(): string {
+  public getCurrentGameVersion = (): string => {
     try {
       return this.mGameVersion.split(/\-+/)[0];
     } catch (error) {
@@ -56,7 +56,7 @@ export class SharedDelegates {
   /**
    * Get the version of a script extender (e.g., SKSE, F4SE)
    */
-  public getExtenderVersion(extender: string): string {
+  public getExtenderVersion = (extender: string): string => {
     try {
       return this.mGameVersion.split(/\-+/)[0];
     } catch (error) {
@@ -67,7 +67,7 @@ export class SharedDelegates {
   /**
    * Get all plugins (mods with .esp/.esm/.esl files)
    */
-  public getAllPlugins(activeOnly: boolean): string[] {
+  public getAllPlugins = (activeOnly: boolean): string[] => {
     try {
       const state = this.mApi.getState();
       if (!hasSessionPlugins(state.session)) {
@@ -85,7 +85,7 @@ export class SharedDelegates {
     }
   }
 
-  private isPluginEnabled(state: IState, pluginList: any, plugins: string[], pluginName: string) {
+  private isPluginEnabled = (state: IState, pluginList: any, plugins: string[], pluginName: string) => {
     const existingPluginName = plugins.find(plugin => plugin.toLowerCase() === pluginName.toLowerCase());
     if (existingPluginName === undefined) {
       // unknown plugin can't be enabled
