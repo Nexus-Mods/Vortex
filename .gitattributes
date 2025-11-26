@@ -1,0 +1,23 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Scripts (Unix)
+*.bash      text eol=lf
+*.sh        text eol=lf
+*.zsh       text eol=lf
+
+# Scripts (Windows)
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Project files
+*.sln       text eol=crlf
+*.csproj    text eol=crlf
+*.targets   text eol=crlf
+*.filters   text eol=crlf
+*.vcxitems  text eol=crlf
+
+# Text files where line endings should be preserved
+*.patch     -text
+
