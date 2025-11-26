@@ -47,7 +47,7 @@ jobs:
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
