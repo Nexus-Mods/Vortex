@@ -13,6 +13,7 @@ import opn from '../../../util/opn';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { nexusGameId } from '../../nexus_integration/util/convertGameId';
 import { CollectionsDownloadClickedEvent } from '../../analytics/mixpanel/MixpanelEvents';
+import { UserCanceled } from '../../../util/api';
 
 interface IBrowseNexusPageProps {
   api: IExtensionApi;
@@ -31,12 +32,28 @@ const SORT_OPTIONS: ISortOption[] = [
   { field: 'downloads', direction: 'DESC', label: 'Most Downloaded' },
 ];
 
+async function adultContentDialog(api: IExtensionApi, collection: ICollection, adultContent: boolean): Promise<boolean> {
+  try {
+    const result = await api.showDialog('question', 'Adult Content Warning', {
+      bbcode: api.translate(`The collection "[b]{{collectionName}}[/b]" contains adult content.<br/><br/>`
+        + `Your current website preferences are set to hide such content when browsing Nexus Mods.<br/><br/>`
+        + `Do you wish to proceed and view this collection?`,
+        { replace: { collectionName: collection.name } }),
+    }, [
+      { label: api.translate('Cancel') },
+      { label: api.translate('View Collection') },
+    ])
+    return result.action === 'Cancel' ? false : true;
+  } catch (err) {
+    return adultContent;
+  }
+}
+
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
   const { t } = useTranslation(['collection', 'common']);
   const gameId = useSelector((state: IState) => activeGameId(state));
   const adultContentFilter = useSelector((state: IState) => state.persistent['nexus']?.userInfo?.adult);
-
   const [collections, setCollections] = React.useState<ICollection[]>([]);
   const [totalCount, setTotalCount] = React.useState<number>(0);
   const [allCollectionsTotal, setAllCollectionsTotal] = React.useState<number>(0);
@@ -82,22 +99,29 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   };
 
   const handleAddCollection = (collection: ICollection) => {
-    const revisionNumber = (collection as any).latestPublishedRevision?.revisionNumber || 'latest';
+    const revisionNumber = collection.latestPublishedRevision?.revisionNumber || 'latest';
     // Use the game domain name from the collection data (already converted)
     const nxmUrl = `nxm://${collection.game.domainName}/collections/${collection.slug}/revisions/${revisionNumber}`;
-
 
     // Track the download click event
     api.events.emit('analytics-track-mixpanel-event',
       new CollectionsDownloadClickedEvent(collection.slug, collection.game.id));
 
-    // Use the Vortex API to handle the NXM link
-    api.events.emit('start-download', [nxmUrl], {}, undefined,
-      (err: Error) => {
-        if (err && !(err instanceof (api.ext as any).UserCanceled)) {
-          api.showErrorNotification('Failed to add collection', err);
+    if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
+      adultContentDialog(api, collection, false).then((proceed) => {
+        if (proceed) {
+          handleViewOnNexus(collection);
         }
-      }, undefined, { allowInstall: 'force' });
+      });
+    } else {
+      // Use the Vortex API to handle the NXM link
+      api.events.emit('start-download', [nxmUrl], {}, undefined,
+        (err: Error) => {
+          if (err && !(err instanceof UserCanceled)) {
+            api.showErrorNotification('Failed to add collection', err);
+          }
+        }, undefined, { allowInstall: 'force' });
+    }
   };
 
   const handleViewOnNexus = (collection: ICollection) => {
@@ -125,7 +149,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       search: activeSearch || undefined,
       categoryName: [{ op: 'NOT_EQUALS', value: 'Wabbajack Mod List' }],
       collectionStatuses: ['listed'],
-      adultContent: adultContentFilter === true ? undefined : false,
     };
 
     // Fetch collections using the new search API with sorting and search
