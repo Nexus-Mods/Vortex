@@ -119,14 +119,14 @@ export class NotificationAggregator {
    * @param timeoutMs Timeout to set for the next auto-flush
    */
   private flushPendingNotifications(aggregationId: string, timeoutMs: number): void {
-    log('info', 'flushPendingNotifications called', {
-      aggregationId,
-      isActive: this.mActiveAggregations.has(aggregationId),
-      pendingCount: this.mPendingNotifications[aggregationId]?.length || 0
-    });
+    // log('info', 'flushPendingNotifications called', {
+    //   aggregationId,
+    //   isActive: this.mActiveAggregations.has(aggregationId),
+    //   pendingCount: this.mPendingNotifications[aggregationId]?.length || 0
+    // });
 
     if (!this.mActiveAggregations.has(aggregationId)) {
-      log('warn', 'flushPendingNotifications called for inactive aggregation', { aggregationId });
+      // log('warn', 'flushPendingNotifications called for inactive aggregation', { aggregationId });
       return;
     }
 
