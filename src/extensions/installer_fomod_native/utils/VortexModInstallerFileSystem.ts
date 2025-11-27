@@ -17,7 +17,7 @@ export class VortexModInstallerFileSystem {
     );
   }
 
-  public useVortexFuntions = () => {
+  public useVortexFunctions = () => {
     this.mFileSystem.setCallbacks();
   }
 

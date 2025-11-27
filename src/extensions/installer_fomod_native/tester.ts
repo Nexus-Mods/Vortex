@@ -2,6 +2,8 @@ import { ISupportedResult, ITestSupportedDetails } from '../mod_management/types
 
 import { VortexModTester } from './utils/VortexModTester';
 
+let testerInstance: VortexModTester | null = null;
+
 /**
  * Test if files are supported by the FOMOD installer
  */
@@ -17,7 +19,10 @@ export const testSupported = async (
     };
   }
 
-  const modInstaller = new VortexModTester();
-  const result = modInstaller.testSupport(files, isBasic ? ['Basic'] : ['XmlScript']);
+  if (testerInstance === null) {
+    testerInstance = new VortexModTester();
+  }
+
+  const result = testerInstance.testSupport(files, isBasic ? ['Basic'] : ['XmlScript']);
   return Promise.resolve(result);
 }

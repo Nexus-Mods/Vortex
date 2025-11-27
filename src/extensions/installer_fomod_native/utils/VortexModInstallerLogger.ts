@@ -26,7 +26,7 @@ export class VortexModInstallerLogger {
     );
   }
 
-  public useVortexFuntions = () => {
+  public useVortexFunctions = () => {
     this.mLogger.setCallbacks();
   }
 

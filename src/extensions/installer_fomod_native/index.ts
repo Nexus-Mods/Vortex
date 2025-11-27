@@ -64,13 +64,16 @@ const main = (context: IExtensionContext): boolean => {
     })
   );
 
-  context.once(() =>{
+  context.once(() => {
     context.api.onAsync('will-install-mod', async (_gameId: string, _archiveId: string, _modId: string) => {
-      logger = new VortexModInstallerLogger();
-      logger.useVortexFuntions();
-
-      fileSystem = new VortexModInstallerFileSystem();
-      fileSystem.useVortexFuntions();
+      if (logger != null) {
+        logger = new VortexModInstallerLogger();
+        logger.useVortexFunctions();
+      }
+      if (fileSystem != null) {
+        fileSystem = new VortexModInstallerFileSystem();
+        fileSystem.useVortexFunctions();
+      }
     });
   });
 
