@@ -2170,7 +2170,7 @@ class InstallManager {
         const mods = api.getState().persistent.mods[gameId] ?? {};
         const existingMod = mod.rule?.reference && findModByRef(mod.rule.reference, mods);
 
-        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
+        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, modId: existingMod.id });
         if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
           const success = this.handleDownloadFinished(api, downloadId, sourceModId);
