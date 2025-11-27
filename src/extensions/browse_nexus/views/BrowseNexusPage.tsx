@@ -415,6 +415,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       onAddCollection={() => handleAddCollection(collection)}
                       onViewPage={() => handleViewOnNexus(collection)}
                       className="tw:max-w-none"
+                      adultContent={latestRevision?.adultContent}
                     />
                   );
                 })}
