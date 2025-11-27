@@ -1,0 +1,39 @@
+{
+  "name": "issue-tracker",
+  "version": "0.1.4",
+  "description": "Track issues you reported on the dashboard",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "copy_scss": "copyfiles -f src/issue_tracker.scss dist",
+    "build": "npm run webpack && npm run copy_scss && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "7.16.7",
+    "@nexusmods/nexus-api": "^1.0.5",
+    "@types/bluebird": "^3.5.29",
+    "@types/node": "^10.3.4",
+    "@types/react": "^16.9.17",
+    "@types/react-bootstrap": "^0.32.20",
+    "@types/react-dom": "^16.9.4",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "babel-loader": "^8.0.6",
+    "copyfiles": "^2.1.1",
+    "react-redux": "^5.0.7",
+    "redux-act": "^1.7.4",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.76.1",
+    "webpack-cli": "^5.0.1"
+  }
+}

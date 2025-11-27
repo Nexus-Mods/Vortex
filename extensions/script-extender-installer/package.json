@@ -1,0 +1,35 @@
+{
+  "name": "script-extender-installer",
+  "version": "1.1.14",
+  "description": "Install script extenders for Gamebyro games with Vortex",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "bundle7z": "7z a -t7z script-extender-installer.7z .\\dist\\index.js .\\dist\\info.json",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Pickysaurus",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "7z-bin": "Nexus-Mods/7z-bin",
+    "@types/node": "^12.0.10",
+    "electron": "18.3.7",
+    "exe-version": "Nexus-Mods/node-exe-version",
+    "nexus-api": "Nexus-Mods/node-nexus-api",
+    "react": "^16.8.6",
+    "react-bootstrap": "^0.32.4",
+    "redux": "^4.0.5",
+    "typescript": "^4.4.3",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  },
+  "dependencies": {
+    "semver": "^6.3.0"
+  }
+}

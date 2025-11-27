@@ -1,0 +1,38 @@
+{
+  "name": "game-pillarsofeternity2",
+  "version": "0.2.2",
+  "description": "Vortex support for Pillars Of Eternity 2: Deadfire",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "copy_gameart": "copyfiles -f assets/gameart.png dist",
+    "copy_scss": "copyfiles -f src/stylesheet.scss dist",
+    "build": "yarn run webpack && yarn run copy_gameart && yarn run copy_scss && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^10.3.4",
+    "@types/react-bootstrap": "^0.32.10",
+    "@types/react-dnd": "^3.0.2",
+    "@types/react-dom": "^16.0.6",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "@types/semver": "^5.5.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "copyfiles": "^2.1.1",
+    "react-dnd": "^10.0.2",
+    "react-redux": "^5.0.7",
+    "redux-act": "^1.7.4",
+    "semver": "^5.5.0",
+    "typescript": "^4.4.3",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

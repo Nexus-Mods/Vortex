@@ -1,0 +1,25 @@
+{
+  "name": "open-directory",
+  "version": "0.1.4",
+  "description": "Adds several buttons to open relevant directories in the file manager",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "babel-loader": "^8.2.3",
+    "bluebird": "^3.5.0",
+    "i18next": "^8.4.3",
+    "redux-thunk": "^2.2.0",
+    "ts-loader": "^4.4.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

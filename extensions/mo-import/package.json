@@ -1,0 +1,41 @@
+{
+  "name": "mo-import",
+  "version": "0.0.2",
+  "description": "Import Mods from Mod Organizer",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/mo-import",
+    "build": "npm run webpack && copyfiles -f src/stylesheets/mo-import.scss dist && extractInfo",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/i18next": "^12.1.0",
+    "@types/immutability-helper": "^2.0.15",
+    "@types/react": "16.0.34",
+    "@types/react-bootstrap": "^0.0.37",
+    "@types/react-dom": "16.0.3",
+    "@types/react-redux": "4.4.35",
+    "@types/react-router": "^2.0.41",
+    "copyfiles": "^2.1.1",
+    "i18next": "^10.5.0",
+    "immutability-helper": "^2.2.2",
+    "json-loader": "^0.5.4",
+    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "react": "^16.8.6",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^16.8.6",
+    "react-i18next": "^1.10.1",
+    "semver": "^6.2.0",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini"
+  }
+}

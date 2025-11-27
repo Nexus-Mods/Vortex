@@ -1,0 +1,34 @@
+{
+  "name": "script-extender-error-check",
+  "version": "0.1.1",
+  "description": "Warn if the script extender log contains error message",
+  "main": "./out/index.js",
+  "repository": "Nexus-Mods/extension-script-extender-error-check",
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
+    "bundle7z": "7z a -t7z script-extender-error-check.7z .\\dist\\index.js .\\dist\\info.json .\\dist\\style.scss",
+    "build": "npm run webpack && copyfiles -f src/style.scss dist && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "7z-bin": "Nexus-Mods/7z-bin",
+    "@types/i18next": "^12.1.0",
+    "@types/node": "^12.0.10",
+    "@types/react": "^16.8.22",
+    "@types/react-dom": "^16.8.22",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "copyfiles": "^2.1.1",
+    "i18next": "^17.0.4",
+    "react": "^16.8.6",
+    "react-bootstrap": "^0.32.4",
+    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

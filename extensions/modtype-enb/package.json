@@ -1,0 +1,20 @@
+{
+  "name": "modtype-enb",
+  "version": "0.0.2",
+  "description": "Support for enb mods",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/i18next": "^8.4.0",
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^7.1.1",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

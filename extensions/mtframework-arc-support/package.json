@@ -1,0 +1,22 @@
+{
+  "name": "mtframework-arc-support",
+  "version": "0.1.1",
+  "description": "Support for arc archives used in MT Framework (Capcom) games",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && node download_arctool.js && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/bluebird": "^3.5.30",
+    "@types/i18next": "^8.4.0",
+    "@types/redux": "^3.6.0",
+    "node-7z": "Nexus-Mods/node-7z",
+    "shortid": "2.2.8",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

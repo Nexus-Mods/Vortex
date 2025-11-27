@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "resolveJsonModule": true,
+    "rootDir": "./src",
+    "outDir": "./out",
+    "jsx": "react",
+    "skipLibCheck": true,
+    "sourceMap": false
+  },
+    "exclude": [
+      "node_modules"
+    ],
+  "files": [
+    "src/index.ts"
+  ]
+}

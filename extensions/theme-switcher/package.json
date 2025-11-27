@@ -1,0 +1,38 @@
+{
+  "name": "theme-switcher",
+  "version": "0.1.0",
+  "description": "Settings section to switch and customize UI themes",
+  "main": "./out/index.js",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --stats-error-details --progress --profile --color",
+    "copy_lib": "copyfiles -u 4 node_modules/font-scanner/build/Release/fontmanager.node dist",
+    "copy_themes": "copyfiles themes/**/* dist",
+    "build": "npm run webpack && npm run copy_lib && npm run copy_themes && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/bluebird": "^3.5.29",
+    "@types/react": "16.14.66",
+    "@types/react-bootstrap": "^0.32.16",
+    "@types/react-color": "^2.14.0",
+    "@types/react-dom": "16.9.25",
+    "@types/react-redux": "^6.0.6",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "bluebird": "3.7.1",
+    "copyfiles": "^2.1.1",
+    "font-scanner": "^0.2.1",
+    "prop-types": "^15.6.1",
+    "react-bootstrap": "^0.31.0",
+    "react-color": "^2.17.0",
+    "redux": "^3.7.2",
+    "ts-loader": "4.4.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.61.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

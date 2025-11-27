@@ -1,0 +1,27 @@
+{
+  "name": "mod-report",
+  "description": "Create a report on the final effects of a mod on disk",
+  "version": "0.0.7",
+  "main": "./out/index.js",
+  "license": "GPL-3.0",
+  "author": "Black Tree Gaming Ltd.",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "devDependencies": {
+    "@types/node": "^11.10.5",
+    "bs58": "^4.0.1",
+    "electron": "^16.0.6",
+    "fork-ts-checker-webpack-plugin": "^6.5.0",
+    "ts-loader": "^9.2.6",
+    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "typescript": "^4.9.5",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  },
+  "resolutions": {
+    "node-gyp": "^9.0.0"
+  }
+}

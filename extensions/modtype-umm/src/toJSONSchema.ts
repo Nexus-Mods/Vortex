@@ -1,0 +1,1 @@
+export { IUMMGameConfig } from './types';

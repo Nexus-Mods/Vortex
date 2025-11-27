@@ -1,0 +1,40 @@
+{
+  "name": "gamebryo-test-settings",
+  "version": "0.1.5",
+  "description": "Management for gamebryo tests settings",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
+    "clear": "rm-local-modules",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "babel-loader": "^8.2.3",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.7.2",
+    "copyfiles": "^2.1.1",
+    "i18next": "^19.0.1",
+    "immutability-helper": "^2.2.2",
+    "json-loader": "^0.5.4",
+    "react": "^16.14.0",
+    "react-bootstrap": "^2.1.0",
+    "react-dom": "^16.14.0",
+    "react-i18next": "^11.15.3",
+    "redux-act": "^1.7.3",
+    "rm-local-modules": "^0.0.2",
+    "ts-loader": "^9.2.6",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

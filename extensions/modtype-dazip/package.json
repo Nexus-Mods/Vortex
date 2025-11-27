@@ -1,0 +1,23 @@
+{
+  "name": "modtype-dazip",
+  "version": "1.0.0",
+  "description": "Support for dazip (Dragon Age) mods",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^7.1.1",
+    "bluebird": "^3.5.0",
+    "i18next": "^8.4.3",
+    "ts-loader": "^9.2.6",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

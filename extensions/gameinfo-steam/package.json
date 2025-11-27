@@ -1,0 +1,27 @@
+{
+  "name": "gameinfo-steam",
+  "version": "0.0.1",
+  "description": "Retrieve information about supported games from steam",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^7.1.1",
+    "bluebird": "^3.5.0",
+    "i18next": "^19.0.1",
+    "react": "^16.14.0",
+    "react-bootstrap": "^0.31.0",
+    "react-dom": "^16.14.0",
+    "react-i18next": "^11.15.3",
+    "ts-loader": "^9.2.6",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}
