@@ -46,7 +46,7 @@ class InstallDriver {
     this.mStateUpdates = [];
     util.batchDispatch(this.mApi.store, actions);
     return Promise.resolve();
-  }, 100, true, false);
+  }, 100, false, false);
 
   // Collection installation tracking
   private mCurrentSessionId: string;
@@ -169,6 +169,11 @@ class InstallDriver {
       });
 
       if ((mod !== undefined) && (dependent !== undefined)) {
+        const isMarkedInstalled = this.mInstalledMods.find(m => m.id === mod.id) !== undefined;
+        if (isMarkedInstalled) {
+          // Been here, done that.
+          return;
+        }
         if (dependent.type === 'requires') {
           this.mInstalledMods.push(mod);
         }
