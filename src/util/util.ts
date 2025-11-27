@@ -766,7 +766,7 @@ const chunkSizeCache = new Map<string, number>();
  * Uses caching to minimize overhead for repeated action types
  *
  * Electron IPC has practical limits around 10-20MB of JSON payload
- * We target ~2MB chunks to be conservative and allow for JSON overhead
+ * We target ~6MB chunks to be conservative and allow for JSON overhead
  */
 function calculateChunkSize(actions: Redux.Action[]): number {
   if (actions.length === 0) {
@@ -796,8 +796,8 @@ function calculateChunkSize(actions: Redux.Action[]): number {
 
   const avgActionSize = totalSize / sampleSize;
 
-  // Target chunk size of ~2MB (in characters, roughly equivalent to bytes for ASCII)
-  const TARGET_CHUNK_SIZE_MB = 2;
+  // Target chunk size of ~6MB (in characters, roughly equivalent to bytes for ASCII)
+  const TARGET_CHUNK_SIZE_MB = 6;
   const TARGET_CHUNK_SIZE_CHARS = TARGET_CHUNK_SIZE_MB * 1024 * 1024;
 
   // Calculate how many actions fit in target size
@@ -805,8 +805,8 @@ function calculateChunkSize(actions: Redux.Action[]): number {
 
   // Clamp between reasonable bounds
   // Min 10: Avoid too many chunks for very large actions
-  // Max 500: Avoid huge chunks if actions are tiny
-  const chunkSize = Math.max(10, Math.min(500, calculatedChunkSize));
+  // Max 1000: Avoid huge chunks if actions are tiny
+  const chunkSize = Math.max(10, Math.min(1000, calculatedChunkSize));
 
   // Cache the result for this action type
   if (firstActionType) {
