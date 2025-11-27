@@ -48,7 +48,7 @@ export const install = async (
     connection.registerCallback('getAppVersion', () => sharedDelegates.getAppVersion());
     connection.registerCallback('getCurrentGameVersion', () => sharedDelegates.getCurrentGameVersion());
     connection.registerCallback('getExtenderVersion', (extender: string) => sharedDelegates.getExtenderVersion(extender));
-    connection.registerCallback('getAllPlugins', (activeOnly: boolean) => sharedDelegates.getAllPlugins(activeOnly));
+    connection.registerCallback('getAll', (activeOnly: boolean) => sharedDelegates.getAllPlugins(activeOnly));
 
     const csharpDelegates = new CSharpDelegates(api);
     connection.registerCallback('isExtenderPresent', () => csharpDelegates.isExtenderPresent());
@@ -57,7 +57,7 @@ export const install = async (
     connection.registerCallback('getExistingDataFileList', (folderPath: string, searchFilter: string, isRecursive: boolean) => csharpDelegates.getExistingDataFileList(folderPath, searchFilter, isRecursive));
     connection.registerCallback('getIniString', (iniFileName: string, section: string, key: string) => csharpDelegates.getIniString(iniFileName, section, key));
     connection.registerCallback('getIniInt', (iniFileName: string, section: string, key: string) => csharpDelegates.getIniInt(iniFileName, section, key));
-    connection.registerCallback('reportError', (title: string, message: string, details: string) => csharpDelegates.reportError(title, message, details));
+    connection.registerCallback('reportError', ({ title, message, details }: { title: string, message: string, details: string }) => csharpDelegates.reportError(title, message, details));
 
     // When override instructions file is present, use only the universal stop patterns and null pluginPath
     // to prevent any automatic path manipulation (both FindPathPrefix and pluginPath stripping)
@@ -80,6 +80,17 @@ export const install = async (
     );
 
     log('info', 'FOMOD installation completed', { gameId });
+
+    if (result.instructions !== undefined && Array.isArray(result.instructions)) {
+      for (const instruction of result.instructions) {
+        if (instruction.type === 'generatefile') {
+          var json = (instruction.data as any);
+          if (json.type && json.type === 'Buffer' && typeof json.data === 'string') {
+            instruction.data = Buffer.from(json.data, 'base64');
+          }
+        }
+      }
+    }
 
     result.instructions.push({
       type: 'attribute',

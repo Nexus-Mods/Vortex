@@ -266,6 +266,27 @@ export function closeDialog(id: string, actionKey?: string, input?: any) {
   };
 }
 
+export function closeDialogs(ids: string[], actionKey?: string, input?: any) {
+  return (dispatch) => {
+    for (const id of ids) {
+      dispatch(dismissDialog(id));
+      try {
+        if (actionKey !== undefined) {
+          if (DialogCallbacks.instance()[id] !== undefined) {
+            DialogCallbacks.instance()[id](actionKey, input);
+          } else if (ipcRenderer !== undefined) {
+            ipcRenderer.sendSync('fire-dialog-action', id, actionKey, input);
+          }
+        }
+      } catch (err) {
+        log('error', 'failed to invoke dialog callback', { id, actionKey });
+      } finally {
+        delete DialogCallbacks.instance()[id];
+      }
+    }
+  };
+}
+
 export function triggerDialogLink(id: string, idx: number) {
   const cbId = `__link-${id}`;
   if (DialogCallbacks.instance()[cbId] !== undefined) {

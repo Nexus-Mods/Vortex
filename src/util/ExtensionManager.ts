@@ -831,10 +831,10 @@ class ExtensionManager {
         }
         // This is a namespace key, use new separators.
         if (options?.isNamespaceKey) {
-          return this.mTranslator.t(input, options);
+          return this.mTranslator.t(input, { ...options, keySeparator: '.', nsSeparator: ':' });
         }
         // Not a namespace key, use old separators.
-        return this.mTranslator.t(input, { ...options, keySeparator: '::', nsSeparator: ':::' });
+        return this.mTranslator.t(input, options);
       },
       laterT: (input, options?) => new TString(input, options, 'common'),
       locale: () => this.mTranslator.language,

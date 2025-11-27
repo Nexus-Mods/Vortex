@@ -13,12 +13,16 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
     env:
       NO_PARALLEL: true
       NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: "recursive"
 
@@ -35,10 +39,15 @@ jobs:
           echo "Using Node.js version: $nodeVersion"
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: "yarn"
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
@@ -47,6 +56,7 @@ jobs:
         run: yarn build
 
       - name: Test
+        if: runner.os == 'Windows'
         run: yarn test
 
 

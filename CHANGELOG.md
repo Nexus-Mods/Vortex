@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-alpha.4] - 2025-11-26
+
+_Fallout series modding improvements and collection installation fixes_
+
+- Fallout New Vegas modding user journey improvements ([#18586](https://github.com/Nexus-Mods/Vortex/issues/18586))
+- Fixed optional mods not installing correctly for FO4 Anniversary collection ([#18864](https://github.com/Nexus-Mods/Vortex/issues/18864))
+- Fixed MCM for FalloutNV not installing correctly ([#18863](https://github.com/Nexus-Mods/Vortex/issues/18863))
+- Fixed incorrect offset for small chunk retry ([#18865](https://github.com/Nexus-Mods/Vortex/issues/18865))
+- Fixed crash: reduce is not a function in FOMOD choices ([#18735](https://github.com/Nexus-Mods/Vortex/issues/18735))
+- Fixed "Do this for all remaining installs" button not working when reinstalling ([#18752](https://github.com/Nexus-Mods/Vortex/issues/18752))
+- Fixed preset re-application on reinstall/variant install ([#18846](https://github.com/Nexus-Mods/Vortex/issues/18846))
+- Fixed curated renamed mods not renamed for end-user ([#18824](https://github.com/Nexus-Mods/Vortex/issues/18824))
+- Fixed mod types not applying correctly when installing a collection ([#18822](https://github.com/Nexus-Mods/Vortex/issues/18822))
+- Fixed mod category info lost during collection download ([#18790](https://github.com/Nexus-Mods/Vortex/issues/18790))
+- Added adult content preferences support for collection downloading ([#18777](https://github.com/Nexus-Mods/Vortex/issues/18777))
+- Updated to collectionsV2 API for collection browsing ([#18817](https://github.com/Nexus-Mods/Vortex/issues/18817))
+- Fixed slow snapshot creation during FO4 deployment ([#18811](https://github.com/Nexus-Mods/Vortex/issues/18811))
+- Improved notification aggregation when extracting mods ([#18830](https://github.com/Nexus-Mods/Vortex/issues/18830))
+- Removed "Loose Files May Not Get Loaded" notification for Skyrim SE ([#18381](https://github.com/Nexus-Mods/Vortex/issues/18381))
+
 ## [1.16.0-alpha.3] - 2025-11-18
 
 _Stability-focused release with FOMOD native port completion, collection browsing improvements, and critical crash fixes_
@@ -1055,6 +1075,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-alpha.4]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.4
 [1.16.0-alpha.3]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.3
 [1.16.0-alpha.2]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.2
 [1.15.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.2

@@ -50,13 +50,15 @@ function init(context: IExtensionContext): boolean {
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return '<None>';
       }
-      return (choices.options || []).reduce((prev, step) => {
-        prev.push(...step.groups
+      const options = Object.values(choices.options || {}).flatMap(step =>
+        step.groups
           .filter(group => group.choices.length > 0)
           .map(group =>
             `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
-        return prev;
-      }, Array<string>());
+      if (options.length === 0) {
+        return '<None>';
+      }
+      return options;
     },
     edit: {},
     isDefaultVisible: false,

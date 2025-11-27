@@ -505,7 +505,8 @@ function deployableModTypes(modPaths: { [typeId: string]: string }) {
 
 function genUpdateModDeployment() {
   return (api: IExtensionApi, manual: boolean, profileId?: string,
-    progressCB?: (text: string, percent: number) => void): Promise<void> => {
+    progressCB?: (text: string, percent: number) => void,
+    deployOptions?: IDeployOptions): Promise<void> => {
     const t = api.translate;
 
     const notification: INotification = {
@@ -631,7 +632,7 @@ function genUpdateModDeployment() {
           loadActivation(api, gameId, typeId, modPaths[typeId], stagingPath, activator)
             .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
           .tap(() => progress(t('Running pre-deployment events'), 2))
-          .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
+          .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment, deployOptions))
           .then(() => {
             // need to update the profile so that if a will-deploy handler disables a mod, that
             // actually has an affect on this deployment
@@ -675,8 +676,12 @@ function genUpdateModDeployment() {
         // at this point the deployment lock gets released so another deployment
         // can be started during post-deployment
         .tap(() => progress(t('Running post-deployment events'), 99))
-        .then(() => api.emitAndAwait('did-deploy', profile.id, newDeployment,
-          (title: string) => progress(title, 99)))
+        .then(() => api.emitAndAwait('did-deploy',
+          profile.id,
+          newDeployment,
+          (title: string) => progress(title, 99),
+          deployOptions
+        ))
         .tap(() => {
           api.events.emit('mods-did-deploy', profile.id, newDeployment);
           progress(t('Preparing game settings'), 100);
@@ -1142,17 +1147,20 @@ function once(api: IExtensionApi) {
 
   const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
-    (manual: boolean, profileId: string, progressCB) =>
-      updateModDeployment(api, manual, profileId, progressCB), 2000);
+    (manual: boolean,
+     profileId: string,
+     progressCB: (text: string, percent: number) => void,
+     deployOptions?: IDeployOptions) =>
+      updateModDeployment(api, manual, profileId, progressCB, deployOptions), 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
     progressCB?: (text: string, percent: number) => void,
     deployOptions?: IDeployOptions) => { // Can't believe that 7+ years in, we still didn't have deployment options defined.
     if (!(callback as any).called) {
       if (deployOptions?.manual === true) {
-        deploymentTimer.runNow(callback, true, profileId, progressCB);
+        deploymentTimer.runNow(callback, true, profileId, progressCB, deployOptions);
       } else {
-        deploymentTimer.runNow(callback, false, profileId, progressCB);
+        deploymentTimer.runNow(callback, false, profileId, progressCB, deployOptions);
       }
     }
   });

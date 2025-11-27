@@ -4,7 +4,7 @@ import Nexus, {
   IOAuthCredentials, IModFile, IModFileQuery, IModFiles, IModQuery, ITrackResponse,
   IRevision, IRevisionQuery, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
   ICollectionSearchOptions,
-  ICollectionSearchResult,
+  ICollectionSearchResult, IPreference,
 } from '@nexusmods/nexus-api';
 import { IModLookupResult } from '../../types/IModLookupResult';
 import { IModRepoId } from '../mod_management/types/IMod';
@@ -998,7 +998,7 @@ function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: strin
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusCollectionId: number = parseInt(mod.attributes.collectionId, 10);
+  const nexusCollectionId: number = mod.attributes.collectionId;
 
   store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'pending'));
   const game = gameById(api.store.getState(), gameId);
@@ -1019,7 +1019,7 @@ function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusModId: number = parseInt(mod.attributes.modId, 10);
+  const nexusModId: number = mod.attributes.modId;
   const version: string = getSafe(mod.attributes, ['version'], undefined)
                         || getSafe(mod.attributes, ['modVersion'], undefined);
 
@@ -1427,11 +1427,11 @@ function getAccountStatus(apiUserInfo:IUserInfo):IAccountStatus {
   else if(apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Premium;
   else if(apiUserInfo.membership_roles.includes('supporter') && !apiUserInfo.membership_roles.includes('premium') ) return IAccountStatus.Supporter;
   else return IAccountStatus.Free;
-} 
+}
 
-export function transformUserInfoFromApi(input: IUserInfo) {
+export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPreference }) {
 
-  const stateUserInfo:IValidateKeyDataV2 = {
+  const stateUserInfo: IValidateKeyDataV2 = {
     email: input.email,
     isPremium: input.membership_roles.includes('premium'),
     isSupporter: input.membership_roles.includes('supporter'),
@@ -1441,7 +1441,8 @@ export function transformUserInfoFromApi(input: IUserInfo) {
     isLifetime:  input.membership_roles.includes('lifetimepremium'),
     isBanned: input.group_id === 5,
     isClosed: input.group_id === 41 ,
-    status: getAccountStatus(input)
+    status: getAccountStatus(input),
+    ...input.preferences,
   };
   
   //log('info', 'transformUserInfoFromApi()', stateUserInfo);
