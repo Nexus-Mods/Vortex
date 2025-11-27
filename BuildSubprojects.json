@@ -13,7 +13,6 @@
       "type": "build-copy",
       "name": "gameversion-hash",
       "path": "extensions/gameversion-hash",
-      "os": ["win32"],
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "src/**/*.scss", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gameversion-hash"
