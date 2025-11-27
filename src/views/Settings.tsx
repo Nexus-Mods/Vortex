@@ -5,7 +5,7 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 import lazyRequire from '../util/lazyRequire';
 import makeReactive from '../util/makeReactive';
-import startupSettingsT from '../util/startupSettings';
+import type startupSettingsT from '../util/startupSettings';
 
 import MainPage from './MainPage';
 

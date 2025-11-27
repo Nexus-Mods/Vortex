@@ -13,7 +13,7 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import NexusT, { IFeedbackResponse, IOAuthCredentials } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import {

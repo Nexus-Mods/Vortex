@@ -11,7 +11,7 @@ import { showError } from '../../../util/message';
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as os from 'os';

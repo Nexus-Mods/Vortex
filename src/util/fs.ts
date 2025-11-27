@@ -29,12 +29,12 @@ import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import * as net from 'net';
 import * as path from 'path';
-import * as permissionT from 'permissions';
+import type * as permissionT from 'permissions';
 import rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import * as tmp from 'tmp';
-import * as vortexRunT from 'vortex-run';
-import * as whoLocksT from 'wholocks';
+import type * as vortexRunT from 'vortex-run';
+import type * as whoLocksT from 'wholocks';
 
 const permission: typeof permissionT = lazyRequire(() => require('permissions'));
 const vortexRun: typeof vortexRunT = lazyRequire(() => require('vortex-run'));

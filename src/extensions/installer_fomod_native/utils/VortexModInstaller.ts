@@ -1,8 +1,10 @@
-import { NativeModInstaller, types as vetypes } from 'fomod-installer-native';
-import { IExtensionApi, ISupportedResult } from '../../../types/api';
+import { IExtensionApi } from '../../../types/api';
+import lazyRequire from '../../../util/lazyRequire';
 import { log } from '../../../util/log';
 import { DialogManager } from './DialogManager';
 import { SharedDelegates } from '../../installer_fomod_shared/delegates/SharedDelegates';
+
+import type * as fomodT from 'fomod-installer-native';
 
 export class VortexModInstaller {
   public static async create(api: IExtensionApi, instanceId: string): Promise<VortexModInstaller> {
@@ -11,7 +13,8 @@ export class VortexModInstaller {
     return delegates;
   }
 
-  private mModInstaller: NativeModInstaller;
+  private fomod: typeof fomodT;
+  private mModInstaller: fomodT.NativeModInstaller;
   private mApi: IExtensionApi;
   private mInstanceId: string;
   private mScriptPath: string;
@@ -19,7 +22,8 @@ export class VortexModInstaller {
   private mSharedDelegates: SharedDelegates;
 
   private constructor(api: IExtensionApi, instanceId: string) {
-    this.mModInstaller = new NativeModInstaller(
+    this.fomod = lazyRequire<typeof fomodT>(() => require('fomod-installer-native'));
+    this.mModInstaller = new this.fomod.NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
       this.contextGetCurrentGameVersionAsync,
@@ -43,28 +47,12 @@ export class VortexModInstaller {
     this.mDialogManager = undefined;
   }
 
-  /**
-   * Calls FOMOD's testSupport and converts the result to Vortex data
-   */
-  public static testSupport = (files: string[], allowedTypes: string[]): ISupportedResult => {
-    try {
-      const result = NativeModInstaller.testSupported(files, allowedTypes);
-      return {
-        supported: result.supported,
-        requiredFiles: result.requiredFiles,
-      };
-    } catch (error) {
-      return {
-        supported: false,
-        requiredFiles: [],
-      };
-    }
-  };
+
 
   /**
    * Calls FOMOD's install and converts the result to Vortex data
    */
-  public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<vetypes.InstallResult | null> => {
+  public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<fomodT.types.InstallResult | null> => {
     try {
       this.mScriptPath = scriptPath;
       return await this.mModInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
@@ -107,10 +95,10 @@ export class VortexModInstaller {
    */
   private uiStartDialog = (
     moduleName: string,
-    image: vetypes.IHeaderImage,
-    selectCallback: vetypes.SelectCallback,
-    contCallback: vetypes.ContinueCallback,
-    cancelCallback: vetypes.CancelCallback
+    image: fomodT.types.IHeaderImage,
+    selectCallback: fomodT.types.SelectCallback,
+    contCallback: fomodT.types.ContinueCallback,
+    cancelCallback: fomodT.types.CancelCallback
   ): void => {
     log('debug', 'Starting FOMOD dialog', { instanceId: this.mInstanceId });
     this.mDialogManager = new DialogManager(this.mApi, this.mInstanceId, this.mScriptPath);
@@ -121,7 +109,7 @@ export class VortexModInstaller {
    * Callback for updating FOMOD dialog state
    * Delegates to DialogManager instance
    */
-  private uiUpdateState = (installSteps: vetypes.IInstallStep[], currentStepId: number): void => {
+  private uiUpdateState = (installSteps: fomodT.types.IInstallStep[], currentStepId: number): void => {
     if (!this.mDialogManager) {
       throw new Error('DialogManager not initialized');
     }

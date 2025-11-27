@@ -16,7 +16,7 @@ import FixedItem from './FixedItem';
 import PackeryGrid from './PackeryGrid';
 import PackeryItem, { IPackeryItemProps } from './PackeryItem';
 
-import * as remoteT from '@electron/remote';
+import type * as remoteT from '@electron/remote';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, MenuItem } from 'react-bootstrap';

@@ -19,7 +19,7 @@ import { setInstallPath } from './actions/settings';
 import { fallbackPurge } from './util/activationStore';
 import { resolveInstallPath } from './util/getInstallPath';
 
-import * as winapiT from 'winapi-bindings';
+import type * as winapiT from 'winapi-bindings';
 
 const winapi: typeof winapiT = lazyRequire(() => require('winapi-bindings'));
 

@@ -1,7 +1,7 @@
 import lazyRequire from '../../../util/lazyRequire';
 
 import * as _ from 'lodash';
-import * as PackeryT from 'packery';
+import type * as PackeryT from 'packery';
 import * as React from 'react';
 import { generate as shortid } from 'shortid';
 

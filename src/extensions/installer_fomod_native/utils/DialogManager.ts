@@ -1,5 +1,3 @@
-import { types as vetypes } from 'fomod-installer-native';
-
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -21,6 +19,8 @@ import {
   IInstallStep,
 } from '../../installer_fomod_shared/types/interface';
 
+import type * as fomodT from 'fomod-installer-native';
+
 /**
  * UI Delegate for native FOMOD installer
  * Manages dialog state and user interactions through Redux store
@@ -34,9 +34,9 @@ export class DialogManager implements IDialogManager {
   private mApi: IExtensionApi;
   private mInstanceId: string;
   
-  private mSelectCB: vetypes.SelectCallback | undefined;
-  private mContinueCB: vetypes.ContinueCallback | undefined;
-  private mCancelCB: vetypes.CancelCallback | undefined;
+  private mSelectCB: fomodT.types.SelectCallback | undefined;
+  private mContinueCB: fomodT.types.ContinueCallback | undefined;
+  private mCancelCB: fomodT.types.CancelCallback | undefined;
   private mModuleName: string;
   private mImage: IHeaderImage;
   private mScriptPath: string;
@@ -67,10 +67,10 @@ export class DialogManager implements IDialogManager {
    */
   public enqueueDialog = (
     moduleName: string,
-    image: vetypes.IHeaderImage,
-    selectCallback: vetypes.SelectCallback,
-    contCallback: vetypes.ContinueCallback,
-    cancelCallback: vetypes.CancelCallback
+    image: fomodT.types.IHeaderImage,
+    selectCallback: fomodT.types.SelectCallback,
+    contCallback: fomodT.types.ContinueCallback,
+    cancelCallback: fomodT.types.CancelCallback
   ): void => {
     log('debug', 'Queuing FOMOD dialog', { instanceId: this.mInstanceId, moduleName });
     
@@ -100,7 +100,7 @@ export class DialogManager implements IDialogManager {
    * This is the callback passed to the native ModInstaller
    */
   public updateDialogState = (
-    installSteps: vetypes.IInstallStep[],
+    installSteps: fomodT.types.IInstallStep[],
     currentStep: number
   ): void => {
     log('debug', 'Updating FOMOD dialog state', {
@@ -278,7 +278,7 @@ export class DialogManager implements IDialogManager {
 /**
  * Convert native IInstallStep to shared IInstallStep format
  */
-const convertInstallStep = (nativeStep: vetypes.IInstallStep): IInstallStep => {
+const convertInstallStep = (nativeStep: fomodT.types.IInstallStep): IInstallStep => {
   return {
     id: nativeStep.id,
     name: nativeStep.name,

@@ -1,25 +1,28 @@
 import path from 'path';
 import { Dirent, readdirSync, readFileSync } from 'node:fs';
 import { FileHandle, open, readdir } from 'node:fs/promises';
-import { NativeFileSystem, types as vetypes, allocWithoutOwnership } from 'fomod-installer-native';
+import lazyRequire from '../../../util/lazyRequire';
+import type * as fomodT from 'fomod-installer-native';
 
 export class VortexModInstallerFileSystem {
-  private mFileSystem: NativeFileSystem;
+  private fomod: typeof fomodT;
+  private mFileSystem: fomodT.NativeFileSystem;
 
   public constructor() {
-    this.mFileSystem = new NativeFileSystem(
+    this.fomod = lazyRequire<typeof fomodT>(() => require('fomod-installer-native'));
+    this.mFileSystem = new this.fomod.NativeFileSystem(
       this.readFileContent,
       this.readDirectoryFileList,
       this.readDirectoryList
     );
   }
 
-  public useVortexFuntions = () => {
+  public useVortexFunctions = () => {
     this.mFileSystem.setCallbacks();
   }
 
   public useLibraryFunctions = () => {
-    NativeFileSystem.setDefaultCallbacks();
+    this.fomod.NativeFileSystem.setDefaultCallbacks();
   }
 
   /**
@@ -86,7 +89,7 @@ export class VortexModInstallerFileSystem {
           const stats = await fileHandle.stat();
           length = stats.size;
         }
-        const buffer = allocWithoutOwnership(length) ?? new Uint8Array(length);
+        const buffer = this.fomod.allocWithoutOwnership(length) ?? new Uint8Array(length);
         await fileHandle.read(buffer, 0, length, offset);
         return buffer;
       } finally {

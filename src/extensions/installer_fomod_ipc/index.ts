@@ -41,18 +41,17 @@ const main = (context: IExtensionContext): boolean => {
       return await testSupported(context.api, files, gameId, details);
     }),
     /*install:*/ toBluebird(async (
-        files: string[],
-        destinationPath: string,
-        gameId: string,
-        _progressDelegate: unknown,
-        choices?: unknown,
-        unattended?: boolean,
-        archivePath?: string,
-        details?: IInstallationDetails
-      ) => {
-        return await install(context.api, files, destinationPath, gameId, choices, unattended, archivePath, details);
-      }
-    )
+      files: string[],
+      destinationPath: string,
+      gameId: string,
+      _progressDelegate: unknown,
+      choices?: unknown,
+      unattended?: boolean,
+      archivePath?: string,
+      details?: IInstallationDetails
+    ) => {
+      return await install(context.api, files, destinationPath, gameId, choices, unattended, archivePath, details);
+    })
   );
 
   log('info', '[FOMOD_IPC] Installer registered (priority 20)');

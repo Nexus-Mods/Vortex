@@ -1,4 +1,4 @@
-import * as RemoteT from '@electron/remote';
+import type * as RemoteT from '@electron/remote';
 import Nexus, {
   EndorsedStatus, ICollectionQuery, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
   IOAuthCredentials, IModFile, IModFileQuery, IModFiles, IModQuery, ITrackResponse,
