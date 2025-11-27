@@ -126,19 +126,6 @@ async function buildFomodNative() {
   }
 }
 
-async function installExtensions() {
-  console.log("Installing extension dependencies...");
-  const installExtensionsScript = path.join(__dirname, "scripts", "install-extensions.js");
-
-  try {
-    await runCommand("node", [installExtensionsScript], { cwd: __dirname });
-    console.log("Extension dependencies installed successfully");
-  } catch (err) {
-    console.error("Failed to install extension dependencies:", err.message);
-    throw err;
-  }
-}
-
 
 /**
  * Main preinstall routine
@@ -154,10 +141,7 @@ async function main() {
     await buildFomodIPC();
 
     // Build FOMOD Native
-    await buildFomodNative()
-
-    // Run yarn install for folders in extensions/
-    await installExtensions();
+    await buildFomodNative();
 
     console.log("Preinstall completed successfully");
   } catch (err) {
