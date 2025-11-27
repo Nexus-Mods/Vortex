@@ -1,0 +1,45 @@
+{
+  "name": "meta-editor",
+  "version": "0.0.1",
+  "description": "Editor for Mod Meta Data",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/meta-editor",
+    "build": "npm run webpack && copyfiles -f src/stylesheets/metaeditor.scss dist && extractInfo",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "@types/immutability-helper": "^2.0.15",
+    "@types/node": "^10.10.1",
+    "@types/react": "16.0.34",
+    "@types/react-bootstrap": "^0.32.13",
+    "@types/react-dom": "^16.0.7",
+    "@types/react-redux": "7.1.22",
+    "@types/react-router": "^4.0.31",
+    "babel-loader": "^8.2.3",
+    "babel-polyfill": "^6.26.0",
+    "bluebird": "^3.5.2",
+    "copyfiles": "^2.1.1",
+    "i18next": "^19.0.1",
+    "immutability-helper": "^2.6.6",
+    "json-loader": "^0.5.7",
+    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "react": "^16.5.1",
+    "react-i18next": "^11.2.2",
+    "semver": "^5.3.0",
+    "ts-loader": "^9.4.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "modtype-umm",
+  "version": "1.0.4",
+  "description": "Unity Mod Manager modtype to support unity games which rely on UMM to install mods",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo",
+    "postinstall": "generate-validation -t ./tsconfig.json"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^8.2.3",
+    "bluebird": "^3.5.0",
+    "i18next": "^8.4.3",
+    "ts-loader": "^9.2.6",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  },
+  "dependencies": {
+    "ts-v-gen": "^1.0.3"
+  }
+}

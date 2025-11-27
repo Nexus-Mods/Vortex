@@ -1,0 +1,22 @@
+{
+  "name": "quickbms-support",
+  "version": "0.2.5",
+  "description": "QuickBMS extractor support",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && node download_dependencies.js && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/i18next": "^8.4.0",
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^7.1.1",
+    "cross-fetch": "^3.1.5",
+    "i18next": "^8.4.3",
+    "node-7z": "Nexus-Mods/node-7z",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

@@ -1,0 +1,11 @@
+.mod-content-icons {
+  white-space: nowrap;
+  > a {
+    margin-right: 0.2em;
+  }
+}
+
+.mod-content-empty {
+  color: $brand-danger;
+  font-weight: bolder;
+}

@@ -1,0 +1,8 @@
+{
+  "{{count}} ITM record": "one ITM record",
+  "{{count}} ITM record_plural": "{{ count }} ITM records",
+  "{{count}} deleted navmesh": "one deleted navmesh",
+  "{{count}} deleted navmesh_plural": "{{ count }} deleted navmeshes",
+  "{{count}} deleted reference": "one deleted reference",
+  "{{count}} deleted reference_plural": "{{ count }} deleted references"
+}

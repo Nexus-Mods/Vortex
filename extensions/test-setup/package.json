@@ -1,0 +1,30 @@
+{
+  "name": "test-setup",
+  "version": "0.1.0",
+  "description": "Test for common problems with the Vortex setup itself",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "bundle7z": "7z a -t7z test-setup.7z .\\dist\\index.js .\\dist\\info.json",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "7z-bin": "Nexus-Mods/7z-bin",
+    "@types/i18next": "^12.1.0",
+    "@types/node": "^16.10.3",
+    "copyfiles": "^2.1.1",
+    "i18next": "^17.0.4",
+    "react-bootstrap": "^0.32.4",
+    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "gamebryo-archive-check",
+  "version": "1.0.5",
+  "description": "Check BSA/BA2 archives are valid for the current game after updating your load order.",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Pickysaurus",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/i18next": "^12.1.0",
+    "@types/node": "^12.0.10",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "react-bootstrap": "^0.32.4",
+    "typescript": "^4.9.5",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  }
+}

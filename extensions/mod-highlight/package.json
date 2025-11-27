@@ -1,0 +1,24 @@
+{
+  "name": "mod-highlight",
+  "version": "0.1.0",
+  "description": "Custom highlighting (and notes) for mods",
+  "main": "./out/index.js",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/react": "16.0.34",
+    "@types/react-bootstrap": "^0.32.29",
+    "@types/react-redux": "7.1.22",
+    "@types/redux": "^3.6.0",
+    "copyfiles": "^2.1.1",
+    "react-bootstrap": "^0.32.3",
+    "ts-loader": "^9.2.6",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "collections",
+  "description": "Allows creation of installation of mod packs (meta mods that install a bunch of other mods)",
+  "version": "0.2.2",
+  "main": "./out/index.js",
+  "license": "GPL-3.0",
+  "author": "Black Tree Gaming Ltd.",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "copy_assets": "copyfiles -f src/language.json dist && copyfiles -f src/icons.svg dist && copyfiles -f src/collectionicon.svg dist && copyfiles -f style.scss dist && copyfiles -f src/assets/fallback_tile.png dist && copyfiles -f node_modules/bsdiff-node/build/Release/bsdiff.node dist",
+    "bundle7z": "7z a -t7z collections.7z .\\dist\\index.js .\\dist\\info.json .\\dist\\language.json .\\dist\\*.svg .\\dist\\style.scss",
+    "update_validation": "generate-validation .",
+    "_postinstall": "npm run update_validation",
+    "build": "npm run webpack && npm run copy_assets && extractInfo",
+    "test": "jest",
+    "test:build": "node scripts/validate-build.js"
+  },
+  "devDependencies": {
+    "7z-bin": "Nexus-Mods/7z-bin",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "16.14.66",
+    "@types/react-bootstrap": "^0.32.16",
+    "@types/react-dom": "16.9.25",
+    "@types/react-redux": "^7.1.16",
+    "@types/redux": "3.6.0",
+    "bluebird": "^3.5.3",
+    "bsdiff-node": "Nexus-Mods/bsdiff-node",
+    "copyfiles": "^2.1.0",
+    "crc-32": "^1.2.1",
+    "i18next": "^15.0.9",
+    "jest": "^30.1.3",
+    "memoize-one": "^6.0.0",
+    "node-7z": "Nexus-Mods/node-7z",
+    "react": "^16.12.0",
+    "react-bootstrap": "^0.32.0",
+    "react-dom": "^16.12.0",
+    "react-i18next": "^11.15.3",
+    "react-redux": "^7.2.3",
+    "react-select": "^1.3.0",
+    "redux": "4.0.1",
+    "redux-act": "^1.7.4",
+    "semver": "^5.6.0",
+    "shortid": "^2.2.16",
+    "tmp": "^0.2.1",
+    "ts-jest": "^29.4.3",
+    "ts-loader": "^9.5.1",
+    "ts-v-gen": "^1.0.1",
+    "typescript": "^5.6.0",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "resolutions": {
+    "@types/react": "16.14.66",
+    "@types/react-dom": "16.9.25"
+  },
+  "dependencies": {
+    "react-markdown": "6.0.2",
+    "reselect": "^5.1.1"
+  }
+}

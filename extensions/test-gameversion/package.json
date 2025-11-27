@@ -1,0 +1,42 @@
+{
+  "name": "test-gameversion",
+  "version": "0.1.1",
+  "description": "Report an error if a mod isn't compatible with the current game version",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
+    "clear": "rm-local-modules",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/i18next": "^8.4.0",
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^2.1.1",
+    "exe-version": "Nexus-Mods/node-exe-version",
+    "i18next": "^3.5.1",
+    "immutability-helper": "^2.2.2",
+    "json-loader": "^0.5.4",
+    "react": "^16.8.6",
+    "react-bootstrap": "^0.32.1",
+    "react-dom": "^16.8.6",
+    "react-i18next": "^1.10.1",
+    "redux-act": "^1.7.3",
+    "rm-local-modules": "^0.0.2",
+    "ts-loader": "^9.4.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  }
+}

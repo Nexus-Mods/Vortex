@@ -1,0 +1,20 @@
+{
+  "name": "gamestore-origin",
+  "version": "0.1.0",
+  "description": "Discovery and game launch support for the Origin/EA game store",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/libxmljs": "^0.18.4",
+    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "typescript": "^4.9.5",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
+  }
+}

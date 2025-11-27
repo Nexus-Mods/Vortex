@@ -1,0 +1,30 @@
+{
+  "name": "gamebryo-bsa-support",
+  "version": "0.1.0",
+  "description": "Support for (old) gamebryo data archives",
+  "main": "./out/index.js",
+  "exports": {
+    "node": "./out/index.js"
+  },
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --mode development --progress --profile --color",
+    "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
+    "build": "npm run webpack && npm run copy_bsatk && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/i18next": "^13.0.0",
+    "@types/node": "^22.14.0",
+    "@types/rimraf": "^3.0.2",
+    "bluebird": "^3.7.2",
+    "bsatk": "Nexus-Mods/node-bsatk",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^3.0.2",
+    "rm-local-modules": "^0.0.2",
+    "ts-loader": "^9.5.1",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

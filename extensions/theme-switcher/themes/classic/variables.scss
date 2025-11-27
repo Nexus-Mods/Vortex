@@ -1,0 +1,33 @@
+$white:                  #ffffff;
+$black:                  #000000;
+$gray-darker:            #DEE2E6;
+$gray-dark:              #DDDDDD;
+$gray:                   #a9a9a9;
+$gray-light:             #4C4C4C;
+$gray-lighter:           #2A2C2B;
+
+$brand-primary:         #D78F46;
+$brand-highlight:       #00c1FF;
+$brand-success:         #86B951;
+$brand-info:            #00C1FF;
+$brand-warning:         #ff7300;
+$brand-danger:          #FF1C38;
+$border-color:          rgb(128, 128, 128);
+
+
+
+
+
+
+
+
+$brand-bg: $gray-lighter;
+$brand-menu: $gray-light;
+$brand-secondary: $brand-primary;
+$brand-clickable: $brand-primary;
+
+
+$text-color:            $white;
+$text-color-disabled:   darken($text-color, 40%);
+$link-color: $brand-primary;
+$link-hover-color:      darken($link-color, 15%);

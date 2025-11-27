@@ -1,0 +1,27 @@
+{
+  "name": "common-interpreters",
+  "version": "1.0.0",
+  "main": "./out/index.js",
+  "author": "Black Tree Gaming Ltd.",
+  "description": "Adds support for running java, python, ... executables",
+  "license": "GPL-3.0",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "devDependencies": {
+    "@types/node": "^11.13.0",
+    "@types/react": "^16.8.12",
+    "@types/react-redux": "^7.1.22",
+    "@types/redux": "^3.6.0",
+    "@types/which": "^1.3.1",
+    "bluebird": "^3.5.1",
+    "redux": "^4.0.1",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "webpack": "^5.76.1",
+    "webpack-cli": "^5.0.1",
+    "which": "^1.3.1"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "local-gamesettings",
+  "version": "0.1.4",
+  "description": "Management for local game settings",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "clear": "rm-local-modules",
+    "build": "npm run webpack && extractInfo",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/local-gamesettings",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "@types/bluebird": "3.5.20",
+    "@types/immutability-helper": "^2.0.15",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^2.1.1",
+    "i18next": "^19.0.1",
+    "immutability-helper": "^2.2.2",
+    "json-loader": "^0.5.4",
+    "react": "^16.14.0",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^16.14.0",
+    "react-i18next": "^1.10.1",
+    "redux-act": "^1.1.0",
+    "rm-local-modules": "^0.0.2",
+    "ts-loader": "^9.4.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  }
+}

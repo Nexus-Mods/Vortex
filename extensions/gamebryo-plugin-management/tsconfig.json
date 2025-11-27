@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "rootDir": "./src",
+    "outDir": "./out",
+    "jsx": "react",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+    "exclude": [
+      "node_modules"
+    ],
+  "files": [
+    "src/index.ts"
+  ]
+}

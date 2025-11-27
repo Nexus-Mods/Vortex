@@ -1,0 +1,19 @@
+{
+  "name": "gamestore-gog",
+  "version": "0.0.5",
+  "description": "Provides discovery and launch support for GoG games",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/node": "^12.12.14",
+    "typescript": "^4.9.5",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
+  }
+}

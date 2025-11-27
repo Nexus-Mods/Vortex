@@ -1,0 +1,29 @@
+{
+  "name": "gameversion-hash",
+  "version": "1.0.2",
+  "description": "An alternative to conventional game version resolution aiming to identify game version based on file hashes. This is useful when the game is in Early Access or the user facing version is not easily resolved.",
+  "main": "./dist/index.js",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^12.12.35",
+    "@types/react": "^16.9.43",
+    "@types/react-bootstrap": "^0.32.20",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "copyfiles": "^2.4.1",
+    "react": "^16.12.0",
+    "react-bootstrap": "^0.33.0",
+    "react-dom": "^16.12.0",
+    "typescript": "^4.9.5",
+    "vortexmt": "Nexus-Mods/node-vortexmt",
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+  },
+  "dependencies": {
+    "simple-git": "^3.7.1"
+  }
+}
