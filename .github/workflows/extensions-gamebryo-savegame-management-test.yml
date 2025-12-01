@@ -38,7 +38,10 @@ jobs:
       with:
         node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
 
-    - name: Install dependencies
+    - name: Install root dependencies
+      run: yarn install --ignore-scripts
+
+    - name: Install extension dependencies
       run: yarn install
       working-directory: extensions/gamebryo-savegame-management
 
