@@ -316,7 +316,7 @@ class GameStoreHelper {
     // It's possible that the game mode manager has yet
     //  to load the stores.
     try {
-      this.mStores = getGameStores();
+      this.mStores = getGameStores().filter(store => !!store);
       this.mStoresDict = this.mStores.reduce(
         (prev: { [storeId: string]: IGameStore }, store: IGameStore) => {
           prev[store.id] = store;
