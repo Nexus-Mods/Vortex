@@ -1,39 +1,50 @@
-name: Test Build
+name: Extensions - Collections Test
 
 on:
   push:
-    branches: [ main, master, fix-node22 ]
+    branches: [ master ]
+    paths:
+      - 'extensions/collections/**'
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
+    paths:
+      - 'extensions/collections/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-windows:
     runs-on: windows-latest
-    
+
     strategy:
       matrix:
         node-version: [22.x]
-    
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
-    
+
     - name: Install dependencies
       run: yarn install --frozen-lockfile
-    
+
     - name: Run full build
       run: yarn build
-    
-    - name: Validate build outputs (Windows)
+      working-directory: extensions/collections
+
+    - name: Validate build outputs
       run: yarn test:build
+      working-directory: extensions/collections
 
     - name: Run unit tests
       run: yarn test
+      working-directory: extensions/collections
