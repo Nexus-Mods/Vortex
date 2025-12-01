@@ -39,8 +39,12 @@ jobs:
         node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
         cache: 'yarn'
 
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
+    - name: Install root dependencies
+      run: yarn install --ignore-scripts
+
+    - name: Install extension dependencies
+      run: yarn install
+      working-directory: extensions/collections
 
     - name: Run full build
       run: yarn build
