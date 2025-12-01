@@ -20,8 +20,8 @@
     "react-bootstrap": "^0.33.0",
     "react-dom": "^16.12.0",
     "typescript": "^4.9.5",
-    "vortexmt": "Nexus-Mods/node-vortexmt",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortexmt": "Nexus-Mods/node-vortexmt"
   },
   "dependencies": {
     "simple-git": "^3.7.1"
