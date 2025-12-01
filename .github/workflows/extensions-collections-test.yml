@@ -18,20 +18,25 @@ jobs:
   test-windows:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        node-version: [22.x]
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
       with:
         submodules: recursive
 
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Read Node.js version from package.json
+      id: node-version
+      shell: pwsh
+      run: |
+        $packageJson = Get-Content package.json | ConvertFrom-Json
+        $nodeVersion = $packageJson.engines.node
+        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+        echo "Using Node.js version: $nodeVersion"
+
+    - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
         cache: 'yarn'
 
     - name: Install dependencies
