@@ -1,0 +1,46 @@
+name: Extensions - MTFramework ARC Support Test
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'extensions/mtframework-arc-support/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'extensions/mtframework-arc-support/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        architecture: x64
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: extensions/mtframework-arc-support
+
+    - name: Build
+      run: npm run build
+      working-directory: extensions/mtframework-arc-support
