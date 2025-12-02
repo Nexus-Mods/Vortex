@@ -3,18 +3,15 @@
  * 
  * This is an experimental replacement for MainWindow.tsx that uses Tailwind CSS
  * for styling. It maintains full compatibility with the extension system.
- * 
- * NOTE: This must be a class component to support the legacy context API
- * (childContextTypes/getChildContext) that many Vortex components rely on.
  */
 
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as Redux from 'redux';
 
-import { setOpenMainPage, setDialogVisible, clearUIBlocker } from '../actions/session';
+import { setOpenMainPage, setDialogVisible } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 import Tailwind from '../tailwind';
 import { IExtensionApi } from '../types/IExtensionContext';
@@ -45,210 +42,116 @@ const GROUP_TITLES: Record<PageGroup, string> = {
   'support': 'Support',
 };
 
-export interface IBaseProps {
+export interface IMainWindowNextProps {
   t: TFunction;
   className: string;
   api: IExtensionApi;
   objects: IMainPage[];
 }
 
-interface IConnectedProps {
-  mainPage: string;
-  secondaryPage: string;
-  tabsMinimized: boolean;
-  visibleDialog: string;
-  notifications: any[];
-  version: string;
-  updateChannel: string;
-}
-
-interface IActionProps {
-  onSetOpenMainPage: (page: string, secondary: boolean) => void;
-  onSetTabsMinimized: (minimized: boolean) => void;
-  onHideDialog: () => void;
-}
-
-type IProps = IBaseProps & IConnectedProps & IActionProps;
-
-interface IMainWindowNextState {
-  loadedPages: string[];
-}
-
-class MainWindowNext extends React.Component<IProps, IMainWindowNextState> {
-  // Legacy context API - required for older class components
+/**
+ * LegacyContextProvider - Thin class wrapper that provides legacy React context
+ * 
+ * Many Vortex components use the old contextTypes/getChildContext API.
+ * Functional components cannot provide legacy context, so we use this minimal
+ * class wrapper to bridge the gap.
+ */
+class LegacyContextProvider extends React.Component<{
+  api: IExtensionApi;
+  menuLayer: HTMLDivElement | null;
+  getModifiers: () => IModifiers;
+  children: React.ReactNode;
+}> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
     getModifiers: PropTypes.func,
   };
 
-  private modifiers: IModifiers = { alt: false, ctrl: false, shift: false };
-  private menuLayer: HTMLDivElement = null;
-
-  constructor(props: IProps) {
-    super(props);
-    this.state = {
-      loadedPages: [],
-    };
-  }
-
-  // Provide legacy context for older components
   public getChildContext(): IComponentContext {
-    const { api } = this.props;
     return {
-      api,
-      menuLayer: this.menuLayer,
-      getModifiers: this.getModifiers,
+      api: this.props.api,
+      menuLayer: this.props.menuLayer,
+      getModifiers: this.props.getModifiers,
     };
-  }
-
-  public componentDidMount() {
-    // Set initial page if needed
-    if (this.props.objects.length > 0 && !this.props.mainPage) {
-      const firstPage = this.props.objects.sort((a, b) => 
-        (a.priority || 100) - (b.priority || 100)
-      )[0];
-      this.setMainPage(firstPage.id, false);
-    }
-
-    window.addEventListener('keydown', this.updateModifiers);
-    window.addEventListener('keyup', this.updateModifiers);
-  }
-
-  public componentWillUnmount() {
-    window.removeEventListener('keydown', this.updateModifiers);
-    window.removeEventListener('keyup', this.updateModifiers);
   }
 
   public render() {
-    const { t, objects, mainPage, secondaryPage, tabsMinimized, 
-            visibleDialog, notifications, version, updateChannel } = this.props;
-
-    const contextValue = this.getChildContext();
-
-    // Group and sort pages
-    const groupedPages = this.getGroupedPages();
-
-    return (
-      <MainContext.Provider value={contextValue}>
-        <div className="tw:flex tw:flex-col tw:h-screen tw:bg-surface-lowest tw:text-neutral-base">
-          {/* Header */}
-          <header className="tw:flex tw:items-center tw:h-12 tw:px-4 tw:bg-surface-low tw:border-b tw:border-stroke-low tw:gap-4">
-            {/* Left: App title */}
-            <div className="tw:flex tw:items-center tw:gap-2">
-              <Tailwind.Icon path="nexus" size="md" className="tw:text-primary-base" />
-              {!tabsMinimized && (
-                <Tailwind.Typography type="heading-sm" className="tw:text-neutral-strong">
-                  Vortex
-                </Tailwind.Typography>
-              )}
-            </div>
-            
-            {/* Center: New UI badge */}
-            <div className="tw:flex tw:items-center tw:gap-2 tw:ml-4">
-              <span className="tw:px-2 tw:py-0.5 tw:text-xs tw:font-medium tw:bg-primary-base tw:text-white tw:rounded">
-                New UI
-              </span>
-            </div>
-            
-            {/* Spacer */}
-            <div className="tw:flex-1" />
-            
-            {/* Right: Version and notifications */}
-            <div className="tw:flex tw:items-center tw:gap-3">
-              <span className={`tw:px-2 tw:py-0.5 tw:text-xs tw:font-medium tw:text-white tw:rounded ${this.getChannelColor()}`}>
-                v{version}
-              </span>
-              <button className="tw:relative tw:p-2 tw:rounded-lg hover:tw:bg-surface-high tw:transition-colors">
-                <Tailwind.Icon path="notifications" size="md" className="tw:text-neutral-subdued" />
-                {notifications.length > 0 && (
-                  <span className="tw:absolute tw:top-1 tw:right-1 tw:w-2 tw:h-2 tw:bg-danger-base tw:rounded-full" />
-                )}
-              </button>
-            </div>
-          </header>
-
-          {/* Body */}
-          <div className="tw:flex tw:flex-1 tw:overflow-hidden">
-            {/* Sidebar */}
-            <aside 
-              className={`
-                tw:flex tw:flex-col tw:bg-surface-low tw:border-r tw:border-stroke-low
-                tw:transition-all tw:duration-200
-                ${tabsMinimized ? 'tw:w-16' : 'tw:w-56'}
-              `}
-            >
-              {/* Navigation */}
-              <div className="tw:flex tw:flex-1 tw:flex-col tw:overflow-y-auto tw:p-2">
-                {PAGE_GROUPS.map(group => this.renderPageGroup(group, groupedPages))}
-              </div>
-              
-              {/* Footer */}
-              <div className="tw:p-2 tw:border-t tw:border-stroke-low">
-                <MainFooter slim={tabsMinimized} />
-              </div>
-              
-              {/* Collapse toggle */}
-              <button
-                onClick={this.toggleSidebar}
-                className="tw:p-2 tw:border-t tw:border-stroke-low hover:tw:bg-surface-high tw:transition-colors"
-                title={tabsMinimized ? t('Expand sidebar') : t('Collapse sidebar')}
-              >
-                <Tailwind.Icon 
-                  path={tabsMinimized ? 'chevron-right' : 'chevron-left'} 
-                  size="sm" 
-                  className="tw:text-neutral-muted tw:mx-auto"
-                />
-              </button>
-            </aside>
-
-            {/* Main content */}
-            <main className="tw:flex tw:flex-1 tw:overflow-hidden tw:bg-surface-base">
-                {objects.map(page => this.renderPage(page))}
-            </main>
-          </div>
-
-          {/* Menu layer for dropdowns */}
-          <div ref={this.setMenuLayer} />
-          
-          {/* Dialog system */}
-          <Dialog />
-          <DialogContainer 
-            visibleDialog={visibleDialog} 
-            onHideDialog={this.props.onHideDialog} 
-          />
-          <OverlayContainer />
-          <Toaster />
-        </div>
-      </MainContext.Provider>
-    );
+    return this.props.children;
   }
+}
 
-  private getModifiers = (): IModifiers => {
-    return this.modifiers;
-  }
+/**
+ * MainWindowNextContent - The actual functional component with all the UI logic
+ */
+function MainWindowNextContent(props: IMainWindowNextProps) {
+  const { t, api, objects } = props;
+  const dispatch = useDispatch<ThunkDispatch<IState, null, Redux.Action>>();
 
-  private updateModifiers = (event: KeyboardEvent) => {
-    this.modifiers = {
-      alt: event.altKey,
-      ctrl: event.ctrlKey,
-      shift: event.shiftKey,
+  // Redux state
+  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const secondaryPage = useSelector((state: IState) => state.session.base.secondaryPage);
+  const tabsMinimized = useSelector((state: IState) =>
+    getSafe(state, ['settings', 'window', 'tabsMinimized'], false));
+  const visibleDialog = useSelector((state: IState) =>
+    state.session.base.visibleDialog || undefined);
+  const notifications = useSelector((state: IState) =>
+    state.session.notifications.notifications);
+  const version = useSelector((state: IState) => state.app.appVersion);
+  const updateChannel = useSelector((state: IState) => state.settings.update.channel);
+
+  // Local state
+  const [loadedPages, setLoadedPages] = React.useState<string[]>([]);
+  const modifiersRef = React.useRef<IModifiers>({ alt: false, ctrl: false, shift: false });
+  const [menuLayer, setMenuLayer] = React.useState<HTMLDivElement | null>(null);
+
+  // Set initial page
+  React.useEffect(() => {
+    if (objects.length > 0 && !mainPage) {
+      const firstPage = [...objects].sort((a, b) =>
+        (a.priority || 100) - (b.priority || 100)
+      )[0];
+      if (firstPage) {
+        handleSelectPage(firstPage.id);
+      }
+    }
+  }, [objects, mainPage]);
+
+  // Keyboard modifiers tracking
+  React.useEffect(() => {
+    const updateModifiers = (event: KeyboardEvent) => {
+      modifiersRef.current = {
+        alt: event.altKey,
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+      };
     };
-  }
 
-  private setMenuLayer = (ref: HTMLDivElement) => {
-    this.menuLayer = ref;
-  }
+    window.addEventListener('keydown', updateModifiers);
+    window.addEventListener('keyup', updateModifiers);
 
-  private getGroupedPages(): Record<PageGroup, IMainPage[]> {
-    const { objects } = this.props;
+    return () => {
+      window.removeEventListener('keydown', updateModifiers);
+      window.removeEventListener('keyup', updateModifiers);
+    };
+  }, []);
+
+  // Callback ref for menu layer
+  const menuLayerRef = React.useCallback((node: HTMLDivElement | null) => {
+    setMenuLayer(node);
+  }, []);
+
+  const getModifiers = React.useCallback(() => modifiersRef.current, []);
+
+  // Group and sort pages
+  const groupedPages = React.useMemo(() => {
     const groups: Record<PageGroup, IMainPage[]> = {
       'dashboard': [],
       'global': [],
       'per-game': [],
       'support': [],
     };
-    
+
     objects.forEach(page => {
       const group = (page.group as PageGroup) || 'global';
       if (groups[group]) {
@@ -257,66 +160,74 @@ class MainWindowNext extends React.Component<IProps, IMainWindowNextState> {
         groups['global'].push(page);
       }
     });
-    
+
     // Sort each group by priority
     Object.keys(groups).forEach(key => {
       groups[key as PageGroup].sort((a, b) => (a.priority || 100) - (b.priority || 100));
     });
-    
+
     return groups;
-  }
+  }, [objects]);
 
-  private renderPageGroup(group: PageGroup, groupedPages: Record<PageGroup, IMainPage[]>) {
-    const { t, tabsMinimized } = this.props;
-    const pages = groupedPages[group];
-    if (pages.length === 0) return null;
-    
-    const title = GROUP_TITLES[group];
-    
-    return (
-      <div key={group} className="tw:mb-4">
-        {title && !tabsMinimized && (
-          <div className="tw:px-3 tw:py-2 tw:text-xs tw:font-semibold tw:text-neutral-muted tw:uppercase tw:tracking-wider">
-            {t(title)}
-          </div>
-        )}
-        <nav className="tw:space-y-1">
-          {pages.map(page => this.renderNavItem(page))}
-        </nav>
-      </div>
-    );
-  }
+  // Handle page navigation
+  const handleSelectPage = React.useCallback((pageId: string, secondary: boolean = false) => {
+    if (!loadedPages.includes(pageId)) {
+      setLoadedPages(prev => [...prev, pageId]);
+    }
+    setImmediate(() => {
+      dispatch(setOpenMainPage(pageId, secondary));
+    });
+  }, [dispatch, loadedPages]);
 
-  private renderNavItem(page: IMainPage) {
-    const { t, mainPage, tabsMinimized } = this.props;
+  // Toggle sidebar
+  const toggleSidebar = React.useCallback(() => {
+    dispatch(setTabsMinimized(!tabsMinimized));
+  }, [dispatch, tabsMinimized]);
+
+  // Hide dialog
+  const hideDialog = React.useCallback(() => {
+    dispatch(setDialogVisible(undefined));
+  }, [dispatch]);
+
+  // Version badge color
+  const getChannelColor = () => {
+    switch (updateChannel) {
+      case 'beta': return 'tw:bg-warning-base';
+      case 'next': return 'tw:bg-danger-base';
+      default: return 'tw:bg-success-base';
+    }
+  };
+
+  // Render navigation item
+  const renderNavItem = (page: IMainPage) => {
     const isActive = mainPage === page.id;
-    
+
     let isVisible = true;
     try {
       isVisible = page.visible?.() ?? true;
     } catch (err) {
       // ignore visibility errors
     }
-    
+
     if (!isVisible) return null;
-    
+
     return (
       <button
         key={page.id}
-        onClick={() => this.handleSelectPage(page.id)}
+        onClick={() => handleSelectPage(page.id)}
         className={`
           tw:w-full tw:flex tw:items-center tw:gap-3 tw:px-3 tw:py-2 tw:rounded-lg
           tw:text-left tw:transition-colors tw:duration-150
-          ${isActive 
-            ? 'tw:bg-primary-base tw:text-white' 
+          ${isActive
+            ? 'tw:bg-primary-base tw:text-white'
             : 'tw:text-neutral-subdued hover:tw:bg-surface-high hover:tw:text-neutral-strong'}
           ${tabsMinimized ? 'tw:justify-center' : ''}
         `}
         title={tabsMinimized ? t(page.title) : undefined}
       >
-        <Tailwind.Icon 
-          path={page.icon || 'placeholder'} 
-          size="md" 
+        <Tailwind.Icon
+          path={page.icon || 'placeholder'}
+          size="md"
           className={isActive ? 'tw:text-white' : 'tw:text-neutral-muted'}
         />
         {!tabsMinimized && (
@@ -329,13 +240,31 @@ class MainWindowNext extends React.Component<IProps, IMainWindowNextState> {
         )}
       </button>
     );
-  }
+  };
 
-  private renderPage(page: IMainPage) {
-    const { mainPage, secondaryPage } = this.props;
-    const { loadedPages } = this.state;
+  // Render page group
+  const renderPageGroup = (group: PageGroup) => {
+    const pages = groupedPages[group];
+    if (pages.length === 0) return null;
 
-    // Don't render pages that have never been opened
+    const title = GROUP_TITLES[group];
+
+    return (
+      <div key={group} className="tw:mb-4">
+        {title && !tabsMinimized && (
+          <div className="tw:px-3 tw:py-2 tw:text-xs tw:font-semibold tw:text-neutral-muted tw:uppercase tw:tracking-wider">
+            {t(title)}
+          </div>
+        )}
+        <nav className="tw:space-y-1">
+          {pages.map(renderNavItem)}
+        </nav>
+      </div>
+    );
+  };
+
+  // Render page container
+  const renderPage = (page: IMainPage) => {
     if (!loadedPages.includes(page.id)) {
       return null;
     }
@@ -350,60 +279,120 @@ class MainWindowNext extends React.Component<IProps, IMainWindowNextState> {
         secondary={secondaryPage === page.id}
       />
     );
-  }
-
-  private handleSelectPage = (pageId: string) => {
-    this.setMainPage(pageId, false);
-  }
-
-  private setMainPage(pageId: string, secondary: boolean) {
-    const { loadedPages } = this.state;
-    
-    if (!loadedPages.includes(pageId)) {
-      this.setState({
-        loadedPages: [...loadedPages, pageId],
-      });
-    }
-    
-    setImmediate(() => {
-      this.props.onSetOpenMainPage(pageId, secondary);
-    });
-  }
-
-  private toggleSidebar = () => {
-    this.props.onSetTabsMinimized(!this.props.tabsMinimized);
-  }
-
-  private getChannelColor(): string {
-    switch (this.props.updateChannel) {
-      case 'beta': return 'tw:bg-warning-base';
-      case 'next': return 'tw:bg-danger-base';
-      default: return 'tw:bg-success-base';
-    }
-  }
-}
-
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    mainPage: state.session.base.mainPage,
-    secondaryPage: state.session.base.secondaryPage,
-    tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
-    visibleDialog: state.session.base.visibleDialog || undefined,
-    notifications: state.session.notifications.notifications,
-    version: state.app.appVersion,
-    updateChannel: state.settings.update.channel,
   };
-}
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
-  return {
-    onSetOpenMainPage: (page: string, secondary: boolean) => 
-      dispatch(setOpenMainPage(page, secondary)),
-    onSetTabsMinimized: (minimized: boolean) => 
-      dispatch(setTabsMinimized(minimized)),
-    onHideDialog: () => 
-      dispatch(setDialogVisible(undefined)),
+  // Context value for new Context API
+  const contextValue: IComponentContext = {
+    api,
+    menuLayer,
+    getModifiers,
   };
+
+  return (
+    <LegacyContextProvider api={api} menuLayer={menuLayer} getModifiers={getModifiers}>
+      <MainContext.Provider value={contextValue}>
+
+        {/* new layout */}
+        <div className="tw:flex tw:flex-col tw:h-screen tw:bg-surface-base tw:text-neutral-moderate tw:overflow-hidden"
+        // onDragEnter={onDragEnter}
+        // onDragOver={onDragOver}
+        // onDragLeave={onDragLeave}
+        // onDrop={onDrop}
+        >
+          {/* toolbar */}
+          <header
+            role="banner"
+            className="tw:h-9 tw:shrink-0 tw:flex tw:flex-row tw:items-center tw:border-b tw:border-stroke-neutral-translucent-weak"
+          >
+            {/* Left: App title */}
+            <div className="tw:flex tw:items-center tw:gap-2">
+              <Tailwind.Icon path="nexus" size="md" className="tw:text-primary-base" />
+              {!tabsMinimized && (
+                <Tailwind.Typography type="heading-sm" className="tw:text-neutral-strong">
+                  Vortex
+                </Tailwind.Typography>
+              )}
+            </div>
+
+            {/* Center: New UI badge */}
+            <div className="tw:flex tw:items-center tw:gap-2 tw:ml-4">
+              <span className="tw:px-2 tw:py-0.5 tw:text-xs tw:font-medium tw:bg-primary-base tw:text-white tw:rounded">
+                New UI
+              </span>
+            </div>
+
+            {/* Spacer */}
+            <div className="tw:flex-1" />
+
+            {/* Right: Version and notifications */}
+            <div className="tw:flex tw:items-center tw:gap-3">
+              <span className={`tw:px-2 tw:py-0.5 tw:text-xs tw:font-medium tw:text-white tw:rounded ${getChannelColor()}`}>
+                v{version}
+              </span>
+              <button className="tw:relative tw:p-2 tw:rounded-lg tw:hover:bg-surface-high tw:transition-colors">
+                <Tailwind.Icon path="notifications" size="md" className="tw:text-neutral-subdued" />
+                {notifications.length > 0 && (
+                  <span className="tw:absolute tw:top-1 tw:right-1 tw:w-2 tw:h-2 tw:bg-danger-base tw:rounded-full" />
+                )}
+              </button>
+            </div>
+          </header>
+          <div className="tw:flex tw:flex-1 tw:min-h-0">
+            {/* spine */}
+            <nav
+              aria-label="Primary navigation"
+              className="tw:w-16 tw:shrink-0 tw:bg-surface-base tw:border-r tw:border-stroke-neutral-translucent-weak tw:flex tw:flex-col"
+            ></nav>
+            {/* sidebar */}
+            <aside
+              aria-label="Secondary navigation"
+              className="tw:px-3 tw:py-6 md:tw:py-3 tw:lg:w-64 tw:md:w-15 tw:bg-surface-mid tw:shrink-0 tw:transition-all tw:duration-100 tw:ease-in-out tw:overflow-auto tw:md:overflow-clip"
+            >
+              {/* Navigation */}
+              <div className="tw:flex-1 tw:overflow-y-auto tw:p-2">
+                {PAGE_GROUPS.map(renderPageGroup)}
+              </div>
+            </aside>
+
+            {/* content */}
+            <main
+              role="main"
+              className="tw:flex tw:flex-1 tw:h-full tw:bg-surface-low tw:overflow-auto"
+            >
+              {objects.map(renderPage)}
+            </main>
+          </div>
+          {/* statusbar */}
+          <footer
+            role="contentinfo"
+            className="tw:h-8 tw:shrink-0 tw:flex tw:items-center tw:px-4 tw:gap-4 tw:border-t tw:border-stroke-neutral-translucent-weak tw:bg-surface-base">
+            <div className="tw:flex tw:items-center tw:gap-2 tw:border-r tw:border-stroke-neutral-translucent-weak tw:pr-4">
+              StatusBar
+            </div>
+          </footer>
+        </div>
+
+        {/* Menu layer for dropdowns */}
+        <div ref={menuLayerRef} />
+
+        {/* Dialog system */}
+        <Dialog />
+        <DialogContainer
+          visibleDialog={visibleDialog}
+          onHideDialog={hideDialog}
+        />
+        <OverlayContainer />
+        <Toaster />
+      </MainContext.Provider>
+    </LegacyContextProvider>
+  );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MainWindowNext) as unknown as React.ComponentClass<IBaseProps>;
+/**
+ * MainWindowNext - Entry point that wraps the functional component
+ */
+function MainWindowNext(props: IMainWindowNextProps) {
+  return <MainWindowNextContent {...props} />;
+}
+
+export default MainWindowNext;
