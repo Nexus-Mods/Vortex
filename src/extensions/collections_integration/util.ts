@@ -10,7 +10,8 @@ export function generateCollectionSessionId(collectionId: string, profileId: str
 
 export function modRuleId(input: IModRule): string {
   return input.type + '_' + (
-    input.reference.fileMD5
+    input.reference.tag
+    || input.reference.fileMD5
     || input.reference.id
     || input.reference.logicalFileName
     || input.reference.fileExpression
