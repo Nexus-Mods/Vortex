@@ -24,20 +24,23 @@ function DownloadsPageNext(props: IDownloadsPageNextProps) {
     <MainPage id="page-downloads-next">
       <MainPage.Body>
         <div className="tw:flex tw:flex-col tw:h-full tw:bg-surface-low tw:p-6">
+
           {/* Header */}
           <div className="tw:flex tw:items-center tw:justify-between tw:mb-6">
-            <Tailwind.Typography type="heading-lg" className="tw:text-neutral-strong">
+            <Tailwind.Typography as="div" typographyType="heading-lg" appearance="strong">
               {t('Downloads')}
             </Tailwind.Typography>
             <div className="tw:flex tw:items-center tw:gap-2">
-              <span className="tw:px-3 tw:py-1 tw:bg-primary-base tw:text-white tw:rounded-full tw:text-sm tw:font-medium">
-                {t('New UI')}
+              <span className="tw:px-3 tw:py-1 tw:bg-surface-low tw:text-white tw:rounded-full tw:text-sm tw:font-medium">
+                <Tailwind.Typography as="div" typographyType="heading-lg" appearance="strong">
+                  {t('New UI')}
+                </Tailwind.Typography>
               </span>
             </div>
           </div>
 
           {/* Content placeholder */}
-          <div className="tw:flex-1 tw:flex tw:flex-col tw:items-center tw:justify-center tw:bg-surface-base tw:rounded-lg tw:border tw:stroke-neutral-translucent-weak">
+          <div className="tw:flex-1 tw:flex tw:flex-col tw:items-center tw:justify-center tw:bg-surface-base tw:rounded-lg tw:border tw:border-stroke-neutral-translucent-weak">
             <Tailwind.Icon path="download" size="xl" className="tw:text-neutral-subdued tw:mb-4" />
             <Tailwind.Typography as="div" appearance="moderate">
               {t('Downloads Page - Work in Progress')}
@@ -51,7 +54,7 @@ function DownloadsPageNext(props: IDownloadsPageNextProps) {
           </div>
 
           {/* Footer placeholder */}
-          <div className="tw:mt-4 tw:p-4 tw:bg-surface-base tw:rounded-lg tw:border tw:border-stroke-low">
+          <div className="tw:mt-4 tw:p-4 tw:bg-surface-base tw:rounded-lg tw:border tw:border-stroke-neutral-translucent-weak">
             <Tailwind.Typography as="div" appearance="moderate">
               {t('Drop zone and controls will be added here')}
             </Tailwind.Typography>

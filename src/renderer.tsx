@@ -77,7 +77,7 @@ import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
-import MainWindow from './views/MainWindow';
+import MainWindowWrapper from './views/MainWindowWrapper';
 
 import * as remote from '@electron/remote';
 import * as msgpackT from '@msgpack/msgpack';
@@ -730,7 +730,7 @@ function renderer(extensions: ExtensionManager) {
           <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
               <ExtensionContext.Provider value={extensions}>
-                <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+                <MainWindowWrapper className='full-height' api={extensions.getApi()} t={tFunc} />
               </ExtensionContext.Provider>
             </I18nextProvider>
           </DndProvider>
