@@ -831,9 +831,12 @@ class InstallDriver {
       const mods = required.reduce((acc, rule) => {
         const ruleId = util.modRuleId(rule);
         const download = util.findDownloadByRef(rule.reference, downloads);
+        const isBundled = rule.extra?.localPath != null;
+        const isInstalled = installed.find(r => util.modRuleId(r) === ruleId) != null;
+        const isDownloaded = download != null || isBundled;
         acc[ruleId] = {
           rule,
-          status: installed.find(r => util.modRuleId(r) === ruleId) != null ? 'installed' : download != null ? 'downloaded' : 'pending',
+          status: isInstalled ? 'installed' : isDownloaded ? 'downloaded' : 'pending',
           type: rule.type as 'requires' | 'recommends',
           phase: rule.extra?.phase ?? 0,
         };
