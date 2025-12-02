@@ -37,7 +37,8 @@ import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 import { finalizeDownload } from './util/postprocessDownload';
 import queryInfo from './util/queryDLInfo';
-import DownloadView, { IDownloadViewProps } from './views/DownloadView';
+import { IDownloadViewProps } from './views/DownloadView';
+import DownloadsPageWrapper from './views/DownloadsPageWrapper';
 import Settings from './views/Settings';
 import ShutdownButton from './views/ShutdownButton';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -873,7 +874,7 @@ function init(context: IExtensionContextExt): boolean {
   const downloadColumns = (props: () => IDownloadViewProps) =>
     downloadAttributes(context.api, props, withAddInProgress);
 
-  context.registerMainPage('download', 'Downloads', DownloadView, {
+  context.registerMainPage('download', 'Downloads', DownloadsPageWrapper, {
     hotkey: 'D',
     group: 'global',
     badge: downloadCount,

@@ -28,6 +28,7 @@ export interface IParameters {
   userData?: string;
   inspector?: boolean;
   storeVersion?: string;
+  featureUi?: boolean;
 }
 
 export interface ISetItem {
@@ -205,6 +206,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('--epic-userid <userid>')
     .option('--epic-locale <locale>')
     .option('--epic-sandboxid <sandboxid>')
+    .option('--feature-ui', 'Enable experimental new UI components')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption(true)
     .parse(argv || []).opts() as IParameters;
