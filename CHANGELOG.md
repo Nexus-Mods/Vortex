@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-alpha.5] - 2025-12-03
+
+_Stability fixes and collection installation improvements_
+
+- Fixed crash on startup when no game is active ([#18898](https://github.com/Nexus-Mods/Vortex/issues/18898))
+- Fixed race condition causing mods to lack metadata during installation ([#18930](https://github.com/Nexus-Mods/Vortex/issues/18930))
+- Fixed stalled collection installation when mod archives are present ([#18889](https://github.com/Nexus-Mods/Vortex/issues/18889))
+- Fixed installer issue where certain files are not linked correctly ([#18927](https://github.com/Nexus-Mods/Vortex/issues/18927))
+- FOMOD installer now lazy loads for faster startup ([#18868](https://github.com/Nexus-Mods/Vortex/pull/18868))
+- Fixed handling of undefined game stores ([#18924](https://github.com/Nexus-Mods/Vortex/pull/18924))
+
 ## [1.16.0-alpha.4] - 2025-11-26
 
 _Fallout series modding improvements and collection installation fixes_
@@ -1075,6 +1086,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-alpha.5]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.5
 [1.16.0-alpha.4]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.4
 [1.16.0-alpha.3]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.3
 [1.16.0-alpha.2]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.2
