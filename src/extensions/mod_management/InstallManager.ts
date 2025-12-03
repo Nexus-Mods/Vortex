@@ -1256,7 +1256,17 @@ class InstallManager {
               return Bluebird.resolve();
             }
           })
-          .then(() => filterModInfo(fullInfo, destinationPath))
+          .then(() => {
+            // Refresh download data from current state to get any Nexus info
+            // (like category_id) that was fetched asynchronously after installation started
+            if (archiveId) {
+              const currentDownload = api.getState().persistent.downloads.files[archiveId];
+              if (currentDownload) {
+                fullInfo.download = currentDownload;
+              }
+            }
+            return filterModInfo(fullInfo, destinationPath);
+          })
           .then(modInfo => {
             const state = api.getState();
             const existingKeys =
