@@ -687,7 +687,9 @@ interface IDownloadResult {
 export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
                                 : (...args: any[]) => Bluebird<IFileInfo[]> {
   return (gameId: string, modId: number): Bluebird<IFileInfo[]> => {
-    return Bluebird.resolve(nexus.getModFiles(modId, gameId))
+    const state = api.getState();
+    const game = gameById(state, gameId);
+    return Bluebird.resolve(nexus.getModFiles(modId, nexusGameId(game, gameId) || gameId))
       .then(result => result.files)
       .catch(err => {
         api.showErrorNotification('Failed to get list of mod files', err, {
