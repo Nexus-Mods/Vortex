@@ -1,0 +1,63 @@
+name: Extensions - Collections Test
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'extensions/collections/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'extensions/collections/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+
+    - name: Read Node.js version from package.json
+      id: node-version
+      shell: pwsh
+      run: |
+        $packageJson = Get-Content package.json | ConvertFrom-Json
+        $nodeVersion = $packageJson.engines.node
+        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+        echo "Using Node.js version: $nodeVersion"
+
+    - name: Use Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+        cache: 'yarn'
+
+    - name: Install root dependencies
+      run: yarn install --ignore-scripts
+
+    - name: Install extension dependencies
+      run: yarn install
+      working-directory: extensions/collections
+
+    - name: Run full build
+      run: yarn build
+      working-directory: extensions/collections
+
+    - name: Validate build outputs
+      run: yarn test:build
+      working-directory: extensions/collections
+
+    - name: Run unit tests
+      run: yarn test
+      working-directory: extensions/collections

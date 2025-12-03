@@ -1,0 +1,50 @@
+name: Extensions - Gamebryo Savegame Management Test
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'extensions/gamebryo-savegame-management/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'extensions/gamebryo-savegame-management/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+
+    - name: Read Node.js version from package.json
+      id: node-version
+      shell: pwsh
+      run: |
+        $packageJson = Get-Content package.json | ConvertFrom-Json
+        $nodeVersion = $packageJson.engines.node
+        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
+        echo "Using Node.js version: $nodeVersion"
+
+    - name: Use Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+
+    - name: Install root dependencies
+      run: yarn install --ignore-scripts
+
+    - name: Install extension dependencies
+      run: yarn install
+      working-directory: extensions/gamebryo-savegame-management
+
+    - name: Build
+      run: yarn build
+      working-directory: extensions/gamebryo-savegame-management
