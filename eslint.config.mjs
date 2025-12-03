@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
 import eslintReact from "@eslint-react/eslint-plugin";
+import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 
 export default defineConfig([
   {
@@ -26,6 +27,18 @@ export default defineConfig([
     },
   },
   prettierConfig,
+  {
+    plugins: {
+      vortex: {
+        rules: {
+          "no-cross-imports": noCrossImportsRule
+        }
+      }
+    },
+    rules: {
+      "vortex/no-cross-imports": "error"
+    }
+  },
   {
     // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)
     name: "Vortex legacy config",
