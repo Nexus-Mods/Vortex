@@ -84,20 +84,17 @@ function extractorOrSkip(extractor: AttributeExtractor, input: any, modPath: str
   }
 
   // Create timeout promise that rejects after 5 seconds
-  const timeoutPromise = new Promise<any>((_, reject) => {
-    setTimeout(() => {
-      reject(new Error(`Extractor "${extractorName}" timed out after 5 seconds${extractorDetails}`));
-    }, 5000);
-  });
+  // const timeoutPromise = new Promise<any>((_, reject) => {
+  //   setTimeout(() => {
+  //     reject(new Error(`Extractor "${extractorName}" timed out after 5 seconds${extractorDetails}`));
+  //   }, 5000);
+  // });
 
   // Add start time for performance tracking
   const startTime = Date.now();
 
   // Race the extractor against the timeout
-  return Promise.race([
-    Promise.resolve(extractor(input, modPath)),
-    timeoutPromise
-  ])
+  return Promise.resolve(extractor(input, modPath))
     .catch(err => {
       const duration = Date.now() - startTime;
       log('error', `Extractor skipped: "${extractorName}" (modPath: "${modPath}") - ${err.message}`, {

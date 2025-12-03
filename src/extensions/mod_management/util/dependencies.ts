@@ -176,6 +176,18 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
     return false;
   }
   const { value } = lookup;
+
+  // When using exact version matching (non-fuzzy), also require fileId to match.
+  // This prevents incorrectly deduplicating different files from the same mod
+  // (same modId but different fileId) when they are meant to be installed separately.
+  const refRepo = (reference as IModReference).repo;
+  if ((refRepo?.fileId !== undefined) && !isFuzzyVersion(versionMatch)) {
+    const lookupFileId = value?.details?.fileId?.toString();
+    if ((lookupFileId !== undefined) && (lookupFileId !== refRepo.fileId)) {
+      return false;
+    }
+  }
+
   return ((gameId === undefined) || (gameId === value.gameId))
     && ((fileMD5 === undefined) || (fileMD5 === value.fileMD5))
     && ((fileSize === undefined) || (fileSize === value.fileSizeBytes))

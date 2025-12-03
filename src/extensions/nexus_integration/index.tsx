@@ -456,7 +456,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
 
   let gameId = input.download?.modInfo?.game || input.download?.modInfo?.nexus?.ids?.gameId;
 
-  if ((input.download?.modInfo?.nexus?.modInfo === undefined)
+  if ((input.download?.modInfo?.nexus?.modInfo == null)
     && (input.download?.modInfo?.source === 'nexus')) {
     const modId = input.download?.modInfo?.ids?.modId ?? input.download?.modInfo?.nexus?.ids?.modId;
     const fileId = input.download?.modInfo?.ids?.fileId

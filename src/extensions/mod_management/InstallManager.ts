@@ -1256,7 +1256,17 @@ class InstallManager {
               return Bluebird.resolve();
             }
           })
-          .then(() => filterModInfo(fullInfo, destinationPath))
+          .then(() => {
+            // Refresh download data from current state to get any Nexus info
+            // (like category_id) that was fetched asynchronously after installation started
+            if (archiveId) {
+              const currentDownload = api.getState().persistent.downloads.files[archiveId];
+              if (currentDownload) {
+                fullInfo.download = currentDownload;
+              }
+            }
+            return filterModInfo(fullInfo, destinationPath);
+          })
           .then(modInfo => {
             const state = api.getState();
             const existingKeys =
@@ -2057,12 +2067,13 @@ class InstallManager {
 
       let downloadId = null;
 
+      const md5Value = reference.md5Hint ?? reference.fileMD5;
       if (cache) {
         // Use cache for fast lookup
         if (reference.tag && cache.byTag.has(reference.tag)) {
           downloadId = cache.byTag.get(reference.tag);
-        } else if (reference.md5Hint && cache.byMd5.has(reference.md5Hint)) {
-          downloadId = cache.byMd5.get(reference.md5Hint);
+        } else if (md5Value && cache.byMd5.has(md5Value)) {
+          downloadId = cache.byMd5.get(md5Value);
         }
         if (downloadId && this.hasActiveOrPendingInstallation(sourceModId, downloadId)) {
           downloadId = null; // Invalidate if already installing
@@ -2170,7 +2181,7 @@ class InstallManager {
         const mods = api.getState().persistent.mods[gameId] ?? {};
         const existingMod = mod.rule?.reference && findModByRef(mod.rule.reference, mods);
 
-        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, existingMod });
+        log('debug', 'Requeue check', { downloadId, hasPendingOrActive, modId: existingMod?.id });
         if (!hasPendingOrActive && !existingMod) {
           log('info', 'Requeuing download for installation', { downloadId });
           const success = this.handleDownloadFinished(api, downloadId, sourceModId);

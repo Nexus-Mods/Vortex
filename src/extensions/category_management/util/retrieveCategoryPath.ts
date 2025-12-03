@@ -33,17 +33,27 @@ function createCategoryDetailPath(categories: ICategoryDictionary, category: str
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-export function resolveCategoryPath(category: string, state: IState) {
+export function resolveCategoryPath(category: string | number, state: IState) {
   if (!truthy(category)) {
     return null;
   }
+
+  // Handle cases where category might be an array converted to string (e.g., "95,1704")
+  // or a number - normalize to the first/primary category ID as a string
+  let categoryId: string;
+  if (typeof category === 'number') {
+    categoryId = category.toString();
+  } else {
+    categoryId = category.toString().split(',')[0];
+  }
+
   let completePath: string = '';
   const gameId: string = activeGameId(state);
 
   const categories: ICategoryDictionary = getSafe(state, ['persistent', 'categories', gameId], {});
   const hideTopLevel: boolean = getSafe(state, ['settings', 'interface', 'hideTopLevelCategory'], false);
-  if (categories[category] !== undefined) {
-    completePath = createCategoryDetailPath(categories, category, '', hideTopLevel, new Set<string>());
+  if (categories[categoryId] !== undefined) {
+    completePath = createCategoryDetailPath(categories, categoryId, '', hideTopLevel, new Set<string>());
   }
   return completePath;
 
@@ -68,12 +78,21 @@ export function resolveCategoryId(name: string, state: IState): number {
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-export function resolveCategoryName(category: string, state: IState) {
+export function resolveCategoryName(category: string | number, state: IState) {
   if (!truthy(category)) {
     return '';
   }
 
+  // Handle cases where category might be an array converted to string (e.g., "95,1704")
+  // or a number - normalize to the first/primary category ID as a string
+  let categoryId: string;
+  if (typeof category === 'number') {
+    categoryId = category.toString();
+  } else {
+    categoryId = category.toString().split(',')[0];
+  }
+
   const gameId: string = activeGameId(state);
 
-  return getSafe(state, ['persistent', 'categories', gameId, category, 'name'], '');
+  return getSafe(state, ['persistent', 'categories', gameId, categoryId, 'name'], '');
 }

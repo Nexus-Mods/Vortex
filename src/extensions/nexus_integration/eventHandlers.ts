@@ -486,6 +486,9 @@ export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
   return async (gameId: string, count?: number, offset?: number): Promise<Partial<IRevision[]>> => {
     const game = gameById(api.getState(), gameId);
     const nexusDomainId = nexusGameId(game);
+    if (!nexusDomainId) {
+      return [];
+    }
     try {
       const query: ICollectionQuery = {
         ...COLLECTION_SEARCH_QUERY,
@@ -684,7 +687,9 @@ interface IDownloadResult {
 export function onGetModFiles(api: IExtensionApi, nexus: Nexus)
                                 : (...args: any[]) => Bluebird<IFileInfo[]> {
   return (gameId: string, modId: number): Bluebird<IFileInfo[]> => {
-    return Bluebird.resolve(nexus.getModFiles(modId, gameId))
+    const state = api.getState();
+    const game = gameById(state, gameId);
+    return Bluebird.resolve(nexus.getModFiles(modId, nexusGameId(game, gameId) || gameId))
       .then(result => result.files)
       .catch(err => {
         api.showErrorNotification('Failed to get list of mod files', err, {
