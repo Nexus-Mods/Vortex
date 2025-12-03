@@ -1,6 +1,6 @@
-import { SITE_GAME_NAME } from '../../../controls/constants';
-import FlexLayout from '../../../controls/FlexLayout';
-import { IconButton } from '../../../controls/TooltipControls';
+import { SITE_GAME_NAME } from '../../../renderer/controls/constants';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IGameStored } from '../../../types/IState';
 import { PureComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';

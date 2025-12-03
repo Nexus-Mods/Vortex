@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { withTranslation } from 'react-i18next';
-import FlexLayout from '../../../controls/FlexLayout';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
 import bbcode from '../../../util/bbcode';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { LoadOrderValidationError } from '../types/types';

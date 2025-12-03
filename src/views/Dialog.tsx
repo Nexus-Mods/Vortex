@@ -1,9 +1,9 @@
 import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog, closeDialogs, DialogContentItem } from '../actions/notifications';
-import Collapse from '../controls/Collapse';
-import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
-import Icon from '../controls/Icon';
-import Webview from '../controls/Webview';
+import Collapse from '../renderer/controls/Collapse';
+import ErrorBoundary, { ErrorContext } from '../renderer/controls/ErrorBoundary';
+import Icon from '../renderer/controls/Icon';
+import Webview from '../renderer/controls/Webview';
 import {
   ConditionResults, DialogType, ICheckbox, IConditionResult, IDialog,
   IDialogContent, IInput,

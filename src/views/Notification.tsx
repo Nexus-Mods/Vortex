@@ -1,7 +1,7 @@
-import Dropdown from '../controls/Dropdown';
-import Icon from '../controls/Icon';
-import PortalMenu from '../controls/PortalMenu';
-import Spinner from '../controls/Spinner';
+import Dropdown from '../renderer/controls/Dropdown';
+import Icon from '../renderer/controls/Icon';
+import PortalMenu from '../renderer/controls/PortalMenu';
+import Spinner from '../renderer/controls/Spinner';
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
@@ -9,7 +9,7 @@ import { TFunction } from '../util/i18n';
 
 import * as React from 'react';
 import { Button, MenuItem } from 'react-bootstrap';
-import { IconButton } from '../controls/TooltipControls';
+import { IconButton } from '../renderer/controls/TooltipControls';
 
 interface IActionProps {
   t: TFunction;

@@ -1,10 +1,10 @@
 import { setDialogVisible } from '../../actions';
 import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from '../../actions/app';
-import Dropzone, { DropType } from '../../controls/Dropzone';
-import FlexLayout from '../../controls/FlexLayout';
-import IconBar from '../../controls/IconBar';
-import Table, { ITableRowAction } from '../../controls/Table';
-import ToolbarIcon from '../../controls/ToolbarIcon';
+import Dropzone, { DropType } from '../../renderer/controls/Dropzone';
+import FlexLayout from '../../renderer/controls/FlexLayout';
+import IconBar from '../../renderer/controls/IconBar';
+import Table, { ITableRowAction } from '../../renderer/controls/Table';
+import ToolbarIcon from '../../renderer/controls/ToolbarIcon';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { relaunch } from '../../util/commandLine';

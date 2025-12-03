@@ -1,6 +1,6 @@
 import { showDialog } from '../../actions/notifications';
-import Dashlet from '../../controls/Dashlet';
-import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
+import Dashlet from '../../renderer/controls/Dashlet';
+import EmptyPlaceholder from '../../renderer/controls/EmptyPlaceholder';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IMod, IRunningTool } from '../../types/IState';
@@ -33,8 +33,8 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import DynDiv from '../../controls/DynDiv';
-import FlexLayout from '../../controls/FlexLayout';
+import DynDiv from '../../renderer/controls/DynDiv';
+import FlexLayout from '../../renderer/controls/FlexLayout';
 import { IReducerAction, StateReducerType } from './types';
 
 import { MainContext } from '../../views/MainWindow';

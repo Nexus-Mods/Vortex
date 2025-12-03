@@ -1,7 +1,7 @@
-import IconBar from '../../controls/IconBar';
+import IconBar from '../../renderer/controls/IconBar';
 import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
-import ToolIcon from '../../controls/ToolIcon';
+import ToolIcon from '../../renderer/controls/ToolIcon';
 
 import { IStarterInfo } from '../../util/StarterInfo';
 

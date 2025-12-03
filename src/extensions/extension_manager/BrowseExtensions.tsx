@@ -1,10 +1,10 @@
-import FlexLayout from '../../controls/FlexLayout';
-import FormInput from '../../controls/FormInput';
-import Icon from '../../controls/Icon';
-import Modal from '../../controls/Modal';
-import Spinner from '../../controls/Spinner';
-import { IconButton } from '../../controls/TooltipControls';
-import ZoomableImage from '../../controls/ZoomableImage';
+import FlexLayout from '../../renderer/controls/FlexLayout';
+import FormInput from '../../renderer/controls/FormInput';
+import Icon from '../../renderer/controls/Icon';
+import Modal from '../../renderer/controls/Modal';
+import Spinner from '../../renderer/controls/Spinner';
+import { IconButton } from '../../renderer/controls/TooltipControls';
+import ZoomableImage from '../../renderer/controls/ZoomableImage';
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 
 import { IState } from '../../types/IState';

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
+import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
 import { TFunction } from '../../../util/i18n';
 import { IDownload } from '../types/IDownload';
 

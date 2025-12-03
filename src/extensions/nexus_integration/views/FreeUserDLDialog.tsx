@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { util } from '../../..';
-import Modal from '../../../controls/Modal';
+import Modal from '../../../renderer/controls/Modal';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
 import { NEXUS_BASE_URL, PREMIUM_PATH } from '../constants';

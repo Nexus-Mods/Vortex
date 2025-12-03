@@ -1,4 +1,4 @@
-import Modal from '../../../controls/Modal';
+import Modal from '../../../renderer/controls/Modal';
 import { IDeploymentMethod } from '../../../types/api';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId, currentGameDiscovery, modPathsForGame } from '../../../util/selectors';

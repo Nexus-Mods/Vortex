@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import Usage from '../../controls/Usage';
+import Usage from '../../renderer/controls/Usage';
 import { IState } from '../../types/IState';
 import { TFunction } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';

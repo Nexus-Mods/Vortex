@@ -5,14 +5,14 @@ import { connect } from 'react-redux';
 
 import { matchesGameMode, matchesVersion } from './util';
 
-import Dashlet from '../../controls/Dashlet';
-import { Icon, IconButton } from '../../controls/TooltipControls';
+import Dashlet from '../../renderer/controls/Dashlet';
+import { Icon, IconButton } from '../../renderer/controls/TooltipControls';
 import { getApplication } from '../../util/application';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import * as selectors from '../../util/selectors';
 
-import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
+import { EmptyPlaceholder, FlexLayout } from '../../renderer/controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
 import ReactMarkdown from 'react-markdown';
 

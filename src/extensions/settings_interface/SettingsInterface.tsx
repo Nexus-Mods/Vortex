@@ -2,8 +2,8 @@ import { showDialog } from '../../actions/notifications';
 import { resetSuppression } from '../../actions/notificationSettings';
 import { setCustomTitlebar } from '../../actions/window';
 
-import More from '../../controls/More';
-import Toggle from '../../controls/Toggle';
+import More from '../../renderer/controls/More';
+import Toggle from '../../renderer/controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
 import { IParameters, relaunch } from '../../util/commandLine';

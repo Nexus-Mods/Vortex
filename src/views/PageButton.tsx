@@ -1,5 +1,5 @@
-import Icon from '../controls/Icon';
-import Spinner from '../controls/Spinner';
+import Icon from '../renderer/controls/Icon';
+import Spinner from '../renderer/controls/Spinner';
 import { IMainPage } from '../types/IMainPage';
 import { TFunction } from '../util/i18n';
 

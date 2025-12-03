@@ -1,4 +1,4 @@
-import { ActionDropdown } from '../../../controls/api';
+import { ActionDropdown } from '../../../renderer/controls/api';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IMod } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';

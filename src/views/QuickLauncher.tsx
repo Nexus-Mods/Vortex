@@ -1,8 +1,8 @@
 import { util } from '..';
 import { showDialog } from '../actions/notifications';
-import EmptyPlaceholder from '../controls/EmptyPlaceholder';
-import Spinner from '../controls/Spinner';
-import { IconButton } from '../controls/TooltipControls';
+import EmptyPlaceholder from '../renderer/controls/EmptyPlaceholder';
+import Spinner from '../renderer/controls/Spinner';
+import { IconButton } from '../renderer/controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';

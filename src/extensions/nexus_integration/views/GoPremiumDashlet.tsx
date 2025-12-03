@@ -1,4 +1,4 @@
-import Dashlet from '../../../controls/Dashlet';
+import Dashlet from '../../../renderer/controls/Dashlet';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
 
@@ -8,8 +8,8 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import { Campaign, nexusModsURL, Section, Content } from '../../../util/util';
-import FlexLayout from '../../../controls/FlexLayout';
-import Image from '../../../controls/Image';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Image from '../../../renderer/controls/Image';
 
 class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {

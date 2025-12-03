@@ -1,7 +1,7 @@
-import DropdownButton from '../../../controls/DropdownButton';
-import FlexLayout from '../../../controls/FlexLayout';
-import Icon from '../../../controls/Icon';
-import { IconButton } from '../../../controls/TooltipControls';
+import DropdownButton from '../../../renderer/controls/DropdownButton';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Icon from '../../../renderer/controls/Icon';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';

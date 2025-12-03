@@ -1,5 +1,5 @@
-import Toggle from '../../../controls/Toggle';
-import {Button} from '../../../controls/TooltipControls';
+import Toggle from '../../../renderer/controls/Toggle';
+import {Button} from '../../../renderer/controls/TooltipControls';
 import {ComponentEx} from '../../../util/ComponentEx';
 import {getSafe, setSafe} from '../../../util/storeHelper';
 

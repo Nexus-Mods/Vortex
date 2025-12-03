@@ -4,9 +4,9 @@ import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { setGameSearchPaths } from '../../../actions';
-import Icon from '../../../controls/Icon';
-import Modal from '../../../controls/Modal';
-import { IconButton } from '../../../controls/TooltipControls';
+import Icon from '../../../renderer/controls/Icon';
+import Modal from '../../../renderer/controls/Modal';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { TFunction } from '../../../util/i18n';
 

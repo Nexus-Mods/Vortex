@@ -1,6 +1,6 @@
-import Dashlet from '../../controls/Dashlet';
-import Icon from '../../controls/Icon';
-import { IconButton } from '../../controls/TooltipControls';
+import Dashlet from '../../renderer/controls/Dashlet';
+import Icon from '../../renderer/controls/Icon';
+import { IconButton } from '../../renderer/controls/TooltipControls';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 

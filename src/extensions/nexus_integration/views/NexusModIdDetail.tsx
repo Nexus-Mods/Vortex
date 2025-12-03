@@ -1,5 +1,5 @@
-import FormInput from '../../../controls/FormInput';
-import More from '../../../controls/More';
+import FormInput from '../../../renderer/controls/FormInput';
+import More from '../../../renderer/controls/More';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { truthy } from '../../../util/util';
@@ -13,7 +13,7 @@ import { TFunction } from 'i18next';
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
 import * as Redux from 'redux';
-import { Button, Icon, IconButton } from '../../../controls/TooltipControls';
+import { Button, Icon, IconButton } from '../../../renderer/controls/TooltipControls';
 
 function validateNum(value: string): ValidationState {
   return !truthy(value)

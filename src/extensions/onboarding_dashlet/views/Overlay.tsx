@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
-import Icon from '../../../controls/Icon';
+import Icon from '../../../renderer/controls/Icon';
 import { completeStep } from '../actions';
 import { useTranslation } from 'react-i18next';
 

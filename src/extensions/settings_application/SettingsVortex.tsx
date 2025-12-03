@@ -1,5 +1,5 @@
 import { setMultiUser } from '../../actions/user';
-import More from '../../controls/More';
+import More from '../../renderer/controls/More';
 import { IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';

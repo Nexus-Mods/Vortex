@@ -1,4 +1,4 @@
-import Icon from '../../../controls/Icon';
+import Icon from '../../../renderer/controls/Icon';
 import bbcode from '../../../util/bbcode';
 import { truthy } from '../../../util/util';
 

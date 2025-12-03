@@ -1,6 +1,6 @@
 import { addNotification } from '../../../actions/notifications';
 import { setSettingsPage } from '../../../actions/session';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
+import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
 import { INotificationAction } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

@@ -6,7 +6,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 
 import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
 
-import { Icon, tooltip } from '../../../controls/api';
+import { Icon, tooltip } from '../../../renderer/controls/api';
 import { IProfile, IState } from '../../../types/api';
 
 import * as selectors from '../../../util/selectors';

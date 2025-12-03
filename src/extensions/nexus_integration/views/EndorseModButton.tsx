@@ -1,6 +1,6 @@
-import Icon from '../../../controls/Icon';
-import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
+import Icon from '../../../renderer/controls/Icon';
+import Spinner from '../../../renderer/controls/Spinner';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 
 import { TFunction } from 'i18next';

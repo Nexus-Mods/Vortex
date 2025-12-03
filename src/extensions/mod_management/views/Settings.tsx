@@ -1,17 +1,19 @@
 import { showDialog } from '../../../actions/notifications';
-import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
-import FlexLayout from '../../../controls/FlexLayout';
-import Icon from '../../../controls/Icon';
-import More from '../../../controls/More';
-import Spinner from '../../../controls/Spinner';
-import Toggle from '../../../controls/Toggle';
-import { Button } from '../../../controls/TooltipControls';
+import EmptyPlaceholder from '../../../renderer/controls/EmptyPlaceholder';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Icon from '../../../renderer/controls/Icon';
+import More from '../../../renderer/controls/More';
+import Spinner from '../../../renderer/controls/Spinner';
+import Toggle from '../../../renderer/controls/Toggle';
+import { Button } from '../../../renderer/controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { InstallPathMode, IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled, TemporaryError,
-         UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
+import {
+  CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled, TemporaryError,
+  UnsupportedOperatingSystem, UserCanceled
+} from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import getNormalizeFunc from '../../../util/getNormalizeFunc';

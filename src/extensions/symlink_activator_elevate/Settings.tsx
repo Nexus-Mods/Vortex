@@ -1,5 +1,5 @@
 import { showDialog } from '../../actions/notifications';
-import Toggle from '../../controls/Toggle';
+import Toggle from '../../renderer/controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
 import { ComponentEx } from '../../util/ComponentEx';

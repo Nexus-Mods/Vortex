@@ -1,4 +1,4 @@
-import { ErrorContext } from '../../controls/ErrorBoundary';
+import { ErrorContext } from '../../renderer/controls/ErrorBoundary';
 import opn from '../opn';
 
 import { Tag } from 'bbcode-to-react';

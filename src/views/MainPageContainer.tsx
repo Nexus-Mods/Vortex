@@ -1,5 +1,5 @@
-import ExtensionGate from '../controls/ExtensionGate';
-import Icon from '../controls/Icon';
+import ExtensionGate from '../renderer/controls/ExtensionGate';
+import Icon from '../renderer/controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
 import { didIgnoreError, isOutdated } from '../util/errorHandling';

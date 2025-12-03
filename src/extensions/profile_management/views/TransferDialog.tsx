@@ -1,4 +1,4 @@
-import { IconButton } from '../../../controls/TooltipControls';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';

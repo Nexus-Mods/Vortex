@@ -1,7 +1,7 @@
 import { setDialogVisible } from '../../../actions/session';
-import Icon from '../../../controls/Icon';
-import Image from '../../../controls/Image';
-import * as tooltip from '../../../controls/TooltipControls';
+import Icon from '../../../renderer/controls/Icon';
+import Image from '../../../renderer/controls/Image';
+import * as tooltip from '../../../renderer/controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getVortexPath from '../../../util/getVortexPath';
@@ -73,15 +73,15 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     onClearOAuthCredentials();
   }
 
-  private getMembershipText(userInfo: IValidateKeyDataV2):string {
+  private getMembershipText(userInfo: IValidateKeyDataV2): string {
 
-    if(userInfo?.isPremium === true) {
+    if (userInfo?.isPremium === true) {
       return '★ Premium';
     }
-    else if(userInfo?.isSupporter === true && userInfo?.isPremium === false) {
+    else if (userInfo?.isSupporter === true && userInfo?.isPremium === false) {
       return 'Supporter';
     }
-    else if(userInfo?.isLifetime === true) {
+    else if (userInfo?.isLifetime === true) {
       return 'Premium';
     }
     return 'Free';
@@ -148,8 +148,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
             style={{ height: 32, width: 32 }}
           />
         ) : (
-            <Icon name='user' className='logout-avatar' />
-          )
+          <Icon name='user' className='logout-avatar' />
+        )
         }
       </tooltip.Button>
     );
@@ -157,7 +157,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private showLoginLayer = async () => {
     const { userInfo } = this.props;
-    
+
     if (!this.isLoggedIn()) {
       this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
       this.setDialogVisible(true);
@@ -168,7 +168,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private launchNexusOauth = () => {
-    this.context.api.events.emit('request-nexus-login', (err: Error) => { 
+    this.context.api.events.emit('request-nexus-login', (err: Error) => {
       if (err !== null) {
         this.props.onShowError('Login Failed', err);
         this.hideLoginLayer();

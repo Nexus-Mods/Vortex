@@ -6,7 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
-import { installIconSet } from '../controls/Icon';
+import { installIconSet } from '../renderer/controls/Icon';
 import {
   resolveCategoryName,
   resolveCategoryPath

@@ -7,7 +7,7 @@ import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
 
 import * as ReactDOM from 'react-dom';
 
-import { ContextMenu } from '../../../controls/api';
+import { ContextMenu } from '../../../renderer/controls/api';
 
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';

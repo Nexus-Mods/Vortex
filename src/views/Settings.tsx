@@ -1,5 +1,5 @@
 import { setSettingsPage } from '../actions/session';
-import EmptyPlaceholder from '../controls/EmptyPlaceholder';
+import EmptyPlaceholder from '../renderer/controls/EmptyPlaceholder';
 import { PropsCallback } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';

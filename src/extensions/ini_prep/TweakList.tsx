@@ -1,6 +1,6 @@
 import { setDeploymentNecessary } from '../../actions';
-import Spinner from '../../controls/Spinner';
-import Toggle from '../../controls/Toggle';
+import Spinner from '../../renderer/controls/Spinner';
+import Toggle from '../../renderer/controls/Toggle';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';

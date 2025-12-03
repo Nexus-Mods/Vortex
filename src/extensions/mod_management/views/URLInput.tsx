@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
-import FlexLayout from '../../../controls/FlexLayout';
-import FormInput from '../../../controls/FormInput';
-import { IconButton } from '../../../controls/TooltipControls';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import FormInput from '../../../renderer/controls/FormInput';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { TFunction } from '../../../util/i18n';
 import opn from '../../../util/opn';
 import { setModAttribute } from '../actions/mods';

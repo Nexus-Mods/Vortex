@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Checkbox } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { Modal } from '../../../controls/api';
+import { Modal } from '../../../renderer/controls/api';
 
 import { activeGameId } from '../../../util/selectors';
 import { useSelector } from 'react-redux';

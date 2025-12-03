@@ -4,8 +4,8 @@ import { INotification, INotificationAction, NotificationType } from '../types/I
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
-import Icon from '../controls/Icon';
-import RadialProgress, { IBar } from '../controls/RadialProgress';
+import Icon from '../renderer/controls/Icon';
+import RadialProgress, { IBar } from '../renderer/controls/RadialProgress';
 import Debouncer from '../util/Debouncer';
 import Notification from './Notification';
 

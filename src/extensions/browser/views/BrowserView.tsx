@@ -1,8 +1,8 @@
 import { addNotification } from '../../../actions';
-import Modal from '../../../controls/Modal';
-import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
-import { WebviewEmbed, WebviewOverlay } from '../../../controls/Webview';
+import Modal from '../../../renderer/controls/Modal';
+import Spinner from '../../../renderer/controls/Spinner';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
+import { WebviewEmbed, WebviewOverlay } from '../../../renderer/controls/Webview';
 import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

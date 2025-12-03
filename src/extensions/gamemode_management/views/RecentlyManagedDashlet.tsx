@@ -1,5 +1,5 @@
-import Dashlet from '../../../controls/Dashlet';
-import Placeholder from '../../../controls/EmptyPlaceholder';
+import Dashlet from '../../../renderer/controls/Dashlet';
+import Placeholder from '../../../renderer/controls/EmptyPlaceholder';
 import { IProfile, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';

@@ -1,5 +1,5 @@
-import ErrorBoundary from '../controls/ErrorBoundary';
-import ExtensionGate from '../controls/ExtensionGate';
+import ErrorBoundary from '../renderer/controls/ErrorBoundary';
+import ExtensionGate from '../renderer/controls/ExtensionGate';
 import {PropsCallback} from '../types/IExtensionContext';
 import {extend} from '../util/ComponentEx';
 

@@ -1,4 +1,4 @@
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { Button, IconButton } from '../../../renderer/controls/TooltipControls';
 import { TFunction } from '../../../util/i18n';
 import { truthy } from '../../../util/util';
 import { setModAttributes } from '../actions/mods';

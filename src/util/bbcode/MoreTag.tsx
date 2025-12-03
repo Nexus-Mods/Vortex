@@ -1,6 +1,6 @@
 import { Tag } from 'bbcode-to-react';
 import * as React from 'react';
-import More from '../../controls/More';
+import More from '../../renderer/controls/More';
 
 class MoreTag extends Tag {
   public toHTML(): string[] {

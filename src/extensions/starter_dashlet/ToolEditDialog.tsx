@@ -1,8 +1,8 @@
 import { displayGroup } from '../../actions/session';
-import { FormPathItem, FormTextItem } from '../../controls/FormFields';
-import More from '../../controls/More';
-import Toggle from '../../controls/Toggle';
-import { Button } from '../../controls/TooltipControls';
+import { FormPathItem, FormTextItem } from '../../renderer/controls/FormFields';
+import More from '../../renderer/controls/More';
+import Toggle from '../../renderer/controls/Toggle';
+import { Button } from '../../renderer/controls/TooltipControls';
 import { ThunkDispatch } from 'redux-thunk';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import StarterInfo from '../../util/StarterInfo';
@@ -11,11 +11,13 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 
 import * as selectors from '../../util/selectors';
 
-import ToolIcon from '../../controls/ToolIcon';
+import ToolIcon from '../../renderer/controls/ToolIcon';
 
 import * as React from 'react';
-import { Col, ControlLabel, Form, FormControl, FormGroup,
-         Modal, ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
+import {
+  Col, ControlLabel, Form, FormControl, FormGroup,
+  Modal, ToggleButton, ToggleButtonGroup
+} from 'react-bootstrap';
 import * as Redux from 'redux';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';

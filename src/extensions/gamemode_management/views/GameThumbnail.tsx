@@ -1,7 +1,7 @@
-import Icon from '../../../controls/Icon';
-import IconBar from '../../../controls/IconBar';
-import OverlayTrigger from '../../../controls/OverlayTrigger';
-import { IconButton } from '../../../controls/TooltipControls';
+import Icon from '../../../renderer/controls/Icon';
+import IconBar from '../../../renderer/controls/IconBar';
+import OverlayTrigger from '../../../renderer/controls/OverlayTrigger';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IActionDefinition } from '../../../types/api';
 import { IMod, IProfile, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
@@ -59,7 +59,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     }
 
     const logoPath: string = ((game.extensionPath !== undefined)
-                           && (game.logo !== undefined))
+      && (game.logo !== undefined))
       ? path.join(game.extensionPath, game.logo)
       : game.imageURL;
 
@@ -67,7 +67,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     //  the supported type suggests that the game has been removed from the machine.
     const modCount = ((profile !== undefined) && (type !== 'undiscovered'))
       ? countIf(Object.keys(profile.modState || {}),
-          id => profile.modState[id].enabled && (mods[id] !== undefined))
+        id => profile.modState[id].enabled && (mods[id] !== undefined))
       : undefined;
 
     const nameParts = game.name.split('\t');
@@ -119,9 +119,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           {type !== 'launcher' ? (
             game.contributed ? (
               <div className='game-thumbnail-tags' title={game.contributed ? t('Contributed by {{name}}', { replace: { name: game.contributed } }) : null}>
-              {game.contributed ? ('Community') : null}
-            </div>
-            ) : null 
+                {game.contributed ? ('Community') : null}
+              </div>
+            ) : null
           ) : null}
         </Panel.Body>
       </Panel>
@@ -137,7 +137,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           onClick={onLaunch}
           className='btn-embed'
         >
-          <Icon name='launch-application'/>
+          <Icon name='launch-application' />
         </Button>
       </div>
     );

@@ -1,10 +1,10 @@
-import { SITE_GAME_NAME } from '../../controls/constants';
-import ProgressBar from '../../controls/ProgressBar';
-import Spinner from '../../controls/Spinner';
-import DateTimeFilter from '../../controls/table/DateTimeFilter';
-import GameFilter from '../../controls/table/GameFilter';
-import TextFilter from '../../controls/table/TextFilter';
-import { Icon } from '../../controls/TooltipControls';
+import { SITE_GAME_NAME } from '../../renderer/controls/constants';
+import ProgressBar from '../../renderer/controls/ProgressBar';
+import Spinner from '../../renderer/controls/Spinner';
+import DateTimeFilter from '../../renderer/controls/table/DateTimeFilter';
+import GameFilter from '../../renderer/controls/table/GameFilter';
+import TextFilter from '../../renderer/controls/table/TextFilter';
+import { Icon } from '../../renderer/controls/TooltipControls';
 
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { ITableAttribute } from '../../types/ITableAttribute';

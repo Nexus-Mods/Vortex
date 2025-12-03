@@ -1,8 +1,8 @@
-import FlexLayout from '../../../controls/FlexLayout';
-import Modal from '../../../controls/Modal';
-import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
-import ZoomableImage from '../../../controls/ZoomableImage';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Modal from '../../../renderer/controls/Modal';
+import Spinner from '../../../renderer/controls/Spinner';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
+import ZoomableImage from '../../../renderer/controls/ZoomableImage';
 import { IState } from '../../../types/api';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import { pushSafe, removeValue } from '../../../util/storeHelper';
