@@ -55,6 +55,9 @@ export interface CollectionTileProps {
 
   // Style
   className?: string;
+  
+  // Content flags
+  adultContent?: boolean;
 }
 
 export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IExtensionApi }> = ({
@@ -70,6 +73,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
   onAddCollection,
   onViewPage,
   className,
+  adultContent
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const [canBeAdded, setCanBeAdded] = React.useState(true);
@@ -307,15 +311,17 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
 
       {/* Action bar */}
       <div className="tw:self-stretch tw:p-3 tw:bg-surface-high tw:rounded-bl tw:rounded-br tw:inline-flex tw:justify-start tw:items-center tw:gap-2">
-        <Button
-          title={tooltip}
-          disabled={!canBeAdded || pending}
-          buttonType="primary"
-          size="sm"
-          onClick={addCollection}
-        >
-          Add collection
-        </Button>
+        {!adultContent && (
+          <Button
+            title={tooltip}
+            disabled={!canBeAdded || pending}
+            buttonType="primary"
+            size="sm"
+            onClick={addCollection}
+          >
+            Add collection
+          </Button>
+        )}
 
         <Button
           buttonType="tertiary"
