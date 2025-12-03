@@ -324,13 +324,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.gameMode !== newProps.gameMode)
-        || (this.props.mods !== newProps.mods)
-        || (this.props.modState !== newProps.modState)
-        || (this.props.downloads !== newProps.downloads)
-        || (this.props.showDropzone !== newProps.showDropzone)) {
-      this.mUpdateDebouncer.schedule(undefined, newProps);
+  public componentDidUpdate(prevProps: IProps) {
+    if ((prevProps.gameMode !== this.props.gameMode)
+        || (prevProps.mods !== this.props.mods)
+        || (prevProps.modState !== this.props.modState)
+        || (prevProps.downloads !== this.props.downloads)
+        || (prevProps.showDropzone !== this.props.showDropzone)) {
+      this.mUpdateDebouncer.schedule(undefined, this.props);
     }
   }
 
