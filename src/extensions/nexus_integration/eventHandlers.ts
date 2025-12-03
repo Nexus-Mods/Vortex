@@ -486,6 +486,9 @@ export function onGetMyCollections(api: IExtensionApi, nexus: Nexus)
   return async (gameId: string, count?: number, offset?: number): Promise<Partial<IRevision[]>> => {
     const game = gameById(api.getState(), gameId);
     const nexusDomainId = nexusGameId(game);
+    if (!nexusDomainId) {
+      return [];
+    }
     try {
       const query: ICollectionQuery = {
         ...COLLECTION_SEARCH_QUERY,
