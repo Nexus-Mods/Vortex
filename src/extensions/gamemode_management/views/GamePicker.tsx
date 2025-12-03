@@ -13,7 +13,7 @@ import opn from '../../../util/opn';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
 import { nexusGameId } from '../../nexus_integration/util/convertGameId';

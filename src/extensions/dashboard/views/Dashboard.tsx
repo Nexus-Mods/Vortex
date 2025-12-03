@@ -7,7 +7,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import lazyRequire from '../../../util/lazyRequire';
 import { getSafe } from '../../../util/storeHelper';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { setDashletEnabled, setDashletHeight, setDashletWidth, setLayout } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';

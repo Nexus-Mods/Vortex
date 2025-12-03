@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 import Tailwind from '../../../tailwind';
 import { activeGameId, isCollectionModPresent } from '../../../util/selectors';
 import { IState } from '../../../types/IState';

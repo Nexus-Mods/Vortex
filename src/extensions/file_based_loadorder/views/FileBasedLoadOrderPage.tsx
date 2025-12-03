@@ -11,7 +11,7 @@ import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
-import { DNDContainer, MainPage } from '../../../views/api';
+import { DNDContainer, MainPage } from '../../../renderer/views/api';
 import FilterBox from './FilterBox';
 
 import { IItemRendererProps, ILoadOrderGameInfo, LoadOrder,

@@ -1,16 +1,16 @@
-import ExtensionGate from '../renderer/controls/ExtensionGate';
-import Icon from '../renderer/controls/Icon';
-import { IMainPage } from '../types/IMainPage';
-import { ComponentEx, translate } from '../util/ComponentEx';
-import { didIgnoreError, isOutdated } from '../util/errorHandling';
-import { genHash } from '../util/genHash';
-import { log } from '../util/log';
+import ExtensionGate from '../controls/ExtensionGate';
+import Icon from '../controls/Icon';
+import { IMainPage } from '../../types/IMainPage';
+import { ComponentEx, translate } from '../../util/ComponentEx';
+import { didIgnoreError, isOutdated } from '../../util/errorHandling';
+import { genHash } from '../../util/genHash';
+import { log } from '../../util/log';
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, Button, Jumbotron } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
-import { getApplication } from '../util/application';
+import { getApplication } from '../../util/application';
 
 export interface IBaseProps {
   page: IMainPage;

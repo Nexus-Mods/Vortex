@@ -1,19 +1,19 @@
-import { ILink, triggerDialogLink } from '../actions';
-import { closeDialog, closeDialogs, DialogContentItem } from '../actions/notifications';
-import Collapse from '../renderer/controls/Collapse';
-import ErrorBoundary, { ErrorContext } from '../renderer/controls/ErrorBoundary';
-import Icon from '../renderer/controls/Icon';
-import Webview from '../renderer/controls/Webview';
+import { ILink, triggerDialogLink } from '../../actions';
+import { closeDialog, closeDialogs, DialogContentItem } from '../../actions/notifications';
+import Collapse from '../controls/Collapse';
+import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
+import Icon from '../controls/Icon';
+import Webview from '../controls/Webview';
 import {
   ConditionResults, DialogType, ICheckbox, IConditionResult, IDialog,
   IDialogContent, IInput,
-} from '../types/IDialog';
-import { IState } from '../types/IState';
-import bbcode from '../util/bbcode';
-import { ComponentEx, connect, translate } from '../util/ComponentEx';
-import { TFunction } from '../util/i18n';
-import lazyRequire from '../util/lazyRequire';
-import { MutexWrapper } from '../util/MutexContext';
+} from '../../types/IDialog';
+import { IState } from '../../types/IState';
+import bbcode from '../../util/bbcode';
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { TFunction } from '../../util/i18n';
+import lazyRequire from '../../util/lazyRequire';
+import { MutexWrapper } from '../../util/MutexContext';
 
 import type * as RemoteT from '@electron/remote';
 import update from 'immutability-helper';

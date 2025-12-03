@@ -1,6 +1,6 @@
-import IconBar from '../renderer/controls/IconBar';
-import { IActionDefinition } from '../types/IActionDefinition';
-import { ComponentEx } from '../util/ComponentEx';
+import IconBar from '../controls/IconBar';
+import { IActionDefinition } from '../../types/IActionDefinition';
+import { ComponentEx } from '../../util/ComponentEx';
 
 import * as React from 'react';
 

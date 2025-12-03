@@ -1,4 +1,4 @@
-import { ComponentEx } from '../util/ComponentEx';
+import { ComponentEx } from '../../util/ComponentEx';
 
 import Body from './MainPageBody';
 import Header from './MainPageHeader';

@@ -76,8 +76,8 @@ import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
-import LoadingScreen from './views/LoadingScreen';
-import MainWindow from './views/MainWindow';
+import LoadingScreen from './renderer/views/LoadingScreen';
+import MainWindow from './renderer/views/MainWindow';
 
 import * as remote from '@electron/remote';
 import * as msgpackT from '@msgpack/msgpack';

@@ -1,5 +1,5 @@
-import ProgressBar from '../renderer/controls/ProgressBar';
-import ExtensionManager from '../util/ExtensionManager';
+import ProgressBar from '../controls/ProgressBar';
+import ExtensionManager from '../../util/ExtensionManager';
 
 import * as React from 'react';
 

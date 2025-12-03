@@ -37,7 +37,7 @@ import DynDiv from '../../renderer/controls/DynDiv';
 import FlexLayout from '../../renderer/controls/FlexLayout';
 import { IReducerAction, StateReducerType } from './types';
 
-import { MainContext } from '../../views/MainWindow';
+import { MainContext } from '../../renderer/views/MainWindow';
 
 import { propOf, updateJumpList } from './util';
 import { useTranslation } from 'react-i18next';

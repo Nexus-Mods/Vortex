@@ -21,7 +21,7 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { IInstallOptions } from '../../mod_management/types/IInstallOptions';

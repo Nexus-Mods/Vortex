@@ -9,7 +9,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
-import Notification from '../../../views/Notification';
+import Notification from '../../../renderer/views/Notification';
 
 import { closeBrowser } from '../actions';
 

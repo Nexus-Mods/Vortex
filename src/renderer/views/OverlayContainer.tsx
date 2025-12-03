@@ -1,9 +1,9 @@
-import ErrorBoundary from '../renderer/controls/ErrorBoundary';
-import {PropsCallback} from '../types/IExtensionContext';
-import {extend} from '../util/ComponentEx';
+import ErrorBoundary from '../controls/ErrorBoundary';
+import {PropsCallback} from '../../types/IExtensionContext';
+import {extend} from '../../util/ComponentEx';
 
 import * as React from 'react';
-import ExtensionGate from '../renderer/controls/ExtensionGate';
+import ExtensionGate from '../controls/ExtensionGate';
 
 interface IExtOverlay {
   id: string;

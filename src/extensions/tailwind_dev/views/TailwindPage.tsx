@@ -5,7 +5,7 @@
  */
 
 import * as React from 'react';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 import { TailwindTest } from '../../../tailwind/components/TailwindTest';
 import { TypographyDemo } from '../../../tailwind/components/next/typography/TypographyDemo';
 import { ButtonDemo } from '../../../tailwind/components/next/button/ButtonDemo';

@@ -12,7 +12,7 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import MainPage from '../../views/MainPage';
+import MainPage from '../../renderer/views/MainPage';
 
 import { IDownload } from '../download_management/types/IDownload';
 import { SITE_ID } from '../gamemode_management/constants';

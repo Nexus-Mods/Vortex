@@ -6,7 +6,7 @@ import Icon from '../../renderer/controls/Icon';
 import { IconButton } from '../../renderer/controls/TooltipControls';
 import { TFunction } from '../../util/i18n';
 import opn from '../../util/opn';
-import { MainContext } from '../../views/MainWindow';
+import { MainContext } from '../../renderer/views/MainWindow';
 import { IExtra, IListItem } from './types';
 
 export interface IBaseDashletProps {

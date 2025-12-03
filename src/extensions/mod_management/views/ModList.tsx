@@ -22,7 +22,7 @@ import Debouncer from '../../../util/Debouncer';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { batchDispatch, bytesToString, toPromise, truthy } from '../../../util/util';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import calculateFolderSize from '../../../util/calculateFolderSize';
 

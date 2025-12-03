@@ -11,7 +11,7 @@ import * as selectors from './util/selectors';
 import Promise from 'bluebird';
 
 export * from './renderer/controls/api';
-export * from './views/api';
+export * from './renderer/views/api';
 export { actions, Promise, fs, log, selectors, types, util };
 export { ComponentEx, PureComponentEx } from './util/ComponentEx';
 

@@ -2,7 +2,7 @@ import More from '../../../renderer/controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import github from '../../../util/github';
 import {log} from '../../../util/log';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 

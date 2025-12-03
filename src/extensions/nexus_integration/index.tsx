@@ -89,7 +89,7 @@ import { Button } from 'react-bootstrap';
 import { Action } from 'redux';
 import { } from 'uuid';
 import { IComponentContext } from '../../types/IComponentContext';
-import { MainContext } from '../../views/MainWindow';
+import { MainContext } from '../../renderer/views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
 import { selectors } from 'vortex-api';
 import { app } from 'electron';

@@ -24,7 +24,7 @@ import { IToolStored } from '../gamemode_management/types/IToolStored';
 import { useTranslation } from 'react-i18next';
 
 import { toDirname, isEqual, toToolDiscovery, toEditStarter, updateImage, splitCommandLine, resolveToolName } from './util';
-import { MainContext } from '../../views/MainWindow';
+import { MainContext } from '../../renderer/views/MainWindow';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { useSelector } from 'react-redux';
 
