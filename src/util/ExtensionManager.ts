@@ -1474,18 +1474,6 @@ class ExtensionManager {
     this.mContextProxyHandler = new ContextProxyHandler(context);
     const contextProxy = new Proxy(context, this.mContextProxyHandler);
     this.mExtensions.forEach(ext => {
-      // DEBUG: Log to file for all FOMOD extensions
-      if (ext.name.includes('fomod')) {
-        try {
-          const fs = require('fs');
-          const path_module = require('path');
-          const logPath = path_module.join(process.env.APPDATA || process.env.USERPROFILE || 'C:\\', 'vortex_fomod_debug.log');
-          fs.appendFileSync(logPath, `${new Date().toISOString()} [ExtensionManager] About to init extension: ${ext.name}\n`);
-        } catch (err) {
-          // Ignore logging errors
-        }
-      }
-
       if (process.type === 'renderer') {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name, path: ext.path});
@@ -1495,19 +1483,6 @@ class ExtensionManager {
         const apiProxy = new APIProxyCreator(ext, this.mEventEmitter);
         const extProxy = new Proxy(contextProxy, apiProxy);
         ext.initFunc()(extProxy as IExtensionContext);
-
-        // DEBUG: Log completion for FOMOD extensions
-        if (ext.name.includes('fomod')) {
-          try {
-            const fs = require('fs');
-            const path_module = require('path');
-            const logPath = path_module.join(process.env.APPDATA || process.env.USERPROFILE || 'C:\\', 'vortex_fomod_debug.log');
-            fs.appendFileSync(logPath, `${new Date().toISOString()} [ExtensionManager] Successfully initialized extension: ${ext.name}\n`);
-          } catch (err) {
-            // Ignore logging errors
-          }
-        }
-
         apiProxy.enableAPI();
       } catch (err) {
         if (!ext.dynamic) {
@@ -2559,13 +2534,6 @@ class ExtensionManager {
     const loadedExtensions = new Set<string>();
     let dynamicallyLoaded = [];
     return staticExtensions
-      .filter(ext => {
-        // DEBUG: Force-enable FOMOD extensions for testing circular dependency fixes
-        if (ext.includes('fomod')) {
-          return true;
-        }
-        return getSafe(this.mExtensionState, [ext, 'enabled'], true);
-      })
       .map((name: string) => ({
           name,
           namespace: name,
