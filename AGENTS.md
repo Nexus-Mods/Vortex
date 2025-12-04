@@ -40,18 +40,14 @@ Electron-based mod manager with Redux state management.
 
 ### Key Directories
 
+- `extensions/` - Bundled extensions (dynamically loaded)
+- `src/extensions/` - Embedded extensions (statically loaded)
 - `src/controls/` - Reusable React components
 - `src/views/` - Main UI views
 - `src/util/` - Utility helpers
 - `src/types/` - TypeScript definitions
 - `app/` - Production build staging
 - `out/` - Development build output
-
-### Build System
-
-- **Development**: TypeScript compiler directly, files loaded individually
-- **Production**: Webpack bundles into two files (main + renderer)
-- **Extensions**: Always built with Webpack
 
 ## Extension Development
 

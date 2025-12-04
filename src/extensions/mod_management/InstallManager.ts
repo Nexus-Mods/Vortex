@@ -1828,6 +1828,24 @@ class InstallManager {
     });
   }
 
+  /**
+   * CRITICAL INVARIANTS for phase-gated installation:
+   * 
+   * 1. DEPLOYMENT BLOCKING: The `isDeploying` flag MUST be set during deployment
+   *    and cleared after. Never remove this check - installations must wait for
+   *    deployment to complete to prevent race conditions and file conflicts.
+   * 
+   * 2. PHASE COMPLETION: A phase is complete ONLY when BOTH conditions are true:
+   *    - `activeByPhase.get(phase) === 0` (no active installations)
+   *    - `pendingByPhase.get(phase)?.length === 0` (no pending installations)
+   *    Checking only `active === 0` allows deployment during queued installs = BAD.
+   * 
+   * 3. PHASE GATING: Even optional/recommended mods must wait for their phase.
+   *    Never bypass phase gating - it breaks last-phase advancement logic.
+   * 
+   * 4. POST-DEPLOYMENT: Always call `startPendingForPhase()` after deployment
+   *    completes to resume any installations that were queued during deployment.
+   */
   // Map tracking phase gating per sourceMod/collection
   private mInstallPhaseState: Map<string, {
     allowedPhase?: number;
@@ -1957,7 +1975,8 @@ class InstallManager {
         const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, checkPhase);
         const existing = phaseState?.deploymentPromises.get(checkPhase);
         if ((existing?.deployOnSettle) && !hasDeployed) {
-          // Set deployment flag to block new installations during deployment
+          // CRITICAL: Block new installations during deployment to prevent file conflicts.
+          // Removing this check causes race conditions. See AGENTS-COLLECTIONS.md.
           if (phaseState) {
             phaseState.isDeploying = true;
           }
