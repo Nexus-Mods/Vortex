@@ -13,7 +13,7 @@ import Select from 'react-select';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { actions, ComponentEx, FlexLayout, Modal, More, Toggle, types, util } from 'vortex-api';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 
 interface IInstallDialogProps {
   onHide: () => void;

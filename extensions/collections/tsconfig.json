@@ -3,6 +3,7 @@
     "target": "ES2019",
     "module": "commonjs",
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "noImplicitAny": false,
     "removeComments": true,
     "preserveConstEnums": true,

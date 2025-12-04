@@ -1,3 +1,4 @@
+import Bluebird from 'bluebird';
 import * as bsdiffT from 'bsdiff-node';
 import * as crc32 from 'crc-32';
 import * as path from 'path';
@@ -21,10 +22,10 @@ async function validatePatch(srcFilePath: string, patchFilePath: string) {
 
 const queue = util.makeQueue();
 
-export async function scanForDiffs(api: types.IExtensionApi, gameId: string,
+export function scanForDiffs(api: types.IExtensionApi, gameId: string,
                                    modId: string, destPath: string,
                                    onProgress: (percent: number, text: string) => void)
-                                   : Promise<{ [filePath: string]: string }> {
+                                   : Bluebird<{ [filePath: string]: string }> {
   const state = api.getState();
   const mod = state.persistent.mods[gameId][modId];
 
@@ -39,7 +40,7 @@ export async function scanForDiffs(api: types.IExtensionApi, gameId: string,
 
   const choices = mod.attributes?.installerChoices;
 
-  return queue(() => new Promise<{ [filePath: string]: string }>((resolve, reject) => {
+  return queue(() => new Bluebird((resolve, reject) => {
     api.events.emit('simulate-installer', gameId, mod.archiveId, { choices },
       async (instRes: types.IInstallResult, tempPath: string) => {
       try {
@@ -116,7 +117,7 @@ export async function scanForDiffs(api: types.IExtensionApi, gameId: string,
         reject(err);
       }
     });
-  }), false);
+  }), false) as Bluebird<{ [filePath: string]: string }>;
 }
 
 export async function applyPatches(api: types.IExtensionApi,

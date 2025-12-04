@@ -853,9 +853,9 @@ export async function cloneCollection(api: types.IExtensionApi,
   }
 
   const shouldCopyAttributes = () => !isCloning && (ownCollection || isContributing);
-  const cloneName = t('Copy of {{name}}', { replace: { name: existingCollection.attributes?.customFileName } });
-  const existingName = existingCollection.attributes?.customFileName;
-  const customFileName = shouldCopyAttributes() ? existingName : cloneName;
+  const cloneFileName = t('Copy of {{name}}', { replace: { name: existingCollection.attributes?.customFileName } });
+  const existingFileName = existingCollection.attributes?.customFileName;
+  const customFileName = shouldCopyAttributes() ? existingFileName : cloneFileName;
 
   const ownCollectionAttributes = shouldCopyAttributes() ? ({
     pictureUrl: existingCollection.attributes.pictureUrl,
@@ -865,15 +865,15 @@ export async function cloneCollection(api: types.IExtensionApi,
     uploaderId: existingCollection.attributes?.uploaderId ?? userInfo?.userId,
     permissions: existingCollection.attributes?.permissions,
   }) : {};
+
   const mod: types.IMod = {
     id,
     type: MOD_TYPE,
     state: 'installed',
     attributes: {
-      name,
       customFileName,
       version: shouldCopyAttributes() ? existingCollection.attributes?.version : '0',
-      installTime: new Date(),
+      installTime: new Date().toString(),
       author: userInfo?.name ?? 'Anonymous',
       uploader: userInfo?.name ?? 'Anonymous',
       uploaderId: userInfo?.userId,
@@ -939,7 +939,7 @@ export async function createCollection(api: types.IExtensionApi,
     attributes: {
       name,
       version: '0',
-      installTime: new Date(),
+      installTime: new Date().toString(),
       author: state.persistent['nexus']?.userInfo?.name ?? 'Anonymous',
       uploader: state.persistent['nexus']?.userInfo?.name ?? 'Anonymous',
       uploaderId: state.persistent['nexus']?.userInfo?.user_id,

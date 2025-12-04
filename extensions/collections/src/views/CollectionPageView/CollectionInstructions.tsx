@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { types, util } from 'vortex-api';
 import { DEFAULT_INSTRUCTIONS } from '../../constants';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 
 import { isEmpty } from '../../util/util';
 

@@ -35,7 +35,7 @@ import initIniTweaks from './initweaks';
 import initTools from './tools';
 
 import * as nexusApi from '@nexusmods/nexus-api';
-import * as PromiseBB from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import memoize from 'memoize-one';
 import * as path from 'path';
@@ -98,17 +98,17 @@ function makeDidRemoveMods() {
 function makeOnUnfulfilledRules(api: types.IExtensionApi) {
   const reported = new Set<string>();
 
-  return (profileId: string, modId: string, rules: types.IModRule[]): PromiseBB<boolean> => {
+  return (profileId: string, modId: string, rules: types.IModRule[]): Bluebird<boolean> => {
     const state: types.IState = api.store.getState();
 
     const profile = selectors.profileById(state, profileId);
     const gameId = profile.gameId;
     if (gameId !== selectors.activeGameId(state)) {
-      return PromiseBB.resolve(false);
+      return Bluebird.resolve(false);
     }
 
     if (modsBeingRemoved.has(makeModKey(gameId, modId))) {
-      return PromiseBB.resolve(false);
+      return Bluebird.resolve(false);
     }
 
     const collection: types.IMod =
@@ -163,9 +163,9 @@ function makeOnUnfulfilledRules(api: types.IExtensionApi) {
         message: util.renderModName(collection),
         actions: notiActions,
       });
-      return PromiseBB.resolve(true);
+      return Bluebird.resolve(true);
     } else {
-      return PromiseBB.resolve(false);
+      return Bluebird.resolve(false);
     }
   };
 }
@@ -432,7 +432,7 @@ async function removeCollection(api: types.IExtensionApi,
 
 function genAttributeExtractor(api: types.IExtensionApi) {
   // tslint:disable-next-line:no-shadowed-variable
-  return (modInfo: any, modPath: string): PromiseBB<{ [key: string]: any }> => {
+  return (modInfo: any, modPath: string): Bluebird<{ [key: string]: any }> => {
     const collectionId = modInfo.download?.modInfo?.nexus?.ids?.collectionId;
     const revisionId = modInfo.download?.modInfo?.nexus?.ids?.revisionId;
     const collectionSlug = modInfo.download?.modInfo?.nexus?.ids?.collectionSlug;
@@ -447,7 +447,7 @@ function genAttributeExtractor(api: types.IExtensionApi) {
       referenceTag,
     };
 
-    return PromiseBB.resolve(result);
+    return Bluebird.resolve(result);
   };
 }
 
@@ -692,7 +692,7 @@ function register(context: types.IExtensionContext,
   });
 
   context.registerModType(MOD_TYPE, 200, () => true,
-    () => undefined, () => PromiseBB.resolve(false), {
+    () => undefined, () => Bluebird.resolve(false), {
     name: 'Collection',
     customDependencyManagement: true,
     noConflicts: true,
@@ -832,28 +832,35 @@ function register(context: types.IExtensionContext,
     }, (profileIds: string[]) => profileCollectionExists(context.api, profileIds[0]));
 
   context.registerAction('mods-action-icons', 300, 'collection', {}, 'Add to Collection...',
-    (instanceIds: string[]) => addCollectionAction(context.api, instanceIds)
+    (instanceIds: string[]) => {
+      addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch(err => context.api.showErrorNotification('failed to add mod to collection', err)),
+        .catch(err => context.api.showErrorNotification('failed to add mod to collection', err))
+    },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds));
 
   context.registerAction('mods-multirow-actions', 300, 'collection', {}, 'Add to Collection...',
-    (instanceIds: string[]) => addCollectionAction(context.api, instanceIds)
+    (instanceIds: string[]) => {
+      addCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch(err => context.api.showErrorNotification('failed to add mod to collection', err)),
+        .catch(err => context.api.showErrorNotification('failed to add mod to collection', err))
+    },
     (instanceIds: string[]) => addCollectionCondition(context.api, instanceIds));
 
   context.registerAction('mods-action-icons', 300, 'collection', {}, 'Remove from Collection...',
-    (instanceIds: string[]) => removeCollectionAction(context.api, instanceIds)
+    (instanceIds: string[]) => {
+      removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch(err => context.api.showErrorNotification('failed to remove mod from collection', err)),
+        .catch(err => context.api.showErrorNotification('failed to remove mod from collection', err))
+    },
     (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds));
 
-  context.registerAction('mods-multirow-actions', 300, 'collection', {},
-                         'Remove from Collection...',
-    (instanceIds: string[]) => removeCollectionAction(context.api, instanceIds)
+  context.registerAction('mods-multirow-actions', 300, 'collection', {}, 'Remove from Collection...',
+    (instanceIds: string[]) => {
+      removeCollectionAction(context.api, instanceIds)
         .then(() => collectionChanged.schedule())
-        .catch(err => context.api.showErrorNotification('failed to remove mod from collection', err)),
+        .catch(err => context.api.showErrorNotification('failed to remove mod from collection', err))
+    },
     (instanceIds: string[]) => removeCollectionCondition(context.api, instanceIds));
 
   context.registerAttributeExtractor(100, genAttributeExtractor(context.api));
@@ -899,7 +906,7 @@ function register(context: types.IExtensionContext,
 }
 
 async function triggerVoteNotification(api: types.IExtensionApi,
-                                       revisionId: string,
+                                       revisionId: number,
                                        collectionSlug: string, revisionNumber: number)
                                        : Promise<void> {
   if ((collectionSlug === undefined) || (revisionNumber === undefined)) {
@@ -920,7 +927,7 @@ async function triggerVoteNotification(api: types.IExtensionApi,
   const sendRating = async (success: boolean) => {
     const vote = success ? 'positive' : 'negative';
     const voted: { success: boolean, averageRating?: nexusApi.IRating } =
-      (await api.emitAndAwait('rate-nexus-collection-revision', parseInt(revisionId, 10), vote))[0];
+      (await api.emitAndAwait('rate-nexus-collection-revision', revisionId, vote))[0];
     if (voted.success) {
       api.store.dispatch(
         updateSuccessRate(revisionId, vote,
@@ -973,8 +980,9 @@ async function checkVoteRequest(api: types.IExtensionApi): Promise<number> {
   const pendingVotes = state.persistent['collections'].pendingVotes ?? {};
   const now = Date.now();
 
-  for (const revisionId of Object.keys(pendingVotes)) {
-    const pendingInfo = pendingVotes[revisionId];
+  for (const revisionIdRaw of Object.keys(pendingVotes)) {
+    const pendingInfo = pendingVotes[revisionIdRaw];
+    const revisionId = parseInt(revisionIdRaw, 10);
     if (now - pendingInfo.time >= TIME_BEFORE_VOTE) {
       await triggerVoteNotification(api, revisionId,
         pendingInfo.collectionSlug, pendingInfo.revisionNumber);

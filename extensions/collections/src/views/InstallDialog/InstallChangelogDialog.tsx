@@ -3,7 +3,7 @@ import CollectionThumbnail from '../CollectionTile';
 import React = require('react');
 import { Button, Media, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import { FlexLayout, MainContext, tooltip, types, util } from 'vortex-api';
 
 import { IRevision } from '@nexusmods/nexus-api';

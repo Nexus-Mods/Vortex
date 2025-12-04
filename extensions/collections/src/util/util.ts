@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as PromiseBB from 'bluebird';
+import Bluebird from 'bluebird';
 import { createHash } from 'crypto';
 import { ICollectionPermission, CollectionPermission, ICollection } from '@nexusmods/nexus-api';
 import { selectors, types, util } from 'vortex-api';
@@ -78,8 +78,8 @@ export function makeProgressFunction(api: types.IExtensionApi) {
   return { progress, progressEnd };
 }
 
-export function bbProm<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => PromiseBB<T> {
-  return (...args: any[]) => PromiseBB.resolve(func(...args));
+export function bbProm<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
+  return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
 export function getUnfulfilledNotificationId(collectionId: string) {

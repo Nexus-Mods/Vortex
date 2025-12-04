@@ -4,7 +4,7 @@ import { modToCollection as modToCollection } from './util/transformCollection';
 import { hasEditPermissions, makeProgressFunction } from './util/util';
 
 import { ICreateCollectionResult, IGraphErrorDetail } from '@nexusmods/nexus-api';
-import * as PromiseBB from 'bluebird';
+import Bluebird from 'bluebird';
 import * as _ from 'lodash';
 import Zip = require('node-7z');
 import * as path from 'path';
@@ -58,7 +58,7 @@ async function generateCollectionInfo(
 
 async function writeCollectionToFile(state: types.IState, info: ICollection,
                                      mod: types.IMod, outputPath: string) {
-  await fs.ensureDirWritableAsync(outputPath, () => PromiseBB.resolve());
+  await fs.ensureDirWritableAsync(outputPath, () => Bluebird.resolve());
 
   await fs.writeFileAsync(
     path.join(outputPath, 'collection.json'), JSON.stringify(info, undefined, 2));

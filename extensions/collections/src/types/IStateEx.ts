@@ -21,7 +21,7 @@ export interface IStateEx extends types.IState {
         },
       },
       revisions: {
-        [revisionId: string]: {
+        [revisionId: number]: {
           timestamp: number,
           info: IRevision,
         },

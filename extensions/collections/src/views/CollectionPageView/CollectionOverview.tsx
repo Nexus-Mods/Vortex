@@ -28,6 +28,16 @@ interface IEndorseButtonProps {
   voteAllowed: boolean;
 }
 
+// NOTE: this way we'll have a compilation error on a new value
+const endorsedStatusMap: Record<EndorsedStatus, true> = {
+  Undecided: true,
+  Abstained: true,
+  Endorsed: true,
+};
+function isEndorsedStatus(value: unknown): value is EndorsedStatus {
+  return typeof value === 'string' && value in endorsedStatusMap;
+}
+
 function EndorseButton(props: IEndorseButtonProps) {
 
   const { t, collection, gameId, mod, voteAllowed } = props;
@@ -37,7 +47,8 @@ function EndorseButton(props: IEndorseButtonProps) {
   
   const endorse = React.useCallback(async () => {
     
-    const endorsedStatus: EndorsedStatus = mod.attributes?.endorsed ?? 'Undecided';
+    const rawEndorsedStatus = mod.attributes?.endorsed;
+    const endorsedStatus: EndorsedStatus = isEndorsedStatus(rawEndorsedStatus) ? rawEndorsedStatus : 'Undecided';
     
     context.api.events.emit('endorse-mod', gameId, mod.id, endorsedStatus);
     context.api.events.emit('analytics-track-click-event', 'Collections', endorsedStatus);
@@ -50,7 +61,8 @@ function EndorseButton(props: IEndorseButtonProps) {
     
   }, [mod, collection]);
   
-  const endorsedStatus: EndorsedStatus = mod.attributes?.endorsed ?? 'Undecided';
+  const rawEndorsedStatus = mod.attributes?.endorsed;
+  const endorsedStatus: EndorsedStatus = isEndorsedStatus(rawEndorsedStatus) ? rawEndorsedStatus : 'Undecided';
   const isBlocked = collection?.viewerIsBlocked ?? false;
   const finalStatus = isBlocked ? 'Blocked' : endorsedStatus;
   const endorsed: boolean = (mod.attributes?.endorsed === 'Endorsed');
@@ -449,7 +461,8 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
     //const gameId = selectors.activeGameId(state);
     //const mods = state.persistent.mods[gameId];
 
-    const endorsedStatus: EndorsedStatus = collection.attributes?.endorsed ?? 'Undecided';
+    const rawEndorsedStatus = collection.attributes?.endorsed;
+    const endorsedStatus: EndorsedStatus = isEndorsedStatus(rawEndorsedStatus) ? rawEndorsedStatus : 'Undecided';
 
     if (success && showUpvoteResponse) {
 
