@@ -75,3 +75,6 @@ playwright/.run-counter
 
 # JetBrains
 .idea/
+
+# api-extractor
+temp/
