@@ -51,10 +51,7 @@ describe('NotificationAggregator', () => {
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
       "Failed to install dependency (3 dependencies)",
-      {
-        message: expect.stringContaining('Affected dependencies: Mod1, Mod2, Mod3'),
-        affectedDependencies: expect.stringContaining('Mod1\nMod2\nMod3')
-      },
+      expect.stringContaining('Affected dependencies: Mod1, Mod2, Mod3'),
       expect.objectContaining({
         allowReport: undefined,
         id: expect.stringContaining("aggregated-")
@@ -91,10 +88,7 @@ describe('NotificationAggregator', () => {
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
       "Failed to install dependency (7 dependencies)",
-      {
-        affectedDependencies: expect.stringContaining("Mod1\nMod2\nMod3\nMod4\nMod5\nMod6\nMod7"),
-        message: expect.stringContaining("and 2 more")
-      },
+      expect.stringContaining("and 2 more"),
       expect.objectContaining({
         allowReport: undefined,
         id: expect.stringContaining("aggregated-error-Failed to install dependency")
