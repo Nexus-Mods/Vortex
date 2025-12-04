@@ -33,7 +33,7 @@ import { Alert, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap'
 import { withTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
-import CreatableSelect from 'react-select/creatable';
+import Select from 'react-select';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
@@ -130,20 +130,39 @@ interface IGroupSelectProps {
   onSetGroup: (pluginId: string, group: string) => void;
 }
 
-class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
+interface IGroupSelectState {
+  inputValue: string;
+}
+
+class GroupSelect extends React.PureComponent<IGroupSelectProps, IGroupSelectState> {
+  constructor(props: IGroupSelectProps) {
+    super(props);
+    this.state = { inputValue: '' };
+  }
+
   public render(): JSX.Element {
-    const { plugins, masterlist, userlist } = this.props;
+    const { t, plugins, masterlist, userlist } = this.props;
+    const { inputValue } = this.state;
 
     let group = util.getSafe(plugins, [0, 'group'], '');
     if (plugins.find(plugin => plugin.group !== group) !== undefined) {
       group = '';
     }
 
-    const options = Array.from(new Set([]
+    const existingOptions = Array.from(new Set([]
         .concat(masterlist.groups, userlist.groups)
         .filter(iter => iter !== undefined)
         .map(iter => iter.name)))
       .map(iter => ({ label: iter, value: iter }));
+
+    // Add "Create group" option if user is typing something that doesn't exist
+    const options = [...existingOptions];
+    if (inputValue && !existingOptions.some(opt => opt.value.toLowerCase() === inputValue.toLowerCase())) {
+      options.unshift({
+        label: t('Create Group: {{group}}', { replace: { group: inputValue } }),
+        value: inputValue,
+      });
+    }
 
     const isCustom: boolean = (userlist.plugins || []).find(plugin => {
         const refPlugin = plugins.find(iter => iter.id === plugin.name.toLowerCase());
@@ -151,25 +170,24 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, {}> {
       }) !== undefined;
 
     return (
-      <CreatableSelect
-        // TODO: for some reason the value doesn't actually show - anywhere. Guess
-        //   we have to update react-select at some point...
+      <Select
         value={isCustom ? { label: group, value: group } : null}
         placeholder={group || 'default'}
         onChange={(newValue: any) => this.changeGroup(newValue)}
+        onInputChange={this.handleInputChange}
+        inputValue={inputValue}
         options={options}
-        formatCreateLabel={this.createPrompt}
       />
     );
   }
 
-  private createPrompt = (label: string): string => {
-    const { t } = this.props;
-    return t('Create Group: {{group}}', { replace: { group: label } });
+  private handleInputChange = (newValue: string) => {
+    this.setState({ inputValue: newValue });
   }
 
   private changeGroup = (selection: { label: string, value: string } | null) => {
     const { plugins, onSetGroup } = this.props;
+    this.setState({ inputValue: '' });
     plugins.forEach(plugin => onSetGroup(plugin.name,
       selection ? selection.value : undefined));
   }
