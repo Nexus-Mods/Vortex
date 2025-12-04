@@ -10,6 +10,7 @@ import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_
 import { getGame } from '../gamemode_management/util/getGame';
 import { log } from '../../util/log';
 import { IExtensionApi, IInstallResult } from '../../types/api';
+import { ProcessCanceled, InstallationSkipped } from '../../util/CustomErrors';
 
 /**
  * Install a FOMOD mod
@@ -78,6 +79,14 @@ export const install = async (
       fomodChoices,
       validate
     );
+
+    if (!result) {
+      throw new ProcessCanceled("Installation cancelled by user");
+    }
+
+    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+      throw new InstallationSkipped(); // No files to copy, skip the mod
+    }
 
     log('info', 'FOMOD installation completed', { gameId });
 

@@ -12,7 +12,7 @@ import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 import { ModsInstallationCancelledEvent, ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
 
-import { setDownloadInstalled } from '../download_management/actions/state';
+import { setDownloadInstalled, setDownloadSkipped } from '../download_management/actions/state';
 import { NotificationAggregator } from './NotificationAggregator';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import NXMUrl from '../nexus_integration/NXMUrl';
@@ -34,6 +34,8 @@ import getModName from './util/modName';
 
 import Promise from 'bluebird';
 import * as path from 'path';
+import { updateModStatus } from '../../actions';
+import { modRuleId } from '../collections_integration/util';
 
 class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
@@ -49,6 +51,7 @@ class InstallContext implements IInstallContext {
   private mSetModType: (id: string, modType: string) => void;
   private mEnableMod: (modId: string) => void;
   private mSetDownloadInstalled: (archiveId: string, gameId: string, modId: string) => void;
+  private mSetCollectionModSkipped: (modId: string, logicalFileName: string | undefined) => void;
   private mStartActivity: (activityId: string) => void;
   private mStopActivity: (activityId: string) => void;
   private mAddedId: string;
@@ -132,6 +135,25 @@ class InstallContext implements IInstallContext {
     };
     this.mSetDownloadInstalled = (archiveId, gameId, modId) => {
       dispatch(setDownloadInstalled(archiveId, gameId, modId));
+    };
+    this.mSetCollectionModSkipped = (modId, logicalFileName) => {
+      const state: IState = store.getState();
+      const currentSession = state.session['collections']?.activeSession;
+      if (currentSession !== undefined) {
+        // NOTE: I seem to have lost some metadat that was injected in some later stage?
+        // For example, at some point I had `mod.rule?.extra?.originalFileName`
+        // Never saw where `mod.modId` was
+        const rule = Object.values(currentSession?.mods ?? {}).find(mod =>
+          mod.modId === modId ||
+          mod.rule?.reference?.logicalFileName === logicalFileName ||
+          mod.rule?.extra?.originalFileName?.startsWith(modId)
+        )?.rule;
+
+        const ruleId = rule ? modRuleId(rule) : undefined;
+        if (ruleId !== undefined) {
+          dispatch(updateModStatus(currentSession.sessionId, ruleId, 'skipped'));
+        }
+      }
     };
     this.mIsDownload = (archiveId) => {
       const state: IState = store.getState();
@@ -270,6 +292,10 @@ class InstallContext implements IInstallContext {
       if (this.mIsDownload(this.mArchiveId)) {
         this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
       }
+    } else if (outcome === 'skipped') {
+      this.mSetModState(this.mAddedId, 'skipped');
+
+      this.mSetCollectionModSkipped(info?.modId, info?.logicalFileName);
     } else {
       this.mFailReason = reason;
       if (this.mAddedId !== undefined) {

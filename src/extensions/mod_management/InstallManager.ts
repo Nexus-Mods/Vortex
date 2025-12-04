@@ -13,6 +13,7 @@ import { NotificationAggregator } from './NotificationAggregator';
 import {
   DataInvalid, NotFound, ProcessCanceled, SelfCopyCheckError, SetupError, TemporaryError,
   UserCanceled, ArchiveBrokenError,
+  InstallationSkipped,
 } from '../../util/CustomErrors';
 import {
   createErrorReport, didIgnoreError,
@@ -1290,6 +1291,16 @@ class InstallManager {
             return null;
           })
           .catch(err => {
+            if (err instanceof InstallationSkipped) {
+              log('info', 'Installation skipped by installer', { installId: activeInstall.installId, modId });
+
+              installContext?.finishInstallCB('skipped', { modId: modId, logicalFileName: fullInfo?.meta?.logicalFileName });
+
+              promiseCallback?.(null, modId);
+
+              return Bluebird.resolve();
+            }
+
             // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
             //   exceptions from extensions, hence we have to do the string check (last one)
             const canceled = (err instanceof UserCanceled)
