@@ -1,11 +1,11 @@
 import { createAction } from 'redux-act';
-import { types } from 'vortex-api';
+import { ICollectionInstallSession, CollectionModStatus } from '../types';
 
 export const startInstallSession = createAction('COLLECTION_START_INSTALL_SESSION',
-  (sessionInfo: Omit<types.ICollectionInstallSession, 'downloadedCount' | 'installedCount' | 'failedCount' | 'skippedCount'>) => sessionInfo);
+  (sessionInfo: Omit<ICollectionInstallSession, 'downloadedCount' | 'installedCount' | 'failedCount' | 'skippedCount'>) => sessionInfo);
 
 export const updateModStatus = createAction('COLLECTION_UPDATE_MOD_STATUS',
-  (sessionId: string, ruleId: string, status: types.CollectionModStatus) => ({ sessionId, ruleId, status }));
+  (sessionId: string, ruleId: string, status: CollectionModStatus) => ({ sessionId, ruleId, status }));
 
 export const markModInstalled = createAction('COLLECTION_MARK_MOD_INSTALLED',
   (sessionId: string, ruleId: string, modId: string) => ({ sessionId, ruleId, modId }));
