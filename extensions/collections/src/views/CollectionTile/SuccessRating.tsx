@@ -8,7 +8,7 @@ export interface ISuccessRatingProps {
   infoCache: InfoCache;
   collectionSlug: string;
   revisionNumber: number;
-  revisionId: string;
+  revisionId: number;
 }
 
 export function SuccessRating(props: ISuccessRatingProps) {

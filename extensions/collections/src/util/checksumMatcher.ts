@@ -1,3 +1,4 @@
+import Bluebird from 'bluebird';
 import * as crc32 from 'crc-32';
 import * as path from 'path';
 import { fs, log, selectors, types, util } from 'vortex-api';
@@ -46,8 +47,8 @@ export async function matchChecksums(api: types.IExtensionApi,
   });
 
   let entries: string[] = [];
-  await util.walk(localPath, async input => {
-    entries = [].concat(entries, input);
+  await util.walk(localPath, input => {
+    return Bluebird.resolve(entries = [].concat(entries, input));
   }, {});
 
   const localChecksums: Set<string> = new Set();

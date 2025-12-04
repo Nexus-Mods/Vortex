@@ -24,7 +24,7 @@ class InfoCache {
     this.mApi = api;
   }
 
-  public async getCollectionModRules(revisionId: string, collection: types.IMod, gameId: string) {
+  public async getCollectionModRules(revisionId: number, collection: types.IMod, gameId: string) {
     const cacheId = revisionId ?? collection.id;
     if (this.mCacheColRules[cacheId] === undefined) {
       this.mCacheColRules[cacheId] = this.cacheCollectionModRules(revisionId, collection, gameId);
@@ -79,7 +79,7 @@ class InfoCache {
     // remove revision infos
     {
       const { revisions } = state.persistent.collections;
-      const revisionsToDrop: string[] = Object.keys(revisions)
+      const revisionsToDrop: number[] = Object.keys(revisions)
         .sort((lhs, rhs) => revisions[rhs].timestamp - revisions[lhs].timestamp)
         .reduce((prev, iter, idx) => {
           if ((idx >= CACHE_LRU_COUNT) || (revisions[iter].timestamp < cutOffTime)) {
@@ -106,7 +106,7 @@ class InfoCache {
    *    "force" will always update
    * @returns 
    */
-  public async getRevisionInfo(revisionId: string,
+  public async getRevisionInfo(revisionId: number,
                                collectionSlug: string, revisionNumber: number,
                                fetchBehavior: 'allow' | 'avoid' | 'force' = 'allow')
                                : Promise<IRevision> {
@@ -136,7 +136,7 @@ class InfoCache {
   }
 
   private fetchRevisionInfo(revisions,
-                            revisionId: string,
+                            revisionId: number,
                             collectionSlug: string,
                             revisionNumber: number): void {
     log('info', 'revision info cache outdated', {
@@ -150,7 +150,7 @@ class InfoCache {
     }
   }
 
-  private async cacheCollectionModRules(revisionId: string,
+  private async cacheCollectionModRules(revisionId: number,
                                         collection: types.IMod,
                                         gameId: string)
                                         : Promise<ICollectionModRule[]> {
@@ -193,7 +193,7 @@ class InfoCache {
   }
 
   private updateRevisionCacheState(store: types.ThunkStore<any>,
-                                   revisionId: string,
+                                   revisionId: number,
                                    revisionInfo: any,
                                    now: number): void {
     // we cache revision info and collection info separately to reduce duplication
@@ -209,7 +209,7 @@ class InfoCache {
     }, now));
   }
 
-  private async cacheRevisionInfo(revisionId: string,
+  private async cacheRevisionInfo(revisionId: number,
                                   collectionSlug: string,
                                   revisionNumber: number)
                                   : Promise<IRevision> {

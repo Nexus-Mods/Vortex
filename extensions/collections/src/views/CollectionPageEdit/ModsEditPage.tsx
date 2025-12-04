@@ -878,8 +878,8 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
     const { versionMatch } = entry.rule.reference;
 
     if ((sourceType === 'nexus')
-        && (isNaN(parseInt(entry.mod.attributes?.modId, 10))
-            || isNaN(parseInt(entry.mod.attributes?.fileId, 10)))) {
+        && (isNaN(entry.mod.attributes?.modId)
+            || isNaN(entry.mod.attributes?.fileId))) {
       res.push({
         type: 'invalid-ids',
         summary: t('Missing file identifiers'),

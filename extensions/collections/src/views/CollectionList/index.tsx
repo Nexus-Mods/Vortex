@@ -1,4 +1,5 @@
 /* eslint-disable */
+import Bluebird from 'bluebird';
 import { updateSuccessRate } from '../../actions/persistent';
 import { doExportToAPI } from '../../collectionExport';
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE, NAMESPACE, TOS_URL} from '../../constants';
@@ -369,7 +370,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
 
     const vote = success ? 'positive' : 'negative';
     const voted: { success: boolean, averageRating?: IRating } =
-      (await api.emitAndAwait('rate-nexus-collection-revision', parseInt(revisionId, 10), vote))[0];
+      (await api.emitAndAwait('rate-nexus-collection-revision', revisionId, vote))[0];
     if (voted.success) {
       api.store.dispatch(
         updateSuccessRate(revisionId, vote,
@@ -474,7 +475,7 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
 
     const eaa = (ruleList, recommended) => {
       if (ruleList.length === 0) {
-        return Promise.resolve();
+        return Bluebird.resolve();
       } else {
         return api.emitAndAwait('install-from-dependencies', collectionId, ruleList, recommended);
       }

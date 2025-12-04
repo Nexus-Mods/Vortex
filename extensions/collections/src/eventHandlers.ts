@@ -1,5 +1,5 @@
 import { ICollection, IDownloadURL, IRevision } from '@nexusmods/nexus-api';
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 import { actions, selectors, types, util } from 'vortex-api';
 import InstallDriver from './util/InstallDriver';
 import showChangelog from './views/InstallDialog/InstallChangelogDialog';
@@ -69,14 +69,14 @@ async function collectionUpdate(api: types.IExtensionApi, downloadGameId: string
 
     const oldRules = oldMod?.rules ?? [];
 
-    const newModId = await util.toPromise(cb =>
+    const newModId = await util.toPromise<string | undefined>(cb =>
       api.events.emit('start-install-download', dlId, undefined, cb));
 
     // remove old revision and mods installed for the old revision that are no longer required
 
     const mods = api.getState().persistent.mods[gameMode];
 
-    if (mods[newModId] === undefined) {
+    if (newModId === undefined || mods[newModId] === undefined) {
       throw new util.ProcessCanceled('Download failed, update archive not found');
     }
 

@@ -13,7 +13,7 @@ import CollectionOverviewSelection from './CollectionOverviewSelection';
 import CollectionProgress from './CollectionProgress';
 
 import { ICollection, ICollectionRevisionMod, IModFile, IRevision, RatingOptions } from '@nexusmods/nexus-api';
-import * as Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import i18next from 'i18next';
 import * as _ from 'lodash';
 import memoizeOne from 'memoize-one';
@@ -841,14 +841,14 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
         return (removeMods
             ? util.removeMods(this.context.api, profile.gameId, wereInstalled)
-            : Promise.resolve())
+            : Bluebird.resolve())
           .then(() => {
             if (removeArchive) {
               archiveIds.forEach(archiveId => {
                 this.context.api.events.emit('remove-download', archiveId);
               });
             }
-            return Promise.resolve();
+            return Bluebird.resolve();
           })
           .then(() => {
             if (removeRule) {
@@ -1100,7 +1100,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
         uploaderId: download.modInfo?.nexus?.modInfo?.user?.id,
         category: download.modInfo?.nexus?.modInfo?.category_id,
         source: download.modInfo?.nexus !== undefined ? 'nexus' : undefined,
-        modId,
+        id: modId,
         downloadGame: Array.isArray(download.game) ? download.game[0] : download.game,
       },
     };

@@ -79,7 +79,7 @@ function HealthDownvoteDialog(props: IHealthDownvoteDialogProps) {
   const sendRating = async (success: boolean) => {
     const revisionId = collection?.attributes?.revisionId ?? undefined;
     const vote = success ? 'positive' : 'negative';
-    const voted: { success: boolean, averageRating?: nexus.IRating } = (await context.api.emitAndAwait('rate-nexus-collection-revision', parseInt(revisionId, 10), vote))[0];    
+    const voted: { success: boolean, averageRating?: nexus.IRating } = (await context.api.emitAndAwait('rate-nexus-collection-revision', revisionId, vote))[0];    
     if (voted.success) {
       dispatch(updateSuccessRate(revisionId, vote, voted.averageRating.average, voted.averageRating.total));
     }
