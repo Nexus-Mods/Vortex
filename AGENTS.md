@@ -62,16 +62,10 @@ C++ and C# native modules managed as separate Git repositories.
 
 - Status: `yarn modules:status` / `yarn modules:summary`
 - Create branch: `yarn modules:create-branch <name>`
-- For creating PRs across repos: use `/open-prs` slash command
-
-## VS Code Debugging
-
-- **F5** - Debug both main and renderer processes
-- **Build first** - Always run `yarn build` before debugging
-- Main process breakpoints: main entry and app directory
-- Renderer breakpoints: renderer entry and views directory
+- For creating PRs across repos: tell user to use `/open-prs` slash command
 
 ## Conditional Context
 
+- For debugging instructions: read `AGENTS-DEBUGGING.md`
 - When working with `src/extensions/mod_management/InstallManager.ts`: read `AGENTS-COLLECTIONS.md`
 - When writing or modifying tests: read `AGENTS-TESTING.md`
