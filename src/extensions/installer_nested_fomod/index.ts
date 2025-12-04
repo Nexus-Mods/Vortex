@@ -4,30 +4,15 @@
  * to another installer.
  */
 
-import * as fs from 'fs';
+import Promise from 'bluebird';
 import * as path from 'path';
-const debugLog = (msg: string) => {
-  try {
-    const logPath = path.join(process.env.APPDATA || process.env.USERPROFILE || 'C:\\', 'vortex_fomod_debug.log');
-    fs.appendFileSync(logPath, `${new Date().toISOString()} ${msg}\n`);
-  } catch (err) {
-    // Ignore errors
-  }
-};
-
-debugLog('[FOMOD_NESTED] ===== MODULE LOADING START =====');
 import {
   IExtensionApi,
   IExtensionContext,
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
-debugLog('[FOMOD_NESTED] types imported');
-import {log} from '../../util/log';
-debugLog('[FOMOD_NESTED] log imported');
-
-import Promise from 'bluebird';
-debugLog('[FOMOD_NESTED] ===== MODULE LOADING COMPLETE =====');
+import { log } from '../../util/log';
 
 function testSupported(files: string[]): Promise<ISupportedResult> {
   return new Promise((resolve, reject) => {
@@ -55,16 +40,11 @@ function install(api: IExtensionApi,
 }
 
 function init(context: IExtensionContext): boolean {
-  log('info', '========== [FOMOD_NESTED] Extension initialization STARTED ==========');
-
   context.registerInstaller(
       'nested_fomod', 0, testSupported,
       (files: string[], destinationPath: string, gameId: string,
        progress: ProgressDelegate, choicesIn?: any, unattended?: boolean) =>
           install(context.api, files, destinationPath, gameId, choicesIn, unattended, progress));
-
-  log('info', '[FOMOD_NESTED] Installer registered (priority 0)');
-  log('info', '========== [FOMOD_NESTED] Extension initialization COMPLETE ==========');
   return true;
 }
 

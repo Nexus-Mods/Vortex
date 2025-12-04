@@ -6,14 +6,11 @@ import { VortexModInstallerFileSystem } from "./utils/VortexModInstallerFileSyst
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
-import { log } from '../../util/log';
 
 let logger: VortexModInstallerLogger | null = null;
 let fileSystem: VortexModInstallerFileSystem | null = null;
 
 const main = (context: IExtensionContext): boolean => {
-  log('info', '========== [FOMOD_NATIVE] Extension initialization STARTED ==========');
-
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 10,
