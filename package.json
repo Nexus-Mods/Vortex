@@ -18,7 +18,7 @@
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
     "subprojects_app_ci": "node BuildSubprojects.js app --noparallel",
-    "build_api": "cd api && yarn run build",
+    "build_api": "cd api && yarn run build && cd .. && yarn run docs",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
@@ -68,7 +68,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "docs": "yarn api-extractor run --local"
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -123,6 +124,7 @@
     "@babel/register": "7.16.8",
     "@eslint-react/eslint-plugin": "2.3.7",
     "@eslint/js": "9.39.1",
+    "@microsoft/api-extractor": "^7.55.1",
     "@playwright/test": "^1.55.0",
     "@types/babel-core": "^6.25.6",
     "@types/babel-template": "^6.25.2",
