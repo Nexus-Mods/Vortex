@@ -12,7 +12,6 @@ import { applyPatches } from './binaryPatching';
 import { readCollection } from './importCollection';
 import InfoCache from './InfoCache';
 import { calculateCollectionSize, getUnfulfilledNotificationId, isRelevant, walkPath } from './util';
-import * as installActions from '../actions/installTracking';
 
 import * as _ from 'lodash';
 
@@ -82,7 +81,7 @@ class InstallDriver {
       return;
     }
 
-    this.mStateUpdates.push(installActions.updateModStatus(
+    this.mStateUpdates.push(actions.updateModStatus(
       this.mCurrentSessionId,
       ruleId,
       status
@@ -96,7 +95,7 @@ class InstallDriver {
     }
 
     const ruleId = util.modRuleId(rule);
-    this.mStateUpdates.push(installActions.markModInstalled(
+    this.mStateUpdates.push(actions.markModInstalled(
       this.mCurrentSessionId,
       ruleId,
       modId
@@ -109,7 +108,7 @@ class InstallDriver {
       return;
     }
 
-    this.mStateUpdates.push(installActions.finishInstallSession(
+    this.mStateUpdates.push(actions.finishInstallSession(
       this.mCurrentSessionId,
       success
     ));
@@ -844,7 +843,7 @@ class InstallDriver {
       }, {});
 
       // Dispatch start session action (omitting computed properties)
-      this.mApi.store.dispatch(installActions.startInstallSession({
+      this.mApi.store.dispatch(actions.startInstallSession({
         sessionId: this.mCurrentSessionId,
         collectionId,
         profileId: profile.id,

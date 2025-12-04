@@ -207,6 +207,11 @@ declare namespace actions {
         setCategoryOrder,
         updateCategories,
         renameCategory,
+        startInstallSession,
+        updateModStatus,
+        markModInstalled,
+        finishInstallSession,
+        clearOldSessions,
         setMaxDownloads,
         setDownloadPath,
         setShowDLDropzone,
@@ -539,6 +544,11 @@ const clearModRules: reduxAct.ComplexActionCreator2<string, string, {
 
 // @public (undocumented)
 const clearOAuthCredentials: reduxAct.ComplexActionCreator1<unknown, any, {}>;
+
+// @public (undocumented)
+const clearOldSessions: ComplexActionCreator1<number, {
+daysOld: number;
+}, {}>;
 
 // @public (undocumented)
 const clearUIBlocker: reduxAct.ComplexActionCreator1<string, string, {}>;
@@ -997,6 +1007,12 @@ const finishDownload: reduxAct.ComplexActionCreator3<string, "finished" | "faile
     id: string;
     state: "finished" | "failed" | "redirect";
     failCause: any;
+}, {}>;
+
+// @public (undocumented)
+const finishInstallSession: ComplexActionCreator2<string, boolean, {
+sessionId: string;
+success: boolean;
 }, {}>;
 
 // @public (undocumented)
@@ -4114,6 +4130,13 @@ function makeUnique<T>(input: T[]): T[];
 // @public
 function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 
+// @public (undocumented)
+const markModInstalled: ComplexActionCreator3<string, string, string, {
+sessionId: string;
+ruleId: string;
+modId: string;
+}, {}>;
+
 // @public
 function merge<T extends object>(state: T, path: Array<(string | number)>, value: any): T;
 
@@ -5400,6 +5423,9 @@ class StarterInfo implements IStarterInfo {
     workingDirectory: string;
 }
 
+// @public (undocumented)
+const startInstallSession: ComplexActionCreator1<Omit<ICollectionInstallSession, "downloadedCount" | "installedCount" | "failedCount" | "skippedCount">, Omit<ICollectionInstallSession, "downloadedCount" | "installedCount" | "failedCount" | "skippedCount">, {}>;
+
 // @public
 const startNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
 
@@ -5963,6 +5989,13 @@ const updateCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictiona
 //
 // @public (undocumented)
 type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
+
+// @public (undocumented)
+const updateModStatus: ComplexActionCreator3<string, string, CollectionModStatus, {
+sessionId: string;
+ruleId: string;
+status: CollectionModStatus;
+}, {}>;
 
 // @public (undocumented)
 const updateNotification: reduxAct.ComplexActionCreator3<string, number, string, {
