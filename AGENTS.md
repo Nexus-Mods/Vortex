@@ -40,8 +40,6 @@ Electron-based mod manager with Redux state management.
 
 ### Key Directories
 
-- `extensions/` - Bundled extensions (dynamically loaded)
-- `src/extensions/` - Embedded extensions (statically loaded)
 - `src/controls/` - Reusable React components
 - `src/views/` - Main UI views
 - `src/util/` - Utility helpers
