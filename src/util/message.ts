@@ -422,6 +422,7 @@ export interface IPrettifiedError {
   code?: string;
   replace?: any;
   allowReport?: boolean;
+  stack?: string;
 }
 
 export function prettifyNodeErrorMessage(err: any,
@@ -643,6 +644,7 @@ export function prettifyNodeErrorMessage(err: any,
   return {
     message: err.message,
     code: err.code,
+    stack: err?.stack,
     allowReport: err['allowReport'],
   };
 }

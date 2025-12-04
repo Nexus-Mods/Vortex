@@ -1736,7 +1736,6 @@ class InstallManager {
         baseName: renderModReference(dep.reference)
       };
       this.mActiveInstalls.set(installKey, depInstallInfo);
-
       try {
         // Check if installation is still needed
         if (!this.mPendingInstalls.has(installKey)) {
@@ -1819,7 +1818,7 @@ class InstallManager {
         // Note: Don't call maybeAdvancePhase here - it should only be called when phases are actually complete
       }
     }).catch(err => {
-      this.showDependencyError(api, sourceModId, 'Critical error in dependency installation', err.message, renderModReference(dep.reference));
+      this.showDependencyError(api, sourceModId, 'Critical error in dependency installation', err, renderModReference(dep.reference));
       log('error', 'Critical error in dependency installation', {
         downloadId,
         error: err.message,
@@ -3934,7 +3933,7 @@ class InstallManager {
         })
         .catch(NotFound, err => {
           const refName = renderModReference(dep.reference, undefined);
-          this.showDependencyError(api, sourceModId, 'Failed to install dependency', err.message, refName, {
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency', err, refName, {
             allowReport: false,
             silent,
           });
@@ -3975,13 +3974,13 @@ class InstallManager {
             });
           } else if (err.name === 'HTTPError') {
             err['attachLogOnReport'] = true;
-            this.showDependencyError(api, sourceModId, 'Failed to install dependency', err.message, refName, {
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', err, refName, {
               allowReport: true,
               silent,
             });
           } else {
             const pretty = prettifyNodeErrorMessage(err);
-            this.showDependencyError(api, sourceModId, 'Failed to install dependency', pretty.message, refName, {
+            this.showDependencyError(api, sourceModId, 'Failed to install dependency', pretty as Error, refName, {
               allowReport: pretty.allowReport,
               silent,
             });
@@ -5334,7 +5333,7 @@ class InstallManager {
     api: IExtensionApi,
     sourceModId: string,
     title: string,
-    message: string,
+    details: string | Error,
     dependencyRef: string,
     options: { allowReport?: boolean; replace?: any; silent?: boolean } = {}
   ): void {
@@ -5345,12 +5344,12 @@ class InstallManager {
         aggregationId,
         'error',
         title,
-        message,
+        details,
         dependencyRef,
         { allowReport: options.allowReport }
       );
     } else {
-      api.showErrorNotification(title, message, {
+      api.showErrorNotification(title, details, {
         id: `failed-install-dependency-${dependencyRef}`,
         message: dependencyRef,
         allowReport: options.allowReport,
