@@ -12,7 +12,7 @@ import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 import { ModsInstallationCancelledEvent, ModsInstallationCompletedEvent, ModsInstallationFailedEvent, ModsInstallationStartedEvent } from '../analytics/mixpanel/MixpanelEvents';
 
-import { setDownloadInstalled, setDownloadSkipped } from '../download_management/actions/state';
+import { setDownloadInstalled } from '../download_management/actions/state';
 import { NotificationAggregator } from './NotificationAggregator';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import NXMUrl from '../nexus_integration/NXMUrl';
