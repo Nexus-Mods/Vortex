@@ -678,7 +678,7 @@ class LootInterface {
     try {
       loot = Bluebird.promisifyAll(
         await LootProm.createAsync(this.convertGameId(gameMode, false), this.gamePath,
-                                   localPath, 'en', this.log, this.fork));
+                                   localPath, 'en', this.logCB, this.fork));
     } catch (err) {
       this.mExtensionApi.showErrorNotification('Failed to initialize LOOT', err, {
         allowReport: false,
@@ -752,19 +752,7 @@ class LootInterface {
       });
   }
 
-  private mHashWarningLogged = false;
-  private log = (level: number, message: string) => {
-    if (this.mHashWarningLogged) {
-      return;
-    }
-    if (message.includes('and file with hashes') && !this.mHashWarningLogged) {
-      // Ugly hack - but hash related errors will be logged for EACH file within a
-      //  Bethesda archive which will end up spamming Vortex to Oblivion with information
-      //  the user can't even see. One instance of this is enough for us to pinpoint
-      //  a BSA/BA2 conflict in the future (if it's ever implemented)
-      this.mHashWarningLogged = true;
-      return;
-    }
+  private logCB = (level: number, message: string) => {
     log(this.logLevel(level) as any, message);
   };
 

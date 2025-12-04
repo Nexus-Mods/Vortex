@@ -1601,7 +1601,7 @@ loose-envify@^1.1.0, loose-envify@^1.4.0:
 
 loot@Nexus-Mods/node-loot:
   version "6.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/7f992e86f798903ba2c11bb5773fb3ca298883d5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/4d5b5d1fff12f8a0ba02562b0a16066b3ea9312b"
   dependencies:
     autogypi "^0.2.2"
     lodash "^4.17.21"
