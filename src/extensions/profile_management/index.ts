@@ -590,8 +590,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
       store.dispatch(removeProfile(profileId));
     })
     .catch(err => {
-      this.context.api.showErrorNotification('Failed to remove profile',
-        err, { allowReport: err.code !== 'EPERM' });
+      api.showErrorNotification('Failed to remove profile', err, { allowReport: err.code !== 'EPERM' });
     });
 }
 
