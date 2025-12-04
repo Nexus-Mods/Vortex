@@ -981,8 +981,8 @@ async function checkVoteRequest(api: types.IExtensionApi): Promise<number> {
   const now = Date.now();
 
   for (const revisionIdRaw of Object.keys(pendingVotes)) {
+    const pendingInfo = pendingVotes[revisionIdRaw];
     const revisionId = parseInt(revisionIdRaw, 10);
-    const pendingInfo = pendingVotes[revisionId];
     if (now - pendingInfo.time >= TIME_BEFORE_VOTE) {
       await triggerVoteNotification(api, revisionId,
         pendingInfo.collectionSlug, pendingInfo.revisionNumber);
