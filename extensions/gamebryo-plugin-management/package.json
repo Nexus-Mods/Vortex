@@ -39,7 +39,7 @@
     "immutability-helper": "^3.1.1",
     "js-yaml": "^4.1.0",
     "json-loader": "^0.5.7",
-    "loot": "Nexus-Mods/node-loot#18811-truncated-messages",
+    "loot": "Nexus-Mods/node-loot",
     "markdown-ast": "^0.2.1",
     "prop-types": "^15.8.1",
     "react": "^16.14.0",

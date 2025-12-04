@@ -1599,9 +1599,9 @@ loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-loot@Nexus-Mods/node-loot#18811-truncated-messages:
+loot@Nexus-Mods/node-loot:
   version "6.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/108bb32ed37479a9acdf9d9343b32017a88640c5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/4d5b5d1fff12f8a0ba02562b0a16066b3ea9312b"
   dependencies:
     autogypi "^0.2.2"
     lodash "^4.17.21"
