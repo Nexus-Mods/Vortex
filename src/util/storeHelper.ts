@@ -9,7 +9,7 @@ import * as Redux from 'redux';
 
 function clone<T>(input: T): T {
   return Array.isArray(input)
-    ? input
+    ? [...input] as T
     : { ...(input as any) };
 }
 
