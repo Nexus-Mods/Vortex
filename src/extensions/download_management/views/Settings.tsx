@@ -1,11 +1,11 @@
 import { showDialog } from '../../../actions/notifications';
-import FlexLayout from '../../../controls/FlexLayout';
-import FormInput from '../../../controls/FormInput';
-import Icon from '../../../controls/Icon';
-import More from '../../../controls/More';
-import Spinner from '../../../controls/Spinner';
-import Toggle from '../../../controls/Toggle';
-import { Button } from '../../../controls/TooltipControls';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import FormInput from '../../../renderer/controls/FormInput';
+import Icon from '../../../renderer/controls/Icon';
+import More from '../../../renderer/controls/More';
+import Spinner from '../../../renderer/controls/Spinner';
+import Toggle from '../../../renderer/controls/Toggle';
+import { Button } from '../../../renderer/controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IDownload, IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
@@ -23,8 +23,10 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
-import { Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
-         nexusModsURL, Section, Content } from '../../../util/util';
+import {
+  Campaign, ciEqual, isChildPath, isPathValid, isReservedDirectory,
+  nexusModsURL, Section, Content
+} from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
 import { PREMIUM_PATH } from '../../nexus_integration/constants';
 import { setCopyOnIFF, setDownloadPath, setMaxBandwidth, setMaxDownloads, setCollectionConcurrency } from '../actions/settings';
@@ -46,7 +48,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import getVortexPath from '../../../util/getVortexPath';
-import Image from '../../../controls/Image';
+import Image from '../../../renderer/controls/Image';
 
 const MB = 1024 * 1024;
 

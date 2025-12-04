@@ -1,13 +1,13 @@
-import DropdownButton from '../../../controls/DropdownButton';
-import FlexLayout from '../../../controls/FlexLayout';
-import Icon from '../../../controls/Icon';
-import { IconButton } from '../../../controls/TooltipControls';
+import DropdownButton from '../../../renderer/controls/DropdownButton';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Icon from '../../../renderer/controls/Icon';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import lazyRequire from '../../../util/lazyRequire';
 import { getSafe } from '../../../util/storeHelper';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { setDashletEnabled, setDashletHeight, setDashletWidth, setLayout } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';

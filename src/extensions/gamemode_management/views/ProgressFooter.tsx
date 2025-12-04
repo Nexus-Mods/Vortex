@@ -1,6 +1,6 @@
-import Icon from '../../../controls/Icon';
-import ProgressBar from '../../../controls/ProgressBar';
-import RadialProgress from '../../../controls/RadialProgress';
+import Icon from '../../../renderer/controls/Icon';
+import ProgressBar from '../../../renderer/controls/ProgressBar';
+import RadialProgress from '../../../renderer/controls/RadialProgress';
 import { IDiscoveryPhase, IDiscoveryState } from '../../../types/IState';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import { sum } from '../../../util/util';

@@ -49,8 +49,8 @@ import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
-import FlexLayout from '../../controls/FlexLayout';
-import Image from '../../controls/Image';
+import FlexLayout from '../../renderer/controls/FlexLayout';
+import Image from '../../renderer/controls/Image';
 import { toast } from 'react-hot-toast';
 
 
@@ -89,11 +89,11 @@ import { Button } from 'react-bootstrap';
 import { Action } from 'redux';
 import { } from 'uuid';
 import { IComponentContext } from '../../types/IComponentContext';
-import { MainContext } from '../../views/MainWindow';
+import { MainContext } from '../../renderer/views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';
 import { selectors } from 'vortex-api';
 import { app } from 'electron';
-import Icon from '../../controls/Icon';
+import Icon from '../../renderer/controls/Icon';
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
@@ -166,7 +166,7 @@ class Disableable {
       // tslint:disable-next-line:no-this-assignment
       const that = this;
       // tslint:disable-next-line:only-arrow-functions
-      return function (...args) {
+      return function(...args) {
         const now = Date.now();
         const state = that.mApi.getState();
         // we don't do this if logged in via OAuth because we primarily care about the
@@ -523,7 +523,8 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
             .catch(err => {
               const errorLevel = ['COLLECTION_UNDER_MODERATION', 'NOT_FOUND'].includes(err.code) ? 'warn' : 'error';
               log(errorLevel, 'failed to fetch nexus info about collection', {
-                gameId, collectionSlug, revisionNumber, error: err.message });
+                gameId, collectionSlug, revisionNumber, error: err.message
+              });
               return undefined;
             });
         }
@@ -918,7 +919,8 @@ function checkModsWithMissingMeta(api: IExtensionApi) {
     // Only log if we made changes (reduce JSON.stringify overhead)
     if (actions.length !== before && process.env.NODE_ENV === 'development') {
       log('info', 'mod meta updating', {
-        modId, mod: JSON.stringify(mod), meta: JSON.stringify(download.modInfo) });
+        modId, mod: JSON.stringify(mod), meta: JSON.stringify(download.modInfo)
+      });
     }
   }
 
@@ -1388,11 +1390,11 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     });
   }
 
-// Cache download URLs to avoid repeated API calls for the same file
-const downloadURLCache: { [key: string]: { urls: string[], expires: number, meta: any } } = {};
-const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  // Cache download URLs to avoid repeated API calls for the same file
+  const downloadURLCache: { [key: string]: { urls: string[], expires: number, meta: any } } = {};
+  const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+  function premiumUserDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
     const state = api.getState();
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);

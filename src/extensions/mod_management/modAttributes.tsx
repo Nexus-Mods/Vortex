@@ -1,5 +1,5 @@
-import DateTimeFilter from '../../controls/table/DateTimeFilter';
-import ZoomableImage from '../../controls/ZoomableImage';
+import DateTimeFilter from '../../renderer/controls/table/DateTimeFilter';
+import ZoomableImage from '../../renderer/controls/ZoomableImage';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { getCurrentLanguage } from '../../util/i18n';
 import { userFriendlyTime } from '../../util/relativeTime';

@@ -1,4 +1,4 @@
-import Toggle from '../../../controls/Toggle';
+import Toggle from '../../../renderer/controls/Toggle';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';

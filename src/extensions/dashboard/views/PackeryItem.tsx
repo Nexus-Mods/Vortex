@@ -1,4 +1,4 @@
-import Icon from '../../../controls/Icon';
+import Icon from '../../../renderer/controls/Icon';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { TFunction } from '../../../util/i18n';
 import lazyRequire from '../../../util/lazyRequire';

@@ -4,7 +4,7 @@ import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
-import { EmptyPlaceholder, FlexLayout, Icon } from '../../../controls/api';
+import { EmptyPlaceholder, FlexLayout, Icon } from '../../../renderer/controls/api';
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';

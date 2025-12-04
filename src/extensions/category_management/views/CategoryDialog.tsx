@@ -1,6 +1,6 @@
-import Modal from '../../../controls/Modal';
+import Modal from '../../../renderer/controls/Modal';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import DNDContainer from '../../../views/DNDContainer';
+import DNDContainer from '../../../renderer/views/DNDContainer';
 
 import { showCategoriesDialog } from '../actions/session';
 

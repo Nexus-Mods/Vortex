@@ -1,5 +1,5 @@
-import { ButtonType } from '../../../controls/IconBar';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { ButtonType } from '../../../renderer/controls/IconBar';
+import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { fileMD5 } from '../../../util/checksum';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

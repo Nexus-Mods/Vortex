@@ -1,9 +1,9 @@
-import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
-import FlexLayout from '../../../controls/FlexLayout';
-import FormInput from '../../../controls/FormInput';
-import Icon from '../../../controls/Icon';
-import IconBar from '../../../controls/IconBar';
-import { ToggleButton } from '../../../controls/TooltipControls';
+import EmptyPlaceholder from '../../../renderer/controls/EmptyPlaceholder';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import FormInput from '../../../renderer/controls/FormInput';
+import Icon from '../../../renderer/controls/Icon';
+import IconBar from '../../../renderer/controls/IconBar';
+import { ToggleButton } from '../../../renderer/controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IState } from '../../../types/IState';
@@ -13,7 +13,7 @@ import opn from '../../../util/opn';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { IAvailableExtension, IExtension } from '../../extension_manager/types';
 import { nexusGameId } from '../../nexus_integration/util/convertGameId';

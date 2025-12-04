@@ -1,4 +1,4 @@
-import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
+import EmptyPlaceholder from '../../../renderer/controls/EmptyPlaceholder';
 import { IGameInfoEntry, IState } from '../../../types/IState';
 import { ComponentEx, connect } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';

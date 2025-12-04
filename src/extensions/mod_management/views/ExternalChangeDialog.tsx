@@ -1,7 +1,7 @@
-import Modal from '../../../controls/Modal';
-import Table from '../../../controls/Table';
-import Toggle from '../../../controls/Toggle';
-import { Button } from '../../../controls/TooltipControls';
+import Modal from '../../../renderer/controls/Modal';
+import Table from '../../../renderer/controls/Table';
+import Toggle from '../../../renderer/controls/Toggle';
+import { Button } from '../../../renderer/controls/TooltipControls';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setdefault } from '../../../util/util';

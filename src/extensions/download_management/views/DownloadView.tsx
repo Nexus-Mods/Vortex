@@ -1,10 +1,10 @@
 import { showDialog } from '../../../actions/notifications';
-import Banner from '../../../controls/Banner';
-import CollapseIcon from '../../../controls/CollapseIcon';
-import Dropzone, { DropType } from '../../../controls/Dropzone';
-import FlexLayout from '../../../controls/FlexLayout';
-import IconBar from '../../../controls/IconBar';
-import SuperTable, { ITableRowAction } from '../../../controls/Table';
+import Banner from '../../../renderer/controls/Banner';
+import CollapseIcon from '../../../renderer/controls/CollapseIcon';
+import Dropzone, { DropType } from '../../../renderer/controls/Dropzone';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import IconBar from '../../../renderer/controls/IconBar';
+import SuperTable, { ITableRowAction } from '../../../renderer/controls/Table';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -21,7 +21,7 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import MainPage from '../../../views/MainPage';
+import MainPage from '../../../renderer/views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { IInstallOptions } from '../../mod_management/types/IInstallOptions';

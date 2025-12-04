@@ -5,12 +5,12 @@ import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
 import * as actions from '../../../actions/index';
-import { FlexLayout, IconBar, Spinner, ToolbarIcon } from '../../../controls/api';
+import { FlexLayout, IconBar, Spinner, ToolbarIcon } from '../../../renderer/controls/api';
 import * as types from '../../../types/api';
 import * as util from '../../../util/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
-import { DNDContainer, MainPage } from '../../../views/api';
+import { DNDContainer, MainPage } from '../../../renderer/views/api';
 
 import { setGameLoadOrderRendererOptions } from '../actions/settings';
 

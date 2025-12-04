@@ -1,5 +1,5 @@
-import FlexLayout from '../../../controls/FlexLayout';
-import Spinner from '../../../controls/Spinner';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
+import Spinner from '../../../renderer/controls/Spinner';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';

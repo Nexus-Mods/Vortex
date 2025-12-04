@@ -1,6 +1,6 @@
 import { setSettingsPage } from '../../actions/session';
-import Icon from '../../controls/Icon';
-import Spinner from '../../controls/Spinner';
+import Icon from '../../renderer/controls/Icon';
+import Spinner from '../../renderer/controls/Spinner';
 import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
 import * as selectors from '../../util/selectors';
 

@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
-import OptionsFilter, { ISelectOption } from '../../controls/table/OptionsFilter';
+import OptionsFilter, { ISelectOption } from '../../renderer/controls/table/OptionsFilter';
 import {
   GameInfoQuery,
   IExtensionApi,

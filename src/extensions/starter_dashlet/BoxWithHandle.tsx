@@ -1,6 +1,6 @@
 import React, { FC, useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import Icon from '../../controls/Icon';
+import Icon from '../../renderer/controls/Icon';
 import { IStarterInfo } from '../../util/StarterInfo';
 
 interface IProps {

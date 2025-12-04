@@ -1,13 +1,13 @@
 import { IsValidNewOptionHandler } from 'react-select';
 import { showDialog } from '../../../actions/notifications';
-import ContextMenu from '../../../controls/ContextMenu';
-import FormFeedback from '../../../controls/FormFeedback';
-import Icon from '../../../controls/Icon';
-import Modal from '../../../controls/Modal';
-import Spinner from '../../../controls/Spinner';
-import CopyClipboardInput from '../../../controls/CopyClipboardInput';
-import PlaceholderTextArea from '../../../controls/PlaceholderTextArea';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import ContextMenu from '../../../renderer/controls/ContextMenu';
+import FormFeedback from '../../../renderer/controls/FormFeedback';
+import Icon from '../../../renderer/controls/Icon';
+import Modal from '../../../renderer/controls/Modal';
+import Spinner from '../../../renderer/controls/Spinner';
+import CopyClipboardInput from '../../../renderer/controls/CopyClipboardInput';
+import PlaceholderTextArea from '../../../renderer/controls/PlaceholderTextArea';
+import { Button, IconButton } from '../../../renderer/controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
@@ -23,9 +23,11 @@ import { getPageURL } from '../util/sso';
 import { clipboard } from 'electron';
 import { TFunction } from 'i18next';
 import * as React from 'react';
-import { Alert, ControlLabel, FormControl, FormGroup,
-         InputGroup,
-         ModalBody } from 'react-bootstrap';
+import {
+  Alert, ControlLabel, FormControl, FormGroup,
+  InputGroup,
+  ModalBody
+} from 'react-bootstrap';
 import { findDOMNode } from 'react-dom';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';

@@ -1,4 +1,4 @@
-import Toggle from '../../../controls/Toggle';
+import Toggle from '../../../renderer/controls/Toggle';
 import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { setCleanupOnDeploy } from '../actions/settings';

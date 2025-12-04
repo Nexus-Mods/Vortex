@@ -8,7 +8,7 @@ import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { IItemRendererOptions, ILoadOrder, ILoadOrderDisplayItem,
   ILoadOrderEntry } from '../types/types';
 
-import { Icon } from '../../../controls/api';
+import { Icon } from '../../../renderer/controls/api';
 import { IProfile, IState } from '../../../types/api';
 
 import * as selectors from '../../../util/selectors';

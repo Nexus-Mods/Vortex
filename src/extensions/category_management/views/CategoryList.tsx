@@ -1,12 +1,14 @@
 import { showDialog } from '../../../actions/notifications';
-import ActionDropdown from '../../../controls/ActionDropdown';
-import Icon from '../../../controls/Icon';
-import IconBar from '../../../controls/IconBar';
-import { IconButton } from '../../../controls/TooltipControls';
+import ActionDropdown from '../../../renderer/controls/ActionDropdown';
+import Icon from '../../../renderer/controls/Icon';
+import IconBar from '../../../renderer/controls/IconBar';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { DialogActions, DialogType, IConditionResult, IDialogContent,
-         IDialogResult, IInput } from '../../../types/IDialog';
+import {
+  DialogActions, DialogType, IConditionResult, IDialogContent,
+  IDialogResult, IInput
+} from '../../../types/IDialog';
 import { IErrorOptions } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

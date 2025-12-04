@@ -4,7 +4,7 @@ jest.mock('react-i18next', () => ({
   translate: () => (component) => component,
 }));
 
-import { MainWindow } from '../src/views/MainWindow';
+import { MainWindow } from '../src/renderer/views/MainWindow';
 import React from 'react';
 import { shallow } from 'enzyme';
 import { findAll } from 'react-shallow-testutils';

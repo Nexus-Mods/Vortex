@@ -1,9 +1,9 @@
 import { addNotification } from '../../../actions';
 import { showDialog } from '../../../actions/notifications';
-import Icon from '../../../controls/Icon';
-import More from '../../../controls/More';
-import Toggle from '../../../controls/Toggle';
-import { Button } from '../../../controls/TooltipControls';
+import Icon from '../../../renderer/controls/Icon';
+import More from '../../../renderer/controls/More';
+import Toggle from '../../../renderer/controls/Toggle';
+import { Button } from '../../../renderer/controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IErrorOptions } from '../../../types/IExtensionContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

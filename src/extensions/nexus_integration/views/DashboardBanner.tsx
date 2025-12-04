@@ -1,7 +1,7 @@
 import { setDialogVisible } from '../../../actions/session';
-import Image from '../../../controls/Image';
-import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
+import Image from '../../../renderer/controls/Image';
+import Spinner from '../../../renderer/controls/Spinner';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';

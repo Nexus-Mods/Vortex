@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { TFunction } from 'i18next';
-import FlexLayout from '../../../controls/FlexLayout';
+import FlexLayout from '../../../renderer/controls/FlexLayout';
 import { Button, Panel } from 'react-bootstrap';
-import Image from '../../../controls/Image';
-import { IconButton } from '../../../controls/TooltipControls';
+import Image from '../../../renderer/controls/Image';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 
 const electricBoltIconPath = 'assets/icons/electric-bolt.svg';
 const premiumPictogramPath = 'assets/pictograms/premium-pictogram.svg';

@@ -1,4 +1,4 @@
-import More from '../../controls/More';
+import More from '../../renderer/controls/More';
 import { UPDATE_CHANNELS, UpdateChannel, IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';

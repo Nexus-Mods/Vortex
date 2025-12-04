@@ -1,5 +1,5 @@
 import { setSettingsPage } from '../../../actions/session';
-import ErrorBoundary from '../../../controls/ErrorBoundary';
+import ErrorBoundary from '../../../renderer/controls/ErrorBoundary';
 import {IState} from '../../../types/IState';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
 import { bytesToString, truthy } from '../../../util/util';

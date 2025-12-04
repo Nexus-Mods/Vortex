@@ -1,4 +1,4 @@
-import TableTextFilter from '../../controls/table/TextFilter';
+import TableTextFilter from '../../renderer/controls/table/TextFilter';
 import { IExtensionLoadFailure } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { getSafe } from '../../util/storeHelper';

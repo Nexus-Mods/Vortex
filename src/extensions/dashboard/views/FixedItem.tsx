@@ -1,4 +1,4 @@
-import Icon from '../../../controls/Icon';
+import Icon from '../../../renderer/controls/Icon';
 import { TFunction } from '../../../util/i18n';
 
 import * as React from 'react';

@@ -1,4 +1,4 @@
-import ToolbarIcon from '../../../controls/ToolbarIcon';
+import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import { TFunction } from 'i18next';

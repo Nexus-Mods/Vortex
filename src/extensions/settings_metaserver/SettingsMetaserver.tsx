@@ -1,24 +1,28 @@
-import Icon from '../../controls/Icon';
-import InputButton from '../../controls/InputButton';
-import More from '../../controls/More';
-import { Button } from '../../controls/TooltipControls';
+import Icon from '../../renderer/controls/Icon';
+import InputButton from '../../renderer/controls/InputButton';
+import More from '../../renderer/controls/More';
+import { Button } from '../../renderer/controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { setSafe } from '../../util/storeHelper';
-import DNDContainer from '../../views/DNDContainer';
+import DNDContainer from '../../renderer/views/DNDContainer';
 
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 import getText from './texts';
 
 import * as _ from 'lodash';
 import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock,
-         ListGroup, ListGroupItem } from 'react-bootstrap';
-import {ConnectDragSource, ConnectDropTarget,
-        DragSource, DragSourceConnector, DragSourceMonitor, DragSourceSpec,
-        DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec} from 'react-dnd';
-import {findDOMNode} from 'react-dom';
+import {
+  ControlLabel, FormGroup, HelpBlock,
+  ListGroup, ListGroupItem
+} from 'react-bootstrap';
+import {
+  ConnectDragSource, ConnectDropTarget,
+  DragSource, DragSourceConnector, DragSourceMonitor, DragSourceSpec,
+  DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec
+} from 'react-dnd';
+import { findDOMNode } from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';

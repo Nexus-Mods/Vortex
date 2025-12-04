@@ -2,7 +2,7 @@ import { IStarterInfo } from '../../util/StarterInfo';
 
 import { useTranslation } from 'react-i18next';
 
-import Icon from '../../controls/Icon';
+import Icon from '../../renderer/controls/Icon';
 import { getSafe } from '../../util/storeHelper';
 
 import React from 'react';
@@ -10,8 +10,8 @@ import * as ReactDOM from 'react-dom';
 import { MenuItem } from 'react-bootstrap';
 import { useSelector, useStore } from 'react-redux';
 
-import Dropdown from '../../controls/Dropdown';
-import PortalMenu from '../../controls/PortalMenu';
+import Dropdown from '../../renderer/controls/Dropdown';
+import PortalMenu from '../../renderer/controls/PortalMenu';
 
 import { setToolVisible } from '../gamemode_management/actions/settings';
 

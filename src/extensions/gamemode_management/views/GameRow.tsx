@@ -1,6 +1,6 @@
-import IconBar from '../../../controls/IconBar';
-import OverlayTrigger from '../../../controls/OverlayTrigger';
-import { IconButton } from '../../../controls/TooltipControls';
+import IconBar from '../../../renderer/controls/IconBar';
+import OverlayTrigger from '../../../renderer/controls/OverlayTrigger';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { ComponentEx } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';

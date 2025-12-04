@@ -1,7 +1,7 @@
 import Nexus, { NexusError, ProtocolError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import React from 'react';
-import { IconButton } from '../../../controls/TooltipControls';
+import { IconButton } from '../../../renderer/controls/TooltipControls';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGameStored, IMod } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';

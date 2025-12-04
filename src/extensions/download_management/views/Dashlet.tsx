@@ -1,5 +1,5 @@
-import Dashlet from '../../../controls/Dashlet';
-import RadialProgress from '../../../controls/RadialProgress';
+import Dashlet from '../../../renderer/controls/Dashlet';
+import RadialProgress from '../../../renderer/controls/RadialProgress';
 import {IState} from '../../../types/IState';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
 import { bytesToString } from '../../../util/util';
