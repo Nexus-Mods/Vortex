@@ -185,8 +185,8 @@ export class NotFound extends Error {
 }
 
 export class StalledError extends Error {
-  constructor() {
-    super('Operation stalled');
+  constructor(msg: string) {
+    super(msg);
     this.name = this.constructor.name;
   }
 }
