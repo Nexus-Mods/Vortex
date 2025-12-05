@@ -1,3 +1,45 @@
+/**
+ * InstallManager - Handles mod installation with phased collection support.
+ *
+ * ## Phased Installation Methods
+ *
+ * The following methods work together to manage phase-gated collection installs:
+ *
+ * 1. `ensurePhaseState(sourceModId)` - Initialize phase tracking for a collection
+ *    - Creates tracking maps for active/pending installations per phase
+ *    - Sets up deployment scheduling and re-queue prevention
+ *
+ * 2. `markPhaseDownloadsFinished(sourceModId, phase, api)` - Called when downloads for a phase complete
+ *    - Marks phase as ready for installation
+ *    - Sets `allowedPhase` if this is the first phase
+ *    - Calls `maybeAdvancePhase()` to check if we can progress
+ *
+ * 3. `maybeAdvancePhase(sourceModId, api)` - Attempts to advance to next phase
+ *    - Checks if current phase is deployed
+ *    - Verifies no active installations in current phase
+ *    - Advances `allowedPhase` to next incomplete phase
+ *    - Starts pending installations for newly-allowed phase
+ *
+ * 4. `scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum)` - Schedules deployment when phase completes
+ *    - Called with `options.deployOnSettle = true`
+ *    - Sets `isDeploying` flag to block new installations
+ *    - Runs deployment, then clears flag and resumes installations
+ *
+ * 5. `startPendingForPhase(sourceModId, phase)` - Starts queued installations for a phase
+ *    - Called when phase becomes allowed or after deployment completes
+ *
+ * ## Phase State Structure (mInstallPhaseState)
+ *
+ * - `allowedPhase` - Current phase that can install
+ * - `downloadsFinished` - Phases with completed downloads
+ * - `pendingByPhase` - Queued installs per phase
+ * - `activeByPhase` - Active install count per phase
+ * - `deployedPhases` - Phases that have been deployed
+ * - `isDeploying` - CRITICAL: Blocks installs during deployment
+ *
+ * See AGENTS-COLLECTIONS.md for architectural overview.
+ */
+
 /* eslint-disable */
 import {
   removeDownload, setDownloadModInfo,
@@ -1827,6 +1869,24 @@ class InstallManager {
     });
   }
 
+  /**
+   * CRITICAL INVARIANTS for phase-gated installation:
+   * 
+   * 1. DEPLOYMENT BLOCKING: The `isDeploying` flag MUST be set during deployment
+   *    and cleared after. Never remove this check - installations must wait for
+   *    deployment to complete to prevent race conditions and file conflicts.
+   * 
+   * 2. PHASE COMPLETION: A phase is complete ONLY when BOTH conditions are true:
+   *    - `activeByPhase.get(phase) === 0` (no active installations)
+   *    - `pendingByPhase.get(phase)?.length === 0` (no pending installations)
+   *    Checking only `active === 0` allows deployment during queued installs = BAD.
+   * 
+   * 3. PHASE GATING: Even optional/recommended mods must wait for their phase.
+   *    Never bypass phase gating - it breaks last-phase advancement logic.
+   * 
+   * 4. POST-DEPLOYMENT: Always call `startPendingForPhase()` after deployment
+   *    completes to resume any installations that were queued during deployment.
+   */
   // Map tracking phase gating per sourceMod/collection
   private mInstallPhaseState: Map<string, {
     allowedPhase?: number;
@@ -1956,7 +2016,8 @@ class InstallManager {
         const collectionStatus = this.checkCollectionPhaseStatus(api, sourceModId, checkPhase);
         const existing = phaseState?.deploymentPromises.get(checkPhase);
         if ((existing?.deployOnSettle) && !hasDeployed) {
-          // Set deployment flag to block new installations during deployment
+          // CRITICAL: Block new installations during deployment to prevent file conflicts.
+          // Removing this check causes race conditions. See AGENTS-COLLECTIONS.md.
           if (phaseState) {
             phaseState.isDeploying = true;
           }
