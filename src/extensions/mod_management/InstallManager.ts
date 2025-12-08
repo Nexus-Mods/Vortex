@@ -353,7 +353,12 @@ function findCollectionByDownload(
     return null;
   }
 
-  return { collectionMod: state.persistent.mods[gameId][activeCollection.collectionId], matchingRule: matchingRule.rule, gameId };
+  const collectionMod = state.persistent.mods[gameId]?.[activeCollection.collectionId];
+  if (!collectionMod) {
+    log('debug', 'Collection mod not found in state', { gameId, collectionId: activeCollection.collectionId });
+    return null;
+  }
+  return { collectionMod, matchingRule: matchingRule.rule, gameId };
 }
 
 /**
