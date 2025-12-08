@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-alpha.6] - 2025-12-08
+
+_Stability and deployment improvements_
+
+- Fixed infinite metadata loop causing "Creating Snapshots" to never complete ([#18811](https://github.com/Nexus-Mods/Vortex/issues/18811))
+- Fixed plugins page panel rendering wrong dropdown control ([#18944](https://github.com/Nexus-Mods/Vortex/issues/18944))
+- Re-added download stall restart functionality ([#18933](https://github.com/Nexus-Mods/Vortex/issues/18933))
+- Fixed incorrect stack information for aggregated error notifications ([#18949](https://github.com/Nexus-Mods/Vortex/issues/18949))
+- Fixed mod files query to only use domain name ([#18939](https://github.com/Nexus-Mods/Vortex/pull/18939))
+- Fixed storeHelper clone returning same array instead of cloning ([#18955](https://github.com/Nexus-Mods/Vortex/pull/18955))
+
+
 ## [1.16.0-alpha.5] - 2025-12-03
 
 _Stability fixes and collection installation improvements_
@@ -1086,6 +1098,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-alpha.6]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.6
 [1.16.0-alpha.5]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.5
 [1.16.0-alpha.4]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.4
 [1.16.0-alpha.3]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.3
