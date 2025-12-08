@@ -27,7 +27,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
-import {} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import { getApplication } from './application';
 import lazyRequire from './lazyRequire';
 import { getCPUArch } from './nativeArch';
@@ -57,7 +57,7 @@ function isWine() {
 }
 
 function createReport(type: string, error: IError, context: IErrorContext,
-                      version: string, reporterProcess: string, sourceProcess: string) {
+  version: string, reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
   if (sourceProcess !== undefined) {
     proc = `${sourceProcess} -> ${proc}`;
@@ -115,7 +115,7 @@ ${error.stack}
 }
 
 export function createErrorReport(type: string, error: IError, context: IErrorContext,
-                                  labels: string[], state: any, sourceProcess?: string) {
+  labels: string[], state: any, sourceProcess?: string) {
   const userData = getVortexPath('userData');
   const reportPath = path.join(userData, 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
@@ -128,12 +128,12 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     context: IErrorContext, oauthToken: any,
-                     reporterProcess: string, sourceProcess: string, attachment: string)
-                     : Promise<IFeedbackResponse> {
+  context: IErrorContext, oauthToken: any,
+  reporterProcess: string, sourceProcess: string, attachment: string)
+  : Promise<IFeedbackResponse> {
   const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
-  const referenceId = require('uuid').v4();
+  const referenceId = uuidv4();
 
   const oauthCredentials: IOAuthCredentials = (oauthToken !== undefined) ? {
     fingerprint: oauthToken.fingerprint,
@@ -243,9 +243,9 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,
-                           labels: string[],
-                           reporterToken: any, reporterProcess: string,
-                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
+  labels: string[],
+  reporterToken: any, reporterProcess: string,
+  sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
@@ -259,7 +259,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
     return Promise.resolve(undefined);
   } else {
     return nexusReport(hash, type, error, labels, context, reporterToken || fallbackOauthToken,
-                       reporterProcess, sourceProcess, attachment);
+      reporterProcess, sourceProcess, attachment);
   }
 }
 
@@ -295,8 +295,8 @@ export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
 }
 
 function showTerminateError(error: IError, state: any, source: string,
-                            allowReport: boolean, withDetails: boolean)
-                            : boolean {
+  allowReport: boolean, withDetails: boolean)
+  : boolean {
   const dialog = process.type === 'renderer' ? remote.dialog : dialogIn;
   const buttons = ['Ignore', 'Quit'];
   if (!withDetails) {
@@ -341,8 +341,8 @@ function showTerminateError(error: IError, state: any, source: string,
       type: 'error',
       buttons: ['Quit', 'I understand'],
       title: 'Are you sure?',
-      message:  'The error was unhandled which may lead to unforseen consequences including data loss. ' + 
-                'Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ',
+      message: 'The error was unhandled which may lead to unforseen consequences including data loss. ' +
+        'Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ',
       noLink: true,
     });
     if (action === 1) {
@@ -394,8 +394,8 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
         message: `This crash was caused by an extension (${error.extension}). ` +
-                 'Do you want to disable this extension? All functionality provided '
-                 + 'by the extension will be removed from Vortex!',
+          'Do you want to disable this extension? All functionality provided '
+          + 'by the extension will be removed from Vortex!',
         noLink: true,
       });
       if (action === 0) {
@@ -427,7 +427,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * It's important this doesn't translate the error message or lose information
  */
 export function toError(input: any, title?: string,
-                        options?: IErrorOptions, sourceStack?: string): IError {
+  options?: IErrorOptions, sourceStack?: string): IError {
   let ten = I18next.getFixedT('en');
   try {
     ten('dummy');
@@ -501,7 +501,7 @@ export function toError(input: any, title?: string,
       const flatErr = flatten(input);
 
       let attributes = Object.keys(flatErr || {})
-          .filter(key => key[0].toUpperCase() === key[0]);
+        .filter(key => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
@@ -511,10 +511,10 @@ export function toError(input: any, title?: string,
       }
 
       const details = attributes.length === 0 ? undefined : attributes
-          .map(key => key + ':\t' + input[key])
-          .join('\n');
+        .map(key => key + ':\t' + input[key])
+        .join('\n');
 
-      return {message, title, subtitle, stack, details};
+      return { message, title, subtitle, stack, details };
     }
     case 'string': {
       /* i18next-extract-disable-next-line */

@@ -53,11 +53,10 @@ import * as os from 'os';
 import * as path from 'path';
 import type * as permissionsT from 'permissions';
 import * as semver from 'semver';
-import type * as uuidT from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 import type * as winapiT from 'winapi-bindings';
 
-const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 const permissions = lazyRequire<typeof permissionsT>(() => require('permissions'));
 const winapi = lazyRequire<typeof winapiT>(() => require('winapi-bindings'));
 
@@ -834,7 +833,7 @@ class Application {
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           this.mFirstStart = true;
-          const newId = uuid.v4();
+          const newId = uuidv4();
           log('debug', 'first startup, generated instance id', { instanceId: newId });
           newStore.dispatch(setInstanceId(newId));
         } else {

@@ -87,7 +87,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Action } from 'redux';
-import { } from 'uuid';
 import { IComponentContext } from '../../types/IComponentContext';
 import { MainContext } from '../../renderer/views/MainWindow';
 import { getGame } from '../gamemode_management/util/getGame';

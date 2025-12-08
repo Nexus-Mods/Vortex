@@ -8,10 +8,10 @@ import { truthy } from '../../util/util';
 
 import { NEXUS_BASE_URL } from '../nexus_integration/constants';
 
-import {app as appIn, dialog as dialogIn, ipcMain} from 'electron';
-import {autoUpdater as AUType, CancellationToken, UpdateInfo} from 'electron-updater';
+import { app as appIn, dialog as dialogIn, ipcMain } from 'electron';
+import { autoUpdater as AUType, CancellationToken, UpdateInfo } from 'electron-updater';
 import * as semver from 'semver';
-import uuidv5 from 'uuid/v5';
+import { v5 as uuidv5 } from "uuid";
 import { RegGetValue } from 'winapi-bindings';
 import { getApplication } from '../../util/application';
 
@@ -65,8 +65,8 @@ function updateWarning() {
     type: 'info',
     title: 'Vortex critical update',
     message: 'A critical update has been downloaded and needs installing. ' +
-            'Please do not turn off your computer until it\'s done. ' + 
-            'If the installation process is interrupted, Vortex may not work correctly.',
+      'Please do not turn off your computer until it\'s done. ' +
+      'If the installation process is interrupted, Vortex may not work correctly.',
     buttons: ['Continue'],
     noLink: true,
   });
@@ -81,7 +81,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   let cancellationToken: CancellationToken;
   let updateChannel = state().settings.update.channel;
   const currentVersion = semver.parse(getApplication().version);
-  
+
 
   /*
   if (process.env.IS_PREVIEW_BUILD === 'true') {
@@ -98,7 +98,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   }
 
   // if we are running a prerelease build, we want to force the update channel to be beta 
-  if(currentVersion.prerelease.length > 0 && updateChannel === 'stable') {
+  if (currentVersion.prerelease.length > 0 && updateChannel === 'stable') {
     log('info', 'current version is a pre-release and current channel is stable, setting update channel to beta');
 
     api.store.dispatch(setUpdateChannel('beta'));
@@ -106,7 +106,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       id: FORCED_SWITCH_TO_BETA_ID,
       type: 'info',
       message: 'You are running a beta version of Vortex so auto update settings have been '
-             + 'changed to keep you up-to-date with current betas.',
+        + 'changed to keep you up-to-date with current betas.',
     });
   }
 
@@ -124,30 +124,30 @@ function setupAutoUpdate(api: IExtensionApi) {
       }
 
       // if it's a minor release (1.x.0) then we need to ask to download
-      
+
       // log('info', `${updateInfo.version} is not a patch update from ${autoUpdater.currentVersion.version} so we need to ask to download`);
 
 
       // below is needed to make sure we only show release notes less than or equal to the current version
       let filteredReleaseNotes = updateInfo.releaseNotes;
-      
-      if(typeof filteredReleaseNotes !== 'string') {
+
+      if (typeof filteredReleaseNotes !== 'string') {
         filteredReleaseNotes = filteredReleaseNotes.filter(release => {
           {
             const comparisonResult = semver.compare(release.version, updateInfo.version);
             return comparisonResult === 0 || comparisonResult === -1;
           }
-        });        
+        });
       }
 
-      notified = true;     
+      notified = true;
 
 
 
       // is update version greater than our current version?
 
       if (semver.satisfies(updateInfo.version, `>${autoUpdater.currentVersion.version}`, { includePrerelease: true })) {
-        
+
         // normal upgrade
 
         log('info', `${updateInfo.version} is greater than ${autoUpdater.currentVersion.version} so this is an upgrade.`);
@@ -158,28 +158,32 @@ function setupAutoUpdate(api: IExtensionApi) {
           title: 'Update available',
           message: `${updateInfo.version} is available.`,
           //noDismiss: true,
-          actions: [          
-            { title: 'View Update', action: dismiss => {
-              return api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
-                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
-                  `<div class="changelog-dialog-release">
+          actions: [
+            {
+              title: 'View Update', action: dismiss => {
+                return api.showDialog('info', `What\'s New in ${updateInfo.version}`, {
+                  htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>
+                    `<div class="changelog-dialog-release">
                     <h4>${release.version} </h4>
                     ${release.note}
                   </div>`
                   ).join(''),
-              }, [
-                { label: 'Close' , action: () => log('debug', 'User closed dialog')},
-                /*{ label: 'Ignore', action: () => {                  
-                  log('debug', 'User ignored update')
-                  return reject(new UserCanceled())
-                }},*/
-                { label: 'Download', action: () => {                                
-                  log('debug', 'User downloading update')
-                  return resolve()
-                } }
-              ],
-              'new-update-changelog-dialog');
-            } },/*
+                }, [
+                  { label: 'Close', action: () => log('debug', 'User closed dialog') },
+                  /*{ label: 'Ignore', action: () => {                  
+                    log('debug', 'User ignored update')
+                    return reject(new UserCanceled())
+                  }},*/
+                  {
+                    label: 'Download', action: () => {
+                      log('debug', 'User downloading update')
+                      return resolve()
+                    }
+                  }
+                ],
+                  'new-update-changelog-dialog');
+              }
+            },/*
             {
               title: 'Ignore',
               action: dismiss => {
@@ -189,12 +193,12 @@ function setupAutoUpdate(api: IExtensionApi) {
               },
             },*/
           ],
-        })        
+        })
 
       } else {
 
         // downgrade?
-            
+
         log('info', `${updateInfo.version} is less than ${autoUpdater.currentVersion.version} so this is a downgrade.`);
 
         api.sendNotification({
@@ -203,21 +207,23 @@ function setupAutoUpdate(api: IExtensionApi) {
           title: 'Downgrade available',
           message: `${updateInfo.version} is available.`,
           noDismiss: false,
-          actions: [          
-            { title: 'More Info', action: () => {
-              api.showDialog('info', `Downgrade warning`, {
-                text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
+          actions: [
+            {
+              title: 'More Info', action: () => {
+                api.showDialog('info', `Downgrade warning`, {
+                  text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
 
 Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
                     
 Are you sure you want to downgrade?`,
-              }, [
-                { label: 'Close' },
-                //{ label: 'Ignore', action: () => reject(new UserCanceled()) },
-                { label: 'Downgrade', action: () => resolve() }
-              ],
-              'new-update-changelog-dialog');
-            } },
+                }, [
+                  { label: 'Close' },
+                  //{ label: 'Ignore', action: () => reject(new UserCanceled()) },
+                  { label: 'Downgrade', action: () => resolve() }
+                ],
+                  'new-update-changelog-dialog');
+              }
+            },
             /*{
               title: 'Ignore',
               action: dismiss => {
@@ -227,11 +233,11 @@ Are you sure you want to downgrade?`,
               },
             },*/
           ],
-        }); 
-        
-        
-      }  
-    });    
+        });
+
+
+      }
+    });
   };
 
   autoUpdater.on('error', (err) => {
@@ -254,8 +260,8 @@ Are you sure you want to downgrade?`,
         'Failed to verify the signature of the update file, please try again later.',
         { allowReport: false });
     } else if ((err.message === 'net::ERR_CONNECTION_RESET')
-               || (err.message === 'net::ERR_NAME_NOT_RESOLVED')
-               || (err.message === 'net::ERR_INTERNET_DISCONNECTED')) {
+      || (err.message === 'net::ERR_NAME_NOT_RESOLVED')
+      || (err.message === 'net::ERR_INTERNET_DISCONNECTED')) {
       api.showErrorNotification(
         'Checking for update failed',
         'This was probably a temporary network problem, please try again later.',
@@ -266,7 +272,7 @@ Are you sure you want to downgrade?`,
   });
 
   autoUpdater.on('update-not-available', () => {
-    
+
     log('info', `Installed version is up to date using the ${updateChannel} channel.`);
 
     api.sendNotification({
@@ -290,7 +296,7 @@ Are you sure you want to downgrade?`,
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
-      
+
     // need to remove notifications?!
     api.dismissNotification(CHECKING_FOR_UPDATES_ID);
 
@@ -319,29 +325,33 @@ Are you sure you want to downgrade?`,
     if (process.platform === 'win32') {
       try {
         instPath = RegGetValue('HKEY_LOCAL_MACHINE',
-                               `SOFTWARE\\${myguid()}`,
-                               'InstallLocation').value as string;
+          `SOFTWARE\\${myguid()}`,
+          'InstallLocation').value as string;
       } catch (err) {
         api.sendNotification({
           type: 'warning',
           message: 'Update can\'t be installed automatically',
           actions: [
-            { title: 'More', action: dismiss => {
-              api.showDialog('info', 'Update can\'t be installed automatically', {
-                text: 'An update for Vortex is available but it can\'t be installed automatically because '
-                  + 'a necessary registry key has been removed. Please install the latest version of Vortex manually.',
-              }, [
-                { label: 'Close' },
-                { label: 'Open Page', action: () => {
-                  if (channel === 'beta') {
-                    openTesting();
-                  } else {
-                    openStable();
-                  }
-                  dismiss();
-                } },
-              ]);
-            } },
+            {
+              title: 'More', action: dismiss => {
+                api.showDialog('info', 'Update can\'t be installed automatically', {
+                  text: 'An update for Vortex is available but it can\'t be installed automatically because '
+                    + 'a necessary registry key has been removed. Please install the latest version of Vortex manually.',
+                }, [
+                  { label: 'Close' },
+                  {
+                    label: 'Open Page', action: () => {
+                      if (channel === 'beta') {
+                        openTesting();
+                      } else {
+                        openStable();
+                      }
+                      dismiss();
+                    }
+                  },
+                ]);
+              }
+            },
           ],
         });
         return;
@@ -367,7 +377,7 @@ Are you sure you want to downgrade?`,
 
   autoUpdater.on('download-progress', (progress: IProgressInfo) => {
     if (notified) {
-      
+
       api.sendNotification({
         id: UPDATE_AVAILABLE_ID,
         type: 'activity',
@@ -402,18 +412,18 @@ Are you sure you want to downgrade?`,
 
       // below is needed to make sure we only show release notes less than or equal to the current version
       let filteredReleaseNotes = updateInfo.releaseNotes;
-      
-      if(typeof filteredReleaseNotes === 'string') {
+
+      if (typeof filteredReleaseNotes === 'string') {
         log('info', 'release notes are a string');
       } else {
-        log('info', 'release notes are an array'); 
+        log('info', 'release notes are an array');
 
         filteredReleaseNotes = filteredReleaseNotes.filter(release => {
           {
             const comparisonResult = semver.compare(release.version, updateInfo.version);
             return comparisonResult === 0 || comparisonResult === -1;
           }
-        });        
+        });
       }
 
       api.sendNotification({
@@ -426,16 +436,16 @@ Are you sure you want to downgrade?`,
             title: 'What\'s New',
             action: () => {
               api.store.dispatch(showDialog('info', `What\'s New in ${updateInfo.version}`, {
-                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>                
+                htmlText: typeof filteredReleaseNotes === 'string' ? filteredReleaseNotes : filteredReleaseNotes.map(release =>
                   `<div class="changelog-dialog-release">
                     <h4>${release.version} </h4>
                     ${release.note}
                   </div>`
-                  ).join(''),
+                ).join(''),
               }, [
-                  { label: 'Close' },
-                  { label: 'Restart & Install', action: handleRestartInstall }
-                ],
+                { label: 'Close' },
+                { label: 'Restart & Install', action: handleRestartInstall }
+              ],
                 'new-update-changelog-dialog'
               ));
             },
@@ -448,43 +458,44 @@ Are you sure you want to downgrade?`,
       });
     });
 
-    /**
-     * Handles the restart and install action
-     */
-    const handleRestartInstall = () => {
+  /**
+   * Handles the restart and install action
+   */
+  const handleRestartInstall = () => {
 
-      if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development') {
 
-          // only needed if the user force closes and doesn't use this notification button
-          app.removeListener('before-quit', updateWarning);
+      // only needed if the user force closes and doesn't use this notification button
+      app.removeListener('before-quit', updateWarning);
 
-          // we only want to quit and install if we are not running a dev build
-          autoUpdater.quitAndInstall();
+      // we only want to quit and install if we are not running a dev build
+      autoUpdater.quitAndInstall();
 
-        } else {
+    } else {
 
-          // show a dialog to say that we are not going to install the update
-          api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
-            text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
-          }, [
-            { label: 'Close' },
-          ]));
+      // show a dialog to say that we are not going to install the update
+      api.store.dispatch(showDialog('info', 'This update won\'t be installed', {
+        text: 'This update won\'t be installed as this is a development build and have gone as far as we can down the update route.',
+      }, [
+        { label: 'Close' },
+      ]));
 
-        }
-
-      
     }
+
+
+  }
 
   const checkNow = (channel: string, manual: boolean = false) => {
 
     if (!state().session.base.networkConnected) {
-      log('info', 'Not checking for updates because network is offline');    }
+      log('info', 'Not checking for updates because network is offline');
+    }
 
     const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
 
     log('info', 'Checking for vortex update:', channel);
     const didOverride = channelOverride !== undefined;
-    autoUpdater.allowPrerelease = channel !== 'stable';    
+    autoUpdater.allowPrerelease = channel !== 'stable';
 
     // if we are on stable channel, and the latest non-prerelease is less than what we have (suggesting we have installed a pre-release and then switched to stable)
     // we have the potential to need to downgrade and that the latest stable is less than what we have
@@ -494,7 +505,7 @@ Are you sure you want to downgrade?`,
       owner: 'Nexus-Mods',
       repo: isPreviewBuild ? 'Vortex-Staging' : 'Vortex',
       private: false,
-      publisherName: [        
+      publisherName: [
         'Black Tree Gaming Ltd',
         'Black Tree Gaming Limited'
       ],
@@ -513,14 +524,14 @@ Are you sure you want to downgrade?`,
     });
 
     // add notificaiton to show checking for updates only if manual check
-    if(manual) {
+    if (manual) {
       api.sendNotification({
         id: CHECKING_FOR_UPDATES_ID,
         type: 'activity',
         message: 'Checking for updates...'
       });
     }
-      
+
     autoUpdater.checkForUpdates()
       .then(check => {
         log('info', 'completed update check');
@@ -537,7 +548,7 @@ Are you sure you want to downgrade?`,
               log('warn', 'Checking for update failed', err);
             });
           }
-        }        
+        }
 
         if (!didOverride && (channelOverride !== undefined)) {
           return checkNow(channelOverride);
@@ -563,19 +574,19 @@ Are you sure you want to downgrade?`,
       // cancel download in case?
       cancellationToken?.cancel();
 
-      if(channel !== 'beta') 
+      if (channel !== 'beta')
         // remove just in case it might be on
         api.suppressNotification(FORCED_SWITCH_TO_BETA_ID, true);
-      
-      if ((channel !== 'none')     
-        && ((channelOverride === undefined) || manual)    
+
+      if ((channel !== 'none')
+        && ((channelOverride === undefined) || manual)
         //&& (process.env.NODE_ENV !== 'development') 
         && (process.env.IGNORE_UPDATES !== 'yes')) {
-        
+
         if (manual) {
           channelOverride = channel;
         }
-        
+
         updateChannel = channel;
 
         checkNow(channel);

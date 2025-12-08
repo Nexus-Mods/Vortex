@@ -8,6 +8,8 @@ import { log } from '../../../util/log';
 import { OAUTH_REDIRECT_URL, OAUTH_REDIRECT_BASE, getOAuthRedirectUrl } from '../constants';
 import NEXUSMODS_LOGO from './nexusmodslogo';
 import { ArgumentInvalid } from '../../../util/CustomErrors';
+import { v1 as uuidv1 } from "uuid";
+import crypto from "node:crypto";
 
 type TokenType = 'Bearer';
 
@@ -29,7 +31,7 @@ interface IOAuthServerSettings {
   getRedirectUrl?: (port: number) => string;  // New way to get redirect URL
 }
 
-/* eslint-disable max-len */
+
 function makeResultPage(success: boolean) {
 
   var html = [];
@@ -55,13 +57,13 @@ function makeResultPage(success: boolean) {
 
   if (success) {
 
-  html.push(`
+    html.push(`
     <h1>Vortex log in successful!</h1>
   `);
 
   } else {
 
-  html.push(`
+    html.push(`
     <h1>Vortex was unable to log in</h1>
     <p style="font-size: 1.2em;">Please check Vortex for more information</a></p>
   `);
@@ -102,15 +104,11 @@ class OAuth {
     onOpenPage: (url: string) => void)
     : Promise<void> {
 
-    // importing uuid can take significant amounts of time so always delay it as far as possible
-    const uuid = (await import('uuid/v1')).default;
-    const crypto = (await import('crypto')).default;
-
-    const state = uuid();
+    const state = uuidv1();
     this.mStates[state] = onToken;
 
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.1
-    this.mVerifier = Buffer.from(uuid().replace(/-/g, '')).toString('base64');
+    this.mVerifier = Buffer.from(uuidv1().replace(/-/g, '')).toString('base64');
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto.createHash('sha256').update(this.mVerifier).digest('base64');
 
@@ -221,7 +219,7 @@ class OAuth {
       const err = new Error((error_description as string) ?? 'Description missing');
       err['code'] = error;
       this.mStates[state]?.(err, undefined);
-      resp.write(makeResultPage(false)); 
+      resp.write(makeResultPage(false));
       delete this.mStates[state];
 
       this.checkServerStillRequired();

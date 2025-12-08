@@ -54,6 +54,7 @@ import { endorseCollection, endorseMod } from './util/endorseMod';
 import { FULL_REVISION_INFO } from './util/graphQueries';
 import OAuth, { ITokenReply } from './util/oauth';
 import { IAccountStatus, IValidateKeyData, IValidateKeyDataV2 } from './types/IValidateKeyData';
+import { v4 as uuidv4 } from "uuid";
 
 const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
@@ -138,8 +139,7 @@ export function bringToFront() {
 
 function genId() {
   try {
-    const uuid = require('uuid');
-    return uuid.v4();
+    return uuidv4();
   } catch (err) {
     // odd, still unidentified bugs where bundled modules fail to load.
     log('warn', 'failed to import uuid module', err.message);
@@ -300,10 +300,10 @@ export function requestLogin(nexus: Nexus, api: IExtensionApi, callback: (err: E
     // set state to url
     api.store.dispatch(setOauthPending(url));
   })
-  .catch(err => {
-    err.stack = stackErr.stack;
-    callback(err);
-  });
+    .catch(err => {
+      err.stack = stackErr.stack;
+      callback(err);
+    });
 }
 
 export function oauthCallback(api: IExtensionApi, code: string, state?: string) {
@@ -331,14 +331,14 @@ export function ensureLoggedIn(api: IExtensionApi): BluebirdPromise<void> {
 }
 
 export function startDownload(api: IExtensionApi,
-                              nexus: Nexus,
-                              nxmurl: string,
-                              redownload?: RedownloadMode,
-                              fileName?: string,
-                              allowInstall?: boolean,
-                              handleErrors: boolean = true,
-                              referenceTag?: string)
-                              : BluebirdPromise<string> {
+  nexus: Nexus,
+  nxmurl: string,
+  redownload?: RedownloadMode,
+  fileName?: string,
+  allowInstall?: boolean,
+  handleErrors: boolean = true,
+  referenceTag?: string)
+  : BluebirdPromise<string> {
   let url: NXMUrl;
 
   log('debug', 'start download', { fileName, referenceTag });
@@ -359,17 +359,17 @@ export function startDownload(api: IExtensionApi,
 
   return (url.type === 'mod')
     ? startDownloadMod(api, nexus, nxmurl, url, redownload, fileName,
-                       allowInstall, handleErrors, referenceTag)
+      allowInstall, handleErrors, referenceTag)
     : startDownloadCollection(api, nexus, nxmurl, url, handleErrors, referenceTag);
 }
 
 function startDownloadCollection(api: IExtensionApi,
-                                 nexus: Nexus,
-                                 urlStr: string,
-                                 url: NXMUrl,
-                                 handleErrors: boolean = true,
-                                 referenceTag?: string)
-                                 : BluebirdPromise<string> {
+  nexus: Nexus,
+  urlStr: string,
+  url: NXMUrl,
+  handleErrors: boolean = true,
+  referenceTag?: string)
+  : BluebirdPromise<string> {
   const state: IState = api.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
@@ -379,8 +379,8 @@ function startDownloadCollection(api: IExtensionApi,
   const revNumber = url.revisionNumber >= 0 ? url.revisionNumber : undefined;
 
   return BluebirdPromise.resolve(nexus.getCollectionRevisionGraph(FULL_REVISION_INFO,
-                                                          url.collectionSlug,
-                                                          revNumber))
+    url.collectionSlug,
+    revNumber))
     .then(revision => {
       revisionInfo = revision;
       api.sendNotification({
@@ -409,7 +409,7 @@ function startDownloadCollection(api: IExtensionApi,
           revisionInfo,
         },
       }, (revisionInfo as any).file_name, cb, undefined, { allowInstall: false }))
-      .catch(err => BluebirdPromise.reject(contextify(err)));
+        .catch(err => BluebirdPromise.reject(contextify(err)));
     })
     .tap(dlId => api.events.emit('did-download-collection', dlId))
     .catch(err => {
@@ -424,8 +424,8 @@ function startDownloadCollection(api: IExtensionApi,
           + 'an unpublished collection.', { allowReport: false });
       } else if (!(err instanceof UserCanceled)) {
         api.showErrorNotification('Failed to download collection', err, {
-        allowReport: !(err instanceof ProcessCanceled),
-      });
+          allowReport: !(err instanceof ProcessCanceled),
+        });
       }
       return null;
     });
@@ -438,7 +438,7 @@ export interface IRemoteInfo {
 }
 
 export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
-                        : BluebirdPromise<IRemoteInfo> {
+  : BluebirdPromise<IRemoteInfo> {
   return BluebirdPromise.resolve((async () => {
     try {
       // Run both API calls concurrently for better performance
@@ -458,36 +458,36 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
 export function getInfoGraphQL(nexus: Nexus, domain: string, modId: number, fileId: number): BluebirdPromise<IRemoteInfo> {
   // Define the GraphQL query for file information
   const fileQuery: Partial<IModFileQuery> = {
-        categoryId: true,
-        count: true,
-        date: true,
-        description: true,
-        fileId: true,
-        mod: {
-          author: true,
-          category: true,
-          game: {
-            id: true,
-            domainName: true,
-          },
-          gameId: true,
-          id: true,
-          modCategory: {
-            id: true,
-            name: true,
-          },
-          pictureUrl: true,
-          status: true,
-          uid: true,
-        },
-        modId: true,
+    categoryId: true,
+    count: true,
+    date: true,
+    description: true,
+    fileId: true,
+    mod: {
+      author: true,
+      category: true,
+      game: {
+        id: true,
+        domainName: true,
+      },
+      gameId: true,
+      id: true,
+      modCategory: {
+        id: true,
         name: true,
-        primary: true,
-        size: true,
-        uid: true,
-        uri: true,
-        version: true,
-      } as any; 
+      },
+      pictureUrl: true,
+      status: true,
+      uid: true,
+    },
+    modId: true,
+    name: true,
+    primary: true,
+    size: true,
+    uid: true,
+    uri: true,
+    version: true,
+  } as any;
   // const query: Partial<IModFileQuery> = {
   //   name: true,
   //   categoryId: true,
@@ -578,8 +578,8 @@ function transformGraphQLFileToIFileInfo(graphqlFile: any): IFileInfo {
 }
 
 export function getCollectionInfo(nexus: Nexus,
-                                  collectionSlug: string, revisionNumber: number,
-                                  revisionId: number): BluebirdPromise<IRemoteInfo> {
+  collectionSlug: string, revisionNumber: number,
+  revisionId: number): BluebirdPromise<IRemoteInfo> {
   const query: IRevisionQuery = {
     adultContent: true,
     id: true,
@@ -624,7 +624,7 @@ export function getCollectionInfo(nexus: Nexus,
   }
 
   return BluebirdPromise.resolve(
-      nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
+    nexus.getCollectionRevisionGraph(query, collectionSlug, revisionNumber))
     .then(revision => ({ revisionInfo: revision }))
     .catch(err => {
       err['collectionSlug'] = collectionSlug;
@@ -635,14 +635,14 @@ export function getCollectionInfo(nexus: Nexus,
 }
 
 function startDownloadMod(api: IExtensionApi,
-                          nexus: Nexus,
-                          urlStr: string,
-                          url: NXMUrl,
-                          redownload?: RedownloadMode,
-                          fileName?: string,
-                          allowInstall?: boolean,
-                          handleErrors: boolean = true,
-                          referenceTag?: string): BluebirdPromise<string> {
+  nexus: Nexus,
+  urlStr: string,
+  url: NXMUrl,
+  redownload?: RedownloadMode,
+  fileName?: string,
+  allowInstall?: boolean,
+  handleErrors: boolean = true,
+  referenceTag?: string): BluebirdPromise<string> {
   log('info', 'start download mod', { urlStr, allowInstall });
   let state = api.getState();
   const games = knownGames(state);
@@ -665,11 +665,11 @@ function startDownloadMod(api: IExtensionApi,
             fileInfo,
           },
         },
-        fileName ?? nexusFileInfo.file_name,
-        (err, downloadId) => (truthy(err)
-          ? reject(contextify(err))
-          : resolve(downloadId)),
-        redownload, { allowInstall });
+          fileName ?? nexusFileInfo.file_name,
+          (err, downloadId) => (truthy(err)
+            ? reject(contextify(err))
+            : resolve(downloadId)),
+          redownload, { allowInstall });
       });
     })
     .tap(() => {
@@ -741,11 +741,11 @@ function startDownloadMod(api: IExtensionApi,
           message: userName === undefined
             ? t('You need to be logged in to Nexus Mods.')
             : t('The link was not created for this account ({{ userName }}). You have to be logged '
-                + 'into nexusmods.com with the same account that you use in Vortex.', {
-            replace: {
-              userName,
-            },
-          }),
+              + 'into nexusmods.com with the same account that you use in Vortex.', {
+              replace: {
+                userName,
+              },
+            }),
           localize: {
             message: false,
           },
@@ -766,7 +766,7 @@ function startDownloadMod(api: IExtensionApi,
         }
         showError(api.store.dispatch, 'Download failed', detail, { allowReport });
       } else if (err.statusCode >= 400) {
-          api.showErrorNotification('Download failed', err, { allowReport: false });
+        api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof HTTPError) {
         api.showErrorNotification('Download failed', {
           error: err,
@@ -780,9 +780,9 @@ function startDownloadMod(api: IExtensionApi,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
       } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
-              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)
-              || (err.message.indexOf('BAD_SIGNATURE') !== -1)
-              || (err.message.indexOf('TLSV1_ALERT_ACCESS_DENIED') !== -1)) {
+        || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)
+        || (err.message.indexOf('BAD_SIGNATURE') !== -1)
+        || (err.message.indexOf('TLSV1_ALERT_ACCESS_DENIED') !== -1)) {
         api.showErrorNotification('Download failed', {
           error: err,
           message: 'This may be a temporary issue, please try again later',
@@ -839,11 +839,11 @@ function expectedErrorMessage(code: string): string {
 }
 
 export function processErrorMessage(err: NexusError): IRequestError {
-  const errorMessage = typeof(err) === 'string' ? err : err.message;
+  const errorMessage = typeof (err) === 'string' ? err : err.message;
   if (err.statusCode === undefined) {
     if (errorMessage
       && ((errorMessage.indexOf('APIKEY') !== -1)
-          || (errorMessage.indexOf('API Key') !== -1))) {
+        || (errorMessage.indexOf('API Key') !== -1))) {
       return { message: 'You are not logged in to Nexus Mods!', noReport: true };
     } else {
       const res: IRequestError = { message: errorMessage };
@@ -856,8 +856,8 @@ export function processErrorMessage(err: NexusError): IRequestError {
     const expected = expectedErrorMessage(err.code);
     return {
       message: expected
-            ?? 'Server couldn\'t process this request.\nMaybe the locally stored '
-             + 'info about the mod is wrong\nor the mod was removed from Nexus.',
+        ?? 'Server couldn\'t process this request.\nMaybe the locally stored '
+        + 'info about the mod is wrong\nor the mod was removed from Nexus.',
       Servermessage: errorMessage,
       URL: err.request,
       fatal: errorMessage === undefined,
@@ -908,7 +908,7 @@ export function resolveGraphError(t: TFunction, isLoggedIn: boolean, err: Error)
 const IGNORE_ERRORS = ['ENOENT', 'EPROTO', 'ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'];
 
 function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'collection',
-                            gameId: string, modId: number, version?: string) {
+  gameId: string, modId: number, version?: string) {
   const loggedIn = isLoggedIn(api.getState());
   const expectedError = resolveGraphError(api.translate, loggedIn, err);
   if (expectedError !== undefined) {
@@ -928,8 +928,8 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
       displayMS: calcDuration(message.length),
     });
   } else if (IGNORE_ERRORS.includes(err['code'])
-             || (err instanceof ProcessCanceled)
-             || (err?.message ?? '').includes('getaddrinfo')) {
+    || (err instanceof ProcessCanceled)
+    || (err?.message ?? '').includes('getaddrinfo')) {
     api.showErrorNotification(`Endorsing ${type} failed, please try again later`, err, {
       allowReport: false,
     });
@@ -955,8 +955,8 @@ function reportEndorseError(api: IExtensionApi, err: Error, type: 'mod' | 'colle
 }
 
 export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
-                                  gameId: string, nexusId: number, version: string,
-                                  endorsedStatus: string): BluebirdPromise<string> {
+  gameId: string, nexusId: number, version: string,
+  endorsedStatus: string): BluebirdPromise<string> {
   return endorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
       reportEndorseError(api, err, 'mod', gameId, nexusId, version);
@@ -993,7 +993,7 @@ function convertCollectionEndorseStatus(input: string): string {
 }
 
 function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
-                               mod: IMod, endorsedStatus: string) {
+  mod: IMod, endorsedStatus: string) {
   const { store } = api;
 
   const gameId = mod.attributes?.downloadGame;
@@ -1014,14 +1014,14 @@ function endorseCollectionImpl(api: IExtensionApi, nexus: Nexus, gameMode: strin
 }
 
 function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
-                        mod: IMod, endorsedStatus: string) {
+  mod: IMod, endorsedStatus: string) {
   const { store } = api;
 
   const gameId = mod.attributes?.downloadGame;
 
   const nexusModId: number = mod.attributes.modId;
   const version: string = getSafe(mod.attributes, ['version'], undefined)
-                        || getSafe(mod.attributes, ['modVersion'], undefined);
+    || getSafe(mod.attributes, ['modVersion'], undefined);
 
   if (!truthy(version)) {
     api.sendNotification({
@@ -1044,9 +1044,9 @@ function endorseModImpl(api: IExtensionApi, nexus: Nexus, gameMode: string,
 }
 
 function processInstallError(api: IExtensionApi,
-                             error: any,
-                             downloadId: string,
-                             archiveName: string) {
+  error: any,
+  downloadId: string,
+  archiveName: string) {
   // This installation error handling function is intended to be used to
   //  handle installation errors that are obfuscated for some reason, and
   //  the installManager's error handling is not sufficient or is unable
@@ -1081,13 +1081,13 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
         endorsements.reduce((prev, endorsement: IEndorsement) => {
           // can't trust anyone these days...
           if ((endorsement.domain_name === undefined)
-              || (endorsement.status === undefined)
-              || (endorsement.mod_id === undefined)) {
+            || (endorsement.status === undefined)
+            || (endorsement.mod_id === undefined)) {
             return prev;
           }
 
           const gameId = convertGameIdReverse(knownGames(store.getState()),
-                                              endorsement.domain_name);
+            endorsement.domain_name);
           const modId = endorsement.mod_id;
           if (prev[gameId] === undefined) {
             prev[gameId] = {};
@@ -1121,9 +1121,9 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
 }
 
 function filterByUpdateList(store: Redux.Store<any>,
-                            nexus: Nexus,
-                            gameId: string,
-                            input: IMod[]): BluebirdPromise<IMod[]> {
+  nexus: Nexus,
+  gameId: string,
+  input: IMod[]): BluebirdPromise<IMod[]> {
   const getGameId = (mod: IMod) => getSafe(mod.attributes, ['downloadGame'], undefined) || gameId;
 
   // all game ids for which we have mods installed
@@ -1137,7 +1137,7 @@ function filterByUpdateList(store: Redux.Store<any>,
     const modGameId = getGameId(mod);
     const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], undefined);
     if ((lastUpdate !== undefined)
-        && ((prev[modGameId] === undefined) || (prev[modGameId] > lastUpdate))) {
+      && ((prev[modGameId] === undefined) || (prev[modGameId] > lastUpdate))) {
       prev[modGameId] = lastUpdate;
     }
     return prev;
@@ -1153,40 +1153,40 @@ function filterByUpdateList(store: Redux.Store<any>,
         prev[iterGameId] = entries;
         return prev;
       }), {})
-      .then((updateLists: IUpdateMap) => {
-        const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
+    .then((updateLists: IUpdateMap) => {
+      const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
 
-        Object.keys(updateLists).forEach(iterGameId => {
-          updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
-            prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
-                                          (entry as any).latest_mod_activity) * 1000;
-            return prev;
-          }, {});
-        });
-
-        const now = Date.now();
-
-        return input.filter(mod => {
-          const modGameId = getGameId(mod);
-          if (updateMap[modGameId] === undefined) {
-            // the game hasn't been checked for updates for so long we can't fetch an update range
-            // long enough
-            return true;
-          }
-          const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
-          // check anything for updates that is either in the update list and has been updated as
-          // well as anything that has last been checked before the range of the update list
-          return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
-              || ((now - lastUpdate) > 28 * ONE_DAY);
-        });
+      Object.keys(updateLists).forEach(iterGameId => {
+        updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
+          prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
+            (entry as any).latest_mod_activity) * 1000;
+          return prev;
+        }, {});
       });
+
+      const now = Date.now();
+
+      return input.filter(mod => {
+        const modGameId = getGameId(mod);
+        if (updateMap[modGameId] === undefined) {
+          // the game hasn't been checked for updates for so long we can't fetch an update range
+          // long enough
+          return true;
+        }
+        const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
+        // check anything for updates that is either in the update list and has been updated as
+        // well as anything that has last been checked before the range of the update list
+        return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
+          || ((now - lastUpdate) > 28 * ONE_DAY);
+      });
+    });
 }
 
 export function checkForCollectionUpdates(store: Redux.Store<any>,
-                                          nexus: Nexus,
-                                          gameId: string,
-                                          mods: { [modId: string]: IMod })
-    : BluebirdPromise<{ errorMessages: string[], updatedIds: string[] }> {
+  nexus: Nexus,
+  gameId: string,
+  mods: { [modId: string]: IMod })
+  : BluebirdPromise<{ errorMessages: string[], updatedIds: string[] }> {
   const collectionIds = Object.keys(mods)
     .filter(modId => mods[modId].attributes?.collectionId !== undefined);
 
@@ -1209,11 +1209,11 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         const currentRevision = collection.revisions
           .filter(rev => rev.revisionStatus === 'published')
           .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber)
-          [0];
+        [0];
 
         const batched = [setModAttribute(gameId, modId, 'lastUpdateTime', Date.now())];
         if ((currentRevision?.id !== mod.attributes?.revisionId)
-            && (currentRevision?.revisionNumber !== undefined)) {
+          && (currentRevision?.revisionNumber !== undefined)) {
           batched.push(setModAttribute(gameId, modId, 'newestFileId', currentRevision.revisionNumber));
           batched.push(setModAttribute(gameId, modId, 'newestVersion', currentRevision.revisionNumber.toString()));
         }
@@ -1226,15 +1226,15 @@ export function checkForCollectionUpdates(store: Redux.Store<any>,
         return `${nameLink}:<br/>${err.message}`;
       });
   }))
-  .then(messages => ({
-    errorMessages: messages,
-    updatedIds: collectionIds,
-  }));
+    .then(messages => ({
+      errorMessages: messages,
+      updatedIds: collectionIds,
+    }));
 }
 
 function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
-                            gameId: string, modsList: IMod[],
-                            forceFull: boolean | 'silent', now: number) {
+  gameId: string, modsList: IMod[],
+  forceFull: boolean | 'silent', now: number) {
   return filterByUpdateList(store, nexus, gameId, modsList)
     .then((filteredMods: IMod[]) => checkForModUpdatesImpl(store, nexus,
       gameId, modsList, filteredMods,
@@ -1242,9 +1242,9 @@ function checkForModUpdates(store: Redux.Store<any>, nexus: Nexus,
 }
 
 function checkForModUpdatesImpl(store: Redux.Store<any>, nexus: Nexus,
-                                gameId: string, modsList: IMod[], filteredMods: IMod[],
-                                forceFull: boolean | 'silent', now: number)
-                                : BluebirdPromise<{ errorMessages: string[], updatedIds: string[] }> {
+  gameId: string, modsList: IMod[], filteredMods: IMod[],
+  forceFull: boolean | 'silent', now: number)
+  : BluebirdPromise<{ errorMessages: string[], updatedIds: string[] }> {
   const filtered = new Set(filteredMods.map(mod => mod.id));
   const tStore = (store as ThunkStore<any>);
   let pos = 0;
@@ -1406,10 +1406,10 @@ export function checkModVersionsImpl(
       checkForModUpdates(store, nexus, gameId, modsList, forceFull, now),
     ]))
     .then((result: Array<{ errorMessages: string[], updatedIds: string[] }>)
-          : { errors: string[], modIds: string[] } => ({
-      errors: [].concat(...result.map(r => r.errorMessages.filter(msg => msg !== undefined))),
-      modIds: [].concat(...result.map(r => r.updatedIds)),
-    }));
+      : { errors: string[], modIds: string[] } => ({
+        errors: [].concat(...result.map(r => r.errorMessages.filter(msg => msg !== undefined))),
+        modIds: [].concat(...result.map(r => r.updatedIds)),
+      }));
 }
 
 function errorFromNexusError(err: NexusError): string {
@@ -1420,12 +1420,12 @@ function errorFromNexusError(err: NexusError): string {
 }
 
 
-function getAccountStatus(apiUserInfo:IUserInfo):IAccountStatus {
+function getAccountStatus(apiUserInfo: IUserInfo): IAccountStatus {
 
-  if(apiUserInfo.group_id === 5) return IAccountStatus.Banned;
-  else if(apiUserInfo.group_id === 41) return IAccountStatus.Closed;
-  else if(apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Premium;
-  else if(apiUserInfo.membership_roles.includes('supporter') && !apiUserInfo.membership_roles.includes('premium') ) return IAccountStatus.Supporter;
+  if (apiUserInfo.group_id === 5) return IAccountStatus.Banned;
+  else if (apiUserInfo.group_id === 41) return IAccountStatus.Closed;
+  else if (apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Premium;
+  else if (apiUserInfo.membership_roles.includes('supporter') && !apiUserInfo.membership_roles.includes('premium')) return IAccountStatus.Supporter;
   else return IAccountStatus.Free;
 }
 
@@ -1438,13 +1438,13 @@ export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPref
     name: input.name,
     profileUrl: input.avatar,
     userId: Number.parseInt(input.sub),
-    isLifetime:  input.membership_roles.includes('lifetimepremium'),
+    isLifetime: input.membership_roles.includes('lifetimepremium'),
     isBanned: input.group_id === 5,
-    isClosed: input.group_id === 41 ,
+    isClosed: input.group_id === 41,
     status: getAccountStatus(input),
     ...input.preferences,
   };
-  
+
   //log('info', 'transformUserInfoFromApi()', stateUserInfo);
 
   return stateUserInfo;
@@ -1462,10 +1462,10 @@ function userInfoFromJWTToken(input: IJWTAccessToken) {
 }
 
 export function getOAuthTokenFromState(api: IExtensionApi) {
-  
+
   const state = api.getState();
   const apiKey = state.confidential.account?.['nexus']?.['APIKey'];
-  const oauthCred:IOAuthCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
+  const oauthCred: IOAuthCredentials = state.confidential.account?.['nexus']?.['OAuthCredentials'];
 
   //log('info', 'getOAuthTokenFromState()');
   //log('info', 'api key', apiKey !== undefined);
@@ -1475,14 +1475,14 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
 }
 
 function getUserInfo(api: IExtensionApi,
-                        nexus: Nexus,
+  nexus: Nexus,
                         /*userInfo: IValidateKeyResponse*/)
-                        : BluebirdPromise<boolean> {
+  : BluebirdPromise<boolean> {
 
 
 
   log('info', 'updateUserInfo()')
-  
+
   /**
    * This is where we are primarily updating the user info in the state.
    * I've added a check for the oauth token in the state, and if it exists, updates
@@ -1491,8 +1491,8 @@ function getUserInfo(api: IExtensionApi,
    */
   //const token = getOAuthTokenFromState(api);
 
-  if(isLoggedIn(api.getState())) {
-    
+  if (isLoggedIn(api.getState())) {
+
     // get userinfo from api
     return BluebirdPromise.resolve(nexus.getUserInfo())
       .then(apiUserInfo => {
@@ -1509,11 +1509,11 @@ function getUserInfo(api: IExtensionApi,
         return false;
       });
 
-      
+
   } else {
-      log('warn', 'updateUserInfo() not logged in');
+    log('warn', 'updateUserInfo() not logged in');
   }
-  
+
   /*
   return github.fetchConfig('api')
     .then(configObj => {
@@ -1542,7 +1542,7 @@ function getUserInfo(api: IExtensionApi,
 }
 
 function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
-  
+
   log('info', 'onJWTTokenRefresh');
 
   // sets state oauth credentials
@@ -1559,19 +1559,19 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
 
 export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any): BluebirdPromise<boolean> {
   setOauthToken(credentials); // used for reporting, unimportant right now
-                        
-  log('info', 'updateToken()'); 
+
+  log('info', 'updateToken()');
 
   // update the nexus-node object with our credentials.
   // could be from nexus_integration once() or from when the credentials are updated in state
 
   return BluebirdPromise.resolve(nexus.setOAuthCredentials({
-      fingerprint: credentials.fingerprint,
-      refreshToken: credentials.refreshToken,
-      token: credentials.token,
-    }, {
-      id: OAUTH_CLIENT_ID,
-    }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
+    fingerprint: credentials.fingerprint,
+    refreshToken: credentials.refreshToken,
+    token: credentials.token,
+  }, {
+    id: OAUTH_CLIENT_ID,
+  }, (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus) // callback for when token is refreshed by nexus-node    
   ))
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
@@ -1589,8 +1589,8 @@ export function updateToken(api: IExtensionApi, nexus: Nexus, credentials: any):
 
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): BluebirdPromise<boolean> {
   setApiKey(key);
-  return BluebirdPromise.resolve(nexus.setKey(key)) 
-    .then(() => true) 
+  return BluebirdPromise.resolve(nexus.setKey(key))
+    .then(() => true)
     //.then(userInfo => updateUserInfo(api, nexus))
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => BluebirdPromise.resolve(true))
@@ -1613,10 +1613,12 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Bluebi
         title: 'Failed to log in',
         message: errorFromNexusError(err),
         actions: [
-          { title: 'Try again', action: dismiss => {
-            updateKey(api, nexus, key);
-            dismiss();
-          } },
+          {
+            title: 'Try again', action: dismiss => {
+              updateKey(api, nexus, key);
+              dismiss();
+            }
+          },
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
@@ -1631,10 +1633,12 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Bluebi
         title: 'Failed to log in',
         message: err.message,
         actions: [
-          { title: 'Try again', action: dismiss => {
-            updateKey(api, nexus, key);
-            dismiss();
-          } },
+          {
+            title: 'Try again', action: dismiss => {
+              updateKey(api, nexus, key);
+              dismiss();
+            }
+          },
         ],
       });
       api.store.dispatch(setUserInfo(undefined));
@@ -1647,14 +1651,14 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Bluebi
         ? 'Connection to nexusmods.com timed out, please check your internet connection'
         : 'Failed to log in',
         err, {
-          actions: [{
-            title: 'Retry',
-            action: dismiss => {
-              updateKey(api, nexus, key);
-              dismiss();
-            },
-          }],
-        });
+        actions: [{
+          title: 'Retry',
+          action: dismiss => {
+            updateKey(api, nexus, key);
+            dismiss();
+          },
+        }],
+      });
       api.store.dispatch(setUserInfo(undefined));
       api.events.emit('did-login', err);
       return false;
