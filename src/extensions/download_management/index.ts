@@ -246,11 +246,11 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
   }
 }
 
-function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
+async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   const state: IState = api.store.getState();
   gameId = gameId || selectors.activeGameId(state);
   if (!gameId) {
-    return Promise.resolve();
+    return;
   }
   const downloadPath = selectors.downloadPathForGame(state, gameId);
   let downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
@@ -261,11 +261,14 @@ function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   const invalid = Object.keys(downloads)
     .filter(dlId => !archiveExtLookup.has(path.extname(downloads[dlId].localPath || '').toLowerCase()));
   const removeSet = new Set<string>(incomplete.concat(invalid));
-  const batched = [];
-  return Promise.all(Array.from(removeSet).map(async dlId => {
-    await fs.removeAsync(path.join(downloadPath, downloads[dlId].localPath)).catch(() => null);
-    batched.push(removeDownloadSilent(dlId));
-  })).then(() => batchDispatch(api.store, batched));
+
+  const array = Array.from(removeSet);
+  await Promise.all(array.map(async dlId => {
+    if (downloads[dlId].localPath !== undefined) {
+      await fs.removeAsync(path.join(downloadPath, downloads[dlId].localPath)).catch(() => null);
+    }
+  }));
+  batchDispatch(api.store, array.map(dlId => removeDownloadSilent(dlId)));
 }
 
 function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
