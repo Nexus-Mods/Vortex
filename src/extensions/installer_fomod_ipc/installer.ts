@@ -10,6 +10,7 @@ import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_
 import { getGame } from '../gamemode_management/util/getGame';
 import { log } from '../../util/log';
 import { IExtensionApi, IInstallResult } from '../../types/api';
+import { } from '../installer_dotnet/';
 
 /**
  * Install a FOMOD mod
@@ -38,7 +39,12 @@ export const install = async (
       await api.ext.awaitNextPhaseDeployment?.();
     }
 
-    const strategies = createConnectionStrategies({ securityLevel: details?.isTrusted === true ? SecurityLevel.Regular : SecurityLevel.Sandbox, allowFallback: true });
+    await api.ext?.awaitDotnetAssert?.();
+
+    const state = api.getState();
+    const isSandboxDisabled = !state.settings.mods.installerSandbox;
+    const securityLevel = details?.isTrusted === true || isSandboxDisabled ? SecurityLevel.Regular : SecurityLevel.Sandbox;
+    const strategies = createConnectionStrategies({ securityLevel: securityLevel, allowFallback: true });
     const modName = details?.modReference?.id || path.basename(archivePath, path.extname(archivePath));
     connection = new VortexIPCConnection(api, strategies, 30000, modName);
     await connection.initialize();

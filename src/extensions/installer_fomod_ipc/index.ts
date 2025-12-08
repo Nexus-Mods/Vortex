@@ -1,14 +1,24 @@
 import { method as toBluebird } from 'bluebird';
+import { SupportsAppContainer } from 'winapi-bindings';
 import { testSupported } from './tester';
 import { install } from './installer';
 import { ITestSupportedDetails } from '../mod_management/types/TestSupported';
 import { IInstallationDetails } from '../mod_management/types/InstallFunc';
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { settingsReducer } from './reducers/sandbox';
+import Sandbox from './views/Sandbox';
 
 /**
  * Extension initialization
  */
 const main = (context: IExtensionContext): boolean => {
+  context.registerReducer(['settings', 'mods'], settingsReducer);
+
+  const osSupportsAppContainer = SupportsAppContainer?.() ?? false;
+  context.registerSettings('Workarounds', Sandbox, () => ({
+    osSupportsAppContainer,
+  }));
+
   context.registerInstaller(
     /*id:*/ `fomod`,
     /*priority:*/ 20,
