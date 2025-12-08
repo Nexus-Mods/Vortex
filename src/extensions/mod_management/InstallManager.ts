@@ -441,8 +441,12 @@ class InstallManager {
 
     api.onAsync(
       'install-from-dependencies',
-      (dependentId: string, rules: IModRule[], recommended: boolean) => {
-        const profile = activeProfile(api.getState());
+      (dependentId: string, rules: IModRule[], recommended: boolean, profileId?: string) => {
+        profileId = profileId || lastActiveProfileForGame(api.getState(), activeGameId(api.getState()));
+        const contextName = recommended ? 'install-recommendations' : 'install-dependencies';
+        const batchedContext = getBatchContext(contextName, '', true);
+        batchedContext?.set('profileId', profileId);
+        const profile = profileById(api.getState(), profileId);
         if (profile === undefined) {
           return Bluebird.reject(new ProcessCanceled('No game active'));
         }
@@ -463,7 +467,7 @@ class InstallManager {
             api,
             'installing_dependencies',
             dependentId,
-            this.withDependenciesContext('install-recommendations', () =>
+            this.withDependenciesContext('install-recommendations', profile.id, () =>
               this.installRecommendationsImpl(
                 api, profile, profile.gameId, dependentId,
                 modName(collection), filtered, instPath, true))
@@ -473,7 +477,7 @@ class InstallManager {
             api,
             'installing_dependencies',
             dependentId,
-            this.withDependenciesContext('install-collections', () =>
+            this.withDependenciesContext('install-collections', profile.id, () =>
               this.installDependenciesImpl(
                 api, profile, profile.gameId, dependentId,
                 modName(collection), filtered, instPath, true))
@@ -945,12 +949,14 @@ class InstallManager {
       modReference,
     };
 
+    const batchedContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
+    const profileId = batchedContext?.get('profileId', activeProfile(api.store.getState())?.id);
+    const currentProfile = profileById(api.getState(), profileId);
+
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit.do(() => {
       return new Promise<string>((resolve, reject) => {
         const installationZip = new Zip();
-
-        const currentProfile = activeProfile(api.store.getState());
 
         const fullInfo = { ...info };
         let rules: IRule[] = [];
@@ -1023,7 +1029,12 @@ class InstallManager {
             }
             if (installGameId !== currentProfile?.gameId) {
               const installProfileId = lastActiveProfileForGame(state, installGameId);
+              batchedContext?.set('profileId', installProfileId);
               installProfile = profileById(state, installProfileId);
+            } else if (info.profileId && info.profileId !== currentProfile?.id) {
+              // Use the target profile from install options (e.g., when installing for a collection
+              // on a different profile than the active one)
+              installProfile = profileById(state, info.profileId);
             }
             // TODO make the download first functionality optional
             await api.emitAndAwait('will-install-mod', installGameId, archiveId, modId, fullInfo);
@@ -1118,11 +1129,15 @@ class InstallManager {
                     if (choice.enable) {
                       enable = true;
                     }
-                    // When user chooses to replace or create a variant, clear any pre-set
-                    // installer options so they get a fresh installation experience
-                    delete fullInfo.choices;
-                    delete fullInfo.patches;
-                    fileList = undefined;
+
+                    const activeSession = getCollectionActiveSession(api.getState());
+                    if (!activeSession) {
+                      // When user chooses to replace or create a variant, clear any pre-set
+                      // installer options so they get a fresh installation experience
+                      delete fullInfo.choices;
+                      delete fullInfo.patches;
+                      fileList = undefined;
+                    }
                     setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
                     rules = choice.rules || [];
                     fullInfo.previous = choice.attributes;
@@ -1562,7 +1577,7 @@ class InstallManager {
       api,
       'installing_dependencies',
       mod.id,
-      this.withDependenciesContext('install-dependencies', () =>
+      this.withDependenciesContext('install-dependencies', profile.id, () =>
         this.augmentRules(api, gameId, mod)
           .then(rules => this.installDependenciesImpl(
             api, profile, gameId, mod.id, modName(mod), rules,
@@ -1595,7 +1610,7 @@ class InstallManager {
       api,
       'installing_dependencies',
       mod.id,
-      this.withDependenciesContext('install-recommendations', () =>
+      this.withDependenciesContext('install-recommendations', profile.id, () =>
         this.augmentRules(api, gameId, mod)
           .then(rules => this.installRecommendationsImpl(
             api, profile, gameId, mod.id, modName(mod),
@@ -1624,10 +1639,11 @@ class InstallManager {
     // });
   }
 
-  private withDependenciesContext<T>(contextName: string, func: () => Bluebird<T>): Bluebird<T> {
+  private withDependenciesContext<T>(contextName: string, profileId: string, func: () => Bluebird<T>): Bluebird<T> {
     const context = getBatchContext(contextName, '', true);
     context.set('depth', context.get('depth', 0) + 1);
     context.set('remember-instructions', null);
+    context.set('profileId', profileId);
 
     return func()
       .finally(() => {
@@ -1797,9 +1813,15 @@ class InstallManager {
         }
 
         const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
-        // Check if mod is already installed
+        // Check if mod is already installed with matching installer choices and patches
         const mods = api.getState().persistent.mods[gameId];
-        const existingMod = findModByRef(currentDep.reference, mods);
+        const fullReference: IModReference = {
+          ...currentDep.reference,
+          installerChoices: currentDep.installerChoices,
+          patches: currentDep.patches,
+          fileList: currentDep.fileList,
+        };
+        const existingMod = findModByRef(fullReference, mods);
         const modId = existingMod != null ? existingMod.id : await this.withInstructions(api,
           modName(sourceMod),
           renderModReference(currentDep.reference),
@@ -1822,16 +1844,38 @@ class InstallManager {
             patches: currentDep.patches ?? currentDep.extra?.patches,
           });
 
-          // Enable the mod in any profile that has the source mod enabled
-          const profiles = Object.values(api.getState().persistent.profiles)
-            .filter(prof => (prof.gameId === gameId)
-              && prof.modState?.[sourceModId]?.enabled);
-          profiles.forEach(prof => {
-            api.store.dispatch(setModEnabled(prof.id, modId, true));
-          });
+          const batchedActions = [];
+          // Enable the mod only for the target profile to avoid affecting other profiles
+          const batchedContext = getBatchContext(['install-dependencies', 'install-collections', 'install-recommendations'], '');
+          const targetProfileId = batchedContext?.get<string>('profileId');
+          const targetProfile = targetProfileId
+            ? profileById(api.getState(), targetProfileId)
+            : undefined;
+
+          if (targetProfile) {
+            // Only modify the target profile - disable other variants and enable this one
+            const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
+            for (const otherModId of otherModIds) {
+              batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
+            }
+            batchedActions.push(setModEnabled(targetProfile.id, modId, true));
+          } else {
+            // Fallback: enable in profiles where source mod is enabled (original behavior)
+            const profiles = Object.values(api.getState().persistent.profiles)
+              .filter(prof => (prof.gameId === gameId)
+                && prof.modState?.[sourceModId]?.enabled);
+            profiles.forEach(prof => {
+              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
+              for (const otherModId of otherModIds) {
+                batchedActions.push(setModEnabled(prof.id, otherModId, false));
+              }
+              batchedActions.push(setModEnabled(prof.id, modId, true));
+            });
+          }
 
           // Mark as installed as dependency
-          api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
+          batchedActions.push(setModAttribute(gameId, modId, 'installedAsDependency', true));
+          batchDispatch(api.store, batchedActions);
           
           // Clear retry counter on successful installation
           this.mDependencyRetryCount.delete(installKey);
@@ -2087,7 +2131,9 @@ class InstallManager {
     modsNeedingRequeue: number;
   } {
     const state = api.getState();
-    const profile = activeProfile(state);
+    const batchedContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
+    const profileId = batchedContext?.get<string>('profileId', activeProfile(api.getState())?.id);
+    const profile = profileById(state, profileId);
     const sessionId = generateCollectionSessionId(sourceModId, profile?.id);
     const activeCollectionSession = getCollectionSessionById(state, sessionId);
 
@@ -2236,10 +2282,16 @@ class InstallManager {
       if (downloads[downloadId].state === 'finished') {
         const hasPendingOrActive = this.hasActiveOrPendingInstallation(sourceModId, downloadId);
 
-        // Check if mod is already installed
+        // Check if mod is already installed with matching installer choices and patches
         const gameId = activeGameId(api.getState());
         const mods = api.getState().persistent.mods[gameId] ?? {};
-        const existingMod = mod.rule?.reference && findModByRef(mod.rule.reference, mods);
+        const fullReference: IModReference | undefined = mod.rule?.reference ? {
+          ...mod.rule.reference,
+          installerChoices: mod.rule.installerChoices ?? mod.rule.extra?.installerChoices,
+          patches: mod.rule.extra?.patches,
+          fileList: mod.rule.fileList ?? mod.rule.reference?.fileList,
+        } : undefined;
+        const existingMod = fullReference && findModByRef(fullReference, mods);
 
         log('debug', 'Requeue check', { downloadId, hasPendingOrActive, modId: existingMod?.id });
         if (!hasPendingOrActive && !existingMod) {
@@ -2454,7 +2506,9 @@ class InstallManager {
 
         // When advancing to a new phase, scan for any finished downloads that should be queued
         const apiState = api.getState();
-        const gameId = activeProfile(apiState)?.gameId;
+        const batchContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
+        const profileId = batchContext?.get<string>('profileId', activeProfile(apiState)?.id);
+        const gameId = profileById(apiState, profileId)?.gameId;
         if (!gameId) {
           continue;
         }
@@ -3322,6 +3376,9 @@ class InstallManager {
       const state: IState = api.store.getState();
       const mods: IMod[] = Object.values(state.persistent.mods[gameId])
         .filter(mod => modIds.includes(mod.id) && mod.state === 'installed');
+      const batchContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
+      const profileId = batchContext?.get<string>('profileId', activeProfile(api.store.getState())?.id);
+      const currentProfile = profileById(api.store.getState(), profileId);
       if (mods.length === 0) {
         // Technically for this to happen the timing must be *perfect*,
         //  the replace query dialog will only show if we manage to confirm that
@@ -3330,7 +3387,6 @@ class InstallManager {
         //  appears the mod could be potentially missing from the state.
         // In this case we resolve using the existing modId.
         // https://github.com/Nexus-Mods/Vortex/issues/7972
-        const currentProfile = activeProfile(api.store.getState());
         return resolve({
           id: modIds[0],
           variant: '',
@@ -3534,13 +3590,38 @@ class InstallManager {
         }
       }
 
-      if (choices === undefined) {
-        choices = isDependency ? Bluebird.resolve({ action: 'replace', remember: true }) : queryDialog();
+      // When installing as a dependency, check if the existing mod is enabled in a different profile.
+      // If so, create a variant so each profile can have its own version of the mod.
+      if (!choices && isDependency) {
+        const activeSession = getCollectionActiveSession(api.getState());
+        const targetProfileId = currentProfile?.id;
+
+        // Check if any existing mod variant is enabled in a profile OTHER than the target profile
+        const profiles = Object.values(state.persistent.profiles)
+          .filter(prof => prof.gameId === gameId && prof.id !== targetProfileId);
+        const isEnabledInOtherProfile = modIds.some(modId =>
+          profiles.some(prof => getSafe(prof.modState, [modId, 'enabled'], false)));
+
+        if (isEnabledInOtherProfile && activeSession?.collectionId != null) {
+          // Create a variant so the other profile keeps its version
+          const collectionMod = api.getState().persistent.mods?.[gameId]?.[activeSession.collectionId];
+          const variantNum = installOptions.variantNumber?.toString() ?? '1';
+          const maxLength = MAX_VARIANT_NAME - variantNum.length + 1;
+          const rawName = collectionMod?.attributes?.customFileName?.trim() ?? '';
+          const autoVariant = rawName.length > maxLength
+            ? `${rawName.substring(0, maxLength)}.${variantNum}`
+            : `${rawName}.${variantNum}`;
+          choices = Bluebird.resolve({ action: 'variant', variant: autoVariant, remember: false });
+        } else {
+          // No other profile uses this mod, safe to replace
+          choices = Bluebird.resolve({ action: 'replace', remember: false });
+        }
+      } else {
+        choices = choices ?? queryDialog();
       }
 
       choices
         .then((result: { action: string, variant: string, remember: boolean }) => {
-          const currentProfile = activeProfile(api.store.getState());
           const wasEnabled = (modId: string) => {
             return (currentProfile?.gameId === gameId)
               ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
@@ -3941,13 +4022,36 @@ class InstallManager {
             api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
           }
 
-          // enable the mod in any profile that has the source mod enabled
-          const profiles = Object.values(api.getState().persistent.profiles)
-            .filter(prof => (prof.gameId === gameId)
-              && prof.modState?.[sourceModId]?.enabled);
-          profiles.forEach(prof => {
-            api.store.dispatch(setModEnabled(prof.id, modId, true));
-          });
+          const batchedActions = [];
+          // Enable the mod only for the target profile to avoid affecting other profiles
+          const batchedContext = getBatchContext(['install-dependencies', 'install-collections', 'install-recommendations'], '');
+          const targetProfileId = batchedContext?.get<string>('profileId');
+          const targetProfile = targetProfileId
+            ? profileById(api.getState(), targetProfileId)
+            : undefined;
+
+          if (targetProfile) {
+            // Only modify the target profile - disable other variants and enable this one
+            const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
+            for (const otherModId of otherModIds) {
+              batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
+            }
+            batchedActions.push(setModEnabled(targetProfile.id, modId, true));
+          } else {
+            // Fallback: enable in profiles where source mod is enabled (original behavior)
+            const profiles = Object.values(api.getState().persistent.profiles)
+              .filter(prof => (prof.gameId === gameId)
+                && prof.modState?.[sourceModId]?.enabled);
+            profiles.forEach(prof => {
+              const otherModIds = this.checkModVariantsExist(api, gameId, downloadId);
+              for (const otherModId of otherModIds) {
+                batchedActions.push(setModEnabled(prof.id, otherModId, false));
+              }
+              batchedActions.push(setModEnabled(prof.id, modId, true));
+            });
+          }
+
+          batchDispatch(api.store, batchedActions);
 
           this.applyExtraFromRule(api, gameId, modId, {
             ...dep.extra,

@@ -95,9 +95,19 @@ function previousBatch(keys: string[], context: BatchContext): BatchContext {
   return undefined;
 }
 
-export function getBatchContext(operation: string,
+export function getBatchContext(operation: string | string[],
                                 key: string,
                                 create: boolean = false): IBatchContext {
+  if (Array.isArray(operation)) {
+    // We don't create contexts for multiple operations, only search.
+    for (const op of operation) {
+      const res = getBatchContext(op, key, false);
+      if (res !== undefined) {
+        return res;
+      }
+    }
+    return undefined;
+  }
   const fullKey = makeKey(operation, key);
   const res = contexts[fullKey];
   if (res !== undefined) {

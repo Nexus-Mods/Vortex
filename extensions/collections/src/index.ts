@@ -1145,8 +1145,10 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
 
   api.events.on('did-install-mod', async (gameId: string, archiveId: string, modId: string) => {
     // automatically enable collections once they're installed
-    const profileId = selectors.lastActiveProfileForGame(state(), gameId);
-    const profile = selectors.profileById(state(), profileId);
+    // Use the driver's target profile if available, otherwise fall back to last active profile
+    const targetProfile = driver.profile;
+    const profileId = targetProfile?.id ?? selectors.lastActiveProfileForGame(state(), gameId);
+    const profile = targetProfile ?? selectors.profileById(state(), profileId);
     if (profile === undefined) {
       return;
     }
