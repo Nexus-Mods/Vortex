@@ -23,7 +23,7 @@ import OverrideEditor, { IPathTools } from './views/OverrideEditor';
 import Settings from './views/Settings';
 
 import { setConflictDialog, setConflictInfo, setEditCycle,
-         setFileOverrideDialog, 
+         setFileOverrideDialog, setHasUnsolvedConflicts,
          setModTypeConflictsSetting} from './actions';
 import { sessionReducer as connectionReducer, settingsReducer } from './reducers';
 import { enabledModKeys, enabledModsWithOverrides, modsWithOverrides } from './selectors';
@@ -43,7 +43,6 @@ import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import shortid = require('shortid');
 import { actions, fs, log, PureComponentEx, selectors, ToolbarIcon, types, util } from 'vortex-api';
-import { activeGameId } from 'vortex-api/lib/util/selectors';
 
 const CONFLICT_NOTIFICATION_ID = 'mod-file-conflict';
 const UNFULFILLED_NOTIFICATION_ID = 'mod-rule-unfulfilled';
@@ -408,6 +407,7 @@ async function updateConflictInfo(api: types.IExtensionApi, gameId: string,
 
   if (Object.keys(unsolved).length === 0) {
     store.dispatch(actions.dismissNotification(CONFLICT_NOTIFICATION_ID));
+    store.dispatch(setHasUnsolvedConflicts(false));
   } else {
     const message: string[] = [
       t('There are unresolved file conflicts. This just means that two or more mods contain the '
@@ -437,6 +437,7 @@ async function updateConflictInfo(api: types.IExtensionApi, gameId: string,
       ]));
     };
 
+    store.dispatch(setHasUnsolvedConflicts(true));
     store.dispatch(actions.addNotification({
       type: 'warning',
       message: 'There are unresolved file conflicts',

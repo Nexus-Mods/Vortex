@@ -32,3 +32,6 @@ export const setEditCycle = createAction('SET_EDIT_MOD_CYCLE',
 
 export const setModTypeConflictsSetting = createAction('SET_MOD_TYPE_CONFLICTS_SETTING',
   (enabled: boolean) => ({ enabled }));
+
+export const setHasUnsolvedConflicts = createAction('SET_HAS_UNSOLVED_CONFLICTS',
+  (hasUnsolvedConflicts: boolean) => ({ hasUnsolvedConflicts }));
