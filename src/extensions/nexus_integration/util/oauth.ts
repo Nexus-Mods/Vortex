@@ -8,7 +8,7 @@ import { log } from '../../../util/log';
 import { OAUTH_REDIRECT_URL, OAUTH_REDIRECT_BASE, getOAuthRedirectUrl } from '../constants';
 import NEXUSMODS_LOGO from './nexusmodslogo';
 import { ArgumentInvalid } from '../../../util/CustomErrors';
-import { v1 as uuidv1 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import crypto from "node:crypto";
 
 type TokenType = 'Bearer';
@@ -104,11 +104,11 @@ class OAuth {
     onOpenPage: (url: string) => void)
     : Promise<void> {
 
-    const state = uuidv1();
+    const state = uuidv4();
     this.mStates[state] = onToken;
 
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.1
-    this.mVerifier = Buffer.from(uuidv1().replace(/-/g, '')).toString('base64');
+    this.mVerifier = Buffer.from(uuidv4().replace(/-/g, '')).toString('base64');
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto.createHash('sha256').update(this.mVerifier).digest('base64');
 
