@@ -3070,6 +3070,8 @@ interface IPrettifiedError {
     message: string;
     // (undocumented)
     replace?: any;
+    // (undocumented)
+    stack?: string;
 }
 
 // @public (undocumented)
