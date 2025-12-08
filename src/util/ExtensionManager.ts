@@ -1,7 +1,9 @@
 /* eslint-disable */
 import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification, dismissAllNotifications,
-         IDialogContent, showDialog } from '../actions/notifications';
+import {
+  addNotification, closeDialog, DialogActions, DialogType, dismissNotification, dismissAllNotifications,
+  IDialogContent, showDialog
+} from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
 
@@ -32,8 +34,10 @@ import { IExtensionLoadFailure, IExtensionOptional, IExtensionState, IState } fr
 
 import { Archive } from './archives';
 import { COMPANY_ID } from './constants';
-import { MissingDependency, NotSupportedError,
-        ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
+import {
+  MissingDependency, NotSupportedError,
+  ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled
+} from './CustomErrors';
 import { disableErrorReport, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n, TString } from './i18n';
@@ -78,7 +82,7 @@ export function isExtSame(installed: IExtension, remote: IAvailableExtension): b
   if (installed.modId !== undefined) {
     return installed.modId === remote.modId;
   }
-  
+
   return installed.name === remote.name;
 }
 
@@ -87,25 +91,25 @@ const winapi = lazyRequire<typeof winapiT>(() => require('vortex-run'));
 const ERROR_OUTPUT_CUTOFF = 3;
 
 function selfCL(userDataPath?: string): [string, string[]] {
-    let execPath = process.execPath;
-    // make it work when using the development version
-    if (execPath.endsWith('electron.exe')) {
-      execPath = path.join(getVortexPath('package'), 'vortex.bat');
-    }
+  let execPath = process.execPath;
+  // make it work when using the development version
+  if (execPath.endsWith('electron.exe')) {
+    execPath = path.join(getVortexPath('package'), 'vortex.bat');
+  }
 
-    const args = [];
-    /*
-    TODO: This is necessary for downloads to multiple instances to work correctly but
-      it doesn't work until https://github.com/electron/electron/issues/18397 is fixed
+  const args = [];
+  /*
+  TODO: This is necessary for downloads to multiple instances to work correctly but
+    it doesn't work until https://github.com/electron/electron/issues/18397 is fixed
 
-    if (userDataPath !== undefined) {
-      args.push('--user-data', userDataPath);
-    }
-    */
+  if (userDataPath !== undefined) {
+    args.push('--user-data', userDataPath);
+  }
+  */
 
-    args.push('-d');
+  args.push('-d');
 
-    return [execPath, args];
+  return [execPath, args];
 }
 
 const setSelfAsProtocolClient = makeRemoteCallSync('set-as-default-protocol-client',
@@ -113,7 +117,7 @@ const setSelfAsProtocolClient = makeRemoteCallSync('set-as-default-protocol-clie
 
     const [execPath, args] = selfCL(udPath);
     electron.app.setAsDefaultProtocolClient(protocol, execPath, args);
-});
+  });
 
 const isSelfProtocolClient = makeRemoteCallSync('is-self-protocol-client',
   (electron, contents, protocol: string, udPath: string) => {
@@ -141,16 +145,16 @@ const showOpenDialog = makeRemoteCall('show-open-dialog',
   });
 
 const showSaveDialog = makeRemoteCall('show-save-dialog',
-(electron, contents, options: Electron.SaveDialogOptions) => {
-  let window: Electron.BrowserWindow = null;
-  try {
-    window = electron.BrowserWindow?.fromWebContents?.(contents);
-  } catch (err) {
-    // nop
-  }
+  (electron, contents, options: Electron.SaveDialogOptions) => {
+    let window: Electron.BrowserWindow = null;
+    try {
+      window = electron.BrowserWindow?.fromWebContents?.(contents);
+    } catch (err) {
+      // nop
+    }
 
-  return electron.dialog.showSaveDialog(window, options);
-});
+    return electron.dialog.showSaveDialog(window, options);
+  });
 
 const appExit = makeRemoteCallSync('exit-application',
   (electron, contents, exitCode?: number) => {
@@ -422,7 +426,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
         return (...args) => {
           if (!that.mMayRegister) {
             log('warn', 'extension tries to use register call outside init function', {
-              extension: this.mCurrentExtension,
+              extension: that.mCurrentExtension,
               call: key,
             });
             return;
@@ -478,7 +482,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       const ext = this.findExt(requiredKey, allExtensions);
       if (ext === undefined) {
         const optional: IExtensionOptional = { id: requiredKey, args: iter.arguments, extensionPath: iter.extensionPath };
-        acc = {...acc, [callingExtensionKey]: [].concat(acc[callingExtensionKey] || [], optional) as IExtensionOptional[]};
+        acc = { ...acc, [callingExtensionKey]: [].concat(acc[callingExtensionKey] || [], optional) as IExtensionOptional[] };
       }
       return acc;
     }, {});
@@ -489,21 +493,21 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * remove all init calls from incompatible extensions
    */
   public unloadIncompatible(furtherAPIs: Set<string>,
-                            allExtensions: IRegisteredExtension[])
-                            : { [extId: string]: IExtensionLoadFailure[] } {
+    allExtensions: IRegisteredExtension[])
+    : { [extId: string]: IExtensionLoadFailure[] } {
     const addAPIs: string[] =
-        this.mApiAdditions.map((addition: IApiAddition) => addition.key);
+      this.mApiAdditions.map((addition: IApiAddition) => addition.key);
     const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
 
     const incompatibleExtensions: { [extId: string]: IExtensionLoadFailure[] } = {};
 
     this.mInitCalls.filter(
       (call: IInitCall) => !call.optional && !fullAPI.has(call.key))
-    .forEach((call: IInitCall) => {
-      log('debug', 'unsupported api call', { extension: call.extension, api: call.key });
-      setdefault(incompatibleExtensions, call.extension, [])
-        .push({ id: 'unsupported-api' });
-    });
+      .forEach((call: IInitCall) => {
+        log('debug', 'unsupported api call', { extension: call.extension, api: call.key });
+        setdefault(incompatibleExtensions, call.extension, [])
+          .push({ id: 'unsupported-api' });
+      });
 
     const testValid = (extId: string, requiredId?: string, version?: string, optional?: boolean) => {
       if (!optional) {
@@ -524,9 +528,9 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     this.getCalls('requireVersion').forEach(call => {
       if ((process.env.NODE_ENV !== 'development')
-          && !semver.satisfies(getApplication().version,
-                               call.arguments[0],
-                               { includePrerelease: true })) {
+        && !semver.satisfies(getApplication().version,
+          call.arguments[0],
+          { includePrerelease: true })) {
         setdefault(incompatibleExtensions, call.extension, []).push(
           { id: 'unsupported-version' });
       }
@@ -534,7 +538,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     if (Object.keys(incompatibleExtensions).length > 0) {
       log('info', 'extensions ignored for using unsupported api',
-          { extensions: Object.keys(incompatibleExtensions).join(', ') });
+        { extensions: Object.keys(incompatibleExtensions).join(', ') });
       this.mInitCalls = this.mInitCalls.filter((call: IInitCall) =>
         incompatibleExtensions[call.extension] === undefined);
     } else {
@@ -647,8 +651,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
   public findExt = (id: string, allExtensions?: IRegisteredExtension[]) => {
     return allExtensions.find(ext => (ext.info?.name === id)
-                                  || (ext.info?.id === id)
-                                  || (ext.name === id));
+      || (ext.info?.id === id)
+      || (ext.name === id));
   };
 }
 
@@ -711,11 +715,11 @@ class EventProxy extends EventEmitter {
 
   public emit(eventName: string, ...args) {
     if (!super.emit(eventName, args)
-        && (this.mTarget !== undefined)
-        && !this.mTarget.isDestroyed()) {
+      && (this.mTarget !== undefined)
+      && !this.mTarget.isDestroyed()) {
       // relay all events this process didn't handle itself to the connected
       // process
-      if (typeof(args[args.length - 1]) === 'function') {
+      if (typeof (args[args.length - 1]) === 'function') {
         const id = shortid();
         this.mRemoteCallbacks[id] = args[args.length - 1];
         const newArgs = [].concat(args.slice(0, args.length - 1), id);
@@ -731,7 +735,7 @@ class EventProxy extends EventEmitter {
 
 const UNDEFINED = {};
 
-type CBFunc = (...args: any[]) =>  void;
+type CBFunc = (...args: any[]) => void;
 interface IStartHook {
   priority: number;
   id: string;
@@ -824,7 +828,7 @@ class ExtensionManager {
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
-            return(Array.isArray(input) ? input[0].toString() : input.toString()) as any;
+          return (Array.isArray(input) ? input[0].toString() : input.toString()) as any;
         }
         if (options == null) {
           options = {};
@@ -869,8 +873,8 @@ class ExtensionManager {
       // and everything in this phase of startup is synchronous anyway
       try {
         const disableExtensions =
-            fs.readdirSync(getVortexPath('temp'))
-                .filter(name => name.startsWith('__disable_'));
+          fs.readdirSync(getVortexPath('temp'))
+            .filter(name => name.startsWith('__disable_'));
         disableExtensions.forEach(ext => {
           const extId = ext.substr(10);
           log('info', 'disabling extension that caused a crash before', { extId });
@@ -968,10 +972,10 @@ class ExtensionManager {
       }
       if (notification.type === 'warning') {
         log('warn', 'warning notification',
-            { message: notification.message, title: notification.title });
+          { message: notification.message, title: notification.title });
       } else if (notification.type === 'error') {
         log('warn', 'error notification',
-            { message: notification.message, title: notification.title });
+          { message: notification.message, title: notification.title });
       }
       store.dispatch(addNotification(noti));
       return noti.id;
@@ -979,18 +983,18 @@ class ExtensionManager {
 
     // tslint:disable-next-line:only-arrow-functions
     this.mApi.showErrorNotification = function(message: string,
-                                               details: string | Error | any,
-                                               options?: IErrorOptions) {
+      details: string | Error | any,
+      options?: IErrorOptions) {
       let extension: IRegisteredExtension = this.extension;
 
       if ((extension === undefined) && (details?.['extension'] !== undefined)) {
         extension = (this.getLoadedExtensions() as IRegisteredExtension[])
           .find(iter => (iter.name === details['extension']));
       }
-      
+
       if ((extension !== undefined)
-          && (extension.info !== undefined)
-          && (extension.info.author !== COMPANY_ID)) {
+        && (extension.info !== undefined)
+        && (extension.info.author !== COMPANY_ID)) {
         if (options === undefined) {
           options = {};
         }
@@ -1006,7 +1010,7 @@ class ExtensionManager {
     };
 
     this.mApi.showDialog = (type: DialogType, title: string, content: IDialogContent,
-                            actions: DialogActions, id?: string) =>
+      actions: DialogActions, id?: string) =>
       store.dispatch(showDialog(type, title, content, actions, id));
     this.mApi.closeDialog = (id: string, actionKey: string, input: any) =>
       store.dispatch(closeDialog(id, actionKey, input));
@@ -1031,7 +1035,7 @@ class ExtensionManager {
     if (ipcRenderer !== undefined) {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
-      ipcRenderer.on('show-error-notification', (event, message, details, options, isError) =>  {
+      ipcRenderer.on('show-error-notification', (event, message, details, options, isError) => {
         let data = JSON.parse(details);
         if (isError) {
           data = Object.assign(new Error(), data);
@@ -1096,32 +1100,32 @@ class ExtensionManager {
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: WebContents) {
     this.mApi.showErrorNotification =
-        (message: string, details: string | Error, options: IErrorOptions) => {
-          try {
-            // make an attempt to serialise error objects in such a way that they can be
-            // reconstructed.
-            const data: any = (typeof(details) === 'object')
-              ? { ...details }
-              : details;
-            if (details instanceof Error) {
-              // details.stack, details.name AND details.message seem to be getters.
-              data.stack = details.stack;
-              data.name = details.name;
-              data.message = details.message;
-              // stack is also optional. If we don't have one, generate one to this function
-              // which is better than nothing because otherwise the code reconstructing the error
-              // will produce a stack that is completely useless
-              if (data.stack === undefined) {
-                data.stack = (new Error()).stack;
-              }
+      (message: string, details: string | Error, options: IErrorOptions) => {
+        try {
+          // make an attempt to serialise error objects in such a way that they can be
+          // reconstructed.
+          const data: any = (typeof (details) === 'object')
+            ? { ...details }
+            : details;
+          if (details instanceof Error) {
+            // details.stack, details.name AND details.message seem to be getters.
+            data.stack = details.stack;
+            data.name = details.name;
+            data.message = details.message;
+            // stack is also optional. If we don't have one, generate one to this function
+            // which is better than nothing because otherwise the code reconstructing the error
+            // will produce a stack that is completely useless
+            if (data.stack === undefined) {
+              data.stack = (new Error()).stack;
             }
-            ipc.send('show-error-notification',
-                     message, JSON.stringify(data), options, details instanceof Error);
-          } catch (err) {
-            // this may happen if the ipc has already been destroyed
-            this.showErrorBox(message, details);
           }
-        };
+          ipc.send('show-error-notification',
+            message, JSON.stringify(data), options, details instanceof Error);
+        } catch (err) {
+          // this may happen if the ipc has already been destroyed
+          this.showErrorBox(message, details);
+        }
+      };
     this.mApi.events = this.mEventEmitter = new EventProxy(ipc);
   }
 
@@ -1148,11 +1152,11 @@ class ExtensionManager {
       registerSanityCheck(actionType, check);
     });
     this.apply('registerInterpreter', (extension: string,
-                                       apply: (input: IRunParameters) => IRunParameters) => {
+      apply: (input: IRunParameters) => IRunParameters) => {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
     this.apply('registerStartHook', (priority: number, id: string,
-                                     hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+      hook: (input: IRunParameters) => Promise<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
     this.apply('registerToolVariables', (func: ToolParameterCB) => {
@@ -1183,8 +1187,8 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public apply(funcName: keyof IExtensionContext,
-               func: (...args: any[]) => void,
-               addExtInfo?: boolean) {
+    func: (...args: any[]) => void,
+    addExtInfo?: boolean) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
       try {
         if (addExtInfo === true) {
@@ -1256,12 +1260,12 @@ class ExtensionManager {
         reportError(err, call);
       }
     })
-    .then(() => {
-      this.mLoadingCallbacks.forEach(cb => {
-        cb(undefined, calls.length);
+      .then(() => {
+        this.mLoadingCallbacks.forEach(cb => {
+          cb(undefined, calls.length);
+        });
+        log('debug', 'once done');
       });
-      log('debug', 'once done');
-    });
   }
 
   public renderStyle() {
@@ -1305,9 +1309,9 @@ class ExtensionManager {
       message: `An extension (${extension}) is taking unusually long to load. `
         + 'This is very likely a bug. Do you want to continue to wait for it?',
       noLink: true,
-      buttons: [ 'Cancel', 'Wait' ],
+      buttons: ['Cancel', 'Wait'],
     }))
-    .then(result => result.response === 1);
+      .then(result => result.response === 1);
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
@@ -1334,9 +1338,9 @@ class ExtensionManager {
     return init.then(() => {
       // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
-          || this.mForceDBReconnect
-          || (gameMode !== this.mModDBGame)
-          || (currentKey !== this.mModDBAPIKey)) {
+        || this.mForceDBReconnect
+        || (gameMode !== this.mModDBGame)
+        || (currentKey !== this.mModDBAPIKey)) {
         this.mForceDBReconnect = false;
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
@@ -1360,7 +1364,7 @@ class ExtensionManager {
           onDone();
         }
       });
-      // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+    // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
   private canBeToast = (notif: INotification) => {
@@ -1407,8 +1411,8 @@ class ExtensionManager {
   }
 
   private stateChangeHandler = (watchPath: string[],
-                                callback: StateChangeCallback,
-                                ext?: IRegisteredExtension) => {
+    callback: StateChangeCallback,
+    ext?: IRegisteredExtension) => {
     if (!isFunction(callback)) {
       // TODO we should be throwing an exception here but this didn't fail in the past and I don't
       //   want to break previously ok extensions in a minor update
@@ -1426,7 +1430,7 @@ class ExtensionManager {
     // TODO: this code makes using the ReduxWatcher pointless and looking at the
     //   code I would now disagree with the assessment that it may retrigger
     //   without an actual change. otoh I didn't add this for no reason...
-    const changeHandler = ({prevValue, currentValue}) => {
+    const changeHandler = ({ prevValue, currentValue }) => {
       // redux-watch may trigger even if no change occurred so we have to
       // do our own check, otherwise we could end up in an endless loop
       // if the callback causes redux-watch to trigger again without change
@@ -1476,7 +1480,7 @@ class ExtensionManager {
     this.mExtensions.forEach(ext => {
       if (process.type === 'renderer') {
         // log this only once so we don't spam the log file with this
-        log('info', 'init extension', {name: ext.name, path: ext.path});
+        log('info', 'init extension', { name: ext.name, path: ext.path });
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -1494,9 +1498,9 @@ class ExtensionManager {
         // make sure we're not calling any of the register calls if the extension
         // isn't fully initialized
         this.mContextProxyHandler.dropCalls(ext.name);
-        this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
+        this.mLoadFailures[ext.name] = [{ id: 'exception', args: { message: err.message } }];
         log('warn', 'couldn\'t initialize extension',
-          {name: ext.name, err: err.message, stack: err.stack});
+          { name: ext.name, err: err.message, stack: err.stack });
       }
     });
     this.mContextProxyHandler.endRegistration();
@@ -1537,7 +1541,7 @@ class ExtensionManager {
           let oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
           if (!semver.valid(oldVersion)) {
             log('error', 'invalid version stored for extension',
-                { extension: ext.name, oldVersion });
+              { extension: ext.name, oldVersion });
             oldVersion = '0.0.0';
           }
           if (oldVersion !== ext.info.version) {
@@ -1547,7 +1551,7 @@ class ExtensionManager {
               Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
                   log('info', 'set extension version',
-                      { name: ext.name, info: JSON.stringify(ext.info) });
+                    { name: ext.name, info: JSON.stringify(ext.info) });
                   this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
                 })
                 .catch(err => {
@@ -1592,7 +1596,7 @@ class ExtensionManager {
       ...options
     };
     //if (options === true) {
-      //fullOptions.properties.push('showOverwriteConfirmation');
+    //fullOptions.properties.push('showOverwriteConfirmation');
     //}
     return Promise.resolve(showSaveDialog(fullOptions))
       .then(result => (result.filePath !== undefined)
@@ -1632,7 +1636,7 @@ class ExtensionManager {
   private commandLineUserData = () => this.mApi.getState().session.base.commandLine?.userData;
 
   private registerProtocol = (protocol: string, def: boolean,
-                              callback: (url: string, install: boolean) => void): boolean => {
+    callback: (url: string, install: boolean) => void): boolean => {
     log('info', 'register protocol', { protocol });
     const haveToRegister = def && !isSelfProtocolClient(protocol, this.commandLineUserData());
     if (def) {
@@ -1643,11 +1647,11 @@ class ExtensionManager {
   }
 
   private registerRepositoryLookup =
-       (repository: string,
-        preferOverMD5: boolean,
-        func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
-    this.mRepositoryLookup[repository] = { preferOverMD5, func };
-  }
+    (repository: string,
+      preferOverMD5: boolean,
+      func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
+      this.mRepositoryLookup[repository] = { preferOverMD5, func };
+    }
 
   private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
     this.mArchiveHandlers[extension] = handler;
@@ -1659,81 +1663,81 @@ class ExtensionManager {
   }
 
   private lookupModReference =
-      (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
-    if (options === undefined) {
-      options = {};
-    }
-
-    // Spammy debug log
-    // log('debug', 'lookup mod reference', { reference });
-
-    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
-    let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
-    if (reference.repo !== undefined) {
-      lookup = this.mRepositoryLookup[reference.repo.repository];
-    }
-    if ((lookup !== undefined) && lookup.preferOverMD5) {
-      preMD5 = lookup.func(reference.repo);
-    }
-
-    return preMD5.then((results: IModLookupResult[]) => {
-      if (options.requireURL === true) {
-        results = results.filter(res => truthy(res.value.sourceURI));
+    (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
+      if (options === undefined) {
+        options = {};
       }
-      if (results.length !== 0) {
-        return results;
-      } else {
-        return this.getModDB()
-          .then(modDB => modDB.getByReference(reference))
-          .filter((mod: ILookupResult) => {
-            if (options.requireURL === true) {
-              return truthy(mod.value.sourceURI);
-            } else {
-              return true;
-            }
-          })
-          .map((mod: ILookupResult) => convertMD5Result(mod));
+
+      // Spammy debug log
+      // log('debug', 'lookup mod reference', { reference });
+
+      let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
+      let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
+      if (reference.repo !== undefined) {
+        lookup = this.mRepositoryLookup[reference.repo.repository];
       }
-    })
-    .then((results: IModLookupResult[]) => {
-      if (results.length !== 0) {
-        if (reference.logicalFileName !== undefined) {
-          const exactMatch = results.filter(iter =>
-            (iter.value.logicalFileName !== undefined)
-            && (iter.value.logicalFileName === reference.logicalFileName));
-          if (exactMatch.length > 0) {
-            return exactMatch;
-          } else {
-            return results.sort((lhs, rhs) =>
-              fuzz.ratio(rhs.value.logicalFileName, reference.logicalFileName)
-              - fuzz.ratio(lhs.value.logicalFileName, reference.logicalFileName));
-          }
-        } else {
+      if ((lookup !== undefined) && lookup.preferOverMD5) {
+        preMD5 = lookup.func(reference.repo);
+      }
+
+      return preMD5.then((results: IModLookupResult[]) => {
+        if (options.requireURL === true) {
+          results = results.filter(res => truthy(res.value.sourceURI));
+        }
+        if (results.length !== 0) {
           return results;
-        }
-      } else {
-        if ((lookup !== undefined) && !lookup.preferOverMD5) {
-          return lookup.func(reference.repo);
         } else {
-          return [];
+          return this.getModDB()
+            .then(modDB => modDB.getByReference(reference))
+            .filter((mod: ILookupResult) => {
+              if (options.requireURL === true) {
+                return truthy(mod.value.sourceURI);
+              } else {
+                return true;
+              }
+            })
+            .map((mod: ILookupResult) => convertMD5Result(mod));
         }
-      }
-    });
-  }
+      })
+        .then((results: IModLookupResult[]) => {
+          if (results.length !== 0) {
+            if (reference.logicalFileName !== undefined) {
+              const exactMatch = results.filter(iter =>
+                (iter.value.logicalFileName !== undefined)
+                && (iter.value.logicalFileName === reference.logicalFileName));
+              if (exactMatch.length > 0) {
+                return exactMatch;
+              } else {
+                return results.sort((lhs, rhs) =>
+                  fuzz.ratio(rhs.value.logicalFileName, reference.logicalFileName)
+                  - fuzz.ratio(lhs.value.logicalFileName, reference.logicalFileName));
+              }
+            } else {
+              return results;
+            }
+          } else {
+            if ((lookup !== undefined) && !lookup.preferOverMD5) {
+              return lookup.func(reference.repo);
+            } else {
+              return [];
+            }
+          }
+        });
+    }
 
   private modLookupId(detail: ILookupDetails): string {
     const san = (input: string) => path.basename(input, path.extname(input));
     const fileName = (detail.filePath !== undefined)
       ? san(detail.filePath)
       : (detail.fileName !== undefined)
-      ? san(detail.fileName)
-      : undefined;
+        ? san(detail.fileName)
+        : undefined;
     return `${detail.fileMD5}_${fileName}`
-         + `_${detail.fileSize}_${detail.gameId}`;
+      + `_${detail.fileSize}_${detail.gameId}`;
   }
 
   private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
-      : Promise<ILookupResult[]> => {
+    : Promise<ILookupResult[]> => {
     if ((detail.fileName !== undefined) && (detail.fileSize === 0)) {
       log('error', 'trying to calculate hash for an empty file', {
         name: detail.fileName,
@@ -1771,10 +1775,10 @@ class ExtensionManager {
         this.getApi().events.emit('filehash-calculated',
           detail.filePath, fileMD5, fileSize, detail.gameId);
       })
-      .catch(err => {
-        log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
-        return Promise.resolve();
-      });
+        .catch(err => {
+          log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
+          return Promise.resolve();
+        });
     } else {
       promise = Promise.resolve();
     }
@@ -1831,12 +1835,12 @@ class ExtensionManager {
       // prefer results where the file name matches, otherwise use the one with
       // more details
       return hasAttribute('fileName', lhsV, rhsV, fileName)
-          || hasAttribute('source', lhsV, rhsV, 'nexus')
-          || hasAttribute('sourceURI', lhsV, rhsV)
-          || hasAttribute('gameId', lhsV, rhsV)
-          || hasAttribute('fileVersion', lhsV, rhsV)
-          || hasAttribute('logicalFileName', lhsV, rhsV)
-          || numDetails(lhsV) - numDetails(rhsV);
+        || hasAttribute('source', lhsV, rhsV, 'nexus')
+        || hasAttribute('sourceURI', lhsV, rhsV)
+        || hasAttribute('gameId', lhsV, rhsV)
+        || hasAttribute('fileVersion', lhsV, rhsV)
+        || hasAttribute('logicalFileName', lhsV, rhsV)
+        || numDetails(lhsV) - numDetails(rhsV);
     };
   }
 
@@ -1887,8 +1891,8 @@ class ExtensionManager {
   }
 
   private openArchive = (archivePath: string,
-                         options?: IArchiveOptions,
-                         ext?: string): Promise<Archive> => {
+    options?: IArchiveOptions,
+    ext?: string): Promise<Archive> => {
     if (this.mArchiveHandlers === undefined) {
       // lazy loading the archive handlers
       this.mArchiveHandlers = {};
@@ -1929,7 +1933,7 @@ class ExtensionManager {
         }
         return Promise.reject(err);
       }))
-    .then(() => updated);
+      .then(() => updated);
   }
 
   private runExecutable =
@@ -2116,10 +2120,10 @@ class ExtensionManager {
           }
           return Promise.reject(err);
         });
-  }
+    }
 
   private runElevated(executable: string, cwd: string, args: string[],
-                      env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
+    env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
     const ipcPath = shortid();
     let tmpFilePath: string;
     return new Promise((resolve, reject) => {
@@ -2144,15 +2148,15 @@ class ExtensionManager {
         }
       }).catch(err => reject(err));
     })
-    .finally(() => {
-      if (tmpFilePath !== undefined) {
-        try {
-          fs.unlinkSync(tmpFilePath);
-        } catch (err) {
-          // nop
+      .finally(() => {
+        if (tmpFilePath !== undefined) {
+          try {
+            fs.unlinkSync(tmpFilePath);
+          } catch (err) {
+            // nop
+          }
         }
-      }
-    });
+      });
   }
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
@@ -2178,12 +2182,12 @@ class ExtensionManager {
   }
 
   private onAsync = (event: string,
-                     listener: (...args) => PromiseLike<any>,
-                     extInfo?: { name: string, official: boolean }) => {
+    listener: (...args) => PromiseLike<any>,
+    extInfo?: { name: string, official: boolean }) => {
     const effectiveListener = wrapExtCBAsync(listener, extInfo);
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
-      if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
+      if ((enqueue === undefined) || (typeof (enqueue) !== 'function')) {
         // no arguments, this is not an emitAndAwait event!
         this.mApi.showErrorNotification('Invalid event handler', { event });
         if (enqueue !== undefined) {
@@ -2205,9 +2209,9 @@ class ExtensionManager {
   private withPrePost = <T>(eventName: string, cb: (...args: any[]) => Promise<T>) => {
     return (...args: any[]) => {
       return this.emitAndAwait(`will-${eventName}`, ...args)
-      .then(() => cb(...args))
-      .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args)
-        .then(() => res));
+        .then(() => cb(...args))
+        .then((res: T) => this.emitAndAwait(`did-${eventName}`, res, ...args)
+          .then(() => res));
     };
   }
 
@@ -2248,7 +2252,7 @@ class ExtensionManager {
       initCSS();
       let result = '';
 
-      const css = altStyle ? highlightCSSAlt :  highlightCSS;
+      const css = altStyle ? highlightCSSAlt : highlightCSS;
       const afterCSS = highlightAfterCSS;
       const dummySelector = altStyle ? '#highlight-control-dummy-alt' : '#highlight-control-dummy';
 
@@ -2280,19 +2284,19 @@ class ExtensionManager {
   })();
 
   private highlightControl =
-      (selector: string, duration: number, text?: string, altStyle?: boolean) => {
-    const id = shortid();
-    const style = document.createElement('style');
-    style.id = `highlight_${id}`;
-    style.type = 'text/css';
-    style.innerHTML = this.highlightCSS(selector, text, altStyle);
+    (selector: string, duration: number, text?: string, altStyle?: boolean) => {
+      const id = shortid();
+      const style = document.createElement('style');
+      style.id = `highlight_${id}`;
+      style.type = 'text/css';
+      style.innerHTML = this.highlightCSS(selector, text, altStyle);
 
-    const head = document.getElementsByTagName('head')[0];
-    const highlightNode = head.appendChild(style);
-    setTimeout(() => {
-      head.removeChild(highlightNode);
-    }, duration);
-  }
+      const head = document.getElementsByTagName('head')[0];
+      const highlightNode = head.appendChild(style);
+      setTimeout(() => {
+        head.removeChild(highlightNode);
+      }, duration);
+    }
 
   private addMetaServer = (id: string, server: modmetaT.IServer) => {
     if (server !== undefined) {
@@ -2333,7 +2337,7 @@ class ExtensionManager {
           finish(err);
         });
     })
-    .listen(path.join('\\\\?\\pipe', ipcPath));
+      .listen(path.join('\\\\?\\pipe', ipcPath));
   }
 
   private idify(name: string, pathName: string) {
@@ -2349,9 +2353,9 @@ class ExtensionManager {
   }
 
   private loadDynamicExtension(extensionPath: string,
-                               alreadyLoaded: IRegisteredExtension[],
-                               bundled: boolean)
-                               : IRegisteredExtension {
+    alreadyLoaded: IRegisteredExtension[],
+    bundled: boolean)
+    : IRegisteredExtension {
     const indexPath = this.mExtensionFormats
       .map(format => path.join(extensionPath, format))
       .find(iter => fs.existsSync(iter));
@@ -2359,7 +2363,7 @@ class ExtensionManager {
       let info: IExtension = { name: '', author: '', description: '', version: '' };
       try {
         info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
-                                          { encoding: 'utf8' }));
+          { encoding: 'utf8' }));
       } catch (error) {
         const errMessage = (error.code === 'ENOENT')
           ? 'extension has no info.json file'
@@ -2370,8 +2374,8 @@ class ExtensionManager {
       const pathName = path.basename(extensionPath);
       const name = info.id || pathName;
       const namespace = info.namespace ?? info.id ?? (bundled
-            ? pathName
-            : this.idify(info.name, pathName));
+        ? pathName
+        : this.idify(info.name, pathName));
 
       const existing = alreadyLoaded.find(reg => reg.name === name);
 
@@ -2403,15 +2407,15 @@ class ExtensionManager {
   }
 
   private loadDynamicExtensions(extension: { path: string, bundled: boolean },
-                                loadedExtensions: Set<string>,
-                                alreadyLoaded: IRegisteredExtension[]): IRegisteredExtension[] {
+    loadedExtensions: Set<string>,
+    alreadyLoaded: IRegisteredExtension[]): IRegisteredExtension[] {
     if (!fs.existsSync(extension.path)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extension.path);
       try {
         fs.mkdirSync(extension.path);
       } catch (err) {
         log('warn', 'extension path missing and can\'t be created',
-            { path: extension.path, error: err.message});
+          { path: extension.path, error: err.message });
       }
       return [];
     }
@@ -2444,10 +2448,10 @@ class ExtensionManager {
               // in a different directory, but if the same directory contains multiple copies
               // of the same extension, we have to deal with that slightly differently
               log('warn', 'multiple copies of the same extension installed',
-                  { first: ext.path, second: prev[ext.name].path });
+                { first: ext.path, second: prev[ext.name].path });
 
               if ((ext.info === undefined)
-                  || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
+                || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
                 // the copy we loaded previously is newer so mark this one for removal and not
                 // load it
                 this.mOutdated.push(path.basename(ext.path));
@@ -2463,7 +2467,7 @@ class ExtensionManager {
           }
         } catch (err) {
           log('warn', 'failed to load dynamic extension',
-              { name, error: err.message, stack: err.stack });
+            { name, error: err.message, stack: err.stack });
           this.mLoadFailures[name] = [{ id: 'exception', args: { message: err.message } }];
         }
         return prev;
@@ -2535,12 +2539,12 @@ class ExtensionManager {
     let dynamicallyLoaded = [];
     return staticExtensions
       .map((name: string) => ({
-          name,
-          namespace: name,
-          path: path.resolve(__dirname, '..', 'extensions', name),
-          initFunc: () => require(`../extensions/${name}/index`).default,
-          dynamic: false,
-        }))
+        name,
+        namespace: name,
+        path: path.resolve(__dirname, '..', 'extensions', name),
+        initFunc: () => require(`../extensions/${name}/index`).default,
+        dynamic: false,
+      }))
       .concat(...extensionPaths.map(extSpec => {
         const newExtensions =
           this.loadDynamicExtensions(extSpec, loadedExtensions, dynamicallyLoaded);
