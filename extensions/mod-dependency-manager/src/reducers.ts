@@ -64,6 +64,8 @@ export const sessionReducer: types.IReducerSpec = {
         (state, payload) => util.setSafe(state, ['highlightConflicts'], payload),
     [actions.setEditCycle as any]:
         (state, payload) => util.setSafe(state, ['editCycle'], payload),
+    [actions.setHasUnsolvedConflicts as any]:
+        (state, payload) => util.setSafe(state, ['hasUnsolvedConflicts'], payload.hasUnsolvedConflicts),
   },
   defaults: {
     connection: undefined,
@@ -73,6 +75,7 @@ export const sessionReducer: types.IReducerSpec = {
     conflictDialog: undefined,
     overrideDialog: undefined,
     editCycle: undefined,
+    hasUnsolvedConflicts: false,
   },
 };
 
