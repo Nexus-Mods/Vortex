@@ -350,5 +350,9 @@
   "packageManager": "yarn@1.22.19",
   "engines": {
     "node": "22.19"
+  },
+  "volta": {
+    "node": "22.19.0",
+    "yarn": "1.22.19"
   }
 }
