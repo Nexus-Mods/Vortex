@@ -800,6 +800,7 @@ class ExtensionManager {
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
+  private mUIReady: boolean = false;
   private mOutdated: string[] = [];
   private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
@@ -1287,6 +1288,7 @@ class ExtensionManager {
   }
 
   public setUIReady() {
+    this.mUIReady = true;
     this.mOnUIStarted();
     ipcRenderer.send('__ui_is_ready');
   }
@@ -1368,6 +1370,10 @@ class ExtensionManager {
   }
 
   private canBeToast = (notif: INotification) => {
+    // Make sure we can't use toast notifications before the UI is ready
+    if (!this.mUIReady) {
+      return false;
+    }
     const invalidToastTypes = ['activity', 'warning'];
     if ((notif.displayMS != null && notif.displayMS <= 5000)
       && notif.noToast !== true
