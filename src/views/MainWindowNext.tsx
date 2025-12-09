@@ -346,7 +346,7 @@ function MainWindowNextContent(props: IMainWindowNextProps) {
             {/* sidebar */}
             <aside
               aria-label="Secondary navigation"
-              className="tw:px-3 tw:py-6 md:tw:py-3 tw:lg:w-64 tw:md:w-15 tw:bg-surface-mid tw:shrink-0 tw:transition-all tw:duration-100 tw:ease-in-out tw:overflow-auto tw:md:overflow-clip"
+              className="tw:px-3 tw:py-6 tw:max-md:py-3 tw:w-64 tw:max-lg:w-15 tw:bg-surface-mid tw:shrink-0 tw:transition-all tw:duration-100 tw:ease-in-out tw:overflow-auto tw:max-md:overflow-clip"
             >
               {/* Navigation */}
               <div className="tw:flex-1 tw:overflow-y-auto tw:p-2">
