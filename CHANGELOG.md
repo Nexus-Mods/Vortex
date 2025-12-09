@@ -4,6 +4,116 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-beta.1] - 2025-12-09
+
+_Major refactor release with Electron 37, .NET 9 upgrade, complete Download/Install pipeline overhaul, FOMOD native port, and new Collection Browsing feature_
+
+### Major Features
+
+- Complete Download/Install Pipeline Refactor - Decoupled downloads from installations, raised concurrency limits, improved phase gating for collections ([#18211](https://github.com/Nexus-Mods/Vortex/issues/18211))
+- Phase deployments are no longer required at the end of each phase for mods where the curator has pre-defined the fomod installer choices ([#18467](https://github.com/Nexus-Mods/Vortex/issues/18467))
+- Complete FOMOD Installer Native Port - Split FOMOD installer into shared logic and native implementation modules for better performance, reliability, and maintainability ([#18465](https://github.com/Nexus-Mods/Vortex/issues/18465))
+- Added Collection Browsing feature - Browse and install collections directly in Vortex ([#18596](https://github.com/Nexus-Mods/Vortex/issues/18596), [#18563](https://github.com/Nexus-Mods/Vortex/issues/18563))
+- Upgraded to Electron 37 with Node.js 22 ([#18221](https://github.com/Nexus-Mods/Vortex/issues/18221), [#18311](https://github.com/Nexus-Mods/Vortex/issues/18311))
+- Migrated to .NET 9 runtime ([#18220](https://github.com/Nexus-Mods/Vortex/issues/18220))
+- Analytics moved to Mixpanel with enhanced system diagnostics ([#18225](https://github.com/Nexus-Mods/Vortex/issues/18225), [#18510](https://github.com/Nexus-Mods/Vortex/issues/18510))
+
+### Collections Improvements
+
+- Added fully automated/headless installation to FOMOD installer module ([#18466](https://github.com/Nexus-Mods/Vortex/issues/18466))
+- Fixed phased installation polling issues causing crashes ([#18515](https://github.com/Nexus-Mods/Vortex/issues/18515))
+- Fixed collection progress tracking bugs ([#18503](https://github.com/Nexus-Mods/Vortex/issues/18503), [#18520](https://github.com/Nexus-Mods/Vortex/issues/18520))
+- Fixed collection tracking not highlighting collection as complete ([#18652](https://github.com/Nexus-Mods/Vortex/issues/18652))
+- Fixed various collection bugs ([#18651](https://github.com/Nexus-Mods/Vortex/issues/18651))
+- "Exact" matching now defaults when creating collections ([#18214](https://github.com/Nexus-Mods/Vortex/issues/18214))
+- Added indication of total mod count during collection installs ([#18217](https://github.com/Nexus-Mods/Vortex/issues/18217))
+- De-duplicated collection notifications ([#18306](https://github.com/Nexus-Mods/Vortex/issues/18306))
+- Improved free user journey with new download/install workflow ([#18215](https://github.com/Nexus-Mods/Vortex/issues/18215))
+- Allow users with correct permissions to edit collections ([#18453](https://github.com/Nexus-Mods/Vortex/issues/18453))
+- Collection browsing UX fixes ([#18728](https://github.com/Nexus-Mods/Vortex/issues/18728))
+- Fixed collection browsing not scrolling back to top on pagination change ([#18726](https://github.com/Nexus-Mods/Vortex/issues/18726))
+- Fixed installation skip of manually downloaded mods that are missing the referenceTag when installing a collection ([#18736](https://github.com/Nexus-Mods/Vortex/issues/18736))
+- Fixed ability to export "dead" collection rules when uploading a new revision ([#18709](https://github.com/Nexus-Mods/Vortex/issues/18709))
+- Updated to collectionsV2 API for collection browsing ([#18817](https://github.com/Nexus-Mods/Vortex/issues/18817))
+- Fixed optional mods not installing correctly for FO4 Anniversary collection ([#18864](https://github.com/Nexus-Mods/Vortex/issues/18864))
+- Fixed stalled collection installation when mod archives are present ([#18889](https://github.com/Nexus-Mods/Vortex/issues/18889))
+- Fixed race condition causing mods to lack metadata during installation ([#18930](https://github.com/Nexus-Mods/Vortex/issues/18930))
+- Added adult content preferences support for collection downloading ([#18777](https://github.com/Nexus-Mods/Vortex/issues/18777))
+- Fixed collection conflict check incorrectly blocking new revision uploads ([#18980](https://github.com/Nexus-Mods/Vortex/issues/18980))
+- Fixed Install as Variant not being prompted when installing a collection where mods already exist with different FOMOD options ([#18979](https://github.com/Nexus-Mods/Vortex/issues/18979))
+- Fixed Mod Configuration Menu (MCM) for Fallout New Vegas failing to install during collection installation ([#18975](https://github.com/Nexus-Mods/Vortex/issues/18975))
+
+### Bug Fixes
+
+- Fixed binary patched mod differences not detected correctly ([#18998](https://github.com/Nexus-Mods/Vortex/issues/18998))
+- Fixed download failure due to undefined 'id' property when handling download completion ([#18967](https://github.com/Nexus-Mods/Vortex/issues/18967))
+- Fixed path argument type error when cleaning up downloads directory ([#18853](https://github.com/Nexus-Mods/Vortex/issues/18853))
+- Fixed infinite metadata loop causing "Creating Snapshots" to never complete ([#18811](https://github.com/Nexus-Mods/Vortex/issues/18811))
+- Fixed plugins page panel rendering wrong dropdown control ([#18944](https://github.com/Nexus-Mods/Vortex/issues/18944))
+- Re-added download stall restart functionality ([#18933](https://github.com/Nexus-Mods/Vortex/issues/18933))
+- Fixed incorrect stack information for aggregated error notifications ([#18949](https://github.com/Nexus-Mods/Vortex/issues/18949))
+- Fixed mod files query to only use domain name ([#18939](https://github.com/Nexus-Mods/Vortex/pull/18939))
+- Fixed storeHelper clone returning same array instead of cloning ([#18955](https://github.com/Nexus-Mods/Vortex/pull/18955))
+- Fixed crash on startup when no game is active ([#18898](https://github.com/Nexus-Mods/Vortex/issues/18898))
+- Fixed installer issue where certain files are not linked correctly ([#18927](https://github.com/Nexus-Mods/Vortex/issues/18927))
+- FOMOD installer now lazy loads for faster startup ([#18868](https://github.com/Nexus-Mods/Vortex/pull/18868))
+- Fixed handling of undefined game stores ([#18924](https://github.com/Nexus-Mods/Vortex/pull/18924))
+- Fixed incorrect offset for small chunk retry ([#18865](https://github.com/Nexus-Mods/Vortex/issues/18865))
+- Fixed crash: reduce is not a function in FOMOD choices ([#18735](https://github.com/Nexus-Mods/Vortex/issues/18735))
+- Fixed "Do this for all remaining installs" button not working when reinstalling ([#18752](https://github.com/Nexus-Mods/Vortex/issues/18752))
+- Fixed preset re-application on reinstall/variant install ([#18846](https://github.com/Nexus-Mods/Vortex/issues/18846))
+- Fixed curated renamed mods not renamed for end-user ([#18824](https://github.com/Nexus-Mods/Vortex/issues/18824))
+- Fixed mod types not applying correctly when installing a collection ([#18822](https://github.com/Nexus-Mods/Vortex/issues/18822))
+- Fixed mod category info lost during collection download ([#18790](https://github.com/Nexus-Mods/Vortex/issues/18790))
+- Improved notification aggregation when extracting mods ([#18830](https://github.com/Nexus-Mods/Vortex/issues/18830))
+- Fixed Mixpanel event crash on mod install ([#18716](https://github.com/Nexus-Mods/Vortex/issues/18716))
+- Fixed downloads folder cleanup ([#18720](https://github.com/Nexus-Mods/Vortex/issues/18720))
+- Fixed download reference false positives for fuzzy/bundled mods ([#18719](https://github.com/Nexus-Mods/Vortex/issues/18719))
+- Fixed confirmedOffset + confirmedReceived for stalled/slow download workers ([#18827](https://github.com/Nexus-Mods/Vortex/issues/18827))
+- Fixed self copy check error on mod extraction ([#18810](https://github.com/Nexus-Mods/Vortex/issues/18810))
+- Fixed Game Not Supported Error when downloading a requirement from another game domain ([#18738](https://github.com/Nexus-Mods/Vortex/issues/18738))
+- Fixed text in dialogue not displaying properly ([#18768](https://github.com/Nexus-Mods/Vortex/issues/18768))
+- Fixed crash: HTTP (403) - Forbidden ([#18764](https://github.com/Nexus-Mods/Vortex/issues/18764))
+- Fixed YouTube embedded player sometimes not working ([#18707](https://github.com/Nexus-Mods/Vortex/issues/18707))
+- Fixed i18 functionality for string resources ([#18641](https://github.com/Nexus-Mods/Vortex/issues/18641))
+- Fixed speedometer displaying incorrect download speeds ([#18213](https://github.com/Nexus-Mods/Vortex/issues/18213))
+- Fixed inconsistent installation keys when initially queueing installations ([#18545](https://github.com/Nexus-Mods/Vortex/issues/18545))
+- Fixed plugins not sorting properly without restart ([#18486](https://github.com/Nexus-Mods/Vortex/issues/18486))
+- Fixed 'Download deleted' toast showing on game switch/launch ([#18422](https://github.com/Nexus-Mods/Vortex/issues/18422))
+- Fixed unhandled exception when clicking starter dashlet items ([#18410](https://github.com/Nexus-Mods/Vortex/issues/18410))
+- Fixed Electron Redux duplicate action dispatch ([#18507](https://github.com/Nexus-Mods/Vortex/issues/18507))
+- Fixed potential race condition if update is running but mod was removed ([#18246](https://github.com/Nexus-Mods/Vortex/issues/18246))
+- Fixed objdiff potentially attempting to loop over null and arrays ([#18243](https://github.com/Nexus-Mods/Vortex/issues/18243))
+- Fixed nullish checks in mod reference match tests ([#18252](https://github.com/Nexus-Mods/Vortex/issues/18252))
+- Fixed crashpad error detail sanitization ([#18251](https://github.com/Nexus-Mods/Vortex/issues/18251))
+- Fixed user cancellation errors in Halo MCC ([#18257](https://github.com/Nexus-Mods/Vortex/issues/18257))
+- Fixed stop patterns interfering with instruction overrides ([#18593](https://github.com/Nexus-Mods/Vortex/issues/18593))
+- Fixed modType conflict functionality raising errors during collection installation when replacing mods ([#18653](https://github.com/Nexus-Mods/Vortex/issues/18653))
+
+### UI/UX Improvements
+
+- Notifications automatically clear on game change ([#18399](https://github.com/Nexus-Mods/Vortex/issues/18399))
+- Converted appropriate notifications to toast format ([#18307](https://github.com/Nexus-Mods/Vortex/issues/18307))
+- Feedback button now links to Google Form ([#18446](https://github.com/Nexus-Mods/Vortex/issues/18446))
+- Various UI/UX fixes for Collections ([#18686](https://github.com/Nexus-Mods/Vortex/issues/18686))
+- Removed "Loose Files May Not Get Loaded" notification for Skyrim SE ([#18381](https://github.com/Nexus-Mods/Vortex/issues/18381))
+- Fallout New Vegas modding user journey improvements ([#18586](https://github.com/Nexus-Mods/Vortex/issues/18586))
+
+### Plugin Management
+
+- Fixed GraphDialog not updating correctly upon user change ([#18411](https://github.com/Nexus-Mods/Vortex/issues/18411))
+
+### Development & Testing
+
+- Added Jest tests for 1.16 refactor work ([#18297](https://github.com/Nexus-Mods/Vortex/issues/18297))
+- Added Playwright integration for E2E testing ([#18219](https://github.com/Nexus-Mods/Vortex/issues/18219))
+- Created install mod Playwright test ([#18298](https://github.com/Nexus-Mods/Vortex/issues/18298))
+- Refactored ComponentEx/nexus_integration selectors to remove circular dependency ([#18414](https://github.com/Nexus-Mods/Vortex/issues/18414))
+- Build scripts restored and working ([#18321](https://github.com/Nexus-Mods/Vortex/issues/18321))
+- Removed Windows10SDK.19041 dependency ([#18320](https://github.com/Nexus-Mods/Vortex/issues/18320))
+
+---
+
 ## [1.16.0-alpha.6] - 2025-12-08
 
 _Stability and deployment improvements_
@@ -1098,6 +1208,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1
 [1.16.0-alpha.6]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.6
 [1.16.0-alpha.5]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.5
 [1.16.0-alpha.4]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.4
