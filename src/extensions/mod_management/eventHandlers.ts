@@ -872,7 +872,7 @@ export async function onStartInstallDownload(api: IExtensionApi,
   const allowAutoDeploy = options.allowAutoEnable !== false;
   const { enable } = state.settings.automation;
   installManager.install(downloadId, fullPath, download.game, api,
-    { download, choices: options.choices }, true, enable && allowAutoDeploy,
+    { download, choices: options.choices, profileId: options.profileId }, true, enable && allowAutoDeploy,
     callback, convertedGameId, options.fileList, options.unattended, options.forceInstaller, allowAutoDeploy);
   return;
 }

@@ -8,4 +8,5 @@ export interface IInstallOptions {
   fileList?: IFileListItem[];
   patches?: any;
   variantNumber?: number;
+  profileId?: string;
 }
