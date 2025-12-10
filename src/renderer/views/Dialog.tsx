@@ -678,9 +678,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const rememberChecked = data['remember'] === true;
     if (rememberChecked && dialogs.length > 1) {
       const currentDialog = dialogs[0];
+      const dialogActions = currentDialog.actions;
       // Find all pending dialogs with the same title (indicating same type of dialog)
       const matchingDialogIds = dialogs
-        .filter(dialog => dialog.title === currentDialog.title)
+        .filter(dialog => dialog.title === currentDialog.title || JSON.stringify(dialogActions) === JSON.stringify(dialog.actions))
         .map(dialog => dialog.id);
 
       onDismissMultiple(matchingDialogIds, action, data);
