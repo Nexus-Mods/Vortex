@@ -1901,9 +1901,7 @@ class InstallManager {
         } else {
           // Max retries exceeded, clean up and show error
           this.mDependencyRetryCount.delete(installKey);
-          this.showDependencyError(api, sourceModId, 'Failed to install dependency',
-            `Installation failed after ${InstallManager.MAX_DEPENDENCY_RETRIES} attempts: ${err.message}`,
-            renderModReference(dep.reference));
+          this.showDependencyError(api, sourceModId, 'Failed to install dependency', err, renderModReference(dep.reference));
         }
         // Don't rethrow to avoid crashing the concurrency limiter
       } finally {
