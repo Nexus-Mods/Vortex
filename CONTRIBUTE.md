@@ -20,5 +20,5 @@
 - Build: `yarn build`
 - Start: `yarn start`
 
-To get `nxm` protocol handler to work you need to run the script `./scripts/linux-protocol-registration.sh`
+To get `nxm` protocol handler to work you need to run the script `./scripts/linux-protocol-registration.sh`. This script only needs to be run once.
 
