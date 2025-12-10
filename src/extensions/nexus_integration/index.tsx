@@ -1602,6 +1602,10 @@ function onSkip(api: IExtensionApi, inputUrl: string) {
         api.events.emit('free-user-skipped-download', itemIdentifiers);
         queueItem.rej(new UserCanceled(true));
       })
+      .catch(err => {
+        log('warn', 'failed to query relevant updates on skip', { error: err.message });
+        queueItem.rej(new UserCanceled(true));
+      });
   }
 }
 
