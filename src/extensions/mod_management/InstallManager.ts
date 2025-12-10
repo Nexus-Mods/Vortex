@@ -955,7 +955,7 @@ class InstallManager {
     };
 
     const batchedContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
-    const profileId = batchedContext?.get('profileId', activeProfile(api.store.getState())?.id);
+    const profileId = batchedContext?.get('profileId', activeProfile(api.store.getState())?.id) ?? activeProfile(api.getState())?.id;
     const currentProfile = profileById(api.getState(), profileId);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
