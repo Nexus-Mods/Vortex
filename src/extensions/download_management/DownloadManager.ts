@@ -253,7 +253,7 @@ class DownloadWorker {
     try {
       getCookies({ url: jobUrl })
       .then(cookies => {
-          simulateHttpError(416, 1); // Adjust probability for testing
+          // simulateHttpError(416, 1); // Adjust probability for testing
           this.startDownload(job, jobUrl, cookies);
         })
         .catch(err => {
