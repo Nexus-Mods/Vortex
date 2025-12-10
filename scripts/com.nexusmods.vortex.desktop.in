@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Vortex
+GenericName=Mod Manager
+Comment=Mod Manager for your games
+Categories=Game
+Terminal=false
+# StartupWMClass=Vortex
+# Icon=com.nexusmods.vortex
+Exec=@EXEC_PATH@ %u
+MimeType=x-scheme-handler/nxm;x-scheme-handler/nxm
