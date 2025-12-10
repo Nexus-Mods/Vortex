@@ -141,7 +141,7 @@ try {
 
 import {} from './util/requireRebuild';
 
-import Application from './main/Application';
+import Application from './app/Application';
 
 import type { IPresetStep, IPresetStepCommandLine } from './types/IPreset';
 

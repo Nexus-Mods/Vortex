@@ -27,8 +27,6 @@ import * as stream from 'stream';
 import * as zlib from 'zlib';
 import { IExtensionApi } from '../../types/api';
 
-import { simulateHttpError } from './debug/simulateHttpError';
-
 const getCookies = makeRemoteCall('get-cookies',
   (electron, webContents, filter: Electron.CookiesGetFilter) => {
     return webContents.session.cookies.get(filter);
@@ -252,8 +250,7 @@ class DownloadWorker {
 
     try {
       getCookies({ url: jobUrl })
-      .then(cookies => {
-          // simulateHttpError(416, 1); // Adjust probability for testing
+        .then(cookies => {
           this.startDownload(job, jobUrl, cookies);
         })
         .catch(err => {
@@ -577,44 +574,33 @@ class DownloadWorker {
     if (this.mEnded) {
       return;
     }
-
-    // Check retry limit at the START before any processing
+    clearTimeout(this.mStallTimer);
+    log('warn', 'chunk error',
+        { 
+          id: this.mJob.workerId, 
+          err: err.message, 
+          errorCode: err.code,
+          ended: this.mEnded, 
+          url: this.mUrl,
+          networkRetries: this.mNetworkRetries,
+          dataReceived: this.mDataHistory.length > 0
+        });
+    if (this.mJob.errorCB !== undefined) {
+      this.mJob.errorCB(err);
+    }
+    if (this.mRequest !== undefined) {
+      this.mRequest.destroy();
+    }
+    
     const is416Error = (err instanceof HTTPError) && err.statusCode === 416;
+
+    // Check for network errors that should trigger a retry
     const isNetworkError = ['ESOCKETTIMEDOUT', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH', 'ETIMEDOUT'].includes(err.code)
       || err.message?.includes('socket hang up')
       || err.message?.includes('ECONNRESET')
       || err.message?.includes('ETIMEDOUT')
       || err.message?.includes('Request timeout')
-      || is416Error;
-
-    // If we've already hit max retries, abort immediately
-    if (isNetworkError && this.mNetworkRetries >= DownloadWorker.MAX_NETWORK_RETRIES) {
-      log('warn', 'maximum network retries exceeded for chunk', {
-        id: this.mJob.workerId,
-        retries: this.mNetworkRetries,
-        maxRetries: DownloadWorker.MAX_NETWORK_RETRIES,
-        errorMessage: err.message,
-      });
-      this.mEnded = true;
-      this.mJob.errorCB?.(err);
-      this.mFinishCB(false);
-      return;
-    }
-
-    clearTimeout(this.mStallTimer);
-    log('warn', 'chunk error',
-        {
-          id: this.mJob.workerId,
-          err: err.message,
-          errorCode: err.code,
-          ended: this.mEnded,
-          url: this.mUrl,
-          networkRetries: this.mNetworkRetries,
-          dataReceived: this.mDataHistory.length > 0
-        });
-    if (this.mRequest !== undefined) {
-      this.mRequest.destroy();
-    }
+      || is416Error; // HTTP 416 is also retriable
 
     // For timeout errors, be more permissive - retry even without progress for initial connection issues
     const isTimeoutError = ['ETIMEDOUT', 'ESOCKETTIMEDOUT'].includes(err.code)
@@ -646,17 +632,14 @@ class DownloadWorker {
         // Add a small delay before retrying to avoid hammering the server
         setTimeout(() => {
           if (!this.mEnded) {
-            // For 416 errors, reset the chunk to start from the beginning
-            // since the server rejected our range request
-            if (is416Error) {
-              log('debug', 'resetting chunk range after 416 error', {
-                id: this.mJob.workerId,
-                previousOffset: this.mJob.confirmedOffset,
-                previousReceived: this.mJob.confirmedReceived,
-              });
-              this.mJob.confirmedReceived = 0;
-              this.mJob.offset = this.mJob.confirmedOffset;
-            }
+            // Reset derived fields to last confirmed position before retrying
+            // The confirmed fields (confirmedOffset, confirmedSize, confirmedReceived) remain unchanged
+            log('debug', 'resetting to confirmed position before retry', {
+              id: this.mJob.workerId,
+              confirmedOffset: this.mJob.confirmedOffset,
+              confirmedReceived: this.mJob.confirmedReceived,
+              confirmedSize: this.mJob.confirmedSize
+            });
 
             this.mJob.url().then(jobUrl => {
               this.assignJob(this.mJob, jobUrl);
@@ -678,9 +661,7 @@ class DownloadWorker {
           received: this.mJob.received,
           confirmedReceived: this.mJob.confirmedReceived
         });
-        // Set mEnded BEFORE calling errorCB to prevent any race conditions
         this.mEnded = true;
-        this.mJob.errorCB?.(err);
         this.mFinishCB(false);
       }
     } else {
@@ -697,7 +678,6 @@ class DownloadWorker {
         networkRetries: this.mNetworkRetries,
         maxRetries: DownloadWorker.MAX_NETWORK_RETRIES
       });
-      this.mJob.errorCB?.(err);
       this.abort(false);
     }
   }
