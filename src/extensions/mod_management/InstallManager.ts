@@ -954,9 +954,10 @@ class InstallManager {
       modReference,
     };
 
+    const state = api.getState();
     const batchedContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
-    const profileId = batchedContext?.get('profileId', activeProfile(api.store.getState())?.id) ?? activeProfile(api.getState())?.id;
-    const currentProfile = profileById(api.getState(), profileId);
+    const profileId = batchedContext?.get<string>('profileId') ?? activeProfile(state)?.id;
+    const currentProfile = profileById(state, profileId);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
     this.mMainInstallsLimit.do(() => {
@@ -1849,12 +1850,14 @@ class InstallManager {
             patches: currentDep.patches ?? currentDep.extra?.patches,
           });
 
+          const state = api.getState();
+
           const batchedActions = [];
           // Enable the mod only for the target profile to avoid affecting other profiles
           const batchedContext = getBatchContext(['install-dependencies', 'install-collections', 'install-recommendations'], '');
-          const targetProfileId = batchedContext?.get<string>('profileId');
+          const targetProfileId = batchedContext?.get<string>('profileId') ?? activeProfile(state)?.id;
           const targetProfile = targetProfileId
-            ? profileById(api.getState(), targetProfileId)
+            ? profileById(state, targetProfileId)
             : undefined;
 
           if (targetProfile) {
@@ -2137,7 +2140,7 @@ class InstallManager {
   } {
     const state = api.getState();
     const batchedContext = getBatchContext(['install-dependencies', 'install-recommendations'], '');
-    const profileId = batchedContext?.get<string>('profileId', activeProfile(api.getState())?.id);
+    const profileId = batchedContext?.get<string>('profileId') ?? activeProfile(state)?.id;
     const profile = profileById(state, profileId);
     const sessionId = generateCollectionSessionId(sourceModId, profile?.id);
     const activeCollectionSession = getCollectionSessionById(state, sessionId);
@@ -4027,12 +4030,13 @@ class InstallManager {
             api.store.dispatch(setModAttribute(gameId, modId, 'installedAsDependency', true));
           }
 
+          const state = api.getState();
           const batchedActions = [];
           // Enable the mod only for the target profile to avoid affecting other profiles
           const batchedContext = getBatchContext(['install-dependencies', 'install-collections', 'install-recommendations'], '');
-          const targetProfileId = batchedContext?.get<string>('profileId');
+          const targetProfileId = batchedContext?.get<string>('profileId') ?? activeProfile(state)?.id;
           const targetProfile = targetProfileId
-            ? profileById(api.getState(), targetProfileId)
+            ? profileById(state, targetProfileId)
             : undefined;
 
           if (targetProfile) {
