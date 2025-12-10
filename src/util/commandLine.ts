@@ -67,6 +67,8 @@ const ARG_COUNTS = {
   '--user-data': 1,
 };
 
+const electronExecutable = process.platform === "win32" ? "electron.exe" : "electron";
+
 // Chrome rearranges the command line parameters it passes to processes it spawns internally
 // by putting switches (--foo) first, arguments (bar) after.
 // Which is fine in chrome because it's internal processes.
@@ -85,7 +87,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
   let nextArg = 0;
 
   const res = [argv[0]];
-  if (argv[0].includes('electron.exe')) {
+  if (argv[0].includes(electronExecutable)) {
     // did I say we have no positional arguments? Well, electron does...
     res.push(args[nextArg]);
     nextArg++;
@@ -147,7 +149,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   // lets look and replace epic stuff?!  
   argv = transformEpicArguments(argv);
 
-  if (!argv[0].includes('electron.exe')) {
+  if (!argv[0].includes(electronExecutable)) {
     argv = ['dummy'].concat(argv);
   }
 
