@@ -929,18 +929,18 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
   return (stat.uid !== process.getuid())
     ? (!hasGroupPermissions) || (hasGroupPermissions && (stat.gid !== process.getgid()))
       ? PromiseBB.resolve(fs.chown(filePath, process.getuid(), stat.gid))
-          .catch(err => PromiseBB.reject(err))
+        .catch(err => PromiseBB.reject(err))
       : PromiseBB.resolve()
     : PromiseBB.resolve();
 }
 
 export function changeFileAttributes(filePath: string,
-                                     wantedAttributes: number,
-                                     stat: fs.Stats): PromiseBB<void> {
-    return this.changeFileOwnership(filePath, stat)
-      .then(() => {
-        const finalAttributes = stat.mode | wantedAttributes;
-        return PromiseBB.resolve(fs.chmod(filePath, finalAttributes));
+  wantedAttributes: number,
+  stat: fs.Stats): PromiseBB<void> {
+  return changeFileOwnership(filePath, stat)
+    .then(() => {
+      const finalAttributes = stat.mode | wantedAttributes;
+      return PromiseBB.resolve(fs.chmod(filePath, finalAttributes));
     })
     .catch(ProcessCanceled, () => PromiseBB.resolve())
     .catch(err => PromiseBB.reject(err));
@@ -961,7 +961,7 @@ export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
     }
 
     return ((stat.mode & wantedAttributes) !== wantedAttributes)
-      ? this.changeFileAttributes(filePath, wantedAttributes, stat)
+      ? changeFileAttributes(filePath, wantedAttributes, stat)
       : PromiseBB.resolve();
   });
 }
@@ -1029,7 +1029,7 @@ export function forcePerm<T>(t: TFunction,
           ? parseInt('0666', 8)
           : parseInt('0600', 8);
         return fs.stat(fileToAccess)
-          .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
+          .then(stat => changeFileAttributes(fileToAccess, wantedAttributes, stat))
           .then(() => op())
           .catch(innerErr => {
             if (innerErr instanceof UserCanceled) {

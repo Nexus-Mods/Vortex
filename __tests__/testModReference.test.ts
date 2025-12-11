@@ -503,25 +503,6 @@ describe('testModReference', () => {
 
       expect(testModReference(mod, reference)).toBe(true);
     });
-
-    it('should pass when patches do not match but tag matches', () => {
-      const mod = sampleMods.skyrimse['BSA Version-68139-3-0-1685378500'];
-      if (mod.attributes) {
-        mod.attributes.referenceTag = 'test-tag'; // Same tag as reference
-      }
-      
-      const reference: IModReference = {
-        logicalFileName: 'BSA_Version.zip',
-        patches: {
-          patch1: 'different_value', // This value doesn't match
-          patch2: 'value2'
-        },
-        tag: 'test-tag' // Same tag - this causes early return true
-      };
-
-      // The function returns true because the tag matches (early return)
-      expect(testModReference(mod, reference)).toBe(true);
-    });
   });
 
   describe('Edge cases and real-world scenarios', () => {

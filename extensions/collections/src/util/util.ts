@@ -179,8 +179,8 @@ export async function uploadCollection(api: types.IExtensionApi, profileId: stri
 
   // Make sure the mod conflicts are up to date and block upload if there are any outstanding.
   await api.emitAndAwait('update-conflicts-and-rules', false);
-  const conflictsDetected = util.getSafe(api.store.getState(), ['session', 'dependencies', 'conflicts'], {});
-  if (Object.keys(conflictsDetected).length > 0) {
+  const conflictsDetected = util.getSafe(api.store.getState(), ['session', 'dependencies', 'hasUnsolvedConflicts'], false);
+  if (conflictsDetected) {
     await api.showDialog('error', 'Resolve conflicts before uploading', {
       text: 'You have unresolved mod conflicts in your current mods setup. Please resolve them before '
           + 'uploading a collection.',

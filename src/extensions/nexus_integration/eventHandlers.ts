@@ -373,7 +373,8 @@ export function onModsUpdate(api: IExtensionApi, nexus: Nexus) {
         continue;
       }
       const numericModId = mod.attributes?.modId;
-      onModUpdate(api, nexus)(gameId, numericModId, newestFileId, 'nexus');
+      const downloadGame = mod.attributes?.downloadGame ?? gameId;
+      onModUpdate(api, nexus)(downloadGame, numericModId, newestFileId, 'nexus');
     }
 
     api.dismissNotification('mods-update-multi');

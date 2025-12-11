@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
@@ -14,7 +15,7 @@ export interface IAggregatedNotification {
   id: string;
   type: 'error' | 'warning' | 'info';
   title: string;
-  message: string;
+  details: string | Error;
   text: string;
   items: string[];
   count: number;
@@ -25,7 +26,7 @@ export interface IAggregatedNotification {
 export interface IPendingNotification {
   type: 'error' | 'warning' | 'info';
   title: string;
-  message: string;
+  details: string | Error;
   item: string;
   allowReport?: boolean;
   actions?: any[];
@@ -82,13 +83,13 @@ export class NotificationAggregator {
     aggregationId: string,
     type: 'error' | 'warning' | 'info',
     title: string,
-    message: string,
+    details: string | Error,
     item: string,
     options: { allowReport?: boolean; actions?: any[] } = {}
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
       setImmediatePolyfill(() => {
-        this.mApi.showErrorNotification(title, message, {
+        this.mApi.showErrorNotification(title, details, {
           message: item,
           allowReport: options.allowReport,
           actions: options.actions,
@@ -101,7 +102,7 @@ export class NotificationAggregator {
     this.addNotificationBatched(aggregationId, {
       type,
       title,
-      message,
+      details,
       item,
       allowReport: options.allowReport,
       actions: options.actions,
@@ -307,12 +308,37 @@ export class NotificationAggregator {
       const group = grouped[key];
       const first = group[0];
       const uniqueItems = Array.from(new Set(group.map(n => n.item)));
-      
+
+      // Use the first available stack trace from the group (if any notification has an Error)
+      const errorNotification = group.find(n => n.details instanceof Error);
+      const stack = errorNotification !== undefined
+        ? (errorNotification.details as Error)?.stack
+        : undefined;
+
+      const message = this.buildAggregatedMessage(first, uniqueItems);
+
+      let details: string | Error = message;
+      if (stack !== undefined) {
+        const originalError = errorNotification!.details as Error;
+        const aggregatedError = new Error(message);
+        aggregatedError.name = originalError.name;
+        // Preserve the stack trace but with the aggregated error's name and message at the top
+        const stackLines = stack.split('\n');
+        const frameStartIndex = stackLines.findIndex(line => /^\s+at\s/.test(line));
+        if (frameStartIndex > 0) {
+          aggregatedError.stack = `${aggregatedError.name}: ${message}\n${stackLines.slice(frameStartIndex).join('\n')}`;
+        } else {
+          // Fallback: just use the original stack
+          aggregatedError.stack = stack;
+        }
+        details = aggregatedError;
+      }
+
       return {
         id: `aggregated-${key}-${Date.now()}`,
         type: first.type,
         title: first.title,
-        message: this.buildAggregatedMessage(first, uniqueItems),
+        details,
         text: uniqueItems.join('\n'),
         items: uniqueItems,
         count: group.length,
@@ -325,15 +351,32 @@ export class NotificationAggregator {
   private getGroupingKey(notification: IPendingNotification): string {
     // For performance, use a simpler grouping key that avoids expensive normalization
     // Only normalize if we have time (small batches)
-    const simpleKey = `${notification.type}-${notification.title}`;
+    const messageText = notification.details instanceof Error ? notification.details.message : notification.details;
+    let simpleKey = `${notification.type}-${notification.title}-${messageText}`;
+
+    // For errors, include a hash of the stack trace so errors from different code paths
+    // are kept separate (preserving debugging info)
+    if (notification.details instanceof Error && notification.details.stack) {
+      const stackHash = this.hashStack(notification.details.stack);
+      simpleKey += `-${stackHash}`;
+    }
 
     // Only do expensive normalization for smaller batches to avoid UI blocking
     if (this.mPendingNotifications && Object.keys(this.mPendingNotifications).length < 100) {
-      const normalizedMessage = this.normalizeMessage(notification.message);
+      const normalizedMessage = this.normalizeMessage(messageText);
       return `${simpleKey}-${normalizedMessage}`;
     }
 
     return simpleKey;
+  }
+
+  private hashStack(stack: string): string {
+    const frames = stack.split('\n')
+      .filter(line => /^\s+at\s/.test(line))
+      .slice(0, 5) // Only use first 5 frames for grouping
+      .join('');
+
+    return createHash('sha1').update(frames).digest('hex').slice(0, 8);
   }
 
   private normalizeMessage(message: string): string {
@@ -360,17 +403,18 @@ export class NotificationAggregator {
   }
 
   private buildAggregatedMessage(notification: IPendingNotification, items: string[]): string {
-    const baseMessage = notification.message;
-    
-    if (items.length === 1) {
-      return baseMessage;
+    const baseMessage = notification.details instanceof Error ? notification.details.message : notification.details;
+
+    let result = baseMessage;
+
+    if (items.length > 1) {
+      const itemList = items.length <= 5
+        ? items.join(', ')
+        : `${items.slice(0, 5).join(', ')} and ${items.length - 5} more`;
+      result += `\n\nAffected dependencies: ${itemList}`;
     }
 
-    const itemList = items.length <= 5 
-      ? items.join(', ')
-      : `${items.slice(0, 5).join(', ')} and ${items.length - 5} more`;
-
-    return `${baseMessage}\n\nAffected dependencies: ${itemList}`;
+    return result;
   }
 
   private showAggregatedNotification(notification: IAggregatedNotification): void {
@@ -391,14 +435,14 @@ export class NotificationAggregator {
 
       switch (notification.type) {
         case 'error':
-          this.mApi.showErrorNotification(displayTitle, { message: notification.message, affectedDependencies: `\n${notification.text}` }, options);
+          this.mApi.showErrorNotification(displayTitle, notification.details, options);
           break;
         case 'warning':
           this.mApi.sendNotification({
             id: notification.id,
             type: 'warning',
             title: displayTitle,
-            message: notification.message,
+            details: notification.details,
             text: notification.text,
             ...options,
           });
@@ -408,7 +452,7 @@ export class NotificationAggregator {
             id: notification.id,
             type: 'info',
             title: displayTitle,
-            message: notification.message,
+            details: notification.details,
             text: notification.text,
             ...options,
           });

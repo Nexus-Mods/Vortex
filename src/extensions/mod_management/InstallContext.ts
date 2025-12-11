@@ -324,12 +324,12 @@ class InstallContext implements IInstallContext {
     if (this.mNotificationAggregator && this.mSourceModId) {
       const aggregationId = `install-dependencies-${this.mSourceModId}`;
       if (this.mNotificationAggregator.isAggregating(aggregationId)) {
-        const errorMessage = details instanceof Error ? details.message : (details || message);
+        // Pass the original details (Error or string) to preserve stack traces
         this.mNotificationAggregator.addNotification(
           aggregationId,
           'error',
           message,
-          errorMessage,
+          details || message,
           this.mAddedId || this.mIndicatorId || 'unknown',
           { allowReport }
         );

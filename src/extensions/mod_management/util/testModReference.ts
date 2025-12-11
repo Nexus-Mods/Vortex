@@ -242,8 +242,8 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference,
   }
 
   // Right patches?
-  if ((ref.patches != null && Object.keys(ref.patches).length > 0 && ref.tag != null) && ((!_.isEqual(mod.patches, ref.patches)))) {
-    if (mod?.patches != null && mod.referenceTag !== ref.tag) {
+  if ((ref.patches != null && Object.keys(ref.patches).length > 0) && ((!_.isEqual(mod.patches, ref.patches)))) {
+    if (mod?.patches != null) {
       return false;
     }
   }

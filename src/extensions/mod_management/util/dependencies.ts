@@ -8,7 +8,7 @@ import { IDownloadHint, IFileListItem, IMod, IModReference, IModRule } from '../
 
 import ConcurrencyLimiter from '../../../util/ConcurrencyLimiter';
 import { log } from '../../../util/log';
-import { activeGameId, lastActiveProfileForGame } from '../../../util/selectors';
+import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { semverCoerce, truthy } from '../../../util/util';
 
