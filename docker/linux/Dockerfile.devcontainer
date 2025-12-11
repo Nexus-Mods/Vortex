@@ -1,0 +1,32 @@
+# Vortex Development Container
+# Based on Ubuntu 24.04 with all build dependencies + Volta for Node.js/Yarn
+# For use with VS Code Dev Containers or GitHub Codespaces
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    libfontconfig1-dev \
+    ca-certificates \
+    xz-utils \
+    python3 \
+    python3-setuptools \
+    build-essential \
+    libicu-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install .NET SDK 9.0 (required for fomod-installer)
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
+ENV DOTNET_ROOT=/root/.dotnet
+ENV PATH="${PATH}:${DOTNET_ROOT}:${DOTNET_ROOT}/tools"
+
+# Install Volta (Node.js and Yarn installed via postCreateCommand)
+ENV VOLTA_HOME=/root/.volta
+ENV PATH="${VOLTA_HOME}/bin:${PATH}"
+RUN curl https://get.volta.sh | bash -s -- --skip-setup
+
+WORKDIR /workspace

@@ -1,0 +1,26 @@
+{
+  // Linux Dev Container to build Vortex.
+  // Usage is discouraged for peformance and ease of development reasons, prefer building directly on host.
+  // Clone the repo on host machine, start the container using VSCode Restart in Container command.
+  // Inside the container run `yarn install` and `yarn build` to build Vortex.
+  "name": "Vortex Linux Build",
+  "build": {
+    "dockerfile": "../../docker/linux/Dockerfile.devcontainer",
+    "context": "../.."
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "volta install node yarn",
+  "postStartCommand": "git config --global --add safe.directory /workspace",
+  "remoteUser": "root",
+  "containerEnv": {
+    "ELECTRON_DISABLE_GPU": "true",
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "NO_PARALLEL": "true"
+  },
+  "runArgs": [
+    "--init"
+  ],
+  "forwardPorts": [],
+  "portsAttributes": {}
+}
