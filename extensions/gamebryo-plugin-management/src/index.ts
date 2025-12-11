@@ -1459,7 +1459,6 @@ function init(context: IExtensionContextExt) {
         if (!profileId) {
           return;
         }
-        // Yes - again - the stupid collection postprocess may change the plugins
         onDidDeploy(context.api, profileId);
       });
 
@@ -1470,7 +1469,8 @@ function init(context: IExtensionContextExt) {
           pluginsChangedQueued = false;
           context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
         }
-        if (deployOptions?.isCollectionPostprocessCall) {
+        const activeCollection = selectors.getCollectionActiveSession(context.api.getState());
+        if (activeCollection || deployOptions?.isCollectionPostprocessCall) {
           // handled in 'collection-postprocess-complete' event
           return Promise.resolve();
         }
