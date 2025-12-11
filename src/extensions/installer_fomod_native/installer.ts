@@ -43,8 +43,18 @@ export const install = async (
     const result = await modInstaller.installAsync(
       files, stopPatterns, pluginPath, scriptPath, fomodChoices, validate);
 
-    if (result === null) {
+    if (!result) {
       throw new ProcessCanceled("Installation cancelled by user");
+    }
+
+    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+      return {
+        instructions: [{
+          type: 'generatefile',
+          data: 'This is a placeholder file generated because the mod had no files to copy.',
+          destination: `placeholder_${shortid()}.txt`,
+        }],
+      }
     }
 
     const choices = getChoicesFromState(api, instanceId);

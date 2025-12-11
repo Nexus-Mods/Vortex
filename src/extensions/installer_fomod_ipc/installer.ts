@@ -1,4 +1,5 @@
 import path from 'path';
+import shortid from 'shortid';
 import { SecurityLevel } from 'fomod-installer-ipc';
 import { CSharpDelegates } from './delegates/CSharpDelegates';
 import { VortexIPCConnection } from './utils/VortexIPCConnection';
@@ -10,7 +11,7 @@ import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_
 import { getGame } from '../gamemode_management/util/getGame';
 import { log } from '../../util/log';
 import { IExtensionApi, IInstallResult } from '../../types/api';
-import { } from '../installer_dotnet/';
+import { ProcessCanceled } from '../../util/CustomErrors';
 
 /**
  * Install a FOMOD mod
@@ -84,6 +85,20 @@ export const install = async (
       fomodChoices,
       validate
     );
+
+    if (!result) {
+      throw new ProcessCanceled("Installation cancelled by user");
+    }
+
+    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+      return {
+        instructions: [{
+          type: 'generatefile',
+          data: 'This is a placeholder file generated because the mod had no files to copy.',
+          destination: `placeholder_${shortid()}.txt`,
+        }],
+      }
+    }
 
     log('info', 'FOMOD installation completed', { gameId });
 
