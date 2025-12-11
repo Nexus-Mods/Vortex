@@ -1,34 +1,38 @@
-import { DialogActions, DialogType, IDialogContent,
-         showDialog } from '../../../actions/notifications';
-import { IMod, IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
-import getVortexPath from '../../../util/getVortexPath';
-import { log } from '../../../util/log';
-import { activeGameId } from '../../../util/selectors';
-import { getSafe } from '../../../util/storeHelper';
-import MainPage from '../../../renderer/views/MainPage';
+import {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  showDialog,
+} from "../../../actions/notifications";
+import { IMod, IState } from "../../../types/IState";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import * as fs from "../../../util/fs";
+import getVortexPath from "../../../util/getVortexPath";
+import { log } from "../../../util/log";
+import { activeGameId } from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import MainPage from "../../../renderer/views/MainPage";
 
-import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
-import { IGameStored } from '../../gamemode_management/types/IGameStored';
-import { getGame } from '../../gamemode_management/util/getGame';
+import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import { IGameStored } from "../../gamemode_management/types/IGameStored";
+import { getGame } from "../../gamemode_management/util/getGame";
 
-import { setFeature, setProfile } from '../actions/profiles';
-import { setNextProfile } from '../actions/settings';
-import { IProfile } from '../types/IProfile';
-import { IProfileFeature } from '../types/IProfileFeature';
-import { profilePath, removeProfile } from '../util/manage';
+import { setFeature, setProfile } from "../actions/profiles";
+import { setNextProfile } from "../actions/settings";
+import { IProfile } from "../types/IProfile";
+import { IProfileFeature } from "../types/IProfileFeature";
+import { profilePath, removeProfile } from "../util/manage";
 
-import ProfileEdit from './ProfileEdit';
-import ProfileItem from './ProfileItem';
+import ProfileEdit from "./ProfileEdit";
+import ProfileItem from "./ProfileItem";
 
-import { shell } from 'electron';
-import update from 'immutability-helper';
-import * as path from 'path';
-import * as React from 'react';
-import { Button, Collapse } from 'react-bootstrap';
-import { WithTranslation } from 'react-i18next';
-import { generate as shortid } from 'shortid';
+import { shell } from "electron";
+import update from "immutability-helper";
+import * as path from "path";
+import * as React from "react";
+import { Button, Collapse } from "react-bootstrap";
+import { WithTranslation } from "react-i18next";
+import { generate as shortid } from "shortid";
 
 export interface IBaseProps {
   features: IProfileFeature[];
@@ -49,8 +53,12 @@ interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
-  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => void;
+  onShowDialog: (
+    type: DialogType,
+    title: string,
+    content: IDialogContent,
+    actions: DialogActions,
+  ) => void;
 }
 
 interface IViewState {
@@ -84,9 +92,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const currentGameProfiles: { [id: string]: IProfile } = {};
     const otherProfiles: { [id: string]: IProfile } = {};
 
-    Object.keys(profiles).forEach(profileId => {
-      if ((profiles[profileId].gameId === undefined)
-          || (profiles[profileId].name === undefined)) {
+    Object.keys(profiles).forEach((profileId) => {
+      if (
+        profiles[profileId].gameId === undefined ||
+        profiles[profileId].name === undefined
+      ) {
         return;
       }
 
@@ -97,33 +107,40 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       }
     });
 
-    const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
+    const currentGameProfilesSorted = this.sortProfiles(
+      currentGameProfiles,
+      language,
+    );
     const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
 
-    const isDeploying = activity.includes('deployment') || activity.includes('purging');
+    const isDeploying =
+      activity.includes("deployment") || activity.includes("purging");
 
     // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
-    const supportedFeatures = features.filter(feature => feature.supported());
+    const supportedFeatures = features.filter((feature) => feature.supported());
 
     return (
       <MainPage>
-        <MainPage.Body style={{ overflowY: 'auto' }}>
-          <div className='profile-list'>
-            {currentGameProfilesSorted.map(
-              profileId => this.renderProfile(profileId, supportedFeatures))}
+        <MainPage.Body style={{ overflowY: "auto" }}>
+          <div className="profile-list">
+            {currentGameProfilesSorted.map((profileId) =>
+              this.renderProfile(profileId, supportedFeatures),
+            )}
           </div>
           {this.renderAddOrEdit(edit)}
           <div>
-            {t('Other Games')}
-            {' '}
-            <a onClick={this.toggleOther}>{showOther ? t('Hide') : t('Show')}</a>
+            {t("Other Games")}{" "}
+            <a onClick={this.toggleOther}>
+              {showOther ? t("Hide") : t("Show")}
+            </a>
           </div>
-          <Collapse in={showOther} >
+          <Collapse in={showOther}>
             <div>
-              <div className='profile-list'>
-                {otherProfilesSorted.map(
-                  profileId => this.renderProfile(profileId, supportedFeatures))}
+              <div className="profile-list">
+                {otherProfilesSorted.map((profileId) =>
+                  this.renderProfile(profileId, supportedFeatures),
+                )}
               </div>
             </div>
           </Collapse>
@@ -134,23 +151,24 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private renderOverlay(): JSX.Element {
-    const {t} = this.props;
-    return (
-      <div className='profile-overlay'>
-        {t('Deployment in progress')}
-      </div>
-    );
+    const { t } = this.props;
+    return <div className="profile-overlay">{t("Deployment in progress")}</div>;
   }
 
   private sortProfiles(profiles: { [id: string]: IProfile }, language: string) {
-    return Object.keys(profiles).sort(
-      (lhs: string, rhs: string): number =>
-        (profiles[lhs].gameId !== profiles[rhs].gameId)
-          ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
-          : profiles[lhs].name.localeCompare(profiles[rhs].name, language, { sensitivity: 'base' }));
+    return Object.keys(profiles).sort((lhs: string, rhs: string): number =>
+      profiles[lhs].gameId !== profiles[rhs].gameId
+        ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
+        : profiles[lhs].name.localeCompare(profiles[rhs].name, language, {
+            sensitivity: "base",
+          }),
+    );
   }
 
-  private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
+  private renderProfile = (
+    profileId: string,
+    features: IProfileFeature[],
+  ): JSX.Element => {
     const { t, mods } = this.props;
     const { edit } = this.state;
 
@@ -158,15 +176,17 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       return this.renderEditProfile();
     }
 
-    const { currentProfile, discoveredGames, onSetNextProfile, profiles } = this.props;
+    const { currentProfile, discoveredGames, onSetNextProfile, profiles } =
+      this.props;
 
     if (profiles[profileId] === undefined) {
       return null;
     }
 
     const discovered = discoveredGames[profiles[profileId].gameId];
-    const available = (discovered !== undefined) && (discovered.path !== undefined);
-    const gameAvailable = getGame(profiles[profileId].gameId)?.name !== undefined;
+    const available = discovered !== undefined && discovered.path !== undefined;
+    const gameAvailable =
+      getGame(profiles[profileId].gameId)?.name !== undefined;
     if (profileId === this.state.edit) {
       return null;
     }
@@ -191,48 +211,55 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         onCreateShortcut={this.setShortcut}
       />
     );
-  }
+  };
 
   private toggleOther = () => {
-    this.setState(update(this.state, {
-      showOther: { $set: !this.state.showOther },
-    }));
-  }
+    this.setState(
+      update(this.state, {
+        showOther: { $set: !this.state.showOther },
+      }),
+    );
+  };
 
   private setHighlightGameId = (gameId: string) => {
-    this.setState(update(this.state, {
-      highlightGameId: { $set: gameId },
-    }));
-  }
+    this.setState(
+      update(this.state, {
+        highlightGameId: { $set: gameId },
+      }),
+    );
+  };
 
   private setShortcut = (profileId: string) => {
     const { t, profiles } = this.props;
     const profile = profiles[profileId];
-    const appDir = (process.env.NODE_ENV === 'development')
-      ? path.join(process.env.ProgramFiles, 'Black Tree Gaming Ltd', 'Vortex')
-      : path.dirname(getVortexPath('exe'));
+    const appDir =
+      process.env.NODE_ENV === "development"
+        ? path.join(process.env.ProgramFiles, "Black Tree Gaming Ltd", "Vortex")
+        : path.dirname(getVortexPath("exe"));
 
-    const desktopLocation = getVortexPath('desktop');
-    const shortcutPath =
-      path.join(desktopLocation, `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`);
-    const created = shell.writeShortcutLink(shortcutPath, 'create', {
-      target: path.join(appDir, 'Vortex.exe'),
+    const desktopLocation = getVortexPath("desktop");
+    const shortcutPath = path.join(
+      desktopLocation,
+      `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`,
+    );
+    const created = shell.writeShortcutLink(shortcutPath, "create", {
+      target: path.join(appDir, "Vortex.exe"),
       args: `--profile ${profileId}`,
     });
 
     const displayMS = 5000;
     const message = created
-      ? t('Vortex profile shortcut saved to desktop')
-      : t('Failed to save profile shortcut to desktop');
+      ? t("Vortex profile shortcut saved to desktop")
+      : t("Failed to save profile shortcut to desktop");
 
-    const type = created ? 'info' : 'error';
+    const type = created ? "info" : "error";
     this.context.api.sendNotification({ message, type, displayMS });
-  }
+  };
 
   private renderAddOrEdit(editId: string) {
     return editId === null
       ? this.renderAddProfile()
-      : editId === '__new'
+      : editId === "__new"
         ? this.renderEditProfile()
         : null;
   }
@@ -241,7 +268,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { t, features, gameId, onSetFeature, profiles } = this.props;
     const { edit } = this.state;
     let profile;
-    if (edit !== '__new') {
+    if (edit !== "__new") {
       profile = profiles[edit];
     }
 
@@ -271,14 +298,21 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const game = games.find((iter: IGameStored) => iter.id === gameId);
     const discovered = discoveredGames[gameId];
-    let gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
+    let gameName = getSafe(discovered, ["name"], getSafe(game, ["name"], ""));
     if (gameName !== undefined) {
-      gameName = gameName.split('\t').map(part => t(part)).join(' ');
+      gameName = gameName
+        .split("\t")
+        .map((part) => t(part))
+        .join(" ");
     }
 
     return (
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Button bsStyle='ghost' className='profile-add' onClick={this.editNewProfile}>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Button
+          bsStyle="ghost"
+          className="profile-add"
+          onClick={this.editNewProfile}
+        >
           {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
         </Button>
       </div>
@@ -287,83 +321,105 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
   private saveEdit = (profile: IProfile) => {
     const { onAddProfile } = this.props;
-    if (profile.id === '__new') {
+    if (profile.id === "__new") {
       const newId: string = shortid();
       const newProf: IProfile = update(profile, { id: { $set: newId } });
-      fs.ensureDirAsync(profilePath(newProf))
-        .then(() => {
-          onAddProfile(newProf);
-        });
+      fs.ensureDirAsync(profilePath(newProf)).then(() => {
+        onAddProfile(newProf);
+      });
     } else {
       onAddProfile(profile);
     }
     this.endEdit();
-  }
+  };
 
   private endEdit = () => {
-    this.setState(update(this.state, {
-      edit: { $set: null },
-    }));
-  }
+    this.setState(
+      update(this.state, {
+        edit: { $set: null },
+      }),
+    );
+  };
 
   private editNewProfile = () => {
-    this.setState(update(this.state, {
-      edit: { $set: '__new' },
-    }));
-    this.context.api.events.emit('analytics-track-click-event', 'Profile', `Add new profile`);
-  }
+    this.setState(
+      update(this.state, {
+        edit: { $set: "__new" },
+      }),
+    );
+    this.context.api.events.emit(
+      "analytics-track-click-event",
+      "Profile",
+      `Add new profile`,
+    );
+  };
 
   private onCloneProfile = (profileId: string) => {
     const { onAddProfile, profiles } = this.props;
     const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
     fs.ensureDirAsync(profilePath(profiles[profileId]))
-      .then(() => fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)))
+      .then(() =>
+        fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)),
+      )
       .then(() => {
         onAddProfile(newProfile);
         this.editExistingProfile(newProfile.id);
       })
-      .catch(err => this.context.api.showErrorNotification(
-        'Failed to clone profile',
-        err, { allowReport: err.code !== 'EPERM' }));
-  }
+      .catch((err) =>
+        this.context.api.showErrorNotification("Failed to clone profile", err, {
+          allowReport: err.code !== "EPERM",
+        }),
+      );
+  };
 
   private onRemoveProfile = (profileId: string) => {
     const { currentProfile, onShowDialog, profiles } = this.props;
 
     const gameMode = profiles[profileId].gameId;
-    const totalProfilesForGame = (gameMode)
-      ? Object.keys(profiles).filter(id => profiles[id].gameId === gameMode).length
+    const totalProfilesForGame = gameMode
+      ? Object.keys(profiles).filter((id) => profiles[id].gameId === gameMode)
+          .length
       : 0;
-    let confirmText = (profileId === currentProfile)
-      ? 'You are trying to remove your currently active profile, "{{profileName}}". '
-        + 'This will result in Vortex exiting to the dashboard screen, with no active profile set. '
-        + 'Remove this profile? Note: the removed profile cannot be restored!'
-      : 'Remove the profile "{{profileName}}"? This can\'t be undone!';
-    confirmText = (totalProfilesForGame === 1)
-      ? confirmText + ' As this is your only profile for this game, removing it will unmanage the '
-                    + 'game within Vortex!'
-      : confirmText;
-    onShowDialog('question', 'Confirm', {
-      text: confirmText,
-      parameters: { profileName: profiles[profileId].name },
-    }, [
-      { label: 'Cancel', default: true },
+    let confirmText =
+      profileId === currentProfile
+        ? 'You are trying to remove your currently active profile, "{{profileName}}". ' +
+          "This will result in Vortex exiting to the dashboard screen, with no active profile set. " +
+          "Remove this profile? Note: the removed profile cannot be restored!"
+        : 'Remove the profile "{{profileName}}"? This can\'t be undone!';
+    confirmText =
+      totalProfilesForGame === 1
+        ? confirmText +
+          " As this is your only profile for this game, removing it will unmanage the " +
+          "game within Vortex!"
+        : confirmText;
+    onShowDialog(
+      "question",
+      "Confirm",
       {
-        label: 'Remove', action:
-          () => {
-            log('info', 'user removing profile', { id: profileId });
+        text: confirmText,
+        parameters: { profileName: profiles[profileId].name },
+      },
+      [
+        { label: "Cancel", default: true },
+        {
+          label: "Remove",
+          action: () => {
+            log("info", "user removing profile", { id: profileId });
             removeProfile(this.context.api, profileId);
           },
-      },
-    ]);
-  }
+        },
+      ],
+    );
+  };
 
   private editExistingProfile = (profileId: string) => {
-    this.setState(update(this.state, {
-      edit: { $set: profileId },
-    }));
-  }
+    this.setState(
+      update(this.state, {
+        edit: { $set: profileId },
+      }),
+    );
+  };
 }
 
 const emptyArray = [];
@@ -379,14 +435,19 @@ function mapStateToProps(state: IState): IConnectedProps {
     mods: state.persistent.mods || emptyObject,
     games: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
-    activity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
+    activity: getSafe(
+      state,
+      ["session", "base", "activity", "mods"],
+      emptyArray,
+    ),
   };
 }
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
+    onSetNextProfile: (profileId: string) =>
+      dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),
     onShowDialog: (type, title, content, actions) =>
@@ -394,7 +455,6 @@ function mapDispatchToProps(dispatch): IActionProps {
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      ProfileView)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(ProfileView),
+) as React.ComponentClass<IBaseProps>;

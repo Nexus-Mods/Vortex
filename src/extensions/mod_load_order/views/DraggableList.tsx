@@ -1,31 +1,49 @@
-import Promise from 'bluebird';
-import * as React from 'react';
-import { ListGroup } from 'react-bootstrap';
-import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
-  DragSourceConnector, DragSourceMonitor, DragSourceSpec,
-  DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
+import Promise from "bluebird";
+import * as React from "react";
+import { ListGroup } from "react-bootstrap";
+import {
+  ConnectDragPreview,
+  ConnectDragSource,
+  ConnectDropTarget,
+  DragSource,
+  DragSourceConnector,
+  DragSourceMonitor,
+  DragSourceSpec,
+  DropTarget,
+  DropTargetConnector,
+  DropTargetMonitor,
+  DropTargetSpec,
+} from "react-dnd";
 
-import * as ReactDOM from 'react-dom';
+import * as ReactDOM from "react-dom";
 
-import { ContextMenu } from '../../../renderer/controls/api';
+import { ContextMenu } from "../../../renderer/controls/api";
 
-import * as util from '../../../util/api';
-import { ComponentEx } from '../../../util/ComponentEx';
-import { IDnDConditionResult, ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
+import * as util from "../../../util/api";
+import { ComponentEx } from "../../../util/ComponentEx";
+import {
+  IDnDConditionResult,
+  ILoadOrder,
+  ILoadOrderDisplayItem,
+} from "../types/types";
 
 interface IItemBaseProps {
   index: number;
   item: ILoadOrderDisplayItem;
   isLocked: boolean;
   itemRenderer: React.ComponentType<{
-    className?: string,
-    item: ILoadOrderDisplayItem,
-    onRef: (ref: any) => any,
-    onContextMenu?: (evt: any) => any }>;
+    className?: string;
+    item: ILoadOrderDisplayItem;
+    onRef: (ref: any) => any;
+    onContextMenu?: (evt: any) => any;
+  }>;
   containerId: string;
   take: (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => any;
-  onChangeIndex: (oldIndex: number, newIndex: number,
-                  take: (list: ILoadOrderDisplayItem[]) => any) => void;
+  onChangeIndex: (
+    oldIndex: number,
+    newIndex: number,
+    take: (list: ILoadOrderDisplayItem[]) => any,
+  ) => void;
   apply: () => void;
   onContextMenu?: (evt: any) => any;
 }
@@ -47,13 +65,15 @@ type IItemProps = IItemBaseProps & IDragProps & IDropProps;
 class DraggableItem extends React.Component<IItemProps, {}> {
   public render(): JSX.Element {
     const { isDragging, item, isLocked } = this.props;
-    const classNames = [].concat(isLocked ? 'locked' : undefined,
-                                !!item.external ? 'external' : undefined,
-                                isDragging ? 'dragging' : undefined);
+    const classNames = [].concat(
+      isLocked ? "locked" : undefined,
+      !!item.external ? "external" : undefined,
+      isDragging ? "dragging" : undefined,
+    );
 
     return (
       <this.props.itemRenderer
-        className={classNames.filter(name => !!name).join(' ')}
+        className={classNames.filter((name) => !!name).join(" ")}
         item={item}
         onRef={this.setRef}
         onContextMenu={this.props.onContextMenu}
@@ -66,21 +86,19 @@ class DraggableItem extends React.Component<IItemProps, {}> {
     const node: any = ReactDOM.findDOMNode(ref);
     connectDragSource(node);
     connectDropTarget(node);
-  }
+  };
 }
 
-const DND_TYPE = 'load-order-entry';
+const DND_TYPE = "load-order-entry";
 
-function collectDrag(connect: DragSourceConnector,
-                     monitor: DragSourceMonitor) {
+function collectDrag(connect: DragSourceConnector, monitor: DragSourceMonitor) {
   return {
     connectDragSource: connect.dragSource(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connect: DropTargetConnector,
-                     monitor: DropTargetMonitor) {
+function collectDrop(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };
@@ -105,7 +123,8 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
 
 const entryTarget: DropTargetSpec<IItemProps> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
+    const { containerId, index, item, take, isLocked } =
+      monitor.getItem() as any;
     const hoverIndex = props.index;
 
     if (index === hoverIndex || !!isLocked || !!props.isLocked) {
@@ -121,8 +140,10 @@ const entryTarget: DropTargetSpec<IItemProps> = {
     const clientOffset = monitor.getClientOffset();
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 
-    if (((index < hoverIndex) && (hoverClientY < hoverMiddleY))
-        || ((index > hoverIndex) && (hoverClientY > hoverMiddleY))) {
+    if (
+      (index < hoverIndex && hoverClientY < hoverMiddleY) ||
+      (index > hoverIndex && hoverClientY > hoverMiddleY)
+    ) {
       return;
     }
 
@@ -139,25 +160,30 @@ const entryTarget: DropTargetSpec<IItemProps> = {
   },
 };
 
-const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
-    DragSource(DND_TYPE, entrySource, collectDrag)(
-      DraggableItem)) as React.ComponentClass<IItemBaseProps>;
+const Draggable = DropTarget(
+  DND_TYPE,
+  entryTarget,
+  collectDrop,
+)(
+  DragSource(DND_TYPE, entrySource, collectDrag)(DraggableItem),
+) as React.ComponentClass<IItemBaseProps>;
 
 interface IBaseProps {
   id: string;
   items: ILoadOrderDisplayItem[];
   loadOrder: ILoadOrder;
   itemRenderer: React.ComponentType<{
-    className?: string,
-    item: ILoadOrderDisplayItem,
-    onRef: (ref: any) => any }>;
+    className?: string;
+    item: ILoadOrderDisplayItem;
+    onRef: (ref: any) => any;
+  }>;
   apply: (ordered: ILoadOrderDisplayItem[]) => void;
 }
 
 interface IState {
   ordered: ILoadOrderDisplayItem[];
   contextMenuVisible: boolean;
-  offset: { x: number, y: number };
+  offset: { x: number; y: number };
   contextHistory: {
     previous: string;
     current: string;
@@ -181,11 +207,15 @@ class DraggableList extends ComponentEx<IProps, IState> {
       },
     });
 
-    this.applyDebouncer = new util.Debouncer((list: ILoadOrderDisplayItem[]) => {
-      this.props.apply(list);
-      return Promise.resolve() as any;
-    }, 300, false, true);
-
+    this.applyDebouncer = new util.Debouncer(
+      (list: ILoadOrderDisplayItem[]) => {
+        this.props.apply(list);
+        return Promise.resolve() as any;
+      },
+      300,
+      false,
+      true,
+    );
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -197,7 +227,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer, loadOrder } = this.props;
     const { ordered } = this.state;
-    return connectDropTarget((
+    return connectDropTarget(
       <div>
         <ListGroup>
           {ordered.map((item, idx) => (
@@ -213,24 +243,27 @@ class DraggableList extends ComponentEx<IProps, IState> {
                 apply={this.apply}
                 isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
               />
-            {this.renderContextMenu(item)}
+              {this.renderContextMenu(item)}
             </div>
           ))}
         </ListGroup>
-      </div>
-    ));
+      </div>,
+    );
   }
 
-  public changeIndex = (oldIndex: number, newIndex: number,
-                        take: (list: ILoadOrderDisplayItem[]) => any) => {
+  public changeIndex = (
+    oldIndex: number,
+    newIndex: number,
+    take: (list: ILoadOrderDisplayItem[]) => any,
+  ) => {
     const { loadOrder } = this.props;
     const { ordered } = this.state;
     if (oldIndex === undefined) {
       return;
     }
 
-    const itemLocked = (idx) => !!(ordered[idx]?.locked)
-                             || !!(loadOrder[ordered[idx]?.id]?.locked);
+    const itemLocked = (idx) =>
+      !!ordered[idx]?.locked || !!loadOrder[ordered[idx]?.id]?.locked;
 
     if (itemLocked(newIndex) === true) {
       return;
@@ -241,14 +274,23 @@ class DraggableList extends ComponentEx<IProps, IState> {
     const replacedItem = ordered[newIndex];
     copy.splice(newIndex, 0, currentItem);
 
-    const conditions = [currentItem?.condition, replacedItem?.condition].filter(cond => !!cond);
-    const failedConditions: IDnDConditionResult[] = conditions.reduce((accum, cond) => {
-      const condRes: IDnDConditionResult = cond(currentItem, replacedItem, copy);
-      if (condRes !== undefined && !condRes.success) {
-        accum.push(condRes);
-      }
-      return accum;
-    }, []);
+    const conditions = [currentItem?.condition, replacedItem?.condition].filter(
+      (cond) => !!cond,
+    );
+    const failedConditions: IDnDConditionResult[] = conditions.reduce(
+      (accum, cond) => {
+        const condRes: IDnDConditionResult = cond(
+          currentItem,
+          replacedItem,
+          copy,
+        );
+        if (condRes !== undefined && !condRes.success) {
+          accum.push(condRes);
+        }
+        return accum;
+      },
+      [],
+    );
 
     if (failedConditions.length > 0) {
       // TODO: need to write a custom drag layer to display
@@ -264,45 +306,48 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule(undefined, copy);
-  }
+  };
 
   private renderContextMenu = (item: ILoadOrderDisplayItem): JSX.Element => {
     const { contextMenuVisible, offset, contextHistory } = this.state;
-    const isTargetItem = (contextHistory?.current !== undefined)
-      ? contextHistory.current.indexOf(item.name) !== -1
-      : false;
-    return (isTargetItem && !!item?.contextMenuActions)
-      ? (
-        <ContextMenu
-          key={'lo-entry-context-menu'}
-          actions={item.contextMenuActions}
-          position={offset}
-          visible={contextMenuVisible}
-          onHide={this.onHide}
-          instanceId={item.id}
-        />
-      )
-    : null;
-  }
+    const isTargetItem =
+      contextHistory?.current !== undefined
+        ? contextHistory.current.indexOf(item.name) !== -1
+        : false;
+    return isTargetItem && !!item?.contextMenuActions ? (
+      <ContextMenu
+        key={"lo-entry-context-menu"}
+        actions={item.contextMenuActions}
+        position={offset}
+        visible={contextMenuVisible}
+        onHide={this.onHide}
+        instanceId={item.id}
+      />
+    ) : null;
+  };
 
   private onHide = () => {
     this.nextState.contextMenuVisible =
-      (this.state.contextHistory.current === this.state.contextHistory.previous)
+      this.state.contextHistory.current === this.state.contextHistory.previous
         ? false
         : true;
-    this.nextState.contextHistory.previous = this.nextState.contextHistory.current;
-  }
+    this.nextState.contextHistory.previous =
+      this.nextState.contextHistory.current;
+  };
 
   private onContextMenu = (evt: any) => {
     this.nextState.contextMenuVisible = true;
     this.nextState.contextHistory.current = evt.target.innerText;
     this.nextState.offset = { x: evt.clientX, y: evt.clientY };
-  }
+  };
 
-  private take = (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => {
+  private take = (
+    item: ILoadOrderDisplayItem,
+    list: ILoadOrderDisplayItem[],
+  ) => {
     const { ordered } = this.nextState;
     let res = item;
-    const index = ordered.findIndex(entry => entry.id === item.id);
+    const index = ordered.findIndex((entry) => entry.id === item.id);
     if (index !== -1) {
       if (list !== undefined) {
         res = list.splice(index, 1)[0];
@@ -313,33 +358,39 @@ class DraggableList extends ComponentEx<IProps, IState> {
       }
     }
     return res;
-  }
+  };
 
   private apply = () => {
     this.props.apply(this.state.ordered);
-  }
+  };
 }
 
 const containerTarget: DropTargetSpec<IProps> = {
   hover(props: IProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take } = monitor.getItem() as any;
 
     if (containerId !== props.id) {
       (component as any).changeIndex(index, 0, take);
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) =>
+        (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(connect: DropTargetConnector,
-                          monitor: DropTargetMonitor) {
+function containerCollect(
+  connect: DropTargetConnector,
+  monitor: DropTargetMonitor,
+) {
   return {
     connectDropTarget: connect.dropTarget(),
   };
 }
 
-export default DropTarget(DND_TYPE, containerTarget, containerCollect)(
-  DraggableList) as React.ComponentType<IBaseProps>;
+export default DropTarget(
+  DND_TYPE,
+  containerTarget,
+  containerCollect,
+)(DraggableList) as React.ComponentType<IBaseProps>;

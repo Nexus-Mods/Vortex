@@ -1,77 +1,78 @@
 .btngroup-collapsed .btn {
-  @extend .btn-embed;
-  > .button-text {
-    display: none;
-  }
+    @extend .btn-embed;
+    > .button-text {
+        display: none;
+    }
 }
 
 @mixin menubar-button-text {
-  margin-top: 2px;
-  margin-bottom: 0px;
-  font-size: 0.75em;
-  white-space: normal;
-  flex: 1 1 0;
-  display: flex;
-  align-items: center;
+    margin-top: 2px;
+    margin-bottom: 0px;
+    font-size: 0.75em;
+    white-space: normal;
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
 }
 
-.menubar, .menubar > .iconbar-actiongroup {
-  display: flex;
-  flex-direction: row;
-  height: 48px;
-
-  p {
-    margin-top: auto;
-    margin-bottom: auto;
-  }
-
-  .btn {
+.menubar,
+.menubar > .iconbar-actiongroup {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 4px;
-    width: 64px;
-    border: 0;
-    flex: 1 1 0;
-    max-width: 64px;
-    margin-left: initial !important;
-  }
-  .button-text {
-    @include menubar-button-text;
-  }
+    flex-direction: row;
+    height: 48px;
+
+    p {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .btn {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 4px;
+        width: 64px;
+        border: 0;
+        flex: 1 1 0;
+        max-width: 64px;
+        margin-left: initial !important;
+    }
+    .button-text {
+        @include menubar-button-text;
+    }
 }
 
 .icon-menu-positioner {
-  z-index: $zindex-menu-layer;
+    z-index: $zindex-menu-layer;
 }
 
 .icon-menu-overlay {
-  z-index: calc(#{$zindex-menu-layer} + 1);
+    z-index: calc(#{$zindex-menu-layer} + 1);
 }
 
 .toolbar-dropdown {
-  height: 100%;
-  >div { 
-    svg {
-      margin-right: 0;
+    height: 100%;
+    > div {
+        svg {
+            margin-right: 0;
+        }
     }
-  }
 
-  .toolbar-dropdown-splitbtn {
-    height: 100%;
-  }
+    .toolbar-dropdown-splitbtn {
+        height: 100%;
+    }
 
-  .dropdown-toggle {
-    height: 100%;
-    width: 1em;
-  }
+    .dropdown-toggle {
+        height: 100%;
+        width: 1em;
+    }
 
-  .caret {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-  }
+    .caret {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+    }
 }
 
 .window-focused .toolbar-flash-button:not(:hover) {
@@ -80,13 +81,13 @@
 }
 
 .iconbar-actiongroup {
-  width: 100%;
+    width: 100%;
 
-  &:not(:last-child)::after {
-    content: "";
-    display: block;
-    width: 80%;
-    margin: 0 auto;
-    border-bottom: $border-width solid $border-color;
-  }
+    &:not(:last-child)::after {
+        content: "";
+        display: block;
+        width: 80%;
+        margin: 0 auto;
+        border-bottom: $border-width solid $border-color;
+    }
 }

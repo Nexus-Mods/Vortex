@@ -1,7 +1,7 @@
-import { IChunk } from './IChunk';
-import { IDownloadOptions } from './IDownload';
+import { IChunk } from "./IChunk";
+import { IDownloadOptions } from "./IDownload";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 /**
  * Represents a download job with precise semantics for chunk positioning and progress tracking.
@@ -36,7 +36,7 @@ import Promise from 'bluebird';
  *    Recalculated: offset=0 (back to confirmedOffset), size=1MB, received=0
  */
 export interface IDownloadJob extends IChunk {
-  state: 'init' | 'running' | 'paused' | 'finished';
+  state: "init" | "running" | "paused" | "finished";
   workerId?: number;
   options: IDownloadOptions;
 

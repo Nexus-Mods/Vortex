@@ -1,164 +1,163 @@
 // the notification container (invisible)
 #notifications {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  width: 90%;
-  max-height: 90%;
-  overflow-y: auto;
-  z-index: $zindex-notifications;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    z-index: $zindex-notifications;
 
-  -webkit-scrollbar {
-    display: none;
-  }
+    -webkit-scrollbar {
+        display: none;
+    }
 }
 
 // notification
 .notification {
-  margin-bottom: 1px;
-  padding: 5px;
-  min-height: 32px;
-  width: 30em;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  position: relative;
-  border-radius: 4px;
-
-  .notification-progress {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    z-index: 0;
-
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-
-  .notification-textbox {
-    flex: 1 1 0;
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-bottom: 1px;
+    padding: 5px;
+    min-height: 32px;
+    width: 30em;
     display: flex;
-    flex-direction: column;
-    z-index: 1;
-    overflow: hidden;
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
+    flex-direction: row;
+    align-items: flex-start;
+    position: relative;
+    border-radius: 4px;
 
-  .notification-title {
-    font-weight: bold;
-    z-index: 1;
-  }
+    .notification-progress {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 0;
 
-  .notification-buttons {
-    white-space: nowrap;
-    z-index: 1;
-    button {
-      padding: 0px 4px;
-      margin: 0px 2px;
-      background-color: $white;
-      color: $black;
-      border: $border-width solid $white;
+        background-color: rgba(0, 0, 0, 0.3);
     }
 
-    .icon-button {
-      margin-left: 0.5em;
-      @extend .btn-embed;
+    .notification-textbox {
+        flex: 1 1 0;
+        margin-left: 10px;
+        margin-right: 10px;
+        display: flex;
+        flex-direction: column;
+        z-index: 1;
+        overflow: hidden;
+        span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
-  }
 
-  .notification-timer {
-    width: 1.5em;
-    height: 1.5em;
-    stroke: $text-color;
-  }
+    .notification-title {
+        font-weight: bold;
+        z-index: 1;
+    }
+
+    .notification-buttons {
+        white-space: nowrap;
+        z-index: 1;
+        button {
+            padding: 0px 4px;
+            margin: 0px 2px;
+            background-color: $white;
+            color: $black;
+            border: $border-width solid $white;
+        }
+
+        .icon-button {
+            margin-left: 0.5em;
+            @extend .btn-embed;
+        }
+    }
+
+    .notification-timer {
+        width: 1.5em;
+        height: 1.5em;
+        stroke: $text-color;
+    }
 }
 
 .notification-enter {
-  opacity: 0;
+    opacity: 0;
 
-  .notification-enter-active {
-    opacity: 1;
-    transition: opacity $transition-time ease-in;
-  }
+    .notification-enter-active {
+        opacity: 1;
+        transition: opacity $transition-time ease-in;
+    }
 }
 
 .notification-leave {
-  opacity: 1;
-  .notification-leave-active {
-    opacity: 0;
-    transition: opacity $transition-time-half ease-in;
-  }
+    opacity: 1;
+    .notification-leave-active {
+        opacity: 0;
+        transition: opacity $transition-time-half ease-in;
+    }
 }
 
 #notifications-popover {
-  min-width: 200px;
-  max-width: 50%;
-  z-index: $zindex-notifications;
+    min-width: 200px;
+    max-width: 50%;
+    z-index: $zindex-notifications;
 
-  .popover-content {
-    max-height: 40vh;
-    padding: calc(#{$half-gutter} * 0.5);
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+    .popover-content {
+        max-height: 40vh;
+        padding: calc(#{$half-gutter} * 0.5);
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
 }
 
 #notifications-button {
-  position: relative;
-  svg {
-    width: 2.5em;
-    height: 2.5em;
-  }
-  .notifications-progress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .badge {
-    padding: 1px 3px;
-    font-size: $font-size-small;
-    position: absolute;
-    right: 8px;
-    top: 8px;
-  }
-
-  &:hover {
-    .badge {
-      color: $brand-primary;
-      background-color: $text-color;
+    position: relative;
+    svg {
+        width: 2.5em;
+        height: 2.5em;
     }
-  }
+    .notifications-progress {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .badge {
+        padding: 1px 3px;
+        font-size: $font-size-small;
+        position: absolute;
+        right: 8px;
+        top: 8px;
+    }
+
+    &:hover {
+        .badge {
+            color: $brand-primary;
+            background-color: $text-color;
+        }
+    }
 }
 
-
 .notification-buttons .notification-extra-options {
-  // margin-left: 1em;
-  margin-right: 0;
-  line-height: 0;
+    // margin-left: 1em;
+    margin-right: 0;
+    line-height: 0;
 
-  .dropdown-toggle {
-    padding-right: 0;
-  }
-
-  .btn {
-    @extend .btn-embed;
-
-    svg {
-      width: 1.2em;
-      height: 1.2em;
+    .dropdown-toggle {
+        padding-right: 0;
     }
 
-    .caret {
-      display: none;
+    .btn {
+        @extend .btn-embed;
+
+        svg {
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        .caret {
+            display: none;
+        }
     }
-  }
 }

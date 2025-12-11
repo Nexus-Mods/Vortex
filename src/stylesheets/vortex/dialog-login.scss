@@ -1,102 +1,101 @@
 #login-dialog {
+    .nexus-header {
+        width: 157px;
+        height: 4em;
+    }
 
-  .nexus-header {
-    width: 157px;
-    height: 4em;
-  }
+    .input-group {
+        border: 1px solid $text-color;
+        padding: 2px;
+    }
 
-  .input-group {
-    border: 1px solid $text-color;
-    padding: 2px;
-  }
+    .form-control {
+        border: none;
+        background-color: inherit;
+    }
 
-  .form-control {
-    border: none;
-    background-color: inherit;
-  }
+    .input-group-addon {
+        border: none;
+        background-color: inherit;
+    }
 
-  .input-group-addon {
-    border: none;
-    background-color: inherit;
-  }
+    .login-content {
+        min-height: 250px;
+    }
 
-  .login-content {
-    min-height: 250px;
-  }
+    .token-paste-textarea {
+        background-color: $brand-bg;
+        padding: 6px;
+        height: 4.2em;
+        resize: none;
+        border: 1px solid $text-color;
+    }
 
-  .token-paste-textarea {
-    background-color: $brand-bg;
-    padding: 6px;
-    height: 4.2em;
-    resize: none;
-    border: 1px solid $text-color;
-  }
+    .login-copy-to-clipboard {
+        margin-top: 3px;
+        margin-bottom: 0;
+        color: $brand-success;
+        text-align: right;
+        padding: 0;
+    }
 
-  .login-copy-to-clipboard {
-    margin-top: 3px;
-    margin-bottom: 0;
-    color: $brand-success;
-    text-align: right;
-    padding: 0;    
-  } 
+    .login-invalid-key-group {
+        margin-top: 3px;
+        margin-bottom: 0;
 
-  .login-invalid-key-group {
-    margin-top: 3px;
-    margin-bottom: 0;
-    
-    text-align: left;
-    padding: 0;    
-  } 
+        text-align: left;
+        padding: 0;
+    }
 
-  .login-invalid-key-danger {
-    margin: 0;
-    color: $brand-danger;
-  }
+    .login-invalid-key-danger {
+        margin: 0;
+        color: $brand-danger;
+    }
 
-  .login-invalid-key-details {
-    margin: 0;
-    color: $text-color;
-  }
+    .login-invalid-key-details {
+        margin: 0;
+        color: $text-color;
+    }
 
-  .login-please-click {
-    text-transform: uppercase;
-    text-align: center;
-    font-weight: bold;    
-    margin: 25px 0;
-  }    
-  
-  .login-please-click h4 {
-    font-weight: 600;
-    margin: 0 0 0 10px;
-    display: inline;
-    vertical-align: middle;
-  }
+    .login-please-click {
+        text-transform: uppercase;
+        text-align: center;
+        font-weight: bold;
+        margin: 25px 0;
+    }
 
-  .login-please-click .icon {
-    height: 2em;
-    width: 2em;
-    fill: $brand-primary;    
-    display: inline;
-    vertical-align: middle;
-  }
-  
-  .modal-dialog {   
-    width: 60em; 
-    background-repeat: no-repeat;
-    background-color: $brand-menu;
-  }
+    .login-please-click h4 {
+        font-weight: 600;
+        margin: 0 0 0 10px;
+        display: inline;
+        vertical-align: middle;
+    }
 
-  .modal-content {
-    background-color: inherit;
-  }
+    .login-please-click .icon {
+        height: 2em;
+        width: 2em;
+        fill: $brand-primary;
+        display: inline;
+        vertical-align: middle;
+    }
 
-  .modal-body {
-    text-align: left;
-  }
+    .modal-dialog {
+        width: 60em;
+        background-repeat: no-repeat;
+        background-color: $brand-menu;
+    }
 
-  .login-instructions {
-    font-size: 2em;
-    font-family: $font-family-headings;
-    margin: $gutter-width 0;
-  }
+    .modal-content {
+        background-color: inherit;
+    }
+
+    .modal-body {
+        text-align: left;
+    }
+
+    .login-instructions {
+        font-size: 2em;
+        font-family: $font-family-headings;
+        margin: $gutter-width 0;
+    }
 }

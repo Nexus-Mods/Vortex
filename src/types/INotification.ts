@@ -7,7 +7,13 @@ export interface INotificationAction {
 }
 
 export type NotificationType =
-  'activity' | 'global' | 'success' | 'info' | 'warning' | 'error' | 'silent';
+  | "activity"
+  | "global"
+  | "success"
+  | "info"
+  | "warning"
+  | "error"
+  | "silent";
 
 /**
  * a notification message
@@ -98,8 +104,8 @@ export interface INotification {
    * control which part of the notification gets localized. default is true for both
    */
   localize?: {
-    title?: boolean,
-    message?: boolean,
+    title?: boolean;
+    message?: boolean;
   };
 
   /**
@@ -118,7 +124,7 @@ export interface INotification {
    *
    * As of Vortex 1.16.x, any notification with a timer will be raised
    *  as a toast notification (unless noToast is set)
-   * 
+   *
    * @type {number}
    * @memberOf INotification
    */

@@ -1,12 +1,12 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
-export type ProblemSeverity = 'warning' | 'error' | 'fatal';
+export type ProblemSeverity = "warning" | "error" | "fatal";
 
 export interface ITestResult {
   description: {
     short: string;
     long?: string;
-    replace?: { [key: string]: any },
+    replace?: { [key: string]: any };
     localize?: boolean;
     context?: any;
   };

@@ -1,73 +1,73 @@
 .todo-search {
-  background-color: $brand-success;
+    background-color: $brand-success;
 }
 
 .todo-settings {
-  background-color: $brand-info;
+    background-color: $brand-info;
 }
 
 .todo-more {
-  background-color: $brand-secondary;
+    background-color: $brand-secondary;
 }
 
 .todo-workaround {
-  background-color: $brand-warning;
+    background-color: $brand-warning;
 }
 
 .todo-search:hover {
-  background-color: darken($brand-success, 10%);
+    background-color: darken($brand-success, 10%);
 }
 
 .todo-settings:hover {
-  background-color: darken($brand-info, 10%);
+    background-color: darken($brand-info, 10%);
 }
 
 .todo-more:hover {
-  background-color: darken($brand-secondary, 10%);
+    background-color: darken($brand-secondary, 10%);
 }
 
 .todo-workaround:hover {
-  background-color: darken($brand-warning, 10%);
+    background-color: darken($brand-warning, 10%);
 }
 
 .todo {
-  display: flex;
-  flex-direction: column;
-  width: 140px;
-  height: 105px;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  margin: 0;
-  text-align: center;
-  padding: 8px;
-  max-width: 140px;
-  min-width: 110px;
-  border-radius: 4px;
-
-  > svg {
-    width: 2em;
-    height: 2em;
-    margin-bottom: 0.7em;
-  }
-
-  .todo-text {
-    font-size: larger;
-    text-align: center;
-    padding: 0 5px;
-  line-height: 1.2;
-  }
-
-  .icon-todo-type {
-    width: 2em;
-    height: 2em;
-  }
-
-  .btn-dismiss {
-    position: absolute;
-    top: 2px;
-    right: 2px;
+    display: flex;
+    flex-direction: column;
+    width: 140px;
+    height: 105px;
+    justify-content: center;
+    align-items: center;
+    position: relative;
     margin: 0;
-    padding: 2px;
-  }
+    text-align: center;
+    padding: 8px;
+    max-width: 140px;
+    min-width: 110px;
+    border-radius: 4px;
+
+    > svg {
+        width: 2em;
+        height: 2em;
+        margin-bottom: 0.7em;
+    }
+
+    .todo-text {
+        font-size: larger;
+        text-align: center;
+        padding: 0 5px;
+        line-height: 1.2;
+    }
+
+    .icon-todo-type {
+        width: 2em;
+        height: 2em;
+    }
+
+    .btn-dismiss {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        margin: 0;
+        padding: 2px;
+    }
 }

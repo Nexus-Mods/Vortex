@@ -1,4 +1,4 @@
-import { delay } from './util';
+import { delay } from "./util";
 
 const RETRIES = 5;
 
@@ -46,16 +46,21 @@ class ConcurrencyLimiter {
     return this.process(cb, tries);
   }
 
-  private async process<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
+  private async process<T>(
+    cb: () => PromiseLike<T>,
+    tries: number,
+  ): Promise<T> {
     // reduce limit while processing
     --this.mLimit;
     try {
       // forward cb result
       return await cb();
     } catch (err) {
-      if ((this.mRepeatTest !== undefined)
-          && (tries > 0)
-          && this.mRepeatTest(err)) {
+      if (
+        this.mRepeatTest !== undefined &&
+        tries > 0 &&
+        this.mRepeatTest(err)
+      ) {
         return await delay(100).then(() => this.do(cb));
       } else {
         return Promise.reject(err);
@@ -72,8 +77,8 @@ class ConcurrencyLimiter {
 
   private enqueue<T>(cb: () => PromiseLike<T>, tries: number): Promise<T> {
     return new Promise((outerResolve, outerReject) => {
-      this.mEndOfQueue = this.mEndOfQueue
-        .then(() => new Promise<boolean>((resolve) => {
+      this.mEndOfQueue = this.mEndOfQueue.then(() =>
+        new Promise<boolean>((resolve) => {
           // if the caller calls "do" in parallel, by the time we get here
           // tasks may already be fulfilled. More they might all have been fulfilled already
           // in which case no one is going to call mNext.
@@ -83,8 +88,7 @@ class ConcurrencyLimiter {
             // this pauses the queue until someone calls mNext
             this.mNext = () => resolve(true);
           }
-        })
-        .then((queued: boolean) => {
+        }).then((queued: boolean) => {
           // once the queue is ticked, reset mNext in case there
           // is nothing else queued, then process the actual promise
           if (queued) {
@@ -97,7 +101,8 @@ class ConcurrencyLimiter {
           // this resolves immediately, so the next promise in the queue
           // gets paused
           return Promise.resolve();
-        }));
+        }),
+      );
     });
   }
 }

@@ -1,7 +1,7 @@
-import * as _ from 'lodash';
-import * as React from 'react';
-import { DropdownButton, SplitButton } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
+import * as _ from "lodash";
+import * as React from "react";
+import { DropdownButton, SplitButton } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
 
 export interface IBaseProps {
   split?: boolean;
@@ -30,41 +30,49 @@ function MyDropdownButton(props: IProps) {
   const getBounds = React.useCallback(() => {
     return container
       ? container.getBoundingClientRect()
-      : {
-        top: 0,
-        left: 0,
-        bottom: window.innerHeight,
-        right: window.innerWidth,
-        height: window.innerHeight,
-        width: window.innerWidth,
-      } as any;
-  }, [ container ]);
+      : ({
+          top: 0,
+          left: 0,
+          bottom: window.innerHeight,
+          right: window.innerWidth,
+          height: window.innerHeight,
+          width: window.innerWidth,
+        } as any);
+  }, [container]);
 
-  const onToggle = React.useCallback((isOpen: boolean, evt: React.MouseEvent<any>, metadata) => {
-    if (evt?.isDefaultPrevented?.()) {
-      return;
-    }
-    setOpen(isOpen);
-    if (isOpen) {
-      const bounds = getBounds();
-      const nodeBounds = node.current.getBoundingClientRect();
-      const newUp = nodeBounds.bottom > (bounds.top + bounds.height / 2);
-      const newRight = nodeBounds.right > (bounds.left + bounds.width / 2);
-      setUp(newUp);
-      setRight(newRight);
-    }
+  const onToggle = React.useCallback(
+    (isOpen: boolean, evt: React.MouseEvent<any>, metadata) => {
+      if (evt?.isDefaultPrevented?.()) {
+        return;
+      }
+      setOpen(isOpen);
+      if (isOpen) {
+        const bounds = getBounds();
+        const nodeBounds = node.current.getBoundingClientRect();
+        const newUp = nodeBounds.bottom > bounds.top + bounds.height / 2;
+        const newRight = nodeBounds.right > bounds.left + bounds.width / 2;
+        setUp(newUp);
+        setRight(newRight);
+      }
 
-    if (props.onToggle) {
-      props.onToggle(isOpen, evt, metadata);
-    }
-  }, [setOpen]);
+      if (props.onToggle) {
+        props.onToggle(isOpen, evt, metadata);
+      }
+    },
+    [setOpen],
+  );
 
   const setRef = React.useCallback((newRef) => {
     node.current = ReactDOM.findDOMNode(newRef) as Element;
   }, []);
 
-  const relayProps: any =
-    _.omit(props, ['container', 'dropup', 'onToggle', 'split', 'children']);
+  const relayProps: any = _.omit(props, [
+    "container",
+    "dropup",
+    "onToggle",
+    "split",
+    "children",
+  ]);
 
   const Comp: any = props.split ? SplitButton : DropdownButton;
 

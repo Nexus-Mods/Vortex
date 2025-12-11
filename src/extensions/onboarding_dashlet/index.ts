@@ -1,59 +1,69 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
-import opn from '../../util/opn';
-import { currentGame } from '../../util/storeHelper';
-import { dismissOverlay } from '../instructions_overlay/actions';
-import { NEXUS_BASE_URL } from '../nexus_integration/constants';
-import { nexusGameId } from '../nexus_integration/util/convertGameId';
-import Dashlet, { IOnCardClickPayload } from './Dashlet';
-import settingsReducer from './reducers';
-import { STEPS } from './steps';
-import { Overlay } from './views/Overlay';
+import { IExtensionContext } from "../../types/IExtensionContext";
+import opn from "../../util/opn";
+import { currentGame } from "../../util/storeHelper";
+import { dismissOverlay } from "../instructions_overlay/actions";
+import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { nexusGameId } from "../nexus_integration/util/convertGameId";
+import Dashlet, { IOnCardClickPayload } from "./Dashlet";
+import settingsReducer from "./reducers";
+import { STEPS } from "./steps";
+import { Overlay } from "./views/Overlay";
 
 function init(context: IExtensionContext): boolean {
-  context.registerReducer(['settings', 'onboardingsteps'], settingsReducer);
+  context.registerReducer(["settings", "onboardingsteps"], settingsReducer);
 
   const allStepIds = STEPS.map((x) => x.id);
 
-  context.registerDashlet('Onboarding', 2, 3, 0, Dashlet, state => {
-    return true;
-  },
+  context.registerDashlet(
+    "Onboarding",
+    2,
+    3,
+    0,
+    Dashlet,
+    (state) => {
+      return true;
+    },
     () => ({
       onCardClick: (payload: IOnCardClickPayload) => {
         const { title, video, desc, pos, id } = payload;
 
-        allStepIds.filter((x) => x !== id).forEach((x) => {
-          // Close all the other overlays if there is any overlay of this kind open
-          context.api.store.dispatch(dismissOverlay(x));
-        });
+        allStepIds
+          .filter((x) => x !== id)
+          .forEach((x) => {
+            // Close all the other overlays if there is any overlay of this kind open
+            context.api.store.dispatch(dismissOverlay(x));
+          });
 
         const props = {
           desc,
           url: video,
           id,
-          isCompleted: context.api.store.getState().settings.onboardingsteps?.steps[id],
+          isCompleted:
+            context.api.store.getState().settings.onboardingsteps?.steps[id],
           closeOverlay: () => context.api.ext.dismissOverlay(id),
         };
 
         context.api.ext.showOverlay(id, undefined, Overlay, pos, {
           containerTitle: title,
           showIcon: false,
-          className: 'overlay-onboarding',
+          className: "overlay-onboarding",
           disableCollapse: true,
           props,
         });
       },
       getMoreMods: () => {
-        currentGame(context.api.store)
-        .then(game => {
+        currentGame(context.api.store).then((game) => {
           const nxsGameId = nexusGameId(game);
-          opn(`${NEXUS_BASE_URL}/${nxsGameId !== '__placeholder' ? nxsGameId : 'mods'}`)
-            .catch(err => undefined);
+          opn(
+            `${NEXUS_BASE_URL}/${nxsGameId !== "__placeholder" ? nxsGameId : "mods"}`,
+          ).catch((err) => undefined);
         });
       },
       steps: STEPS,
       completed: context.api.store.getState().settings.onboardingsteps,
     }),
-    undefined);
+    undefined,
+  );
 
   return true;
 }

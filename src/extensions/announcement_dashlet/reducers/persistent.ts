@@ -1,16 +1,15 @@
-import * as _ from 'lodash';
-import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setSafe } from '../../../util/storeHelper';
+import * as _ from "lodash";
+import { IReducerSpec } from "../../../types/IExtensionContext";
+import { setSafe } from "../../../util/storeHelper";
 
-import * as actions from '../actions';
+import * as actions from "../actions";
 
 const persistentReducer: IReducerSpec = {
   reducers: {
     [actions.setSuppressSurvey as any]: (state, payload) =>
-      setSafe(state, ['suppressed', payload.id], payload.suppress),
+      setSafe(state, ["suppressed", payload.id], payload.suppress),
   },
-  defaults: {
-  },
+  defaults: {},
 };
 
 export default persistentReducer;

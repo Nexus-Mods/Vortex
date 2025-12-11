@@ -1,8 +1,8 @@
-import * as d3 from 'd3';
-import * as React from 'react';
+import * as d3 from "d3";
+import * as React from "react";
 
 const spinData = {
-  class: 'running',
+  class: "running",
   min: 0,
   max: 100,
   value: 25,
@@ -49,18 +49,22 @@ class RadialProgress extends React.Component<IProps, {}> {
     const { className, data, offset, style, totalRadius, spin } = this.props;
     const sideLength = (totalRadius + (offset || 0)) * 2;
 
-    const classNames = ['radial', className];
+    const classNames = ["radial", className];
 
-    let progressData = [...data]
-    
+    let progressData = [...data];
+
     if (spin && progressData.length == 0) {
       // The normal progress has higher priority than the spin
-      classNames.push('radial--spin');
+      classNames.push("radial--spin");
       progressData.push(spinData);
     }
 
     return (
-      <svg className={classNames.join(' ')} viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
+      <svg
+        className={classNames.join(" ")}
+        viewBox={`0 0 ${sideLength} ${sideLength}`}
+        style={style}
+      >
         {progressData.map(this.renderArc)}
       </svg>
     );
@@ -81,12 +85,12 @@ class RadialProgress extends React.Component<IProps, {}> {
         />
 
         <path
-          className='radial-rest'
+          className="radial-rest"
           d={this.mRestArcGen(bar, idx, arr.length)}
         />
       </g>
     );
-  }
+  };
 
   private updateArcGen(props: IProps) {
     const { data, maxWidth, totalRadius } = props;
@@ -117,19 +121,27 @@ class RadialProgress extends React.Component<IProps, {}> {
       return res;
     };
 
-    this.mArcGen = d3.arc<any, IBar>()
+    this.mArcGen = d3
+      .arc<any, IBar>()
       .startAngle(0)
       .endAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .cornerRadius(4)
-      .innerRadius((item: IBar, idx: number, count: number) => inner(false, idx))
-      .outerRadius((item: IBar, idx: number, count: number) => outer(false, idx));
+      .innerRadius((item: IBar, idx: number, count: number) =>
+        inner(false, idx),
+      )
+      .outerRadius((item: IBar, idx: number, count: number) =>
+        outer(false, idx),
+      );
 
-    this.mRestArcGen = d3.arc<any, IBar>()
+    this.mRestArcGen = d3
+      .arc<any, IBar>()
       .startAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .endAngle(2 * Math.PI)
       .innerRadius((item: IBar, idx: number, count: number) => inner(true, idx))
-      .outerRadius((item: IBar, idx: number, count: number) => outer(true, idx));
-   }
+      .outerRadius((item: IBar, idx: number, count: number) =>
+        outer(true, idx),
+      );
+  }
 }
 
 export default RadialProgress as React.ComponentClass<IBaseProps>;

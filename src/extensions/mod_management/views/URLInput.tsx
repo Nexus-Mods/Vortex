@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { useDispatch } from 'react-redux';
-import FlexLayout from '../../../renderer/controls/FlexLayout';
-import FormInput from '../../../renderer/controls/FormInput';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { TFunction } from '../../../util/i18n';
-import opn from '../../../util/opn';
-import { setModAttribute } from '../actions/mods';
-import { IMod } from '../types/IMod';
+import * as React from "react";
+import { useDispatch } from "react-redux";
+import FlexLayout from "../../../renderer/controls/FlexLayout";
+import FormInput from "../../../renderer/controls/FormInput";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { TFunction } from "../../../util/i18n";
+import opn from "../../../util/opn";
+import { setModAttribute } from "../actions/mods";
+import { IMod } from "../types/IMod";
 
 function isURLValid(url: string) {
   try {
@@ -29,21 +29,28 @@ function URLInput(props: IURLInputProps) {
 
   const dispatch = useDispatch();
 
-  const updateURL = React.useCallback((newUrl: string) => {
-    dispatch(setModAttribute(gameId, mod.id, 'url', newUrl));
-  }, [gameId, mod]);
+  const updateURL = React.useCallback(
+    (newUrl: string) => {
+      dispatch(setModAttribute(gameId, mod.id, "url", newUrl));
+    },
+    [gameId, mod],
+  );
 
   const openSite = React.useCallback(() => {
     opn(mod.attributes?.url).catch(() => null);
   }, [mod]);
 
   return (
-    <FlexLayout type='row'>
-      <FormInput style={{ flex: '1 1 0' }} value={mod.attributes?.url} onChange={updateURL} />
+    <FlexLayout type="row">
+      <FormInput
+        style={{ flex: "1 1 0" }}
+        value={mod.attributes?.url}
+        onChange={updateURL}
+      />
       <IconButton
-        icon='open-in-browser'
+        icon="open-in-browser"
         disabled={!isURLValid(mod.attributes?.url)}
-        tooltip={t('Open website in your browser')}
+        tooltip={t("Open website in your browser")}
         onClick={openSite}
       />
     </FlexLayout>

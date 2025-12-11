@@ -1,10 +1,10 @@
-import Line from './Line';
+import Line from "./Line";
 
-import { ComponentEx } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
+import { ComponentEx } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
 
-import * as React from 'react';
-import { connect } from 'react-redux';
+import * as React from "react";
+import { connect } from "react-redux";
 
 interface ICoord {
   x: number;
@@ -12,8 +12,8 @@ interface ICoord {
 }
 
 interface IConnectorProps {
-  source?: { id: string, pos: ICoord };
-  target?: { id: string, pos: ICoord };
+  source?: { id: string; pos: ICoord };
+  target?: { id: string; pos: ICoord };
 }
 
 class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
@@ -24,14 +24,14 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
   public render(): JSX.Element {
     const { source, target } = this.props;
 
-    if ((source === undefined) || (target === undefined)) {
+    if (source === undefined || target === undefined) {
       return null;
     }
 
-    const lineClass = target.id !== null ? 'line-connect' : 'line-disconnect';
+    const lineClass = target.id !== null ? "line-connect" : "line-disconnect";
 
     return (
-      <div className='profile-connector-layer'>
+      <div className="profile-connector-layer">
         <Line
           source={source.pos}
           target={target.pos}
@@ -45,10 +45,16 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
 function mapStateToProps(state: any): IConnectorProps {
   return {
-    source:
-      getSafe(state, ['session', 'profileTransfer', 'connection', 'source'], undefined),
-    target:
-      getSafe(state, ['session', 'profileTransfer', 'connection', 'target'], undefined),
+    source: getSafe(
+      state,
+      ["session", "profileTransfer", "connection", "source"],
+      undefined,
+    ),
+    target: getSafe(
+      state,
+      ["session", "profileTransfer", "connection", "target"],
+      undefined,
+    ),
   };
 }
 

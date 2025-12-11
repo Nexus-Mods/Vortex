@@ -1,9 +1,10 @@
-import { IPersistor, PersistorKey } from '../types/IExtensionContext';
+import { IPersistor, PersistorKey } from "../types/IExtensionContext";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 class SubPersistor implements IPersistor {
-  public getAllKVs: () => Promise<Array<{ key: string[], value: string }>> = undefined;
+  public getAllKVs: () => Promise<Array<{ key: string[]; value: string }>> =
+    undefined;
 
   private mWrapped: IPersistor;
   private mHive: string;
@@ -13,10 +14,16 @@ class SubPersistor implements IPersistor {
     this.mHive = hive;
 
     if (wrapped.getAllKVs !== undefined) {
-      this.getAllKVs = () => this.mWrapped.getAllKVs(hive)
-        .filter((kv: { key: PersistorKey, value: string }) => kv.key[0] === hive)
-        .map((kv: { key: PersistorKey, value: string }) =>
-          ({ key: kv.key.slice(1), value: kv.value }));
+      this.getAllKVs = () =>
+        this.mWrapped
+          .getAllKVs(hive)
+          .filter(
+            (kv: { key: PersistorKey; value: string }) => kv.key[0] === hive,
+          )
+          .map((kv: { key: PersistorKey; value: string }) => ({
+            key: kv.key.slice(1),
+            value: kv.value,
+          }));
     }
   }
 
@@ -37,10 +44,11 @@ class SubPersistor implements IPersistor {
   }
 
   public getAllKeys(): Promise<string[][]> {
-    return this.mWrapped.getAllKeys()
-      .then(keys => keys
-        .filter(key => key[0] === this.mHive)
-        .map(key => key.slice(1)));
+    return this.mWrapped
+      .getAllKeys()
+      .then((keys) =>
+        keys.filter((key) => key[0] === this.mHive).map((key) => key.slice(1)),
+      );
   }
 }
 

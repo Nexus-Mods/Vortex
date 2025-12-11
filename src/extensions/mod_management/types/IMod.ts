@@ -1,9 +1,12 @@
-import { IReference, IRule } from 'modmeta-db';
+import { IReference, IRule } from "modmeta-db";
 
 export { IReference, IRule };
 
 export type ModState =
-  'downloading' | 'downloaded' | 'installing' | 'installed';
+  | "downloading"
+  | "downloaded"
+  | "installing"
+  | "installed";
 
 /**
  * Attributes specific to Nexus Mods Collections (when IMod.type === "collection")
@@ -104,7 +107,9 @@ export interface ICommonModAttributes {
  * Comprehensive type for mod attributes that can be either common mod attributes,
  * collection-specific attributes, or any custom attributes
  */
-export type IModAttributes = Partial<ICommonModAttributes & ICollectionAttributes> & {
+export type IModAttributes = Partial<
+  ICommonModAttributes & ICollectionAttributes
+> & {
   [key: string]: any;
 };
 
@@ -182,7 +187,7 @@ export interface IModReference extends IReference {
   // downloaded archive in the same way id helps find a locally installed mod
   archiveId?: string;
   // using a set of ids identifying the mod on a specific repository
-  repo?: { repository: string, campaign?: string } & IModRepoId;
+  repo?: { repository: string; campaign?: string } & IModRepoId;
   // optional parameter used to display the reference in a user-friendly way if available.
   // This is only used when the mod isn't installed, otherwise we always try to use the name
   // the user chose for the mod.
@@ -210,7 +215,7 @@ export interface IFileListItem {
 }
 
 export interface IDownloadHint {
-  mode: 'direct' | 'browse' | 'manual';
+  mode: "direct" | "browse" | "manual";
   url?: string;
   instructions?: string;
 }

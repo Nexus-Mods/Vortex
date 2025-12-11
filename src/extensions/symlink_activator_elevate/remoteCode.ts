@@ -1,14 +1,15 @@
 export function remoteCode(ipcClient, req) {
-  const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'UNKNOWN']);
+  const RETRY_ERRORS = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
   process.noAsar = true;
 
-  const delayed = (delay: number) => new Promise(resolve => {
-    setTimeout(resolve, delay);
-  });
+  const delayed = (delay: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, delay);
+    });
 
   const doFS = (op: () => Promise<any>, tries: number = 5) => {
-    return op().catch(err => {
-      if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
+    return op().catch((err) => {
+      if (RETRY_ERRORS.has(err.code) && tries > 0) {
         return delayed(100).then(() => doFS(op, tries - 1));
       } else {
         return Promise.reject(err);
@@ -17,33 +18,36 @@ export function remoteCode(ipcClient, req) {
   };
 
   return new Promise<void>((resolve, reject) => {
-    const fs = req('fs').promises;
+    const fs = req("fs").promises;
 
     const emit = (message, payload) => {
       ipcClient.sendMessage({ message, payload });
     };
 
     const handlers = {
-      'link-file': (payload) => {
+      "link-file": (payload) => {
         const { source, destination, num } = payload;
         return doFS(() => fs.symlink(source, destination))
-            .catch(err => (err.code !== 'EEXIST')
+          .catch((err) =>
+            err.code !== "EEXIST"
               ? Promise.reject(err)
-              : doFS(() => fs.unlink(destination))
-                .then(() => doFS(() => fs.symlink(source, destination))))
+              : doFS(() => fs.unlink(destination)).then(() =>
+                  doFS(() => fs.symlink(source, destination)),
+                ),
+          )
           .then(() => {
-            emit('log', {
-              level: 'debug',
-              message: 'installed',
+            emit("log", {
+              level: "debug",
+              message: "installed",
               meta: { source, destination },
             });
-            emit('completed', { err: null, num });
+            emit("completed", { err: null, num });
           })
           .catch((err) => {
-            if (err.code === 'EISDIR') {
-              emit('report', 'not-supported');
+            if (err.code === "EISDIR") {
+              emit("report", "not-supported");
             }
-            emit('completed', {
+            emit("completed", {
               err: {
                 // in case message is a getter
                 message: err.message,
@@ -53,21 +57,22 @@ export function remoteCode(ipcClient, req) {
             });
           });
       },
-      'remove-link': (payload) => {
+      "remove-link": (payload) => {
         const { destination, num } = payload;
         doFS(() => fs.lstat(destination))
-          .then(stats => {
+          .then((stats) => {
             if (stats.isSymbolicLink()) {
               return doFS(() => fs.unlink(destination));
             }
           })
           .then(() => {
-            emit('completed', { err: null, num });
+            emit("completed", { err: null, num });
           })
           .catch((err) => {
-            emit('completed', {
+            emit("completed", {
               err: { code: err.code, message: err.message, stack: err.stack },
-              num });
+              num,
+            });
           });
       },
       quit: () => {
@@ -78,26 +83,25 @@ export function remoteCode(ipcClient, req) {
       },
     };
 
-    ipcClient.on('message', data => {
+    ipcClient.on("message", (data) => {
       const { message, payload } = data;
       if (handlers[message] !== undefined) {
         handlers[message](payload);
       } else {
-        emit('log', {
-          level: 'error',
-          message:
-            `unknown message "${message}", expected one of "${Object.keys(handlers).join(', ')}"`,
+        emit("log", {
+          level: "error",
+          message: `unknown message "${message}", expected one of "${Object.keys(handlers).join(", ")}"`,
           meta: { got: message },
         });
       }
     });
 
-    ipcClient.on('disconnect', () => {
+    ipcClient.on("disconnect", () => {
       if (resolve !== undefined) {
         resolve();
       }
     });
-    emit('initialised', {
+    emit("initialised", {
       pid: process.pid,
     });
   });

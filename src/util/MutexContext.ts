@@ -2,8 +2,8 @@
 /// only one is visible at the same time.
 /// It's currently intended to prevent multiple modals from showing up at once
 
-import * as React from 'react';
-import { generate as shortid } from 'shortid';
+import * as React from "react";
+import { generate as shortid } from "shortid";
 
 export interface IMutexContextValue {
   current: string;
@@ -63,7 +63,7 @@ export function useMutex(show: boolean) {
     };
   }, [show]);
 
-  return (ctx.current === mutexId) && (mutexId !== null);
+  return ctx.current === mutexId && mutexId !== null;
 }
 
 export function useRandomId() {
@@ -76,9 +76,12 @@ export function useRandomId() {
   return ref.current;
 }
 
-export function MutexWrapper(props: { show: boolean, children: React.ReactNode }) {
+export function MutexWrapper(props: {
+  show: boolean;
+  children: React.ReactNode;
+}) {
   // const primary = useMutex(props.show);
 
   // return primary ? React.createElement('div', undefined, props.children) : null;
-  return React.createElement('div', undefined, props.children);
+  return React.createElement("div", undefined, props.children);
 }

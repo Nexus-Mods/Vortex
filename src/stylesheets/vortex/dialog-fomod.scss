@@ -1,95 +1,95 @@
 #fomod-installer-dialog {
-  .modal-dialog {
-    width: 60%;
-    height: 60%;
-  }
-
-  .modal-content {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-body {
-    flex: 1 0%;
-    display: flex;
-    padding: $half-gutter $gutter-width;
-  }
-
-  .modal-footer {
-    padding-top: 5px;
-    padding-bottom: 5px;
-  }
-
-  .progress {
-    display: inline-block;
-    width: 200px;
-    height: 16px;
-    margin-bottom: 0px;
-    background-color: $gray-dark;
-    height: 4px;
-    border-radius: 4px;
-    .progress-bar {
-      background-color: $brand-secondary;
+    .modal-dialog {
+        width: 60%;
+        height: 60%;
     }
-  }
 
-  .pager {
-    margin: 5px 0px;
-    li > a {
-      color: $text-color;
+    .modal-content {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
     }
-  }
 
-  .description {
-    padding: 15px;
-    margin: 15px;
-    overflow-y: auto;
-    > .control-label {
-      white-space: pre-wrap;
+    .modal-body {
+        flex: 1 0%;
+        display: flex;
+        padding: $half-gutter $gutter-width;
     }
-  }
 
-  .fomod-nav-buttons {
-    display: flex;
-    > * {
-      flex: 1 1 0;
-      text-align: center;
-      &:first-child {
-        text-align: left;
-      }
-      &:last-child {
-        text-align: right;
-      }
+    .modal-footer {
+        padding-top: 5px;
+        padding-bottom: 5px;
     }
-  }
+
+    .progress {
+        display: inline-block;
+        width: 200px;
+        height: 16px;
+        margin-bottom: 0px;
+        background-color: $gray-dark;
+        height: 4px;
+        border-radius: 4px;
+        .progress-bar {
+            background-color: $brand-secondary;
+        }
+    }
+
+    .pager {
+        margin: 5px 0px;
+        li > a {
+            color: $text-color;
+        }
+    }
+
+    .description {
+        padding: 15px;
+        margin: 15px;
+        overflow-y: auto;
+        > .control-label {
+            white-space: pre-wrap;
+        }
+    }
+
+    .fomod-nav-buttons {
+        display: flex;
+        > * {
+            flex: 1 1 0;
+            text-align: center;
+            &:first-child {
+                text-align: left;
+            }
+            &:last-child {
+                text-align: right;
+            }
+        }
+    }
 }
 
 .installer-zoom {
-  top: 0;
-  z-index: 1080;
-  position: absolute;
+    top: 0;
+    z-index: 1080;
+    position: absolute;
 }
 
 .installer-image {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  display: flex;
-  justify-content: center;
-  position: absolute;
-
-  .zoomable-image {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
-  }
+    width: auto;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    position: absolute;
+
+    .zoomable-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
 }
 
 .table-detail-installer ul {
-  max-width: 20em;
-  margin-left: $half-gutter;
-  text-indent: calc(#{$half-gutter} * -1);
+    max-width: 20em;
+    margin-left: $half-gutter;
+    text-indent: calc(#{$half-gutter} * -1);
 }

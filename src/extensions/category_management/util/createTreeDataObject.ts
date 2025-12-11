@@ -1,30 +1,44 @@
-import { getSafe, pushSafe } from '../../../util/storeHelper';
+import { getSafe, pushSafe } from "../../../util/storeHelper";
 
-import { IMod } from '../../mod_management/types/IMod';
-import { ICategory } from '../types/ICategoryDictionary';
-import { ICategoriesTree } from '../types/ITrees';
-import generateSubtitle from './generateSubtitle';
+import { IMod } from "../../mod_management/types/IMod";
+import { ICategory } from "../types/ICategoryDictionary";
+import { ICategoriesTree } from "../types/ITrees";
+import generateSubtitle from "./generateSubtitle";
 
-import { TFunction } from 'i18next';
+import { TFunction } from "i18next";
 
-function searchChildren(t: TFunction,
-                        categories: { [categoryId: string]: ICategory },
-                        rootId: string,
-                        mods: { [categoryId: string]: IMod[] }) {
+function searchChildren(
+  t: TFunction,
+  categories: { [categoryId: string]: ICategory },
+  rootId: string,
+  mods: { [categoryId: string]: IMod[] },
+) {
   const children = Object.keys(categories)
-  .filter(id => rootId === categories[id].parentCategory)
-  .sort((lhs: string, rhs: string) => (categories[lhs].order - categories[rhs].order));
+    .filter((id) => rootId === categories[id].parentCategory)
+    .sort(
+      (lhs: string, rhs: string) =>
+        categories[lhs].order - categories[rhs].order,
+    );
 
   const childrenList = [];
 
-  children.forEach(childId => {
-    const nestedChildren: ICategoriesTree[] = searchChildren(t, categories, childId, mods);
+  children.forEach((childId) => {
+    const nestedChildren: ICategoriesTree[] = searchChildren(
+      t,
+      categories,
+      childId,
+      mods,
+    );
     // tslint:disable-next-line:no-shadowed-variable
-    const nestedModCount = nestedChildren.reduce((total: number, child: ICategoriesTree) =>
-      total + child.modCount, 0);
+    const nestedModCount = nestedChildren.reduce(
+      (total: number, child: ICategoriesTree) => total + child.modCount,
+      0,
+    );
     const modCount = getSafe(mods, [childId], []).length;
-    const subt: string = (mods !== undefined)
-      ? generateSubtitle(t, childId, mods, nestedModCount) : '';
+    const subt: string =
+      mods !== undefined
+        ? generateSubtitle(t, childId, mods, nestedModCount)
+        : "";
     const child: ICategoriesTree = {
       categoryId: childId,
       title: categories[childId].name,
@@ -50,45 +64,65 @@ function searchChildren(t: TFunction,
  *
  */
 
-function createTreeDataObject(t: TFunction,
-                              categories: { [categoryId: string]: ICategory },
-                              mods: {[modId: string]: IMod},
-                              customSort?: (lhs: string, rhs: string) => number): ICategoriesTree[] {
+function createTreeDataObject(
+  t: TFunction,
+  categories: { [categoryId: string]: ICategory },
+  mods: { [modId: string]: IMod },
+  customSort?: (lhs: string, rhs: string) => number,
+): ICategoriesTree[] {
   const categoryList: ICategoriesTree[] = [];
 
   const modsByCategory = Object.keys(mods || {}).reduce(
-      (prev: {[categoryId: string]: IMod[]}, current: string) => {
-        const category = getSafe(mods, [current, 'attributes', 'category'], undefined);
-        if (category === undefined) {
-          return prev;
-        }
-        return pushSafe(prev, [ category ], current);
-      },
-      {});
+    (prev: { [categoryId: string]: IMod[] }, current: string) => {
+      const category = getSafe(
+        mods,
+        [current, "attributes", "category"],
+        undefined,
+      );
+      if (category === undefined) {
+        return prev;
+      }
+      return pushSafe(prev, [category], current);
+    },
+    {},
+  );
 
-  const sortFunc = (lhs, rhs) => (customSort !== undefined)
+  const sortFunc = (lhs, rhs) =>
+    customSort !== undefined
       ? customSort(lhs, rhs)
-      : (categories[lhs].order - categories[rhs].order);
+      : categories[lhs].order - categories[rhs].order;
 
   const roots = Object.keys(categories)
-    .filter((id: string) => (categories[id].parentCategory === undefined))
+    .filter((id: string) => categories[id].parentCategory === undefined)
     .sort((lhs, rhs) => sortFunc(lhs, rhs));
 
-  roots.forEach(rootElement => {
+  roots.forEach((rootElement) => {
     let childCategoryModCount = 0;
     const children = Object.keys(categories)
-      .filter((id: string) => (rootElement === categories[id].parentCategory))
+      .filter((id: string) => rootElement === categories[id].parentCategory)
       .sort((lhs, rhs) => sortFunc(lhs, rhs));
 
     const childrenList = [];
 
-    children.forEach(element => {
-      const nestedChildren = searchChildren(t, categories, element, modsByCategory);
+    children.forEach((element) => {
+      const nestedChildren = searchChildren(
+        t,
+        categories,
+        element,
+        modsByCategory,
+      );
       // tslint:disable-next-line:no-shadowed-variable
-      const nestedModCount = nestedChildren.reduce((total: number, child: ICategoriesTree) =>
-        total + child.modCount, 0);
+      const nestedModCount = nestedChildren.reduce(
+        (total: number, child: ICategoriesTree) => total + child.modCount,
+        0,
+      );
 
-      const subtitle: string = generateSubtitle(t, element, modsByCategory, nestedModCount);
+      const subtitle: string = generateSubtitle(
+        t,
+        element,
+        modsByCategory,
+        nestedModCount,
+      );
       const modCount = getSafe(modsByCategory, [element], []).length;
       childCategoryModCount += modCount;
       const child: ICategoriesTree = {
@@ -107,7 +141,12 @@ function createTreeDataObject(t: TFunction,
     categoryList.push({
       categoryId: rootElement,
       title: categories[rootElement].name,
-      subtitle: generateSubtitle(t, rootElement, modsByCategory, childCategoryModCount),
+      subtitle: generateSubtitle(
+        t,
+        rootElement,
+        modsByCategory,
+        childCategoryModCount,
+      ),
       expanded: false,
       parentId: undefined,
       modCount: getSafe(modsByCategory, [rootElement], []).length,

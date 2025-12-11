@@ -1,7 +1,7 @@
-import Promise from 'bluebird';
-import * as React from 'react';
+import Promise from "bluebird";
+import * as React from "react";
 
-const debugMissingIcons = process.env.NODE_ENV === 'development';
+const debugMissingIcons = process.env.NODE_ENV === "development";
 const debugReported = new Set<string>();
 
 /**
@@ -25,7 +25,7 @@ export interface IIconProps {
   /** draw a (css) border around the control */
   border?: boolean;
   /** flip icon horizonally or vertically */
-  flip?: 'horizontal' | 'vertical';
+  flip?: "horizontal" | "vertical";
   /** rotate by specified number of degrees */
   rotate?: number;
   /**
@@ -51,8 +51,9 @@ export interface IIconProps {
  * renders a svg icon (as an instance/ref of a globally defined svg)
  */
 class Icon extends React.Component<IIconProps, {}> {
-  private static sCache: { [id: string]: { width: number, height: number } } = {};
-  private mCurrentSize: { width: number, height: number };
+  private static sCache: { [id: string]: { width: number; height: number } } =
+    {};
+  private mCurrentSize: { width: number; height: number };
 
   public componentDidMount() {
     this.setIcon(this.props);
@@ -65,35 +66,35 @@ class Icon extends React.Component<IIconProps, {}> {
   public render(): JSX.Element {
     const { name, style, svgStyle } = this.props;
 
-    let classes = ['icon', `icon-${name}`];
+    let classes = ["icon", `icon-${name}`];
     // avoid using css for transforms. For one thing this is more flexible but more importantly
     // it has no interactions with other css. For example css transforms tend to break z ordering
     const transforms = [];
 
-    if (this.props.spin || (name === 'spinner')) {
-      classes.push('icon-spin');
+    if (this.props.spin || name === "spinner") {
+      classes.push("icon-spin");
     }
 
     if (this.props.pulse) {
-      classes.push('icon-pulse');
+      classes.push("icon-pulse");
     }
 
     if (this.props.border) {
-      classes.push('icon-border');
+      classes.push("icon-border");
     }
 
     if (this.props.stroke) {
-      classes.push('icon-stroke');
+      classes.push("icon-stroke");
     }
 
     if (this.props.hollow) {
-      classes.push('icon-hollow');
+      classes.push("icon-hollow");
     }
 
     if (this.props.flip) {
-      transforms.push(this.props.flip === 'horizontal'
-        ? `scale(-1, 1)`
-        : `scale(1, -1)`);
+      transforms.push(
+        this.props.flip === "horizontal" ? `scale(-1, 1)` : `scale(1, -1)`,
+      );
     }
 
     const effectiveStyle = { ...style };
@@ -111,23 +112,31 @@ class Icon extends React.Component<IIconProps, {}> {
       }
       */
       effectiveStyle.transform = `rotateZ(${this.props.rotate}deg)`;
-      effectiveStyle.transformStyle = 'preserve-3d';
+      effectiveStyle.transformStyle = "preserve-3d";
     }
 
     if (this.props.className !== undefined) {
-      classes = classes.concat(this.props.className.split(' '));
+      classes = classes.concat(this.props.className.split(" "));
     }
 
     return (
       <svg
-        preserveAspectRatio='xMidYMid meet'
-        className={classes.join(' ')}
+        preserveAspectRatio="xMidYMid meet"
+        className={classes.join(" ")}
         style={effectiveStyle}
-        ref={/*this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : */undefined}
+        ref={
+          /*this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : */ undefined
+        }
         onContextMenu={this.props.onContextMenu}
       >
-        {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
-        <use className='svg-use' xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
+        {svgStyle !== undefined ? (
+          <style type="text/css">{svgStyle}</style>
+        ) : null}
+        <use
+          className="svg-use"
+          xlinkHref={`#icon-${name}`}
+          transform={transforms.join(" ")}
+        />
       </svg>
     );
   }
@@ -141,23 +150,28 @@ class Icon extends React.Component<IIconProps, {}> {
         Icon.sCache[this.props.rotateId] = this.mCurrentSize;
       }
     }
-  }
+  };
 
   private setIcon(props: IIconProps) {
-    const set = props.set || 'icons';
-    props.getSet(set)
-    .then(requiredSet => {
-      if (debugMissingIcons
-          && (requiredSet !== null)
-          && !requiredSet.has('icon-' + props.name)
-          && !debugReported.has(props.name)) {
+    const set = props.set || "icons";
+    props.getSet(set).then((requiredSet) => {
+      if (
+        debugMissingIcons &&
+        requiredSet !== null &&
+        !requiredSet.has("icon-" + props.name) &&
+        !debugReported.has(props.name)
+      ) {
         // tslint:disable-next-line:no-console
-        console.trace('icon missing', props.name);
+        console.trace("icon missing", props.name);
         debugReported.add(props.name);
       }
     });
 
-    if (props.rotate && (props.rotateId !== undefined) && (this.mCurrentSize === undefined)) {
+    if (
+      props.rotate &&
+      props.rotateId !== undefined &&
+      this.mCurrentSize === undefined
+    ) {
       this.mCurrentSize = Icon.sCache[props.rotateId];
     }
   }

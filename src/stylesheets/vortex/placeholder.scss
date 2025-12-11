@@ -1,33 +1,33 @@
 .placeholder {
-  color: $text-color-disabled;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: $gutter-width;
+    color: $text-color-disabled;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: $gutter-width;
 
-  &.fill-parent {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    min-height: initial;
-  }
+    &.fill-parent {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        min-height: initial;
+    }
 
-  .placeholder-icon {
-    width: 92px;
-    height: 92px;
-  }
+    .placeholder-icon {
+        width: 92px;
+        height: 92px;
+    }
 
-  .placeholder-text {
-    font-family: $font-family-headings;
-    font-size: 2em;
-    // text-transform: uppercase;
-  }
+    .placeholder-text {
+        font-family: $font-family-headings;
+        font-size: 2em;
+        // text-transform: uppercase;
+    }
 }
 
 .placeholder-container {
-  height: 300px;
-  position: relative;
+    height: 300px;
+    position: relative;
 }

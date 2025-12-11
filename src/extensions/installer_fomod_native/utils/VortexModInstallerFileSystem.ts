@@ -1,34 +1,40 @@
-import path from 'path';
-import { Dirent, readdirSync, readFileSync } from 'node:fs';
-import { FileHandle, open, readdir } from 'node:fs/promises';
-import lazyRequire from '../../../util/lazyRequire';
-import type * as fomodT from 'fomod-installer-native';
+import path from "path";
+import { Dirent, readdirSync, readFileSync } from "node:fs";
+import { FileHandle, open, readdir } from "node:fs/promises";
+import lazyRequire from "../../../util/lazyRequire";
+import type * as fomodT from "fomod-installer-native";
 
 export class VortexModInstallerFileSystem {
   private fomod: typeof fomodT;
   private mFileSystem: fomodT.NativeFileSystem;
 
   public constructor() {
-    this.fomod = lazyRequire<typeof fomodT>(() => require('fomod-installer-native'));
+    this.fomod = lazyRequire<typeof fomodT>(() =>
+      require("fomod-installer-native"),
+    );
     this.mFileSystem = new this.fomod.NativeFileSystem(
       this.readFileContent,
       this.readDirectoryFileList,
-      this.readDirectoryList
+      this.readDirectoryList,
     );
   }
 
   public useVortexFunctions = () => {
     this.mFileSystem.setCallbacks();
-  }
+  };
 
   public useLibraryFunctions = () => {
     this.fomod.NativeFileSystem.setDefaultCallbacks();
-  }
+  };
 
   /**
    * Callback
    */
-  private readFileContent = (filePath: string, offset: number, length: number): Uint8Array | null => {
+  private readFileContent = (
+    filePath: string,
+    offset: number,
+    length: number,
+  ): Uint8Array | null => {
     try {
       if (offset === 0 && length === -1) {
         const data = readFileSync(filePath);
@@ -38,7 +44,10 @@ export class VortexModInstallerFileSystem {
         //const fd = fs.openSync(filePath, 'r');
         //const buffer = Buffer.alloc(length);
         //fs.readSync(fd, buffer, offset, length, 0);
-        return new Uint8Array(readFileSync(filePath)).slice(offset, offset + length);
+        return new Uint8Array(readFileSync(filePath)).slice(
+          offset,
+          offset + length,
+        );
       } else {
         return null;
       }
@@ -79,17 +88,18 @@ export class VortexModInstallerFileSystem {
   private readFileContentAsync = async (
     filePath: string,
     offset: number,
-    length: number
+    length: number,
   ): Promise<Uint8Array | null> => {
     try {
       let fileHandle: FileHandle | null = null;
       try {
-        fileHandle = await open(filePath, 'r');
+        fileHandle = await open(filePath, "r");
         if (length === -1) {
           const stats = await fileHandle.stat();
           length = stats.size;
         }
-        const buffer = this.fomod.allocWithoutOwnership(length) ?? new Uint8Array(length);
+        const buffer =
+          this.fomod.allocWithoutOwnership(length) ?? new Uint8Array(length);
         await fileHandle.read(buffer, 0, length, offset);
         return buffer;
       } finally {
@@ -97,7 +107,7 @@ export class VortexModInstallerFileSystem {
       }
     } catch (err) {
       // ENOENT means that a file or folder is not found, it's an expected error
-      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      if (err instanceof Error && "code" in err && err.code === "ENOENT") {
         return null;
       }
       //const { localize: t } = LocalizationManager.getInstance(this.api);
@@ -109,14 +119,18 @@ export class VortexModInstallerFileSystem {
   /**
    * Callback
    */
-  private readDirectoryFileListAsync = async (directoryPath: string): Promise<string[] | null> => {
+  private readDirectoryFileListAsync = async (
+    directoryPath: string,
+  ): Promise<string[] | null> => {
     try {
       const dirs = await readdir(directoryPath, { withFileTypes: true });
-      const res = dirs.filter((x) => x.isFile()).map<string>((x) => path.join(directoryPath, x.name));
+      const res = dirs
+        .filter((x) => x.isFile())
+        .map<string>((x) => path.join(directoryPath, x.name));
       return res;
     } catch (err) {
       // ENOENT means that a file or folder is not found, it's an expected error
-      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      if (err instanceof Error && "code" in err && err.code === "ENOENT") {
         return null;
       }
       //const { localize: t } = LocalizationManager.getInstance(this.api);
@@ -128,14 +142,18 @@ export class VortexModInstallerFileSystem {
   /**
    * Callback
    */
-  private readDirectoryListAsync = async (directoryPath: string): Promise<string[] | null> => {
+  private readDirectoryListAsync = async (
+    directoryPath: string,
+  ): Promise<string[] | null> => {
     try {
       const dirs = await readdir(directoryPath, { withFileTypes: true });
-      const res = dirs.filter((x) => x.isDirectory()).map<string>((x) => path.join(directoryPath, x.name));
+      const res = dirs
+        .filter((x) => x.isDirectory())
+        .map<string>((x) => path.join(directoryPath, x.name));
       return res;
     } catch (err) {
       // ENOENT means that a file or folder is not found, it's an expected error
-      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      if (err instanceof Error && "code" in err && err.code === "ENOENT") {
         return null;
       }
       //const { localize: t } = LocalizationManager.getInstance(this.api);

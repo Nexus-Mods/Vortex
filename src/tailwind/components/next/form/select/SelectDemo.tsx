@@ -3,17 +3,17 @@
  * Demonstrates all Select component variants and features
  */
 
-import * as React from 'react';
-import { useState } from 'react';
+import * as React from "react";
+import { useState } from "react";
 
-import { Select } from './Select';
-import { FormFieldWrap } from '../formfield';
-import { Typography } from '../../typography/Typography';
+import { Select } from "./Select";
+import { FormFieldWrap } from "../formfield";
+import { Typography } from "../../typography/Typography";
 
 export const SelectDemo = () => {
-  const [country, setCountry] = useState('');
-  const [language, setLanguage] = useState('en');
-  const [game, setGame] = useState('');
+  const [country, setCountry] = useState("");
+  const [language, setLanguage] = useState("en");
+  const [game, setGame] = useState("");
 
   return (
     <div className="tw:p-8 tw:bg-surface-base tw:min-h-screen">
@@ -77,30 +77,19 @@ export const SelectDemo = () => {
           Select States
         </Typography>
         <FormFieldWrap>
-          <Select
-            id="default-select"
-            label="Default State"
-          >
+          <Select id="default-select" label="Default State">
             <option value="">Select...</option>
             <option value="1">Option 1</option>
             <option value="2">Option 2</option>
           </Select>
 
-          <Select
-            id="disabled-select"
-            label="Disabled State"
-            disabled
-          >
+          <Select id="disabled-select" label="Disabled State" disabled>
             <option value="">Cannot select...</option>
             <option value="1">Option 1</option>
             <option value="2">Option 2</option>
           </Select>
 
-          <Select
-            id="required-select"
-            label="Required Field"
-            required
-          >
+          <Select id="required-select" label="Required Field" required>
             <option value="">Please select...</option>
             <option value="1">Option 1</option>
             <option value="2">Option 2</option>
@@ -169,8 +158,8 @@ export const SelectDemo = () => {
             id="multiple-hints-select"
             label="Select with Multiple Hints"
             hints={[
-              'This selection affects your experience',
-              'You can change this later in settings',
+              "This selection affects your experience",
+              "You can change this later in settings",
             ]}
           >
             <option value="">Select theme...</option>
@@ -224,10 +213,7 @@ export const SelectDemo = () => {
             </optgroup>
           </Select>
 
-          <Select
-            id="category-select"
-            label="Select Category"
-          >
+          <Select id="category-select" label="Select Category">
             <option value="">All Categories...</option>
             <optgroup label="Gameplay">
               <option value="combat">Combat</option>
@@ -280,8 +266,8 @@ export const SelectDemo = () => {
             label="User Role"
             required
             hints={[
-              'Select the appropriate role for this user',
-              'Roles determine access permissions',
+              "Select the appropriate role for this user",
+              "Roles determine access permissions",
             ]}
           >
             <option value="">Select role...</option>

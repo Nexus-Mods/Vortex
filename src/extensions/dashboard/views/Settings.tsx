@@ -1,16 +1,16 @@
-import Toggle from '../../../renderer/controls/Toggle';
-import { IDashletSettings, IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
+import Toggle from "../../../renderer/controls/Toggle";
+import { IDashletSettings, IState } from "../../../types/IState";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
 
-import { setDashletEnabled } from '../actions';
-import { IDashletProps } from '../types/IDashletProps';
+import { setDashletEnabled } from "../actions";
+import { IDashletProps } from "../types/IDashletProps";
 
-import { TFunction } from 'i18next';
-import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import { TFunction } from "i18next";
+import * as React from "react";
+import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 interface IDashletToggleProps {
   t: TFunction;
@@ -32,7 +32,7 @@ class DashletToggle extends React.PureComponent<IDashletToggleProps, {}> {
   private toggle = (newValue: boolean) => {
     const { dashlet, onToggle } = this.props;
     onToggle(dashlet.title, newValue);
-  }
+  };
 }
 
 export interface IBaseProps {
@@ -55,20 +55,24 @@ class Settings extends ComponentEx<IProps, {}> {
 
     return (
       <form>
-        <FormGroup controlId='dashlets'>
-          <ControlLabel>{t('Dashlets')}</ControlLabel>
-          <HelpBlock>{t('Enable Dashboard Widgets')}</HelpBlock>
-          {
-            dashlets.filter(dashlet => dashlet.closable !== false).map(dashlet => (
+        <FormGroup controlId="dashlets">
+          <ControlLabel>{t("Dashlets")}</ControlLabel>
+          <HelpBlock>{t("Enable Dashboard Widgets")}</HelpBlock>
+          {dashlets
+            .filter((dashlet) => dashlet.closable !== false)
+            .map((dashlet) => (
               <DashletToggle
                 t={t}
                 key={dashlet.title}
                 dashlet={dashlet}
-                enabled={getSafe(dashletSettings, [dashlet.title, 'enabled'], true)}
+                enabled={getSafe(
+                  dashletSettings,
+                  [dashlet.title, "enabled"],
+                  true,
+                )}
                 onToggle={onSetDashletEnabled}
               />
-            ))
-          }
+            ))}
         </FormGroup>
       </form>
     );
@@ -81,14 +85,15 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>
       dispatch(setDashletEnabled(dashletId, enabled)),
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      Settings)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(Settings),
+) as React.ComponentClass<{}>;

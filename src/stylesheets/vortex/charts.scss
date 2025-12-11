@@ -1,60 +1,60 @@
 .chart-container {
-  text-align: -webkit-center;
-  margin-right: $half-gutter;
+    text-align: -webkit-center;
+    margin-right: $half-gutter;
 }
 
 .recharts-default-tooltip {
-  background-color: $brand-menu;
-  border: $border-width solid $border-color;
+    background-color: $brand-menu;
+    border: $border-width solid $border-color;
 }
 
 .recharts-text.recharts-cartesian-axis-tick-value {
-  fill: $gray-dark;
+    fill: $gray-dark;
 }
 
 .download-chart .recharts-area {
-  // unfortunately stroke and area are two separate groups that
-  // are indistinguishable by class/id so we have to rely on their order
-  // here (which is an implementation detail)
-  :first-child {
-    fill: url(#graph-gradient);
-  }
-  :last-child {
-    stroke: $brand-clickable;
-    stroke-width: 1.2px;
-  }
+    // unfortunately stroke and area are two separate groups that
+    // are indistinguishable by class/id so we have to rely on their order
+    // here (which is an implementation detail)
+    :first-child {
+        fill: url(#graph-gradient);
+    }
+    :last-child {
+        stroke: $brand-clickable;
+        stroke-width: 1.2px;
+    }
 }
 
 // without padding the labels on the y-axis are faded out.
 // Note that the chart maintains aspect ratio so adding a padding
 // on the horizontal actually also causes a small padding on the vertical
 .download-chart .recharts-surface {
-  padding-left: 15px;
+    padding-left: 15px;
 }
 
 .download-chart .recharts-reference-line {
-  line {
-    stroke: $brand-danger;
-  }
-  text {
-    fill: $link-color;
-    &:hover {
-      fill: $link-hover-color;
+    line {
+        stroke: $brand-danger;
     }
-  }
+    text {
+        fill: $link-color;
+        &:hover {
+            fill: $link-hover-color;
+        }
+    }
 }
 
 .dashlet-download .recharts-sector {
-  fill: $brand-success;
-  cursor: pointer;
+    fill: $brand-success;
+    cursor: pointer;
 }
 
 .graph-gradient-start {
- stop-color: #D78F46;
- stop-opacity: 0.9;
+    stop-color: #d78f46;
+    stop-opacity: 0.9;
 }
 
 .graph-gradient-end {
- stop-color: #D78F46;
- stop-opacity: 0.0;
+    stop-color: #d78f46;
+    stop-opacity: 0;
 }

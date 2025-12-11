@@ -1,20 +1,23 @@
-import * as React from 'react';
-import { Checkbox, ListGroupItem } from 'react-bootstrap';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import { ComponentEx } from '../../../util/ComponentEx';
+import * as React from "react";
+import { Checkbox, ListGroupItem } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import { ComponentEx } from "../../../util/ComponentEx";
 
-import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
+import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
 
-import { Icon, tooltip } from '../../../renderer/controls/api';
-import { IProfile, IState } from '../../../types/api';
+import { Icon, tooltip } from "../../../renderer/controls/api";
+import { IProfile, IState } from "../../../types/api";
 
-import * as selectors from '../../../util/selectors';
+import * as selectors from "../../../util/selectors";
 
-import { setFBLoadOrder, setFBLoadOrderEntry } from '../actions/loadOrder';
+import { setFBLoadOrder, setFBLoadOrderEntry } from "../actions/loadOrder";
 
-import { LoadOrderIndexInput } from './loadOrderIndex';
-import { currentLoadOrderForProfile, currentModStateForProfile } from '../selectors';
+import { LoadOrderIndexInput } from "./loadOrderIndex";
+import {
+  currentLoadOrderForProfile,
+  currentModStateForProfile,
+} from "../selectors";
 
 interface IConnectedProps {
   modState: any;
@@ -45,67 +48,71 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderValidationError(): JSX.Element {
     const { invalidEntries, loEntry } = this.props.item;
-    const invalidEntry = (invalidEntries !== undefined)
-      ? invalidEntries.find(inv => inv.id.toLowerCase() === loEntry.id.toLowerCase())
-      : undefined;
-    return (invalidEntry !== undefined)
-      ? (
-        <tooltip.Icon
-          className='fblo-invalid-entry'
-          name='feedback-error'
-          tooltip={invalidEntry.reason}
-        />
-      ) : null;
+    const invalidEntry =
+      invalidEntries !== undefined
+        ? invalidEntries.find(
+            (inv) => inv.id.toLowerCase() === loEntry.id.toLowerCase(),
+          )
+        : undefined;
+    return invalidEntry !== undefined ? (
+      <tooltip.Icon
+        className="fblo-invalid-entry"
+        name="feedback-error"
+        tooltip={invalidEntry.reason}
+      />
+    ) : null;
   }
 
   private renderExternalBanner(item: ILoadOrderEntry): JSX.Element {
     const { t } = this.props;
     return this.isExternal(item) ? (
-      <div className='load-order-unmanaged-banner'>
-        <Icon className='external-caution-logo' name='feedback-warning'/>
-        <span className='external-text-area'>{t('Not managed by Vortex')}</span>
+      <div className="load-order-unmanaged-banner">
+        <Icon className="external-caution-logo" name="feedback-warning" />
+        <span className="external-text-area">{t("Not managed by Vortex")}</span>
       </div>
     ) : null;
   }
 
-  private renderDraggable(item: ILoadOrderEntry, displayCheckboxes: boolean): JSX.Element {
+  private renderDraggable(
+    item: ILoadOrderEntry,
+    displayCheckboxes: boolean,
+  ): JSX.Element {
     const { loadOrder, className } = this.props;
     const key = !!item.name ? `${item.name}` : `${item.id}`;
 
-    let classes = ['load-order-entry'];
+    let classes = ["load-order-entry"];
     if (className !== undefined) {
-      classes = classes.concat(className.split(' '));
+      classes = classes.concat(className.split(" "));
     }
 
     if (this.isExternal(item)) {
-      classes = classes.concat('external');
+      classes = classes.concat("external");
     }
 
-    const checkBox = () => (displayCheckboxes)
-      ? (
+    const checkBox = () =>
+      displayCheckboxes ? (
         <Checkbox
-          className='entry-checkbox'
+          className="entry-checkbox"
           checked={item.enabled}
           disabled={this.isLocked(item)}
           onChange={this.onStatusChange}
         />
-      )
-      : null;
+      ) : null;
 
-    const lock = () => (this.isLocked(item))
-      ? (
-        <Icon className='locked-entry-logo' name='locked'/>
+    const lock = () =>
+      this.isLocked(item) ? (
+        <Icon className="locked-entry-logo" name="locked" />
       ) : null;
 
     return (
       <ListGroupItem
         key={key}
-        className={classes.join(' ')}
+        className={classes.join(" ")}
         ref={this.props.item.setRef}
       >
-        <Icon className='drag-handle-icon' name='drag-handle'/>
+        <Icon className="drag-handle-icon" name="drag-handle" />
         <LoadOrderIndexInput
-          className='load-order-index'
+          className="load-order-index"
           api={this.context.api}
           item={item}
           currentPosition={this.currentPosition()}
@@ -115,7 +122,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
           onApplyIndex={this.onApplyIndex}
         />
         {this.renderValidationError()}
-        <p className='load-order-name'>{key}</p>
+        <p className="load-order-name">{key}</p>
         {this.renderExternalBanner(item)}
         {checkBox()}
         {lock()}
@@ -124,11 +131,11 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   }
 
   private isLocked(item: ILoadOrderEntry): boolean {
-    return [true, 'true', 'always'].includes(item.locked);
+    return [true, "true", "always"].includes(item.locked);
   }
 
   private isExternal(item: ILoadOrderEntry): boolean {
-    return (item.modId !== undefined) ? false : true;
+    return item.modId !== undefined ? false : true;
   }
 
   private onStatusChange = (evt: any) => {
@@ -138,12 +145,12 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       enabled: evt.target.checked,
     };
     onSetLoadOrderEntry(profile.id, entry);
-  }
+  };
 
   private currentPosition = (): number => {
     const { item, loadOrder } = this.props;
-    return loadOrder.findIndex(entry => entry.id === item.loEntry.id) + 1;
-  }
+    return loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
+  };
 
   private onApplyIndex = (idx: number) => {
     const { item, onSetLoadOrder, profile, loadOrder } = this.props;
@@ -160,13 +167,13 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     const newLO = loadOrder.filter((entry) => entry.id !== item.loEntry.id);
     newLO.splice(idx - 1, 0, entry);
     onSetLoadOrder(profile.id, newLO);
-  }
+  };
 
   private lockedEntriesCount = (): number => {
     const { loadOrder } = this.props;
-    const locked = loadOrder.filter(item => this.isLocked(item));
+    const locked = loadOrder.filter((item) => this.isLocked(item));
     return locked.length;
-  }
+  };
 }
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
@@ -187,9 +194,9 @@ function mapDispatchToProps(dispatch: any): IActionProps {
   };
 }
 
-export default withTranslation(['common'])(
-  connect(mapStateToProps, mapDispatchToProps)(
-    ItemRenderer) as any) as React.ComponentClass<{
-      className?: string,
-      item: IItemRendererProps,
-    }>;
+export default withTranslation(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(ItemRenderer) as any,
+) as React.ComponentClass<{
+  className?: string;
+  item: IItemRendererProps;
+}>;

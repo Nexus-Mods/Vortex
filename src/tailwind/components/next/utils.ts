@@ -7,7 +7,9 @@
  * XOr type - ensures only one of two types can be used
  */
 export type XOr<T, U> = T | U extends object
-  ? (T & Partial<Record<keyof U, never>>) | (U & Partial<Record<keyof T, never>>)
+  ?
+      | (T & Partial<Record<keyof U, never>>)
+      | (U & Partial<Record<keyof T, never>>)
   : T | U;
 
 /**
@@ -16,17 +18,17 @@ export type XOr<T, U> = T | U extends object
  */
 export function joinClasses(
   classes: (string | string[] | Record<string, boolean | undefined>)[],
-  conditionalClasses?: Record<string, boolean | undefined>
+  conditionalClasses?: Record<string, boolean | undefined>,
 ): string {
   const classArray: string[] = [];
 
   // Process main classes
   classes.forEach((item) => {
-    if (typeof item === 'string') {
+    if (typeof item === "string") {
       classArray.push(item);
     } else if (Array.isArray(item)) {
       classArray.push(...item);
-    } else if (typeof item === 'object') {
+    } else if (typeof item === "object") {
       Object.entries(item).forEach(([key, value]) => {
         if (value) {
           classArray.push(key);
@@ -44,13 +46,19 @@ export function joinClasses(
     });
   }
 
-  return classArray.filter(Boolean).join(' ');
+  return classArray.filter(Boolean).join(" ");
 }
 
 /**
  * Responsive screen sizes for Tailwind
  */
-export type ResponsiveScreenSizes = 'default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type ResponsiveScreenSizes =
+  | "default"
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl";
 
 /**
  * Converts a tab name into a valid HTML element ID
@@ -62,5 +70,5 @@ export type ResponsiveScreenSizes = 'default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl
  * getTabId('A tab name\n  on multiple lines') → 'a_tab_name_on_multiple_lines'
  */
 export function getTabId(tabName: string): string {
-  return tabName.toLowerCase().replace(/\s+/g, '_');
+  return tabName.toLowerCase().replace(/\s+/g, "_");
 }

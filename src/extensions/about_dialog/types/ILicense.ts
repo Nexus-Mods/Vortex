@@ -9,5 +9,5 @@ export interface ILicense {
   email?: string;
   url?: string;
   licenseFile?: string;
-  licenseModified?: 'yes' | 'no';
+  licenseModified?: "yes" | "no";
 }

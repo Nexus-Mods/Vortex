@@ -1,4 +1,4 @@
-import { Tag } from 'bbcode-to-react';
+import { Tag } from "bbcode-to-react";
 
 class IdentityTag extends Tag {
   public toHTML(): string[] {

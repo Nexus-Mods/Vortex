@@ -1,4 +1,4 @@
-import { IToolStored } from './IToolStored';
+import { IToolStored } from "./IToolStored";
 
 /**
  * cached information about games.

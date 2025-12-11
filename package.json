@@ -19,7 +19,7 @@
     "subprojects_app": "node BuildSubprojects.js app",
     "subprojects_app_ci": "node BuildSubprojects.js app --noparallel",
     "build_api": "cd api && yarn run build && cd .. && yarn run docs",
-    "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
+    "build_rest": "yarn run format && yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
@@ -57,8 +57,6 @@
     "postinstall": "node postinstall.js",
     "install:debug": "cross-env VORTEX_BUILD_CONFIG=Debug yarn install",
     "test": "jest --no-cache",
-    "lint": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet",
-    "lint-to-file": "eslint . -c .eslintrc.js --ext .ts,.tsx --quiet --output-file ./eslint.log --no-color",
     "build": "yarn run check_packages && yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
@@ -69,7 +67,11 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "docs": "yarn api-extractor run --local"
+    "docs": "yarn api-extractor run --local",
+    "lint": "yarn eslint .",
+    "lint:quiet": "yarn eslint . --quiet",
+    "format": "yarn prettier src --write",
+    "format:check": "yarn prettier src --check"
   },
   "jest": {
     "testEnvironment": "jsdom",

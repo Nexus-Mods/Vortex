@@ -1,9 +1,17 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { createContext, useContext, KeyboardEvent, MutableRefObject, ReactNode, useCallback, useState } from 'react';
+import * as React from "react";
+import {
+  createContext,
+  useContext,
+  KeyboardEvent,
+  MutableRefObject,
+  ReactNode,
+  useCallback,
+  useState,
+} from "react";
 
-import { getTabId } from '../utils';
+import { getTabId } from "../utils";
 
 /**
  * Arguments for the register tab method
@@ -11,7 +19,7 @@ import { getTabId } from '../utils';
 type RegisterTabArgs = {
   name: string;
   ref: MutableRefObject<HTMLButtonElement | HTMLAnchorElement>;
-  type: 'link' | 'button';
+  type: "link" | "button";
 };
 
 /**
@@ -43,7 +51,12 @@ export const TabContext = createContext<TabsState | undefined>(undefined);
 /**
  * React component to provide context to tabs
  */
-export const TabProvider = ({ children, onSetSelectedTab, tab, tabListId }: TabProviderProps) => {
+export const TabProvider = ({
+  children,
+  onSetSelectedTab,
+  tab,
+  tabListId,
+}: TabProviderProps) => {
   // Handles callback for tab select behaviour (e.g. scrolling)
   const setSelectedTab = (tabToSet: string) => {
     onSetSelectedTab?.(tabToSet);
@@ -53,7 +66,9 @@ export const TabProvider = ({ children, onSetSelectedTab, tab, tabListId }: TabP
   const selectedTab = getTabId(tab);
 
   // Store references to each tab to manage focus. References are keyed by tab name
-  const [tabs, setTabs] = useState<Record<string, Omit<RegisterTabArgs, 'name'>>>({});
+  const [tabs, setTabs] = useState<
+    Record<string, Omit<RegisterTabArgs, "name">>
+  >({});
 
   // Tracks all tabs in id format
   const tabIds = Object.keys(tabs);
@@ -71,28 +86,30 @@ export const TabProvider = ({ children, onSetSelectedTab, tab, tabListId }: TabP
   // Perform keyboard navigation between tabs within the tab list
   const onKeyDown = (event: KeyboardEvent) => {
     // Handle focus and selection separately
-    const focusedIndex = tabIds.findIndex((t) => tabs[t].ref.current === document.activeElement);
+    const focusedIndex = tabIds.findIndex(
+      (t) => tabs[t].ref.current === document.activeElement,
+    );
     const selectedIndex = tabIds.findIndex((t) => t === selectedTab);
 
     // Track focused tab if it exists, else track selected tab
     let index = focusedIndex >= 0 ? focusedIndex : selectedIndex;
 
     switch (event.key) {
-      case 'Home': {
+      case "Home": {
         index = 0;
         event.preventDefault();
         break;
       }
-      case 'End': {
+      case "End": {
         index = tabIds.length - 1;
         event.preventDefault();
         break;
       }
-      case 'ArrowLeft': {
+      case "ArrowLeft": {
         index -= 1;
         break;
       }
-      case 'ArrowRight': {
+      case "ArrowRight": {
         index += 1;
         break;
       }
@@ -105,7 +122,7 @@ export const TabProvider = ({ children, onSetSelectedTab, tab, tabListId }: TabP
     const newTabId = tabIds[index];
 
     // If new tab is a button, select the new tab
-    if (tabs[newTabId].type === 'button') {
+    if (tabs[newTabId].type === "button") {
       setSelectedTab(newTabId);
     }
 
@@ -136,7 +153,7 @@ export const useTabContext = (): TabsState => {
   const context = useContext(TabContext);
 
   if (context === undefined) {
-    throw new Error('useTabContext must be used within a TabProvider');
+    throw new Error("useTabContext must be used within a TabProvider");
   }
 
   return context;

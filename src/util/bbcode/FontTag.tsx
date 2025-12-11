@@ -1,19 +1,17 @@
-import { Tag } from 'bbcode-to-react';
-import * as React from 'react';
+import { Tag } from "bbcode-to-react";
+import * as React from "react";
 
 class FontTag extends Tag {
   public toHTML(): string[] {
     const font = this.params.font;
 
-    return [`<span style="font-family:${font}">`, this.getContent(), '</span>'];
+    return [`<span style="font-family:${font}">`, this.getContent(), "</span>"];
   }
 
   public toReact() {
     const font = this.params.font;
 
-    return (
-      <span style={{ fontFamily: font }}>{this.getComponents()}</span>
-    );
+    return <span style={{ fontFamily: font }}>{this.getComponents()}</span>;
   }
 }
 

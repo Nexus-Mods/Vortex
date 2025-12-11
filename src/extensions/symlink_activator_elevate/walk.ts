@@ -1,12 +1,14 @@
 // IMPORTANT: This file is included from elevated code, it can't include electron stuff
 
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 
-import Promise from 'bluebird';
-import * as path from 'path';
+import Promise from "bluebird";
+import * as path from "path";
 
-function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
+function walk(
+  target: string,
+  callback: (iterPath: string, stats: fs.Stats) => Promise<any>,
+): Promise<any> {
   let allFileNames: string[];
 
   return Promise.resolve(fs.readdir(target))
@@ -16,7 +18,8 @@ function walk(target: string,
         const fullPath: string = path.join(target, statPath);
         return Promise.resolve(fs.lstat(fullPath)).reflect();
       });
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+    })
+    .then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
@@ -32,8 +35,12 @@ function walk(target: string,
         }
       });
       return Promise.all(
-        cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback))));
-    }).then(() => null);
+        cbPromises.concat(
+          Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback)),
+        ),
+      );
+    })
+    .then(() => null);
 }
 
 export default walk;

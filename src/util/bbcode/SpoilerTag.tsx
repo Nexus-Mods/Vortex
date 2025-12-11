@@ -1,8 +1,8 @@
-import { TFunction } from '../i18n';
+import { TFunction } from "../i18n";
 
-import { Tag } from 'bbcode-to-react';
-import * as React from 'react';
-import { withTranslation } from 'react-i18next';
+import { Tag } from "bbcode-to-react";
+import * as React from "react";
+import { withTranslation } from "react-i18next";
 
 interface ISpoilerProps {
   t: TFunction;
@@ -20,14 +20,10 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
   public render(): JSX.Element {
     const { t } = this.props;
     return (
-      <div className='bbcode-spoiler-tag'>
-        <a onClick={this.toggle}>
-          {t(this.props.label ?? 'More')}
-        </a>
+      <div className="bbcode-spoiler-tag">
+        <a onClick={this.toggle}>{t(this.props.label ?? "More")}</a>
         {this.state.display ? (
-          <div className='bbcode-spoiler-content'>
-            {this.props.content}
-          </div>
+          <div className="bbcode-spoiler-content">{this.props.content}</div>
         ) : null}
       </div>
     );
@@ -35,10 +31,12 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
 
   private toggle = () => {
     this.setState({ display: !this.state.display });
-  }
+  };
 }
 
-const SpoilerTrans = withTranslation(['common'])(Spoiler) as React.ComponentClass<any>;
+const SpoilerTrans = withTranslation(["common"])(
+  Spoiler,
+) as React.ComponentClass<any>;
 
 class SpoilerTag extends Tag {
   public toHTML(): string[] {
@@ -46,7 +44,9 @@ class SpoilerTag extends Tag {
   }
 
   public toReact() {
-    return <SpoilerTrans content={this.getComponents()} label={this.params.label} />;
+    return (
+      <SpoilerTrans content={this.getComponents()} label={this.params.label} />
+    );
   }
 }
 

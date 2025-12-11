@@ -1,17 +1,19 @@
-import {setSafe} from './storeHelper';
+import { setSafe } from "./storeHelper";
 
 export class ObserverProxyHandler<T extends object> implements ProxyHandler<T> {
   private mSubscribers: Array<React.Component<any, any>> = [];
 
   public has(target: T, key: PropertyKey): boolean {
-    return (key in target) ||
-      ((typeof(key) === 'string') && (['attach', 'detach'].indexOf(key) !== -1));
+    return (
+      key in target ||
+      (typeof key === "string" && ["attach", "detach"].indexOf(key) !== -1)
+    );
   }
 
   public get(target: T, key: PropertyKey): any {
-    if (key === 'attach') {
+    if (key === "attach") {
       return this.attach;
-    } else if (key === 'detach') {
+    } else if (key === "detach") {
       return this.detach;
     }
     return target[key];
@@ -19,7 +21,7 @@ export class ObserverProxyHandler<T extends object> implements ProxyHandler<T> {
 
   public set(target: T, key: PropertyKey, value: any, receiver: any): boolean {
     target[key] = value;
-    this.mSubscribers.forEach(comp => {
+    this.mSubscribers.forEach((comp) => {
       comp.setState({});
     });
     return true;
@@ -27,14 +29,14 @@ export class ObserverProxyHandler<T extends object> implements ProxyHandler<T> {
 
   private attach = (component: React.Component<any, any>) => {
     this.mSubscribers.push(component);
-  }
+  };
 
   private detach = (component: React.Component<any, any>) => {
     const index = this.mSubscribers.indexOf(component);
     if (index !== -1) {
       this.mSubscribers.splice(index, 1);
     }
-  }
+  };
 }
 
 /**

@@ -3,19 +3,19 @@
 // by containers higher up in the hierarchy
 
 .menu-layer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: $zindex-menu-layer;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: $zindex-menu-layer;
 
-  > * {
-    pointer-events: initial;
-  }
+    > * {
+        pointer-events: initial;
+    }
 }
 
 .modal-container .menu-layer {
-  z-index: $zindex-modal + 5;
+    z-index: $zindex-modal + 5;
 }

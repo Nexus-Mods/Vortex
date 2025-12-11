@@ -4,26 +4,36 @@
  * Adapted from Figma design for collection browsing
  */
 
-import * as React from 'react';
-import { Button } from '../button/Button';
-import { Typography } from '../typography/Typography';
-import { Icon } from '../icon';
-import { nxmFileSize, nxmMod } from '../../../lib/icon-paths';
-import numeral from 'numeral';
-import { IExtensionApi } from '../../../../types/IExtensionContext';
-import { isCollectionModPresent } from '../../../../util/selectors';
-import Debouncer from '../../../../util/Debouncer';
-import { delayed } from '../../../../util/util';
+import * as React from "react";
+import { Button } from "../button/Button";
+import { Typography } from "../typography/Typography";
+import { Icon } from "../icon";
+import { nxmFileSize, nxmMod } from "../../../lib/icon-paths";
+import numeral from "numeral";
+import { IExtensionApi } from "../../../../types/IExtensionContext";
+import { isCollectionModPresent } from "../../../../util/selectors";
+import Debouncer from "../../../../util/Debouncer";
+import { delayed } from "../../../../util/util";
 
-const debouncer = new Debouncer((func: () => void) => {
-  func?.();
-  return delayed(5000);
-}, 5000, false, true);
+const debouncer = new Debouncer(
+  (func: () => void) => {
+    func?.();
+    return delayed(5000);
+  },
+  5000,
+  false,
+  true,
+);
 
-const userInfoDebouncer = new Debouncer((func: () => void) => {
-  func?.();
-  return Promise.resolve();
-}, 10000, false, true);
+const userInfoDebouncer = new Debouncer(
+  (func: () => void) => {
+    func?.();
+    return Promise.resolve();
+  },
+  10000,
+  false,
+  true,
+);
 
 export interface CollectionTileProps {
   // Data
@@ -36,11 +46,11 @@ export interface CollectionTileProps {
     avatar?: string;
   };
   coverImage: string;
-  tags: string[];  // Max 2 tags
+  tags: string[]; // Max 2 tags
   stats: {
     endorsements: number;
     modCount: number;
-    size: number;  // e.g., '540MB'
+    size: number; // e.g., '540MB'
   };
   description: string;
   version?: string;
@@ -57,7 +67,9 @@ export interface CollectionTileProps {
   className?: string;
 }
 
-export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IExtensionApi }> = ({
+export const CollectionTile: React.ComponentType<
+  CollectionTileProps & { api: IExtensionApi }
+> = ({
   api,
   slug,
   title,
@@ -73,23 +85,26 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const [canBeAdded, setCanBeAdded] = React.useState(true);
-  const [tooltip, setTooltip] = React.useState<string>('Add this collection');
+  const [tooltip, setTooltip] = React.useState<string>("Add this collection");
   const [pending, setPending] = React.useState(false);
   // Helper to extract tag text from string or object
   const getTagText = (tag: any): string => {
-    if (typeof tag === 'string') {
+    if (typeof tag === "string") {
       return tag;
     }
-    if (tag && typeof tag === 'object' && 'name' in tag) {
+    if (tag && typeof tag === "object" && "name" in tag) {
       return String(tag.name);
     }
     return String(tag);
   };
 
   const addCollectionDebounced = () => {
-    debouncer.schedule(() => setPending(false), () => {
-      onAddCollection?.();
-    });
+    debouncer.schedule(
+      () => setPending(false),
+      () => {
+        onAddCollection?.();
+      },
+    );
   };
 
   React.useEffect(() => {
@@ -99,20 +114,21 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
       //  Need a better mock for the api.
       return;
     }
-    const collectionModInstalled = isCollectionModPresent(
-      state,
-      slug,
-    );
+    const collectionModInstalled = isCollectionModPresent(state, slug);
 
     setCanBeAdded(!collectionModInstalled);
-    setTooltip(collectionModInstalled || pending ? 'Collection already added' : 'Add this collection');
+    setTooltip(
+      collectionModInstalled || pending
+        ? "Collection already added"
+        : "Add this collection",
+    );
   }, [api, slug, pending, isHovered]);
 
   // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
   React.useEffect(() => {
     if (isHovered && api?.events) {
       userInfoDebouncer.schedule(undefined, () => {
-        api.events.emit('refresh-user-info');
+        api.events.emit("refresh-user-info");
       });
     }
   }, [isHovered]);
@@ -133,25 +149,22 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
   }, []);
 
   // Find the "Easy install" badge (if it exists)
-  const easyInstallBadge = badges?.find(badge =>
-    badge.name.toLowerCase() === 'easy install'
+  const easyInstallBadge = badges?.find(
+    (badge) => badge.name.toLowerCase() === "easy install",
   );
 
   return (
     <div
-      className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ''}`}
+      className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ""}`}
       onMouseEnter={mouseEnter}
       onMouseLeave={mouseLeave}
     >
       {/* Main content area */}
       <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
         <div className="tw:self-stretch tw:flex tw:flex-1 tw:justify-between tw:items-start">
-
           {/* Left: Image */}
           <div className="tw:w-[175px] tw:h-[219px] tw:relative tw:shrink-0">
-
             <div className="tw:absolute tw:top-0 tw:left-0">
-
               <img
                 className="tw:w-[166px] tw:h-52 tw:rounded-sm tw:object-cover"
                 src={coverImage}
@@ -168,19 +181,20 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     className="tw:flex tw:items-center tw:gap-x-0.5 tw:px-1.5 tw:py-0.5 tw:bg-info-weak tw:text-info-50"
                   >
                     <Icon path="mdiStar" size="xs" />
-                    <span className="tw:px-0.5 tw:leading-5" title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
+                    <span
+                      className="tw:px-0.5 tw:leading-5"
+                      title={easyInstallBadge.description}
+                    >
+                      {easyInstallBadge.name}
+                    </span>
                   </Typography>
                 </div>
               )}
-
             </div>
-
-
           </div>
 
           {/* Right: Details */}
           <div className="tw:flex-1 tw:self-stretch tw:flex tw:flex-col tw:justify-start tw:items-start">
-
             {/* Header: Title + Author */}
             <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-0">
               <Typography
@@ -226,10 +240,11 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                           as="div"
                           typographyType="body-xs"
                           appearance="none"
-                          className={`tw:justify-center tw:tracking-tight ${tagText.toLowerCase() === 'adult'
-                            ? 'tw:text-danger-strong'
-                            : 'tw:text-neutral-moderate'
-                            }`}
+                          className={`tw:justify-center tw:tracking-tight ${
+                            tagText.toLowerCase() === "adult"
+                              ? "tw:text-danger-strong"
+                              : "tw:text-neutral-moderate"
+                          }`}
                         >
                           {tagText}
                         </Typography>
@@ -246,10 +261,8 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
             {/* Stats section */}
             <div className="tw:self-stretch tw:pl-3 tw:inline-flex tw:justify-start tw:items-center tw:gap-5">
               <div className="tw:flex-1 tw:py-1.5 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
-
                 {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
-
                   <Icon path="mdiThumbUp" size="sm" />
                   <Typography
                     as="div"
@@ -257,10 +270,9 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {numeral(stats.endorsements).format('0 a')}
+                    {numeral(stats.endorsements).format("0 a")}
                   </Typography>
                 </div>
-
 
                 {/* Size */}
                 <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
@@ -271,7 +283,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {numeral(stats.size).format('0.0 b')}
+                    {numeral(stats.size).format("0.0 b")}
                   </Typography>
                 </div>
 
@@ -284,7 +296,7 @@ export const CollectionTile: React.ComponentType<CollectionTileProps & { api: IE
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
-                    {numeral(stats.modCount).format('0,0')}
+                    {numeral(stats.modCount).format("0,0")}
                   </Typography>
                 </div>
               </div>

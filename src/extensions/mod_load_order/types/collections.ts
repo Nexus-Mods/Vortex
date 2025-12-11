@@ -1,6 +1,11 @@
-import { ICollectionInfo, IRevision, SourceType, UpdatePolicy } from '@nexusmods/nexus-api';
-import * as types from '../../../types/api';
-import { ILoadOrder } from '../types/types';
+import {
+  ICollectionInfo,
+  IRevision,
+  SourceType,
+  UpdatePolicy,
+} from "@nexusmods/nexus-api";
+import * as types from "../../../types/api";
+import { ILoadOrder } from "../types/types";
 
 export interface ICollectionLoadOrder {
   loadOrder: ILoadOrder;
@@ -44,7 +49,13 @@ export interface ICollectionMod {
   details?: ICollectionModDetails;
 }
 
-export type RuleType = 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
+export type RuleType =
+  | "before"
+  | "after"
+  | "requires"
+  | "conflicts"
+  | "recommends"
+  | "provides";
 export interface ICollectionModRule {
   source: types.IModReference;
   type: RuleType;
@@ -66,15 +77,19 @@ export interface IGameSpecificInterfaceProps {
 
 export interface ICollectionsGameSupportEntry {
   gameId: string;
-  generator: (state: types.IState,
-              gameId: string,
-              stagingPath: string,
-              modIds: string[],
-              mods: { [modId: string]: types.IMod }) => Promise<any>;
+  generator: (
+    state: types.IState,
+    gameId: string,
+    stagingPath: string,
+    modIds: string[],
+    mods: { [modId: string]: types.IMod },
+  ) => Promise<any>;
 
-  parser: (api: types.IExtensionApi,
-           gameId: string,
-           collection: ICollection) => Promise<void>;
+  parser: (
+    api: types.IExtensionApi,
+    gameId: string,
+    collection: ICollection,
+  ) => Promise<void>;
 
   interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
 }
@@ -82,7 +97,7 @@ export interface ICollectionsGameSupportEntry {
 export class CollectionGenerateError extends Error {
   constructor(why: string) {
     super(`Failed to generate game specific data for collection: ${why}`);
-    this.name = 'CollectionGenerateError';
+    this.name = "CollectionGenerateError";
   }
 }
 
@@ -90,7 +105,7 @@ export class CollectionParseError extends Error {
   private mCollection: ICollection;
   constructor(collection: ICollection, why: string) {
     super(`Failed to parse game specific data for collection: ${why}`);
-    this.name = 'CollectionGenerateError';
+    this.name = "CollectionGenerateError";
     this.mCollection = collection;
   }
 

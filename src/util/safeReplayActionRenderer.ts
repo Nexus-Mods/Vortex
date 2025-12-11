@@ -3,8 +3,8 @@
  * of any renderer-originated action as IPC and avoids re-dispatching to other renderers
  */
 
-import { ipcRenderer } from 'electron';
-import { Store } from 'redux';
+import { ipcRenderer } from "electron";
+import { Store } from "redux";
 
 const RENDERER_ID = `renderer-${process.pid}-${Date.now()}`;
 
@@ -13,13 +13,13 @@ export function safeReplayActionRenderer(store: Store) {
     return;
   }
 
-  ipcRenderer.on('redux-action', (event, payload) => {
+  ipcRenderer.on("redux-action", (event, payload) => {
     try {
       const action = JSON.parse(payload);
 
       // Don't replay actions that originated from ANY renderer
       // This prevents IPC loops between different renderer processes
-      if (action.meta?.origin && action.meta.origin.startsWith('renderer-')) {
+      if (action.meta?.origin && action.meta.origin.startsWith("renderer-")) {
         // console.log(`[IPC] Skipping renderer-originated action: ${action.type} from ${action.meta.origin}`);
         return;
       }
@@ -35,7 +35,7 @@ export function safeReplayActionRenderer(store: Store) {
 
       store.dispatch(actionWithIPCFlag);
     } catch (err) {
-      console.error('Failed to replay action from main process:', err);
+      console.error("Failed to replay action from main process:", err);
     }
   });
 }

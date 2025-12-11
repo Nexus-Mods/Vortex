@@ -1,256 +1,242 @@
 .modal-dialog {
-  max-width: 60%;
-  min-width: 400px;
+    max-width: 60%;
+    min-width: 400px;
 }
 
 .modal-title {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 
+    svg {
+        width: 2em;
+        height: 2em;
+        margin-right: 1em;
+    }
 
-  svg {
-    width: 2em;
-    height: 2em;
-    margin-right: 1em;
-  }
+    .icon-info,
+    .icon-question {
+        color: $brand-info;
+    }
 
-  .icon-info,
-  .icon-question {
-    color: $brand-info;
-  }
-
-  .icon-error {
-    color: $brand-danger;
-  }
+    .icon-error {
+        color: $brand-danger;
+    }
 }
 
 .common-dialog-regular {
-  display: flex !important;
-  justify-content: center;
+    display: flex !important;
+    justify-content: center;
 
-  .modal-dialog {
-    width: 60em;
-    display: flex;
-    margin: 0;
-    align-items: center;
-    height: 100;
-  }
+    .modal-dialog {
+        width: 60em;
+        display: flex;
+        margin: 0;
+        align-items: center;
+        height: 100;
+    }
 }
 
 .common-dialog-wide {
-  .modal-dialog {
-    height: 80%;
-    width: auto;
-  }
-
-  .modal-content {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-body {
-    flex: 1 0%;
-    display: flex;
-    padding: $half-gutter $gutter-width;
-
-    div {
-      display: flex;
-      flex-direction: column;
+    .modal-dialog {
+        height: 80%;
+        width: auto;
     }
 
-    webview {
-      height: 100%;
-      background-color: white;
+    .modal-content {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
     }
-  }
+
+    .modal-body {
+        flex: 1 0%;
+        display: flex;
+        padding: $half-gutter $gutter-width;
+
+        div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        webview {
+            height: 100%;
+            background-color: white;
+        }
+    }
 }
 
 .dialog-container {
-  width: 100%;
-  min-height: 300px;
-  max-height: 60vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  // the flex sizing may not be optimal
-  textarea {
     width: 100%;
-    resize: none;
-    //border: none;
-    //padding: 4px 8px;
-    border-radius: $border-radius-base;
-    flex: 1 1 0%;
+    min-height: 300px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 
-    //resize: none;
-    padding: 5px 8px;
-    background-color: $brand-bg;
-    border: 1px solid $border-color;
-  }
-
-  >div {
-    flex: 1 1 90%;
-  }
-
-  >.dialog-content-bbcode {
-    
-    table {
-      width: 100%;
-    }
-
-    ul {
-      margin-bottom: 0;
-    }
-
-    .bbcode-spoiler-tag {
-      
-
-      .bbcode-spoiler-content {
-        padding: 8px;
-        border: 1px solid $border-color;
+    // the flex sizing may not be optimal
+    textarea {
+        width: 100%;
+        resize: none;
+        //border: none;
+        //padding: 4px 8px;
         border-radius: $border-radius-base;
-        background: $brand-bg;
-        margin-top: 4px;
+        flex: 1 1 0%;
+
+        //resize: none;
+        padding: 5px 8px;
+        background-color: $brand-bg;
+        border: 1px solid $border-color;
     }
+
+    > div {
+        flex: 1 1 90%;
     }
-  }
 
-  .dialog-content-input {
-    display: flex;
-    flex-direction: column;
-
-    >div {
-      flex: 1 1 0;
-      display: flex;
-      flex-direction: column;
-    }
-  }
-
-  >.dialog-content-text {
-    flex: initial;
-    margin-bottom: $half-gutter;
-    white-space: pre-wrap;
-  }
-
-  
-
-  >.dialog-content-html {
-    white-space: pre-wrap;
-  }
-
-  >.dialog-content-choices {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    //justify-content: flex-end;
-
-    >div {
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      .radio label,
-      .checkbox label {
-        display: flex;
-        //align-items: center;
-
-        input[type=radio],
-        input[type=checkbox] {
-          margin: 2px 0 0 -20px; // 2px top border accounts for natural margins of text above when compared to the radio input
+    > .dialog-content-bbcode {
+        table {
+            width: 100%;
         }
 
-      }
+        ul {
+            margin-bottom: 0;
+        }
+
+        .bbcode-spoiler-tag {
+            .bbcode-spoiler-content {
+                padding: 8px;
+                border: 1px solid $border-color;
+                border-radius: $border-radius-base;
+                background: $brand-bg;
+                margin-top: 4px;
+            }
+        }
     }
 
-    .choice-maintext {
-      font-weight: bold;
+    .dialog-content-input {
+        display: flex;
+        flex-direction: column;
+
+        > div {
+            flex: 1 1 0;
+            display: flex;
+            flex-direction: column;
+        }
     }
 
-    /*.choice-subtext {
+    > .dialog-content-text {
+        flex: initial;
+        margin-bottom: $half-gutter;
+        white-space: pre-wrap;
+    }
+
+    > .dialog-content-html {
+        white-space: pre-wrap;
+    }
+
+    > .dialog-content-choices {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        //justify-content: flex-end;
+
+        > div {
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .radio label,
+            .checkbox label {
+                display: flex;
+                //align-items: center;
+
+                input[type="radio"],
+                input[type="checkbox"] {
+                    margin: 2px 0 0 -20px; // 2px top border accounts for natural margins of text above when compared to the radio input
+                }
+            }
+        }
+
+        .choice-maintext {
+            font-weight: bold;
+        }
+
+        /*.choice-subtext {
       //margin-bottom: 1em;
     }*/
-  }
+    }
 }
 
 #new-update-changelog-dialog {
+    .modal-dialog {
+        width: 600px;
+        min-width: 600px;
 
-  .modal-dialog {
-    width: 600px;
-    min-width: 600px;
+        .dialog-container {
+            .dialog-content-html {
+                gap: 8px;
+                padding-right: 16px;
 
-    .dialog-container {
+                // need different sizes in case github releases markdown come in as h1's and h2's etc
+                // when really they should h4s, h5s for their level of importance and consistency
 
-      .dialog-content-html {
+                .changelog-dialog-release {
+                    gap: 12px;
 
-        gap: 8px;
-        padding-right: 16px;
+                    h1 {
+                        font-size: 1.3em;
+                    }
 
-        // need different sizes in case github releases markdown come in as h1's and h2's etc
-        // when really they should h4s, h5s for their level of importance and consistency
+                    h2 {
+                        font-size: 1.2em;
+                    }
 
-        .changelog-dialog-release {
+                    h3 {
+                        font-size: 1.1em;
+                    }
 
-          gap: 12px;
+                    // these are going to be set in code as each release heading
 
-          h1 {
-            font-size: 1.3em;
-          }
-  
-          h2 {
-            font-size: 1.2em;
-          }
-  
-          h3 {
-            font-size: 1.1em;
-          }
+                    h4 {
+                        font-size: 1.6em;
+                        line-height: 1;
+                        margin: 10px 0 0 0;
+                    }
 
-        // these are going to be set in code as each release heading
-  
-          h4 {
-            font-size: 1.6em;
-            line-height: 1;
-            margin: 10px 0 0 0;
-          }
-  
-          ul {    
-            padding-inline-start: 32px;
-            line-height: 1; 
-            margin: 0;
+                    ul {
+                        padding-inline-start: 32px;
+                        line-height: 1;
+                        margin: 0;
 
-            li {
-              line-height: 1.5;
+                        li {
+                            line-height: 1.5;
+                        }
+                    }
+
+                    p {
+                        margin: 0;
+                    }
+
+                    details,
+                    img {
+                        border: 1px solid $border-color;
+                        padding: 8px;
+                        white-space: normal;
+                        border-radius: 8px;
+                    }
+
+                    summary {
+                        display: none;
+                    }
+
+                    video {
+                        width: 100%;
+                        display: block;
+                    }
+                }
             }
-          }
-
-          p {
-            margin: 0;
-          }
-
-          details, img {
-            border: 1px solid $border-color;
-            padding: 8px;
-            white-space: normal;
-            border-radius: 8px;
-          }
-          
-          summary {
-            display: none;
-          }
-
-          video {
-            width: 100%;
-            display: block;
-          }
-
-
-
         }
-
-      }
     }
-  }
 }

@@ -1,23 +1,23 @@
-import Promise from 'bluebird';
-import _ from 'lodash';
-import Debouncer from '../../util/Debouncer';
-import { nativeImage } from 'electron';
-import * as fs from '../../util/fs';
-import path from 'path';
-import extractExeIcon from '../../util/exeIcon';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import Promise from "bluebird";
+import _ from "lodash";
+import Debouncer from "../../util/Debouncer";
+import { nativeImage } from "electron";
+import * as fs from "../../util/fs";
+import path from "path";
+import extractExeIcon from "../../util/exeIcon";
+import { ProcessCanceled } from "../../util/CustomErrors";
 
-import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IEditStarterInfo } from './types';
+import { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import { IEditStarterInfo } from "./types";
 
-import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
+import StarterInfo, { IStarterInfo } from "../../util/StarterInfo";
 
-import { truthy } from '../../util/util';
+import { truthy } from "../../util/util";
 
-import lazyRequire from '../../util/lazyRequire';
-import type * as remoteT from '@electron/remote';
-import { makeRemoteCallSync } from '../../util/electronRemote';
-const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
+import lazyRequire from "../../util/lazyRequire";
+import type * as remoteT from "@electron/remote";
+import { makeRemoteCallSync } from "../../util/electronRemote";
+const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 
 export const propOf = <T>(name: keyof T) => name;
 
@@ -30,11 +30,11 @@ export function toDirname(filePath: string) {
 }
 
 export function resolveToolName(tool: IStarterInfo | IEditStarterInfo): string {
-  return (tool.name)
+  return tool.name
     ? tool.name
     : tool.exePath
       ? path.basename(tool.exePath, path.extname(tool.exePath))
-      : '';
+      : "";
 }
 
 export function splitCommandLine(input: string): string[] {
@@ -48,7 +48,7 @@ export function splitCommandLine(input: string): string[] {
   };
 
   for (let i = 0; i < input.length; ++i) {
-    if ((input[i] === ' ') && (i > startOffset) && !inBrackets) {
+    if (input[i] === " " && i > startOffset && !inBrackets) {
       completeWord(i);
     } else if (input[i] === '"') {
       inBrackets = !inBrackets;
@@ -61,16 +61,19 @@ export function splitCommandLine(input: string): string[] {
   return res;
 }
 
-const setJumpList = makeRemoteCallSync('set-jump-list', (electron, window, categories: Electron.JumpListCategory[]) => {
-  try {
-    electron.app.setJumpList(categories);
-  } catch (err) {
-    console.error(err);
-  }
-});
+const setJumpList = makeRemoteCallSync(
+  "set-jump-list",
+  (electron, window, categories: Electron.JumpListCategory[]) => {
+    try {
+      electron.app.setJumpList(categories);
+    } catch (err) {
+      console.error(err);
+    }
+  },
+);
 
 export function updateJumpList(starters: IStarterInfo[]) {
-  if (process.platform !== 'win32') {
+  if (process.platform !== "win32") {
     return;
   }
 
@@ -80,12 +83,14 @@ export function updateJumpList(starters: IStarterInfo[]) {
   //   get shown anyway.
 
   const userTasks: Electron.JumpListItem[] = starters
-    .filter(starter =>
-      (truthy(starter.exePath))
-      && (Object.keys(starter.environment || {}).length === 0))
-    .map(starter => {
+    .filter(
+      (starter) =>
+        truthy(starter.exePath) &&
+        Object.keys(starter.environment || {}).length === 0,
+    )
+    .map((starter) => {
       const task: Electron.Task = {
-        arguments: starter.commandLine.join(' '),
+        arguments: starter.commandLine.join(" "),
         description: starter.name,
         iconIndex: 0,
         iconPath: StarterInfo.getIconPath(starter),
@@ -98,10 +103,10 @@ export function updateJumpList(starters: IStarterInfo[]) {
 
   setJumpList([
     {
-      name: 'Tools',
-      type: 'custom',
+      name: "Tools",
+      type: "custom",
       items: userTasks,
-    }
+    },
   ]);
 }
 
@@ -110,7 +115,7 @@ export function toEditStarter(input: IStarterInfo): IEditStarterInfo {
     ...input,
     iconPath: StarterInfo.getIconPath(input),
   };
-  temp.commandLine = temp.commandLine.join(' ');
+  temp.commandLine = temp.commandLine.join(" ");
   temp.environment = { ...input.environment };
   return temp;
 }
@@ -137,13 +142,22 @@ export function toToolDiscovery(tool: IEditStarterInfo): IDiscoveredTool {
 }
 
 function toPNG(inputPath: string, outputPath: string): Promise<void> {
-  return fs.writeFileAsync(outputPath, nativeImage.createFromPath(inputPath).toPNG());
+  return fs.writeFileAsync(
+    outputPath,
+    nativeImage.createFromPath(inputPath).toPNG(),
+  );
 }
 
-const updateImageDebouncer = new Debouncer((tool: IStarterInfo, imagePath: string) =>
-  useImage(tool, imagePath), 2000);
+const updateImageDebouncer = new Debouncer(
+  (tool: IStarterInfo, imagePath: string) => useImage(tool, imagePath),
+  2000,
+);
 
-export function updateImage(tool: IStarterInfo, filePath: string, cb: (err?: Error) => void) {
+export function updateImage(
+  tool: IStarterInfo,
+  filePath: string,
+  cb: (err?: Error) => void,
+) {
   updateImageDebouncer.schedule(cb, tool, filePath);
 }
 
@@ -154,13 +168,18 @@ function useImage(tool: IStarterInfo, filePath: string): Promise<void> {
     return Promise.resolve();
   }
 
-  return fs.statAsync(filePath)
-    .catch(err => Promise.reject(new ProcessCanceled('invalid file')))
-    .then(stats => stats.isDirectory()
-      ? Promise.reject(new ProcessCanceled('is a directory'))
-      : Promise.resolve())
+  return fs
+    .statAsync(filePath)
+    .catch((err) => Promise.reject(new ProcessCanceled("invalid file")))
+    .then((stats) =>
+      stats.isDirectory()
+        ? Promise.reject(new ProcessCanceled("is a directory"))
+        : Promise.resolve(),
+    )
     .then(() => fs.ensureDirAsync(path.dirname(destPath)))
-    .then(() => (path.extname(filePath) === '.exe')
-      ? extractExeIcon(filePath, destPath)
-      : toPNG(filePath, destPath));
+    .then(() =>
+      path.extname(filePath) === ".exe"
+        ? extractExeIcon(filePath, destPath)
+        : toPNG(filePath, destPath),
+    );
 }

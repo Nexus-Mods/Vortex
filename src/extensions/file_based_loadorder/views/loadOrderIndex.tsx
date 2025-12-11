@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ILoadOrderEntry } from '../../../types/api';
-import { IExtensionApi, LoadOrder } from '../../../types/api';
+import React, { useState } from "react";
+import { ILoadOrderEntry } from "../../../types/api";
+import { IExtensionApi, LoadOrder } from "../../../types/api";
 
 interface IProps {
   className?: string;
@@ -9,12 +9,13 @@ interface IProps {
   loadOrder: LoadOrder;
   currentPosition: number;
   lockedEntriesCount: number;
-  isLocked: (item: ILoadOrderEntry) => boolean
+  isLocked: (item: ILoadOrderEntry) => boolean;
   onApplyIndex: (idx: number) => void;
 }
 
 export function LoadOrderIndexInput(props: IProps) {
-  const { item, loadOrder, currentPosition, lockedEntriesCount, onApplyIndex } = props;
+  const { item, loadOrder, currentPosition, lockedEntriesCount, onApplyIndex } =
+    props;
 
   // Valid ranges.
   const startIndex = lockedEntriesCount + 1;
@@ -22,29 +23,35 @@ export function LoadOrderIndexInput(props: IProps) {
 
   const [inputValue, setInputValue] = useState(currentPosition.toString());
 
-  const handleInputChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    // Meant to be used as validation only.
-    try {
-      const newIndex = parseInt(event.target.value, 10);
-      setInputValue(newIndex.toString());
-    } catch (err) {
-      setInputValue(currentPosition.toString());
-    }
-  }, [currentPosition, maxIndex, startIndex]);
+  const handleInputChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      // Meant to be used as validation only.
+      try {
+        const newIndex = parseInt(event.target.value, 10);
+        setInputValue(newIndex.toString());
+      } catch (err) {
+        setInputValue(currentPosition.toString());
+      }
+    },
+    [currentPosition, maxIndex, startIndex],
+  );
 
-  const handleKeyPress = React.useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      // Apply new index
-      let newIndex = parseInt(inputValue, 10);
-      newIndex = Math.max(startIndex, Math.min(maxIndex, newIndex));
-      onApplyIndex(newIndex);
-      setInputValue(newIndex.toString());
-    }
-    if (event.key === 'Escape') {
-      // reset
-      setInputValue(currentPosition.toString());
-    }
-  }, [currentPosition, maxIndex, startIndex, inputValue]);
+  const handleKeyPress = React.useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        // Apply new index
+        let newIndex = parseInt(inputValue, 10);
+        newIndex = Math.max(startIndex, Math.min(maxIndex, newIndex));
+        onApplyIndex(newIndex);
+        setInputValue(newIndex.toString());
+      }
+      if (event.key === "Escape") {
+        // reset
+        setInputValue(currentPosition.toString());
+      }
+    },
+    [currentPosition, maxIndex, startIndex, inputValue],
+  );
 
   const handleBlur = React.useCallback(() => {
     // User moved away from the input, reset the index.
@@ -60,7 +67,7 @@ export function LoadOrderIndexInput(props: IProps) {
   ) : (
     <div className={props.className}>
       <input
-        type='number'
+        type="number"
         value={inputValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyPress}

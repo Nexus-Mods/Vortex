@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
-import * as React from 'react';
+import * as _ from "lodash";
+import * as React from "react";
 
 function ignoreFunction(lhs: any, rhs: any): boolean {
   if (_.isFunction(lhs)) {
@@ -64,7 +64,7 @@ class DynamicProps extends React.Component<IBaseProps, {}> {
 const listeners: DynamicProps[] = [];
 
 function refreshListeners() {
-  listeners.forEach(listener => listener.refreshProps());
+  listeners.forEach((listener) => listener.refreshProps());
   if (listeners.length > 0) {
     setTimeout(refreshListeners, 500);
   }

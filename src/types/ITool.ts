@@ -1,5 +1,5 @@
-import Promise from 'bluebird';
-import { IGameStoreEntry } from './IGameStoreEntry';
+import Promise from "bluebird";
+import { IGameStoreEntry } from "./IGameStoreEntry";
 
 /**
  * static information about a tool associated with a game.
@@ -153,5 +153,5 @@ export interface ITool {
    * what to do with Vortex when starting the tool. Default is to do nothing. 'hide' will minimize
    * Vortex and 'close' will make Vortex quit as soon as the tool is started.
    */
-  onStart?: 'hide' | 'hide_recover' | 'close';
+  onStart?: "hide" | "hide_recover" | "close";
 }

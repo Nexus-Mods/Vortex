@@ -1,25 +1,23 @@
-import { IDiscoveryState, IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
+import { IDiscoveryState, IState } from "../../../types/IState";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
 
-import { IDiscoveryResult } from '../types/IDiscoveryResult';
-import { IGameStored } from '../types/IGameStored';
+import { IDiscoveryResult } from "../types/IDiscoveryResult";
+import { IGameStored } from "../types/IGameStored";
 
-import GameThumbnail from './GameThumbnail';
+import GameThumbnail from "./GameThumbnail";
 
-import Promise from 'bluebird';
-import * as React from 'react';
+import Promise from "bluebird";
+import * as React from "react";
 
-export interface IBaseProps {
-}
+export interface IBaseProps {}
 
 interface IConnectedProps {
   knownGames: IGameStored[];
   discoveredGames: { [id: string]: IDiscoveryResult };
 }
 
-interface IActionProps {
-}
+interface IActionProps {}
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
@@ -47,31 +45,37 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     const { t, discoveredGames, knownGames } = this.props;
     const { more } = this.state;
 
-    const games: IGameStored[] = knownGames.filter(game =>
-      getSafe(discoveredGames, [game.id, 'path'], undefined) !== undefined);
+    const games: IGameStored[] = knownGames.filter(
+      (game) =>
+        getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined,
+    );
 
     return (
       <div>
-        <h3 className='dashlet-game-title'>{t('Welcome to Vortex')}</h3>
-        <span>{ t('As this is the first time you start Vortex, please pick a game to manage. ' +
-                  'Afterwards please check the ToDo List below.') }</span>
-        <div style={{ display: 'flex' }} ref={this.setRef}>
-          <div style={{ overflowX: 'hidden', position: 'relative' }}>
-            <div style={{ display: 'inline-flex' }} ref={this.setInnerRef}>
-              {games.map(game => (
+        <h3 className="dashlet-game-title">{t("Welcome to Vortex")}</h3>
+        <span>
+          {t(
+            "As this is the first time you start Vortex, please pick a game to manage. " +
+              "Afterwards please check the ToDo List below.",
+          )}
+        </span>
+        <div style={{ display: "flex" }} ref={this.setRef}>
+          <div style={{ overflowX: "hidden", position: "relative" }}>
+            <div style={{ display: "inline-flex" }} ref={this.setInnerRef}>
+              {games.map((game) => (
                 <GameThumbnail
                   t={t}
                   key={game.id}
                   game={game}
-                  type='unmanaged'
+                  type="unmanaged"
                   active={false}
                   onRefreshGameInfo={this.refreshGameInfo}
-                />))
-              }
+                />
+              ))}
             </div>
             {more ? (
-              <div className='dashlet-game-more'>
-                <a onClick={this.openGames}>{t('More...')}</a>
+              <div className="dashlet-game-more">
+                <a onClick={this.openGames}>{t("More...")}</a>
               </div>
             ) : null}
           </div>
@@ -81,25 +85,26 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private openGames = () => {
-    this.context.api.events.emit('show-main-page', 'Games');
-  }
+    this.context.api.events.emit("show-main-page", "Games");
+  };
 
   private refreshMore = () => {
-    if ((this.mRef === null) || (this.mInnerRef === null)) {
+    if (this.mRef === null || this.mInnerRef === null) {
       return;
     }
 
     const more =
-      this.mInnerRef.getBoundingClientRect().width > this.mRef.getBoundingClientRect().width;
+      this.mInnerRef.getBoundingClientRect().width >
+      this.mRef.getBoundingClientRect().width;
     if (more !== this.state.more) {
       this.nextState.more = more;
     }
     setTimeout(this.refreshMore, 1000);
-  }
+  };
 
-  private refreshGameInfo = gameId => {
+  private refreshGameInfo = (gameId) => {
     return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('refresh-game-info', gameId, err => {
+      this.context.api.events.emit("refresh-game-info", gameId, (err) => {
         if (err !== null) {
           reject(err);
         } else {
@@ -107,15 +112,15 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
         }
       });
     });
-  }
+  };
 
   private setRef = (ref: Element) => {
     this.mRef = ref;
-  }
+  };
 
   private setInnerRef = (ref: Element) => {
     this.mInnerRef = ref;
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -126,10 +131,9 @@ function mapStateToProps(state: IState): IConnectedProps {
 }
 
 function mapDispatchToProps(dispatch): IActionProps {
-  return {
-  };
+  return {};
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(Dashlet)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(Dashlet),
+) as React.ComponentClass<{}>;

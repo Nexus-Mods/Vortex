@@ -1,5 +1,5 @@
-import * as remoteT from '@electron/remote';
-import * as electron from 'electron';
+import * as remoteT from "@electron/remote";
+import * as electron from "electron";
 
 const myExport: typeof electron & { remote?: typeof remoteT } = {
   ...electron,
@@ -7,7 +7,7 @@ const myExport: typeof electron & { remote?: typeof remoteT } = {
 
 module.exports = myExport;
 
-if (process.type === 'renderer') {
+if (process.type === "renderer") {
   // tslint:disable-next-line:no-var-requires
-  module.exports['remote'] = require('@electron/remote');
+  module.exports["remote"] = require("@electron/remote");
 }

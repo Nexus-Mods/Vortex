@@ -1,1 +1,1 @@
-export const SITE_ID = 'site';
+export const SITE_ID = "site";

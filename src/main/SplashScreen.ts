@@ -1,15 +1,15 @@
-import Promise from 'bluebird';
-import * as path from 'path';
-import { pathToFileURL } from 'url';
-import getVortexPath from '../util/getVortexPath';
-import { log } from '../util/log';
+import Promise from "bluebird";
+import * as path from "path";
+import { pathToFileURL } from "url";
+import getVortexPath from "../util/getVortexPath";
+import { log } from "../util/log";
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
 
   public fadeOut() {
     // apparently we can't prevent the user from closing the splash with alt-f4...
-    if ((this.mWindow === null) || this.mWindow.isDestroyed()) {
+    if (this.mWindow === null || this.mWindow.isDestroyed()) {
       return Promise.resolve();
     }
     // ensure the splash screen remains visible
@@ -17,13 +17,14 @@ class SplashScreen {
 
     // don't fade out immediately, otherwise the it looks odd
     // as the main window appears at the same time
-    return Promise.delay(200)
+    return (
+      Promise.delay(200)
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
             try {
-              this.mWindow.webContents.send('fade-out');
+              this.mWindow.webContents.send("fade-out");
             } catch (err) {
-              log('warn', 'failed to fade out splash screen', err.message);
+              log("warn", "failed to fade out splash screen", err.message);
             }
           }
         })
@@ -35,15 +36,17 @@ class SplashScreen {
             this.mWindow.close();
           }
           this.mWindow = null;
-        });
+        })
+    );
   }
 
   public create(disableGPU: boolean): Promise<void> {
-    const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
+    const BrowserWindow: typeof Electron.BrowserWindow =
+      require("electron").BrowserWindow;
 
     return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        log('warn', 'splash screen taking awfully long');
+        log("warn", "splash screen taking awfully long");
         resolve?.();
         resolve = undefined;
       }, 1000);
@@ -82,11 +85,12 @@ class SplashScreen {
         },
       });
 
-      this.mWindow.once('ready-to-show', onReady);
+      this.mWindow.once("ready-to-show", onReady);
 
       this.mWindow.loadURL(
-        pathToFileURL(path.join(getVortexPath('base'), 'splash.html')).href
-        + `?disableGPU=${disableGPU ? 1 : 0}`);
+        pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
+          `?disableGPU=${disableGPU ? 1 : 0}`,
+      );
       // this.mWindow.webContents.openDevTools();
     });
   }

@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 function step(startTime: number, endTime: number, time: number) {
   if (time <= startTime) {
@@ -13,7 +13,11 @@ function step(startTime: number, endTime: number, time: number) {
 
 const scrollJobs: { [elementId: string]: () => void } = {};
 
-function smoothScroll(element: HTMLElement, targetPos: number, duration: number) {
+function smoothScroll(
+  element: HTMLElement,
+  targetPos: number,
+  duration: number,
+) {
   targetPos = Math.round(targetPos);
   duration = Math.max(Math.round(duration), 0);
 
@@ -32,10 +36,10 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
     let timer: number;
 
     scrollJobs[element.id] = () => {
-        canceled = true;
-        window.cancelAnimationFrame(timer);
-        scrollJobs[element.id] = undefined;
-        resolve(false);
+      canceled = true;
+      window.cancelAnimationFrame(timer);
+      scrollJobs[element.id] = undefined;
+      resolve(false);
     };
 
     const tick = () => {
@@ -44,13 +48,17 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
       }
       const now = Date.now();
       const percent = step(startTime, endTime, now);
-      const newPos = Math.round(startPos + (distance * percent));
+      const newPos = Math.round(startPos + distance * percent);
       if (element.scrollTop === newPos) {
         return resolve(true);
       }
       element.scrollTop = newPos;
 
-      if ((now >= endTime) || (element.scrollTop !== newPos) || (newPos === targetPos)) {
+      if (
+        now >= endTime ||
+        element.scrollTop !== newPos ||
+        newPos === targetPos
+      ) {
         // done or failed to scroll all the way to the destination pos,
         // in which case we probably hit bounds
         scrollJobs[element.id] = undefined;

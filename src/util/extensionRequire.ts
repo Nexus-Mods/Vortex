@@ -1,18 +1,18 @@
-import * as reactSelect from '../renderer/controls/ReactSelectWrap';
+import * as reactSelect from "../renderer/controls/ReactSelectWrap";
 
-import ExtensionManager, { IRegisteredExtension } from './ExtensionManager';
+import ExtensionManager, { IRegisteredExtension } from "./ExtensionManager";
 
-import {} from 'module';
-import * as reduxAct from 'redux-act';
-import { dynreq } from 'vortex-run';
+import {} from "module";
+import * as reduxAct from "redux-act";
+import { dynreq } from "vortex-run";
 
 // tslint:disable-next-line:no-var-requires
-const Module = require('module');
+const Module = require("module");
 
-import * as api from '../index';
-import { LogLevel } from './log';
+import * as api from "../index";
+import { LogLevel } from "./log";
 
-const identity = input => input;
+const identity = (input) => input;
 
 class ExtProxyHandler implements ProxyHandler<typeof api> {
   private mExt: IRegisteredExtension;
@@ -21,7 +21,7 @@ class ExtProxyHandler implements ProxyHandler<typeof api> {
   }
 
   public get(target: typeof api, p: PropertyKey, receiver: any): any {
-    if (p === 'log') {
+    if (p === "log") {
       return (level: LogLevel, message: string, metadata: any) => {
         target.log(level, `[${this.mExt.namespace}] ${message}`, metadata);
       };
@@ -38,7 +38,7 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
   }
 
   public get(target: typeof reduxAct, p: PropertyKey, receiver: any): any {
-    if (p === 'createAction') {
+    if (p === "createAction") {
       return (description, payloadReducer, metaReducer) => {
         // add information about the extension emitting an action, unfortunately
         // createAction has a ton of signatures:
@@ -46,7 +46,7 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
         // export function createAction(description: string): EmptyActionCreator;
         // export function createAction<P, M={}>(): SimpleActionCreator<P, M>;
         // export function createAction<P, M={}>(description: string): SimpleActionCreator<P, M>;
-        // 
+        //
         // export function createAction<Arg1, P, M={}>(description: string, payloadReducer: PayloadReducer1<Arg1, P>, metaReducer?: MetaReducer<M>): ComplexActionCreator1<Arg1, P, M>;
         // export function createAction<Arg1, Arg2, P, M={}>(description: string, payloadReducer: PayloadReducer2<Arg1, Arg2, P>, metaReducer?: MetaReducer<M>): ComplexActionCreator2<Arg1, Arg2, P, M>;
         // export function createAction<Arg1, Arg2, Arg3, P, M={}>(description: string, payloadReducer: PayloadReducer3<Arg1, Arg2, Arg3, P>, metaReducer?: MetaReducer<M>): ComplexActionCreator3<Arg1, Arg2, Arg3, P, M>;
@@ -58,17 +58,17 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
         // export function createAction<P, M={}>(description: string, payloadReducer: PayloadReducer<P>, metaReducer?: MetaReducer<M>): ComplexActionCreator<P, M>;
         // export function createAction<P, M={}>(payloadReducer: PayloadReducer<P>, metaReducer?: MetaReducer<M>): ComplexActionCreator<P, M>;
 
-        if (typeof description === 'function') {
+        if (typeof description === "function") {
           metaReducer = payloadReducer;
           payloadReducer = description;
           description = undefined;
         }
 
-        if (typeof payloadReducer !== 'function') {
+        if (typeof payloadReducer !== "function") {
           payloadReducer = identity;
         }
 
-        if (typeof metaReducer !== 'function') {
+        if (typeof metaReducer !== "function") {
           metaReducer = undefined;
         }
 
@@ -76,13 +76,20 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
           metaReducer = () => ({ extension: this.mExt.name });
         } else {
           const oldMetaReducer = metaReducer;
-          metaReducer = () => ({ ...oldMetaReducer(), extension: this.mExt.name });
+          metaReducer = () => ({
+            ...oldMetaReducer(),
+            extension: this.mExt.name,
+          });
         }
 
         if (description === undefined) {
           return reduxAct.createAction(payloadReducer, metaReducer);
         } else {
-          return reduxAct.createAction(description, payloadReducer, metaReducer);
+          return reduxAct.createAction(
+            description,
+            payloadReducer,
+            metaReducer,
+          );
         }
       };
     } else {
@@ -102,9 +109,11 @@ const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
  */
 function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
-  return function(id) {
-    if (id === 'vortex-api') {
-      const ext = getExtensions().find(iter => this.filename.startsWith(iter.path));
+  return function (id) {
+    if (id === "vortex-api") {
+      const ext = getExtensions().find((iter) =>
+        this.filename.startsWith(iter.path),
+      );
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {
           handlerMapAPI[ext.name] = new Proxy(api, new ExtProxyHandler(ext));
@@ -115,18 +124,26 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
         // but which is 100% dependent of vortex
         return api;
       }
-    } else if (id === 'react-select') {
+    } else if (id === "react-select") {
       return reactSelect;
-    } else if (id === 'redux-act') {
-      const ext = getExtensions().find(iter => this.filename.startsWith(iter.path));
+    } else if (id === "redux-act") {
+      const ext = getExtensions().find((iter) =>
+        this.filename.startsWith(iter.path),
+      );
       if (ext !== undefined) {
         if (handlerMapReactAct[ext.name] === undefined) {
-          handlerMapReactAct[ext.name] = new Proxy(reduxAct, new ExtProxyHandlerReduxAct(ext));
+          handlerMapReactAct[ext.name] = new Proxy(
+            reduxAct,
+            new ExtProxyHandlerReduxAct(ext),
+          );
         }
         return handlerMapReactAct[ext.name];
       }
     }
-    if (extensionPaths.find(iter => this.filename.startsWith(iter.path)) !== undefined) {
+    if (
+      extensionPaths.find((iter) => this.filename.startsWith(iter.path)) !==
+      undefined
+    ) {
       let res;
       try {
         res = dynreq(id);
@@ -143,7 +160,7 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   };
 }
 
-export default function(getExtensions: () => IRegisteredExtension[]) {
+export default function (getExtensions: () => IRegisteredExtension[]) {
   const orig = (Module as any).prototype.require;
   (Module as any).prototype.require = extensionRequire(orig, getExtensions);
 }

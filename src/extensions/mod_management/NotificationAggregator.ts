@@ -1,19 +1,20 @@
-import { createHash } from 'crypto';
-import { IExtensionApi } from '../../types/IExtensionContext';
-import { log } from '../../util/log';
+import { createHash } from "crypto";
+import { IExtensionApi } from "../../types/IExtensionContext";
+import { log } from "../../util/log";
 
 // Jest doesn't support setImmediate, so we provide a polyfill
 // This ensures compatibility across environments
 // In test environment, use synchronous execution to avoid timing issues
-const setImmediatePolyfill = (typeof setImmediate !== 'undefined') 
-  ? setImmediate 
-  : (process?.env?.NODE_ENV === 'test')
-    ? (fn: () => void) => fn() // Synchronous in tests
-    : (fn: () => void) => setTimeout(fn, 0);
+const setImmediatePolyfill =
+  typeof setImmediate !== "undefined"
+    ? setImmediate
+    : process?.env?.NODE_ENV === "test"
+      ? (fn: () => void) => fn() // Synchronous in tests
+      : (fn: () => void) => setTimeout(fn, 0);
 
 export interface IAggregatedNotification {
   id: string;
-  type: 'error' | 'warning' | 'info';
+  type: "error" | "warning" | "info";
   title: string;
   details: string | Error;
   text: string;
@@ -24,7 +25,7 @@ export interface IAggregatedNotification {
 }
 
 export interface IPendingNotification {
-  type: 'error' | 'warning' | 'info';
+  type: "error" | "warning" | "info";
   title: string;
   details: string | Error;
   item: string;
@@ -43,7 +44,8 @@ export class NotificationAggregator {
   private mTimeouts: { [key: string]: NodeJS.Timeout } = {};
   private mApi: IExtensionApi;
   private mNormalizedMessageCache: Map<string, string> = new Map();
-  private mAddNotificationQueue: { [aggregationId: string]: NodeJS.Timeout } = {};
+  private mAddNotificationQueue: { [aggregationId: string]: NodeJS.Timeout } =
+    {};
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
@@ -54,7 +56,10 @@ export class NotificationAggregator {
    * @param aggregationId Unique identifier for the aggregation session
    * @param timeoutMs Optional timeout in milliseconds to auto-flush notifications (default: 1000ms)
    */
-  public startAggregation(aggregationId: string, timeoutMs: number = 1000): void {
+  public startAggregation(
+    aggregationId: string,
+    timeoutMs: number = 1000,
+  ): void {
     if (this.mActiveAggregations.has(aggregationId)) {
       return;
     }
@@ -81,11 +86,11 @@ export class NotificationAggregator {
    */
   public addNotification(
     aggregationId: string,
-    type: 'error' | 'warning' | 'info',
+    type: "error" | "warning" | "info",
     title: string,
     details: string | Error,
     item: string,
-    options: { allowReport?: boolean; actions?: any[] } = {}
+    options: { allowReport?: boolean; actions?: any[] } = {},
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
       setImmediatePolyfill(() => {
@@ -109,7 +114,10 @@ export class NotificationAggregator {
     });
   }
 
-  private addNotificationBatched(aggregationId: string, notification: IPendingNotification): void {
+  private addNotificationBatched(
+    aggregationId: string,
+    notification: IPendingNotification,
+  ): void {
     this.mPendingNotifications[aggregationId].push(notification);
   }
 
@@ -119,7 +127,10 @@ export class NotificationAggregator {
    * @param aggregationId The aggregation session to flush
    * @param timeoutMs Timeout to set for the next auto-flush
    */
-  private flushPendingNotifications(aggregationId: string, timeoutMs: number): void {
+  private flushPendingNotifications(
+    aggregationId: string,
+    timeoutMs: number,
+  ): void {
     // log('info', 'flushPendingNotifications called', {
     //   aggregationId,
     //   isActive: this.mActiveAggregations.has(aggregationId),
@@ -133,7 +144,9 @@ export class NotificationAggregator {
 
     const pending = this.mPendingNotifications[aggregationId] || [];
     if (pending.length === 0) {
-      log('debug', 'no pending notifications to flush, scheduling next flush', { aggregationId });
+      log("debug", "no pending notifications to flush, scheduling next flush", {
+        aggregationId,
+      });
       // Reset timeout for next batch
       this.mTimeouts[aggregationId] = setTimeout(() => {
         this.flushPendingNotifications(aggregationId, timeoutMs);
@@ -141,10 +154,14 @@ export class NotificationAggregator {
       return;
     }
 
-    log('info', 'processing pending notifications without cleanup', {
+    log("info", "processing pending notifications without cleanup", {
       aggregationId,
       count: pending.length,
-      notifications: pending.map(n => ({ type: n.type, title: n.title, item: n.item }))
+      notifications: pending.map((n) => ({
+        type: n.type,
+        title: n.title,
+        item: n.item,
+      })),
     });
 
     // Clear current pending notifications and process them
@@ -160,8 +177,11 @@ export class NotificationAggregator {
           }, timeoutMs);
         }
       })
-      .catch(err => {
-        log('error', 'error processing notifications', { aggregationId, error: err.message });
+      .catch((err) => {
+        log("error", "error processing notifications", {
+          aggregationId,
+          error: err.message,
+        });
         // Schedule next auto-flush even on error
         if (this.mActiveAggregations.has(aggregationId)) {
           this.mTimeouts[aggregationId] = setTimeout(() => {
@@ -177,13 +197,15 @@ export class NotificationAggregator {
    */
   public flushAggregation(aggregationId: string): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
-      log('warn', 'flushAggregation called for inactive aggregation', { aggregationId });
+      log("warn", "flushAggregation called for inactive aggregation", {
+        aggregationId,
+      });
       return;
     }
 
     const pending = this.mPendingNotifications[aggregationId] || [];
     if (pending.length === 0) {
-      log('debug', 'no pending notifications to flush', { aggregationId });
+      log("debug", "no pending notifications to flush", { aggregationId });
       this.cleanupAggregation(aggregationId);
       return;
     }
@@ -191,67 +213,86 @@ export class NotificationAggregator {
     // Wait for async processing to complete before cleaning up
     this.processNotificationsAsync(pending, aggregationId)
       .then(() => {
-        log('debug', 'notification processing complete, cleaning up', { aggregationId });
+        log("debug", "notification processing complete, cleaning up", {
+          aggregationId,
+        });
         this.cleanupAggregation(aggregationId);
       })
-      .catch(err => {
-        log('error', 'error processing notifications', { aggregationId, error: err.message });
+      .catch((err) => {
+        log("error", "error processing notifications", {
+          aggregationId,
+          error: err.message,
+        });
         this.cleanupAggregation(aggregationId);
       });
   }
 
-  private async processNotificationsAsync(notifications: IPendingNotification[], aggregationId: string): Promise<void> {
+  private async processNotificationsAsync(
+    notifications: IPendingNotification[],
+    aggregationId: string,
+  ): Promise<void> {
     try {
       // Process aggregation in next tick to prevent blocking (synchronous in tests)
-      if (process?.env?.NODE_ENV !== 'test') {
+      if (process?.env?.NODE_ENV !== "test") {
         // Synchronous in test environment
       } else {
-        await new Promise<void>(resolve => setImmediatePolyfill(resolve));
+        await new Promise<void>((resolve) => setImmediatePolyfill(resolve));
       }
-      
+
       // Circuit breaker: For very large batches, show a simple summary instead of processing all
       if (notifications.length > 500) {
-        log('warn', 'Very large notification batch detected, showing summary instead', {
-          aggregationId,
-          count: notifications.length,
-        });
-        
-        const errorCount = notifications.filter(n => n.type === 'error').length;
-        const warningCount = notifications.filter(n => n.type === 'warning').length;
-        
+        log(
+          "warn",
+          "Very large notification batch detected, showing summary instead",
+          {
+            aggregationId,
+            count: notifications.length,
+          },
+        );
+
+        const errorCount = notifications.filter(
+          (n) => n.type === "error",
+        ).length;
+        const warningCount = notifications.filter(
+          (n) => n.type === "warning",
+        ).length;
+
         if (errorCount > 0) {
           this.mApi.showErrorNotification(
             `Multiple dependency errors (${errorCount} errors)`,
             `${errorCount} dependencies failed to install. Check the log for details.`,
-            { id: `bulk-errors-${aggregationId}` }
+            { id: `bulk-errors-${aggregationId}` },
           );
         }
-        
+
         if (warningCount > 0) {
           this.mApi.sendNotification({
             id: `bulk-warnings-${aggregationId}`,
-            type: 'warning',
+            type: "warning",
             title: `Multiple dependency warnings (${warningCount} warnings)`,
             message: `${warningCount} dependencies had warnings. Check the log for details.`,
           });
         }
-        
+
         return;
       }
-      
+
       const aggregated = this.aggregateNotifications(notifications);
 
       // Show notifications one by one with brief delays to prevent UI blocking
       for (let i = 0; i < aggregated.length; i++) {
         this.showAggregatedNotification(aggregated[i]);
-        
+
         // Add small delay between notifications to prevent UI blocking (skip in tests)
-        if (i < aggregated.length - 1 && (process?.env?.NODE_ENV !== 'test')) {
-          await new Promise<void>(resolve => setTimeout(resolve, 1));
+        if (i < aggregated.length - 1 && process?.env?.NODE_ENV !== "test") {
+          await new Promise<void>((resolve) => setTimeout(resolve, 1));
         }
       }
     } catch (error) {
-      log('error', 'Failed to process aggregated notifications', { aggregationId, error: error.message });
+      log("error", "Failed to process aggregated notifications", {
+        aggregationId,
+        error: error.message,
+      });
     }
   }
 
@@ -274,7 +315,7 @@ export class NotificationAggregator {
   private cleanupAggregation(aggregationId: string): void {
     this.mActiveAggregations.delete(aggregationId);
     delete this.mPendingNotifications[aggregationId];
-    
+
     if (this.mTimeouts[aggregationId]) {
       clearTimeout(this.mTimeouts[aggregationId]);
       delete this.mTimeouts[aggregationId];
@@ -291,11 +332,13 @@ export class NotificationAggregator {
     }
   }
 
-  private aggregateNotifications(notifications: IPendingNotification[]): IAggregatedNotification[] {
+  private aggregateNotifications(
+    notifications: IPendingNotification[],
+  ): IAggregatedNotification[] {
     const grouped: { [key: string]: IPendingNotification[] } = {};
 
     // Group notifications by title and message pattern
-    notifications.forEach(notification => {
+    notifications.forEach((notification) => {
       const key = this.getGroupingKey(notification);
       if (!grouped[key]) {
         grouped[key] = [];
@@ -304,16 +347,17 @@ export class NotificationAggregator {
     });
 
     // Convert groups to aggregated notifications
-    return Object.keys(grouped).map(key => {
+    return Object.keys(grouped).map((key) => {
       const group = grouped[key];
       const first = group[0];
-      const uniqueItems = Array.from(new Set(group.map(n => n.item)));
+      const uniqueItems = Array.from(new Set(group.map((n) => n.item)));
 
       // Use the first available stack trace from the group (if any notification has an Error)
-      const errorNotification = group.find(n => n.details instanceof Error);
-      const stack = errorNotification !== undefined
-        ? (errorNotification.details as Error)?.stack
-        : undefined;
+      const errorNotification = group.find((n) => n.details instanceof Error);
+      const stack =
+        errorNotification !== undefined
+          ? (errorNotification.details as Error)?.stack
+          : undefined;
 
       const message = this.buildAggregatedMessage(first, uniqueItems);
 
@@ -323,10 +367,12 @@ export class NotificationAggregator {
         const aggregatedError = new Error(message);
         aggregatedError.name = originalError.name;
         // Preserve the stack trace but with the aggregated error's name and message at the top
-        const stackLines = stack.split('\n');
-        const frameStartIndex = stackLines.findIndex(line => /^\s+at\s/.test(line));
+        const stackLines = stack.split("\n");
+        const frameStartIndex = stackLines.findIndex((line) =>
+          /^\s+at\s/.test(line),
+        );
         if (frameStartIndex > 0) {
-          aggregatedError.stack = `${aggregatedError.name}: ${message}\n${stackLines.slice(frameStartIndex).join('\n')}`;
+          aggregatedError.stack = `${aggregatedError.name}: ${message}\n${stackLines.slice(frameStartIndex).join("\n")}`;
         } else {
           // Fallback: just use the original stack
           aggregatedError.stack = stack;
@@ -339,7 +385,7 @@ export class NotificationAggregator {
         type: first.type,
         title: first.title,
         details,
-        text: uniqueItems.join('\n'),
+        text: uniqueItems.join("\n"),
         items: uniqueItems,
         count: group.length,
         allowReport: first.allowReport,
@@ -351,7 +397,10 @@ export class NotificationAggregator {
   private getGroupingKey(notification: IPendingNotification): string {
     // For performance, use a simpler grouping key that avoids expensive normalization
     // Only normalize if we have time (small batches)
-    const messageText = notification.details instanceof Error ? notification.details.message : notification.details;
+    const messageText =
+      notification.details instanceof Error
+        ? notification.details.message
+        : notification.details;
     let simpleKey = `${notification.type}-${notification.title}-${messageText}`;
 
     // For errors, include a hash of the stack trace so errors from different code paths
@@ -362,7 +411,10 @@ export class NotificationAggregator {
     }
 
     // Only do expensive normalization for smaller batches to avoid UI blocking
-    if (this.mPendingNotifications && Object.keys(this.mPendingNotifications).length < 100) {
+    if (
+      this.mPendingNotifications &&
+      Object.keys(this.mPendingNotifications).length < 100
+    ) {
       const normalizedMessage = this.normalizeMessage(messageText);
       return `${simpleKey}-${normalizedMessage}`;
     }
@@ -371,12 +423,13 @@ export class NotificationAggregator {
   }
 
   private hashStack(stack: string): string {
-    const frames = stack.split('\n')
-      .filter(line => /^\s+at\s/.test(line))
+    const frames = stack
+      .split("\n")
+      .filter((line) => /^\s+at\s/.test(line))
       .slice(0, 5) // Only use first 5 frames for grouping
-      .join('');
+      .join("");
 
-    return createHash('sha1').update(frames).digest('hex').slice(0, 8);
+    return createHash("sha1").update(frames).digest("hex").slice(0, 8);
   }
 
   private normalizeMessage(message: string): string {
@@ -387,10 +440,10 @@ export class NotificationAggregator {
 
     // Remove variable parts from messages to enable better grouping
     const normalized = message
-      .replace(/\{\{[^}]+\}\}/g, 'PLACEHOLDER') // Replace template variables
-      .replace(/https?:\/\/[^\s]+/g, 'URL') // Replace URLs
-      .replace(/\d+/g, 'NUMBER') // Replace numbers
-      .replace(/['""][^'"]*['"]/g, 'QUOTED') // Replace quoted strings
+      .replace(/\{\{[^}]+\}\}/g, "PLACEHOLDER") // Replace template variables
+      .replace(/https?:\/\/[^\s]+/g, "URL") // Replace URLs
+      .replace(/\d+/g, "NUMBER") // Replace numbers
+      .replace(/['""][^'"]*['"]/g, "QUOTED") // Replace quoted strings
       .toLowerCase()
       .trim();
 
@@ -402,22 +455,31 @@ export class NotificationAggregator {
     return normalized;
   }
 
-  private buildAggregatedMessage(notification: IPendingNotification, items: string[]): string {
-    const baseMessage = notification.details instanceof Error ? notification.details.message : notification.details;
+  private buildAggregatedMessage(
+    notification: IPendingNotification,
+    items: string[],
+  ): string {
+    const baseMessage =
+      notification.details instanceof Error
+        ? notification.details.message
+        : notification.details;
 
     let result = baseMessage;
 
     if (items.length > 1) {
-      const itemList = items.length <= 5
-        ? items.join(', ')
-        : `${items.slice(0, 5).join(', ')} and ${items.length - 5} more`;
+      const itemList =
+        items.length <= 5
+          ? items.join(", ")
+          : `${items.slice(0, 5).join(", ")} and ${items.length - 5} more`;
       result += `\n\nAffected dependencies: ${itemList}`;
     }
 
     return result;
   }
 
-  private showAggregatedNotification(notification: IAggregatedNotification): void {
+  private showAggregatedNotification(
+    notification: IAggregatedNotification,
+  ): void {
     setImmediatePolyfill(() => {
       const options: any = {
         id: notification.id,
@@ -429,28 +491,33 @@ export class NotificationAggregator {
       }
 
       // Add count information to the title if multiple items
-      const displayTitle = notification.count > 1 
-        ? `${notification.title} (${notification.count} dependencies)`
-        : notification.title;
+      const displayTitle =
+        notification.count > 1
+          ? `${notification.title} (${notification.count} dependencies)`
+          : notification.title;
 
       switch (notification.type) {
-        case 'error':
-          this.mApi.showErrorNotification(displayTitle, notification.details, options);
+        case "error":
+          this.mApi.showErrorNotification(
+            displayTitle,
+            notification.details,
+            options,
+          );
           break;
-        case 'warning':
+        case "warning":
           this.mApi.sendNotification({
             id: notification.id,
-            type: 'warning',
+            type: "warning",
             title: displayTitle,
             details: notification.details,
             text: notification.text,
             ...options,
           });
           break;
-        case 'info':
+        case "info":
           this.mApi.sendNotification({
             id: notification.id,
-            type: 'info',
+            type: "info",
             title: displayTitle,
             details: notification.details,
             text: notification.text,

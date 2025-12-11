@@ -1,12 +1,12 @@
-import { ComponentEx } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
-import { userFriendlyTime } from '../../../util/relativeTime';
+import { ComponentEx } from "../../../util/ComponentEx";
+import * as fs from "../../../util/fs";
+import { userFriendlyTime } from "../../../util/relativeTime";
 
-import { IDownload } from '../types/IDownload';
+import { IDownload } from "../types/IDownload";
 
-import { TFunction } from 'i18next';
-import * as path from 'path';
-import * as React from 'react';
+import { TFunction } from "i18next";
+import * as path from "path";
+import * as React from "react";
 
 interface IFileTimeProps {
   t: TFunction;
@@ -36,11 +36,13 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IFileTimeProps) {
-    if ((nextProps.time === undefined)
-      && ((this.props.downloadPath !== nextProps.downloadPath)
-        || (this.props.download !== nextProps.download))) {
-        this.updateTime();
-      }
+    if (
+      nextProps.time === undefined &&
+      (this.props.downloadPath !== nextProps.downloadPath ||
+        this.props.download !== nextProps.download)
+    ) {
+      this.updateTime();
+    }
   }
 
   public render(): JSX.Element {
@@ -65,16 +67,17 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
 
   private updateTime() {
     const { download, downloadPath } = this.props;
-    if ((download.localPath === undefined) || (downloadPath === undefined)) {
-        return null;
+    if (download.localPath === undefined || downloadPath === undefined) {
+      return null;
     } else {
-      return fs.statAsync(path.join(downloadPath, download.localPath))
+      return fs
+        .statAsync(path.join(downloadPath, download.localPath))
         .then((stat: fs.Stats) => {
           if (this.mIsMounted) {
             this.nextState.mtime = stat.mtime;
           }
         })
-        .catch(err => undefined);
+        .catch((err) => undefined);
     }
   }
 }
