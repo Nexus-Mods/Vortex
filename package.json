@@ -69,7 +69,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "docs": "yarn api-extractor run --local"
+    "docs": "yarn api-extractor run --local",
+    "format": "yarn prettier src --write",
+    "format:check": "yarn prettier src --check"
   },
   "jest": {
     "testEnvironment": "jsdom",
