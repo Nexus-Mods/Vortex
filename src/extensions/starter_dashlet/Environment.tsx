@@ -1,10 +1,10 @@
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { getSafe } from '../../util/storeHelper';
+import { ListGroup, ListGroupItem } from "react-bootstrap";
+import React from "react";
+import { useSelector } from "react-redux";
+import { getSafe } from "../../util/storeHelper";
 
-import { TFunction } from '../../util/i18n';
-import EnvButton from './EnvButton';
+import { TFunction } from "../../util/i18n";
+import EnvButton from "./EnvButton";
 
 interface IConnectedProps {
   displayGroups: { [id: string]: string };
@@ -26,13 +26,13 @@ export default function Environment(props: IEnvironmentProps): JSX.Element {
     value: environment[key],
   }));
 
-  const group = getSafe(displayGroups, ['envEdit'], undefined);
+  const group = getSafe(displayGroups, ["envEdit"], undefined);
 
   const editEnv = (itemId: string) => onEditEnv(itemId);
 
   return (
     <ListGroup>
-      {envList.map(env => (
+      {envList.map((env) => (
         <ListGroupItem key={env.key}>
           <EnvButton
             t={t}
@@ -44,10 +44,10 @@ export default function Environment(props: IEnvironmentProps): JSX.Element {
           />
         </ListGroupItem>
       ))}
-      <ListGroupItem key='__add'>
+      <ListGroupItem key="__add">
         <EnvButton
           t={t}
-          open={group === '__add'}
+          open={group === "__add"}
           onAdd={addEnv}
           onRemove={removeEnv}
           onOpen={editEnv}

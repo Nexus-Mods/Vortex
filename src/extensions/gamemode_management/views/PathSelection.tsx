@@ -1,14 +1,20 @@
-import * as React from 'react';
-import { Button, FormControl, InputGroup, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { withTranslation, WithTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import * as Redux from 'redux';
-import { setGameSearchPaths } from '../../../actions';
-import Icon from '../../../renderer/controls/Icon';
-import Modal from '../../../renderer/controls/Modal';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { IState } from '../../../types/IState';
-import { TFunction } from '../../../util/i18n';
+import * as React from "react";
+import {
+  Button,
+  FormControl,
+  InputGroup,
+  ListGroup,
+  ListGroupItem,
+} from "react-bootstrap";
+import { withTranslation, WithTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { setGameSearchPaths } from "../../../actions";
+import Icon from "../../../renderer/controls/Icon";
+import Modal from "../../../renderer/controls/Modal";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { IState } from "../../../types/IState";
+import { TFunction } from "../../../util/i18n";
 
 export interface IGameSelectionDialogProps {
   visible: boolean;
@@ -17,26 +23,43 @@ export interface IGameSelectionDialogProps {
   onSelectPath: (basePath: string) => Promise<string>;
 }
 
-type IProps = IGameSelectionDialogProps & IConnectedProps & IActionProps & WithTranslation;
+type IProps = IGameSelectionDialogProps &
+  IConnectedProps &
+  IActionProps &
+  WithTranslation;
 
 function GameSelectionDialog(props: IProps): JSX.Element {
-  const { t, onHide, onScan, onSelectPath, onSetSearchPaths, searchPaths, visible } = props;
+  const {
+    t,
+    onHide,
+    onScan,
+    onSelectPath,
+    onSetSearchPaths,
+    searchPaths,
+    visible,
+  } = props;
 
   const [paths, setPaths] = React.useState(searchPaths);
 
   const addSearchPath = React.useCallback(() => {
-    setPaths([].concat(paths, process.platform === 'win32' ? 'C:' : '/'));
+    setPaths([].concat(paths, process.platform === "win32" ? "C:" : "/"));
   }, [paths, setPaths]);
 
-  const updateSearchPath = React.useCallback((idx: number, newPath: string) => {
-    const temp = paths.slice();
-    temp.splice(idx, 1, newPath);
-    setPaths(temp);
-  }, [paths, setPaths]);
+  const updateSearchPath = React.useCallback(
+    (idx: number, newPath: string) => {
+      const temp = paths.slice();
+      temp.splice(idx, 1, newPath);
+      setPaths(temp);
+    },
+    [paths, setPaths],
+  );
 
-  const removeSearchPath = React.useCallback((remPath: string) => {
-    setPaths(paths.filter(iter => iter !== remPath));
-  }, [paths, setPaths]);
+  const removeSearchPath = React.useCallback(
+    (remPath: string) => {
+      setPaths(paths.filter((iter) => iter !== remPath));
+    },
+    [paths, setPaths],
+  );
 
   const scan = React.useCallback(() => {
     onSetSearchPaths(paths);
@@ -47,7 +70,7 @@ function GameSelectionDialog(props: IProps): JSX.Element {
   return (
     <Modal show={visible} onHide={nop}>
       <Modal.Header>
-        <Modal.Title>{t('Select directories to scan')}</Modal.Title>
+        <Modal.Title>{t("Select directories to scan")}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <PathsList
@@ -60,8 +83,8 @@ function GameSelectionDialog(props: IProps): JSX.Element {
         />
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={onHide}>{t('Cancel')}</Button>
-        <Button onClick={scan}>{t('Scan')}</Button>
+        <Button onClick={onHide}>{t("Cancel")}</Button>
+        <Button onClick={scan}>{t("Scan")}</Button>
       </Modal.Footer>
     </Modal>
   );
@@ -98,16 +121,19 @@ interface IPathsListProps {
 function PathsList(props: IPathsListProps) {
   const { t, onAddSearchPath, onSelectPath, onUpdateSearchPath, paths } = props;
 
-  const remove = React.useCallback((evt: React.MouseEvent<any>) => {
-    const remPath = evt.currentTarget.getAttribute('data-path');
-    props.onRemoveSearchPath(remPath);
-  }, [props.onRemoveSearchPath]);
+  const remove = React.useCallback(
+    (evt: React.MouseEvent<any>) => {
+      const remPath = evt.currentTarget.getAttribute("data-path");
+      props.onRemoveSearchPath(remPath);
+    },
+    [props.onRemoveSearchPath],
+  );
 
   return (
     <div>
       <ListGroup>
         {paths.map((iter, idx) => (
-          <ListGroupItem key={idx} className='game-search-path'>
+          <ListGroupItem key={idx} className="game-search-path">
             <PathInput
               t={t}
               value={iter}
@@ -116,18 +142,18 @@ function PathsList(props: IPathsListProps) {
               updatePath={onUpdateSearchPath}
             />
             <IconButton
-              className='btn-embed pull-right'
-              tooltip={t('Remove')}
+              className="btn-embed pull-right"
+              tooltip={t("Remove")}
               data-path={iter}
               onClick={remove}
-              icon='remove'
+              icon="remove"
             />
           </ListGroupItem>
         ))}
         <ListGroupItem>
           <Button onClick={onAddSearchPath}>
-            <Icon name='add'/>
-            <div className='button-text'>{t('Add a search path')}</div>
+            <Icon name="add" />
+            <div className="button-text">{t("Add a search path")}</div>
           </Button>
         </ListGroupItem>
       </ListGroup>
@@ -146,9 +172,12 @@ interface IPathInputProps {
 function PathInput(props: IPathInputProps) {
   const { t, value, idx } = props;
 
-  const updatePath = React.useCallback((evt: React.FormEvent<any>) => {
-    props.updatePath(idx, evt.currentTarget.value);
-  }, [props.updatePath, idx]);
+  const updatePath = React.useCallback(
+    (evt: React.FormEvent<any>) => {
+      props.updatePath(idx, evt.currentTarget.value);
+    },
+    [props.updatePath, idx],
+  );
 
   const selectPath = React.useCallback(async () => {
     const selectedPath = await props.selectPath(value);
@@ -159,23 +188,19 @@ function PathInput(props: IPathInputProps) {
 
   return (
     <InputGroup>
-      <FormControl
-        type='text'
-        value={value}
-        onChange={updatePath}
-      />
-      <InputGroup.Button className='inset-btn'>
+      <FormControl type="text" value={value} onChange={updatePath} />
+      <InputGroup.Button className="inset-btn">
         <IconButton
-          id='change-tool-path'
-          tooltip={t('Change')}
+          id="change-tool-path"
+          tooltip={t("Change")}
           onClick={selectPath}
-          icon='browse'
+          icon="browse"
         />
       </InputGroup.Button>
     </InputGroup>
   );
 }
 
-export default withTranslation('default')(
-  connect(mapStateToProps, mapDispatchToProps)(
-    GameSelectionDialog));
+export default withTranslation("default")(
+  connect(mapStateToProps, mapDispatchToProps)(GameSelectionDialog),
+);

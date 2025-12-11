@@ -1,15 +1,15 @@
-import { IExecInfo } from './IExecInfo';
-import { IExtensionApi } from './IExtensionContext';
-import { IGameStoreEntry } from './IGameStoreEntry';
+import { IExecInfo } from "./IExecInfo";
+import { IExtensionApi } from "./IExtensionContext";
+import { IGameStoreEntry } from "./IGameStoreEntry";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
-export type GameLaunchType = 'gamestore' | 'commandline';
+export type GameLaunchType = "gamestore" | "commandline";
 
 export class GameStoreNotFound extends Error {
   private mName: string;
   constructor(name) {
-    super('Missing game store extension');
+    super("Missing game store extension");
     Error.captureStackTrace(this, this.constructor);
     this.name = this.constructor.name;
     this.mName = name;
@@ -25,7 +25,7 @@ export class GameEntryNotFound extends Error {
   private mStore: string;
   private mExistingNames: string[];
   constructor(name: string, store: string, existing?: string[]) {
-    super('Game entry not found');
+    super("Game entry not found");
     Error.captureStackTrace(this, this.constructor);
     this.name = this.constructor.name;
     this.mName = name;
@@ -85,7 +85,7 @@ export interface IGameStore {
    * (lower means preferred)
    * This should be solely based on which store tends to be less problematic for modding
    * (stuff like DRM and such), not a subjective preference of the store.
-   * 
+   *
    * Values <= 30 are for stores that have features benefiting modding (no DRM GOG)
    * Values >= 70 are for stores that have features hindering modding (extra DRM Xbox)
    * Values between should all be ok, we only assign different values so the order is deterministic
@@ -179,7 +179,10 @@ export interface IGameStore {
    *  This functor allows game stores to define their own custom start up logic
    *  if needed. e.g. gamestore-xbox
    */
-  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Promise<void>;
+  launchGameStore?: (
+    api: IExtensionApi,
+    parameters?: string[],
+  ) => Promise<void>;
 
   /**
    * Allows game stores to provide functionality to reload/refresh their
@@ -200,6 +203,8 @@ export interface IGameStore {
    * in the game root directory.
    * The fallback function can be used to invoke the "default" behavior on top.
    */
-  identifyGame?: (gamePath: string,
-                  fallback: (gamePath: string) => PromiseLike<boolean>) => Promise<boolean>;
+  identifyGame?: (
+    gamePath: string,
+    fallback: (gamePath: string) => PromiseLike<boolean>,
+  ) => Promise<boolean>;
 }

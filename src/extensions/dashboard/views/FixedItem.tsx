@@ -1,8 +1,8 @@
-import Icon from '../../../renderer/controls/Icon';
-import { TFunction } from '../../../util/i18n';
+import Icon from "../../../renderer/controls/Icon";
+import { TFunction } from "../../../util/i18n";
 
-import * as React from 'react';
-import { Button } from 'react-bootstrap';
+import * as React from "react";
+import { Button } from "react-bootstrap";
 
 export interface IProps {
   t: TFunction;
@@ -23,27 +23,22 @@ function FixedItem(props: React.PropsWithChildren<IProps>): JSX.Element {
   }, [id, onDismiss]);
 
   const classes = [
-    'fixed-item',
+    "fixed-item",
     `packery-height-${height}`,
     `fixed-width-${width}`,
   ];
 
   if (editable) {
-    classes.push('packery-editmode');
+    classes.push("packery-editmode");
   }
 
   return (
-    <div
-      className={classes.join(' ')}
-    >
+    <div className={classes.join(" ")}>
       {props.children}
-      <div className='packery-buttons'>
-        {(onDismiss !== undefined) && editable ? (
-          <Button
-            className='btn-embed'
-            onClick={dismissWidget}
-          >
-            <Icon name='close-slim' />
+      <div className="packery-buttons">
+        {onDismiss !== undefined && editable ? (
+          <Button className="btn-embed" onClick={dismissWidget}>
+            <Icon name="close-slim" />
           </Button>
         ) : null}
       </div>

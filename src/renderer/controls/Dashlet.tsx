@@ -1,6 +1,6 @@
-import { truthy } from '../../util/util';
+import { truthy } from "../../util/util";
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface IDashletProps {
   className: string;
@@ -10,10 +10,10 @@ export interface IDashletProps {
 class Dashlet extends React.Component<IDashletProps, {}> {
   public render(): JSX.Element {
     const { className, title } = this.props;
-    const classes = ['dashlet'].concat(className.split(' '));
+    const classes = ["dashlet"].concat(className.split(" "));
     return (
-      <div className={classes.join(' ')}>
-        {truthy(title) ? <div className='dashlet-title'>{title}</div> : null}
+      <div className={classes.join(" ")}>
+        {truthy(title) ? <div className="dashlet-title">{title}</div> : null}
         {this.props.children}
       </div>
     );

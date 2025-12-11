@@ -1,9 +1,9 @@
 export interface IMOTMEntry {
   /**
-   * Generated ID for the video 
+   * Generated ID for the video
    */
   id: string;
-  
+
   /**
    * YouTube id of the video
    */
@@ -16,19 +16,18 @@ export interface IMOTMEntry {
 }
 
 export interface IMOTMEntryExt extends IMOTMEntry {
-  
   /**
    * Generated YouTube embed link
    * @example https://www.youtube-nocookie.com/embed/abc123
    */
   link: string;
-  
+
   /**
    * name of the month
    * @example January
    */
   month: string;
-  
+
   /**
    * year of the video
    * @example 2024
@@ -38,4 +37,4 @@ export interface IMOTMEntryExt extends IMOTMEntry {
 
 export type ModSpotlightEntry = IMOTMEntry;
 export type ModSpotlightEntryExt = IMOTMEntryExt;
-export type VideoEntryType = 'modsofthemonth' | 'modspotlights';
+export type VideoEntryType = "modsofthemonth" | "modspotlights";

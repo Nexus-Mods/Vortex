@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
-import * as React from 'react';
+import * as _ from "lodash";
+import * as React from "react";
 
 interface IExtraImageProps<T> extends React.ImgHTMLAttributes<T> {
   srcs: string[];
@@ -27,7 +27,7 @@ function Image(props: IImageProps): JSX.Element {
 
   const classes: string[] = [];
   if (circle === true) {
-    classes.push('img-circle');
+    classes.push("img-circle");
   }
   if (className !== undefined) {
     classes.push(className);
@@ -35,8 +35,8 @@ function Image(props: IImageProps): JSX.Element {
 
   return (
     <img
-      {..._.omit(props, ['srcs', 'circle'])}
-      className={classes.join(' ')}
+      {..._.omit(props, ["srcs", "circle"])}
+      className={classes.join(" ")}
       src={srcs[srcIdx]}
       onError={errorCB}
     />

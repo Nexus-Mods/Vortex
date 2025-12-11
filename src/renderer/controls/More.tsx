@@ -1,14 +1,14 @@
-import { IExtensionApi } from '../../types/api';
-import { ComponentEx, translate } from '../../util/ComponentEx';
+import { IExtensionApi } from "../../types/api";
+import { ComponentEx, translate } from "../../util/ComponentEx";
 
-import Icon from './Icon';
-import Overlay from './Overlay';
-import { IconButton } from './TooltipControls';
+import Icon from "./Icon";
+import Overlay from "./Overlay";
+import { IconButton } from "./TooltipControls";
 
-import * as React from 'react';
-import {Popover} from 'react-bootstrap';
-import { WithTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
+import * as React from "react";
+import { Popover } from "react-bootstrap";
+import { WithTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 
 const haveKnowledgeBase = (() => {
   let value: boolean;
@@ -16,7 +16,7 @@ const haveKnowledgeBase = (() => {
   return (api: IExtensionApi): boolean => {
     if (value === undefined) {
       // is this expensive? Is it worth caching?
-      value = api.events.listenerCount('open-knowledge-base') > 0;
+      value = api.events.listenerCount("open-knowledge-base") > 0;
     }
     return value;
   };
@@ -28,7 +28,7 @@ export interface IMoreProps {
   wikiId?: string;
   children?: string;
   container?: Element;
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: "vertical" | "horizontal";
 }
 
 export interface IComponentState {
@@ -48,7 +48,6 @@ type IProps = IMoreProps & WithTranslation;
  * @returns
  */
 class More extends ComponentEx<IProps, IComponentState> {
-
   private mRef: Element;
 
   constructor(props: IProps) {
@@ -67,28 +66,24 @@ class More extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const wikiFooter = (wikiId === undefined) || !haveKnowledgeBase(this.context.api)
-      ? null
-      : (
-        <div className='more-footer'>
+    const wikiFooter =
+      wikiId === undefined || !haveKnowledgeBase(this.context.api) ? null : (
+        <div className="more-footer">
           <a href={`#${wikiId}`} onClick={this.openWiki}>
-            {t('Learn more')}
+            {t("Learn more")}
           </a>
         </div>
       );
 
     let pCounter = 0;
     const popover = (
-      <Popover id={`popover-${id}`} className='more-popover' title={name}>
-        
-        <ReactMarkdown>
-          {children}
-        </ReactMarkdown>
+      <Popover id={`popover-${id}`} className="more-popover" title={name}>
+        <ReactMarkdown>{children}</ReactMarkdown>
         {wikiFooter}
       </Popover>
     );
     return (
-      <div style={{ display: 'inline' }}>
+      <div style={{ display: "inline" }}>
         <Overlay
           rootClose
           show={open}
@@ -99,8 +94,8 @@ class More extends ComponentEx<IProps, IComponentState> {
         >
           {popover}
         </Overlay>
-        <div className='more-link' ref={this.setRef}>
-          <IconButton tooltip='' onClick={this.toggle} icon='details' />
+        <div className="more-link" ref={this.setRef}>
+          <IconButton tooltip="" onClick={this.toggle} icon="details" />
         </div>
       </div>
     );
@@ -108,37 +103,43 @@ class More extends ComponentEx<IProps, IComponentState> {
 
   private getRef = () => this.mRef;
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
-  }
+  };
 
   private openWiki = (evt: React.MouseEvent<HTMLAnchorElement>) => {
-    this.context.api.events.emit('open-knowledge-base',
-                                 evt.currentTarget.getAttribute('href').slice(1));
+    this.context.api.events.emit(
+      "open-knowledge-base",
+      evt.currentTarget.getAttribute("href").slice(1),
+    );
     this.hide();
-  }
+  };
 
-  private toggle = evt => {
+  private toggle = (evt) => {
     evt.preventDefault();
     this.setState({ open: !this.state.open });
-  }
+  };
 
   private hide = () => {
     this.setState({ open: false });
-  }
+  };
 
   private getBounds = (): DOMRect => {
     const { container } = this.props;
 
-    return container !== undefined ? container.getBoundingClientRect() : {
-      left: 0,
-      top: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
-    } as any;
-  }
+    return container !== undefined
+      ? container.getBoundingClientRect()
+      : ({
+          left: 0,
+          top: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+        } as any);
+  };
 }
 
-export default translate(['common'])(React.memo(More)) as React.ComponentClass<IMoreProps>;
+export default translate(["common"])(
+  React.memo(More),
+) as React.ComponentClass<IMoreProps>;

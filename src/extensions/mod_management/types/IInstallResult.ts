@@ -1,9 +1,16 @@
-import { IRule } from './IMod';
+import { IRule } from "./IMod";
 
 export type InstructionType =
-  'copy' | 'mkdir' | 'submodule' | 'generatefile' | 'iniedit'
-  | 'unsupported' | 'attribute' | 'setmodtype' | 'error'
-  | 'rule';
+  | "copy"
+  | "mkdir"
+  | "submodule"
+  | "generatefile"
+  | "iniedit"
+  | "unsupported"
+  | "attribute"
+  | "setmodtype"
+  | "error"
+  | "rule";
 
 export interface IInstruction {
   type: InstructionType;

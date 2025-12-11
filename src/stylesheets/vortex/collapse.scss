@@ -1,17 +1,17 @@
 .collapse-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  .collapse-content {
-    flex: 1 1 0;
-    transition: opacity $transition-time-half;
-    opacity: 1;
+    width: 100%;
+    height: 100%;
     display: flex;
-  }
+    flex-direction: column;
 
-  .collapse-content-hidden {
-    opacity: 0;
-  }
+    .collapse-content {
+        flex: 1 1 0;
+        transition: opacity $transition-time-half;
+        opacity: 1;
+        display: flex;
+    }
+
+    .collapse-content-hidden {
+        opacity: 0;
+    }
 }

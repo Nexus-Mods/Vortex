@@ -1,20 +1,20 @@
-import { ButtonType } from '../../../renderer/controls/IconBar';
-import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
-import { IState } from '../../../types/IState';
-import { fileMD5 } from '../../../util/checksum';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
-import { log } from '../../../util/log';
+import { ButtonType } from "../../../renderer/controls/IconBar";
+import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
+import { IState } from "../../../types/IState";
+import { fileMD5 } from "../../../util/checksum";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import * as fs from "../../../util/fs";
+import { log } from "../../../util/log";
 
-import { activeGameId } from '../../../util/selectors';
-import { batchDispatch } from '../../../util/util';
+import { activeGameId } from "../../../util/selectors";
+import { batchDispatch } from "../../../util/util";
 
-import { setModAttribute } from '../../mod_management/actions/mods';
-import metaLookupMatch from '../../mod_management/util/metaLookupMatch';
+import { setModAttribute } from "../../mod_management/actions/mods";
+import metaLookupMatch from "../../mod_management/util/metaLookupMatch";
 
-import NXMUrl from '../../nexus_integration/NXMUrl';
+import NXMUrl from "../../nexus_integration/NXMUrl";
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface IBaseProps {
   buttonType: ButtonType;
@@ -33,9 +33,9 @@ class InstallButton extends ComponentEx<IProps, {}> {
 
     return (
       <ToolbarIcon
-        id='install-from-archive'
-        icon='select-install'
-        text={t('Install From File')}
+        id="install-from-archive"
+        icon="select-install"
+        text={t("Install From File")}
         onClick={this.startInstallFile}
       />
     );
@@ -43,65 +43,71 @@ class InstallButton extends ComponentEx<IProps, {}> {
 
   private startInstallFile = () => {
     const options: Electron.OpenDialogOptions = {
-      properties: ['openFile'],
+      properties: ["openFile"],
     };
 
-    this.context.api.selectFile(options)
-    .then(result => {
+    this.context.api.selectFile(options).then((result) => {
       const { api } = this.context;
       if (result !== undefined) {
         if (this.props.copyOnIFF) {
-          api.events.emit('import-downloads', [result], (dlIds: string[]) => {
-            dlIds.forEach(dlId => {
-              api.events.emit('start-install-download', dlId);
+          api.events.emit("import-downloads", [result], (dlIds: string[]) => {
+            dlIds.forEach((dlId) => {
+              api.events.emit("start-install-download", dlId);
             });
           });
         } else {
-          api.events.emit('start-install', result, (error, id: string) => {
+          api.events.emit("start-install", result, (error, id: string) => {
             if (error) {
               return;
             }
             const state = api.getState();
             const gameId = activeGameId(state);
             return Promise.all([fileMD5(result), fs.statAsync(result)])
-              .then(res => api.lookupModMeta({
-                fileMD5: res[0],
-                filePath: result,
-                gameId,
-                fileSize: res[1].size,
-              }, false))
-            .then((modInfo) => {
-              const match = metaLookupMatch(modInfo, result, gameId);
-              if (match !== undefined) {
-                const actions = [];
-                const info = match.value;
-                const setInfo = (key: string, value: any) => {
-                  if (value !== undefined) {
-                    actions.push(setModAttribute(gameId, id, key, value));
+              .then((res) =>
+                api.lookupModMeta(
+                  {
+                    fileMD5: res[0],
+                    filePath: result,
+                    gameId,
+                    fileSize: res[1].size,
+                  },
+                  false,
+                ),
+              )
+              .then((modInfo) => {
+                const match = metaLookupMatch(modInfo, result, gameId);
+                if (match !== undefined) {
+                  const actions = [];
+                  const info = match.value;
+                  const setInfo = (key: string, value: any) => {
+                    if (value !== undefined) {
+                      actions.push(setModAttribute(gameId, id, key, value));
+                    }
+                  };
+                  try {
+                    const nxmUrl = new NXMUrl(info.sourceURI);
+                    setInfo("source", "nexus");
+                    setInfo("description", info.details.description);
+                    setInfo("category", info.details.category);
+                    setInfo("downloadGame", nxmUrl.gameId);
+                    setInfo("fileId", nxmUrl.fileId);
+                    setInfo("modId", nxmUrl.modId);
+                    batchDispatch(api.store, actions);
+                  } catch (err) {
+                    setInfo("source", "unknown");
                   }
-                };
-                try {
-                  const nxmUrl = new NXMUrl(info.sourceURI);
-                  setInfo('source', 'nexus');
-                  setInfo('description', info.details.description);
-                  setInfo('category', info.details.category);
-                  setInfo('downloadGame', nxmUrl.gameId);
-                  setInfo('fileId', nxmUrl.fileId);
-                  setInfo('modId', nxmUrl.modId);
-                  batchDispatch(api.store, actions);
-                } catch (err) {
-                  setInfo('source', 'unknown');
                 }
-              }
-            })
-            .catch(err => {
-              log('warn', 'failed to look up mod meta info', { message: err.message });
-            });
+              })
+              .catch((err) => {
+                log("warn", "failed to look up mod meta info", {
+                  message: err.message,
+                });
+              });
           });
         }
       }
     });
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -112,7 +118,6 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps)(
-      InstallButton)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps)(InstallButton),
+) as React.ComponentClass<IBaseProps>;

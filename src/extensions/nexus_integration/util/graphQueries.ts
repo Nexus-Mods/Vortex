@@ -1,4 +1,4 @@
-import { ICollectionQuery, IRevisionQuery } from '@nexusmods/nexus-api';
+import { ICollectionQuery, IRevisionQuery } from "@nexusmods/nexus-api";
 
 const revisionInfo: IRevisionQuery = {
   id: true,
@@ -123,19 +123,19 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   summary: true,
   badges: {
     name: true,
-    description: true
+    description: true,
   },
   permissions: {
     global: true,
-    key: true
+    key: true,
   },
   category: {
-    name: true
+    name: true,
   },
   game: {
     domainName: true,
     id: true,
-    name: true
+    name: true,
   },
   latestPublishedRevision: {
     adultContent: true,
@@ -145,12 +145,12 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   tileImage: {
     url: true,
     thumbnailUrl: {
-      $filter: { size: 'med' }
-    }
+      $filter: { size: "med" },
+    },
   },
   user: {
     avatar: true,
     memberId: true,
-    name: true
+    name: true,
   },
 };

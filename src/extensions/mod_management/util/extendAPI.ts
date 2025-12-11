@@ -1,21 +1,27 @@
-import InstallManager from '../InstallManager';
-import { IExtensionApi } from '../../../types/api';
-import { getCollectionActiveSession, getCollectionCurrentPhase } from '../../collections_integration/selectors';
-import { IModsAPIExtension } from '../types/IModsAPIExtension';
-import { log } from '../../../util/log';
-import { IDeployOptions } from '../types/IDeployOptions';
+import InstallManager from "../InstallManager";
+import { IExtensionApi } from "../../../types/api";
+import {
+  getCollectionActiveSession,
+  getCollectionCurrentPhase,
+} from "../../collections_integration/selectors";
+import { IModsAPIExtension } from "../types/IModsAPIExtension";
+import { log } from "../../../util/log";
+import { IDeployOptions } from "../types/IDeployOptions";
 
-function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPIExtension {
+function extendAPI(
+  api: IExtensionApi,
+  installManager: InstallManager,
+): IModsAPIExtension {
   const activeCollection = () => {
     const state = api.getState();
     return getCollectionActiveSession(state);
-  }
+  };
 
   const activePhase = () => {
     const state = api.getState();
     const currentPhase = getCollectionCurrentPhase(state);
     return currentPhase;
-  }
+  };
 
   return {
     awaitNextPhaseDeployment: async () => {
@@ -25,21 +31,31 @@ function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPI
 
       const phase = activePhase();
 
-      log('info', 'awaitNextPhaseDeployment called', { collectionId: collection.collectionId, phase });
+      log("info", "awaitNextPhaseDeployment called", {
+        collectionId: collection.collectionId,
+        phase,
+      });
 
       // Schedule deployment and wait for pollPhaseSettlement to complete
-      const deploymentPromise = installManager.scheduleDeployOnPhaseSettled(api, collection.collectionId, phase, true);
+      const deploymentPromise = installManager.scheduleDeployOnPhaseSettled(
+        api,
+        collection.collectionId,
+        phase,
+        true,
+      );
       if (deploymentPromise) {
         await deploymentPromise;
       } else {
-        log('info', 'no deployment promise returned');
+        log("info", "no deployment promise returned");
         return;
       }
     },
 
-    awaitModsDeployment: async (profileId?: string,
+    awaitModsDeployment: async (
+      profileId?: string,
       progressCB?: (text: string, percent: number) => void,
-      deployOptions?: IDeployOptions) => {
+      deployOptions?: IDeployOptions,
+    ) => {
       // Await the deployment of mods for the specified profile
       return new Promise<void>((resolve, reject) => {
         const callback = (err: Error) => {
@@ -49,7 +65,13 @@ function extendAPI(api: IExtensionApi, installManager: InstallManager): IModsAPI
             resolve();
           }
         };
-        api.events.emit('deploy-mods', callback, profileId, progressCB, deployOptions);
+        api.events.emit(
+          "deploy-mods",
+          callback,
+          profileId,
+          progressCB,
+          deployOptions,
+        );
       });
     },
   };

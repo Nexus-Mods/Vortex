@@ -1,12 +1,15 @@
-import makeRemoteCall from './electronRemote';
-import * as fs from './fs';
+import makeRemoteCall from "./electronRemote";
+import * as fs from "./fs";
 
-const efi = makeRemoteCall('extract-file-icon',
-    (electron, content, exePath: string, iconPath: string) => {
-  return electron.app.getFileIcon(exePath, { size: 'normal' })
-    .then(icon => fs.writeFileAsync(iconPath, icon.toPNG()))
-    .then(() => null);
-});
+const efi = makeRemoteCall(
+  "extract-file-icon",
+  (electron, content, exePath: string, iconPath: string) => {
+    return electron.app
+      .getFileIcon(exePath, { size: "normal" })
+      .then((icon) => fs.writeFileAsync(iconPath, icon.toPNG()))
+      .then(() => null);
+  },
+);
 
 function extractExeIcon(exePath: string, destPath: string): Promise<void> {
   // app.getFileIcon generated broken output on windows as of electron 11.0.4
@@ -28,7 +31,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void> {
     });
   } else {
   */
-    return efi(exePath, destPath);
+  return efi(exePath, destPath);
   // }
 }
 

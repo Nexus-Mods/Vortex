@@ -1,13 +1,13 @@
-import React from 'react';
-import { Button, Modal } from 'react-bootstrap';
-import { withTranslation, WithTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import Usage from '../../renderer/controls/Usage';
-import { IState } from '../../types/IState';
-import { TFunction } from '../../util/i18n';
-import relativeTime from '../../util/relativeTime';
-import { getGame } from '../gamemode_management/util/getGame';
-import { IHistoryEvent, IHistoryStack } from './types';
+import React from "react";
+import { Button, Modal } from "react-bootstrap";
+import { withTranslation, WithTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import Usage from "../../renderer/controls/Usage";
+import { IState } from "../../types/IState";
+import { TFunction } from "../../util/i18n";
+import relativeTime from "../../util/relativeTime";
+import { getGame } from "../gamemode_management/util/getGame";
+import { IHistoryEvent, IHistoryStack } from "./types";
 
 interface IDialogProps {
   onClose: () => void;
@@ -38,16 +38,15 @@ interface IHistoryItemProps {
 function HistoryItem(props: IHistoryItemProps) {
   const { t, evt, onReverted, onError, stack, stackId } = props;
 
-  const classes = ['history-event-line'];
-  const canRevert = evt.reverted ? 'invalid' : stack.canRevert(evt);
-  if (canRevert === 'invalid') {
-    classes.push('history-event-invalid');
+  const classes = ["history-event-line"];
+  const canRevert = evt.reverted ? "invalid" : stack.canRevert(evt);
+  if (canRevert === "invalid") {
+    classes.push("history-event-invalid");
   }
 
   const onClick = React.useCallback(() => {
     onReverted(stackId, evt);
-    stack.revert(evt)
-      .catch(err => onError(err, stackId, evt));
+    stack.revert(evt).catch((err) => onError(err, stackId, evt));
   }, []);
 
   const game = getGame(evt.gameId);
@@ -55,17 +54,17 @@ function HistoryItem(props: IHistoryItemProps) {
   const revertDescription = stack.describeRevert(evt);
 
   return (
-    <tr key={evt.id} className={classes.join(' ')}>
-      <td className='history-event-time'>
+    <tr key={evt.id} className={classes.join(" ")}>
+      <td className="history-event-time">
         {relativeTime(new Date(evt.timestamp), t)}
       </td>
-      <td className='history-event-game'>
+      <td className="history-event-game">
         {game !== undefined ? (game.shortName ?? game.name) : null}
       </td>
-      <td className='history-event-description'>{stack.describe(evt)}</td>
-      <td className='history-event-revert'>
+      <td className="history-event-description">{stack.describe(evt)}</td>
+      <td className="history-event-revert">
         {revertDescription ? (
-          <Button disabled={canRevert !== 'yes'} onClick={onClick}>
+          <Button disabled={canRevert !== "yes"} onClick={onClick}>
             {revertDescription}
           </Button>
         ) : null}
@@ -75,22 +74,23 @@ function HistoryItem(props: IHistoryItemProps) {
 }
 
 function HistoryDialog(props: IDialogProps & WithTranslation) {
-  const { t, events, onClose, onReverted, onError, stacks, stackToShow } = props;
+  const { t, events, onClose, onReverted, onError, stacks, stackToShow } =
+    props;
 
   const stack = stacks[stackToShow];
 
   const sorted = (events ?? []).slice(0).sort(byAge);
 
   return (
-    <Modal id='history-dialog' show={stack !== undefined} onHide={nop}>
+    <Modal id="history-dialog" show={stack !== undefined} onHide={nop}>
       <Modal.Header>
-        <h2>{t('Event history')}</h2>
+        <h2>{t("Event history")}</h2>
       </Modal.Header>
       <Modal.Body>
-        <div className='history-table-container'>
+        <div className="history-table-container">
           <table>
             <tbody>
-              {sorted.map(evt => (
+              {sorted.map((evt) => (
                 <HistoryItem
                   t={t}
                   key={evt.id}
@@ -104,17 +104,18 @@ function HistoryDialog(props: IDialogProps & WithTranslation) {
             </tbody>
           </table>
         </div>
-        <Usage className='history-usage' infoId='event-history'>
-          {t('Please note that this is not "Undo"! This screen allows you to revert '
-             + 'specific actions but we make no promises that this actually returns '
-             + 'Vortex or your game to the state before that action. Not every '
-             + 'Action can be undone.')}
+        <Usage className="history-usage" infoId="event-history">
+          {t(
+            'Please note that this is not "Undo"! This screen allows you to revert ' +
+              "specific actions but we make no promises that this actually returns " +
+              "Vortex or your game to the state before that action. Not every " +
+              "Action can be undone.",
+          )}
         </Usage>
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={onClose}>{t('Close')}</Button>
+        <Button onClick={onClose}>{t("Close")}</Button>
       </Modal.Footer>
-
     </Modal>
   );
 }
@@ -124,12 +125,13 @@ function mapPropsToState(state: IState) {
 
   return {
     stackToShow,
-    events: stackToShow !== undefined
-      ? state.persistent.history.historyStacks[stackToShow]
-      : undefined,
+    events:
+      stackToShow !== undefined
+        ? state.persistent.history.historyStacks[stackToShow]
+        : undefined,
   };
 }
 
-export default
-  connect(mapPropsToState)(
-    withTranslation(['common'])(HistoryDialog as any));
+export default connect(mapPropsToState)(
+  withTranslation(["common"])(HistoryDialog as any),
+);

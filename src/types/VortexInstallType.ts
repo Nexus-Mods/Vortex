@@ -3,6 +3,6 @@
 // uninstalling and so on.
 // 'managed' means Vortex was installed through a store which is then responsible for updating or
 // uninstalling.
-type VortexInstallType = 'regular' | 'managed';
+type VortexInstallType = "regular" | "managed";
 
 export default VortexInstallType;

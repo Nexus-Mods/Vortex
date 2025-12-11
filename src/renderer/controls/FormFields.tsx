@@ -1,13 +1,18 @@
-import FormFeedback from './FormFeedback';
-import { IconButton } from './TooltipControls';
+import FormFeedback from "./FormFeedback";
+import { IconButton } from "./TooltipControls";
 
-import { TFunction } from 'i18next';
-import * as React from 'react';
-import { Checkbox, Col, ControlLabel,
-         FormControl, FormGroup,
-         InputGroup } from 'react-bootstrap';
-import { ComponentEx } from '../../util/ComponentEx';
-import FormInput from './FormInput';
+import { TFunction } from "i18next";
+import * as React from "react";
+import {
+  Checkbox,
+  Col,
+  ControlLabel,
+  FormControl,
+  FormGroup,
+  InputGroup,
+} from "react-bootstrap";
+import { ComponentEx } from "../../util/ComponentEx";
+import FormInput from "./FormInput";
 
 export interface IFormItemProps {
   t: TFunction;
@@ -25,13 +30,16 @@ export interface IFormItemProps {
 
 export class FormTextItem extends React.Component<IFormItemProps, {}> {
   public render() {
-    const { controlId, label, maxLength, placeholder, readOnly, style, value } = this.props;
+    const { controlId, label, maxLength, placeholder, readOnly, style, value } =
+      this.props;
 
     const validation = value !== undefined ? this.validationState() : undefined;
-    const validationState = validation === undefined
-      ? undefined : validation === null
-      ? 'success'
-      : 'error';
+    const validationState =
+      validation === undefined
+        ? undefined
+        : validation === null
+          ? "success"
+          : "error";
 
     return (
       <FormGroup
@@ -44,9 +52,9 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
         </Col>
         <Col sm={9}>
           <FormInput
-            type='text'
+            type="text"
             placeholder={placeholder}
-            value={value || ''}
+            value={value || ""}
             onChange={this.onChangeValue}
             readOnly={readOnly}
             maxLength={maxLength}
@@ -55,7 +63,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
         </Col>
         <FormFeedback />
       </FormGroup>
-      );
+    );
   }
 
   private validationState() {
@@ -69,7 +77,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
   private onChangeValue = (value) => {
     const { stateKey, onChangeValue } = this.props;
     onChangeValue(stateKey, value);
-  }
+  };
 }
 
 export class FormCheckboxItem extends React.Component<IFormItemProps, {}> {
@@ -79,14 +87,14 @@ export class FormCheckboxItem extends React.Component<IFormItemProps, {}> {
       <Checkbox value={value} onChange={this.onChangeValue} style={style}>
         {label}
       </Checkbox>
-      );
+    );
   }
   private onChangeValue = (evt) => {
     const { stateKey, onChangeValue } = this.props;
     if (onChangeValue !== undefined) {
       onChangeValue(stateKey, evt.currentTarget.value);
     }
-  }
+  };
 }
 
 export interface IFormPathProps extends IFormItemProps {
@@ -96,35 +104,42 @@ export interface IFormPathProps extends IFormItemProps {
 
 export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
   public render(): JSX.Element {
-    const { t, controlId, label, placeholder, readOnly, style, value } = this.props;
+    const { t, controlId, label, placeholder, readOnly, style, value } =
+      this.props;
 
     const validation = value !== undefined ? this.validationState() : undefined;
-    const validationState = validation === undefined
-      ? undefined : validation === null
-      ? 'success'
-      : 'error';
+    const validationState =
+      validation === undefined
+        ? undefined
+        : validation === null
+          ? "success"
+          : "error";
 
     return (
-      <FormGroup controlId={controlId} validationState={validationState} style={style}>
+      <FormGroup
+        controlId={controlId}
+        validationState={validationState}
+        style={style}
+      >
         <Col componentClass={ControlLabel} sm={3}>
           {label}
         </Col>
         <Col sm={9}>
           <InputGroup>
             <FormControl
-              type='text'
+              type="text"
               value={value}
               placeholder={placeholder}
               readOnly={readOnly}
               onChange={this.handleTypePath}
             />
             {readOnly ? null : (
-              <InputGroup.Button className='inset-btn'>
+              <InputGroup.Button className="inset-btn">
                 <IconButton
-                  id='change-tool-path'
-                  tooltip={t('Change')}
+                  id="change-tool-path"
+                  tooltip={t("Change")}
                   onClick={this.handleChangePath}
-                  icon='browse'
+                  icon="browse"
                 />
               </InputGroup.Button>
             )}
@@ -132,7 +147,7 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
           {validation ? <ControlLabel>{validation}</ControlLabel> : null}
         </Col>
       </FormGroup>
-      );
+    );
   }
 
   private validationState() {
@@ -146,21 +161,22 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
   private handleTypePath = (evt: any) => {
     const { onChangeValue, stateKey } = this.props;
     onChangeValue(stateKey, evt.target.value);
-  }
+  };
 
   private handleChangePath = () => {
-    const {directory, extensions, onChangeValue, stateKey, value} = this.props;
-    const func = directory ? this.context.api.selectDir : this.context.api.selectFile;
+    const { directory, extensions, onChangeValue, stateKey, value } =
+      this.props;
+    const func = directory
+      ? this.context.api.selectDir
+      : this.context.api.selectFile;
 
     func({
       defaultPath: value,
-      filters: extensions !== undefined ? [
-        { name: 'Files', extensions },
-      ] : [],
-    }).then(result => {
+      filters: extensions !== undefined ? [{ name: "Files", extensions }] : [],
+    }).then((result) => {
       if (result !== undefined) {
         onChangeValue(stateKey, result);
       }
     });
-  }
+  };
 }

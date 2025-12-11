@@ -1,16 +1,16 @@
-import { ComponentEx, translate } from '../../util/ComponentEx';
-import { didIgnoreError, isOutdated } from '../../util/errorHandling';
-import { genHash } from '../../util/genHash';
-import { renderError } from '../../util/message';
+import { ComponentEx, translate } from "../../util/ComponentEx";
+import { didIgnoreError, isOutdated } from "../../util/errorHandling";
+import { genHash } from "../../util/genHash";
+import { renderError } from "../../util/message";
 
-import Icon from './Icon';
-import { IconButton } from './TooltipControls';
+import Icon from "./Icon";
+import { IconButton } from "./TooltipControls";
 
-import * as _ from 'lodash';
-import * as React from 'react';
-import { Alert, Button } from 'react-bootstrap';
-import { WithTranslation } from 'react-i18next';
-import { getApplication } from '../../util/application';
+import * as _ from "lodash";
+import * as React from "react";
+import { Alert, Button } from "react-bootstrap";
+import { WithTranslation } from "react-i18next";
+import { getApplication } from "../../util/application";
 
 export type CBFunction = (...args: any[]) => void;
 
@@ -19,7 +19,7 @@ export interface IErrorContext {
 }
 
 export const ErrorContext = React.createContext<IErrorContext>({
-  safeCB: cb => cb,
+  safeCB: (cb) => cb,
 });
 
 export interface IErrorBoundaryProps extends WithTranslation {
@@ -34,7 +34,10 @@ interface IErrorBoundaryState {
   errorInfo?: React.ErrorInfo;
 }
 
-class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState> {
+class ErrorBoundary extends ComponentEx<
+  IErrorBoundaryProps,
+  IErrorBoundaryState
+> {
   private mErrContext: IErrorContext;
   constructor(props: IErrorBoundaryProps) {
     super(props);
@@ -60,28 +63,45 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     if (this.props.canDisplayError === false) {
       this.context.api.sendNotification({
-        type: 'error',
-        message: 'Failed to render',
+        type: "error",
+        message: "Failed to render",
         actions: [
-          { title: 'More', action: () => {
-            const rendered = renderError(error);
-            this.context.api.showDialog('error', 'Failed to render', {
-              message: rendered.message,
-              text: rendered.text,
-              options: {
-                wrap: rendered.wrap,
-                translated: rendered.translated,
-              },
-              parameters: {
-                ...(rendered.parameters || {}),
-              },
-            }, [
-              { label: 'Close' },
-            ]);
-          } },
-          { title: 'Retry', action: () => { this.retryRender(); } },
-          { title: 'Report', action: () => { this.report(); } },
-        ]});
+          {
+            title: "More",
+            action: () => {
+              const rendered = renderError(error);
+              this.context.api.showDialog(
+                "error",
+                "Failed to render",
+                {
+                  message: rendered.message,
+                  text: rendered.text,
+                  options: {
+                    wrap: rendered.wrap,
+                    translated: rendered.translated,
+                  },
+                  parameters: {
+                    ...(rendered.parameters || {}),
+                  },
+                },
+                [{ label: "Close" }],
+              );
+            },
+          },
+          {
+            title: "Retry",
+            action: () => {
+              this.retryRender();
+            },
+          },
+          {
+            title: "Report",
+            action: () => {
+              this.report();
+            },
+          },
+        ],
+      });
     }
     this.setState({ error, errorInfo });
   }
@@ -100,64 +120,67 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
       return null;
     }
 
-    const classes = (className || '').split(' ');
-    classes.push('errorboundary');
+    const classes = (className || "").split(" ");
+    classes.push("errorboundary");
 
     return visible ? (
-      <div className={classes.join(' ')}>
-        <Alert className='render-failure' bsStyle='danger'>
-          <Icon className='render-failure-icon' name='sad' />
-          <div className='render-failure-text'>{t('Failed to render.')}</div>
-          <div className='render-failure-buttons'>
-            {(isOutdated() || didIgnoreError())
-              ? null
-              : <Button onClick={this.report}>{t('Report')}</Button>
-            }
-            <Button onClick={this.retryRender}>{t('Retry')}</Button>
+      <div className={classes.join(" ")}>
+        <Alert className="render-failure" bsStyle="danger">
+          <Icon className="render-failure-icon" name="sad" />
+          <div className="render-failure-text">{t("Failed to render.")}</div>
+          <div className="render-failure-buttons">
+            {isOutdated() || didIgnoreError() ? null : (
+              <Button onClick={this.report}>{t("Report")}</Button>
+            )}
+            <Button onClick={this.retryRender}>{t("Retry")}</Button>
           </div>
-          {(onHide !== undefined)
-            ? (
-              <IconButton
-                className='error-boundary-close'
-                tooltip={t('Hide')}
-                icon='close'
-                onClick={onHide}
-              />)
-              : null}
+          {onHide !== undefined ? (
+            <IconButton
+              className="error-boundary-close"
+              tooltip={t("Hide")}
+              icon="close"
+              onClick={onHide}
+            />
+          ) : null}
         </Alert>
       </div>
-      ) : null;
+    ) : null;
   }
 
   private report = () => {
     const { events } = this.context.api;
     const { onHide } = this.props;
     const { error, errorInfo } = this.state;
-    if ((error === undefined) || (errorInfo === undefined)) {
+    if (error === undefined || errorInfo === undefined) {
       return;
     }
     if (onHide !== undefined) {
       onHide();
     }
-    let errMessage = 'Component rendering error\n\n'
-                   + `Vortex Version: ${getApplication().version}\n\n`
-                   + `${error.stack}`;
+    let errMessage =
+      "Component rendering error\n\n" +
+      `Vortex Version: ${getApplication().version}\n\n` +
+      `${error.stack}`;
 
     if (errorInfo !== undefined) {
-      errMessage += '\n\nComponentStack:'
-                  + errorInfo.componentStack + '\n';
+      errMessage += "\n\nComponentStack:" + errorInfo.componentStack + "\n";
     }
 
-    events.emit('report-feedback', error.stack.split('\n')[0], errMessage,
-                [], genHash(error));
-  }
+    events.emit(
+      "report-feedback",
+      error.stack.split("\n")[0],
+      errMessage,
+      [],
+      genHash(error),
+    );
+  };
 
   private retryRender = () => {
     this.setState({ error: undefined, errorInfo: undefined });
-  }
+  };
 }
 
-export default translate(['common'])(ErrorBoundary);
+export default translate(["common"])(ErrorBoundary);
 
 /**
  * Higher-Order-Component that provides the component with a safeCB callback wrapper
@@ -169,24 +192,32 @@ export function safeCallbacks<T, S>(
 ): React.ComponentType<Omit<T, keyof IErrorContext>> {
   // tslint:disable-next-line:class-name
   // return class __SafeCallbackComponent extends React.Component<T, S> {
-  const cache: { [key: string]: { cb: CBFunction, depList: any[] } } = {};
+  const cache: { [key: string]: { cb: CBFunction; depList: any[] } } = {};
 
   return (props: React.PropsWithChildren<T>) => {
     const context = React.useContext(ErrorContext);
 
-    const cachingSafeCB = React.useCallback((cb: (...args: any[]) => void, depList?: any[]) => {
-      const id = cb.toString();
-      if ((cache[id] === undefined)
-          || (depList !== undefined) && !_.isEqual(depList, cache[id].depList)) {
-        cache[id] = { cb: context.safeCB(cb, []), depList };
-      }
-      return cache[id].cb;
-    }, [context]);
+    const cachingSafeCB = React.useCallback(
+      (cb: (...args: any[]) => void, depList?: any[]) => {
+        const id = cb.toString();
+        if (
+          cache[id] === undefined ||
+          (depList !== undefined && !_.isEqual(depList, cache[id].depList))
+        ) {
+          cache[id] = { cb: context.safeCB(cb, []), depList };
+        }
+        return cache[id].cb;
+      },
+      [context],
+    );
 
-    return React.createElement(ComponentToWrap, {
-      ...props,
-      safeCB: cachingSafeCB,
-    },
-    props.children);
+    return React.createElement(
+      ComponentToWrap,
+      {
+        ...props,
+        safeCB: cachingSafeCB,
+      },
+      props.children,
+    );
   };
 }

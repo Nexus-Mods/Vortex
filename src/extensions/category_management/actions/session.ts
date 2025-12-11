@@ -1,5 +1,8 @@
-import safeCreateAction from '../../../actions/safeCreateAction';
+import safeCreateAction from "../../../actions/safeCreateAction";
 
-import * as reduxAct from 'redux-act';
+import * as reduxAct from "redux-act";
 
-export const showCategoriesDialog = safeCreateAction('SHOW_CATEGORIES_DIALOG', show => show);
+export const showCategoriesDialog = safeCreateAction(
+  "SHOW_CATEGORIES_DIALOG",
+  (show) => show,
+);

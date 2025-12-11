@@ -1,11 +1,11 @@
-import Promise from 'bluebird';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as React from 'react';
-import reqResolve = require('resolve');
+import Promise from "bluebird";
+import * as fs from "fs";
+import * as path from "path";
+import * as React from "react";
+import reqResolve = require("resolve");
 
 // tslint:disable-next-line
-const Module = require('module');
+const Module = require("module");
 
 /**
  * require a module asynchronously.
@@ -19,7 +19,7 @@ const Module = require('module');
  * @param {string} [basedir]
  * @returns {Promise<any>}
  */
-export default function(id: string, basedir?: string): Promise<any> {
+export default function (id: string, basedir?: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const options = basedir !== undefined ? { basedir } : undefined;
     reqResolve(id, options, (resErr, filePath) => {
@@ -29,13 +29,15 @@ export default function(id: string, basedir?: string): Promise<any> {
 
       fs.readFile(filePath, (err, data) => {
         if (err !== null) {
-          return reject(new Error(`failed to read ${filePath}: ${err.message}`));
+          return reject(
+            new Error(`failed to read ${filePath}: ${err.message}`),
+          );
         }
         const paths = Module._nodeModulePaths(path.dirname(filePath));
         const mod = new Module(filePath, module.parent);
         mod.filename = filePath;
         mod.paths = paths;
-        mod._compile(data.toString('utf-8'), filePath);
+        mod._compile(data.toString("utf-8"), filePath);
         resolve(mod.exports);
       });
     });

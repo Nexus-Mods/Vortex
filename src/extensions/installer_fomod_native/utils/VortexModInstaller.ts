@@ -1,13 +1,16 @@
-import { IExtensionApi } from '../../../types/api';
-import lazyRequire from '../../../util/lazyRequire';
-import { log } from '../../../util/log';
-import { DialogManager } from './DialogManager';
-import { SharedDelegates } from '../../installer_fomod_shared/delegates/SharedDelegates';
+import { IExtensionApi } from "../../../types/api";
+import lazyRequire from "../../../util/lazyRequire";
+import { log } from "../../../util/log";
+import { DialogManager } from "./DialogManager";
+import { SharedDelegates } from "../../installer_fomod_shared/delegates/SharedDelegates";
 
-import type * as fomodT from 'fomod-installer-native';
+import type * as fomodT from "fomod-installer-native";
 
 export class VortexModInstaller {
-  public static async create(api: IExtensionApi, instanceId: string): Promise<VortexModInstaller> {
+  public static async create(
+    api: IExtensionApi,
+    instanceId: string,
+  ): Promise<VortexModInstaller> {
     const delegates = new VortexModInstaller(api, instanceId);
     await delegates.initialize();
     return delegates;
@@ -22,7 +25,9 @@ export class VortexModInstaller {
   private mSharedDelegates: SharedDelegates;
 
   private constructor(api: IExtensionApi, instanceId: string) {
-    this.fomod = lazyRequire<typeof fomodT>(() => require('fomod-installer-native'));
+    this.fomod = lazyRequire<typeof fomodT>(() =>
+      require("fomod-installer-native"),
+    );
     this.mModInstaller = new this.fomod.NativeModInstaller(
       this.pluginsGetAllAsync,
       this.contextGetAppVersionAsync,
@@ -30,7 +35,7 @@ export class VortexModInstaller {
       this.contextGetExtenderVersionAsync,
       this.uiStartDialog,
       this.uiEndDialog,
-      this.uiUpdateState
+      this.uiUpdateState,
     );
 
     this.mApi = api;
@@ -42,20 +47,34 @@ export class VortexModInstaller {
   }
 
   public dispose() {
-    log('debug', 'Disposing VortexModInstaller', { instanceId: this.mInstanceId });
+    log("debug", "Disposing VortexModInstaller", {
+      instanceId: this.mInstanceId,
+    });
     this.mDialogManager?.dispose();
     this.mDialogManager = undefined;
   }
 
-
-
   /**
    * Calls FOMOD's install and converts the result to Vortex data
    */
-  public installAsync = async (files: string[], stopPatterns: string[], pluginPath: string, scriptPath: string, preset: any, validate: boolean): Promise<fomodT.types.InstallResult | null> => {
+  public installAsync = async (
+    files: string[],
+    stopPatterns: string[],
+    pluginPath: string,
+    scriptPath: string,
+    preset: any,
+    validate: boolean,
+  ): Promise<fomodT.types.InstallResult | null> => {
     try {
       this.mScriptPath = scriptPath;
-      return await this.mModInstaller.install(files, stopPatterns, pluginPath, scriptPath, preset, validate);
+      return await this.mModInstaller.install(
+        files,
+        stopPatterns,
+        pluginPath,
+        scriptPath,
+        preset,
+        validate,
+      );
     } catch (error) {
       return null;
     }
@@ -74,7 +93,7 @@ export class VortexModInstaller {
   private contextGetAppVersionAsync = (): string => {
     return this.mSharedDelegates.getAppVersion();
   };
-  
+
   /**
    * Callback
    */
@@ -88,7 +107,7 @@ export class VortexModInstaller {
   private contextGetExtenderVersionAsync = (extender: string): string => {
     return this.mSharedDelegates.getExtenderVersion(extender);
   };
-  
+
   /**
    * Callback for starting FOMOD dialog
    * Delegates to DialogManager instance
@@ -98,20 +117,33 @@ export class VortexModInstaller {
     image: fomodT.types.IHeaderImage,
     selectCallback: fomodT.types.SelectCallback,
     contCallback: fomodT.types.ContinueCallback,
-    cancelCallback: fomodT.types.CancelCallback
+    cancelCallback: fomodT.types.CancelCallback,
   ): void => {
-    log('debug', 'Starting FOMOD dialog', { instanceId: this.mInstanceId });
-    this.mDialogManager = new DialogManager(this.mApi, this.mInstanceId, this.mScriptPath);
-    this.mDialogManager.enqueueDialog(moduleName, image, selectCallback, contCallback, cancelCallback);
+    log("debug", "Starting FOMOD dialog", { instanceId: this.mInstanceId });
+    this.mDialogManager = new DialogManager(
+      this.mApi,
+      this.mInstanceId,
+      this.mScriptPath,
+    );
+    this.mDialogManager.enqueueDialog(
+      moduleName,
+      image,
+      selectCallback,
+      contCallback,
+      cancelCallback,
+    );
   };
 
   /**
    * Callback for updating FOMOD dialog state
    * Delegates to DialogManager instance
    */
-  private uiUpdateState = (installSteps: fomodT.types.IInstallStep[], currentStepId: number): void => {
+  private uiUpdateState = (
+    installSteps: fomodT.types.IInstallStep[],
+    currentStepId: number,
+  ): void => {
     if (!this.mDialogManager) {
-      throw new Error('DialogManager not initialized');
+      throw new Error("DialogManager not initialized");
     }
 
     // https://github.com/Nexus-Mods/NexusMods.App/blob/e6b99cff84443ce78081caefda7ffcd4ffc184a9/src/NexusMods.Games.FOMOD/CoreDelegates/UiDelegate.cs#L108-L109
@@ -120,7 +152,7 @@ export class VortexModInstaller {
       //throw new Error('Invalid current step ID');
     }
 
-    log('debug', 'Updating FOMOD dialog state', {
+    log("debug", "Updating FOMOD dialog state", {
       instanceId: this.mInstanceId,
       currentStepId,
       totalSteps: installSteps.length,
@@ -134,11 +166,13 @@ export class VortexModInstaller {
    */
   private uiEndDialog = (): void => {
     if (!this.mDialogManager) {
-      log('debug', 'Ending FOMOD dialog - already disposed', { instanceId: this.mInstanceId });
-      throw new Error('DialogManager not initialized');
+      log("debug", "Ending FOMOD dialog - already disposed", {
+        instanceId: this.mInstanceId,
+      });
+      throw new Error("DialogManager not initialized");
     }
 
-    log('debug', 'Ending FOMOD dialog', { instanceId: this.mInstanceId });
+    log("debug", "Ending FOMOD dialog", { instanceId: this.mInstanceId });
 
     this.mDialogManager.endDialog();
   };

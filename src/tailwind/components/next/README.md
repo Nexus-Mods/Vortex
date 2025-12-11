@@ -10,38 +10,40 @@ This folder contains components adapted from the web team's "next" project for u
 
 ```tsx
 // Import the Tailwind namespace
-import { Tailwind } from 'vortex-api';
+import { Tailwind } from "vortex-api";
 
 // Use components via the namespace
 function MyExtension() {
-  return (
-    <div>
-      <Tailwind.Icon path="nxmVortex" size="lg" />
-      <Tailwind.Button buttonType="primary">Click Me</Tailwind.Button>
-      <Tailwind.Typography as="h1" typographyType="heading-2xl">
-        My Extension
-      </Tailwind.Typography>
-    </div>
-  );
+    return (
+        <div>
+            <Tailwind.Icon path="nxmVortex" size="lg" />
+            <Tailwind.Button buttonType="primary">Click Me</Tailwind.Button>
+            <Tailwind.Typography as="h1" typographyType="heading-2xl">
+                My Extension
+            </Tailwind.Typography>
+        </div>
+    );
 }
 ```
 
 ### Destructuring for Convenience
 
 ```tsx
-import { Tailwind } from 'vortex-api';
+import { Tailwind } from "vortex-api";
 
 // Destructure the components you need
 const { Icon, Button, Typography } = Tailwind;
 
 function MyExtension() {
-  return (
-    <div>
-      <Icon path="nxmVortex" size="lg" />
-      <Button buttonType="primary">Click Me</Button>
-      <Typography as="h1" typographyType="heading-2xl">Title</Typography>
-    </div>
-  );
+    return (
+        <div>
+            <Icon path="nxmVortex" size="lg" />
+            <Button buttonType="primary">Click Me</Button>
+            <Typography as="h1" typographyType="heading-2xl">
+                Title
+            </Typography>
+        </div>
+    );
 }
 ```
 
@@ -51,14 +53,15 @@ When developing within the Vortex source code, you can import directly:
 
 ```tsx
 // Direct import from source (for development within Vortex)
-import { Icon } from '../../../tailwind/components/next/icon';
-import { Button } from '../../../tailwind/components/next/button';
-import { Typography } from '../../../tailwind/components/next/typography';
+import { Icon } from "../../../tailwind/components/next/icon";
+import { Button } from "../../../tailwind/components/next/button";
+import { Typography } from "../../../tailwind/components/next/typography";
 ```
 
 ### Available Components
 
 All components are available under the `Tailwind` namespace:
+
 - `Tailwind.Icon` - Icon rendering (MDI + Nexus custom icons)
 - `Tailwind.Button` - Button component
 - `Tailwind.Typography` - Typography component
@@ -80,16 +83,17 @@ All components are available under the `Tailwind` namespace:
 TypeScript types are also exported:
 
 ```tsx
-import { Tailwind, type IconSize, type ButtonType } from 'vortex-api';
+import { Tailwind, type IconSize, type ButtonType } from "vortex-api";
 
 // Use the types
-const mySize: IconSize = 'lg';
-const myButtonType: ButtonType = 'primary';
+const mySize: IconSize = "lg";
+const myButtonType: ButtonType = "primary";
 ```
 
 ## Organization
 
 Components are organized by domain/feature:
+
 - `typography/` - Typography system components
 - `button/` - Button system components
 - `icon/` - Icon rendering system (MDI + Nexus custom icons)
@@ -102,7 +106,9 @@ Components are organized by domain/feature:
 All components have been adapted to work with Vortex's Tailwind v4 setup:
 
 ### 1. **Tailwind Prefix**
+
 All Tailwind classes use the `tw:` prefix to avoid conflicts with existing Bootstrap/SASS styles:
+
 ```tsx
 // Web team original:
 <div className="text-neutral-strong">
@@ -131,6 +137,7 @@ tw:aria-selected:text-neutral-strong
 ```
 
 **Common Mistakes to Avoid:**
+
 - `hover:tw:*` ❌ → `tw:hover:*` ✅
 - `focus:tw:*` ❌ → `tw:focus:*` ✅
 - `disabled:tw:*` ❌ → `tw:disabled:*` ✅
@@ -139,7 +146,9 @@ tw:aria-selected:text-neutral-strong
 **Note**: Named group variants like `group/name` and `group-hover/name:tw:*` are not supported with our prefix setup. Use standard `:hover` selectors instead.
 
 ### 2. **Dependencies**
+
 Web-specific dependencies have been replaced or adapted:
+
 - `@/utils/join-classes` → **Shared `utils.ts`** at `src/tailwind/components/next/utils.ts`
 - `@/types/x-or.types` → **Shared `utils.ts`** at `src/tailwind/components/next/utils.ts`
 - `@/domains/ui/icon` → `Icon.tsx` using Material Design Icons from `@mdi/js` + Nexus custom icons from `lib/icon-paths/`
@@ -149,25 +158,31 @@ Web-specific dependencies have been replaced or adapted:
 - Next.js routing → Removed (Electron doesn't use Next.js)
 
 ### 3. **CSS Classes**
+
 Custom classes are defined in `src/stylesheets/tailwind-v4.css`:
 
 **Typography:**
+
 - `.tw\:typography-heading-2xl` through `.tw\:typography-heading-xs`
 - `.tw\:typography-title-md` through `.tw\:typography-title-xs`
 - `.tw\:typography-body-2xl` through `.tw\:typography-body-xs`
 
 **Button:**
+
 - `.tw\:hover-overlay` - Light hover effect overlay
 - `.tw\:hover-dark-overlay` - Dark hover effect overlay
 
 ### 4. **Colors**
+
 Semantic colors defined in `@theme` in `src/stylesheets/tailwind-v4.css`:
 
 **Neutral Colors:**
+
 - `--color-neutral-inverted`, `--color-neutral-strong`, `--color-neutral-moderate`, `--color-neutral-subdued`, `--color-neutral-weak`
 - `--color-neutral-800` - For filled buttons
 
 **Stroke/Border Colors:**
+
 - `--color-stroke-moderate` - #d4d4d8 (Neutral-300) - **Use for borders and dividers**
 - `--color-stroke-strong` - #a1a1aa (Neutral-400)
 - `--color-stroke-neutral-translucent-weak` - rgba(255, 255, 255, 0.1)
@@ -178,11 +193,13 @@ Semantic colors defined in `@theme` in `src/stylesheets/tailwind-v4.css`:
 **⚠️ Note**: There is **NO** `--color-stroke-subdued` - use `stroke-moderate` or `stroke-neutral-translucent-subdued` instead.
 
 **Surface Colors:**
+
 - `--color-surface-mid`, `--color-surface-high` - Card and panel backgrounds
 - `--color-surface-low` - Select/input backgrounds
 - `--color-translucent-*` - For dark backgrounds
 
 **Semantic Colors:**
+
 - `--color-primary-moderate`, `--color-primary-400` - Primary button and element colors
 - `--color-info-strong` - Informational tag color
 - `--color-danger-400`, `--color-danger-strong` - Warning/error colors
@@ -192,31 +209,29 @@ Semantic colors defined in `@theme` in `src/stylesheets/tailwind-v4.css`:
 ## Usage Example
 
 ```tsx
-import { Typography } from '../../../tailwind/next/typography';
+import { Typography } from "../../../tailwind/next/typography";
 
 function MyComponent() {
-  return (
-    <Typography
-      as="h1"
-      typographyType="heading-2xl"
-      appearance="strong"
-    >
-      Hello World
-    </Typography>
-  );
+    return (
+        <Typography as="h1" typographyType="heading-2xl" appearance="strong">
+            Hello World
+        </Typography>
+    );
 }
 ```
 
 ## Shared Utilities
 
 All components share common utilities from `utils.ts`:
+
 - **`joinClasses()`** - Joins class names, filtering falsy values, supports conditional classes
 - **`XOr<T, U>`** - TypeScript utility type for exclusive OR type constraints
 - **`ResponsiveScreenSizes`** - Type for Tailwind responsive breakpoints
 
 Import from the shared file:
+
 ```tsx
-import { joinClasses, XOr, ResponsiveScreenSizes } from '../utils';
+import { joinClasses, XOr, ResponsiveScreenSizes } from "../utils";
 ```
 
 ## Adding New Components
@@ -238,17 +253,20 @@ When adding new components from the web team:
 Located in `typography/`
 
 **Files:**
+
 - `Typography.tsx` - Main Typography component
 - `TypographyDemo.tsx` - Demo showcasing all typography styles
 - `index.ts` - Public exports
 
 **Features:**
+
 - Predefined typography sizes (heading, title, body)
 - Color appearances (strong, moderate, subdued, weak)
 - Responsive typography (different sizes per breakpoint)
 - Semantic HTML elements (h1-h6, p, span, div, ul)
 
 **Usage:**
+
 ```tsx
 import { Typography } from '../../../tailwind/next/typography';
 
@@ -281,15 +299,18 @@ import { Typography } from '../../../tailwind/next/typography';
 Located in `button/`
 
 **Files:**
+
 - `Button.tsx` - Main Button component
 - `ButtonDemo.tsx` - Demo showcasing all button types and states
 - `index.ts` - Public exports
 
 **Dependencies:**
+
 - Uses `Icon` component from `../icon/`
 - Uses `Link` component from `../link/`
 
 **Features:**
+
 - Multiple button types (primary, secondary, tertiary, success, premium)
 - Two sizes (sm, md) with responsive support
 - Loading states (visual spinner pending icon implementation)
@@ -299,6 +320,7 @@ Located in `button/`
 - Custom content support
 
 **Usage:**
+
 ```tsx
 import { Button } from '../../../tailwind/next/button';
 
@@ -337,6 +359,7 @@ import { Button } from '../../../tailwind/next/button';
 
 **Icon Support:**
 Icons are fully supported using Material Design Icons from `@mdi/js`:
+
 ```tsx
 // With icon name (automatically looks up in @mdi/js)
 <Button buttonType="primary" leftIconPath="mdiDownload">
@@ -358,6 +381,7 @@ Available icon names can be found at: https://pictogrammers.com/library/mdi/
 
 **Nexus Mods Custom Icons:**
 In addition to Material Design Icons, the Icon component supports 34 custom Nexus Mods icons:
+
 ```tsx
 // Using Nexus Mods custom icons
 <Button buttonType="primary" leftIconPath="nxmVortex">
@@ -374,6 +398,7 @@ In addition to Material Design Icons, the Icon component supports 34 custom Nexu
 ```
 
 **Available Nexus Icons:**
+
 - **Brand/App**: `nxmVortex`, `nxmMod`, `nxmModOutline`, `nxmCollection`, `nxmCollections`
 - **Actions**: `nxmInstall`, `nxmDataCheck`, `nxmClipboard`, `nxmUnblock`
 - **Stats/Display**: `nxmUniqueDownloads`, `nxmFileSize`, `nxmHandHeartOutline` (endorsement), `nxmRosette` (featured), `nxmStar`
@@ -383,10 +408,11 @@ In addition to Material Design Icons, the Icon component supports 34 custom Nexu
 - **Gaming**: `nxmJoystick`
 
 All Nexus icons are located in `src/tailwind/lib/icon-paths/` and can be imported directly:
+
 ```tsx
-import { nxmVortex, nxmCollection } from '../../../tailwind/lib/icon-paths';
+import { nxmVortex, nxmCollection } from "../../../tailwind/lib/icon-paths";
 // or
-import { nxmVortex, nxmCollection } from 'tailwind';
+import { nxmVortex, nxmCollection } from "tailwind";
 ```
 
 ### Icon
@@ -394,10 +420,12 @@ import { nxmVortex, nxmCollection } from 'tailwind';
 Located in `icon/`
 
 **Files:**
+
 - `Icon.tsx` - Icon rendering component
 - `index.ts` - Public exports
 
 **Features:**
+
 - Supports Material Design Icons from `@mdi/js` (5000+ icons)
 - Supports 34 custom Nexus Mods icons
 - Auto-resolution of icon names to SVG paths
@@ -408,6 +436,7 @@ Located in `icon/`
 - Direct SVG path data support
 
 **Size System:**
+
 - `xs`: 0.75rem (12px) - Extra small icons
 - `sm`: 1rem (16px) - Small icons
 - `md`: 1.25rem (20px) - Medium icons (**DEFAULT**)
@@ -417,6 +446,7 @@ Located in `icon/`
 - `none`: Size controlled via className
 
 **Usage:**
+
 ```tsx
 import { Icon } from '../../../tailwind/components/next/icon';
 
@@ -441,12 +471,14 @@ import { Icon } from '../../../tailwind/components/next/icon';
 
 **Icon Resolution:**
 The Icon component automatically resolves icon names:
+
 1. Icons starting with `mdi` are looked up in `@mdi/js`
 2. Icons starting with `nxm` are looked up in custom Nexus icon paths
 3. Strings starting with `M` or `m` are treated as direct SVG path data
 
 **Type Safety:**
 The component uses an XOr type constraint - you can use either `size` OR `sizeOverride`, but not both:
+
 ```tsx
 // ✅ Valid
 <Icon path="mdiAccount" size="md" />
@@ -461,16 +493,19 @@ The component uses an XOr type constraint - you can use either `size` OR `sizeOv
 Located in `link/`
 
 **Files:**
+
 - `Link.tsx` - Link wrapper component
 - `index.ts` - Public exports
 
 **Features:**
+
 - Simple anchor tag wrapper for Electron
 - External link support with `rel` and `target` attributes
 - Ref forwarding support
 - TypeScript-typed props
 
 **Usage:**
+
 ```tsx
 import { Link } from '../../../tailwind/components/next/link';
 
@@ -495,11 +530,13 @@ import { Link } from '../../../tailwind/components/next/link';
 Located in `collectiontile/`
 
 **Files:**
+
 - `CollectionTile.tsx` - Collection card component
 - `CollectionTileDemo.tsx` - Demo with sample collection data
 - `index.ts` - Public exports
 
 **Features:**
+
 - Fixed dimensions (465x288px) matching Figma design
 - Collection cover image (166x207px)
 - Title, author with avatar placeholder
@@ -510,24 +547,25 @@ Located in `collectiontile/`
 - Surface-mid/high backgrounds for dark theme
 
 **Usage:**
+
 ```tsx
-import { CollectionTile } from '../../../tailwind/next/collectiontile';
+import { CollectionTile } from "../../../tailwind/next/collectiontile";
 
 <CollectionTile
-  id="collection-1"
-  title="Ultimate Civil War Reloaded"
-  author={{ name: 'RyukanoHi' }}
-  coverImage="https://example.com/cover.jpg"
-  tags={['Total Overhaul', 'Adult']}
-  stats={{
-    downloads: 320,
-    size: '540MB',
-    endorsements: 320
-  }}
-  description="The story of Stardew Valley expands..."
-  onAddCollection={() => console.log('Add')}
-  onViewPage={() => console.log('View')}
-/>
+    id="collection-1"
+    title="Ultimate Civil War Reloaded"
+    author={{ name: "RyukanoHi" }}
+    coverImage="https://example.com/cover.jpg"
+    tags={["Total Overhaul", "Adult"]}
+    stats={{
+        downloads: 320,
+        size: "540MB",
+        endorsements: 320,
+    }}
+    description="The story of Stardew Valley expands..."
+    onAddCollection={() => console.log("Add")}
+    onViewPage={() => console.log("View")}
+/>;
 ```
 
 **Demo:** See `CollectionTileDemo` component
@@ -539,6 +577,7 @@ import { CollectionTile } from '../../../tailwind/next/collectiontile';
 Located in `form/` with subcomponents in `formfield/`, `input/`, and `select/`
 
 **Files:**
+
 - `formfield/FormField.tsx` - Form field wrapper component
 - `formfield/index.ts` - FormField exports
 - `input/Input.tsx` - Input component
@@ -550,6 +589,7 @@ Located in `form/` with subcomponents in `formfield/`, `input/`, and `select/`
 - `index.ts` - Main form exports
 
 **Dependencies:**
+
 - Uses Typography from `../typography`
 - Uses Icon from `../icon` (Select dropdown icon)
 - Uses shared utilities from `../utils`
@@ -557,6 +597,7 @@ Located in `form/` with subcomponents in `formfield/`, `input/`, and `select/`
 - Select uses mdiMenuDown icon from @mdi/js
 
 **Features:**
+
 - **FormField wrapper**: Labels (visible/hidden), hints (single/multiple), error messages, character counter
 - **Input types**: text, email, password, url, number, time, date
 - **Select dropdown**: Custom styled select with dropdown icon, supports optgroup
@@ -686,6 +727,7 @@ import { Select } from '../../../tailwind/components/next/form/select';
 **Props:**
 
 **FormField:**
+
 - `label` (string) - Field label text
 - `hideLabel` (boolean) - Hides label visually (still accessible to screen readers)
 - `hints` (string | string[]) - Helper text shown below input
@@ -697,6 +739,7 @@ import { Select } from '../../../tailwind/components/next/form/select';
 - `inputLength` (number) - Current input length (for character counter)
 
 **Input:**
+
 - Extends all `FormField` props
 - Extends all native HTML `input` attributes
 - `type` ('text' | 'email' | 'password' | 'url' | 'number' | 'time' | 'date')
@@ -706,6 +749,7 @@ import { Select } from '../../../tailwind/components/next/form/select';
 - `readOnly` (boolean) - Makes input read-only
 
 **Select:**
+
 - Extends all `FormField` props
 - Extends all native HTML `select` attributes
 - `children` (ReactNode) - `<option>` and `<optgroup>` elements
@@ -714,6 +758,7 @@ import { Select } from '../../../tailwind/components/next/form/select';
 - Styled appearance with `tw:appearance-none` for custom design
 
 **Colors Used (Input & Select):**
+
 - `--color-neutral-strong` - Input/select text
 - `--color-neutral-moderate` - Character counter (normal)
 - `--color-neutral-subdued` - Placeholder text, hint text, dropdown icon
@@ -733,6 +778,7 @@ import { Select } from '../../../tailwind/components/next/form/select';
 Located in `tabs/` with subcomponents in `tab-bar/`, `tab/`, and `tab-panel/`
 
 **Files:**
+
 - `tabs/tabs.context.tsx` - TabProvider and useTabContext hook
 - `tabs/tab-bar/TabBar.tsx` - Container with tablist role
 - `tabs/tab/Tab.tsx` - TabButton, TabLink, and TabContent components
@@ -741,12 +787,14 @@ Located in `tabs/` with subcomponents in `tab-bar/`, `tab/`, and `tab-panel/`
 - `tabs/index.ts` - Main tabs exports
 
 **Dependencies:**
+
 - Uses Typography from `../typography`
 - Uses shared utilities from `../utils` (joinClasses, getTabId)
 - Uses `numeral` library for formatting count badges
 - Uses React Context for state management
 
 **Features:**
+
 - **Context-based state management**: TabProvider wrapper required
 - **Two tab types**: TabButton (selectable) and TabLink (focusable, for navigation)
 - **Keyboard navigation**: Arrow Left/Right, Home, End keys with wrapping
@@ -757,6 +805,7 @@ Located in `tabs/` with subcomponents in `tab-bar/`, `tab/`, and `tab-panel/`
 
 **Architecture:**
 The tabs system uses React Context to manage state across all tab components:
+
 1. **TabProvider**: Context provider that wraps the entire tab system
 2. **TabBar**: Container with `role="tablist"` and bottom border
 3. **TabButton**: Selectable tab that changes content when clicked
@@ -766,48 +815,50 @@ The tabs system uses React Context to manage state across all tab components:
 **Usage:**
 
 ```tsx
-import { Tailwind } from 'vortex-api';
+import { Tailwind } from "vortex-api";
 
 const { TabProvider, TabBar, TabButton, TabLink, TabPanel } = Tailwind;
 
 function MyTabs() {
-  const [selectedTab, setSelectedTab] = useState('overview');
+    const [selectedTab, setSelectedTab] = useState("overview");
 
-  return (
-    <TabProvider
-      tab={selectedTab}
-      tabListId="my-tabs"
-      onSetSelectedTab={setSelectedTab}
-    >
-      <TabBar>
-        <TabButton name="Overview" />
-        <TabButton name="Files" count={42} />
-        <TabButton name="Settings" />
-        <TabLink name="Docs" href="https://nexusmods.com" />
-      </TabBar>
+    return (
+        <TabProvider
+            tab={selectedTab}
+            tabListId="my-tabs"
+            onSetSelectedTab={setSelectedTab}
+        >
+            <TabBar>
+                <TabButton name="Overview" />
+                <TabButton name="Files" count={42} />
+                <TabButton name="Settings" />
+                <TabLink name="Docs" href="https://nexusmods.com" />
+            </TabBar>
 
-      <TabPanel name="Overview">
-        <p>Overview content...</p>
-      </TabPanel>
+            <TabPanel name="Overview">
+                <p>Overview content...</p>
+            </TabPanel>
 
-      <TabPanel name="Files">
-        <p>Files content with 42 items...</p>
-      </TabPanel>
+            <TabPanel name="Files">
+                <p>Files content with 42 items...</p>
+            </TabPanel>
 
-      <TabPanel name="Settings">
-        <p>Settings content...</p>
-      </TabPanel>
-    </TabProvider>
-  );
+            <TabPanel name="Settings">
+                <p>Settings content...</p>
+            </TabPanel>
+        </TabProvider>
+    );
 }
 ```
 
 **TabButton vs TabLink:**
+
 - **TabButton**: Changes content when clicked, selectable, `type="button"`
 - **TabLink**: Navigates to URL when clicked, not selectable, `<a>` element
 - Both are focusable with keyboard navigation (Arrow keys)
 
 **Keyboard Navigation:**
+
 - **Arrow Left/Right**: Navigate between tabs (wraps around)
 - **Home**: Jump to first tab
 - **End**: Jump to last tab
@@ -815,6 +866,7 @@ function MyTabs() {
 - **Link tab behavior**: Focusing with arrows doesn't change content (must click)
 
 **Count Badges:**
+
 ```tsx
 // With count badge
 <TabButton name="Comments" count={1543} />
@@ -827,16 +879,19 @@ function MyTabs() {
 **Props:**
 
 **TabProvider:**
+
 - `tab` (string, required) - Currently selected tab name
 - `tabListId` (string, required) - Unique ID for this tab list
 - `onSetSelectedTab` (function, optional) - Callback when tab changes
 - `children` (ReactNode) - Tab components
 
 **TabBar:**
+
 - `children` (ReactNode) - Tab components (TabButton, TabLink)
 - `className` (string, optional) - Additional CSS classes
 
 **TabButton:**
+
 - `name` (string, required) - Tab display name (used as ID via getTabId)
 - `count` (number, optional) - Count badge number
 - `disabled` (boolean, optional) - Disable the tab
@@ -844,20 +899,23 @@ function MyTabs() {
 - Extends all native `<button>` attributes
 
 **TabLink:**
+
 - `name` (string, required) - Tab display name
 - `count` (number, optional) - Count badge number
 - `href` (string) - Link URL
-- `target` (string, optional) - Link target (_blank, etc.)
+- `target` (string, optional) - Link target (\_blank, etc.)
 - `className` (string, optional) - Additional CSS classes
 - Extends all native `<a>` attributes
 
 **TabPanel:**
+
 - `name` (string, required) - Panel name (matches tab name)
 - `children` (ReactNode) - Panel content
 
 **Demo:** See `TabsDemo` component showcasing all features
 
 **Colors Used:**
+
 - `--color-neutral-subdued` - Default tab text, scrollbar
 - `--color-neutral-moderate` - Hover tab text, scrollbar hover
 - `--color-neutral-strong` - Selected tab text
@@ -867,6 +925,7 @@ function MyTabs() {
 - `--color-stroke-subdued` - TabBar bottom border
 
 **Custom CSS:**
+
 - `.tw\:scrollbar` - Custom scrollbar for horizontal overflow in TabBar
 
 **React 16 Compatibility:**

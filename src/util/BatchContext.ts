@@ -1,4 +1,4 @@
-import { setdefault } from './util';
+import { setdefault } from "./util";
 
 /**
  * Provide context during batch operations
@@ -50,7 +50,7 @@ class BatchContext implements IBatchContext {
   constructor(id: string, keys: string[]) {
     this.mId = id;
     this.mKeys = keys;
-    this.mCompletion = new Promise<void>(resolve => {
+    this.mCompletion = new Promise<void>((resolve) => {
       this.onClose(() => resolve());
     });
   }
@@ -72,7 +72,7 @@ class BatchContext implements IBatchContext {
   }
 
   public close() {
-    this.mCloseCBs.forEach(cb => cb(this));
+    this.mCloseCBs.forEach((cb) => cb(this));
   }
 
   public onClose(cb: (context: BatchContext) => void) {
@@ -88,16 +88,18 @@ function makeKey(id: string, key: string) {
 
 function previousBatch(keys: string[], context: BatchContext): BatchContext {
   for (const key of keys) {
-    if ((contexts[key] !== undefined) && (contexts[key][0] !== context)) {
+    if (contexts[key] !== undefined && contexts[key][0] !== context) {
       return contexts[key][0];
     }
   }
   return undefined;
 }
 
-export function getBatchContext(operation: string | string[],
-                                key: string,
-                                create: boolean = false): IBatchContext {
+export function getBatchContext(
+  operation: string | string[],
+  key: string,
+  create: boolean = false,
+): IBatchContext {
   if (Array.isArray(operation)) {
     // We don't create contexts for multiple operations, only search.
     for (const op of operation) {
@@ -122,13 +124,14 @@ export function getBatchContext(operation: string | string[],
   }
 }
 
-export async function withBatchContext<T>(operation: string,
-                                          keys: string[],
-                                          cb: () => PromiseLike<T>)
-                                          : Promise<T> {
+export async function withBatchContext<T>(
+  operation: string,
+  keys: string[],
+  cb: () => PromiseLike<T>,
+): Promise<T> {
   const context = new BatchContext(operation, keys);
 
-  const fullKeys = keys.map(key => makeKey(operation, key));
+  const fullKeys = keys.map((key) => makeKey(operation, key));
 
   for (const key of fullKeys) {
     setdefault(contexts, key, []).push(context);
@@ -149,7 +152,7 @@ export async function withBatchContext<T>(operation: string,
     res = await cb();
   } finally {
     context.close();
-    fullKeys.forEach(key => {
+    fullKeys.forEach((key) => {
       const idx = contexts[key].indexOf(context);
       // idx should *always* be 0 at this point, the block above ensures we only run a batch
       // when it's at idx 0 for all keys

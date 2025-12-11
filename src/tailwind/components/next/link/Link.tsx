@@ -6,13 +6,13 @@
  * anchor tag suitable for Electron applications.
  */
 
-import * as React from 'react';
-import { AnchorHTMLAttributes, forwardRef } from 'react';
+import * as React from "react";
+import { AnchorHTMLAttributes, forwardRef } from "react";
 
 export interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string;
   isExternal?: boolean;
-  'aria-disabled'?: boolean;
+  "aria-disabled"?: boolean;
   children?: React.ReactNode;
 }
 
@@ -26,13 +26,13 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       <a
         ref={ref}
         href={href}
-        {...(isExternal ? { rel: 'noreferrer', target: '_blank' } : {})}
+        {...(isExternal ? { rel: "noreferrer", target: "_blank" } : {})}
         {...props}
       >
         {children}
       </a>
     );
-  }
+  },
 );
 
-Link.displayName = 'Link';
+Link.displayName = "Link";

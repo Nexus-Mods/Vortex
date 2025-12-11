@@ -1,12 +1,12 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import bbcode, { stripBBCode } from '../../util/bbcode';
-import { MainContext } from '../../renderer/views/MainWindow';
-import { activeGameId } from '../profile_management/selectors';
-import BaseDashlet from './BaseDashlet';
-import { MAX_SUMMARY_LENGTH } from './constants';
-import { IExtra, IListItem, IModListItem } from './types';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import bbcode, { stripBBCode } from "../../util/bbcode";
+import { MainContext } from "../../renderer/views/MainWindow";
+import { activeGameId } from "../profile_management/selectors";
+import BaseDashlet from "./BaseDashlet";
+import { MAX_SUMMARY_LENGTH } from "./constants";
+import { IExtra, IListItem, IModListItem } from "./types";
 
 export interface ILatestModsDashletProps {
   title: string;
@@ -16,41 +16,43 @@ export interface ILatestModsDashletProps {
 
 function augmentExtra(input: IExtra): IExtra {
   switch (input.id) {
-    case 'endorsements': {
+    case "endorsements": {
       return {
         ...input,
-        icon: 'endorse-yes',
-        text: '{{ value }}',
+        icon: "endorse-yes",
+        text: "{{ value }}",
       };
     }
-    case 'downloads': {
+    case "downloads": {
       return {
         ...input,
-        icon: 'download',
-        text: '{{ value }}',
+        icon: "download",
+        text: "{{ value }}",
       };
     }
-    default: return undefined;
+    default:
+      return undefined;
   }
 }
 
 function transformMod(encoding: string, input: IModListItem): IListItem {
   const res: IListItem = { ...input };
 
-  if (encoding === 'bbcode') {
+  if (encoding === "bbcode") {
     res.name = bbcode(res.name as string);
     res.summary = stripBBCode(res.summary as string);
   }
 
   if (res.summary.length > MAX_SUMMARY_LENGTH) {
-    res.summary = (res.summary as string).substring(0, MAX_SUMMARY_LENGTH) + '...';
+    res.summary =
+      (res.summary as string).substring(0, MAX_SUMMARY_LENGTH) + "...";
   }
 
-  if (encoding === 'bbcode') {
+  if (encoding === "bbcode") {
     res.summary = bbcode(res.summary as string);
   }
 
-  res.extra = res.extra.map(augmentExtra).filter(iter => iter !== undefined);
+  res.extra = res.extra.map(augmentExtra).filter((iter) => iter !== undefined);
 
   return res;
 }
@@ -67,12 +69,24 @@ function APIDashlet(props: ILatestModsDashletProps) {
 
   const refresh = React.useCallback(() => {
     (async () => {
-      interface IEvtRes { id: string; encoding: string; mods: IModListItem[]; }
-      const results = await context.api.emitAndAwait<IEvtRes[]>(eventName, gameMode);
-      setItems(results.reduce((prev, res) => [
-        ...prev,
-        ...res.mods.map(info => transformMod(res.encoding, info)),
-      ], []));
+      interface IEvtRes {
+        id: string;
+        encoding: string;
+        mods: IModListItem[];
+      }
+      const results = await context.api.emitAndAwait<IEvtRes[]>(
+        eventName,
+        gameMode,
+      );
+      setItems(
+        results.reduce(
+          (prev, res) => [
+            ...prev,
+            ...res.mods.map((info) => transformMod(res.encoding, info)),
+          ],
+          [],
+        ),
+      );
     })();
   }, []);
 

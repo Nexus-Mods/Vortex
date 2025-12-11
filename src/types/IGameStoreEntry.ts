@@ -1,4 +1,3 @@
-
 export interface IGameStoreEntry {
   appid: string;
   name: string;

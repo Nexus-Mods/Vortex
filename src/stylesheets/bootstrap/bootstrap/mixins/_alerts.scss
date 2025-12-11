@@ -1,18 +1,18 @@
 // Alerts
 
 @mixin alert-variant($background, $border, $text-color) {
-  background-color: $background;
-  border-color: $border;
-  color: $text-color;
-
-  .btn-embed.no-hover {
+    background-color: $background;
+    border-color: $border;
     color: $text-color;
-  }
 
-  hr {
-    border-top-color: darken($border, 5%);
-  }
-  .alert-link {
-    color: darken($text-color, 10%);
-  }
+    .btn-embed.no-hover {
+        color: $text-color;
+    }
+
+    hr {
+        border-top-color: darken($border, 5%);
+    }
+    .alert-link {
+        color: darken($text-color, 10%);
+    }
 }

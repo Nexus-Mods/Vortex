@@ -1,9 +1,9 @@
-import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
 
-import { IMod } from '../../mod_management/types/IMod';
+import { IMod } from "../../mod_management/types/IMod";
 
-import { TFunction } from 'i18next';
+import { TFunction } from "i18next";
 
 /**
  * generate the category's subtitle
@@ -13,16 +13,22 @@ import { TFunction } from 'i18next';
  * @return {string}
  */
 
-function generateSubtitle(t: TFunction,
-                          categoryId: string,
-                          mods: { [categoryId: string]: IMod[] },
-                          totalChildModCount?: number) {
+function generateSubtitle(
+  t: TFunction,
+  categoryId: string,
+  mods: { [categoryId: string]: IMod[] },
+  totalChildModCount?: number,
+) {
   const modsCount = getSafe(mods, [categoryId], []).length;
-  let subt: string = (modsCount === 0)
-    ? t('Empty') : t('{{ count }} mods installed', {count: modsCount});
+  let subt: string =
+    modsCount === 0
+      ? t("Empty")
+      : t("{{ count }} mods installed", { count: modsCount });
 
-  if ((totalChildModCount !== undefined) && (totalChildModCount > 0)) {
-    subt = subt + t(' ({{ count }} mods in sub-categories)', {count: totalChildModCount});
+  if (totalChildModCount !== undefined && totalChildModCount > 0) {
+    subt =
+      subt +
+      t(" ({{ count }} mods in sub-categories)", { count: totalChildModCount });
   }
 
   return subt;

@@ -1,1 +1,1 @@
-export { IPreset, IPresetsState } from './types/IPreset';
+export { IPreset, IPresetsState } from "./types/IPreset";

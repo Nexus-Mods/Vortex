@@ -1,18 +1,18 @@
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { IState } from '../../../types/IState';
-import { ComponentEx, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { IState } from "../../../types/IState";
+import { ComponentEx, translate } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
 
-import { IMod } from '../../mod_management/types/IMod';
+import { IMod } from "../../mod_management/types/IMod";
 
-import { setModEnabled } from '../actions/profiles';
-import { closeDialog } from '../actions/transferSetup';
-import { IProfile } from '../types/IProfile';
+import { setModEnabled } from "../actions/profiles";
+import { closeDialog } from "../actions/transferSetup";
+import { IProfile } from "../types/IProfile";
 
-import * as React from 'react';
-import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
-import { connect } from 'react-redux';
+import * as React from "react";
+import { Button, Checkbox, FormControl, Modal } from "react-bootstrap";
+import { connect } from "react-redux";
 
 interface IDialog {
   gameId: string;
@@ -65,66 +65,73 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Modal show={truthy(dialog)} onHide={this.close}>
-        {truthy(dialog)
-          ? (
-            <Modal.Body>
+        {truthy(dialog) ? (
+          <Modal.Body>
             <div>
               <FormControl.Static>
-                {t('From: {{source}}', { replace: { source: profiles[dialog.source].name } })}
+                {t("From: {{source}}", {
+                  replace: { source: profiles[dialog.source].name },
+                })}
               </FormControl.Static>
               <IconButton
-                id='btn-swap-profiles'
-                icon='swap'
-                tooltip={t('Swap profiles')}
+                id="btn-swap-profiles"
+                icon="swap"
+                tooltip={t("Swap profiles")}
                 onClick={this.swapProfiles}
               />
               <FormControl.Static>
-                {t('To: {{target}}', { replace: { target: profiles[dialog.target].name } })}
+                {t("To: {{target}}", {
+                  replace: { target: profiles[dialog.target].name },
+                })}
               </FormControl.Static>
             </div>
             <Checkbox
               checked={this.state.transferEnabledMods}
               onChange={this.toggleTransferEnabled}
             >
-              {t('Transfer Enabled Mods')}
+              {t("Transfer Enabled Mods")}
             </Checkbox>
           </Modal.Body>
-          ) : null}
+        ) : null}
         <Modal.Footer>
-          <Button onClick={this.close}>{t('Cancel')}</Button>
-          <Button onClick={this.apply}>{t('Transfer')}</Button>
+          <Button onClick={this.close}>{t("Cancel")}</Button>
+          <Button onClick={this.apply}>{t("Transfer")}</Button>
         </Modal.Footer>
       </Modal>
-      );
+    );
   }
 
   private swapProfiles = () => {
     const temp = this.nextState.dialog.source;
     this.nextState.dialog.source = this.nextState.dialog.target;
     this.nextState.dialog.target = temp;
-  }
+  };
 
   private toggleTransferEnabled = () => {
     this.nextState.transferEnabledMods = !this.state.transferEnabledMods;
-  }
+  };
 
   private apply = () => {
     const { mods, onSetModEnabled, profiles } = this.props;
     const { dialog } = this.state;
-    Object.keys(mods || {}).forEach(modId => {
-      onSetModEnabled(dialog.target, modId,
-        getSafe(profiles, [dialog.source, 'modState', modId, 'enabled'], false));
+    Object.keys(mods || {}).forEach((modId) => {
+      onSetModEnabled(
+        dialog.target,
+        modId,
+        getSafe(profiles, [dialog.source, "modState", modId, "enabled"], false),
+      );
     });
     this.close();
-  }
+  };
 
   private close = () => {
     this.props.onCloseDialog();
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const dialog: IDialog = (state.session as any).profileTransfer.dialog || undefined;
+  const dialog: IDialog =
+    (state.session as any).profileTransfer.dialog || undefined;
   return {
     dialog,
     profiles: state.persistent.profiles,
@@ -140,5 +147,6 @@ function mapDispatchToProps(dispatch): IActionProps {
   };
 }
 
-export default translate(['common', 'profile-management'])(
-  connect(mapStateToProps, mapDispatchToProps)(Editor)) as React.ComponentClass<{}>;
+export default translate(["common", "profile-management"])(
+  connect(mapStateToProps, mapDispatchToProps)(Editor),
+) as React.ComponentClass<{}>;

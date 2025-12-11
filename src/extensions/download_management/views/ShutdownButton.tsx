@@ -1,7 +1,7 @@
-import * as React from 'react';
-import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
-import { TFunction } from '../../../util/i18n';
-import { IDownload } from '../types/IDownload';
+import * as React from "react";
+import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
+import { TFunction } from "../../../util/i18n";
+import { IDownload } from "../types/IDownload";
 
 export interface IShutdownButtonProps {
   t: TFunction;
@@ -14,10 +14,12 @@ function ShutdownButton(props: IShutdownButtonProps) {
   const { t, shutdownPending, activeDownloads, toggleShutdown } = props;
   return (
     <ToolbarIcon
-      icon='onoff'
-      text={t('Power off when done')}
-      className={shutdownPending ? 'toolbar-flash-button' : undefined}
-      disabled={!shutdownPending && (Object.keys(activeDownloads ?? {}).length === 0)}
+      icon="onoff"
+      text={t("Power off when done")}
+      className={shutdownPending ? "toolbar-flash-button" : undefined}
+      disabled={
+        !shutdownPending && Object.keys(activeDownloads ?? {}).length === 0
+      }
       onClick={toggleShutdown}
     />
   );

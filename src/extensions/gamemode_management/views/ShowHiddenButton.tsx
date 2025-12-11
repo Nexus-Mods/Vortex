@@ -1,8 +1,8 @@
-import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
 
-import { TFunction } from 'i18next';
-import * as React from 'react';
+import { TFunction } from "i18next";
+import * as React from "react";
 
 export interface IBaseProps {
   toggleHidden: () => void;
@@ -16,16 +16,15 @@ class ShowHiddenButton extends ComponentEx<IBaseProps, {}> {
 
     return (
       <ToolbarIcon
-        id='show-hidden-games'
-        text={showHidden ? t('Hide Hidden Games') : t('Show Hidden Games')}
+        id="show-hidden-games"
+        text={showHidden ? t("Hide Hidden Games") : t("Show Hidden Games")}
         onClick={toggleHidden}
-        icon={showHidden ? 'hide' : 'show'}
+        icon={showHidden ? "hide" : "show"}
       />
     );
   }
 }
 
-export default
-  translate(['common'])(
-    connect()(
-      ShowHiddenButton)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect()(ShowHiddenButton),
+) as React.ComponentClass<IBaseProps>;

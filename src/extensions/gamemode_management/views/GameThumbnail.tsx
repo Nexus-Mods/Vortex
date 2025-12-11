@@ -1,24 +1,24 @@
-import Icon from '../../../renderer/controls/Icon';
-import IconBar from '../../../renderer/controls/IconBar';
-import OverlayTrigger from '../../../renderer/controls/OverlayTrigger';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { IActionDefinition } from '../../../types/api';
-import { IMod, IProfile, IState } from '../../../types/IState';
-import { connect, PureComponentEx } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
-import { countIf } from '../../../util/util';
+import Icon from "../../../renderer/controls/Icon";
+import IconBar from "../../../renderer/controls/IconBar";
+import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { IActionDefinition } from "../../../types/api";
+import { IMod, IProfile, IState } from "../../../types/IState";
+import { connect, PureComponentEx } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
+import { countIf } from "../../../util/util";
 
-import { IGameStored } from '../types/IGameStored';
+import { IGameStored } from "../types/IGameStored";
 
-import GameInfoPopover from './GameInfoPopover';
+import GameInfoPopover from "./GameInfoPopover";
 
-import Promise from 'bluebird';
-import { TFunction } from 'i18next';
-import * as path from 'path';
-import * as React from 'react';
-import { Button, Panel, Popover } from 'react-bootstrap';
-import { Provider } from 'react-redux';
-import * as url from 'url';
+import Promise from "bluebird";
+import { TFunction } from "i18next";
+import * as path from "path";
+import * as React from "react";
+import { Button, Panel, Popover } from "react-bootstrap";
+import { Provider } from "react-redux";
+import * as url from "url";
 
 export interface IBaseProps {
   t: TFunction;
@@ -58,23 +58,26 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = ((game.extensionPath !== undefined)
-      && (game.logo !== undefined))
-      ? path.join(game.extensionPath, game.logo)
-      : game.imageURL;
+    const logoPath: string =
+      game.extensionPath !== undefined && game.logo !== undefined
+        ? path.join(game.extensionPath, game.logo)
+        : game.imageURL;
 
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.
-    const modCount = ((profile !== undefined) && (type !== 'undiscovered'))
-      ? countIf(Object.keys(profile.modState || {}),
-        id => profile.modState[id].enabled && (mods[id] !== undefined))
-      : undefined;
+    const modCount =
+      profile !== undefined && type !== "undiscovered"
+        ? countIf(
+            Object.keys(profile.modState || {}),
+            (id) => profile.modState[id].enabled && mods[id] !== undefined,
+          )
+        : undefined;
 
-    const nameParts = game.name.split('\t');
+    const nameParts = game.name.split("\t");
 
     const classes = [
-      'game-thumbnail',
-      `game-thumbnail-${(discovered !== false) ? 'discovered' : 'undiscovered'}`,
+      "game-thumbnail",
+      `game-thumbnail-${discovered !== false ? "discovered" : "undiscovered"}`,
     ];
 
     let imgurl = null;
@@ -86,40 +89,44 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       } catch (err) {
         // If URL parsing fails, treat as file path
       }
-      imgurl = ((protocol !== null) && (protocol.startsWith('http')))
-        ? logoPath
-        : url.pathToFileURL(logoPath).href;
+      imgurl =
+        protocol !== null && protocol.startsWith("http")
+          ? logoPath
+          : url.pathToFileURL(logoPath).href;
     }
 
     return (
-      <Panel className={classes.join(' ')} bsStyle={active ? 'primary' : 'default'}>
-        <Panel.Body className='game-thumbnail-body'>
-          <img
-            className={'thumbnail-img'}
-            src={imgurl}
-          />
-          <div className='bottom'>
-            <div className='name'>
-              {game.name}
-            </div>
-            {
-              modCount !== undefined
-                ? (
-                  <div className='active-mods'>
-                    <Icon name='mods' />
-                    <span>{t('{{ count }} active mod', { count: modCount })}</span>
-                  </div>
-                )
-                : null
-            }
+      <Panel
+        className={classes.join(" ")}
+        bsStyle={active ? "primary" : "default"}
+      >
+        <Panel.Body className="game-thumbnail-body">
+          <img className={"thumbnail-img"} src={imgurl} />
+          <div className="bottom">
+            <div className="name">{game.name}</div>
+            {modCount !== undefined ? (
+              <div className="active-mods">
+                <Icon name="mods" />
+                <span>{t("{{ count }} active mod", { count: modCount })}</span>
+              </div>
+            ) : null}
           </div>
-          <div className='hover-menu'>
-            {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
+          <div className="hover-menu">
+            {type === "launcher" ? this.renderLaunch() : this.renderMenu()}
           </div>
-          {type !== 'launcher' ? (
+          {type !== "launcher" ? (
             game.contributed ? (
-              <div className='game-thumbnail-tags' title={game.contributed ? t('Contributed by {{name}}', { replace: { name: game.contributed } }) : null}>
-                {game.contributed ? ('Community') : null}
+              <div
+                className="game-thumbnail-tags"
+                title={
+                  game.contributed
+                    ? t("Contributed by {{name}}", {
+                        replace: { name: game.contributed },
+                      })
+                    : null
+                }
+              >
+                {game.contributed ? "Community" : null}
               </div>
             ) : null
           ) : null}
@@ -131,32 +138,33 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private renderLaunch(): JSX.Element {
     const { onLaunch } = this.props;
     return (
-      <div className='hover-content hover-launcher'>
+      <div className="hover-content hover-launcher">
         <Button
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: "100%", height: "100%" }}
           onClick={onLaunch}
-          className='btn-embed'
+          className="btn-embed"
         >
-          <Icon name='launch-application' />
+          <Icon name="launch-application" />
         </Button>
       </div>
     );
   }
 
   private renderMenu(): JSX.Element[] {
-    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
+    const { t, container, game, getBounds, onRefreshGameInfo, type } =
+      this.props;
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} className='popover-game-info'>
+      <Popover id={`popover-info-${game.id}`} className="popover-game-info">
         <Provider store={this.context.api.store}>
           <IconBar
             id={`game-thumbnail-${game.id}`}
-            className='buttons'
+            className="buttons"
             group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
             collapse={false}
-            buttonType='text'
-            orientation='vertical'
+            buttonType="text"
+            orientation="vertical"
             filter={this.lowPriorityButtons}
             t={t}
           />
@@ -170,49 +178,48 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       </Popover>
     );
 
-    return [(
-      <div key='primary-buttons' className='hover-content'>
+    return [
+      <div key="primary-buttons" className="hover-content">
         <IconBar
           id={`game-thumbnail-${game.id}`}
-          className='buttons'
+          className="buttons"
           group={`game-${type}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
-          buttonType='text'
-          orientation='vertical'
+          buttonType="text"
+          orientation="vertical"
           filter={this.priorityButtons}
           clickAnywhere={true}
           t={t}
         />
-      </div>
-    ), (
+      </div>,
       <OverlayTrigger
-        key='info-overlay'
+        key="info-overlay"
         overlay={gameInfoPopover}
         triggerRef={this.setRef}
         getBounds={getBounds || this.getWindowBounds}
         container={container}
-        orientation='horizontal'
+        orientation="horizontal"
         shouldUpdatePosition={true}
-        trigger='click'
+        trigger="click"
         rootClose={true}
       >
         <IconButton
           id={`btn-info-${game.id}`}
-          icon='game-menu'
-          className='game-thumbnail-info btn-embed'
-          tooltip={t('Show Details')}
+          icon="game-menu"
+          className="game-thumbnail-info btn-embed"
+          tooltip={t("Show Details")}
         />
-      </OverlayTrigger>
-    )];
+      </OverlayTrigger>,
+    ];
   }
 
   private priorityButtons = (action: IActionDefinition) =>
-    action.position < 100
+    action.position < 100;
 
   private lowPriorityButtons = (action: IActionDefinition) =>
-    action.position >= 100
+    action.position >= 100;
 
   private getWindowBounds = (): DOMRect => {
     return {
@@ -223,17 +230,17 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       bottom: window.innerHeight,
       right: window.innerWidth,
     } as any;
-  }
+  };
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
-  }
+  };
 
   private redraw = () => {
     if (this.mRef !== null) {
       this.mRef.forceUpdate();
     }
-  }
+  };
 }
 
 const emptyObj = {};
@@ -241,17 +248,25 @@ const emptyObj = {};
 function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const profiles = state.persistent.profiles;
 
-  const lastActiveProfile = ownProps.game !== undefined
-    ? getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined)
-    : undefined;
+  const lastActiveProfile =
+    ownProps.game !== undefined
+      ? getSafe(
+          state.settings.profiles,
+          ["lastActiveProfile", ownProps.game.id],
+          undefined,
+        )
+      : undefined;
 
-  const profile = lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined;
+  const profile =
+    lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined;
 
   return {
     profile,
-    mods: ((profile !== undefined) ? state.persistent.mods[profile.gameId] : emptyObj) || emptyObj,
+    mods:
+      (profile !== undefined
+        ? state.persistent.mods[profile.gameId]
+        : emptyObj) || emptyObj,
   };
 }
 
-export default
-  connect(mapStateToProps)(GameThumbnail);
+export default connect(mapStateToProps)(GameThumbnail);

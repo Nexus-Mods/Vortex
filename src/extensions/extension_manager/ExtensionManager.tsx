@@ -1,38 +1,46 @@
-import { setDialogVisible } from '../../actions';
-import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from '../../actions/app';
-import Dropzone, { DropType } from '../../renderer/controls/Dropzone';
-import FlexLayout from '../../renderer/controls/FlexLayout';
-import IconBar from '../../renderer/controls/IconBar';
-import Table, { ITableRowAction } from '../../renderer/controls/Table';
-import ToolbarIcon from '../../renderer/controls/ToolbarIcon';
-import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
-import { ITableAttribute } from '../../types/ITableAttribute';
-import { relaunch } from '../../util/commandLine';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { log } from '../../util/log';
-import * as selectors from '../../util/selectors';
-import { getSafe } from '../../util/storeHelper';
-import MainPage from '../../renderer/views/MainPage';
+import { setDialogVisible } from "../../actions";
+import {
+  removeExtension,
+  setExtensionEnabled,
+  setExtensionEndorsed,
+} from "../../actions/app";
+import Dropzone, { DropType } from "../../renderer/controls/Dropzone";
+import FlexLayout from "../../renderer/controls/FlexLayout";
+import IconBar from "../../renderer/controls/IconBar";
+import Table, { ITableRowAction } from "../../renderer/controls/Table";
+import ToolbarIcon from "../../renderer/controls/ToolbarIcon";
+import {
+  IExtensionLoadFailure,
+  IExtensionState,
+  IState,
+} from "../../types/IState";
+import { ITableAttribute } from "../../types/ITableAttribute";
+import { relaunch } from "../../util/commandLine";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { log } from "../../util/log";
+import * as selectors from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
+import MainPage from "../../renderer/views/MainPage";
 
-import { IDownload } from '../download_management/types/IDownload';
-import { SITE_ID } from '../gamemode_management/constants';
+import { IDownload } from "../download_management/types/IDownload";
+import { SITE_ID } from "../gamemode_management/constants";
 
-import installExtension from './installExtension';
-import getTableAttributes from './tableAttributes';
-import { IExtension, IExtensionWithState } from './types';
+import installExtension from "./installExtension";
+import getTableAttributes from "./tableAttributes";
+import { IExtension, IExtensionWithState } from "./types";
 
-import { EndorsedStatus } from '@nexusmods/nexus-api';
-import Promise from 'bluebird';
-import * as _ from 'lodash';
-import * as path from 'path';
-import * as React from 'react';
-import { Alert, Button, Panel } from 'react-bootstrap';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import { EndorsedStatus } from "@nexusmods/nexus-api";
+import Promise from "bluebird";
+import * as _ from "lodash";
+import * as path from "path";
+import * as React from "react";
+import { Alert, Button, Panel } from "react-bootstrap";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 export interface IExtensionManagerProps {
   localState: {
-    reloadNecessary: boolean,
+    reloadNecessary: boolean;
   };
   updateExtensions: () => void;
 }
@@ -72,68 +80,84 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     this.actions = [
       {
-        icon: 'delete',
-        title: 'Remove',
+        icon: "delete",
+        title: "Remove",
         action: this.removeExtension,
-        condition: (instanceId: string) => !this.props.extensions[instanceId].bundled,
+        condition: (instanceId: string) =>
+          !this.props.extensions[instanceId].bundled,
         singleRowAction: true,
       },
     ];
 
     this.staticColumns = getTableAttributes({
-      onSetExtensionEnabled:
-        (extName: string, enabled: boolean) => {
-          const { extensions, onSetExtensionEnabled } = this.props;
-          const extId = Object.keys(extensions)
-            .find(iter => extensions[iter].name === extName);
-          log('info', 'user toggling extension manually', { extId, enabled });
-          onSetExtensionEnabled(extId, enabled);
-        },
-      onToggleExtensionEnabled:
-        (extName: string) => {
-          const { extensionConfig, extensions, onSetExtensionEnabled } = this.props;
-          const extId = Object.keys(extensions)
-            .find(iter => extensions[iter].name === extName);
-          const enabled = !getSafe(extensionConfig, [extId, 'enabled'], true);
-          log('info', 'user toggling extension manually', { extId, enabled });
-          onSetExtensionEnabled(extId, enabled);
-        },
-      onEndorseMod:
-        (gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {
-          const { extensions } = this.props;
-          const { api } = this.context;
-          const modId: number = parseInt(modIdStr, 10);
-          const extId = Object.keys(extensions)
-            .find(iter => extensions[iter].modId === modId);
+      onSetExtensionEnabled: (extName: string, enabled: boolean) => {
+        const { extensions, onSetExtensionEnabled } = this.props;
+        const extId = Object.keys(extensions).find(
+          (iter) => extensions[iter].name === extName,
+        );
+        log("info", "user toggling extension manually", { extId, enabled });
+        onSetExtensionEnabled(extId, enabled);
+      },
+      onToggleExtensionEnabled: (extName: string) => {
+        const { extensionConfig, extensions, onSetExtensionEnabled } =
+          this.props;
+        const extId = Object.keys(extensions).find(
+          (iter) => extensions[iter].name === extName,
+        );
+        const enabled = !getSafe(extensionConfig, [extId, "enabled"], true);
+        log("info", "user toggling extension manually", { extId, enabled });
+        onSetExtensionEnabled(extId, enabled);
+      },
+      onEndorseMod: (
+        gameId: string,
+        modIdStr: string,
+        endorseState: EndorsedStatus,
+      ) => {
+        const { extensions } = this.props;
+        const { api } = this.context;
+        const modId: number = parseInt(modIdStr, 10);
+        const extId = Object.keys(extensions).find(
+          (iter) => extensions[iter].modId === modId,
+        );
 
-          if (extId === undefined) {
-            return;
-          }
+        if (extId === undefined) {
+          return;
+        }
 
-          api.emitAndAwait('endorse-nexus-mod',
-                           SITE_ID, modId, extensions[extId].version, endorseState)
-            .then((endorsed: EndorsedStatus[])  => {
-              api.store.dispatch(setExtensionEndorsed(extId, endorsed[0]));
-            })
-            .catch(() => {
-              api.store.dispatch(setExtensionEndorsed(extId, 'Undecided'));
-            });
-        },
+        api
+          .emitAndAwait(
+            "endorse-nexus-mod",
+            SITE_ID,
+            modId,
+            extensions[extId].version,
+            endorseState,
+          )
+          .then((endorsed: EndorsedStatus[]) => {
+            api.store.dispatch(setExtensionEndorsed(extId, endorsed[0]));
+          })
+          .catch(() => {
+            api.store.dispatch(setExtensionEndorsed(extId, "Undecided"));
+          });
+      },
     });
   }
 
   public render(): JSX.Element {
-    const {t, extensions, localState, extensionConfig} = this.props;
-    const {oldExtensionConfig, showBundled} = this.state;
+    const { t, extensions, localState, extensionConfig } = this.props;
+    const { oldExtensionConfig, showBundled } = this.state;
 
-    const extensionsWithState = this.mergeExt(extensions, extensionConfig, showBundled);
+    const extensionsWithState = this.mergeExt(
+      extensions,
+      extensionConfig,
+      showBundled,
+    );
 
     // normalize extension config so they differ only if the effective configuration actually
     // differs, leaving out the endorsement state
     const configId = (conf: { [id: string]: IExtensionState }) =>
-      Object.values(conf).map(ext => ({
+      Object.values(conf).map((ext) => ({
         enabled: ext.enabled ?? true,
-        version: ext.version ?? '',
+        version: ext.version ?? "",
         remove: ext.remove ?? false,
       }));
 
@@ -141,36 +165,41 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       <MainPage>
         <MainPage.Header>
           <IconBar
-            id='extensions-layout-list'
-            group='extensions-layout-icons'
+            id="extensions-layout-list"
+            group="extensions-layout-icons"
             staticElements={[]}
-            className='menubar'
+            className="menubar"
             t={t}
           >
             <ToolbarIcon
-              id='show-bundled-extensions'
-              text={showBundled ? t('Hide Bundled') : t('Show Bundled')}
+              id="show-bundled-extensions"
+              text={showBundled ? t("Hide Bundled") : t("Show Bundled")}
               onClick={this.toggleBundled}
-              icon={showBundled ? 'hide' : 'show'}
-              tooltip={showBundled ? t('Hide Bundled Extensions') : t('Show Bundled Extensions')}
+              icon={showBundled ? "hide" : "show"}
+              tooltip={
+                showBundled
+                  ? t("Hide Bundled Extensions")
+                  : t("Show Bundled Extensions")
+              }
             />
           </IconBar>
         </MainPage.Header>
         <MainPage.Body>
           <Panel>
             <Panel.Body>
-              <FlexLayout type='column'>
+              <FlexLayout type="column">
                 <FlexLayout.Fixed>
-                  {
-                    localState.reloadNecessary
-                    || !_.isEqual(configId(extensionConfig), configId(oldExtensionConfig))
-                      ? this.renderReload()
-                      : null
-                  }
+                  {localState.reloadNecessary ||
+                  !_.isEqual(
+                    configId(extensionConfig),
+                    configId(oldExtensionConfig),
+                  )
+                    ? this.renderReload()
+                    : null}
                 </FlexLayout.Fixed>
                 <FlexLayout.Flex>
                   <Table
-                    tableId='extensions'
+                    tableId="extensions"
                     data={extensionsWithState}
                     actions={this.actions}
                     staticElements={this.staticColumns}
@@ -178,24 +207,24 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                   />
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed>
-                  <FlexLayout type='row'>
-                    <FlexLayout.Flex className='extensions-find-button-container'>
-                      <div className='flex-center-both'>
+                  <FlexLayout type="row">
+                    <FlexLayout.Flex className="extensions-find-button-container">
+                      <div className="flex-center-both">
                         <Button
-                          id='btn-more-extensions'
+                          id="btn-more-extensions"
                           onClick={this.onBrowse}
-                          bsStyle='ghost'
+                          bsStyle="ghost"
                         >
-                          {t('Find more')}
+                          {t("Find more")}
                         </Button>
                       </div>
-                      </FlexLayout.Flex>
+                    </FlexLayout.Flex>
                     <FlexLayout.Flex>
                       <Dropzone
-                        accept={['files']}
+                        accept={["files"]}
                         drop={this.dropExtension}
-                        dialogHint={t('Select extension file')}
-                        icon='folder-download'
+                        dialogHint={t("Select extension file")}
+                        icon="folder-download"
                       />
                     </FlexLayout.Flex>
                   </FlexLayout>
@@ -210,76 +239,109 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   private onBrowse = () => {
     this.props.onBrowseExtension();
-  }
-  
+  };
+
   private toggleBundled = () => {
     this.nextState.showBundled = !this.state.showBundled;
-  }
+  };
 
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
     let success = false;
-    log('info', 'installing extension(s) via drag and drop', { extPaths });
-    const prop: Promise<void[]> = (type === 'files')
-      ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
-          .then(() => { success = true; })
-          .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err,
-                                                   { allowReport: false });
-          }))
-      : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
-        this.context.api.events.emit('start-download', [url], undefined,
-                                     (error: Error, id: string) => {
-          const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-          installExtension(this.context.api, dlPath)
-          .then(() => {
-            success = true;
-          })
-          .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err,
-                                                   { allowReport: false });
-          })
-          .finally(() => {
-            resolve();
-          });
-        });
-      }));
+    log("info", "installing extension(s) via drag and drop", { extPaths });
+    const prop: Promise<void[]> =
+      type === "files"
+        ? Promise.map(extPaths, (extPath) =>
+            installExtension(this.context.api, extPath)
+              .then(() => {
+                success = true;
+              })
+              .catch((err) => {
+                this.context.api.showErrorNotification(
+                  "Failed to install extension",
+                  err,
+                  { allowReport: false },
+                );
+              }),
+          )
+        : Promise.map(
+            extPaths,
+            (url) =>
+              new Promise<void>((resolve, reject) => {
+                this.context.api.events.emit(
+                  "start-download",
+                  [url],
+                  undefined,
+                  (error: Error, id: string) => {
+                    const dlPath = path.join(
+                      this.props.downloadPath,
+                      downloads[id].localPath,
+                    );
+                    installExtension(this.context.api, dlPath)
+                      .then(() => {
+                        success = true;
+                      })
+                      .catch((err) => {
+                        this.context.api.showErrorNotification(
+                          "Failed to install extension",
+                          err,
+                          { allowReport: false },
+                        );
+                      })
+                      .finally(() => {
+                        resolve();
+                      });
+                  },
+                );
+              }),
+          );
     prop.then(() => {
       if (success) {
         this.props.updateExtensions();
       }
     });
-  }
+  };
 
   private renderReload(): JSX.Element {
-    const {t} = this.props;
+    const { t } = this.props;
     return (
-      <Alert bsStyle='warning' style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</div>
-        <Button onClick={this.restart}>{t('Restart')}</Button>
+      <Alert
+        bsStyle="warning"
+        style={{ display: "flex", alignItems: "center" }}
+      >
+        <div style={{ flexGrow: 1 }}>
+          {t("You need to restart Vortex to apply changes.")}
+        </div>
+        <Button onClick={this.restart}>{t("Restart")}</Button>
       </Alert>
     );
   }
 
   private restart = () => {
     relaunch();
-  }
+  };
 
-  private mergeExt(extensions: { [id: string]: IExtension },
-                   extensionConfig: { [id: string]: IExtensionState },
-                   includeBundled: boolean)
-                   : { [id: string]: IExtensionWithState } {
+  private mergeExt(
+    extensions: { [id: string]: IExtension },
+    extensionConfig: { [id: string]: IExtensionState },
+    includeBundled: boolean,
+  ): { [id: string]: IExtensionWithState } {
     const { loadFailures } = this.props;
     return Object.keys(extensions).reduce((prev, id) => {
       if (!includeBundled && extensions[id].bundled) {
         return prev;
       }
 
-      if (!getSafe(extensionConfig, [id, 'remove'], false)) {
-        const enabled = loadFailures[id] === undefined ?
-          getSafe(extensionConfig, [id, 'enabled'], true)
-          : 'failed';
-        const endorsed: EndorsedStatus = getSafe(extensionConfig, [id, 'endorsed'], 'Undecided');
+      if (!getSafe(extensionConfig, [id, "remove"], false)) {
+        const enabled =
+          loadFailures[id] === undefined
+            ? getSafe(extensionConfig, [id, "enabled"], true)
+            : "failed";
+        const endorsed: EndorsedStatus = getSafe(
+          extensionConfig,
+          [id, "endorsed"],
+          "Undecided",
+        );
         prev[id] = {
           ...extensions[id],
           enabled,
@@ -292,11 +354,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeExtension = (extIds: string[]) => {
-    extIds.forEach(extId => {
+    extIds.forEach((extId) => {
       const ext = this.props.extensions[extId];
       this.props.onRemoveExtension(path.basename(ext.path || extId));
     });
-  }
+  };
 }
 
 const emptyObject = {};
@@ -314,16 +376,17 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetExtensionEnabled: (extId: string, enabled: boolean) =>
       dispatch(setExtensionEnabled(extId, enabled)),
     onRemoveExtension: (extId: string) => dispatch(removeExtension(extId)),
-    onBrowseExtension: () => dispatch(setDialogVisible('browse-extensions')),
+    onBrowseExtension: () => dispatch(setDialogVisible("browse-extensions")),
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      ExtensionManager));
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(ExtensionManager),
+);

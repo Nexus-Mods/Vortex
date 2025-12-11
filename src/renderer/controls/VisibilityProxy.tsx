@@ -1,8 +1,8 @@
-import { log } from '../../util/log';
+import { log } from "../../util/log";
 
-import * as _ from 'lodash';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import * as _ from "lodash";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 
 export interface IProps {
   container: HTMLElement;
@@ -22,21 +22,27 @@ export interface IProps {
 class VisibilityProxy extends React.PureComponent<any, {}> {
   // need to use maps because the keys aren't PODs
   private static sObservers: Map<Element, IntersectionObserver> = new Map();
-  private static sInstances: Map<Element, (visible: boolean) => void> = new Map();
+  private static sInstances: Map<Element, (visible: boolean) => void> =
+    new Map();
 
   private static getObserver(container: HTMLElement) {
     if (!VisibilityProxy.sObservers.has(container || null)) {
-      VisibilityProxy.sObservers.set(container || null,
-          new IntersectionObserver(VisibilityProxy.callback, {
-        root: container,
-        rootMargin: '360px 0px 360px 0px',
-      } as any));
+      VisibilityProxy.sObservers.set(
+        container || null,
+        new IntersectionObserver(VisibilityProxy.callback, {
+          root: container,
+          rootMargin: "360px 0px 360px 0px",
+        } as any),
+      );
     }
     return VisibilityProxy.sObservers.get(container);
   }
 
-  private static callback(entries: IntersectionObserverEntry[], observer: IntersectionObserver) {
-    entries.forEach(entry => {
+  private static callback(
+    entries: IntersectionObserverEntry[],
+    observer: IntersectionObserver,
+  ) {
+    entries.forEach((entry) => {
       const cb = VisibilityProxy.sInstances.get(entry.target);
       if (cb !== undefined) {
         cb((entry as any).isIntersecting);
@@ -44,9 +50,11 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
     });
   }
 
-  private static observe(container: HTMLElement,
-                         target: HTMLElement,
-                         cb: (visible: boolean) => void) {
+  private static observe(
+    container: HTMLElement,
+    target: HTMLElement,
+    cb: (visible: boolean) => void,
+  ) {
     VisibilityProxy.sInstances.set(target, cb);
     VisibilityProxy.getObserver(container).observe(target);
   }
@@ -60,7 +68,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
       VisibilityProxy.getObserver(container).unobserve(target);
     } catch (err) {
       // not really critical, just not great for performance
-      log('warn', 'Failed to unobserve', { err: err.message, id: target.id });
+      log("warn", "Failed to unobserve", { err: err.message, id: target.id });
     }
   }
 
@@ -78,8 +86,10 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
       //   became visible less than a second ago. Since the observer is flank triggered
       //   this may cause items to be rendered even though they don't have to but this
       //   is a performance optimisation anyway, nothing breaks.
-      if ((this.mLastVisible !== visible) &&
-          (visible || (now - this.mVisibleTime) > 1000.0)) {
+      if (
+        this.mLastVisible !== visible &&
+        (visible || now - this.mVisibleTime > 1000.0)
+      ) {
         this.mLastVisible = visible;
         this.mVisibleTime = now;
         this.props.setVisible?.(visible);
@@ -88,15 +98,24 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   }
 
   public componentWillUnmount() {
-    VisibilityProxy.unobserve(this.props.container, ReactDOM.findDOMNode(this) as HTMLElement);
+    VisibilityProxy.unobserve(
+      this.props.container,
+      ReactDOM.findDOMNode(this) as HTMLElement,
+    );
   }
 
   public render(): JSX.Element {
     const { componentClass: Component } = this.props;
-    const props = _.omit(this.props, ['container', 'placeholder', 'content', 'visible',
-      'setVisible', 'componentClass']);
+    const props = _.omit(this.props, [
+      "container",
+      "placeholder",
+      "content",
+      "visible",
+      "setVisible",
+      "componentClass",
+    ]);
 
-    const content: JSX.Element = (this.props.visible)
+    const content: JSX.Element = this.props.visible
       ? this.props.content()
       : this.props.placeholder();
 

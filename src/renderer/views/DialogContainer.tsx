@@ -1,9 +1,9 @@
-import ErrorBoundary from '../controls/ErrorBoundary';
-import ExtensionGate from '../controls/ExtensionGate';
-import {PropsCallback} from '../../types/IExtensionContext';
-import {extend} from '../../util/ComponentEx';
+import ErrorBoundary from "../controls/ErrorBoundary";
+import ExtensionGate from "../controls/ExtensionGate";
+import { PropsCallback } from "../../types/IExtensionContext";
+import { extend } from "../../util/ComponentEx";
 
-import * as React from 'react';
+import * as React from "react";
 
 interface IExtDialog {
   id: string;
@@ -26,8 +26,8 @@ class DialogContainer extends React.Component<IProps, never> {
   public render(): JSX.Element {
     const { objects } = this.props;
     return (
-      <div id='dialog-container'>
-        {objects.map(dialog => this.renderDialog(dialog))}
+      <div id="dialog-container">
+        {objects.map((dialog) => this.renderDialog(dialog))}
       </div>
     );
   }
@@ -38,7 +38,7 @@ class DialogContainer extends React.Component<IProps, never> {
     return (
       <ErrorBoundary
         key={dialog.id}
-        className='errorboundary-dialog'
+        className="errorboundary-dialog"
         canDisplayError={false}
         visible={dialog.id === visibleDialog}
         onHide={onHideDialog}
@@ -55,10 +55,15 @@ class DialogContainer extends React.Component<IProps, never> {
   }
 }
 
-function registerDialog(instanceGroup: undefined, id: string, component: React.ComponentClass<any>,
-                        props?: PropsCallback): IExtDialog {
+function registerDialog(
+  instanceGroup: undefined,
+  id: string,
+  component: React.ComponentClass<any>,
+  props?: PropsCallback,
+): IExtDialog {
   return { id, component, props };
 }
 
 export default extend(registerDialog)(
-  DialogContainer) as React.ComponentClass<IBaseProps>;
+  DialogContainer,
+) as React.ComponentClass<IBaseProps>;

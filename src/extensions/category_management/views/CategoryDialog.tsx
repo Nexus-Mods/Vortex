@@ -1,13 +1,13 @@
-import Modal from '../../../renderer/controls/Modal';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import DNDContainer from '../../../renderer/views/DNDContainer';
+import Modal from "../../../renderer/controls/Modal";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import DNDContainer from "../../../renderer/views/DNDContainer";
 
-import { showCategoriesDialog } from '../actions/session';
+import { showCategoriesDialog } from "../actions/session";
 
-import CategoryList from './CategoryList';
+import CategoryList from "./CategoryList";
 
-import * as React from 'react';
-import * as Redux from 'redux';
+import * as React from "react";
+import * as Redux from "redux";
 
 interface IConnectedProps {
   showDialog: boolean;
@@ -26,7 +26,7 @@ class CategoryDialog extends ComponentEx<IProps, {}> {
     return (
       <Modal show={showDialog} onHide={this.hide}>
         <Modal.Header>
-          <Modal.Title>{t('Categories')}</Modal.Title>
+          <Modal.Title>{t("Categories")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <CategoryList />
@@ -37,7 +37,7 @@ class CategoryDialog extends ComponentEx<IProps, {}> {
 
   private hide = () => {
     this.props.onShowSelf(false);
-  }
+  };
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -48,12 +48,10 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
-    onShowSelf: (show: boolean) =>
-      dispatch(showCategoriesDialog(show)),
+    onShowSelf: (show: boolean) => dispatch(showCategoriesDialog(show)),
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      CategoryDialog)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(CategoryDialog),
+) as React.ComponentClass<{}>;

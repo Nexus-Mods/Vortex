@@ -1,12 +1,16 @@
-import Promise from 'bluebird';
-import { IDeploymentMethod, IExtensionContext } from '../../types/IExtensionContext';
-import { IGame } from '../../types/IGame';
-import { getGame } from '../gamemode_management/util/getGame';
+import Promise from "bluebird";
+import {
+  IDeploymentMethod,
+  IExtensionContext,
+} from "../../types/IExtensionContext";
+import { IGame } from "../../types/IGame";
+import { getGame } from "../gamemode_management/util/getGame";
 
 class DeploymentMethod implements IDeploymentMethod {
-  public id: string = 'null-deployment';
-  public name: string = 'Null Deployment';
-  public description: string = 'Dummy deployment for games that can use mods directly from staging folder';
+  public id: string = "null-deployment";
+  public name: string = "Null Deployment";
+  public description: string =
+    "Dummy deployment for games that can use mods directly from staging folder";
   public isFallbackPurgeSafe: boolean = true;
   public priority: number = 3;
   public noRedundancy: boolean = true;
@@ -16,18 +20,23 @@ class DeploymentMethod implements IDeploymentMethod {
   }
 
   public detailedDescription(t) {
-    return t('This deployment method does nothing during deployment (although extensions may still '
-      + 'do work during deployment). Only use for games that can be made to use mods '
-      + 'directly from staging.');
+    return t(
+      "This deployment method does nothing during deployment (although extensions may still " +
+        "do work during deployment). Only use for games that can be made to use mods " +
+        "directly from staging.",
+    );
   }
   public isSupported(state, gameId, modTypeId) {
     const game: IGame = getGame(gameId);
-    return (game.compatible?.nulldeployment === true)
+    return game.compatible?.nulldeployment === true
       ? undefined
       : {
-        description: t => t('Only supported for games that can use mods directly from the staging folder'),
-        order: 1000,
-      };
+          description: (t) =>
+            t(
+              "Only supported for games that can use mods directly from the staging folder",
+            ),
+          order: 1000,
+        };
   }
 
   public userGate() {

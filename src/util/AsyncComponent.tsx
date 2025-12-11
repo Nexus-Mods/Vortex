@@ -1,6 +1,6 @@
-import asyncRequire from './asyncRequire';
+import asyncRequire from "./asyncRequire";
 
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * React Component Wrapper for async require. This requires the
@@ -13,13 +13,12 @@ import * as React from 'react';
  * @param {string} [basedir]
  * @returns
  */
-export default function<T>(moduleId: string, basedir?: string) {
+export default function <T>(moduleId: string, basedir?: string) {
   let mod: {
-    default: React.ComponentClass<any>,
+    default: React.ComponentClass<any>;
   };
 
-  asyncRequire(moduleId, basedir)
-  .then(modIn => mod = modIn);
+  asyncRequire(moduleId, basedir).then((modIn) => (mod = modIn));
 
   return (props) => {
     if (mod === undefined) {

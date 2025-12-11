@@ -1,88 +1,88 @@
 .game-page {
-  padding-right: $half-gutter;
+    padding-right: $half-gutter;
 }
 
 .game-filter-container {
-  padding: 0 0 5px 10px;
-  border: 0;
+    padding: 0 0 5px 10px;
+    border: 0;
 
-  .input-group {
-    width: 100%;
-  }
+    .input-group {
+        width: 100%;
+    }
 }
 
 .game-filter-input {
-  position: relative;
-  border-color: $border-color;
-  // prevent this from overlaying popovers from the iconbar above
-  z-index: 0;
-  .form-control {
-    position: initial;
-    float: unset;
-    z-index: unset;
-  }
+    position: relative;
+    border-color: $border-color;
+    // prevent this from overlaying popovers from the iconbar above
+    z-index: 0;
+    .form-control {
+        position: initial;
+        float: unset;
+        z-index: unset;
+    }
 }
 
 .game-sort-container {
-  width: 15em;
-  display: flex;
-  align-items: center;
-  gap: 1em;
+    width: 15em;
+    display: flex;
+    align-items: center;
+    gap: 1em;
 
-  > .Select {
-    flex: 1 1 0;
-  }
+    > .Select {
+        flex: 1 1 0;
+    }
 }
 
 #games-picker-tabs {
-  .tab-content {
-    // needs to be relative for the placeholder to show properly if a tab is empty
-    position: relative;
-  }
+    .tab-content {
+        // needs to be relative for the placeholder to show properly if a tab is empty
+        position: relative;
+    }
 }
 
 .popover-game-info {
-  max-width: 800px;
-  .popover-content {
-    display: flex;
-    > * {
-      padding: 0 $half-gutter;
+    max-width: 800px;
+    .popover-content {
+        display: flex;
+        > * {
+            padding: 0 $half-gutter;
+        }
+        .btn-group-vertical {
+            //justify-content: space-around;
+            border-right: 1px solid $border-color;
+            button {
+                margin: 4px 0;
+            }
+            .toolbar-dropdown {
+                height: 80%;
+            }
+        }
     }
-    .btn-group-vertical {
-      //justify-content: space-around;
-      border-right: 1px solid $border-color;
-      button {
-        margin: 4px 0;
-      }
-      .toolbar-dropdown {
-        height: 80%;
-      }
-    }
-  }
 }
 
 .game-info-grid {
-  display: grid;
-  grid-template-columns: 40% 60%;
-  grid-row-gap: 4px;
-  width: 100%;
+    display: grid;
+    grid-template-columns: 40% 60%;
+    grid-row-gap: 4px;
+    width: 100%;
 }
 
 .game-info-value {
-  word-wrap: break-word;
-  overflow-x: auto;
+    word-wrap: break-word;
+    overflow-x: auto;
 }
 
 .discovery-footer {
-  padding: 16px;
-  .discovery-footer-label {
-    margin-bottom: 8px;
-    font-size: smaller;
-  }
+    padding: 16px;
+    .discovery-footer-label {
+        margin-bottom: 8px;
+        font-size: smaller;
+    }
 }
 
-.game-list-item { 
-  .btn-embed {
-    margin: 0 4px;
-  }
+.game-list-item {
+    .btn-embed {
+        margin: 0 4px;
+    }
 }

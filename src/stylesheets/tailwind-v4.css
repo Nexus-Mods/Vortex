@@ -17,24 +17,24 @@
    ======================================== */
 
 :root {
-  /* Spacing: 0.25rem → 4px (base unit for padding, margin, gap, width, height) */
-  --tw-spacing: 4px;
+    /* Spacing: 0.25rem → 4px (base unit for padding, margin, gap, width, height) */
+    --tw-spacing: 4px;
 
-  /* Typography: Convert rem to px for consistent font sizing */
-  --tw-text-sm: 14px;
-  --tw-text-lg: 18px;
-  --tw-text-xl: 20px;
+    /* Typography: Convert rem to px for consistent font sizing */
+    --tw-text-sm: 14px;
+    --tw-text-lg: 18px;
+    --tw-text-xl: 20px;
 
-  /* Container breakpoints: Convert rem to px */
-  --tw-container-sm: 384px;  /* 24rem = 384px */
+    /* Container breakpoints: Convert rem to px */
+    --tw-container-sm: 384px; /* 24rem = 384px */
 
-  /* Icon sizes: Convert rem to px for consistent icon sizing */
-  --icon-size-xs: 12px;   /* 0.75rem → 12px */
-  --icon-size-sm: 16px;   /* 1rem → 16px */
-  --icon-size-md: 20px;   /* 1.25rem → 20px */
-  --icon-size-lg: 24px;   /* 1.5rem → 24px */
-  --icon-size-xl: 32px;   /* 2rem → 32px */
-  --icon-size-2xl: 48px;  /* 3rem → 48px */
+    /* Icon sizes: Convert rem to px for consistent icon sizing */
+    --icon-size-xs: 12px; /* 0.75rem → 12px */
+    --icon-size-sm: 16px; /* 1rem → 16px */
+    --icon-size-md: 20px; /* 1.25rem → 20px */
+    --icon-size-lg: 24px; /* 1.5rem → 24px */
+    --icon-size-xl: 32px; /* 2rem → 32px */
+    --icon-size-2xl: 48px; /* 3rem → 48px */
 }
 
 /* ========================================
@@ -62,367 +62,367 @@
    ======================================== */
 
 @theme {
-  /* ========================================
+    /* ========================================
      LAYER 1: PRIMITIVES - Raw Color Palette
      ======================================== */
 
-  /* Zinc - Base neutral colors */
-  --color-zinc-50: #fafafa;
-  --color-zinc-100: #f4f4f5;
-  --color-zinc-200: #e4e4e7;
-  --color-zinc-300: #d4d4d8;
-  --color-zinc-400: #a1a1aa;
-  --color-zinc-500: #71717a;
-  --color-zinc-600: #52525b;
-  --color-zinc-700: #3e3e47;
-  --color-zinc-800: #29292e;
-  --color-zinc-900: #1d1d21;
-  --color-zinc-950: #0f0f10;
+    /* Zinc - Base neutral colors */
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f4f4f5;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-300: #d4d4d8;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-600: #52525b;
+    --color-zinc-700: #3e3e47;
+    --color-zinc-800: #29292e;
+    --color-zinc-900: #1d1d21;
+    --color-zinc-950: #0f0f10;
 
-  /* Orange - Primary/CTA colors */
-  --color-orange-50: #fff7ed;
-  --color-orange-100: #ffedd5;
-  --color-orange-200: #fed7aa;
-  --color-orange-300: #fdba74;
-  --color-orange-400: #fb923c;
-  --color-orange-500: #f97316;
-  --color-orange-600: #ea580c;
-  --color-orange-700: #c2410c;
-  --color-orange-800: #9a3412;
-  --color-orange-900: #7c2d12;
-  --color-orange-950: #431407;
+    /* Orange - Primary/CTA colors */
+    --color-orange-50: #fff7ed;
+    --color-orange-100: #ffedd5;
+    --color-orange-200: #fed7aa;
+    --color-orange-300: #fdba74;
+    --color-orange-400: #fb923c;
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+    --color-orange-700: #c2410c;
+    --color-orange-800: #9a3412;
+    --color-orange-900: #7c2d12;
+    --color-orange-950: #431407;
 
-  /* Blue - Info/Link colors */
-  --color-blue-50: #eff6ff;
-  --color-blue-100: #dbeafe;
-  --color-blue-200: #bfdbfe;
-  --color-blue-300: #93c5fd;
-  --color-blue-400: #60a5fa;
-  --color-blue-500: #3b82f6;
-  --color-blue-600: #2563eb;
-  --color-blue-700: #1d4ed8;
-  --color-blue-800: #1e40af;
-  --color-blue-900: #1e3a8a;
-  --color-blue-950: #172554;
+    /* Blue - Info/Link colors */
+    --color-blue-50: #eff6ff;
+    --color-blue-100: #dbeafe;
+    --color-blue-200: #bfdbfe;
+    --color-blue-300: #93c5fd;
+    --color-blue-400: #60a5fa;
+    --color-blue-500: #3b82f6;
+    --color-blue-600: #2563eb;
+    --color-blue-700: #1d4ed8;
+    --color-blue-800: #1e40af;
+    --color-blue-900: #1e3a8a;
+    --color-blue-950: #172554;
 
-  /* Red - Danger/Error colors */
-  --color-red-50: #fef2f2;
-  --color-red-100: #fee2e2;
-  --color-red-200: #fecaca;
-  --color-red-300: #fca5a5;
-  --color-red-400: #f87171;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-  --color-red-700: #b91c1c;
-  --color-red-800: #991b1b;
-  --color-red-900: #7f1d1d;
-  --color-red-950: #450a0a;
+    /* Red - Danger/Error colors */
+    --color-red-50: #fef2f2;
+    --color-red-100: #fee2e2;
+    --color-red-200: #fecaca;
+    --color-red-300: #fca5a5;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-red-800: #991b1b;
+    --color-red-900: #7f1d1d;
+    --color-red-950: #450a0a;
 
-  /* Green - Success colors */
-  --color-green-50: #f0fdf4;
-  --color-green-100: #dcfce7;
-  --color-green-200: #bbf7d0;
-  --color-green-300: #86efac;
-  --color-green-400: #4ade80;
-  --color-green-500: #22c55e;
-  --color-green-600: #16a34a;
-  --color-green-700: #15803d;
-  --color-green-800: #166534;
-  --color-green-900: #14532d;
-  --color-green-950: #052e16;
+    /* Green - Success colors */
+    --color-green-50: #f0fdf4;
+    --color-green-100: #dcfce7;
+    --color-green-200: #bbf7d0;
+    --color-green-300: #86efac;
+    --color-green-400: #4ade80;
+    --color-green-500: #22c55e;
+    --color-green-600: #16a34a;
+    --color-green-700: #15803d;
+    --color-green-800: #166534;
+    --color-green-900: #14532d;
+    --color-green-950: #052e16;
 
-  /* Yellow - Warning colors */
-  --color-yellow-50: #fefce8;
-  --color-yellow-100: #fef9c3;
-  --color-yellow-200: #fef08a;
-  --color-yellow-300: #fde047;
-  --color-yellow-400: #facc15;
-  --color-yellow-500: #eab308;
-  --color-yellow-600: #ca8a04;
-  --color-yellow-700: #a16207;
-  --color-yellow-800: #854d0e;
-  --color-yellow-900: #713f12;
-  --color-yellow-950: #422006;
+    /* Yellow - Warning colors */
+    --color-yellow-50: #fefce8;
+    --color-yellow-100: #fef9c3;
+    --color-yellow-200: #fef08a;
+    --color-yellow-300: #fde047;
+    --color-yellow-400: #facc15;
+    --color-yellow-500: #eab308;
+    --color-yellow-600: #ca8a04;
+    --color-yellow-700: #a16207;
+    --color-yellow-800: #854d0e;
+    --color-yellow-900: #713f12;
+    --color-yellow-950: #422006;
 
-  /* Amber - Premium/Paid colors */
-  --color-amber-50: #fffbeb;
-  --color-amber-100: #fef3c7;
-  --color-amber-200: #fde68a;
-  --color-amber-300: #fcd34d;
-  --color-amber-400: #fbbf24;
-  --color-amber-500: #f59e0b;
-  --color-amber-600: #d97706;
-  --color-amber-700: #b45309;
-  --color-amber-800: #92400e;
-  --color-amber-900: #78350f;
-  --color-amber-950: #451a03;
+    /* Amber - Premium/Paid colors */
+    --color-amber-50: #fffbeb;
+    --color-amber-100: #fef3c7;
+    --color-amber-200: #fde68a;
+    --color-amber-300: #fcd34d;
+    --color-amber-400: #fbbf24;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #d97706;
+    --color-amber-700: #b45309;
+    --color-amber-800: #92400e;
+    --color-amber-900: #78350f;
+    --color-amber-950: #451a03;
 
-  /* Violet - Premium colors */
-  --color-violet-50: #f5f3ff;
-  --color-violet-100: #ede9fe;
-  --color-violet-200: #ddd6fe;
-  --color-violet-300: #c4b5fd;
-  --color-violet-400: #a78bfa;
-  --color-violet-500: #8b5cf6;
-  --color-violet-600: #7c3aed;
-  --color-violet-700: #6d28d9;
-  --color-violet-800: #5b21b6;
-  --color-violet-900: #4c1d95;
-  --color-violet-950: #2e1065;
+    /* Violet - Premium colors */
+    --color-violet-50: #f5f3ff;
+    --color-violet-100: #ede9fe;
+    --color-violet-200: #ddd6fe;
+    --color-violet-300: #c4b5fd;
+    --color-violet-400: #a78bfa;
+    --color-violet-500: #8b5cf6;
+    --color-violet-600: #7c3aed;
+    --color-violet-700: #6d28d9;
+    --color-violet-800: #5b21b6;
+    --color-violet-900: #4c1d95;
+    --color-violet-950: #2e1065;
 
-  /* Teal - Creators colors */
-  --color-teal-50: #f0fdfa;
-  --color-teal-100: #ccfbf1;
-  --color-teal-200: #99f6e4;
-  --color-teal-300: #5eead4;
-  --color-teal-400: #2dd4bf;
-  --color-teal-500: #14b8a6;
-  --color-teal-600: #0d9488;
-  --color-teal-700: #0f766e;
-  --color-teal-800: #115e59;
-  --color-teal-900: #134e4a;
-  --color-teal-950: #042f2e;
+    /* Teal - Creators colors */
+    --color-teal-50: #f0fdfa;
+    --color-teal-100: #ccfbf1;
+    --color-teal-200: #99f6e4;
+    --color-teal-300: #5eead4;
+    --color-teal-400: #2dd4bf;
+    --color-teal-500: #14b8a6;
+    --color-teal-600: #0d9488;
+    --color-teal-700: #0f766e;
+    --color-teal-800: #115e59;
+    --color-teal-900: #134e4a;
+    --color-teal-950: #042f2e;
 
-  /* Pure colors */
-  --color-pure-white: #ffffff;
-  --color-pure-black: #000000;
+    /* Pure colors */
+    --color-pure-white: #ffffff;
+    --color-pure-black: #000000;
 
-  /* Alpha - Translucent overlays */
-  --color-alpha-white-50: rgba(255, 255, 255, 0.05);
-  --color-alpha-white-100: rgba(255, 255, 255, 0.1);
-  --color-alpha-white-200: rgba(255, 255, 255, 0.2);
-  --color-alpha-white-300: rgba(255, 255, 255, 0.3);
-  --color-alpha-white-400: rgba(255, 255, 255, 0.4);
-  --color-alpha-white-500: rgba(255, 255, 255, 0.5);
-  --color-alpha-white-600: rgba(255, 255, 255, 0.6);
-  --color-alpha-white-700: rgba(255, 255, 255, 0.7);
-  --color-alpha-white-800: rgba(255, 255, 255, 0.8);
-  --color-alpha-white-900: rgba(255, 255, 255, 0.9);
-  --color-alpha-white-950: rgba(255, 255, 255, 0.95);
-  --color-alpha-black-50: rgba(0, 0, 0, 0.05);
-  --color-alpha-black-100: rgba(0, 0, 0, 0.1);
-  --color-alpha-black-200: rgba(0, 0, 0, 0.2);
-  --color-alpha-black-300: rgba(0, 0, 0, 0.3);
-  --color-alpha-black-400: rgba(0, 0, 0, 0.4);
-  --color-alpha-black-500: rgba(0, 0, 0, 0.5);
-  --color-alpha-black-600: rgba(0, 0, 0, 0.6);
-  --color-alpha-black-700: rgba(0, 0, 0, 0.7);
-  --color-alpha-black-800: rgba(0, 0, 0, 0.8);
-  --color-alpha-black-900: rgba(0, 0, 0, 0.9);
-  --color-alpha-black-950: rgba(0, 0, 0, 0.95);
+    /* Alpha - Translucent overlays */
+    --color-alpha-white-50: rgba(255, 255, 255, 0.05);
+    --color-alpha-white-100: rgba(255, 255, 255, 0.1);
+    --color-alpha-white-200: rgba(255, 255, 255, 0.2);
+    --color-alpha-white-300: rgba(255, 255, 255, 0.3);
+    --color-alpha-white-400: rgba(255, 255, 255, 0.4);
+    --color-alpha-white-500: rgba(255, 255, 255, 0.5);
+    --color-alpha-white-600: rgba(255, 255, 255, 0.6);
+    --color-alpha-white-700: rgba(255, 255, 255, 0.7);
+    --color-alpha-white-800: rgba(255, 255, 255, 0.8);
+    --color-alpha-white-900: rgba(255, 255, 255, 0.9);
+    --color-alpha-white-950: rgba(255, 255, 255, 0.95);
+    --color-alpha-black-50: rgba(0, 0, 0, 0.05);
+    --color-alpha-black-100: rgba(0, 0, 0, 0.1);
+    --color-alpha-black-200: rgba(0, 0, 0, 0.2);
+    --color-alpha-black-300: rgba(0, 0, 0, 0.3);
+    --color-alpha-black-400: rgba(0, 0, 0, 0.4);
+    --color-alpha-black-500: rgba(0, 0, 0, 0.5);
+    --color-alpha-black-600: rgba(0, 0, 0, 0.6);
+    --color-alpha-black-700: rgba(0, 0, 0, 0.7);
+    --color-alpha-black-800: rgba(0, 0, 0, 0.8);
+    --color-alpha-black-900: rgba(0, 0, 0, 0.9);
+    --color-alpha-black-950: rgba(0, 0, 0, 0.95);
 
-  /* ========================================
+    /* ========================================
      LAYER 2: BRAND - Semantic Color Mapping
      ======================================== */
 
-  /* Neutral brand colors (mapped to Zinc) */
-  --color-neutral-50: #fafafa;          /* Zinc-50 */
-  --color-neutral-100: #f4f4f5;         /* Zinc-100 */
-  --color-neutral-200: #e4e4e7;         /* Zinc-200 */
-  --color-neutral-300: #d4d4d8;         /* Zinc-300 */
-  --color-neutral-400: #a1a1aa;         /* Zinc-400 */
-  --color-neutral-500: #71717a;         /* Zinc-500 */
-  --color-neutral-600: #52525b;         /* Zinc-600 */
-  --color-neutral-700: #3e3e47;         /* Zinc-700 */
-  --color-neutral-800: #29292e;         /* Zinc-800 */
-  --color-neutral-900: #1d1d21;         /* Zinc-900 */
-  --color-neutral-950: #0f0f10;         /* Zinc-950 */
+    /* Neutral brand colors (mapped to Zinc) */
+    --color-neutral-50: #fafafa; /* Zinc-50 */
+    --color-neutral-100: #f4f4f5; /* Zinc-100 */
+    --color-neutral-200: #e4e4e7; /* Zinc-200 */
+    --color-neutral-300: #d4d4d8; /* Zinc-300 */
+    --color-neutral-400: #a1a1aa; /* Zinc-400 */
+    --color-neutral-500: #71717a; /* Zinc-500 */
+    --color-neutral-600: #52525b; /* Zinc-600 */
+    --color-neutral-700: #3e3e47; /* Zinc-700 */
+    --color-neutral-800: #29292e; /* Zinc-800 */
+    --color-neutral-900: #1d1d21; /* Zinc-900 */
+    --color-neutral-950: #0f0f10; /* Zinc-950 */
 
-  /* Primary brand colors (mapped to Orange) */
-  --color-primary-50: #fff7ed;          /* Orange-50 */
-  --color-primary-100: #ffedd5;         /* Orange-100 */
-  --color-primary-200: #fed7aa;         /* Orange-200 */
-  --color-primary-300: #fdba74;         /* Orange-300 */
-  --color-primary-400: #fb923c;         /* Orange-400 */
-  --color-primary-500: #f97316;         /* Orange-500 */
-  --color-primary-600: #ea580c;         /* Orange-600 */
-  --color-primary-700: #c2410c;         /* Orange-700 */
-  --color-primary-800: #9a3412;         /* Orange-800 */
-  --color-primary-900: #7c2d12;         /* Orange-900 */
-  --color-primary-950: #431407;         /* Orange-950 */
+    /* Primary brand colors (mapped to Orange) */
+    --color-primary-50: #fff7ed; /* Orange-50 */
+    --color-primary-100: #ffedd5; /* Orange-100 */
+    --color-primary-200: #fed7aa; /* Orange-200 */
+    --color-primary-300: #fdba74; /* Orange-300 */
+    --color-primary-400: #fb923c; /* Orange-400 */
+    --color-primary-500: #f97316; /* Orange-500 */
+    --color-primary-600: #ea580c; /* Orange-600 */
+    --color-primary-700: #c2410c; /* Orange-700 */
+    --color-primary-800: #9a3412; /* Orange-800 */
+    --color-primary-900: #7c2d12; /* Orange-900 */
+    --color-primary-950: #431407; /* Orange-950 */
 
-  /* Info brand colors (mapped to Blue) */
-  --color-info-50: #eff6ff;             /* Blue-50 */
-  --color-info-100: #dbeafe;            /* Blue-100 */
-  --color-info-200: #bfdbfe;            /* Blue-200 */
-  --color-info-300: #93c5fd;            /* Blue-300 */
-  --color-info-400: #60a5fa;            /* Blue-400 */
-  --color-info-500: #3b82f6;            /* Blue-500 */
-  --color-info-600: #2563eb;            /* Blue-600 */
-  --color-info-700: #1d4ed8;            /* Blue-700 */
-  --color-info-800: #1e40af;            /* Blue-800 */
-  --color-info-900: #1e3a8a;            /* Blue-900 */
-  --color-info-950: #172554;            /* Blue-950 */
+    /* Info brand colors (mapped to Blue) */
+    --color-info-50: #eff6ff; /* Blue-50 */
+    --color-info-100: #dbeafe; /* Blue-100 */
+    --color-info-200: #bfdbfe; /* Blue-200 */
+    --color-info-300: #93c5fd; /* Blue-300 */
+    --color-info-400: #60a5fa; /* Blue-400 */
+    --color-info-500: #3b82f6; /* Blue-500 */
+    --color-info-600: #2563eb; /* Blue-600 */
+    --color-info-700: #1d4ed8; /* Blue-700 */
+    --color-info-800: #1e40af; /* Blue-800 */
+    --color-info-900: #1e3a8a; /* Blue-900 */
+    --color-info-950: #172554; /* Blue-950 */
 
-  /* Success brand colors (mapped to Green) */
-  --color-success-50: #f0fdf4;          /* Green-50 */
-  --color-success-100: #dcfce7;         /* Green-100 */
-  --color-success-200: #bbf7d0;         /* Green-200 */
-  --color-success-300: #86efac;         /* Green-300 */
-  --color-success-400: #4ade80;         /* Green-400 */
-  --color-success-500: #22c55e;         /* Green-500 */
-  --color-success-600: #16a34a;         /* Green-600 */
-  --color-success-700: #15803d;         /* Green-700 */
-  --color-success-800: #166534;         /* Green-800 */
-  --color-success-900: #14532d;         /* Green-900 */
-  --color-success-950: #052e16;         /* Green-950 */
+    /* Success brand colors (mapped to Green) */
+    --color-success-50: #f0fdf4; /* Green-50 */
+    --color-success-100: #dcfce7; /* Green-100 */
+    --color-success-200: #bbf7d0; /* Green-200 */
+    --color-success-300: #86efac; /* Green-300 */
+    --color-success-400: #4ade80; /* Green-400 */
+    --color-success-500: #22c55e; /* Green-500 */
+    --color-success-600: #16a34a; /* Green-600 */
+    --color-success-700: #15803d; /* Green-700 */
+    --color-success-800: #166534; /* Green-800 */
+    --color-success-900: #14532d; /* Green-900 */
+    --color-success-950: #052e16; /* Green-950 */
 
-  /* Warning brand colors (mapped to Yellow) */
-  --color-warning-50: #fefce8;          /* Yellow-50 */
-  --color-warning-100: #fef9c3;         /* Yellow-100 */
-  --color-warning-200: #fef08a;         /* Yellow-200 */
-  --color-warning-300: #fde047;         /* Yellow-300 */
-  --color-warning-400: #facc15;         /* Yellow-400 */
-  --color-warning-500: #eab308;         /* Yellow-500 */
-  --color-warning-600: #ca8a04;         /* Yellow-600 */
-  --color-warning-700: #a16207;         /* Yellow-700 */
-  --color-warning-800: #854d0e;         /* Yellow-800 */
-  --color-warning-900: #713f12;         /* Yellow-900 */
-  --color-warning-950: #422006;         /* Yellow-950 */
+    /* Warning brand colors (mapped to Yellow) */
+    --color-warning-50: #fefce8; /* Yellow-50 */
+    --color-warning-100: #fef9c3; /* Yellow-100 */
+    --color-warning-200: #fef08a; /* Yellow-200 */
+    --color-warning-300: #fde047; /* Yellow-300 */
+    --color-warning-400: #facc15; /* Yellow-400 */
+    --color-warning-500: #eab308; /* Yellow-500 */
+    --color-warning-600: #ca8a04; /* Yellow-600 */
+    --color-warning-700: #a16207; /* Yellow-700 */
+    --color-warning-800: #854d0e; /* Yellow-800 */
+    --color-warning-900: #713f12; /* Yellow-900 */
+    --color-warning-950: #422006; /* Yellow-950 */
 
-  /* Danger brand colors (mapped to Red) */
-  --color-danger-50: #fef2f2;           /* Red-50 */
-  --color-danger-100: #fee2e2;          /* Red-100 */
-  --color-danger-200: #fecaca;          /* Red-200 */
-  --color-danger-300: #fca5a5;          /* Red-300 */
-  --color-danger-400: #f87171;          /* Red-400 */
-  --color-danger-500: #ef4444;          /* Red-500 */
-  --color-danger-600: #dc2626;          /* Red-600 */
-  --color-danger-700: #b91c1c;          /* Red-700 */
-  --color-danger-800: #991b1b;          /* Red-800 */
-  --color-danger-900: #7f1d1d;          /* Red-900 */
-  --color-danger-950: #450a0a;          /* Red-950 */
+    /* Danger brand colors (mapped to Red) */
+    --color-danger-50: #fef2f2; /* Red-50 */
+    --color-danger-100: #fee2e2; /* Red-100 */
+    --color-danger-200: #fecaca; /* Red-200 */
+    --color-danger-300: #fca5a5; /* Red-300 */
+    --color-danger-400: #f87171; /* Red-400 */
+    --color-danger-500: #ef4444; /* Red-500 */
+    --color-danger-600: #dc2626; /* Red-600 */
+    --color-danger-700: #b91c1c; /* Red-700 */
+    --color-danger-800: #991b1b; /* Red-800 */
+    --color-danger-900: #7f1d1d; /* Red-900 */
+    --color-danger-950: #450a0a; /* Red-950 */
 
-  /* Premium brand colors (mapped to Violet) */
-  --color-premium-50: #f5f3ff;          /* Violet-50 */
-  --color-premium-100: #ede9fe;         /* Violet-100 */
-  --color-premium-200: #ddd6fe;         /* Violet-200 */
-  --color-premium-300: #c4b5fd;         /* Violet-300 */
-  --color-premium-400: #a78bfa;         /* Violet-400 */
-  --color-premium-500: #8b5cf6;         /* Violet-500 */
-  --color-premium-600: #7c3aed;         /* Violet-600 */
-  --color-premium-700: #6d28d9;         /* Violet-700 */
-  --color-premium-800: #5b21b6;         /* Violet-800 */
-  --color-premium-900: #4c1d95;         /* Violet-900 */
-  --color-premium-950: #2e1065;         /* Violet-950 */
+    /* Premium brand colors (mapped to Violet) */
+    --color-premium-50: #f5f3ff; /* Violet-50 */
+    --color-premium-100: #ede9fe; /* Violet-100 */
+    --color-premium-200: #ddd6fe; /* Violet-200 */
+    --color-premium-300: #c4b5fd; /* Violet-300 */
+    --color-premium-400: #a78bfa; /* Violet-400 */
+    --color-premium-500: #8b5cf6; /* Violet-500 */
+    --color-premium-600: #7c3aed; /* Violet-600 */
+    --color-premium-700: #6d28d9; /* Violet-700 */
+    --color-premium-800: #5b21b6; /* Violet-800 */
+    --color-premium-900: #4c1d95; /* Violet-900 */
+    --color-premium-950: #2e1065; /* Violet-950 */
 
-  /* Creators brand colors (mapped to Teal) */
-  --color-creators-50: #f0fdfa;         /* Teal-50 */
-  --color-creators-100: #ccfbf1;        /* Teal-100 */
-  --color-creators-200: #99f6e4;        /* Teal-200 */
-  --color-creators-300: #5eead4;        /* Teal-300 */
-  --color-creators-400: #2dd4bf;        /* Teal-400 */
-  --color-creators-500: #14b8a6;        /* Teal-500 */
-  --color-creators-600: #0d9488;        /* Teal-600 */
-  --color-creators-700: #0f766e;        /* Teal-700 */
-  --color-creators-800: #115e59;        /* Teal-800 */
-  --color-creators-900: #134e4a;        /* Teal-900 */
-  --color-creators-950: #042f2e;        /* Teal-950 */
+    /* Creators brand colors (mapped to Teal) */
+    --color-creators-50: #f0fdfa; /* Teal-50 */
+    --color-creators-100: #ccfbf1; /* Teal-100 */
+    --color-creators-200: #99f6e4; /* Teal-200 */
+    --color-creators-300: #5eead4; /* Teal-300 */
+    --color-creators-400: #2dd4bf; /* Teal-400 */
+    --color-creators-500: #14b8a6; /* Teal-500 */
+    --color-creators-600: #0d9488; /* Teal-600 */
+    --color-creators-700: #0f766e; /* Teal-700 */
+    --color-creators-800: #115e59; /* Teal-800 */
+    --color-creators-900: #134e4a; /* Teal-900 */
+    --color-creators-950: #042f2e; /* Teal-950 */
 
-  /* Translucent brand colors */
-  --color-translucent-light-50: rgba(255, 255, 255, 0.05);
-  --color-translucent-light-100: rgba(255, 255, 255, 0.1);
-  --color-translucent-light-200: rgba(255, 255, 255, 0.2);
-  --color-translucent-light-300: rgba(255, 255, 255, 0.3);
-  --color-translucent-light-400: rgba(255, 255, 255, 0.4);
-  --color-translucent-light-500: rgba(255, 255, 255, 0.5);
-  --color-translucent-light-600: rgba(255, 255, 255, 0.6);
-  --color-translucent-light-700: rgba(255, 255, 255, 0.7);
-  --color-translucent-light-800: rgba(255, 255, 255, 0.8);
-  --color-translucent-light-900: rgba(255, 255, 255, 0.9);
-  --color-translucent-light-950: rgba(255, 255, 255, 0.95);
-  --color-translucent-dark-50: rgba(0, 0, 0, 0.05);
-  --color-translucent-dark-100: rgba(0, 0, 0, 0.1);
-  --color-translucent-dark-200: rgba(0, 0, 0, 0.2);
-  --color-translucent-dark-300: rgba(0, 0, 0, 0.3);
-  --color-translucent-dark-400: rgba(0, 0, 0, 0.4);
-  --color-translucent-dark-500: rgba(0, 0, 0, 0.5);
-  --color-translucent-dark-600: rgba(0, 0, 0, 0.6);
-  --color-translucent-dark-700: rgba(0, 0, 0, 0.7);
-  --color-translucent-dark-800: rgba(0, 0, 0, 0.8);
-  --color-translucent-dark-900: rgba(0, 0, 0, 0.9);
-  --color-translucent-dark-950: rgba(0, 0, 0, 0.95);
+    /* Translucent brand colors */
+    --color-translucent-light-50: rgba(255, 255, 255, 0.05);
+    --color-translucent-light-100: rgba(255, 255, 255, 0.1);
+    --color-translucent-light-200: rgba(255, 255, 255, 0.2);
+    --color-translucent-light-300: rgba(255, 255, 255, 0.3);
+    --color-translucent-light-400: rgba(255, 255, 255, 0.4);
+    --color-translucent-light-500: rgba(255, 255, 255, 0.5);
+    --color-translucent-light-600: rgba(255, 255, 255, 0.6);
+    --color-translucent-light-700: rgba(255, 255, 255, 0.7);
+    --color-translucent-light-800: rgba(255, 255, 255, 0.8);
+    --color-translucent-light-900: rgba(255, 255, 255, 0.9);
+    --color-translucent-light-950: rgba(255, 255, 255, 0.95);
+    --color-translucent-dark-50: rgba(0, 0, 0, 0.05);
+    --color-translucent-dark-100: rgba(0, 0, 0, 0.1);
+    --color-translucent-dark-200: rgba(0, 0, 0, 0.2);
+    --color-translucent-dark-300: rgba(0, 0, 0, 0.3);
+    --color-translucent-dark-400: rgba(0, 0, 0, 0.4);
+    --color-translucent-dark-500: rgba(0, 0, 0, 0.5);
+    --color-translucent-dark-600: rgba(0, 0, 0, 0.6);
+    --color-translucent-dark-700: rgba(0, 0, 0, 0.7);
+    --color-translucent-dark-800: rgba(0, 0, 0, 0.8);
+    --color-translucent-dark-900: rgba(0, 0, 0, 0.9);
+    --color-translucent-dark-950: rgba(0, 0, 0, 0.95);
 
-  /* ========================================
+    /* ========================================
      LAYER 3: ELEMENTS - UI Component Tokens
      ======================================== */
 
-  /* Surface colors - Backgrounds and panels */
-  --color-surface-base: #0f0f10;        /* Neutral-950 - Darkest background */
-  --color-surface-low: #1d1d21;         /* Neutral-900 - Low elevation */
-  --color-surface-mid: #29292e;         /* Neutral-800 - Mid elevation */
-  --color-surface-high: #3e3e47;        /* Neutral-700 - High elevation */
-  --color-surface-inverted: #fafafa;    /* Neutral-50 - Light backgrounds */
-  --color-surface-translucent-low: rgba(255, 255, 255, 0.05);
-  --color-surface-translucent-mid: rgba(255, 255, 255, 0.1);
-  --color-surface-translucent-high: rgba(255, 255, 255, 0.2);
+    /* Surface colors - Backgrounds and panels */
+    --color-surface-base: #0f0f10; /* Neutral-950 - Darkest background */
+    --color-surface-low: #1d1d21; /* Neutral-900 - Low elevation */
+    --color-surface-mid: #29292e; /* Neutral-800 - Mid elevation */
+    --color-surface-high: #3e3e47; /* Neutral-700 - High elevation */
+    --color-surface-inverted: #fafafa; /* Neutral-50 - Light backgrounds */
+    --color-surface-translucent-low: rgba(255, 255, 255, 0.05);
+    --color-surface-translucent-mid: rgba(255, 255, 255, 0.1);
+    --color-surface-translucent-high: rgba(255, 255, 255, 0.2);
 
-  /* Neutral text colors - Typography */
-  --color-neutral-strong: #f4f4f5;      /* Neutral-100 - Primary text */
-  --color-neutral-moderate: #d4d4d8;    /* Neutral-300 - Secondary text */
-  --color-neutral-subdued: #a1a1aa;     /* Neutral-400 - Tertiary text */
-  --color-neutral-weak: #71717a;        /* Neutral-500 - Disabled text */
-  --color-neutral-inverted: #0f0f10;    /* Neutral-950 - Text on light bg */
+    /* Neutral text colors - Typography */
+    --color-neutral-strong: #f4f4f5; /* Neutral-100 - Primary text */
+    --color-neutral-moderate: #d4d4d8; /* Neutral-300 - Secondary text */
+    --color-neutral-subdued: #a1a1aa; /* Neutral-400 - Tertiary text */
+    --color-neutral-weak: #71717a; /* Neutral-500 - Disabled text */
+    --color-neutral-inverted: #0f0f10; /* Neutral-950 - Text on light bg */
 
-  /* Neutral translucent colors - Overlays */
-  --color-neutral-translucent-weaker: rgba(255, 255, 255, 0.1);
-  --color-neutral-translucent-weak: rgba(255, 255, 255, 0.4);
-  --color-neutral-translucent-subdued: rgba(255, 255, 255, 0.5);
-  --color-neutral-translucent-moderate: rgba(255, 255, 255, 0.7);
-  --color-neutral-translucent-strong: rgba(255, 255, 255, 0.95);
+    /* Neutral translucent colors - Overlays */
+    --color-neutral-translucent-weaker: rgba(255, 255, 255, 0.1);
+    --color-neutral-translucent-weak: rgba(255, 255, 255, 0.4);
+    --color-neutral-translucent-subdued: rgba(255, 255, 255, 0.5);
+    --color-neutral-translucent-moderate: rgba(255, 255, 255, 0.7);
+    --color-neutral-translucent-strong: rgba(255, 255, 255, 0.95);
 
-  /* Stroke colors - Borders and dividers */
-  --color-stroke-neutral-translucent-weak: rgba(255, 255, 255, 0.1);
-  --color-stroke-neutral-translucent-subdued: rgba(255, 255, 255, 0.2);
-  --color-stroke-neutral-translucent-moderate: rgba(255, 255, 255, 0.3);
-  --color-stroke-neutral-translucent-strong: rgba(255, 255, 255, 0.6);
-  --color-stroke-moderate: #d4d4d8;     /* Neutral-300 */
-  --color-stroke-strong: #a1a1aa;       /* Neutral-400 */
+    /* Stroke colors - Borders and dividers */
+    --color-stroke-neutral-translucent-weak: rgba(255, 255, 255, 0.1);
+    --color-stroke-neutral-translucent-subdued: rgba(255, 255, 255, 0.2);
+    --color-stroke-neutral-translucent-moderate: rgba(255, 255, 255, 0.3);
+    --color-stroke-neutral-translucent-strong: rgba(255, 255, 255, 0.6);
+    --color-stroke-moderate: #d4d4d8; /* Neutral-300 */
+    --color-stroke-strong: #a1a1aa; /* Neutral-400 */
 
-  /* Success semantic colors */
-  --color-success-weak: #166534;        /* Success-800 */
-  --color-success-subdued: #16a34a;     /* Success-600 */
-  --color-success-moderate: #22c55e;    /* Success-500 */
-  --color-success-strong: #86efac;      /* Success-300 */
+    /* Success semantic colors */
+    --color-success-weak: #166534; /* Success-800 */
+    --color-success-subdued: #16a34a; /* Success-600 */
+    --color-success-moderate: #22c55e; /* Success-500 */
+    --color-success-strong: #86efac; /* Success-300 */
 
-  /* Info semantic colors */
-  --color-info-weak: #1d4ed8;           /* Info-700 */
-  --color-info-subdued: #3b82f6;        /* Info-500 */
-  --color-info-moderate: #60a5fa;       /* Info-400 */
-  --color-info-strong: #93c5fd;         /* Info-300 */
+    /* Info semantic colors */
+    --color-info-weak: #1d4ed8; /* Info-700 */
+    --color-info-subdued: #3b82f6; /* Info-500 */
+    --color-info-moderate: #60a5fa; /* Info-400 */
+    --color-info-strong: #93c5fd; /* Info-300 */
 
-  /* Danger semantic colors */
-  --color-danger-weak: #991b1b;         /* Danger-800 */
-  --color-danger-subdued: #dc2626;      /* Danger-600 */
-  --color-danger-moderate: #ef4444;     /* Danger-500 */
-  --color-danger-strong: #f87171;       /* Danger-400 */
+    /* Danger semantic colors */
+    --color-danger-weak: #991b1b; /* Danger-800 */
+    --color-danger-subdued: #dc2626; /* Danger-600 */
+    --color-danger-moderate: #ef4444; /* Danger-500 */
+    --color-danger-strong: #f87171; /* Danger-400 */
 
-  /* Warning semantic colors */
-  --color-warning-weak: #ca8a04;        /* Warning-600 */
-  --color-warning-subdued: #facc15;     /* Warning-400 */
-  --color-warning-moderate: #fde047;    /* Warning-300 */
-  --color-warning-strong: #fef08a;      /* Warning-200 */
+    /* Warning semantic colors */
+    --color-warning-weak: #ca8a04; /* Warning-600 */
+    --color-warning-subdued: #facc15; /* Warning-400 */
+    --color-warning-moderate: #fde047; /* Warning-300 */
+    --color-warning-strong: #fef08a; /* Warning-200 */
 
-  /* Primary semantic colors - CTAs and brand actions */
-  --color-primary-weak: #c2410c;        /* Primary-700 */
-  --color-primary-subdued: #f97316;     /* Primary-500 */
-  --color-primary-moderate: #fb923c;    /* Primary-400 */
-  --color-primary-strong: #fdba74;      /* Primary-300 */
+    /* Primary semantic colors - CTAs and brand actions */
+    --color-primary-weak: #c2410c; /* Primary-700 */
+    --color-primary-subdued: #f97316; /* Primary-500 */
+    --color-primary-moderate: #fb923c; /* Primary-400 */
+    --color-primary-strong: #fdba74; /* Primary-300 */
 
-  /* Premium semantic colors */
-  --color-premium-weak: #2e1065;        /* Premium-950 */
-  --color-premium-subdued: #5b21b6;     /* Premium-800 */
-  --color-premium-moderate: #7c3aed;    /* Premium-600 */
-  --color-premium-strong: #c4b5fd;      /* Premium-300 */
+    /* Premium semantic colors */
+    --color-premium-weak: #2e1065; /* Premium-950 */
+    --color-premium-subdued: #5b21b6; /* Premium-800 */
+    --color-premium-moderate: #7c3aed; /* Premium-600 */
+    --color-premium-strong: #c4b5fd; /* Premium-300 */
 
-  /* Creators semantic colors */
-  --color-creators-weak: #042f2e;       /* Creators-950 */
-  --color-creators-subdued: #115e59;    /* Creators-800 */
-  --color-creators-moderate: #0d9488;   /* Creators-600 */
-  --color-creators-strong: #2dd4bf;     /* Creators-400 */
+    /* Creators semantic colors */
+    --color-creators-weak: #042f2e; /* Creators-950 */
+    --color-creators-subdued: #115e59; /* Creators-800 */
+    --color-creators-moderate: #0d9488; /* Creators-600 */
+    --color-creators-strong: #2dd4bf; /* Creators-400 */
 
-  /* Focus colors - Keyboard focus indicators */
-  --color-focus-subdued: #3b82f6;       /* Info-500 */
+    /* Focus colors - Keyboard focus indicators */
+    --color-focus-subdued: #3b82f6; /* Info-500 */
 }
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
@@ -432,166 +432,166 @@
 
 /* Heading styles */
 .tw\:typography-heading-2xl {
-  font-size: 48px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+    font-size: 48px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .tw\:typography-heading-xl {
-  font-size: 36px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+    font-size: 36px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 .tw\:typography-heading-lg {
-  font-size: 30px;
-  line-height: 1.3;
-  font-weight: 700;
+    font-size: 30px;
+    line-height: 1.3;
+    font-weight: 700;
 }
 
 .tw\:typography-heading-md {
-  font-size: 24px;
-  line-height: 1.35;
-  font-weight: 700;
+    font-size: 24px;
+    line-height: 1.35;
+    font-weight: 700;
 }
 
 .tw\:typography-heading-sm {
-  font-size: 20px;
-  line-height: 1.4;
-  font-weight: 600;
+    font-size: 20px;
+    line-height: 1.4;
+    font-weight: 600;
 }
 
 .tw\:typography-heading-xs {
-  font-size: 18px;
-  line-height: 1.45;
-  font-weight: 600;
+    font-size: 18px;
+    line-height: 1.45;
+    font-weight: 600;
 }
 
 /* Title styles */
 .tw\:typography-title-md {
-  font-size: 14px;
-  line-height: 1.5;
-  text-transform: uppercase;
-  font-weight: 600;
+    font-size: 14px;
+    line-height: 1.5;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 .tw\:typography-title-sm {
-  font-size: 12px;
-  line-height: 1.5;
-  text-transform: uppercase;
-  font-weight: 600;
+    font-size: 12px;
+    line-height: 1.5;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 .tw\:typography-title-xs {
-  font-size: 10px;
-  line-height: 1.5;
-  text-transform: uppercase;
-  font-weight: 600;
+    font-size: 10px;
+    line-height: 1.5;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 /* Body styles */
 .tw\:typography-body-2xl {
-  font-size: 20px;
-  line-height: 1.6;
+    font-size: 20px;
+    line-height: 1.6;
 }
 
 .tw\:typography-body-xl {
-  font-size: 18px;
-  line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.6;
 }
 
 .tw\:typography-body-lg {
-  font-size: 16px;
-  line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.6;
 }
 
 .tw\:typography-body-md {
-  font-size: 14px;
-  line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .tw\:typography-body-sm {
-  font-size: 13px;
-  line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 .tw\:typography-body-xs {
-  font-size: 12px;
-  line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 /* Button utility classes from web team's design system */
 
 /* Hover overlay effect for buttons */
 .tw\:hover-overlay {
-  position: relative;
+    position: relative;
 }
 
 .tw\:hover-overlay::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: inherit;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: inherit;
+    pointer-events: none;
 }
 
 .tw\:hover-overlay:hover::before {
-  opacity: 1;
+    opacity: 1;
 }
 
 /* Dark hover overlay effect for buttons */
 .tw\:hover-dark-overlay {
-  position: relative;
+    position: relative;
 }
 
 .tw\:hover-dark-overlay::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: inherit;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: inherit;
+    pointer-events: none;
 }
 
 .tw\:hover-dark-overlay:hover::before {
-  opacity: 1;
+    opacity: 1;
 }
 
 /* Scrollbar utility classes for tabs and overflow containers */
 
 /* Custom scrollbar styling for horizontal/vertical overflow */
 .tw\:scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-subdued) transparent;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-subdued) transparent;
 }
 
 .tw\:scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 
 .tw\:scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .tw\:scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-neutral-subdued);
-  border-radius: 4px;
+    background-color: var(--color-neutral-subdued);
+    border-radius: 4px;
 }
 
 .tw\:scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-neutral-moderate);
+    background-color: var(--color-neutral-moderate);
 }

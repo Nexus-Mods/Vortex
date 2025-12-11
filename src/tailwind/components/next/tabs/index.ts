@@ -10,10 +10,10 @@
  * - Optional count badges
  */
 
-export { getTabId } from '../utils';
-export { TabBar } from './tab-bar';
-export { TabButton, TabContent, TabLink } from './tab';
-export type { TabButtonProps, TabLinkProps } from './tab';
-export { TabPanel } from './tab-panel';
-export { TabProvider, useTabContext } from './tabs.context';
-export type { TabProviderProps, TabsState } from './tabs.context';
+export { getTabId } from "../utils";
+export { TabBar } from "./tab-bar";
+export { TabButton, TabContent, TabLink } from "./tab";
+export type { TabButtonProps, TabLinkProps } from "./tab";
+export { TabPanel } from "./tab-panel";
+export { TabProvider, useTabContext } from "./tabs.context";
+export type { TabProviderProps, TabsState } from "./tabs.context";

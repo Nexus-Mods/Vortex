@@ -1,35 +1,36 @@
-import { setDialogVisible } from '../../../actions/session';
-import Icon from '../../../renderer/controls/Icon';
-import Image from '../../../renderer/controls/Image';
-import * as tooltip from '../../../renderer/controls/TooltipControls';
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import getVortexPath from '../../../util/getVortexPath';
-import opn from '../../../util/opn';
-import { truthy } from '../../../util/util';
+import { setDialogVisible } from "../../../actions/session";
+import Icon from "../../../renderer/controls/Icon";
+import Image from "../../../renderer/controls/Image";
+import * as tooltip from "../../../renderer/controls/TooltipControls";
+import { IState } from "../../../types/IState";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import getVortexPath from "../../../util/getVortexPath";
+import opn from "../../../util/opn";
+import { truthy } from "../../../util/util";
 
-import { clearOAuthCredentials, setUserAPIKey } from '../actions/account';
-import { IValidateKeyData, IValidateKeyDataV2 } from '../types/IValidateKeyData';
+import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
+import {
+  IValidateKeyData,
+  IValidateKeyDataV2,
+} from "../types/IValidateKeyData";
 
-import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from '../constants';
+import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
 
-import NexusT from '@nexusmods/nexus-api';
-import * as path from 'path';
-import * as React from 'react';
-import { WithTranslation } from 'react-i18next';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { pathToFileURL } from 'url';
-import { isLoggedIn } from '../selectors';
+import NexusT from "@nexusmods/nexus-api";
+import * as path from "path";
+import * as React from "react";
+import { WithTranslation } from "react-i18next";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { pathToFileURL } from "url";
+import { isLoggedIn } from "../selectors";
 
-import { setOauthPending } from '../actions/session';
-import { showError } from '../../../util/message';
+import { setOauthPending } from "../actions/session";
+import { showError } from "../../../util/message";
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
 }
-
-
 
 interface IConnectedProps {
   isLoggedIn: boolean;
@@ -53,17 +54,17 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { t, networkConnected } = this.props;
     if (!networkConnected) {
       return (
-        <span id='login-control'>
-          <tooltip.Icon name='disconnected' tooltip={t('Network is offline')} />
+        <span id="login-control">
+          <tooltip.Icon name="disconnected" tooltip={t("Network is offline")} />
         </span>
       );
     }
     return (
-      <span id='login-control'>
+      <span id="login-control">
         {this.renderMembershipStatus()}
         {this.renderLoginName()}
         {this.renderAvatar()}
-      </span >
+      </span>
     );
   }
 
@@ -71,38 +72,38 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { onClearOAuthCredentials, onSetAPIKey } = this.props;
     onSetAPIKey(undefined);
     onClearOAuthCredentials();
-  }
+  };
 
   private getMembershipText(userInfo: IValidateKeyDataV2): string {
-
     if (userInfo?.isPremium === true) {
-      return '★ Premium';
+      return "★ Premium";
+    } else if (
+      userInfo?.isSupporter === true &&
+      userInfo?.isPremium === false
+    ) {
+      return "Supporter";
+    } else if (userInfo?.isLifetime === true) {
+      return "Premium";
     }
-    else if (userInfo?.isSupporter === true && userInfo?.isPremium === false) {
-      return 'Supporter';
-    }
-    else if (userInfo?.isLifetime === true) {
-      return 'Premium';
-    }
-    return 'Free';
+    return "Free";
   }
 
   private renderMembershipStatus = () => {
     const { t, userInfo } = this.props;
 
     const membership = this.getMembershipText(userInfo);
-    const classes = `membership-status ${membership.toLocaleLowerCase()}`
+    const classes = `membership-status ${membership.toLocaleLowerCase()}`;
 
     if (this.isLoggedIn()) {
       return (
-        <div id='membership-status' className={classes}>
-          <div className='membership-status-text'>{membership}</div>
+        <div id="membership-status" className={classes}>
+          <div className="membership-status-text">{membership}</div>
         </div>
       );
     } else {
       return null;
     }
-  }
+  };
 
   private renderLoginName = () => {
     const { t, userInfo } = this.props;
@@ -110,26 +111,25 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     if (this.isLoggedIn()) {
       return (
         <div>
-          <div className='username'>
-            {userInfo.name}
-          </div>
-          <div className='logout-button'>
-            <a onClick={this.logOut}>{t('Log out')}</a>
+          <div className="username">{userInfo.name}</div>
+          <div className="logout-button">
+            <a onClick={this.logOut}>{t("Log out")}</a>
           </div>
         </div>
       );
     } else {
       return null;
     }
-  }
+  };
 
   private renderAvatar = () => {
     const { t, userInfo } = this.props;
 
     const loggedIn = this.isLoggedIn();
 
-    const fallback =
-      pathToFileURL(path.join(getVortexPath('assets'), '..', FALLBACK_AVATAR)).href;
+    const fallback = pathToFileURL(
+      path.join(getVortexPath("assets"), "..", FALLBACK_AVATAR),
+    ).href;
 
     const profileIcon = truthy(userInfo?.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
@@ -137,8 +137,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     return (
       <tooltip.Button
-        id='btn-login'
-        tooltip={loggedIn ? t('Show Details') : t('Log in')}
+        id="btn-login"
+        tooltip={loggedIn ? t("Show Details") : t("Log in")}
         onClick={this.showLoginLayer}
       >
         {loggedIn ? (
@@ -148,47 +148,52 @@ class LoginIcon extends ComponentEx<IProps, {}> {
             style={{ height: 32, width: 32 }}
           />
         ) : (
-          <Icon name='user' className='logout-avatar' />
-        )
-        }
+          <Icon name="user" className="logout-avatar" />
+        )}
       </tooltip.Button>
     );
-  }
+  };
 
   private showLoginLayer = async () => {
     const { userInfo } = this.props;
 
     if (!this.isLoggedIn()) {
-      this.context.api.events.emit('analytics-track-click-event', 'Profile', 'Site profile');
+      this.context.api.events.emit(
+        "analytics-track-click-event",
+        "Profile",
+        "Site profile",
+      );
       this.setDialogVisible(true);
       this.launchNexusOauth();
     } else {
-      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(err => undefined);
+      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(
+        (err) => undefined,
+      );
     }
-  }
+  };
 
   private launchNexusOauth = () => {
-    this.context.api.events.emit('request-nexus-login', (err: Error) => {
+    this.context.api.events.emit("request-nexus-login", (err: Error) => {
       if (err !== null) {
-        this.props.onShowError('Login Failed', err);
+        this.props.onShowError("Login Failed", err);
         this.hideLoginLayer();
       }
     });
-  }
+  };
 
   private isLoggedIn = () => {
     const { isLoggedIn, userInfo } = this.props;
     //return isLoggedIn;
-    return isLoggedIn && (userInfo !== undefined) && (userInfo !== null);
-  }
+    return isLoggedIn && userInfo !== undefined && userInfo !== null;
+  };
 
   private hideLoginLayer = () => {
     this.setDialogVisible(false);
-  }
+  };
 
   private setDialogVisible = (visible: boolean): void => {
     this.props.onShowDialog();
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -199,17 +204,18 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
-    onShowDialog: () => dispatch(setDialogVisible('login-dialog')),
+    onShowDialog: () => dispatch(setDialogVisible("login-dialog")),
     onShowError: (title: string, err: Error) =>
       showError(dispatch, title, err, { allowReport: false }),
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      LoginIcon)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(LoginIcon),
+) as React.ComponentClass<IBaseProps>;

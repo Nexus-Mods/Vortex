@@ -1,6 +1,6 @@
-import * as React from 'react';
+import * as React from "react";
 
-const ext = jest.genMockFromModule('../ExtensionProvider');
+const ext = jest.genMockFromModule("../ExtensionProvider");
 
 function extend(registerFunc) {
   return (component) => {
@@ -17,6 +17,6 @@ function extend(registerFunc) {
   };
 }
 
-ext['extend'] = extend;
+ext["extend"] = extend;
 
 module.exports = ext;

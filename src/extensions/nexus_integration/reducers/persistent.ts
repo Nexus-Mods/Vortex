@@ -1,8 +1,8 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { IReducerSpec } from "../../../types/IExtensionContext";
 
-import * as actions from '../actions/persistent';
+import * as actions from "../actions/persistent";
 
-import update from 'immutability-helper';
+import update from "immutability-helper";
 
 /**
  * reducer for changes to the authentication
@@ -17,14 +17,14 @@ export const persistentReducer: IReducerSpec = {
   defaults: {
     userInfo: undefined,
     newestVersion: undefined,
-    lastUpdate: {
-    },
+    lastUpdate: {},
   },
   verifiers: {
     userInfo: {
-      description: () => 'Invalid Nexus user info will be removed, '
-                       + 'this should resolve itself automatically.',
-      type: 'object',
+      description: () =>
+        "Invalid Nexus user info will be removed, " +
+        "this should resolve itself automatically.",
+      type: "object",
       noNull: true,
     },
   },

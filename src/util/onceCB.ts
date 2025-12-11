@@ -9,7 +9,7 @@ function onceCB<T extends Function>(func: T): T {
   let called = false;
   return ((...args: any[]) => {
     if (called) {
-      throw new Error('Attempt to call callback multiple times');
+      throw new Error("Attempt to call callback multiple times");
     }
     called = true;
     return func(...args);

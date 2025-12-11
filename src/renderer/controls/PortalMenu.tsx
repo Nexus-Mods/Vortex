@@ -1,9 +1,9 @@
-import Dropdown from './Dropdown';
+import Dropdown from "./Dropdown";
 
-import * as PropTypes from 'prop-types';
-import * as React from 'react';
-import { SelectCallback } from 'react-bootstrap';
-import { Overlay } from 'react-overlays';
+import * as PropTypes from "prop-types";
+import * as React from "react";
+import { SelectCallback } from "react-bootstrap";
+import { Overlay } from "react-overlays";
 
 interface IPortalMenuProps {
   open: boolean;
@@ -11,21 +11,24 @@ interface IPortalMenuProps {
   onClick: (evt) => void;
   onClose: () => void;
   onSelect?: SelectCallback;
-  useMousePosition?: boolean | { x: number, y: number };
+  useMousePosition?: boolean | { x: number; y: number };
   bsRole?: string;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
+  placement?: "top" | "bottom" | "left" | "right";
 }
 
 function nop() {
   // nop
 }
 
-class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: number }> {
+class PortalMenu extends React.Component<
+  IPortalMenuProps,
+  { x: number; y: number }
+> {
   public static contextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
   };
 
-  public declare context: { menuLayer: JSX.Element };
+  declare public context: { menuLayer: JSX.Element };
 
   constructor(props: IPortalMenuProps) {
     super(props);
@@ -43,7 +46,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
       <Overlay
         show={open}
         container={this.context.menuLayer}
-        placement={placement ?? 'bottom'}
+        placement={placement ?? "bottom"}
         onHide={nop}
         target={target}
         flip={true}
@@ -51,12 +54,12 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
         popperConfig={{
           modifiers: {
             preventOverflow: {
-              boundariesElement: 'window',
+              boundariesElement: "window",
             },
           },
         }}
       >
-        {args => {
+        {(args) => {
           try {
             if (useMousePosition === true) {
               args.props.style.top = this.state.y;
@@ -66,13 +69,16 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
               args.props.style.top = useMousePosition.y;
               args.props.style.left = useMousePosition.x;
               delete args.props.style.transform;
-            } else if ((args.props.style !== undefined)
-              && (args.props.style.transform !== undefined)) {
+            } else if (
+              args.props.style !== undefined &&
+              args.props.style.transform !== undefined
+            ) {
               // translate3d causes blurry text on "low-res" screens.
               // Newer popper versions seem to account for that but react-popper still
               // relies on an old version at the time of writing
-              const translateMatch =
-                args.props.style.transform.match(/translate3d\((\w+), (\w+), 0\)/);
+              const translateMatch = args.props.style.transform.match(
+                /translate3d\((\w+), (\w+), 0\)/,
+              );
               if (translateMatch !== undefined) {
                 args.props.style.top = translateMatch[2];
                 args.props.style.left = translateMatch[1];
@@ -83,10 +89,10 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
             // nop, wtf is going on here?
           }
           return (
-            <div {...args.props} className='icon-menu-positioner'>
-              <div className='menu-content'>
+            <div {...args.props} className="icon-menu-positioner">
+              <div className="menu-content">
                 <Dropdown.Menu
-                  style={{ display: 'block', position: 'initial' }}
+                  style={{ display: "block", position: "initial" }}
                   onClose={onClose}
                   open={open}
                   onClick={this.onClick}
@@ -107,7 +113,7 @@ class PortalMenu extends React.Component<IPortalMenuProps, { x: number, y: numbe
       this.setState({ x: evt.clientX, y: evt.clientY });
     }
     this.props.onClick(evt);
-  }
+  };
 }
 
 export default PortalMenu;

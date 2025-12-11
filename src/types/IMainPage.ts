@@ -1,6 +1,6 @@
-import ReduxProp from '../util/ReduxProp';
+import ReduxProp from "../util/ReduxProp";
 
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * interface of a "main page", that is: a content page
@@ -17,7 +17,7 @@ export interface IMainPage {
   component: React.ComponentClass<any> | React.StatelessComponent<any>;
   propsFunc: () => any;
   visible: () => boolean;
-  group: 'global' | 'per-game' | 'support' | 'hidden' | 'dashboard';
+  group: "global" | "per-game" | "support" | "hidden" | "dashboard";
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

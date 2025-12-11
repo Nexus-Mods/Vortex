@@ -1,14 +1,14 @@
-import { log } from '../../util/log';
-import IconBase from './Icon.base';
+import { log } from "../../util/log";
+import IconBase from "./Icon.base";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
-import * as fs from 'fs';
-import update from 'immutability-helper';
-import * as path from 'path';
-import * as React from 'react';
-import getVortexPath from '../../util/getVortexPath';
+import * as fs from "fs";
+import update from "immutability-helper";
+import * as path from "path";
+import * as React from "react";
+import getVortexPath from "../../util/getVortexPath";
 
 export interface IIconProps {
   id?: string;
@@ -21,7 +21,7 @@ export interface IIconProps {
   stroke?: boolean;
   hollow?: boolean;
   border?: boolean;
-  flip?: 'horizontal' | 'vertical';
+  flip?: "horizontal" | "vertical";
   rotate?: number;
   rotateId?: string;
   // avoid using this! These styles may affect other instances of this icon
@@ -29,11 +29,14 @@ export interface IIconProps {
   onContextMenu?: React.MouseEventHandler<Icon>;
 }
 
-export function installIconSet(set: string, setPath: string): Promise<Set<string>> {
-  const newset = document.createElement('div');
-  newset.id = 'iconset-' + set;
-  document.getElementById('icon-sets').appendChild(newset);
-  log('info', 'read font', setPath);
+export function installIconSet(
+  set: string,
+  setPath: string,
+): Promise<Set<string>> {
+  const newset = document.createElement("div");
+  newset.id = "iconset-" + set;
+  document.getElementById("icon-sets").appendChild(newset);
+  log("info", "read font", setPath);
   return new Promise((resolve, reject) => {
     fs.readFile(setPath, {}, (err, data) => {
       if (err !== null) {
@@ -41,21 +44,23 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
       }
       return resolve(data);
     });
-  })
-    .then(data => {
-      newset.innerHTML = data.toString();
-      const newSymbols = newset.querySelectorAll('symbol');
-      const newSet = new Set<string>();
-      newSymbols.forEach(ele => {
-        newSet.add(ele.id);
-      });
-      return newSet;
+  }).then((data) => {
+    newset.innerHTML = data.toString();
+    const newSymbols = newset.querySelectorAll("symbol");
+    const newSet = new Set<string>();
+    newSymbols.forEach((ele) => {
+      newSet.add(ele.id);
     });
+    return newSet;
+  });
 }
 
 const loadingIconSets = new Set<string>();
 
-class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
+class Icon extends React.Component<
+  IIconProps,
+  { sets: { [setId: string]: Set<string> } }
+> {
   private mLoadPromise: Promise<any>;
   private mMounted: boolean = false;
 
@@ -84,8 +89,9 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
 
   private loadSet = (set: string): Promise<Set<string>> => {
     const { sets } = this.state;
-    if ((sets[set] === undefined) && !loadingIconSets.has(set)) {
-      { // mark the set as being loaded
+    if (sets[set] === undefined && !loadingIconSets.has(set)) {
+      {
+        // mark the set as being loaded
         const copy = { ...sets };
         copy[set] = null;
 
@@ -97,18 +103,22 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
 
       // different extensions don't share the sets global so check in the dom
       // to see if the iconset is already loaded after all
-      const existing = document.getElementById('iconset-' + set);
+      const existing = document.getElementById("iconset-" + set);
 
       if (existing !== null) {
-        const newSymbols = existing.querySelectorAll('symbol');
+        const newSymbols = existing.querySelectorAll("symbol");
         const newSet = new Set<string>();
-        newSymbols.forEach(ele => {
+        newSymbols.forEach((ele) => {
           newSet.add(ele.id);
         });
         this.mLoadPromise = Promise.resolve(newSet);
       } else {
         // make sure that no other icon instance tries to render this icon
-        const fontPath = path.resolve(getVortexPath('assets'), 'fonts', set + '.svg');
+        const fontPath = path.resolve(
+          getVortexPath("assets"),
+          "fonts",
+          set + ".svg",
+        );
         this.mLoadPromise = installIconSet(set, fontPath);
       }
 
@@ -127,7 +137,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
     } else {
       return Promise.resolve(sets[set] || null);
     }
-  }
+  };
 }
 
 export default Icon;

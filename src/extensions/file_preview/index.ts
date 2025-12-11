@@ -1,12 +1,19 @@
-import Bluebird from 'bluebird';
-import { IExtensionApi, IExtensionContext, IPreviewFile } from '../../types/IExtensionContext';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
-import { log } from '../../util/log';
-import opn from '../../util/opn';
+import Bluebird from "bluebird";
+import {
+  IExtensionApi,
+  IExtensionContext,
+  IPreviewFile,
+} from "../../types/IExtensionContext";
+import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
+import { log } from "../../util/log";
+import opn from "../../util/opn";
 
 interface IPreviewHandler {
   priority: number;
-  handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>;
+  handler: (
+    files: IPreviewFile[],
+    allowPick: boolean,
+  ) => Bluebird<IPreviewFile>;
 }
 
 let previewHandlers: IPreviewHandler[] = [];
@@ -15,23 +22,29 @@ async function fallbackHandler(
   api: IExtensionApi,
   files: IPreviewFile[],
 ): Promise<IPreviewFile> {
-  const result = await api.showDialog('info', 'Select files to open', {
-    text: 'The files you select below will be opened with whatever application '
-        + 'is set up in your operating system to handle it, if any.',
-    checkboxes: files.map((file, idx) =>
-      ({ id: file.filePath, text: file.label, value: idx === 0 })),
-  }, [
-    { label: 'Cancel' },
-    { label: 'Open' },
-  ]);
+  const result = await api.showDialog(
+    "info",
+    "Select files to open",
+    {
+      text:
+        "The files you select below will be opened with whatever application " +
+        "is set up in your operating system to handle it, if any.",
+      checkboxes: files.map((file, idx) => ({
+        id: file.filePath,
+        text: file.label,
+        value: idx === 0,
+      })),
+    },
+    [{ label: "Cancel" }, { label: "Open" }],
+  );
 
-  if (result.action === 'Cancel') {
+  if (result.action === "Cancel") {
     throw new UserCanceled();
   }
 
-  Object.keys(result.input).forEach(key => {
+  Object.keys(result.input).forEach((key) => {
     if (result.input[key]) {
-      opn(key).catch(err => null);
+      opn(key).catch((err) => null);
     }
   });
 
@@ -41,7 +54,10 @@ async function fallbackHandler(
 function init(context: IExtensionContext) {
   context.registerPreview = (
     priority: number,
-    handler: (files: IPreviewFile[], allowPick: boolean) => Bluebird<IPreviewFile>,
+    handler: (
+      files: IPreviewFile[],
+      allowPick: boolean,
+    ) => Bluebird<IPreviewFile>,
   ) => {
     previewHandlers.push({ priority, handler });
     previewHandlers = previewHandlers.sort(
@@ -56,7 +72,7 @@ function init(context: IExtensionContext) {
   context.once(() => {
     const { api } = context;
     api.events.on(
-      'preview-files',
+      "preview-files",
       async (files: IPreviewFile[], cb?: (selection: IPreviewFile) => void) => {
         for (const handler of previewHandlers) {
           try {
@@ -77,23 +93,28 @@ function init(context: IExtensionContext) {
               }
               return;
             } else {
-              log('error', 'file preview handler failed', err.message);
+              log("error", "file preview handler failed", err.message);
             }
           }
         }
 
-        api.showDialog('info', 'Preview not supported', {
-          text: 'Sorry, preview for this file type is not supported. '
-              + 'You should check the extensions panel if there is one that '
-              + 'supports it.',
-        }, [
-          { label: 'Continue' },
-        ])
-        .then(() => {
-          if (cb !== undefined) {
-            cb(null);
-          }
-        });
+        api
+          .showDialog(
+            "info",
+            "Preview not supported",
+            {
+              text:
+                "Sorry, preview for this file type is not supported. " +
+                "You should check the extensions panel if there is one that " +
+                "supports it.",
+            },
+            [{ label: "Continue" }],
+          )
+          .then(() => {
+            if (cb !== undefined) {
+              cb(null);
+            }
+          });
       },
     );
   });

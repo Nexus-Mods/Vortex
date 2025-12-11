@@ -1,4 +1,4 @@
-import safeCreateAction from './safeCreateAction';
+import safeCreateAction from "./safeCreateAction";
 
 /**
  * generic action to store load orders for games. How it is to be interpreted
@@ -12,5 +12,7 @@ import safeCreateAction from './safeCreateAction';
  * to store the load order, it's only stored in the form of mod names and it would be
  * impractical to redeploy every time the load order is changed)
  */
-export const setLoadOrder =
-  safeCreateAction('SET_LOAD_ORDER', (id: string, order: any[]) => ({ id, order }));
+export const setLoadOrder = safeCreateAction(
+  "SET_LOAD_ORDER",
+  (id: string, order: any[]) => ({ id, order }),
+);

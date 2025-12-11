@@ -1,4 +1,4 @@
-import { IFileListItem } from './IMod';
+import { IFileListItem } from "./IMod";
 
 export interface IInstallOptions {
   allowAutoEnable?: boolean;

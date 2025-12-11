@@ -1,7 +1,14 @@
-import { RedownloadMode } from '../DownloadManager';
-import { IChunk } from './IChunk';
+import { RedownloadMode } from "../DownloadManager";
+import { IChunk } from "./IChunk";
 
-export type DownloadState = 'init' | 'started' | 'paused' | 'finalizing' | 'finished' | 'failed' | 'redirect';
+export type DownloadState =
+  | "init"
+  | "started"
+  | "paused"
+  | "finalizing"
+  | "finished"
+  | "failed"
+  | "redirect";
 
 export interface IDownloadFailCause {
   htmlFile?: string;
@@ -138,7 +145,7 @@ export interface IDownload {
    * mod is uninstalled, so to determine if the archive is actually installed
    * one has to look at the dictionary of installed mods
    */
-  installed?: { gameId: string, modId: string };
+  installed?: { gameId: string; modId: string };
 
   /**
    * hash of the file data

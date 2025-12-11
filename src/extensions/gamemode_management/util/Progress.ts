@@ -4,7 +4,6 @@
  * @class Progress
  */
 class Progress {
-
   private mMagnitude: number;
   private mStepCount: number;
   private mStepsCompleted: number;
@@ -15,8 +14,12 @@ class Progress {
   private mLastProgress: number = 0;
   private mLastProgressTime: number = Date.now();
 
-  constructor(baseValue: number, magnitude: number,
-              callback: (percent: number, label: string) => void, depth: number = 0) {
+  constructor(
+    baseValue: number,
+    magnitude: number,
+    callback: (percent: number, label: string) => void,
+    depth: number = 0,
+  ) {
     this.mMagnitude = magnitude;
     this.mBaseValue = baseValue;
     this.mCallback = callback;
@@ -66,17 +69,24 @@ class Progress {
   public derive(): Progress {
     const childMag = this.mMagnitude / this.mStepCount;
     return childMag > 0.9
-      ? new Progress(this.currentProgress(),
-                     childMag, this.mCallback, this.mDepth + 1)
+      ? new Progress(
+          this.currentProgress(),
+          childMag,
+          this.mCallback,
+          this.mDepth + 1,
+        )
       : null;
   }
 
   private currentProgress() {
     const newProgress = Math.min(
-        Math.max(this.mBaseValue +
-                     (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
-                 this.mLastProgress),
-        this.mMagnitude);
+      Math.max(
+        this.mBaseValue +
+          (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
+        this.mLastProgress,
+      ),
+      this.mMagnitude,
+    );
     this.mLastProgress = newProgress;
     return newProgress;
   }

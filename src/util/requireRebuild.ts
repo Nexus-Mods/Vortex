@@ -1,22 +1,22 @@
-import { log } from './log';
+import { log } from "./log";
 
-import { spawnSync, SpawnSyncOptions } from 'child_process';
-import { createHash } from 'crypto';
-import * as fs from 'fs-extra';
-import {} from 'module';
-import * as os from 'os';
-import * as path from 'path';
-import * as reqResolve from 'resolve';
-import getVortexPath from './getVortexPath';
+import { spawnSync, SpawnSyncOptions } from "child_process";
+import { createHash } from "crypto";
+import * as fs from "fs-extra";
+import {} from "module";
+import * as os from "os";
+import * as path from "path";
+import * as reqResolve from "resolve";
+import getVortexPath from "./getVortexPath";
 
 // tslint:disable-next-line:no-var-requires
-const Module = require('module');
+const Module = require("module");
 
 const loggingHandler = {
   get: (obj, prop) => {
-    if (typeof(obj[prop]) === 'function') {
+    if (typeof obj[prop] === "function") {
       // tslint:disable-next-line:only-arrow-functions
-      return function(...args) {
+      return function (...args) {
         // tslint:disable-next-line:no-console
         console.log(prop, args);
         return obj[prop](...args);
@@ -32,27 +32,27 @@ const loggingHandler = {
 // e.g. const modulesToLog = new Set(['https']);
 const modulesToLog = new Set([]);
 
-const cachePath = path.join(getVortexPath('temp'), 'native_cache');
+const cachePath = path.join(getVortexPath("temp"), "native_cache");
 fs.ensureDirSync(cachePath);
 
 // whitelist of native libraries that we know should load correctly.
 // If one of these doesn't load correctly, rebuild it
 const nativeLibs = [
-  'crash-dump',
-  'diskusage',
-  'drivelist',
-  'leveldown',
-  'msgpack',
-  'native-errors',
-  'permissions',
-  'vortexmt',
-  'winapi-bindings',
-  'icon-extract',
-  'windump',
+  "crash-dump",
+  "diskusage",
+  "drivelist",
+  "leveldown",
+  "msgpack",
+  "native-errors",
+  "permissions",
+  "vortexmt",
+  "winapi-bindings",
+  "icon-extract",
+  "windump",
 ];
 
 // const headerURL = 'https://atom.io/download/electron';
-const headerURL = 'https://www.electronjs.org/headers';
+const headerURL = "https://www.electronjs.org/headers";
 
 // based on https://github.com/juliangruber/require-rebuild
 function makeRebuildFunc(orig) {
@@ -61,18 +61,18 @@ function makeRebuildFunc(orig) {
   return (parent: typeof Module, request: string) => {
     // don't go into endless loops
     if (processed.has(request)) {
-      log('info', 'already processed', request);
+      log("info", "already processed", request);
       return true;
     }
     processed.add(request);
 
     const resolved = reqResolve.sync(request, {
       basedir: path.dirname(parent.id),
-      extensions: ['.js', '.json', '.node'],
+      extensions: [".js", ".json", ".node"],
     });
 
     const segments = resolved.split(path.sep);
-    const modulesIdx = segments.indexOf('node_modules');
+    const modulesIdx = segments.indexOf("node_modules");
     if (modulesIdx === -1) {
       return false;
     }
@@ -81,22 +81,31 @@ function makeRebuildFunc(orig) {
     const moduleName = segments[modulesIdx + 1];
     const modulePath = path.join(nodeModules, moduleName);
     const versionString = `${process.platform}-${process.arch}-${process.versions.modules}`;
-    const abiPath = path.resolve(modulePath, 'bin', versionString);
-    const buildPath = path.join(modulePath, 'build', 'Release');
+    const abiPath = path.resolve(modulePath, "bin", versionString);
+    const buildPath = path.join(modulePath, "build", "Release");
     fs.ensureDirSync(buildPath);
-    let nodeFile = fs.readdirSync(buildPath).find(fileName => fileName.endsWith('.node'));
-    const fileCachePath = path.join(cachePath, versionString, moduleName + '.node');
-    const fileABIPath = path.join(abiPath, moduleName + '.node');
+    let nodeFile = fs
+      .readdirSync(buildPath)
+      .find((fileName) => fileName.endsWith(".node"));
+    const fileCachePath = path.join(
+      cachePath,
+      versionString,
+      moduleName + ".node",
+    );
+    const fileABIPath = path.join(abiPath, moduleName + ".node");
 
-    const hash = nodeFile !== undefined
-      ? createHash('md5').update(fs.readFileSync(path.join(buildPath, nodeFile))).digest('hex')
-      : undefined;
+    const hash =
+      nodeFile !== undefined
+        ? createHash("md5")
+            .update(fs.readFileSync(path.join(buildPath, nodeFile)))
+            .digest("hex")
+        : undefined;
 
     fs.ensureDirSync(abiPath);
-    if (fs.existsSync(fileCachePath) && (nodeFile !== undefined)) {
-      const cacheHash = fs.readFileSync(fileCachePath + '.hash').toString();
+    if (fs.existsSync(fileCachePath) && nodeFile !== undefined) {
+      const cacheHash = fs.readFileSync(fileCachePath + ".hash").toString();
       if (cacheHash === hash) {
-        log('info', 'using cache', moduleName);
+        log("info", "using cache", moduleName);
         fs.copySync(fileCachePath, fileABIPath);
         fs.copySync(fileCachePath, path.join(buildPath, nodeFile));
 
@@ -104,7 +113,7 @@ function makeRebuildFunc(orig) {
       }
     }
 
-    log('info', 'rebuilding ', { moduleName, process: process.type });
+    log("info", "rebuilding ", { moduleName, process: process.type });
 
     const gypArgs: string[] = [
       /*
@@ -114,31 +123,31 @@ function makeRebuildFunc(orig) {
       `--dist-url=${headerURL}`,
       '--build-from-source',
       */
-     'install',
+      "install",
     ];
     const spawnOptions: SpawnSyncOptions = {
       cwd: modulePath,
       env: {
         ...process.env,
-        HOME: path.resolve(os.homedir(), '.electron-gyp'),
-        USERPROFILE: path.resolve(os.homedir(), '.electron-gyp'),
+        HOME: path.resolve(os.homedir(), ".electron-gyp"),
+        USERPROFILE: path.resolve(os.homedir(), ".electron-gyp"),
         npm_config_disturl: headerURL,
-        npm_config_runtime: 'electron',
+        npm_config_runtime: "electron",
         npm_config_arch: process.arch,
         npm_config_target_arch: process.arch,
-        npm_config_build_from_source: 'true',
+        npm_config_build_from_source: "true",
       },
     };
 
     // let nodeGyp = path.join(nodeModules, '.bin', 'node-gyp');
-    let nodeGyp = 'yarn';
-    if (process.platform === 'win32') {
-      nodeGyp = nodeGyp + '.cmd';
+    let nodeGyp = "yarn";
+    if (process.platform === "win32") {
+      nodeGyp = nodeGyp + ".cmd";
     }
 
     const proc = spawnSync(nodeGyp, gypArgs, spawnOptions);
-    log('info', 'stdout', proc.stdout.toString());
-    log('error', 'stderr', proc.stderr.toString());
+    log("info", "stdout", proc.stdout.toString());
+    log("error", "stderr", proc.stderr.toString());
 
     if (proc.error) {
       throw proc.error;
@@ -146,9 +155,11 @@ function makeRebuildFunc(orig) {
 
     if (nodeFile === undefined) {
       try {
-        nodeFile = fs.readdirSync(buildPath).find(fileName => fileName.endsWith('.node'));
+        nodeFile = fs
+          .readdirSync(buildPath)
+          .find((fileName) => fileName.endsWith(".node"));
       } catch (err) {
-        log('warn', 'not found', { buildPath });
+        log("warn", "not found", { buildPath });
       }
     }
     if (nodeFile === undefined) {
@@ -159,9 +170,9 @@ function makeRebuildFunc(orig) {
     fs.copySync(fileBuildPath, fileABIPath);
     if (hash !== undefined) {
       fs.copySync(fileBuildPath, fileCachePath);
-      fs.writeFileSync(fileCachePath + '.hash', hash);
+      fs.writeFileSync(fileCachePath + ".hash", hash);
     }
-    log('info', 'rebuild done');
+    log("info", "rebuild done");
     return true;
   };
 }
@@ -169,7 +180,7 @@ function makeRebuildFunc(orig) {
 function patchedLoad(orig) {
   const rebuildLib = makeRebuildFunc(orig);
   // tslint:disable-next-line:only-arrow-functions
-  return function(request: string, parent: typeof Module) {
+  return function (request: string, parent: typeof Module) {
     try {
       const res = orig.apply(this, arguments);
       if (modulesToLog.has(request)) {
@@ -191,7 +202,7 @@ function patchedLoad(orig) {
   };
 }
 
-export default function() {
+export default function () {
   const orig = (Module as any)._load;
   (Module as any)._load = patchedLoad(orig);
 }

@@ -3,8 +3,8 @@
  * Demonstrates the Typography component from the web team's "next" project
  */
 
-import * as React from 'react';
-import { Typography } from './Typography';
+import * as React from "react";
+import { Typography } from "./Typography";
 
 export const TypographyDemo: React.ComponentType = () => {
   return (
@@ -24,8 +24,9 @@ export const TypographyDemo: React.ComponentType = () => {
         appearance="subdued"
         className="tw:mb-8"
       >
-        This component is adapted from the web team's "next" project. It provides a consistent
-        typography system with predefined sizes and appearances.
+        This component is adapted from the web team's "next" project. It
+        provides a consistent typography system with predefined sizes and
+        appearances.
       </Typography>
 
       {/* Headings */}
@@ -40,12 +41,24 @@ export const TypographyDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="tw:space-y-2">
-          <Typography as="h1" typographyType="heading-2xl">heading-2xl: The quick brown fox</Typography>
-          <Typography as="h2" typographyType="heading-xl">heading-xl: The quick brown fox</Typography>
-          <Typography as="h3" typographyType="heading-lg">heading-lg: The quick brown fox</Typography>
-          <Typography as="h4" typographyType="heading-md">heading-md: The quick brown fox</Typography>
-          <Typography as="h5" typographyType="heading-sm">heading-sm: The quick brown fox</Typography>
-          <Typography as="h6" typographyType="heading-xs">heading-xs: The quick brown fox</Typography>
+          <Typography as="h1" typographyType="heading-2xl">
+            heading-2xl: The quick brown fox
+          </Typography>
+          <Typography as="h2" typographyType="heading-xl">
+            heading-xl: The quick brown fox
+          </Typography>
+          <Typography as="h3" typographyType="heading-lg">
+            heading-lg: The quick brown fox
+          </Typography>
+          <Typography as="h4" typographyType="heading-md">
+            heading-md: The quick brown fox
+          </Typography>
+          <Typography as="h5" typographyType="heading-sm">
+            heading-sm: The quick brown fox
+          </Typography>
+          <Typography as="h6" typographyType="heading-xs">
+            heading-xs: The quick brown fox
+          </Typography>
         </div>
       </div>
 
@@ -61,9 +74,15 @@ export const TypographyDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="tw:space-y-2">
-          <Typography as="p" typographyType="title-md">title-md: The quick brown fox</Typography>
-          <Typography as="p" typographyType="title-sm">title-sm: The quick brown fox</Typography>
-          <Typography as="p" typographyType="title-xs">title-xs: The quick brown fox</Typography>
+          <Typography as="p" typographyType="title-md">
+            title-md: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="title-sm">
+            title-sm: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="title-xs">
+            title-xs: The quick brown fox
+          </Typography>
         </div>
       </div>
 
@@ -79,12 +98,24 @@ export const TypographyDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="tw:space-y-2">
-          <Typography as="p" typographyType="body-2xl">body-2xl: The quick brown fox</Typography>
-          <Typography as="p" typographyType="body-xl">body-xl: The quick brown fox</Typography>
-          <Typography as="p" typographyType="body-lg">body-lg: The quick brown fox</Typography>
-          <Typography as="p" typographyType="body-md">body-md: The quick brown fox</Typography>
-          <Typography as="p" typographyType="body-sm">body-sm: The quick brown fox</Typography>
-          <Typography as="p" typographyType="body-xs">body-xs: The quick brown fox</Typography>
+          <Typography as="p" typographyType="body-2xl">
+            body-2xl: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="body-xl">
+            body-xl: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="body-lg">
+            body-lg: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="body-md">
+            body-md: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="body-sm">
+            body-sm: The quick brown fox
+          </Typography>
+          <Typography as="p" typographyType="body-xs">
+            body-xs: The quick brown fox
+          </Typography>
         </div>
       </div>
 
@@ -100,10 +131,18 @@ export const TypographyDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="tw:space-y-2">
-          <Typography as="p" appearance="strong">appearance="strong": Strong text emphasis</Typography>
-          <Typography as="p" appearance="moderate">appearance="moderate": Moderate text emphasis</Typography>
-          <Typography as="p" appearance="subdued">appearance="subdued": Subdued text emphasis</Typography>
-          <Typography as="p" appearance="weak">appearance="weak": Weak text emphasis</Typography>
+          <Typography as="p" appearance="strong">
+            appearance="strong": Strong text emphasis
+          </Typography>
+          <Typography as="p" appearance="moderate">
+            appearance="moderate": Moderate text emphasis
+          </Typography>
+          <Typography as="p" appearance="subdued">
+            appearance="subdued": Subdued text emphasis
+          </Typography>
+          <Typography as="p" appearance="weak">
+            appearance="weak": Weak text emphasis
+          </Typography>
         </div>
       </div>
 
@@ -112,14 +151,14 @@ export const TypographyDemo: React.ComponentType = () => {
         <Typography
           as="p"
           typographyType={{
-            default: 'body-sm',
-            md: 'body-md',
-            lg: 'body-lg',
+            default: "body-sm",
+            md: "body-md",
+            lg: "body-lg",
           }}
           appearance="moderate"
         >
-          📱 This text is responsive: body-sm on mobile, body-md on tablets, body-lg on desktop.
-          Resize your window to see it change!
+          📱 This text is responsive: body-sm on mobile, body-md on tablets,
+          body-lg on desktop. Resize your window to see it change!
         </Typography>
       </div>
     </div>

@@ -1,19 +1,24 @@
-import { ICollection, ICollectionSearchOptions, CollectionSortField, SortDirection } from '@nexusmods/nexus-api';
-import numeral from 'numeral';
-import * as React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
+import {
+  ICollection,
+  ICollectionSearchOptions,
+  CollectionSortField,
+  SortDirection,
+} from "@nexusmods/nexus-api";
+import numeral from "numeral";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
-import MainPage from '../../../renderer/views/MainPage';
-import Tailwind from '../../../tailwind';
-import { activeGameId, isCollectionModPresent } from '../../../util/selectors';
-import { IState } from '../../../types/IState';
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import opn from '../../../util/opn';
-import { getGame } from '../../gamemode_management/util/getGame';
-import { nexusGameId } from '../../nexus_integration/util/convertGameId';
-import { CollectionsDownloadClickedEvent } from '../../analytics/mixpanel/MixpanelEvents';
-import { UserCanceled } from '../../../util/api';
+import MainPage from "../../../renderer/views/MainPage";
+import Tailwind from "../../../tailwind";
+import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
+import { IState } from "../../../types/IState";
+import { IExtensionApi } from "../../../types/IExtensionContext";
+import opn from "../../../util/opn";
+import { getGame } from "../../gamemode_management/util/getGame";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
+import { UserCanceled } from "../../../util/api";
 
 interface IBrowseNexusPageProps {
   api: IExtensionApi;
@@ -26,23 +31,34 @@ interface ISortOption {
 }
 
 const SORT_OPTIONS: ISortOption[] = [
-  { field: 'createdAt', direction: 'DESC', label: 'Recently Listed' },
-  { field: 'endorsements', direction: 'DESC', label: 'Most Endorsed' },
-  { field: 'recentRating', direction: 'DESC', label: 'Highest Rated' },
-  { field: 'downloads', direction: 'DESC', label: 'Most Downloaded' },
+  { field: "createdAt", direction: "DESC", label: "Recently Listed" },
+  { field: "endorsements", direction: "DESC", label: "Most Endorsed" },
+  { field: "recentRating", direction: "DESC", label: "Highest Rated" },
+  { field: "downloads", direction: "DESC", label: "Most Downloaded" },
 ];
 
-async function adultContentDialog(api: IExtensionApi, collection: ICollection, adultContent: boolean): Promise<boolean> {
+async function adultContentDialog(
+  api: IExtensionApi,
+  collection: ICollection,
+  adultContent: boolean,
+): Promise<boolean> {
   try {
-    const result = await api.showDialog('question', 'Adult content warning', {
-      bbcode: api.translate(`The collection "[b]{{collectionName}}[/b]" has been classified as adult content because it contains: nudity, sexualisation, extreme violence and gore, or excessive profanity.<br/><br/>`
-        + `Your site preferences are set to hide adult content, you can update your preferences on the Nexus Mods website.`,        
-        { replace: { collectionName: collection.name } }),
-    }, [
-      { label: api.translate('Cancel') },
-      { label: api.translate('Open site preferences') },
-    ])
-    return result.action === 'Cancel' ? false : true;
+    const result = await api.showDialog(
+      "question",
+      "Adult content warning",
+      {
+        bbcode: api.translate(
+          `The collection "[b]{{collectionName}}[/b]" has been classified as adult content because it contains: nudity, sexualisation, extreme violence and gore, or excessive profanity.<br/><br/>` +
+            `Your site preferences are set to hide adult content, you can update your preferences on the Nexus Mods website.`,
+          { replace: { collectionName: collection.name } },
+        ),
+      },
+      [
+        { label: api.translate("Cancel") },
+        { label: api.translate("Open site preferences") },
+      ],
+    );
+    return result.action === "Cancel" ? false : true;
   } catch (err) {
     return adultContent;
   }
@@ -50,33 +66,42 @@ async function adultContentDialog(api: IExtensionApi, collection: ICollection, a
 
 function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const { api } = props;
-  const t = (input: string, options?) => api.translate(input, { isNamespaceKey: true, ns: ['collection', 'common'], ...options });
+  const t = (input: string, options?) =>
+    api.translate(input, {
+      isNamespaceKey: true,
+      ns: ["collection", "common"],
+      ...options,
+    });
   const gameId = useSelector((state: IState) => activeGameId(state));
-  const adultContentFilter = useSelector((state: IState) => state.persistent['nexus']?.userInfo?.adult);
+  const adultContentFilter = useSelector(
+    (state: IState) => state.persistent["nexus"]?.userInfo?.adult,
+  );
   const [collections, setCollections] = React.useState<ICollection[]>([]);
   const [totalCount, setTotalCount] = React.useState<number>(0);
-  const [allCollectionsTotal, setAllCollectionsTotal] = React.useState<number>(0);
+  const [allCollectionsTotal, setAllCollectionsTotal] =
+    React.useState<number>(0);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<Error | null>(null);
   const [sortBy, setSortBy] = React.useState<ISortOption>(SORT_OPTIONS[1]); // Default to "Most Endorsed"
-  const [searchQuery, setSearchQuery] = React.useState<string>('');
-  const [activeSearch, setActiveSearch] = React.useState<string>(''); // The search term actually being used
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [activeSearch, setActiveSearch] = React.useState<string>(""); // The search term actually being used
   const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [pageInput, setPageInput] = React.useState<string>('1');
-  const [selectedTab, setSelectedTab] = React.useState<string>('collections');
+  const [pageInput, setPageInput] = React.useState<string>("1");
+  const [selectedTab, setSelectedTab] = React.useState<string>("collections");
   const [refreshTrigger, setRefreshTrigger] = React.useState<number>(0);
-  const [searchValidationError, setSearchValidationError] = React.useState<string>('');
+  const [searchValidationError, setSearchValidationError] =
+    React.useState<string>("");
   const itemsPerPage = 20;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
     // Clear any previous validation errors
-    setSearchValidationError('');
+    setSearchValidationError("");
 
     // If search query is too short (1 character), show validation error
     if (searchQuery.length === 1) {
-      setSearchValidationError(t('collection:browse.searchTooShort'));
+      setSearchValidationError(t("collection:browse.searchTooShort"));
       return;
     }
 
@@ -88,25 +113,31 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const handleRefresh = () => {
     setLoading(true);
     setError(null);
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSearch();
     }
   };
 
   const handleAddCollection = (collection: ICollection) => {
-    const revisionNumber = collection.latestPublishedRevision?.revisionNumber || 'latest';
+    const revisionNumber =
+      collection.latestPublishedRevision?.revisionNumber || "latest";
     // Use the game domain name from the collection data (already converted)
     const nxmUrl = `nxm://${collection.game.domainName}/collections/${collection.slug}/revisions/${revisionNumber}`;
 
     // Track the download click event
-    api.events.emit('analytics-track-mixpanel-event',
-      new CollectionsDownloadClickedEvent(collection.slug, collection.game.id));
+    api.events.emit(
+      "analytics-track-mixpanel-event",
+      new CollectionsDownloadClickedEvent(collection.slug, collection.game.id),
+    );
 
-    if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
+    if (
+      adultContentFilter === false &&
+      collection.latestPublishedRevision?.adultContent
+    ) {
       adultContentDialog(api, collection, false).then((proceed) => {
         if (proceed) {
           handleViewNexusAdultPreferences();
@@ -114,14 +145,21 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       });
     } else {
       // Use the Vortex API to handle the NXM link
-      api.events.emit('start-download', [nxmUrl], {}, undefined,
+      api.events.emit(
+        "start-download",
+        [nxmUrl],
+        {},
+        undefined,
         (err: Error) => {
           if (err && !(err instanceof UserCanceled)) {
-            api.showErrorNotification('Failed to add collection', err);
+            api.showErrorNotification("Failed to add collection", err);
           }
-        }, undefined, { allowInstall: 'force' });
+        },
+        undefined,
+        { allowInstall: "force" },
+      );
     }
-  };  
+  };
 
   const handleViewNexusAdultPreferences = () => {
     const nexusUrl = `https://next.nexusmods.com/settings/content-blocking`;
@@ -151,8 +189,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
         direction: sortBy.direction,
       },
       search: activeSearch || undefined,
-      categoryName: [{ op: 'NOT_EQUALS', value: 'Wabbajack Mod List' }],
-      collectionStatuses: ['listed'],
+      categoryName: [{ op: "NOT_EQUALS", value: "Wabbajack Mod List" }],
+      collectionStatuses: ["listed"],
     };
 
     // Fetch collections using the new search API with sorting and search
@@ -168,11 +206,16 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       })
       .catch((err: Error) => {
         // Provide user-friendly error message for wildcard search requirement
-        if (err.message && err.message.includes('Wildcard value must have 2 or more characters')) {
-          const friendlyError = new Error(t('collection:browse.searchTooShort'));
+        if (
+          err.message &&
+          err.message.includes("Wildcard value must have 2 or more characters")
+        ) {
+          const friendlyError = new Error(
+            t("collection:browse.searchTooShort"),
+          );
           setError(friendlyError);
           // Also clear the invalid search so user can try again
-          setActiveSearch('');
+          setActiveSearch("");
         } else {
           setError(err);
         }
@@ -182,7 +225,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
   React.useEffect(() => {
     setCurrentPage(1);
-    setPageInput('1');
+    setPageInput("1");
   }, [sortBy, activeSearch]);
 
   // Scroll to top when page changes
@@ -194,7 +237,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
   const formatFileSize = (bytes: string): string => {
     const size = parseInt(bytes, 10);
-    if (isNaN(size)) return '0 MB';
+    if (isNaN(size)) return "0 MB";
     const mb = size / (1024 * 1024);
     if (mb >= 1024) {
       return `${(mb / 1024).toFixed(2)} GB`;
@@ -242,17 +285,17 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   };
 
   const handlePageInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleGoToPage();
     }
   };
 
   if (!gameId) {
     return (
-      <MainPage id='browse-collections-page'>
+      <MainPage id="browse-collections-page">
         <MainPage.Body>
           <div className="tw:p-5 tw:text-center">
-            <p>{t('collection:browse.selectGame')}</p>
+            <p>{t("collection:browse.selectGame")}</p>
           </div>
         </MainPage.Body>
       </MainPage>
@@ -260,14 +303,16 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   }
 
   return (
-    <MainPage id='browse-collections-page'>
-      <MainPage.Body style={{ overflowY: 'auto' }}>
-        <div className="tw:h-full tw:p-5" ref={(node) => {
-          if (node) {
-            scrollContainerRef.current = node.parentElement as HTMLDivElement;
-          }
-        }}>
-
+    <MainPage id="browse-collections-page">
+      <MainPage.Body style={{ overflowY: "auto" }}>
+        <div
+          className="tw:h-full tw:p-5"
+          ref={(node) => {
+            if (node) {
+              scrollContainerRef.current = node.parentElement as HTMLDivElement;
+            }
+          }}
+        >
           <Tailwind.TabProvider
             tab={selectedTab}
             tabListId="browse-nexus-tabs"
@@ -275,13 +320,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           >
             <Tailwind.TabBar className="tw:mb-5">
               <Tailwind.TabButton
-                name={t('collection:browse.tabs.collections')}
+                name={t("collection:browse.tabs.collections")}
                 count={allCollectionsTotal}
               />
-              <Tailwind.TabButton name={t('collection:browse.tabs.mods')} />
+              <Tailwind.TabButton name={t("collection:browse.tabs.mods")} />
             </Tailwind.TabBar>
 
-            <Tailwind.TabPanel name={t('collection:browse.tabs.collections')}>
+            <Tailwind.TabPanel name={t("collection:browse.tabs.collections")}>
               {/* Search Bar */}
               <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
                 <Tailwind.Input
@@ -290,16 +335,16 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     setSearchQuery(e.target.value);
                     // Clear validation error when user types
                     if (searchValidationError) {
-                      setSearchValidationError('');
+                      setSearchValidationError("");
                     }
                   }}
                   value={searchQuery}
-                  placeholder={t('collection:browse.searchPlaceholder')}
+                  placeholder={t("collection:browse.searchPlaceholder")}
                   onKeyDown={handleKeyDown}
-                  fieldClassName='tw:w-64 tw:shrink-0'
+                  fieldClassName="tw:w-64 tw:shrink-0"
                   errorMessage={searchValidationError || undefined}
                   hideLabel={true}
-                  label={t('collection:browse.searchPlaceholder')}
+                  label={t("collection:browse.searchPlaceholder")}
                 />
 
                 <Tailwind.Button
@@ -308,7 +353,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   filled="strong"
                   onClick={handleSearch}
                 >
-                  {t('common:actions.search')}
+                  {t("common:actions.search")}
                 </Tailwind.Button>
 
                 <Tailwind.Button
@@ -318,7 +363,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   onClick={handleRefresh}
                   leftIconPath="mdiRefresh"
                 >
-                  {t('collection:browse.refresh')}
+                  {t("collection:browse.refresh")}
                 </Tailwind.Button>
               </div>
 
@@ -326,18 +371,28 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               {loading ? (
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
-                    <Tailwind.Typography typographyType="body-lg" appearance="subdued">
-                      {t('collection:browse.loading')}
+                    <Tailwind.Typography
+                      typographyType="body-lg"
+                      appearance="subdued"
+                    >
+                      {t("collection:browse.loading")}
                     </Tailwind.Typography>
                   </div>
                 </div>
               ) : error ? (
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
-                    <Tailwind.Typography typographyType="body-lg" appearance="none" className="tw:mb-2 tw:text-danger-moderate">
-                      {t('collection:browse.error')}
+                    <Tailwind.Typography
+                      typographyType="body-lg"
+                      appearance="none"
+                      className="tw:mb-2 tw:text-danger-moderate"
+                    >
+                      {t("collection:browse.error")}
                     </Tailwind.Typography>
-                    <Tailwind.Typography typographyType="body-md" appearance="subdued">
+                    <Tailwind.Typography
+                      typographyType="body-md"
+                      appearance="subdued"
+                    >
                       {error.message}
                     </Tailwind.Typography>
                   </div>
@@ -345,184 +400,225 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               ) : collections.length === 0 ? (
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
-                    <Tailwind.Typography typographyType="body-lg" appearance="subdued">
-                      {t('collection:browse.noCollections')}
+                    <Tailwind.Typography
+                      typographyType="body-lg"
+                      appearance="subdued"
+                    >
+                      {t("collection:browse.noCollections")}
                     </Tailwind.Typography>
                   </div>
                 </div>
               ) : (
                 <>
-              {/* Results count and sort */}
-              <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
-                <Tailwind.Typography typographyType="body-md" appearance="moderate" isTranslucent>
-                  {t('collection:browse.resultsCount', { total: numeral(totalCount).format('0,0') })}
-                </Tailwind.Typography>
-
-
-                <Tailwind.Select
-                  id="sort-select"
-                  label={t('collection:browse.sortBy')}
-                  hideLabel={true}
-                  value={SORT_OPTIONS.indexOf(sortBy)}
-                  onChange={(e) => setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])}
-                  className="tw:flex tw:items-center tw:gap-2.5 tw:max-w-64"
-                >
-                  {SORT_OPTIONS.map((option, index) => (
-                    <option key={option.field} value={index}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Tailwind.Select>
-              </div>
-
-              {/* Collection Tiles */}
-              <div className="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(465px,1fr))] tw:gap-4">
-                {collections.map((collection) => {
-                  const tileImage = (collection as any).tileImage?.thumbnailUrl || 'https://placehold.co/166x207/1f1f1f/666?text=No+Image';
-                  const latestRevision = (collection as any).latestPublishedRevision;
-                  const tags: string[] = [];
-
-                  // Extract tags from collection - ensure all tags are strings
-                  if ((collection as any).category?.name) {
-                    tags.push((collection as any).category.name);
-                  }
-                  if (latestRevision?.adultContent) {
-                    tags.push('Adult');
-                  }
-
-                  return (
-                    <Tailwind.CollectionTile
-                      key={collection.id}
-                      api={api}
-                      slug={collection.slug}
-                      gameId={gameId}
-                      id={collection.id.toString()}
-                      title={collection.name}
-                      author={{
-                        name: collection.user?.name || 'Unknown',
-                        avatar: collection.user?.avatar,
-                      }}
-                      coverImage={tileImage}
-                      tags={tags}
-                      stats={{
-                        modCount: latestRevision?.modCount || 0,
-                        size: latestRevision?.totalSize || 0,
-                        endorsements: collection.endorsements || 0,
-                      }}
-                      description={(collection as any).summary || 'No description available.'}
-                      version={latestRevision?.revisionNumber?.toString()}
-                      badges={(collection as any).badges}
-                      onAddCollection={() => handleAddCollection(collection)}
-                      onViewPage={() => handleViewOnNexus(collection)}
-                      className="tw:max-w-none"
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="tw:flex tw:items-center tw:justify-start tw:gap-2.5 tw:mt-8 tw:pb-5">
-                  {/* Previous Button */}
-                  <Tailwind.Button
-                    buttonType="tertiary"
-                    size="md"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                    leftIconPath="mdiChevronLeft"
-                    className=""
-                  />
-
-                  {/* Page Numbers */}
-                  <div className="tw:flex tw:gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(page => {
-                        // Show first page, last page, current page, and 2 pages on each side of current
-                        if (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2) {
-                          return true;
-                        }
-                        return false;
-                      })
-                      .map((page, idx, array) => {
-                        // Add ellipsis if there's a gap
-                        const prevPage = array[idx - 1];
-                        const showEllipsis = prevPage && page - prevPage > 1;
-
-                        return (
-                          <React.Fragment key={page}>
-                            {showEllipsis && (
-                              <span className="tw:px-1 tw:py-2 tw:text-gray-500">...</span>
-                            )}
-                            <Tailwind.Button
-                              buttonType="tertiary"
-                              size="md"
-                              filled={page === currentPage ? 'weak' : undefined}
-                              onClick={() => handlePageClick(page)}
-                              className=""
-                            >
-                              {page.toString()}
-                            </Tailwind.Button>
-                          </React.Fragment>
-                        );
-                      })}
-                  </div>
-
-                  {/* Next Button */}
-                  <Tailwind.Button
-                    buttonType="tertiary"
-                    size="md"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    leftIconPath="mdiChevronRight"
-                    className=""
-                  />
-
-                  {/* Direct Page Input */}
-                  <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
-                    <Tailwind.Typography typographyType="body-md" appearance="subdued">
-                      {t('collection:pagination.goTo')}
-                    </Tailwind.Typography>
-                    <Tailwind.Input
-                      type="number"
-                      value={pageInput}
-                      onChange={(e) => setPageInput(e.target.value)}
-                      onKeyDown={handlePageInputKeyDown}
-                      className="tw:min-w-10 tw:text-center"
-                      id="page-input"
-                      label={t('collection:pagination.pageNumber')}
-                      hideLabel={true}
-                      min={1}
-                      max={totalPages}
-                    />
-                    <Tailwind.Button
-                      buttonType="secondary"
-                      size="md"
-                      filled="weak"
-                      onClick={handleGoToPage}
+                  {/* Results count and sort */}
+                  <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
+                    <Tailwind.Typography
+                      typographyType="body-md"
+                      appearance="moderate"
+                      isTranslucent
                     >
-                      {t('collection:pagination.go')}
-                    </Tailwind.Button>
+                      {t("collection:browse.resultsCount", {
+                        total: numeral(totalCount).format("0,0"),
+                      })}
+                    </Tailwind.Typography>
 
+                    <Tailwind.Select
+                      id="sort-select"
+                      label={t("collection:browse.sortBy")}
+                      hideLabel={true}
+                      value={SORT_OPTIONS.indexOf(sortBy)}
+                      onChange={(e) =>
+                        setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
+                      }
+                      className="tw:flex tw:items-center tw:gap-2.5 tw:max-w-64"
+                    >
+                      {SORT_OPTIONS.map((option, index) => (
+                        <option key={option.field} value={index}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Tailwind.Select>
                   </div>
-                </div>
-              )}
+
+                  {/* Collection Tiles */}
+                  <div className="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(465px,1fr))] tw:gap-4">
+                    {collections.map((collection) => {
+                      const tileImage =
+                        (collection as any).tileImage?.thumbnailUrl ||
+                        "https://placehold.co/166x207/1f1f1f/666?text=No+Image";
+                      const latestRevision = (collection as any)
+                        .latestPublishedRevision;
+                      const tags: string[] = [];
+
+                      // Extract tags from collection - ensure all tags are strings
+                      if ((collection as any).category?.name) {
+                        tags.push((collection as any).category.name);
+                      }
+                      if (latestRevision?.adultContent) {
+                        tags.push("Adult");
+                      }
+
+                      return (
+                        <Tailwind.CollectionTile
+                          key={collection.id}
+                          api={api}
+                          slug={collection.slug}
+                          gameId={gameId}
+                          id={collection.id.toString()}
+                          title={collection.name}
+                          author={{
+                            name: collection.user?.name || "Unknown",
+                            avatar: collection.user?.avatar,
+                          }}
+                          coverImage={tileImage}
+                          tags={tags}
+                          stats={{
+                            modCount: latestRevision?.modCount || 0,
+                            size: latestRevision?.totalSize || 0,
+                            endorsements: collection.endorsements || 0,
+                          }}
+                          description={
+                            (collection as any).summary ||
+                            "No description available."
+                          }
+                          version={latestRevision?.revisionNumber?.toString()}
+                          badges={(collection as any).badges}
+                          onAddCollection={() =>
+                            handleAddCollection(collection)
+                          }
+                          onViewPage={() => handleViewOnNexus(collection)}
+                          className="tw:max-w-none"
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="tw:flex tw:items-center tw:justify-start tw:gap-2.5 tw:mt-8 tw:pb-5">
+                      {/* Previous Button */}
+                      <Tailwind.Button
+                        buttonType="tertiary"
+                        size="md"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                        leftIconPath="mdiChevronLeft"
+                        className=""
+                      />
+
+                      {/* Page Numbers */}
+                      <div className="tw:flex tw:gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((page) => {
+                            // Show first page, last page, current page, and 2 pages on each side of current
+                            if (
+                              page === 1 ||
+                              page === totalPages ||
+                              Math.abs(page - currentPage) <= 2
+                            ) {
+                              return true;
+                            }
+                            return false;
+                          })
+                          .map((page, idx, array) => {
+                            // Add ellipsis if there's a gap
+                            const prevPage = array[idx - 1];
+                            const showEllipsis =
+                              prevPage && page - prevPage > 1;
+
+                            return (
+                              <React.Fragment key={page}>
+                                {showEllipsis && (
+                                  <span className="tw:px-1 tw:py-2 tw:text-gray-500">
+                                    ...
+                                  </span>
+                                )}
+                                <Tailwind.Button
+                                  buttonType="tertiary"
+                                  size="md"
+                                  filled={
+                                    page === currentPage ? "weak" : undefined
+                                  }
+                                  onClick={() => handlePageClick(page)}
+                                  className=""
+                                >
+                                  {page.toString()}
+                                </Tailwind.Button>
+                              </React.Fragment>
+                            );
+                          })}
+                      </div>
+
+                      {/* Next Button */}
+                      <Tailwind.Button
+                        buttonType="tertiary"
+                        size="md"
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                        leftIconPath="mdiChevronRight"
+                        className=""
+                      />
+
+                      {/* Direct Page Input */}
+                      <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
+                        <Tailwind.Typography
+                          typographyType="body-md"
+                          appearance="subdued"
+                        >
+                          {t("collection:pagination.goTo")}
+                        </Tailwind.Typography>
+                        <Tailwind.Input
+                          type="number"
+                          value={pageInput}
+                          onChange={(e) => setPageInput(e.target.value)}
+                          onKeyDown={handlePageInputKeyDown}
+                          className="tw:min-w-10 tw:text-center"
+                          id="page-input"
+                          label={t("collection:pagination.pageNumber")}
+                          hideLabel={true}
+                          min={1}
+                          max={totalPages}
+                        />
+                        <Tailwind.Button
+                          buttonType="secondary"
+                          size="md"
+                          filled="weak"
+                          onClick={handleGoToPage}
+                        >
+                          {t("collection:pagination.go")}
+                        </Tailwind.Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </Tailwind.TabPanel>
 
-            <Tailwind.TabPanel name={t('collection:browse.tabs.mods')}>
+            <Tailwind.TabPanel name={t("collection:browse.tabs.mods")}>
               <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-16">
                 {/* Icon */}
-                <Tailwind.Icon path="mdiClockOutline" size='xl' className="tw:w-9 tw:h-9 tw:text-neutral-subdued" />
+                <Tailwind.Icon
+                  path="mdiClockOutline"
+                  size="xl"
+                  className="tw:w-9 tw:h-9 tw:text-neutral-subdued"
+                />
 
                 {/* Heading */}
-                <Tailwind.Typography typographyType="body-xl" appearance="subdued" className='tw:font-semibold'>
-                  {t('collection:browse.modsComingSoon.title')}
+                <Tailwind.Typography
+                  typographyType="body-xl"
+                  appearance="subdued"
+                  className="tw:font-semibold"
+                >
+                  {t("collection:browse.modsComingSoon.title")}
                 </Tailwind.Typography>
 
                 {/* Description */}
-                <Tailwind.Typography typographyType="body-lg" appearance="subdued" className="tw:text-center">
-                  {t('collection:browse.modsComingSoon.description')}
+                <Tailwind.Typography
+                  typographyType="body-lg"
+                  appearance="subdued"
+                  className="tw:text-center"
+                >
+                  {t("collection:browse.modsComingSoon.description")}
                 </Tailwind.Typography>
 
                 {/* Button */}
@@ -538,7 +634,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     opn(nexusUrl).catch(() => undefined);
                   }}
                 >
-                  {t('collection:browse.modsComingSoon.openWebsite')}
+                  {t("collection:browse.modsComingSoon.openWebsite")}
                 </Tailwind.Button>
               </div>
             </Tailwind.TabPanel>

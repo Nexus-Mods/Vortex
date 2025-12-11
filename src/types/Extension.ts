@@ -1,4 +1,4 @@
-import { IExtensionContext, IReducerSpec } from './IExtensionContext';
+import { IExtensionContext, IReducerSpec } from "./IExtensionContext";
 
 export interface IExtensionReducer {
   path: string[];

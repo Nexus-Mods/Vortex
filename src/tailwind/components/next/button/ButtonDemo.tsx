@@ -3,12 +3,14 @@
  * Demonstrates the Button component from the web team's "next" project
  */
 
-import * as React from 'react';
-import { Button } from './Button';
-import { Typography } from '../typography/Typography';
+import * as React from "react";
+import { Button } from "./Button";
+import { Typography } from "../typography/Typography";
 
 export const ButtonDemo: React.ComponentType = () => {
-  const [loadingStates, setLoadingStates] = React.useState<Record<string, boolean>>({});
+  const [loadingStates, setLoadingStates] = React.useState<
+    Record<string, boolean>
+  >({});
 
   const handleLoadingClick = (key: string) => {
     setLoadingStates({ ...loadingStates, [key]: true });
@@ -34,8 +36,9 @@ export const ButtonDemo: React.ComponentType = () => {
         appearance="subdued"
         className="tw:mb-8"
       >
-        This component is adapted from the web team's "next" project. It provides a consistent
-        button system with multiple types, sizes, and states. Note: Icon support is pending implementation.
+        This component is adapted from the web team's "next" project. It
+        provides a consistent button system with multiple types, sizes, and
+        states. Note: Icon support is pending implementation.
       </Typography>
 
       {/* Primary Buttons */}
@@ -63,7 +66,7 @@ export const ButtonDemo: React.ComponentType = () => {
             buttonType="primary"
             size="md"
             isLoading={loadingStates.primary}
-            onClick={() => handleLoadingClick('primary')}
+            onClick={() => handleLoadingClick("primary")}
           >
             Click for Loading
           </Button>
@@ -192,7 +195,8 @@ export const ButtonDemo: React.ComponentType = () => {
           appearance="subdued"
           className="tw:mb-4"
         >
-          These buttons change size based on screen width. Try resizing the window!
+          These buttons change size based on screen width. Try resizing the
+          window!
         </Typography>
 
         <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
@@ -223,12 +227,7 @@ export const ButtonDemo: React.ComponentType = () => {
           >
             External Link
           </Button>
-          <Button
-            as="a"
-            buttonType="secondary"
-            size="md"
-            href="#demo"
-          >
+          <Button as="a" buttonType="secondary" size="md" href="#demo">
             Anchor Link
           </Button>
         </div>
@@ -274,7 +273,11 @@ export const ButtonDemo: React.ComponentType = () => {
           <Button buttonType="primary" size="md" leftIconPath="mdiDownload">
             Download
           </Button>
-          <Button buttonType="secondary" size="md" rightIconPath="mdiChevronRight">
+          <Button
+            buttonType="secondary"
+            size="md"
+            rightIconPath="mdiChevronRight"
+          >
             Next
           </Button>
           <Button buttonType="success" size="sm" leftIconPath="mdiCheck">

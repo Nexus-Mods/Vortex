@@ -1,121 +1,121 @@
 .profile-details {
-  padding: 0px 16px;
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  column-gap: 1em;
+    padding: 0px 16px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 1em;
 
-  .profile-feature-name,
-  .profile-feature-value {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  li {
-    display: inline;
-    list-style-type: none;
-    padding-right: $half-gutter;
-    a {
-      margin-right: 8px;
+    .profile-feature-name,
+    .profile-feature-value {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-  }
+
+    li {
+        display: inline;
+        list-style-type: none;
+        padding-right: $half-gutter;
+        a {
+            margin-right: 8px;
+        }
+    }
 }
 
 .profile-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: $half-gutter;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: $half-gutter;
 
-  .dropdown > .btn:first-child svg,
-  .dropup > .btn:first-child svg {
-    margin-right: 8px;
-  }
+    .dropdown > .btn:first-child svg,
+    .dropup > .btn:first-child svg {
+        margin-right: 8px;
+    }
 
-  .btn {
-    vertical-align: text-bottom;
-  }
+    .btn {
+        vertical-align: text-bottom;
+    }
 }
 
 .icon-profile-feature {
-  margin-right: 3px;
+    margin-right: 3px;
 }
 
 .profile-list {
-  display: flex;
-  flex-wrap: wrap;
-  margin: $half-gutter 0;
-
-  .profile-item {
     display: flex;
-    flex-direction: column;
-    width: 240px;
-    margin: $half-gutter;
-    border: $border-width solid $border-color;
-    background-color: $brand-menu;
-    .xtd {
-      padding: 4px 0;
+    flex-wrap: wrap;
+    margin: $half-gutter 0;
+
+    .profile-item {
+        display: flex;
+        flex-direction: column;
+        width: 240px;
+        margin: $half-gutter;
+        border: $border-width solid $border-color;
+        background-color: $brand-menu;
+        .xtd {
+            padding: 4px 0;
+        }
+
+        &.active {
+            background-color: $table-bg-active;
+            outline: $border-width * 2 solid $brand-primary;
+        }
+        &.disabled {
+            background-color: $gray;
+        }
+        &:hover {
+            background-color: darken($gray-light, 10%);
+        }
     }
 
-    &.active {
-      background-color: $table-bg-active;
-      outline: $border-width*2 solid $brand-primary;
+    .profile-name {
+        margin: $half-gutter;
+        font-family: $font-family-headings;
     }
-    &.disabled {
-      background-color: $gray;
-    }
-    &:hover {
-      background-color: darken($gray-light, 10%);
-    }
-  }
 
-  .profile-name {
-    margin: $half-gutter;
-    font-family: $font-family-headings;
-  }
-
-  .profile-image {
-    height: 75px;
-    background-size: cover !important;
-    &.offset {
-      background-position-y: 30%;
+    .profile-image {
+        height: 75px;
+        background-size: cover !important;
+        &.offset {
+            background-position-y: 30%;
+        }
     }
-  }
 
-  .profile-add {
-    margin-left: auto;
-    margin-right: auto;
-  }
+    .profile-add {
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
 
 .profile-edit-panel {
-  height: initial;
-  margin: $half-gutter;
-  .btn {
-    margin: 0 4px;
-  }
+    height: initial;
+    margin: $half-gutter;
+    .btn {
+        margin: 0 4px;
+    }
 }
 
 .profile-connector-layer {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 3;
-  pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    pointer-events: none;
 }
 
 .profile-overlay {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: $gray-lighter;
-  opacity: 0.8;
-  font-size: 2em;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: $gray-lighter;
+    opacity: 0.8;
+    font-size: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

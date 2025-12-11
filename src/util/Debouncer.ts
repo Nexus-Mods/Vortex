@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 type Callback = (err: Error) => void;
 
@@ -17,7 +17,7 @@ class Debouncer {
   private mCallbacks: Callback[] = [];
   private mAddCallbacks: Callback[] = [];
   private mRunning: boolean = false;
-  private mReschedule: 'no' | 'yes' | 'immediately' = 'no';
+  private mReschedule: "no" | "yes" | "immediately" = "no";
   private mArgs: any[] = [];
   private mResetting: boolean;
   private mTriggerImmediately: boolean;
@@ -37,10 +37,12 @@ class Debouncer {
    *                           until the timer expires. Otherwise (the default)
    *                           the initial call is delay.
    */
-  constructor(func: (...args: any[]) => Error | PromiseLike<void>,
-              debounceMS: number,
-              reset?: boolean,
-              triggerImmediately: boolean = false) {
+  constructor(
+    func: (...args: any[]) => Error | PromiseLike<void>,
+    debounceMS: number,
+    reset?: boolean,
+    triggerImmediately: boolean = false,
+  ) {
     this.mResetting = reset !== false;
     this.mFunc = func;
     this.mDebounceMS = debounceMS;
@@ -55,14 +57,14 @@ class Debouncer {
    *             parameters will be used
    */
   public schedule(callback?: (err: Error) => void, ...args: any[]) {
-    if ((callback !== undefined) && (callback !== null)) {
+    if (callback !== undefined && callback !== null) {
       this.mCallbacks.push(callback);
     }
     this.mArgs = args;
-    if (this.mTriggerImmediately && (this.mTimer === undefined)) {
+    if (this.mTriggerImmediately && this.mTimer === undefined) {
       this.run();
     } else {
-      const doReset = (this.mTimer !== undefined) && this.mResetting;
+      const doReset = this.mTimer !== undefined && this.mResetting;
       if (doReset) {
         this.clear();
       }
@@ -73,8 +75,8 @@ class Debouncer {
           this.startTimer();
         }
       } else if (this.mRunning) {
-        if (this.mReschedule !== 'immediately') {
-          this.mReschedule = 'yes';
+        if (this.mReschedule !== "immediately") {
+          this.mReschedule = "yes";
         }
       } else if (this.mTimer === undefined) {
         this.startTimer();
@@ -97,14 +99,14 @@ class Debouncer {
       this.clear();
     }
 
-    if ((callback !== undefined) && (callback !== null)) {
+    if (callback !== undefined && callback !== null) {
       this.mCallbacks.push(callback);
     }
 
     this.mArgs = args;
 
     if (this.mRunning) {
-      this.mReschedule = 'immediately';
+      this.mReschedule = "immediately";
     } else {
       this.run();
     }
@@ -123,14 +125,14 @@ class Debouncer {
    * @memberOf Debouncer
    */
   public wait(callback: (err: Error) => void, immediately: boolean = false) {
-    if ((this.mTimer === undefined) && !this.mRunning) {
+    if (this.mTimer === undefined && !this.mRunning) {
       // not scheduled
       return callback(null);
     }
 
     this.mAddCallbacks.push(callback);
 
-    if (immediately && !this.mRunning)  {
+    if (immediately && !this.mRunning) {
       this.clear();
 
       this.run();
@@ -155,20 +157,20 @@ class Debouncer {
     } catch (err) {
       prom = err;
     }
-    if (prom?.['then'] !== undefined) {
+    if (prom?.["then"] !== undefined) {
       this.mRunning = true;
-      prom['then'](() => this.invokeCallbacks(callbacks, null))
-          .catch((err: Error) => this.invokeCallbacks(callbacks, err))
-          .finally(() => {
-            this.mRunning = false;
-            if (this.mReschedule === 'immediately') {
-              this.mReschedule = 'no';
-              this.run();
-            } else if (this.mReschedule === 'yes') {
-              this.mReschedule = 'no';
-              this.reschedule();
-            }
-          });
+      prom["then"](() => this.invokeCallbacks(callbacks, null))
+        .catch((err: Error) => this.invokeCallbacks(callbacks, err))
+        .finally(() => {
+          this.mRunning = false;
+          if (this.mReschedule === "immediately") {
+            this.mReschedule = "no";
+            this.run();
+          } else if (this.mReschedule === "yes") {
+            this.mReschedule = "no";
+            this.reschedule();
+          }
+        });
     } else {
       this.invokeCallbacks(callbacks, prom as Error);
     }
@@ -181,7 +183,7 @@ class Debouncer {
   }
 
   private reschedule() {
-    if ((this.mTimer !== undefined) && this.mResetting) {
+    if (this.mTimer !== undefined && this.mResetting) {
       this.clear();
     }
 
@@ -202,7 +204,7 @@ class Debouncer {
       if (!this.mTriggerImmediately || this.mRetrigger) {
         this.mRetrigger = false;
         if (this.mRunning) {
-          this.mReschedule = 'immediately';
+          this.mReschedule = "immediately";
         } else {
           this.run();
         }

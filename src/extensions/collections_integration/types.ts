@@ -1,17 +1,17 @@
-import { IModRule } from '../../types/api';
+import { IModRule } from "../../types/api";
 
 /**
  * Status of an individual mod within a collection installation
  */
-export type CollectionModStatus = 
-  | 'pending'      // Not yet processed
-  | 'downloading'  // Currently downloading
-  | 'downloaded'   // Downloaded but not installed
-  | 'installing'   // Currently being installed
-  | 'installed'    // Successfully installed
-  | 'failed'       // Installation failed
-  | 'skipped'      // Skipped by user choice
-  | 'optional';    // Optional mod not selected
+export type CollectionModStatus =
+  | "pending" // Not yet processed
+  | "downloading" // Currently downloading
+  | "downloaded" // Downloaded but not installed
+  | "installing" // Currently being installed
+  | "installed" // Successfully installed
+  | "failed" // Installation failed
+  | "skipped" // Skipped by user choice
+  | "optional"; // Optional mod not selected
 
 /**
  * Information about a mod's installation within a collection
@@ -24,7 +24,7 @@ export interface ICollectionModInstallInfo {
   /** The installed mod reference (if installed) */
   modId?: string;
   /** Whether this is a required or optional mod */
-  type: 'requires' | 'recommends';
+  type: "requires" | "recommends";
 }
 
 /**

@@ -2,15 +2,13 @@
  * Helper functions when working with immutable state (or immutable objects in general)
  */
 
-import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 
-import Promise from 'bluebird';
-import * as Redux from 'redux';
+import Promise from "bluebird";
+import * as Redux from "redux";
 
 function clone<T>(input: T): T {
-  return Array.isArray(input)
-    ? [...input] as T
-    : { ...(input as any) };
+  return Array.isArray(input) ? ([...input] as T) : { ...(input as any) };
 }
 
 /**
@@ -24,7 +22,11 @@ function clone<T>(input: T): T {
  * @param {T} fallback
  * @returns {T}
  */
-export function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T {
+export function getSafe<T>(
+  state: any,
+  path: Array<string | number>,
+  fallback: T,
+): T {
   let current = state;
   for (let i = 0; i < path.length; i++) {
     current = current?.[path[i]];
@@ -38,14 +40,20 @@ export function getSafe<T>(state: any, path: Array<(string | number)>, fallback:
 /**
  * case insensitive variant of getSafe
  */
-export function getSafeCI<T>(state: any, path: Array<(string | number)>, fallback: T): T {
+export function getSafeCI<T>(
+  state: any,
+  path: Array<string | number>,
+  fallback: T,
+): T {
   let current = state;
   const getCaseCorrected = (obj: any, prop: string | number) => {
-    if (typeof(prop) === 'number') {
+    if (typeof prop === "number") {
       return obj[prop] !== undefined ? prop : undefined;
     }
     const keys = Object.keys(obj);
-    const idx = keys.map(key => key.toLowerCase()).indexOf(prop.toLowerCase());
+    const idx = keys
+      .map((key) => key.toLowerCase())
+      .indexOf(prop.toLowerCase());
     if (idx === -1) {
       return undefined;
     }
@@ -53,7 +61,7 @@ export function getSafeCI<T>(state: any, path: Array<(string | number)>, fallbac
   };
 
   for (const segment of path) {
-    if ((current === undefined) || (current === null)) {
+    if (current === undefined || current === null) {
       return fallback;
     }
 
@@ -66,7 +74,11 @@ export function getSafeCI<T>(state: any, path: Array<(string | number)>, fallbac
   return current;
 }
 
-export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: any) {
+export function mutateSafe<T>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+) {
   const firstElement = path[0];
   if (path.length === 1) {
     state[firstElement] = value;
@@ -88,15 +100,17 @@ export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: a
  * @param {*} value
  * @returns {T}
  */
-export function setSafe<T extends object>(state: T, path: Array<(string | number)>, value: any): T {
+export function setSafe<T extends object>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   if (path.length === 0) {
     return { ...value };
   }
   const firstElement = path[0];
-  const copy = Array.isArray(state)
-    ? state.slice()
-    : { ...(state as any) }; // "as any" is a workaround for
-                             // https://github.com/Microsoft/TypeScript/issues/13557
+  const copy = Array.isArray(state) ? state.slice() : { ...(state as any) }; // "as any" is a workaround for
+  // https://github.com/Microsoft/TypeScript/issues/13557
 
   if (path.length === 1) {
     copy[firstElement] = value;
@@ -150,7 +164,11 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  * @param {*} value
  * @returns {T}
  */
-export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: any): T {
+export function changeOrNop<T>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   const firstElement: string | number = path[0];
   let result = state;
   if (path.length === 1) {
@@ -179,7 +197,7 @@ export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: 
  * @param {string[]} path
  * @returns {T}
  */
-export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
+export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   const firstElement = path[0];
   let result: any = state;
   if (path.length === 1) {
@@ -203,27 +221,36 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
   return result;
 }
 
-export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
+export function setDefaultArray<T>(
+  state: T,
+  path: Array<string | number>,
+  fallback: any[],
+): T {
   const firstElement = path[0];
-  const copy = Array.isArray(state)
-    ? state.slice()
-    : { ...(state as any) };
+  const copy = Array.isArray(state) ? state.slice() : { ...(state as any) };
 
   if (path.length === 0) {
-    return ((copy !== undefined) && Array.isArray(copy))
-      ? copy as T
-      : fallback as T;
+    return copy !== undefined && Array.isArray(copy)
+      ? (copy as T)
+      : (fallback as T);
   } else if (path.length === 1) {
-    copy[firstElement] = (!Object.hasOwnProperty.call(copy, firstElement)
-                          || !Array.isArray(copy[firstElement]))
-      ? fallback
-      : copy[firstElement].slice();
+    copy[firstElement] =
+      !Object.hasOwnProperty.call(copy, firstElement) ||
+      !Array.isArray(copy[firstElement])
+        ? fallback
+        : copy[firstElement].slice();
   } else {
-    if (!Object.hasOwnProperty.call(copy, firstElement)
-        || (typeof(copy[firstElement]) !== 'object')) {
+    if (
+      !Object.hasOwnProperty.call(copy, firstElement) ||
+      typeof copy[firstElement] !== "object"
+    ) {
       copy[firstElement] = {};
     }
-    copy[firstElement] = setDefaultArray(copy[firstElement], path.slice(1), fallback);
+    copy[firstElement] = setDefaultArray(
+      copy[firstElement],
+      path.slice(1),
+      fallback,
+    );
   }
   return copy;
 }
@@ -235,7 +262,11 @@ export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fal
  * @param path path to the item to update
  * @param value the value to add.
  */
-export function pushSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
+export function pushSafe<T>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   const copy = setDefaultArray(state, path, []);
   getSafe(copy, path, undefined).push(value);
   return copy;
@@ -247,7 +278,11 @@ export function pushSafe<T>(state: T, path: Array<(string | number)>, value: any
  * @param path path to the item to update
  * @param value the value to add.
  */
-export function addUniqueSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
+export function addUniqueSafe<T>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   const copy = setDefaultArray(state, path, []);
   const arr = getSafe(copy, path, undefined);
   if (arr.indexOf(value) !== -1) {
@@ -267,7 +302,11 @@ export function addUniqueSafe<T>(state: T, path: Array<(string | number)>, value
  * @param {*} value
  * @returns {T}
  */
-export function removeValue<T>(state: T, path: Array<(string | number)>, value: any): T {
+export function removeValue<T>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   const copy = setDefaultArray(state, path, []);
   const list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
@@ -289,9 +328,15 @@ export function removeValue<T>(state: T, path: Array<(string | number)>, value: 
  * @returns {T}
  */
 export function removeValueIf<T extends object>(
-    state: T, path: Array<(string | number)>,
-    predicate: (element: any) => boolean): T {
-  return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
+  state: T,
+  path: Array<string | number>,
+  predicate: (element: any) => boolean,
+): T {
+  return setSafe(
+    state,
+    path,
+    getSafe(state, path, []).filter((ele) => !predicate(ele)),
+  );
 }
 
 /**
@@ -304,7 +349,11 @@ export function removeValueIf<T extends object>(
  * @param {Object} value
  * @returns {T}
  */
-export function merge<T extends object>(state: T, path: Array<(string | number)>, value: any): T {
+export function merge<T extends object>(
+  state: T,
+  path: Array<string | number>,
+  value: any,
+): T {
   const newVal = { ...getSafe(state, path, {}), ...value };
   return setSafe(state, path, newVal);
 }
@@ -315,15 +364,18 @@ export function rehydrate<T extends object>(
   path: string[],
   replace: boolean,
   defaults: any,
-  ): T {
+): T {
   const inState = getSafe(inbound, path, undefined);
 
-  return (inState !== undefined)
+  return inState !== undefined
     ? merge(replace ? defaults : state, [], inState)
     : state;
 }
 
-function waitUntil(predicate: () => boolean, interval: number = 100): Promise<void> {
+function waitUntil(
+  predicate: () => boolean,
+  interval: number = 100,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => {
       if (predicate()) {
@@ -347,32 +399,50 @@ function waitUntil(predicate: () => boolean, interval: number = 100): Promise<vo
  * @returns {Promise<IGameStored>}
  */
 export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
-  const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
-  
+  const fallback = {
+    id: "__placeholder",
+    name: "<No game>",
+    requiredFiles: [],
+  };
+
   // Helper function to get the active game ID without importing selectors
   // This inlines the logic from activeGameId selector to break circular dependency
   const getActiveGameId = (state: any): string => {
-    const profileId = getSafe(state, ['settings', 'profiles', 'activeProfileId'], undefined);
-    const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+    const profileId = getSafe(
+      state,
+      ["settings", "profiles", "activeProfileId"],
+      undefined,
+    );
+    const profile = getSafe(
+      state,
+      ["persistent", "profiles", profileId],
+      undefined,
+    );
     return profile !== undefined ? profile.gameId : undefined;
   };
-  
-  let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
-  if ((knownGames !== null) && (knownGames !== undefined)) {
+
+  let knownGames = getSafe(
+    store.getState(),
+    ["session", "gameMode", "known"],
+    null,
+  );
+  if (knownGames !== null && knownGames !== undefined) {
     const gameMode = getActiveGameId(store.getState());
     const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
     return Promise.resolve(res || fallback);
   } else {
     return waitUntil(() => {
-             knownGames =
-                 getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
-             return (knownGames !== null) && (knownGames !== undefined);
-           })
-        .then(() => {
-          const gameMode = getActiveGameId(store.getState());
+      knownGames = getSafe(
+        store.getState(),
+        ["session", "gameMode", "known"],
+        null,
+      );
+      return knownGames !== null && knownGames !== undefined;
+    }).then(() => {
+      const gameMode = getActiveGameId(store.getState());
 
-          const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
-          return Promise.resolve(res || fallback);
-        });
+      const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+      return Promise.resolve(res || fallback);
+    });
   }
 }

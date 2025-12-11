@@ -1,13 +1,13 @@
-import { IExtensionApi } from '../../types/IExtensionContext';
-import { IGame } from '../../types/IGame';
-import { ProcessCanceled } from '../../util/CustomErrors';
-import { truthy } from '../../util/util';
-import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import { IGameVersionProvider } from './types/IGameVersionProvider';
+import { IExtensionApi } from "../../types/IExtensionContext";
+import { IGame } from "../../types/IGame";
+import { ProcessCanceled } from "../../util/CustomErrors";
+import { truthy } from "../../util/util";
+import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import { IGameVersionProvider } from "./types/IGameVersionProvider";
 
-import { log } from '../../util/log';
+import { log } from "../../util/log";
 
-import { getExecGameVersion } from './util/getGameVersion';
+import { getExecGameVersion } from "./util/getGameVersion";
 
 export default class GameVersionManager {
   private mApi: IExtensionApi;
@@ -17,8 +17,10 @@ export default class GameVersionManager {
     this.mProviders = providers;
   }
 
-  public async getSupportedProvider(game: IGame,
-                                    discovery?: IDiscoveryResult): Promise<IGameVersionProvider> {
+  public async getSupportedProvider(
+    game: IGame,
+    discovery?: IDiscoveryResult,
+  ): Promise<IGameVersionProvider> {
     for (const provider of this.mProviders) {
       const isSupported = await provider.supported(game, discovery);
       if (isSupported) {
@@ -27,24 +29,35 @@ export default class GameVersionManager {
     }
   }
 
-  public async getGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
+  public async getGameVersion(
+    game: IGame,
+    discovery: IDiscoveryResult,
+  ): Promise<string> {
     if (!this.isGameValid(game, discovery)) {
-      return Promise.reject(new ProcessCanceled('Game is not discovered'));
+      return Promise.reject(new ProcessCanceled("Game is not discovered"));
     }
-    const provider: IGameVersionProvider = await this.getSupportedProvider(game, discovery);
+    const provider: IGameVersionProvider = await this.getSupportedProvider(
+      game,
+      discovery,
+    );
     try {
       const version = await provider.getGameVersion(game, discovery);
       return Promise.resolve(version);
     } catch (err) {
       // fallback
-      log('warn', 'extension getGameVersion call failed',
-          { message: err.message, stack: err.stack, extension: game.extensionPath });
+      log("warn", "extension getGameVersion call failed", {
+        message: err.message,
+        stack: err.stack,
+        extension: game.extensionPath,
+      });
       return getExecGameVersion(game, discovery);
     }
   }
 
   private isGameValid(game: IGame, discovery: IDiscoveryResult): boolean {
-    return (discovery?.path !== undefined)
-        && truthy(game?.executable?.(discovery.path));
+    return (
+      discovery?.path !== undefined &&
+      truthy(game?.executable?.(discovery.path))
+    );
   }
 }

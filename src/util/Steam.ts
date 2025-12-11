@@ -1,24 +1,29 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
-import * as fs from './fs';
-import { log } from './log';
-import { getSafeCI } from './storeHelper';
+import * as fs from "./fs";
+import { log } from "./log";
+import { getSafeCI } from "./storeHelper";
 
-import * as  fsOG from 'fs/promises';
-import * as path from 'path';
-import { parse } from 'simple-vdf';
-import * as winapi from 'winapi-bindings';
-import { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from '../types/api';
+import * as fsOG from "fs/promises";
+import * as path from "path";
+import { parse } from "simple-vdf";
+import * as winapi from "winapi-bindings";
+import {
+  ICustomExecutionInfo,
+  IExecInfo,
+  IGameStore,
+  IGameStoreEntry,
+} from "../types/api";
 
-import opn from './opn';
+import opn from "./opn";
 
-import { IExtensionApi } from '../types/IExtensionContext';
-import { GameEntryNotFound } from '../types/IGameStore';
-import getVortexPath from './getVortexPath';
+import { IExtensionApi } from "../types/IExtensionContext";
+import { GameEntryNotFound } from "../types/IGameStore";
+import getVortexPath from "./getVortexPath";
 
-const STORE_ID = 'steam';
-const STORE_NAME = 'Steam';
-const STEAM_EXEC = process.platform === 'win32' ? 'Steam.exe' : 'steam.sh';
+const STORE_ID = "steam";
+const STORE_NAME = "Steam";
+const STEAM_EXEC = process.platform === "win32" ? "Steam.exe" : "steam.sh";
 const STORE_PRIORITY = 40;
 
 export interface ISteamEntry extends IGameStoreEntry {
@@ -29,7 +34,7 @@ export interface ISteamEntry extends IGameStoreEntry {
 export class GameNotFound extends Error {
   private mSearch;
   constructor(search: string) {
-    super('Not in Steam library');
+    super("Not in Steam library");
     Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name;
@@ -52,18 +57,23 @@ class Steam implements IGameStore {
   private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
-    if (process.platform === 'win32') {
+    if (process.platform === "win32") {
       // windows
       try {
-        const steamPath =
-          winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
+        const steamPath = winapi.RegGetValue(
+          "HKEY_CURRENT_USER",
+          "Software\\Valve\\Steam",
+          "SteamPath",
+        );
         this.mBaseFolder = Promise.resolve(steamPath.value as string);
       } catch (err) {
-        log('info', 'steam not found', { error: err.message });
+        log("info", "steam not found", { error: err.message });
         this.mBaseFolder = Promise.resolve(undefined);
       }
     } else {
-      this.mBaseFolder = Promise.resolve(path.resolve(getVortexPath('home'), '.steam', 'steam'));
+      this.mBaseFolder = Promise.resolve(
+        path.resolve(getVortexPath("home"), ".steam", "steam"),
+      );
     }
   }
 
@@ -71,10 +81,10 @@ class Steam implements IGameStore {
    * find the first game that matches the specified name pattern
    */
   public findByName(namePattern: string): Promise<ISteamEntry> {
-    const re = new RegExp('^' + namePattern + '$');
+    const re = new RegExp("^" + namePattern + "$");
     return this.allGames()
-      .then(entries => entries.find(entry => re.test(entry.name)))
-      .then(entry => {
+      .then((entries) => entries.find((entry) => re.test(entry.name)))
+      .then((entry) => {
         if (entry === undefined) {
           return Promise.reject(new GameEntryNotFound(namePattern, STORE_ID));
         } else {
@@ -90,19 +100,22 @@ class Steam implements IGameStore {
     //      is used by the gameinfo-steam extension as well).
     //  - The steam Id in string form.
     //  - The directory path which contains the game's executable.
-    if (this.isCustomExecObject(appInfo) && (appInfo.launchType === 'gamestore')) {
-      return this.getPosixPath(appInfo)
-        .then(posix => opn(posix).catch(err => Promise.resolve()));
+    if (
+      this.isCustomExecObject(appInfo) &&
+      appInfo.launchType === "gamestore"
+    ) {
+      return this.getPosixPath(appInfo).then((posix) =>
+        opn(posix).catch((err) => Promise.resolve()),
+      );
     }
-    const info = (!!appInfo.steamAppId)
-      ? appInfo.steamAppId.toString() : appInfo;
-    return this.getExecInfo(info)
-      .then(execInfo =>
-        api.runExecutable(execInfo.execPath, execInfo.arguments, {
-          cwd: path.dirname(execInfo.execPath),
-          suggestDeploy: true,
-          shell: true,
-      }));
+    const info = !!appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
+    return this.getExecInfo(info).then((execInfo) =>
+      api.runExecutable(execInfo.execPath, execInfo.arguments, {
+        cwd: path.dirname(execInfo.execPath),
+        suggestDeploy: true,
+        shell: true,
+      }),
+    );
   }
 
   public getPosixPath(appInfo: any) {
@@ -124,26 +137,27 @@ class Steam implements IGameStore {
       appId = appInfo.toString();
     }
 
-    const isDirPath = (appId.indexOf(path.sep) !== -1);
-    return this.allGames()
-      .then(entries => {
-        const found = entries.find(entry => (!isDirPath)
-          ? (entry.appid === appId)
-          // Checking by gamepath is inefficient but I can't think of a different
-          //  way to ascertain whether the launcher has this game entry with the
-          //  provided information...
-          : (appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1));
-        if (found === undefined) {
-          return Promise.reject(new GameEntryNotFound(appId, STORE_ID));
-        }
-        return this.mBaseFolder.then((basePath) => {
-          const steamExec = {
-            execPath: path.join(basePath, STEAM_EXEC),
-            arguments: ['-applaunch', appId, ...parameters],
-          };
-          return Promise.resolve(steamExec);
-        });
+    const isDirPath = appId.indexOf(path.sep) !== -1;
+    return this.allGames().then((entries) => {
+      const found = entries.find((entry) =>
+        !isDirPath
+          ? entry.appid === appId
+          : // Checking by gamepath is inefficient but I can't think of a different
+            //  way to ascertain whether the launcher has this game entry with the
+            //  provided information...
+            appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1,
+      );
+      if (found === undefined) {
+        return Promise.reject(new GameEntryNotFound(appId, STORE_ID));
+      }
+      return this.mBaseFolder.then((basePath) => {
+        const steamExec = {
+          execPath: path.join(basePath, STEAM_EXEC),
+          arguments: ["-applaunch", appId, ...parameters],
+        };
+        return Promise.resolve(steamExec);
       });
+    });
   }
 
   /**
@@ -153,18 +167,22 @@ class Steam implements IGameStore {
     // support searching for one app id or one out of a list (when there are multiple
     // variants of a game)
     const matcher = Array.isArray(appId)
-      ? entry => appId.indexOf(entry.appid) !== -1
-      : entry => entry.appid === appId;
+      ? (entry) => appId.indexOf(entry.appid) !== -1
+      : (entry) => entry.appid === appId;
 
-    return this.allGames()
-      .then(entries => {
-        const entry = entries.find(matcher);
-        if (entry === undefined) {
-          return Promise.reject(new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID));
-        } else {
-          return Promise.resolve(entry);
-        }
-      });
+    return this.allGames().then((entries) => {
+      const entry = entries.find(matcher);
+      if (entry === undefined) {
+        return Promise.reject(
+          new GameEntryNotFound(
+            Array.isArray(appId) ? appId.join(", ") : appId,
+            STORE_ID,
+          ),
+        );
+      } else {
+        return Promise.resolve(entry);
+      }
+    });
   }
 
   public allGames(): Promise<ISteamEntry[]> {
@@ -175,7 +193,7 @@ class Steam implements IGameStore {
   }
 
   public getGameStorePath(): Promise<string> {
-    return this.mBaseFolder.then(baseFolder => {
+    return this.mBaseFolder.then((baseFolder) => {
       if (baseFolder === undefined) {
         return Promise.resolve(undefined);
       }
@@ -190,33 +208,33 @@ class Steam implements IGameStore {
     });
   }
 
-  public identifyGame(gamePath: string,
-                      fallback: (gamePath: string) => PromiseLike<boolean>)
-                      : Promise<boolean> {
-    const custom = gamePath.toLowerCase().split(path.sep).includes('steamapps');
+  public identifyGame(
+    gamePath: string,
+    fallback: (gamePath: string) => PromiseLike<boolean>,
+  ): Promise<boolean> {
+    const custom = gamePath.toLowerCase().split(path.sep).includes("steamapps");
 
-    return Promise.resolve(fallback(gamePath))
-      .then((fbResult: boolean) => {
-        if (fbResult !== custom) {
-          log('warn', '(steam) game identification inconclusive', {
-            gamePath,
-            custom,
-            fallback,
-          });
-        }
-        return custom || fbResult;
-      });
+    return Promise.resolve(fallback(gamePath)).then((fbResult: boolean) => {
+      if (fbResult !== custom) {
+        log("warn", "(steam) game identification inconclusive", {
+          gamePath,
+          custom,
+          fallback,
+        });
+      }
+      return custom || fbResult;
+    });
   }
 
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
-    if (typeof(object) !== 'object') {
+    if (typeof object !== "object") {
       return false;
     }
-    return ('appId' in object);
+    return "appId" in object;
   }
 
   private resolveSteamPaths(): Promise<string[]> {
-    log('debug', 'resolving Steam game paths');
+    log("debug", "resolving Steam game paths");
     return this.mBaseFolder.then((basePath: string) => {
       if (basePath === undefined) {
         // Steam not found/installed
@@ -224,7 +242,8 @@ class Steam implements IGameStore {
       }
 
       const steamPaths: string[] = [basePath];
-      return fs.readFileAsync(path.resolve(basePath, 'config', 'libraryfolders.vdf'))
+      return fs
+        .readFileAsync(path.resolve(basePath, "config", "libraryfolders.vdf"))
         .then((data: Buffer) => {
           if (data === undefined) {
             return Promise.resolve(steamPaths);
@@ -233,29 +252,29 @@ class Steam implements IGameStore {
           try {
             parsedObj = parse(data.toString());
           } catch (err) {
-            log('warn', 'unable to parse steamfolders.vdf', err);
+            log("warn", "unable to parse steamfolders.vdf", err);
             return Promise.resolve(steamPaths);
           }
-          const libObj: any = getSafeCI(parsedObj, ['libraryfolders'], {});
-          let counter = libObj.hasOwnProperty('0') ? 0 : 1;
+          const libObj: any = getSafeCI(parsedObj, ["libraryfolders"], {});
+          let counter = libObj.hasOwnProperty("0") ? 0 : 1;
           while (libObj.hasOwnProperty(`${counter}`)) {
-            const libPath = libObj[`${counter}`]['path'];
+            const libPath = libObj[`${counter}`]["path"];
             if (libPath && !steamPaths.includes(libPath)) {
-              steamPaths.push(libObj[`${counter}`]['path']);
+              steamPaths.push(libObj[`${counter}`]["path"]);
             }
             ++counter;
           }
-          log('debug', 'found steam install folders', { steamPaths });
+          log("debug", "found steam install folders", { steamPaths });
           return Promise.resolve(steamPaths);
         })
-        .catch(err => {
+        .catch((err) => {
           // A Steam update has changed the way we resolve the steam library paths
           //  (we used to get these from config.vdf) the libraryfolders.vdf file
           //  appears to at times hold a reference to _all_ library folders; other times
           //  it only holds the path to the alternate steam libraries (the ones that aren't
           //  part of the base Steam installation folder)
-          log('warn', 'failed to read steam library folders file', err);
-          return ['EPERM', 'ENOENT'].includes(err.code)
+          log("warn", "failed to read steam library folders file", err);
+          return ["EPERM", "ENOENT"].includes(err.code)
             ? Promise.resolve(steamPaths)
             : Promise.reject(err);
         });
@@ -263,77 +282,104 @@ class Steam implements IGameStore {
   }
 
   private parseManifests(): Promise<ISteamEntry[]> {
-    return this.resolveSteamPaths()
-      .then((steamPaths: string[]) => Promise.mapSeries(steamPaths, steamPath => {
-        log('debug', 'reading steam install folder', { steamPath });
-        const steamAppsPath = path.join(steamPath, 'steamapps');
+    return this.resolveSteamPaths().then((steamPaths: string[]) =>
+      Promise.mapSeries(steamPaths, (steamPath) => {
+        log("debug", "reading steam install folder", { steamPath });
+        const steamAppsPath = path.join(steamPath, "steamapps");
         return Promise.resolve(fsOG.readdir(steamAppsPath))
-          .then(names => {
-            const filtered = names.filter(name =>
-              name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
-            log('debug', 'got steam manifests', { manifests: filtered });
+          .then((names) => {
+            const filtered = names.filter(
+              (name) =>
+                name.startsWith("appmanifest_") &&
+                path.extname(name) === ".acf",
+            );
+            log("debug", "got steam manifests", { manifests: filtered });
             return Promise.map(filtered, (name: string) =>
-              fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
-                manifestData, name,
-              })));
+              fs
+                .readFileAsync(path.join(steamAppsPath, name))
+                .then((manifestData) => ({
+                  manifestData,
+                  name,
+                })),
+            );
           })
-          .then(appsData => {
+          .then((appsData) => {
             return appsData
-              .map(appData => {
+              .map((appData) => {
                 const { name, manifestData } = appData;
                 try {
                   return { obj: parse(manifestData.toString()), name };
                 } catch (err) {
-                  log('warn', 'failed to parse steam manifest',
-                    { name, error: err.message });
+                  log("warn", "failed to parse steam manifest", {
+                    name,
+                    error: err.message,
+                  });
                   return undefined;
                 }
               })
-              .map(res => {
+              .map((res) => {
                 if (res === undefined) {
                   return undefined;
                 }
                 const { obj, name } = res;
-                if ((obj === undefined)
-                  || (obj['AppState'] === undefined)
-                  || (obj['AppState']['installdir'] === undefined)) {
-                  log('debug', 'invalid appmanifest', name);
+                if (
+                  obj === undefined ||
+                  obj["AppState"] === undefined ||
+                  obj["AppState"]["installdir"] === undefined
+                ) {
+                  log("debug", "invalid appmanifest", name);
                   return undefined;
                 }
                 try {
                   return {
-                    appid: obj['AppState']['appid'],
+                    appid: obj["AppState"]["appid"],
                     gameStoreId: STORE_ID,
-                    name: obj['AppState']['name'],
-                    gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
-                    lastUser: obj['AppState']['LastOwner'],
-                    lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                    name: obj["AppState"]["name"],
+                    gamePath: path.join(
+                      steamAppsPath,
+                      "common",
+                      obj["AppState"]["installdir"],
+                    ),
+                    lastUser: obj["AppState"]["LastOwner"],
+                    lastUpdated: new Date(
+                      obj["AppState"]["LastUpdated"] * 1000,
+                    ),
                     manifestData: obj,
                   };
                 } catch (err) {
-                  log('warn', 'failed to parse steam manifest',
-                    { name, error: err.message });
+                  log("warn", "failed to parse steam manifest", {
+                    name,
+                    error: err.message,
+                  });
                   return undefined;
                 }
               })
-              .filter(obj => obj !== undefined);
+              .filter((obj) => obj !== undefined);
           })
-          .catch({ code: 'ENOENT' }, (err: any) => {
+          .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
             // which is currently removed
-            log('info', 'Steam library not found', { error: err.message });
+            log("info", "Steam library not found", { error: err.message });
             return undefined;
           })
-          .catch(err => {
-            log('warn', 'Failed to read steam library', { path: steamPath, error: err.message });
+          .catch((err) => {
+            log("warn", "Failed to read steam library", {
+              path: steamPath,
+              error: err.message,
+            });
           });
       })
         .then((games: ISteamEntry[][]) =>
-          games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-            current !== undefined ? prev.concat(current) : prev, []))
+          games.reduce(
+            (prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
+              current !== undefined ? prev.concat(current) : prev,
+            [],
+          ),
+        )
         .tap(() => {
-          log('info', 'done reading steam libraries');
-        }));
+          log("info", "done reading steam libraries");
+        }),
+    );
   }
 }
 

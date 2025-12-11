@@ -1,4 +1,4 @@
-const NULL_KEY = 'e210e05b-5b22-47ee-96d7-cfd10ae18ef9';
+const NULL_KEY = "e210e05b-5b22-47ee-96d7-cfd10ae18ef9";
 
 export class RelaxedReselectCache {
   private mCache: Map<string, any>;

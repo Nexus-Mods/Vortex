@@ -1,4 +1,4 @@
-import { sum } from '../../util/util';
+import { sum } from "../../util/util";
 
 interface ISpeedEntry {
   lastMeasure: number;
@@ -12,7 +12,7 @@ interface ISpeedEntry {
  * @class SpeedCalculator
  */
 class SpeedCalculator {
-  private mCounters: { [ id: number ]: ISpeedEntry } = {};
+  private mCounters: { [id: number]: ISpeedEntry } = {};
   private mTimeSlices: number[] = [];
   private mHorizon: number;
   private mMeasureTime: number;
@@ -23,7 +23,8 @@ class SpeedCalculator {
     this.mMeasureTime = this.now();
     setInterval(() => {
       this.moveHorizon();
-      const totalRate = sum(this.mTimeSlices.slice(0, this.mHorizon - 1)) / (this.mHorizon - 1);
+      const totalRate =
+        sum(this.mTimeSlices.slice(0, this.mHorizon - 1)) / (this.mHorizon - 1);
       this.mTargetRate = this.mTargetRate * 0.99 + totalRate * 0.01;
       speedCB(totalRate);
     }, 1000);
@@ -54,11 +55,15 @@ class SpeedCalculator {
       this.mCounters[id].timeSlices[i] += perSec;
     }
     let starvation;
-    if ((secondsPassed > 0)
-        && (this.mCounters[id].timeSlices.length === this.mHorizon)) {
+    if (
+      secondsPassed > 0 &&
+      this.mCounters[id].timeSlices.length === this.mHorizon
+    ) {
       const rate =
-        sum(this.mCounters[id].timeSlices.slice(0, this.mHorizon - 1)) / (this.mHorizon - 1);
-      starvation = rate < ((this.mTargetRate / Object.keys(this.mCounters).length) / 5);
+        sum(this.mCounters[id].timeSlices.slice(0, this.mHorizon - 1)) /
+        (this.mHorizon - 1);
+      starvation =
+        rate < this.mTargetRate / Object.keys(this.mCounters).length / 5;
     }
 
     this.mCounters[id].lastMeasure = now;
@@ -81,9 +86,9 @@ class SpeedCalculator {
     if (this.mTimeSlices.length > 0) {
       for (let i = 0; i < time - this.mMeasureTime; ++i) {
         this.mTimeSlices.shift();
-        Object.keys(this.mCounters)
-            .forEach(
-                counterId => { this.mCounters[counterId].timeSlices.shift(); });
+        Object.keys(this.mCounters).forEach((counterId) => {
+          this.mCounters[counterId].timeSlices.shift();
+        });
       }
     }
     this.mMeasureTime = time;

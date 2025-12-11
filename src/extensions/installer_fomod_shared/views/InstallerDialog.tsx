@@ -1,29 +1,39 @@
-import FlexLayout from '../../../renderer/controls/FlexLayout';
-import Modal from '../../../renderer/controls/Modal';
-import Spinner from '../../../renderer/controls/Spinner';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import ZoomableImage from '../../../renderer/controls/ZoomableImage';
-import { IState } from '../../../types/api';
-import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
-import { pushSafe, removeValue } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
+import FlexLayout from "../../../renderer/controls/FlexLayout";
+import Modal from "../../../renderer/controls/Modal";
+import Spinner from "../../../renderer/controls/Spinner";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import ZoomableImage from "../../../renderer/controls/ZoomableImage";
+import { IState } from "../../../types/api";
+import { connect, PureComponentEx, translate } from "../../../util/ComponentEx";
+import { pushSafe, removeValue } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
 
 import {
-  GroupType, IGroup, IInstallerInfo, IInstallerState, IInstallStep,
-  IPlugin, OrderType,
-} from '../types/interface';
+  GroupType,
+  IGroup,
+  IInstallerInfo,
+  IInstallerState,
+  IInstallStep,
+  IPlugin,
+  OrderType,
+} from "../types/interface";
 
-import { TFunction } from 'i18next';
-import update from 'immutability-helper';
-import * as _ from 'lodash';
-import * as React from 'react';
+import { TFunction } from "i18next";
+import update from "immutability-helper";
+import * as _ from "lodash";
+import * as React from "react";
 import {
-  Button, Checkbox, ControlLabel, Form, FormGroup,
-  ProgressBar, Radio,
-} from 'react-bootstrap';
-import { pathToFileURL } from 'url';
-import { hasSessionFOMOD } from '../utils/guards';
-import path from 'path';
+  Button,
+  Checkbox,
+  ControlLabel,
+  Form,
+  FormGroup,
+  ProgressBar,
+  Radio,
+} from "react-bootstrap";
+import { pathToFileURL } from "url";
+import { hasSessionFOMOD } from "../utils/guards";
+import path from "path";
 
 interface IGroupProps {
   t: TFunction;
@@ -31,7 +41,10 @@ interface IGroupProps {
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (image: string | undefined, description: string | undefined) => void;
+  onShowDescription: (
+    image: string | undefined,
+    description: string | undefined,
+  ) => void;
 }
 
 interface IGroupState {
@@ -47,7 +60,9 @@ interface IGroupState {
 const nop = () => undefined;
 
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
-  private mValidate: ((selected: number[]) => string | undefined) = (selected: number[]) => undefined;
+  private mValidate: (selected: number[]) => string | undefined = (
+    selected: number[],
+  ) => undefined;
   constructor(props: IGroupProps) {
     super(props);
     this.state = {
@@ -59,13 +74,16 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
-    const {group, onSelect} = this.props;
-    const {confirmedUpdate, localUpdate, sentUpdate, selectedPlugins} = this.state;
+    const { group, onSelect } = this.props;
+    const { confirmedUpdate, localUpdate, sentUpdate, selectedPlugins } =
+      this.state;
     const valid = this.validateFunc(group.type)(selectedPlugins);
-    if ((selectedPlugins !== oldState.selectedPlugins)
-        && (localUpdate > sentUpdate)
-        // if the confirmation is still pending, don't send now
-        && (confirmedUpdate >= sentUpdate)) {
+    if (
+      selectedPlugins !== oldState.selectedPlugins &&
+      localUpdate > sentUpdate &&
+      // if the confirmation is still pending, don't send now
+      confirmedUpdate >= sentUpdate
+    ) {
       onSelect(group.id, selectedPlugins, valid === undefined);
       this.setState(update(this.state, { sentUpdate: { $set: Date.now() } }));
     }
@@ -75,10 +93,12 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       // unavailable. However, for usability reasons, we don't undo user selections if the user
       // has made further changes since last sending an update
       if (this.state.sentUpdate >= this.state.localUpdate) {
-        this.setState(update(this.state, {
-          selectedPlugins: { $set: this.getSelectedPlugins(this.props) },
-          confirmedUpdate: { $set: Date.now() },
-        }));
+        this.setState(
+          update(this.state, {
+            selectedPlugins: { $set: this.getSelectedPlugins(this.props) },
+            confirmedUpdate: { $set: Date.now() },
+          }),
+        );
       } else if (this.state.localUpdate > this.state.sentUpdate) {
         // while confirmation was pending, the user made further changes, validate them now
         const { group, onSelect } = this.props;
@@ -101,17 +121,16 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   public render(): JSX.Element {
-    const {t, disabled, group} = this.props;
-    const {selectedPlugins} = this.state;
+    const { t, disabled, group } = this.props;
+    const { selectedPlugins } = this.state;
 
     const validationMessage = this.mValidate(selectedPlugins);
-    const validationState = validationMessage === undefined ? null : 'error';
+    const validationState = validationMessage === undefined ? null : "error";
 
     return (
       <FormGroup disabled={disabled} validationState={validationState}>
         <ControlLabel>
-          {group?.name ?? `<${t('Missing group name')}>`}
-          {' '}
+          {group?.name ?? `<${t("Missing group name")}>`}{" "}
           {validationMessage ? `(${validationMessage})` : null}
         </ControlLabel>
         {this.renderNoneOption()}
@@ -122,28 +141,34 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
   private getSelectedPlugins(props: IGroupProps) {
     return props.group.options
-      .filter(plugin => plugin.selected)
-      .map(plugin => plugin.id);
+      .filter((plugin) => plugin.selected)
+      .map((plugin) => plugin.id);
   }
 
-  private validateFunc(type: GroupType): (selected: number[]) => string | undefined {
+  private validateFunc(
+    type: GroupType,
+  ): (selected: number[]) => string | undefined {
     const { t } = this.props;
     switch (type) {
-      case 'SelectAtLeastOne': return (selected: number[]) => (selected.length === 0)
-        ? t('Select at least one') : undefined;
-      case 'SelectAtMostOne': return (selected: number[]) => (selected.length > 1)
-        ? t('Select at most one') : undefined;
-      case 'SelectExactlyOne': return (selected: number[]) => (selected.length !== 1)
-        ? t('Select exactly one') : undefined;
-      default: return () => undefined;
+      case "SelectAtLeastOne":
+        return (selected: number[]) =>
+          selected.length === 0 ? t("Select at least one") : undefined;
+      case "SelectAtMostOne":
+        return (selected: number[]) =>
+          selected.length > 1 ? t("Select at most one") : undefined;
+      case "SelectExactlyOne":
+        return (selected: number[]) =>
+          selected.length !== 1 ? t("Select exactly one") : undefined;
+      default:
+        return () => undefined;
     }
   }
 
   private renderNoneOption = (): JSX.Element | null => {
-    const {t, disabled, group, stepId} = this.props;
-    const {selectedPlugins} = this.state;
+    const { t, disabled, group, stepId } = this.props;
+    const { selectedPlugins } = this.state;
 
-    if (group.type !== 'SelectAtMostOne') {
+    if (group.type !== "SelectAtMostOne") {
       return null;
     }
 
@@ -151,56 +176,57 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     return (
       <Radio
         id={`radio-${stepId}-${group.id}-none`}
-        key='none'
+        key="none"
         disabled={disabled}
         name={group.id.toString()}
-        data-value='none'
+        data-value="none"
         checked={isSelected}
         onChange={this.select}
-      >{t('None')}
+      >
+        {t("None")}
       </Radio>
     );
-  }
+  };
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
-    const {t, disabled, group, stepId} = this.props;
-    const {selectedPlugins} = this.state;
+    const { t, disabled, group, stepId } = this.props;
+    const { selectedPlugins } = this.state;
 
     const isSelected = selectedPlugins.includes(plugin.id);
     const id = `${stepId}-${group.id}-${plugin.id}`;
-    const readOnly = plugin.type === 'Required';
+    const readOnly = plugin.type === "Required";
 
     const content = (
       <a
-        className='fake-link'
+        className="fake-link"
         data-value={plugin.id}
         onMouseOver={this.showDescription}
       >
         {plugin.name}
-        {plugin.preset ? ` (${t('Preset')})` : ''}
+        {plugin.preset ? ` (${t("Preset")})` : ""}
       </a>
     );
     switch (group.type) {
-      case 'SelectExactlyOne':
-      case 'SelectAtMostOne':
+      case "SelectExactlyOne":
+      case "SelectAtMostOne":
         return (
           <Radio
-            id={'radio-' + id}
+            id={"radio-" + id}
             key={plugin.id}
             data-value={plugin.id}
             name={group.id.toString()}
             checked={isSelected}
             onChange={readOnly ? nop : this.select}
-            disabled={disabled || (plugin.type === 'NotUsable')}
+            disabled={disabled || plugin.type === "NotUsable"}
             title={plugin.conditionMsg}
           >
             {content}
           </Radio>
         );
-      case 'SelectAll':
+      case "SelectAll":
         return (
           <Checkbox
-            id={'checkbox-' + id}
+            id={"checkbox-" + id}
             key={plugin.id}
             checked={isSelected}
             data-value={plugin.id}
@@ -212,11 +238,11 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       default:
         return (
           <Checkbox
-            id={'checkbox-' + id}
+            id={"checkbox-" + id}
             key={plugin.id}
             data-value={plugin.id}
             checked={isSelected}
-            disabled={disabled || (plugin.type === 'NotUsable')}
+            disabled={disabled || plugin.type === "NotUsable"}
             onChange={readOnly ? nop : this.select}
             title={plugin.conditionMsg}
           >
@@ -224,26 +250,28 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           </Checkbox>
         );
     }
-  }
+  };
 
   private showDescription = (evt: React.FormEvent<any>) => {
-    const {group, onShowDescription} = this.props;
+    const { group, onShowDescription } = this.props;
 
-    const pluginId = parseInt(evt.currentTarget.getAttribute('data-value'), 10);
-    const {image, description} = group.options[pluginId];
+    const pluginId = parseInt(evt.currentTarget.getAttribute("data-value"), 10);
+    const { image, description } = group.options[pluginId];
 
     onShowDescription(image, description);
-  }
+  };
 
   private select = (evt: React.FormEvent<any>) => {
-    const {group, onShowDescription} = this.props;
+    const { group, onShowDescription } = this.props;
 
-    const value = evt.currentTarget.getAttribute('data-value');
-    if (value === 'none') {
-      this.setState(update(this.state, {
-        selectedPlugins: { $set: [] },
-        localUpdate: { $set: Date.now() },
-      }));
+    const value = evt.currentTarget.getAttribute("data-value");
+    if (value === "none") {
+      this.setState(
+        update(this.state, {
+          selectedPlugins: { $set: [] },
+          localUpdate: { $set: Date.now() },
+        }),
+      );
       onShowDescription(undefined, undefined);
       return;
     }
@@ -252,27 +280,41 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
     this.showDescription(evt);
 
-    if (['SelectExactlyOne', 'SelectAtMostOne'].indexOf(group.type) !== -1) {
-      this.setState(update(this.state, {
-        selectedPlugins: { $set: [pluginId] },
-        localUpdate: { $set: Date.now() },
-      }));
+    if (["SelectExactlyOne", "SelectAtMostOne"].indexOf(group.type) !== -1) {
+      this.setState(
+        update(this.state, {
+          selectedPlugins: { $set: [pluginId] },
+          localUpdate: { $set: Date.now() },
+        }),
+      );
     } else if (this.state.selectedPlugins.indexOf(pluginId) === -1) {
-      this.setState(update(this.state, {
-        selectedPlugins: { $set: Array<number>().concat(this.state.selectedPlugins, [pluginId]) },
-        localUpdate: { $set: Date.now() },
-      }));
+      this.setState(
+        update(this.state, {
+          selectedPlugins: {
+            $set: Array<number>().concat(this.state.selectedPlugins, [
+              pluginId,
+            ]),
+          },
+          localUpdate: { $set: Date.now() },
+        }),
+      );
     } else {
-      this.setState(update(this.state, {
-        selectedPlugins: { $set: this.state.selectedPlugins.filter(iter => iter !== pluginId) },
-        localUpdate: { $set: Date.now() },
-      }));
+      this.setState(
+        update(this.state, {
+          selectedPlugins: {
+            $set: this.state.selectedPlugins.filter(
+              (iter) => iter !== pluginId,
+            ),
+          },
+          localUpdate: { $set: Date.now() },
+        }),
+      );
     }
-  }
+  };
 }
 
 function getGroupSortFunc(order: OrderType) {
-  if (order === 'AlphaDesc') {
+  if (order === "AlphaDesc") {
     return (lhs: IGroup, rhs: IGroup) => rhs.name.localeCompare(lhs.name);
   } else {
     return (lhs: IGroup, rhs: IGroup) => lhs.name.localeCompare(rhs.name);
@@ -283,7 +325,10 @@ interface IStepProps {
   t: TFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
-  onShowDescription: (image: string | undefined, description: string | undefined) => void;
+  onShowDescription: (
+    image: string | undefined,
+    description: string | undefined,
+  ) => void;
   disabled: boolean;
 }
 
@@ -292,7 +337,7 @@ function Step(props: IStepProps) {
   if (props.step.optionalFileGroups?.group === undefined) {
     return null;
   }
-  if (props.step.optionalFileGroups.order === 'Explicit') {
+  if (props.step.optionalFileGroups.order === "Explicit") {
     groupsSorted = props.step.optionalFileGroups.group;
   } else {
     const sortFunc = getGroupSortFunc(props.step.optionalFileGroups.order);
@@ -300,7 +345,7 @@ function Step(props: IStepProps) {
   }
 
   return (
-    <Form disabled={props.disabled} id='fomod-installer-form'>
+    <Form disabled={props.disabled} id="fomod-installer-form">
       {groupsSorted.map((group: IGroup) => (
         <Group
           t={props.t}
@@ -340,12 +385,15 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   public componentDidUpdate(prevProps: IProps) {
     if (
       // when initiating the dialog
-      ((prevProps.installerState === undefined) && (this.props.installerState !== undefined))
+      (prevProps.installerState === undefined &&
+        this.props.installerState !== undefined) ||
       // and any time we change to a different page (forward or backwards)
-      || ((prevProps.installerState !== undefined)
-          && (this.props.installerState !== undefined)
-          && ((prevProps.installerInfo !== this.props.installerInfo)
-            || (prevProps.installerState.currentStep !== this.props.installerState.currentStep)))) {
+      (prevProps.installerState !== undefined &&
+        this.props.installerState !== undefined &&
+        (prevProps.installerInfo !== this.props.installerInfo ||
+          prevProps.installerState.currentStep !==
+            this.props.installerState.currentStep))
+    ) {
       // fully update the description
       this.setState(this.initDescription(this.props));
     }
@@ -360,40 +408,40 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     }
 
     // Use default values if installerInfo is missing
-    const moduleName = installerInfo?.moduleName || 'FOMOD Installer';
+    const moduleName = installerInfo?.moduleName || "FOMOD Installer";
     const hasImage = installerInfo?.image?.path;
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
-    const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
+    const nextVisible = steps.find(
+      (step: IInstallStep, i: number) => i > idx && step.visible,
+    );
     let lastVisible: IInstallStep | undefined;
     steps.forEach((step: IInstallStep, i: number) => {
-      if ((i < idx) && step.visible) {
+      if (i < idx && step.visible) {
         lastVisible = step;
       }
     });
     const nextDisabled = this.state.invalidGroups.length > 0;
     return (
       <Modal
-        id='fomod-installer-dialog'
+        id="fomod-installer-dialog"
         show={activeInstanceId != null}
         onHide={this.cancel}
       >
         <Modal.Header>
-          <Modal.Title>
-            {moduleName}
-          </Modal.Title>
+          <Modal.Title>{moduleName}</Modal.Title>
           {steps[idx].name}
           <IconButton
-            id='fomod-cancel'
-            className='close-button'
-            tooltip={t!('Cancel')}
-            icon='close'
+            id="fomod-cancel"
+            className="close-button"
+            tooltip={t!("Cancel")}
+            icon="close"
             onClick={this.cancel}
           />
         </Modal.Header>
         <Modal.Body>
-          <FlexLayout type='row' style={{ position: 'relative' }}>
-            <FlexLayout.Flex fill style={{ overflowY: 'auto' }}>
+          <FlexLayout type="row" style={{ position: "relative" }}>
+            <FlexLayout.Flex fill style={{ overflowY: "auto" }}>
               <Step
                 t={t!}
                 step={steps[idx]}
@@ -402,43 +450,43 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                 disabled={waiting}
               />
             </FlexLayout.Flex>
-            <FlexLayout.Fixed style={{ maxWidth: '60%', minWidth: '40%', overflowY: 'auto' }}>
-              <FlexLayout type='column'>
-                <FlexLayout.Flex>
-                  {this.renderImage()}
-                </FlexLayout.Flex>
-                <FlexLayout.Flex fill className='description'>
-                  <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
+            <FlexLayout.Fixed
+              style={{ maxWidth: "60%", minWidth: "40%", overflowY: "auto" }}
+            >
+              <FlexLayout type="column">
+                <FlexLayout.Flex>{this.renderImage()}</FlexLayout.Flex>
+                <FlexLayout.Flex fill className="description">
+                  <ControlLabel readOnly={true}>
+                    {currentDescription}
+                  </ControlLabel>
                 </FlexLayout.Flex>
               </FlexLayout>
             </FlexLayout.Fixed>
           </FlexLayout>
         </Modal.Body>
         <Modal.Footer>
-          <div className='fomod-nav-buttons'>
-            <div>{
-              lastVisible !== undefined
-                ? (
-                  <Button onClick={this.prev} disabled={waiting}>
-                    {waiting ? <Spinner /> : lastVisible.name || t!('Previous')}
-                  </Button>
-                ) : null
-            }</div>
-            <div className='fomod-progress'>
+          <div className="fomod-nav-buttons">
+            <div>
+              {lastVisible !== undefined ? (
+                <Button onClick={this.prev} disabled={waiting}>
+                  {waiting ? <Spinner /> : lastVisible.name || t!("Previous")}
+                </Button>
+              ) : null}
+            </div>
+            <div className="fomod-progress">
               <ProgressBar now={idx} max={steps.length - 1} />
             </div>
-            <div>{
-              nextVisible !== undefined
-                ? (
-                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
-                    {waiting ? <Spinner /> : (nextVisible.name || t!('Next'))}
-                  </Button>
-                ) : (
-                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
-                    {t!('Finish')}
-                  </Button>
-                )
-            }</div>
+            <div>
+              {nextVisible !== undefined ? (
+                <Button disabled={nextDisabled || waiting} onClick={this.next}>
+                  {waiting ? <Spinner /> : nextVisible.name || t!("Next")}
+                </Button>
+              ) : (
+                <Button disabled={nextDisabled || waiting} onClick={this.next}>
+                  {t!("Finish")}
+                </Button>
+              )}
+            </div>
           </div>
         </Modal.Footer>
       </Modal>
@@ -451,13 +499,17 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
     let newState = this.state;
     newState = valid
-      ? removeValue(newState, ['invalidGroups'], groupId)
-      : pushSafe(newState, ['invalidGroups'], groupId);
+      ? removeValue(newState, ["invalidGroups"], groupId)
+      : pushSafe(newState, ["invalidGroups"], groupId);
 
-    events.emit(`fomod-installer-select-${activeInstanceId}`,
-      installerState.installSteps[installerState.currentStep].id, groupId, plugins);
+    events.emit(
+      `fomod-installer-select-${activeInstanceId}`,
+      installerState.installSteps[installerState.currentStep].id,
+      groupId,
+      plugins,
+    );
     this.setState(newState);
-  }
+  };
 
   private renderImage = () => {
     const { installerInfo } = this.props;
@@ -472,15 +524,15 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     return (
       <ZoomableImage
         url={pathToFileURL(path.join(installerInfo.dataPath, image)).href}
-        className='installer-image'
-        overlayClass='installer-zoom'
+        className="installer-image"
+        overlayClass="installer-zoom"
         container={undefined}
       />
     );
-  }
+  };
 
   private initDescription(props: IProps): IDialogState {
-    const ret = (option: IPlugin | undefined) : IDialogState => ({
+    const ret = (option: IPlugin | undefined): IDialogState => ({
       invalidGroups: [],
       currentImage: option?.image,
       currentDescription: option?.description,
@@ -492,45 +544,65 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     }
     const { currentStep, installSteps } = props.installerState;
 
-    const selOption = (installSteps[currentStep]?.optionalFileGroups?.group?.[0]?.options ?? [])
-      .find(opt => opt.selected);
+    const selOption = (
+      installSteps[currentStep]?.optionalFileGroups?.group?.[0]?.options ?? []
+    ).find((opt) => opt.selected);
     return ret(selOption || undefined);
   }
 
-  private showDescription = (image: string | undefined, description: string | undefined) => {
-    this.setState(update(this.state, {
-      currentDescription: { $set: description || '' },
-      currentImage: { $set: image || '' },
-    }));
-  }
+  private showDescription = (
+    image: string | undefined,
+    description: string | undefined,
+  ) => {
+    this.setState(
+      update(this.state, {
+        currentDescription: { $set: description || "" },
+        currentImage: { $set: image || "" },
+      }),
+    );
+  };
   private prev = () => {
     const { events } = this.context.api;
     const { activeInstanceId } = this.props;
-    this.setState(update(this.state, {
-      waiting: { $set: true },
-    }));
+    this.setState(
+      update(this.state, {
+        waiting: { $set: true },
+      }),
+    );
 
     // Emit instance-specific event if instanceId is available, otherwise use global event
-    events.emit(`fomod-installer-continue-${activeInstanceId}`, 'back', this.props.installerState.currentStep);
-  }
+    events.emit(
+      `fomod-installer-continue-${activeInstanceId}`,
+      "back",
+      this.props.installerState.currentStep,
+    );
+  };
   private next = () => {
     const { events } = this.context.api;
     const { activeInstanceId, installerState } = this.props;
-    this.setState(update(this.state, {
-      waiting: { $set: true },
-    }));
+    this.setState(
+      update(this.state, {
+        waiting: { $set: true },
+      }),
+    );
 
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
-    const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
-    const direction = nextVisible ? 'forward' : 'finish';
-    events.emit(`fomod-installer-continue-${activeInstanceId}`, direction, this.props.installerState.currentStep);
-  }
+    const nextVisible = steps.find(
+      (step: IInstallStep, i: number) => i > idx && step.visible,
+    );
+    const direction = nextVisible ? "forward" : "finish";
+    events.emit(
+      `fomod-installer-continue-${activeInstanceId}`,
+      direction,
+      this.props.installerState.currentStep,
+    );
+  };
   private cancel = () => {
     const { events } = this.context.api;
     const { activeInstanceId } = this.props;
     events.emit(`fomod-installer-cancel-${activeInstanceId}`);
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -543,8 +615,10 @@ function mapStateToProps(state: IState): IConnectedProps {
   }
 
   // Use instance-specific state if available, fall back to legacy state for compatibility
-  const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
-  const instanceData = state.session.fomod.installer?.dialog?.instances?.[activeInstanceId];
+  const activeInstanceId =
+    state.session.fomod.installer?.dialog?.activeInstanceId;
+  const instanceData =
+    state.session.fomod.installer?.dialog?.instances?.[activeInstanceId];
 
   return {
     installerInfo: instanceData?.info,
@@ -553,5 +627,6 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default translate(['common'])(connect(mapStateToProps)(
-  InstallerDialog)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps)(InstallerDialog),
+) as React.ComponentClass<{}>;

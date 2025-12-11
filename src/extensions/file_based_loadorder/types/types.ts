@@ -1,4 +1,4 @@
-export type LockedState = true | false | 'true' | 'false' | 'always' | 'never';
+export type LockedState = true | false | "true" | "false" | "always" | "never";
 export type LoadOrder = ILoadOrderEntry[];
 
 export interface IItemRendererProps {
@@ -107,7 +107,11 @@ export interface ILoadOrderGameInfo {
    * Extension developers are able to provide a custom item renderer for the
    *  load order page. This will get rendered instead of the default one.
    */
-  customItemRenderer?: React.ComponentType<{ className?: string, item: IItemRendererProps, forwardedRef?: (ref: any) => void }>;
+  customItemRenderer?: React.ComponentType<{
+    className?: string;
+    item: IItemRendererProps;
+    forwardedRef?: (ref: any) => void;
+  }>;
 
   /**
    * By default the FBLO extension will attempt to automatically generate the data
@@ -212,8 +216,8 @@ export class LoadOrderValidationError extends Error {
   private mValidationRes: IValidationResult;
   private mLoadOrder: LoadOrder;
   constructor(validationRes: IValidationResult, loadOrder: LoadOrder) {
-    super('Invalid Load Order');
-    this.name = 'LoadOrderValidationError';
+    super("Invalid Load Order");
+    this.name = "LoadOrderValidationError";
     this.mValidationRes = validationRes;
     this.mLoadOrder = loadOrder;
   }
@@ -227,9 +231,10 @@ export class LoadOrderValidationError extends Error {
   }
 
   public get loadOrderEntryNames(): string {
-    const lo = this.mLoadOrder.filter(entry => !!entry)
-                              .map(entry => entry.name)
-                              .join('\n');
+    const lo = this.mLoadOrder
+      .filter((entry) => !!entry)
+      .map((entry) => entry.name)
+      .join("\n");
     return lo;
   }
 }
@@ -237,12 +242,12 @@ export class LoadOrderValidationError extends Error {
 export class LoadOrderSerializationError extends Error {
   private mLoadOrder: string[];
   constructor(loadOrder: LoadOrder) {
-    super('Failed to serialize load order');
-    this.name = 'LoadOrderSerializationError';
-    this.mLoadOrder = loadOrder.map(entry => entry.name);
+    super("Failed to serialize load order");
+    this.name = "LoadOrderSerializationError";
+    this.mLoadOrder = loadOrder.map((entry) => entry.name);
   }
 
   public get loadOrder(): string {
-    return this.mLoadOrder.join('\n');
+    return this.mLoadOrder.join("\n");
   }
 }

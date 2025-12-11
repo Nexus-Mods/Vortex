@@ -3,17 +3,17 @@
  * Demonstrates all Input component variants and features
  */
 
-import * as React from 'react';
-import { useState } from 'react';
+import * as React from "react";
+import { useState } from "react";
 
-import { Input } from './Input';
-import { FormFieldWrap } from '../formfield';
-import { Typography } from '../../typography/Typography';
+import { Input } from "./Input";
+import { FormFieldWrap } from "../formfield";
+import { Typography } from "../../typography/Typography";
 
 export const InputDemo = () => {
-  const [textValue, setTextValue] = useState('');
-  const [emailValue, setEmailValue] = useState('');
-  const [passwordValue, setPasswordValue] = useState('');
+  const [textValue, setTextValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+  const [passwordValue, setPasswordValue] = useState("");
 
   return (
     <div className="tw:p-8 tw:bg-surface-base tw:min-h-screen">
@@ -69,17 +69,9 @@ export const InputDemo = () => {
             defaultValue={42}
           />
 
-          <Input
-            id="date-input"
-            label="Date Input"
-            type="date"
-          />
+          <Input id="date-input" label="Date Input" type="date" />
 
-          <Input
-            id="time-input"
-            label="Time Input"
-            type="time"
-          />
+          <Input id="time-input" label="Time Input" type="time" />
         </FormFieldWrap>
       </div>
 
@@ -173,9 +165,9 @@ export const InputDemo = () => {
             type="password"
             placeholder="Enter secure password..."
             hints={[
-              'Must be at least 8 characters',
-              'Must contain uppercase and lowercase letters',
-              'Must contain at least one number',
+              "Must be at least 8 characters",
+              "Must contain uppercase and lowercase letters",
+              "Must contain at least one number",
             ]}
           />
 
@@ -255,8 +247,8 @@ export const InputDemo = () => {
             required
             maxLength={30}
             hints={[
-              'Username must be unique',
-              'Only alphanumeric characters allowed',
+              "Username must be unique",
+              "Only alphanumeric characters allowed",
             ]}
           />
 

@@ -1,16 +1,16 @@
-import { ComponentEx } from '../../../util/ComponentEx';
-import { TFunction } from '../../../util/i18n';
-import { IActionDefinitionEx } from '../ActionControl';
-import ContextMenu from '../ContextMenu';
-import Icon from '../Icon';
+import { ComponentEx } from "../../../util/ComponentEx";
+import { TFunction } from "../../../util/i18n";
+import { IActionDefinitionEx } from "../ActionControl";
+import ContextMenu from "../ContextMenu";
+import Icon from "../Icon";
 
-import { TD, TR } from './MyTable';
+import { TD, TR } from "./MyTable";
 
-import i18next from 'i18next';
-import * as React from 'react';
-import * as Redux from 'redux';
+import i18next from "i18next";
+import * as React from "react";
+import * as Redux from "redux";
 
-export const EMPTY_ID = '<Unspecified>';
+export const EMPTY_ID = "<Unspecified>";
 
 export interface IGroupingRowProps {
   t: TFunction;
@@ -25,7 +25,7 @@ export interface IGroupingRowProps {
 }
 
 interface IGroupingRowState {
-  context?: { x: number, y: number };
+  context?: { x: number; y: number };
 }
 
 class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
@@ -40,12 +40,12 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
 
     this.mContextActions = [
       {
-        title: this.props.t('Expand all'),
+        title: this.props.t("Expand all"),
         action: this.props.onExpandAll,
         show: true,
       },
       {
-        title: this.props.t('Collapse all'),
+        title: this.props.t("Collapse all"),
         action: this.props.onCollapseAll,
         show: true,
       },
@@ -58,7 +58,7 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
     return (
       <TR key={`group-${groupId}`} onContextMenu={this.onContext}>
         <TD
-          className='table-group-header'
+          className="table-group-header"
           data-group={groupId}
           onClick={this.toggleGroup}
           colSpan={width}
@@ -70,8 +70,7 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
             position={context}
             onHide={this.onHideContext}
           />
-
-          <Icon name={expanded ? 'showhide-down' : 'showhide-right'} />
+          <Icon name={expanded ? "showhide-down" : "showhide-right"} />
           {t(groupName) || t(EMPTY_ID)} ({count})
         </TD>
       </TR>
@@ -81,15 +80,15 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
   private toggleGroup = () => {
     const { expanded, groupId, onToggle } = this.props;
     onToggle(groupId, !expanded);
-  }
+  };
 
   private onContext = (event: React.MouseEvent<any>) => {
     this.setState({ context: { x: event.clientX, y: event.clientY } });
-  }
+  };
 
   private onHideContext = () => {
     this.setState({ context: undefined });
-  }
+  };
 }
 
 export default GroupingRow;

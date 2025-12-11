@@ -1,4 +1,4 @@
-import { IChunk } from './IChunk';
+import { IChunk } from "./IChunk";
 
 export interface IDownloadResult {
   filePath: string;

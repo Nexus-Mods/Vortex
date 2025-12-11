@@ -1,12 +1,14 @@
 .timer-background {
-  stroke: $text-color-disabled;
-  opacity: 0.5;
+    stroke: $text-color-disabled;
+    opacity: 0.5;
 }
 
 .timer-circle {
-  animation-name: circle-fill;
+    animation-name: circle-fill;
 }
 
 @keyframes circle-fill {
-  to { stroke-dasharray: 0 100; }
+    to {
+        stroke-dasharray: 0 100;
+    }
 }
