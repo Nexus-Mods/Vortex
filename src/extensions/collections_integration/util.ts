@@ -1,5 +1,4 @@
 import { IModRule } from '../mod_management/types/IMod';
-import { IDownload, IState } from '../../types/IState';
 
 export function generateCollectionSessionId(collectionId: string, profileId: string): string {
   if (!profileId || !collectionId) {

@@ -70,6 +70,13 @@ export class ArgumentInvalid extends Error {
   }
 }
 
+export class InstallationSkipped extends Error {
+  constructor() {
+    super('Installation skipped by user');
+    this.name = this.constructor.name;
+  }
+}
+
 /*
 export class UserCanceled extends Error {
   constructor() {
