@@ -48,13 +48,14 @@ export const install = async (
     }
 
     if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
-      return {
+      const generateResult: IInstallResult = {
         instructions: [{
           type: 'generatefile',
           data: 'This is a placeholder file generated because the mod had no files to copy.',
           destination: `placeholder_${shortid()}.txt`,
         }],
       }
+      return generateResult;
     }
 
     const choices = getChoicesFromState(api, instanceId);
