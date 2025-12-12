@@ -716,8 +716,9 @@ class InstallDriver {
 
     if (revisionId !== undefined) {
       try {
-        this.mRevisionInfo = nexusInfo?.revisionInfo
-          ?? await this.mInfoCache.getRevisionInfo(revisionId, slug, this.revisionNumber);
+        this.mRevisionInfo = Array.isArray(nexusInfo?.revisionInfo?.modFiles)
+          ? nexusInfo.revisionInfo
+          : await this.mInfoCache.getRevisionInfo(revisionId, slug, this.revisionNumber);
       } catch (err) {
         log('error', 'failed to get remote info for revision', {
           revisionId, slug, revisionNumber: this.revisionNumber, error: err.message
@@ -883,8 +884,16 @@ class InstallDriver {
       if (rule.reference.repo === undefined) {
         return undefined;
       }
-      const revMod = (this.mRevisionInfo?.modFiles ?? []).find(
-        iter => this.matchRepo(rule, iter.file));
+      const modFiles = this.mRevisionInfo?.modFiles;
+      if ((modFiles != null) && !Array.isArray(modFiles)) {
+        // what?
+        log('error', 'IRevision.modFiles is not an array', {
+          unexpectedType: typeof modFiles,
+          value: JSON.stringify(modFiles)?.slice(0, 200),
+        });
+        return undefined;
+      }
+      const revMod = modFiles.find(iter => this.matchRepo(rule, iter.file));
       if (revMod?.file !== undefined) {
         const newRule = util.setSafe(rule, ['extra', 'fileName'], revMod.file.uri);
         return actions.addModRule(gameId, collection.id, newRule);
