@@ -1,0 +1,3 @@
+# Ignore HTML files with CSP hashes (formatting changes the hash)
+src/index.html
+src/index.dev.html
