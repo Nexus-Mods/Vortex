@@ -1,3 +1,6 @@
-import createAction from '../../../actions/safeCreateAction';
+import createAction from "../../../actions/safeCreateAction";
 
-export const setInstallerSandbox = createAction('SET_INSTALLER_SANDBOX', (enabled: boolean) => enabled);
+export const setInstallerSandbox = createAction(
+  "SET_INSTALLER_SANDBOX",
+  (enabled: boolean) => enabled,
+);

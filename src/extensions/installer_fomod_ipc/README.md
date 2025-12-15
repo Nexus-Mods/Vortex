@@ -9,7 +9,9 @@ This implementation follows the C# test harness pattern from `extensions/fomod-i
 ### Components
 
 #### IPCConnection.ts
+
 Main IPC connection handler that:
+
 - Spawns ModInstallerIPC.exe process
 - Establishes TCP socket connection
 - Handles message serialization/deserialization
@@ -20,6 +22,7 @@ Main IPC connection handler that:
 
 **CoreDelegates.ts**
 Implements game/mod state queries:
+
 - `getAppVersion()` - Return Vortex version
 - `getCurrentGameVersion()` - Return game version
 - `getExtenderVersion()` - Check script extender version (SKSE, F4SE, etc.)
@@ -35,6 +38,7 @@ Implements game/mod state queries:
 
 **UIDelegates.ts**
 Implements FOMOD dialog UI callbacks:
+
 - `startDialog()` - Initialize dialog with module name and callbacks
 - `updateState()` - Update dialog with install steps
 - `endDialog()` - Close/cleanup dialog
@@ -45,6 +49,7 @@ Implements FOMOD dialog UI callbacks:
 Messages are JSON objects delimited by `\uFFFF` character.
 
 ### Message Structure
+
 ```typescript
 {
   id: string,              // Unique message ID
@@ -69,6 +74,7 @@ Messages are JSON objects delimited by `\uFFFF` character.
 
 **TestSupported**
 Check if files contain a FOMOD installer:
+
 ```typescript
 {
   id: "abc123",
@@ -81,6 +87,7 @@ Check if files contain a FOMOD installer:
 ```
 
 Response:
+
 ```typescript
 {
   id: "abc123",
@@ -93,6 +100,7 @@ Response:
 
 **Install**
 Perform FOMOD installation:
+
 ```typescript
 {
   id: "def456",
@@ -109,6 +117,7 @@ Perform FOMOD installation:
 ```
 
 Response:
+
 ```typescript
 {
   id: "def456",
@@ -123,6 +132,7 @@ Response:
 
 **Reply**
 Reply to a callback invocation:
+
 ```typescript
 {
   id: "xyz789",
@@ -137,6 +147,7 @@ Reply to a callback invocation:
 
 **Quit**
 Terminate the IPC connection:
+
 ```typescript
 {
   id: "quit123",
@@ -150,33 +161,34 @@ Terminate the IPC connection:
 
 1. Client sends Install command
 2. Server invokes callbacks during installation:
-   ```typescript
-   {
-     id: "callback_msg_1",
-     callback: { id: "def456", type: "context" },
-     data: {
-       name: "getAppVersion",
-       args: []
-     }
-   }
-   ```
+    ```typescript
+    {
+      id: "callback_msg_1",
+      callback: { id: "def456", type: "context" },
+      data: {
+        name: "getAppVersion",
+        args: []
+      }
+    }
+    ```
 3. Client executes callback and sends Reply:
-   ```typescript
-   {
-     id: "reply_1",
-     payload: {
-       command: "Reply",
-       request: { id: "callback_msg_1" },
-       data: "1.0.0",
-       error: null
-     }
-   }
-   ```
+    ```typescript
+    {
+      id: "reply_1",
+      payload: {
+        command: "Reply",
+        request: { id: "callback_msg_1" },
+        data: "1.0.0",
+        error: null
+      }
+    }
+    ```
 4. Server continues processing and eventually sends final response
 
 ## Implementation Status
 
 ### ✅ Completed
+
 - TCP socket communication
 - Message serialization/deserialization
 - Request/response handling
@@ -187,9 +199,11 @@ Terminate the IPC connection:
 - Error handling
 
 ### ❌ TODO (Empty Implementations)
+
 All delegate methods are stubbed with `log('debug', ...)` calls. You need to implement:
 
 **CoreDelegates**
+
 - [ ] `getAppVersion()` - Read from Vortex version
 - [ ] `getCurrentGameVersion()` - Query game discovery
 - [ ] `getExtenderVersion()` - Check for SKSE/F4SE/etc
@@ -204,6 +218,7 @@ All delegate methods are stubbed with `log('debug', ...)` calls. You need to imp
 - [ ] `getIniInt()` - Parse INI files
 
 **UIDelegates**
+
 - [ ] `startDialog()` - Show FOMOD dialog UI
 - [ ] `updateState()` - Update dialog with steps
 - [ ] `endDialog()` - Close dialog
@@ -211,6 +226,7 @@ All delegate methods are stubbed with `log('debug', ...)` calls. You need to imp
 - [ ] Implement callback invocation through IPCConnection
 
 **Index**
+
 - [ ] Determine game-specific stop patterns
 - [ ] Determine plugin path per game
 - [ ] Transform install result to IInstallResult format
@@ -219,6 +235,7 @@ All delegate methods are stubbed with `log('debug', ...)` calls. You need to imp
 ## Testing
 
 Reference the C# test implementation:
+
 ```
 extensions/fomod-installer/test/ModInstaller.IPC.Tests/
 ├── TestSupportedTests.cs
@@ -251,6 +268,7 @@ The IPC connection system has been refactored into a two-layer architecture:
 Generic, framework-agnostic IPC connection class that can be used in any Node.js environment.
 
 **Key Features**:
+
 - Transport and launcher strategy management
 - Message sending/receiving and protocol handling
 - Timeout management with pluggable dialog handlers
@@ -259,6 +277,7 @@ Generic, framework-agnostic IPC connection class that can be used in any Node.js
 - Connection fallback strategies
 
 **Abstract Methods** (must be implemented by derived classes):
+
 ```typescript
 protected abstract log(level: 'debug' | 'info' | 'warn' | 'error', message: string, metadata?: any): void;
 protected abstract fileExists(filePath: string): Promise<boolean>;
@@ -266,6 +285,7 @@ protected abstract getExecutablePaths(exeName: string): string[];
 ```
 
 **No Vortex dependencies** - Can be used in:
+
 - Console applications
 - Different Electron apps
 - Web applications with Node.js backend
@@ -278,6 +298,7 @@ protected abstract getExecutablePaths(exeName: string): string[];
 Extends `BaseIPCConnection` with Vortex-specific integrations.
 
 **Vortex Integrations**:
+
 - Logging via `log()` from `../../util/log`
 - File system via `fs` from `../..`
 - Path resolution via `getVortexPath()` from `../../util/getVortexPath`
@@ -285,6 +306,7 @@ Extends `BaseIPCConnection` with Vortex-specific integrations.
 - Translations via `api.translate()`
 
 **FOMOD-Specific Methods**:
+
 ```typescript
 public async testSupported(files: string[], allowedTypes: string[]): Promise<ISupportedResult>
 public async install(...): Promise<IInstallResult>
@@ -303,34 +325,35 @@ public async install(...): Promise<IInstallResult>
 To use this IPC system in a different framework:
 
 ```typescript
-import { BaseIPCConnection, ConnectionStrategy } from './BaseIPCConnection';
+import { BaseIPCConnection, ConnectionStrategy } from "./BaseIPCConnection";
 
 export class MyFrameworkIPCConnection extends BaseIPCConnection {
-  protected log(level: string, message: string, metadata?: any): void {
-    myFrameworkLogger.log(level, message, metadata);
-  }
+    protected log(level: string, message: string, metadata?: any): void {
+        myFrameworkLogger.log(level, message, metadata);
+    }
 
-  protected async fileExists(filePath: string): Promise<boolean> {
-    return await myFrameworkFS.exists(filePath);
-  }
+    protected async fileExists(filePath: string): Promise<boolean> {
+        return await myFrameworkFS.exists(filePath);
+    }
 
-  protected getExecutablePaths(exeName: string): string[] {
-    return [
-      path.join(myFrameworkPaths.base, 'bin', exeName),
-      // ... more paths
-    ];
-  }
+    protected getExecutablePaths(exeName: string): string[] {
+        return [
+            path.join(myFrameworkPaths.base, "bin", exeName),
+            // ... more paths
+        ];
+    }
 
-  // Add framework-specific methods
-  public async myCustomCommand(data: any): Promise<any> {
-    return await this.sendCommand('MyCustomCommand', data);
-  }
+    // Add framework-specific methods
+    public async myCustomCommand(data: any): Promise<any> {
+        return await this.sendCommand("MyCustomCommand", data);
+    }
 }
 ```
 
 ### Migration Notes
 
 The original `IPCConnection.ts` class has been split into:
+
 - Generic functionality → `BaseIPCConnection.ts`
 - Vortex-specific functionality → `VortexIPCConnection.ts`
 

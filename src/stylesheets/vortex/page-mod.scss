@@ -1,117 +1,117 @@
 #popover-mod-description {
-  max-width: 700px;
-  // this popover tends to align with the top of the screen so the border isn't visible.
-  // This is irritating because the user has to look twice to see that nothing was cut off
-  margin-top: 5px;
-  img {
-    max-width: 100%;
-  }
+    max-width: 700px;
+    // this popover tends to align with the top of the screen so the border isn't visible.
+    // This is irritating because the user has to look twice to see that nothing was cut off
+    margin-top: 5px;
+    img {
+        max-width: 100%;
+    }
 }
 
 #table-mods {
-  // prevent word wrap
-  .table-header-cell {
-    white-space: nowrap;
-  }
-  .header-endorsed,
-  .header-version,
-  .header-modSource {
-    // need a bit of space so the dropdown menu is readable
-    min-width: 110px;
-  }
-  .header-category {
-    min-width: 200px;
-  }
-  .header-name {
-    // use up remaining space
-    width: 100%;
-  }
-  .cell-tracked {
-    vertical-align: middle;
-    text-align: center;
-  }
+    // prevent word wrap
+    .table-header-cell {
+        white-space: nowrap;
+    }
+    .header-endorsed,
+    .header-version,
+    .header-modSource {
+        // need a bit of space so the dropdown menu is readable
+        min-width: 110px;
+    }
+    .header-category {
+        min-width: 200px;
+    }
+    .header-name {
+        // use up remaining space
+        width: 100%;
+    }
+    .cell-tracked {
+        vertical-align: middle;
+        text-align: center;
+    }
 }
 
 .mod-drop-container {
-  margin-top: $half-gutter;
+    margin-top: $half-gutter;
 }
 
 .version-option {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  svg {
-    margin: 0 !important;
-  }
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    svg {
+        margin: 0 !important;
+    }
 }
 
 .mod-update {
-  &.invalid {
-    color: $brand-warning;
-  }
+    &.invalid {
+        color: $brand-warning;
+    }
 
-  &.warning {
-    color: $brand-warning;
-  }
+    &.warning {
+        color: $brand-warning;
+    }
 
-  &.download {
-    color: $brand-warning;
-  }
+    &.download {
+        color: $brand-warning;
+    }
 
-  &.ban {
-    color: $brand-danger;
-  }
+    &.ban {
+        color: $brand-danger;
+    }
 
-  &.bug {
-    color: $brand-danger;
-  }
+    &.bug {
+        color: $brand-danger;
+    }
 
-  .icon-button {
-    margin-left: 0.4em !important;
-  }
+    .icon-button {
+        margin-left: 0.4em !important;
+    }
 }
 
 @keyframes pulseColor {
-  0% {
-    background-color: lighten($brand-clickable, 15%);
-  }
-  50% {
-    background-color: darken($brand-clickable, 15%);
-  }
-  100% {
-    background-color: lighten($brand-clickable, 15%);
-  }
+    0% {
+        background-color: lighten($brand-clickable, 15%);
+    }
+    50% {
+        background-color: darken($brand-clickable, 15%);
+    }
+    100% {
+        background-color: lighten($brand-clickable, 15%);
+    }
 }
 
 .mod-installing {
-  background-color: $gray-dark;
+    background-color: $gray-dark;
 }
 
 .mod-installed {
-  background-color: $table-bg;
+    background-color: $table-bg;
 }
 
 #more-mods-container {
-  display: flex;
-  justify-content: center;
-  position: sticky;
-  // should be 0 but there seems to be a subpixel-imprecision
-  bottom: -1px;
-  background: rgba($gray-lighter, 0.7);
-  padding: 1em 0;
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    // should be 0 but there seems to be a subpixel-imprecision
+    bottom: -1px;
+    background: rgba($gray-lighter, 0.7);
+    padding: 1em 0;
 }
 
 #table-mods #btn-more-mods {
-  display: block;
-  border-radius: $btn-border-radius-base;
-  border: 2px solid $brand-primary;
-  svg {
-    margin-right: 0.5em;
-  }
+    display: block;
+    border-radius: $btn-border-radius-base;
+    border: 2px solid $brand-primary;
+    svg {
+        margin-right: 0.5em;
+    }
 }
 
 #popover-changelog {
-  .mod-changelog {
-    white-space: pre;
-  }
+    .mod-changelog {
+        white-space: pre;
+    }
 }

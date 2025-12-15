@@ -1,5 +1,5 @@
-import { IModSourceOptions } from '../../../types/IExtensionContext';
-import {IModSource} from '../types/IModSource';
+import { IModSourceOptions } from "../../../types/IExtensionContext";
+import { IModSource } from "../types/IModSource";
 
 const modSources: IModSource[] = [];
 
@@ -8,12 +8,14 @@ export function getModSources(): IModSource[] {
 }
 
 export function getModSource(id: string): IModSource {
-  return modSources.find(iter => iter.id === id);
+  return modSources.find((iter) => iter.id === id);
 }
 
-export function registerModSource(id: string,
-                                  name: string,
-                                  onBrowse?: () => void,
-                                  options?: IModSourceOptions) {
+export function registerModSource(
+  id: string,
+  name: string,
+  onBrowse?: () => void,
+  options?: IModSourceOptions,
+) {
   modSources.push({ id, name, onBrowse, options });
 }

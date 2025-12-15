@@ -1,18 +1,23 @@
-import Nexus, { NexusError, ProtocolError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
-import { TFunction } from 'i18next';
-import React from 'react';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import { IGameStored, IMod } from '../../../types/IState';
-import { ITableAttribute } from '../../../types/ITableAttribute';
-import { ProcessCanceled } from '../../../util/CustomErrors';
-import { laterT } from '../../../util/i18n';
-import { log } from '../../../util/log';
-import { activeGameId, gameById } from '../../../util/selectors';
-import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
-import { getGame } from '../../gamemode_management/util/getGame';
-import { nexusGameId } from './convertGameId';
+import Nexus, {
+  NexusError,
+  ProtocolError,
+  RateLimitError,
+  TimeoutError,
+} from "@nexusmods/nexus-api";
+import { TFunction } from "i18next";
+import React from "react";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { IExtensionApi } from "../../../types/IExtensionContext";
+import { IGameStored, IMod } from "../../../types/IState";
+import { ITableAttribute } from "../../../types/ITableAttribute";
+import { ProcessCanceled } from "../../../util/CustomErrors";
+import { laterT } from "../../../util/i18n";
+import { log } from "../../../util/log";
+import { activeGameId, gameById } from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import { truthy } from "../../../util/util";
+import { getGame } from "../../gamemode_management/util/getGame";
+import { nexusGameId } from "./convertGameId";
 
 class Tracking {
   private mApi: IExtensionApi;
@@ -27,12 +32,17 @@ class Tracking {
   public once(nexusInstance: Nexus) {
     this.mNexus = nexusInstance;
     const state = this.mApi.getState();
-    const username = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+    const username = getSafe(
+      state,
+      ["persistent", "nexus", "userInfo", "name"],
+      undefined,
+    );
     if (username !== undefined) {
       this.fetch();
     }
 
-    this.mApi.onStateChange(['persistent', 'nexus', 'userInfo'],
+    this.mApi.onStateChange(
+      ["persistent", "nexus", "userInfo"],
       (oldUserInfo, newUserInfo) => {
         if (newUserInfo === undefined) {
           this.mTrackedMods = {};
@@ -40,22 +50,23 @@ class Tracking {
         } else {
           this.fetch();
         }
-    });
+      },
+    );
   }
 
   public attribute(): ITableAttribute {
     const TrackedIcon = this.makeIcon();
     return {
-      id: 'tracked',
-      name: laterT('Tracking'),
-      description: laterT('Tracked on Nexus'),
-      icon: 'track',
+      id: "tracked",
+      name: laterT("Tracking"),
+      description: laterT("Tracked on Nexus"),
+      icon: "track",
       customRenderer: (mod: IMod, detail: boolean, t: TFunction) =>
-        mod.attributes?.source === 'nexus' ? (
+        mod.attributes?.source === "nexus" ? (
           <TrackedIcon t={t} mod={mod} />
         ) : null,
       calc: (mod: IMod) => {
-        if (mod.attributes?.source === 'nexus') {
+        if (mod.attributes?.source === "nexus") {
           const gameMode = activeGameId(this.mApi.getState());
           const nexusId = nexusGameId(getGame(gameMode));
           if (!truthy(mod.attributes?.modId)) {
@@ -71,7 +82,7 @@ class Tracking {
       externalData: (changeCB: () => void) => {
         this.mOnChanged = changeCB;
       },
-      placement: 'table',
+      placement: "table",
       isToggleable: true,
       isDefaultVisible: false,
       edit: {},
@@ -88,11 +99,14 @@ class Tracking {
     const game: IGameStored = gameById(state, gameMode);
     const nexusId = nexusGameId(game);
 
-    modIds.forEach(modId => {
+    modIds.forEach((modId) => {
       if (truthy(mods[modId]?.attributes?.modId)) {
         this.trackMod(nexusId, mods[modId].attributes.modId.toString?.());
       } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
-        this.trackMod(nexusId, downloads[modId].modInfo.nexus.ids.modId.toString());
+        this.trackMod(
+          nexusId,
+          downloads[modId].modInfo.nexus.ids.modId.toString(),
+        );
       }
     });
   }
@@ -106,11 +120,14 @@ class Tracking {
     const game: IGameStored = gameById(state, gameMode);
     const nexusId = nexusGameId(game);
 
-    modIds.forEach(modId => {
+    modIds.forEach((modId) => {
       if (truthy(mods[modId]?.attributes?.modId)) {
         this.untrackMod(nexusId, mods[modId].attributes.modId.toString?.());
       } else if (truthy(downloads[modId]?.modInfo?.nexus?.ids?.modId)) {
-        this.untrackMod(nexusId, downloads[modId].modInfo.nexus.ids.modId.toString());
+        this.untrackMod(
+          nexusId,
+          downloads[modId].modInfo.nexus.ids.modId.toString(),
+        );
       }
     });
   }
@@ -127,15 +144,19 @@ class Tracking {
 
       return (
         <IconButton
-          icon='track'
-          className='btn-embed'
+          icon="track"
+          className="btn-embed"
           stroke={
-            !this.mTrackedMods[nexusId]?.has?.(mod.attributes?.modId?.toString())
+            !this.mTrackedMods[nexusId]?.has?.(
+              mod.attributes?.modId?.toString(),
+            )
           }
           hollow={
-            !this.mTrackedMods[nexusId]?.has?.(mod.attributes?.modId?.toString())
+            !this.mTrackedMods[nexusId]?.has?.(
+              mod.attributes?.modId?.toString(),
+            )
           }
-          tooltip={t('Mod Tracked')}
+          tooltip={t("Mod Tracked")}
           data-modid={mod.attributes?.modId}
           onClick={this.toggleTracked}
         />
@@ -148,40 +169,47 @@ class Tracking {
       return;
     }
 
-    this.mNexus.getTrackedMods().then(tracked => {
-      this.mTrackedMods = tracked.reduce((prev, iter) => {
-        if (prev[iter.domain_name] === undefined) {
-          prev[iter.domain_name] = new Set<string>();
+    this.mNexus
+      .getTrackedMods()
+      .then((tracked) => {
+        this.mTrackedMods = tracked.reduce((prev, iter) => {
+          if (prev[iter.domain_name] === undefined) {
+            prev[iter.domain_name] = new Set<string>();
+          }
+          prev[iter.domain_name].add(iter.mod_id.toString());
+          return prev;
+        }, {});
+        this.mOnChanged?.();
+      })
+      .catch((err) => {
+        if (err instanceof ProcessCanceled) {
+          return;
         }
-        prev[iter.domain_name].add(iter.mod_id.toString());
-        return prev;
-      }, {});
-      this.mOnChanged?.();
-    })
-    .catch(err => {
-      if (err instanceof ProcessCanceled) {
-        return;
-      }
-      const allowReport = !(err instanceof RateLimitError)
-                        && !(err instanceof TimeoutError)
-                        && !(err instanceof ProtocolError)
-                        && !(err instanceof NexusError);
-      this.mApi.showErrorNotification('Failed to get list of tracked mods', err, {
-        allowReport,
+        const allowReport =
+          !(err instanceof RateLimitError) &&
+          !(err instanceof TimeoutError) &&
+          !(err instanceof ProtocolError) &&
+          !(err instanceof NexusError);
+        this.mApi.showErrorNotification(
+          "Failed to get list of tracked mods",
+          err,
+          {
+            allowReport,
+          },
+        );
       });
-    });
   }
 
   private toggleTracked = (evt: React.MouseEvent<any>) => {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
-    const modIdStr: string = evt.currentTarget.getAttribute('data-modid');
+    const modIdStr: string = evt.currentTarget.getAttribute("data-modid");
 
-    if (state.persistent['nexus']?.userInfo === undefined) {
+    if (state.persistent["nexus"]?.userInfo === undefined) {
       // user not logged in
       this.mApi.sendNotification({
-        type: 'warning',
-        message: 'You have to be logged in to track mods',
+        type: "warning",
+        message: "You have to be logged in to track mods",
         displayMS: 5000,
       });
       return;
@@ -195,7 +223,7 @@ class Tracking {
     } else {
       this.trackMod(nexusId, modIdStr);
     }
-  }
+  };
 
   private trackMod(nexusId: string, nexusModId: string) {
     if (this.mTrackedMods[nexusId]?.has?.(nexusModId)) {
@@ -212,7 +240,7 @@ class Tracking {
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
-        this.mApi.showErrorNotification('Failed to track/untrack mod', err, {
+        this.mApi.showErrorNotification("Failed to track/untrack mod", err, {
           allowReport: err instanceof RateLimitError,
         });
       });
@@ -230,14 +258,17 @@ class Tracking {
         this.mOnChanged?.();
       })
       .catch((err: Error) => {
-        if (err['statusCode'] === 404) {
+        if (err["statusCode"] === 404) {
           // user isn't actually tracking the mod
-          log('warn', 'mod tracking state out of sync between server and Vortex',
-            { game: nexusId, modId: nexusModId });
+          log(
+            "warn",
+            "mod tracking state out of sync between server and Vortex",
+            { game: nexusId, modId: nexusModId },
+          );
           this.mTrackedMods[nexusId]?.delete?.(nexusModId);
           this.mOnChanged?.();
         } else {
-          this.mApi.showErrorNotification('Failed to track/untrack mod', err);
+          this.mApi.showErrorNotification("Failed to track/untrack mod", err);
         }
       });
   }

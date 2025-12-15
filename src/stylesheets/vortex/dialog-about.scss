@@ -1,42 +1,42 @@
 // about dialog
 #about-dialog {
-  flex: 1 1 0;
-  p {
-    margin: 0px;
-  }
-  .panel-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .third-party-box {
-    margin-top: 4px;
-    flex: 1 1 0%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    width: 100%;
-    .about-panel {
-      flex: 1 1 0%;
-      overflow-y: auto;
-      border: $border-width*2 solid $border-color;
-      padding: 10px;
+    flex: 1 1 0;
+    p {
+        margin: 0px;
     }
-  }
+    .panel-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .third-party-box {
+        margin-top: 4px;
+        flex: 1 1 0%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        width: 100%;
+        .about-panel {
+            flex: 1 1 0%;
+            overflow-y: auto;
+            border: $border-width * 2 solid $border-color;
+            padding: 10px;
+        }
+    }
 
-  .vortex-logo {
-    width: 64px;
-    height: 64px;
-  }
+    .vortex-logo {
+        width: 64px;
+        height: 64px;
+    }
 }
 
 .license-text {
-  margin-left: 10px;
+    margin-left: 10px;
 }
 
 .license-text-own {
-  margin-left: 10px;
-  background-color: $gray-lighter;
-  max-height: 400px;
-  overflow-y: scroll;
+    margin-left: 10px;
+    background-color: $gray-lighter;
+    max-height: 400px;
+    overflow-y: scroll;
 }

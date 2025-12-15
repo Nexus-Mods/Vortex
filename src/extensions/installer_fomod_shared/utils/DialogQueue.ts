@@ -1,9 +1,9 @@
-import { log } from '../../../util/log';
+import { log } from "../../../util/log";
 
-import { IExtensionApi } from '../../../types/api';
+import { IExtensionApi } from "../../../types/api";
 
-import { hasActiveFomodDialog } from './helpers';
-import { hasSessionFOMOD } from './guards';
+import { hasActiveFomodDialog } from "./helpers";
+import { hasSessionFOMOD } from "./guards";
 
 export interface IDialogManager {
   startDialogImmediate(): void;
@@ -40,7 +40,8 @@ export class DialogQueue {
         return false;
       }
 
-      const activeInstanceId = state.session.fomod.installer?.dialog?.activeInstanceId;
+      const activeInstanceId =
+        state.session.fomod.installer?.dialog?.activeInstanceId;
       // If the current active dialog is stale, cancel it and remove it from the queue
       // Should only happen if UpdateState wasn't called for some reason
       for (const request of this.queue) {
@@ -48,36 +49,39 @@ export class DialogQueue {
           continue;
         }
 
-        if (request.timestamp + 5000 < Date.now()) { // 5 seconds
-          log('warn', 'Removing stale dialog request from queue', { instanceId: request.instanceId });
+        if (request.timestamp + 5000 < Date.now()) {
+          // 5 seconds
+          log("warn", "Removing stale dialog request from queue", {
+            instanceId: request.instanceId,
+          });
           request.uiInstance.cancelDialogImmediate();
-          this.queue = this.queue.filter(r => r !== request);
+          this.queue = this.queue.filter((r) => r !== request);
         }
       }
     }, 5000); // 5 seconds
-  }
+  };
 
   destroy = (): void => {
     if (this.periodicChecker) {
       clearInterval(this.periodicChecker);
       this.periodicChecker = null;
     }
-  }
+  };
 
   public static getInstance = (api: IExtensionApi): DialogQueue => {
     if (!DialogQueue.instance) {
       DialogQueue.instance = new DialogQueue(api);
     }
     return DialogQueue.instance;
-  }
+  };
 
   public enqueueDialog = (uiInstance: IDialogManager): void => {
     this.queue.push({
       timestamp: Date.now(),
       uiInstance,
-      instanceId: uiInstance.instanceId
+      instanceId: uiInstance.instanceId,
     });
-  }
+  };
 
   public processNext = (): void => {
     if (this.processing || this.queue.length === 0) {
@@ -101,28 +105,28 @@ export class DialogQueue {
     } finally {
       this.processing = false;
     }
-  }
+  };
 
   public onDialogEnd = (instanceId: string): void => {
     // Remove from queue if still present
-    const request = this.queue.find(r => r.instanceId === instanceId);
+    const request = this.queue.find((r) => r.instanceId === instanceId);
     if (request) {
-      this.queue = this.queue.filter(r => r !== request);
+      this.queue = this.queue.filter((r) => r !== request);
     }
 
     // Process next queued dialog
     this.processNext();
-  }
+  };
 
   public getStatus = () => {
     return {
       queueLength: this.queue.length,
       isProcessing: this.processing,
     };
-  }
+  };
 
   public clear = (): void => {
     this.queue = [];
     this.processing = false;
-  }
+  };
 }

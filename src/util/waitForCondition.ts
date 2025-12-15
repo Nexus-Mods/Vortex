@@ -27,7 +27,7 @@ export const waitForCondition = (opts: IWaitForConditionOptions) => {
   });
 
   waitForCondition.then(() => {
-    if (typeof callback === 'function' && required()) {
+    if (typeof callback === "function" && required()) {
       callback();
     }
   });

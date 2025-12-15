@@ -1,9 +1,9 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
-import { ISettingsAutomation } from '../../../types/IState';
+import { IReducerSpec } from "../../../types/IExtensionContext";
+import { ISettingsAutomation } from "../../../types/IState";
 
-import * as actions from '../actions/automation';
+import * as actions from "../actions/automation";
 
-import update from 'immutability-helper';
+import update from "immutability-helper";
 
 /**
  * reducer for changes to automation settings

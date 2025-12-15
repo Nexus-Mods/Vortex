@@ -9,7 +9,14 @@ import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 export default defineConfig([
   {
     // NOTE(erri120): exclude build output and tests as well as any submodules
-    ignores: ["out/**", "__tests__", "__mocks__", "extensions/**", "api/**"],
+    ignores: [
+      "out/**",
+      "dist/**",
+      "__tests__",
+      "__mocks__",
+      "extensions/**",
+      "api/**",
+    ],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
@@ -31,13 +38,13 @@ export default defineConfig([
     plugins: {
       vortex: {
         rules: {
-          "no-cross-imports": noCrossImportsRule
-        }
-      }
+          "no-cross-imports": noCrossImportsRule,
+        },
+      },
     },
     rules: {
-      "vortex/no-cross-imports": "error"
-    }
+      "vortex/no-cross-imports": "error",
+    },
   },
   {
     // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)

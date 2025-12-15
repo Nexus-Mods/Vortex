@@ -1,9 +1,13 @@
-import { ActionFunc, IActionDefinition, IActionOptions } from '../../types/IActionDefinition';
-import { IRegisteredExtension } from '../../util/ExtensionManager';
-import { extend } from '../../util/ExtensionProvider';
+import {
+  ActionFunc,
+  IActionDefinition,
+  IActionOptions,
+} from "../../types/IActionDefinition";
+import { IRegisteredExtension } from "../../util/ExtensionManager";
+import { extend } from "../../util/ExtensionProvider";
 
-import * as _ from 'lodash';
-import * as React from 'react';
+import * as _ from "lodash";
+import * as React from "react";
 
 export interface IActionControlProps {
   instanceId?: string | string[];
@@ -42,7 +46,10 @@ export interface IActionDefinitionEx extends IActionDefinition {
  *
  * @class IconBar
  */
-class ActionControl extends React.Component<IProps, { actions: IActionDefinitionEx[] }> {
+class ActionControl extends React.Component<
+  IProps,
+  { actions: IActionDefinitionEx[] }
+> {
   constructor(props: IProps) {
     super(props);
     this.state = {
@@ -74,7 +81,8 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
 
   private actionsToShow(props: IProps): IActionDefinitionEx[] {
     const { filter, instanceId, objects, showAll } = props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    const instanceIds =
+      typeof instanceId === "string" ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {
         return true;
@@ -86,23 +94,26 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
       }
     };
 
-    const transformActions = (items: IActionDefinition[] | ActionFunc): IActionDefinitionEx[] => {
+    const transformActions = (
+      items: IActionDefinition[] | ActionFunc,
+    ): IActionDefinitionEx[] => {
       if (!Array.isArray(items)) {
         items = items(instanceId);
       }
       return items
         .map(convert)
-        .filter(iter => showAll || (iter.show !== false))
-        .filter(iter => (filter === undefined) || filter(iter))
+        .filter((iter) => showAll || iter.show !== false)
+        .filter((iter) => filter === undefined || filter(iter))
         .sort(iconSort);
     };
 
     const convert = (input: IActionDefinition): IActionDefinitionEx => ({
       ...input,
       show: checkCondition(input),
-      subMenus: input.subMenus === undefined
-        ? undefined
-        : () => transformActions(input.subMenus),
+      subMenus:
+        input.subMenus === undefined
+          ? undefined
+          : () => transformActions(input.subMenus),
     });
 
     return transformActions(objects);
@@ -123,29 +134,46 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
  * @param {*} action the action to call on click
  * @returns
  */
-function registerAction(instanceGroup: string,
-                        extInfo: Partial<IRegisteredExtension>,
-                        group: string,
-                        position: number,
-                        iconOrComponent: string | React.ComponentClass<any>,
-                        optionsIn: IActionOptions,
-                        titleOrProps?: string | (() => any),
-                        actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-                        condition?: () => boolean | string,
-                        ): any {
+function registerAction(
+  instanceGroup: string,
+  extInfo: Partial<IRegisteredExtension>,
+  group: string,
+  position: number,
+  iconOrComponent: string | React.ComponentClass<any>,
+  optionsIn: IActionOptions,
+  titleOrProps?: string | (() => any),
+  actionOrCondition?: (instanceIds?: string[]) => void | boolean,
+  condition?: () => boolean | string,
+): any {
   if (instanceGroup === group) {
     const options = { ...optionsIn, namespace: extInfo.namespace };
-    if (typeof(iconOrComponent) === 'string') {
-      return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
-               position, action: actionOrCondition, options, condition };
+    if (typeof iconOrComponent === "string") {
+      return {
+        type: "simple",
+        icon: iconOrComponent,
+        title: titleOrProps,
+        position,
+        action: actionOrCondition,
+        options,
+        condition,
+      };
     } else {
-      return { type: 'ext', component: iconOrComponent, props: titleOrProps,
-               position, condition: actionOrCondition, options };
+      return {
+        type: "ext",
+        component: iconOrComponent,
+        props: titleOrProps,
+        position,
+        condition: actionOrCondition,
+        options,
+      };
     }
   } else {
     return undefined;
   }
 }
 
-export default
-  extend(registerAction, 'group', true)(ActionControl) as React.ComponentClass<IActionControlProps>;
+export default extend(
+  registerAction,
+  "group",
+  true,
+)(ActionControl) as React.ComponentClass<IActionControlProps>;

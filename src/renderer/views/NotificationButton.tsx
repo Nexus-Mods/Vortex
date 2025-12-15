@@ -1,17 +1,24 @@
-import { dismissNotification, fireNotificationAction } from '../../actions/notifications';
-import { suppressNotification } from '../../actions/notificationSettings';
-import { INotification, INotificationAction, NotificationType } from '../../types/INotification';
-import { IState } from '../../types/IState';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import {
+  dismissNotification,
+  fireNotificationAction,
+} from "../../actions/notifications";
+import { suppressNotification } from "../../actions/notificationSettings";
+import {
+  INotification,
+  INotificationAction,
+  NotificationType,
+} from "../../types/INotification";
+import { IState } from "../../types/IState";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
 
-import Icon from '../controls/Icon';
-import RadialProgress, { IBar } from '../controls/RadialProgress';
-import Debouncer from '../../util/Debouncer';
-import Notification from './Notification';
+import Icon from "../controls/Icon";
+import RadialProgress, { IBar } from "../controls/RadialProgress";
+import Debouncer from "../../util/Debouncer";
+import Notification from "./Notification";
 
-import * as _ from 'lodash';
-import * as React from 'react';
-import { Badge, Button, Overlay, Popover } from 'react-bootstrap';
+import * as _ from "lodash";
+import * as React from "react";
+import { Badge, Button, Overlay, Popover } from "react-bootstrap";
 
 export interface IBaseProps {
   id: string;
@@ -32,7 +39,7 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 function sortValue(noti: INotification): number {
   let value = noti.createdTime;
-  if ((noti.progress !== undefined) || (noti.type === 'activity')) {
+  if (noti.progress !== undefined || noti.type === "activity") {
     value /= 10;
   }
   return value;
@@ -55,13 +62,21 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mUpdateDebouncer: Debouncer;
   private mMounted: boolean = false;
 
-  private resizeUpdate = _.debounce(() => {
-    this.forceUpdate();
-  }, 300, { maxWait: 1000, trailing: true });
+  private resizeUpdate = _.debounce(
+    () => {
+      this.forceUpdate();
+    },
+    300,
+    { maxWait: 1000, trailing: true },
+  );
 
-  private resizeUpdating = _.debounce(() => {
-    this.nextState.resizing = false;
-  }, 1000, { leading: false, trailing: true });
+  private resizeUpdating = _.debounce(
+    () => {
+      this.nextState.resizing = false;
+    },
+    1000,
+    { leading: false, trailing: true },
+  );
 
   constructor(props: IProps) {
     super(props);
@@ -79,11 +94,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.updateFiltered();
     this.mMounted = true;
-    window.addEventListener('resize', this.onResize);
+    window.addEventListener("resize", this.onResize);
   }
 
   public componentWillUnmount() {
-    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener("resize", this.onResize);
     this.mMounted = false;
     if (this.mUpdateTimer !== undefined) {
       clearTimeout(this.mUpdateTimer);
@@ -107,29 +122,35 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     const collapsed: { [groupId: string]: number } = {};
 
-    const items = filtered.slice()
-      .reduce((prev: INotification[], notification: INotification) =>
-            this.groupNotifications(prev, notification, collapsed), [])
+    const items = filtered
+      .slice()
+      .reduce(
+        (prev: INotification[], notification: INotification) =>
+          this.groupNotifications(prev, notification, collapsed),
+        [],
+      )
       .sort(inverseSort)
-      .map(notification => this.renderNotification(notification, collapsed));
+      .map((notification) => this.renderNotification(notification, collapsed));
 
     const popover = (
       <Popover
-        id='notifications-popover'
+        id="notifications-popover"
         arrowOffsetLeft={64}
-        style={{ display: hide ? 'none' : 'block' }}
+        style={{ display: hide ? "none" : "block" }}
       >
-        {items.length > 0 ? items : t('No Notifications')}
+        {items.length > 0 ? items : t("No Notifications")}
       </Popover>
     );
 
     const combinedProgress: IBar[] = [];
 
-    const progress = notifications.filter(iter => iter.progress !== undefined);
+    const progress = notifications.filter(
+      (iter) => iter.progress !== undefined,
+    );
     if (progress.length > 0) {
-      const percentages = Math.min(...progress.map(iter => iter.progress));
+      const percentages = Math.min(...progress.map((iter) => iter.progress));
       combinedProgress.push({
-        class: 'running',
+        class: "running",
         min: 0,
         max: 100,
         value: percentages,
@@ -137,25 +158,31 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
 
     const pendingActivities = notifications.filter(
-      (iter) => iter.type === 'activity' && iter.progress === undefined
+      (iter) => iter.type === "activity" && iter.progress === undefined,
     );
 
     return (
-      <div style={{ display: 'inline-block' }}>
-        <Button id='notifications-button' onClick={this.toggle} ref={this.mButtonRef}>
-          <Icon name='notifications' />
+      <div style={{ display: "inline-block" }}>
+        <Button
+          id="notifications-button"
+          onClick={this.toggle}
+          ref={this.mButtonRef}
+        >
+          <Icon name="notifications" />
           <RadialProgress
-            className='notifications-progress'
+            className="notifications-progress"
             data={combinedProgress}
             spin={pendingActivities.length >= 1}
             offset={8}
             totalRadius={8}
           />
-          {notifications.length === 0 ? null : <Badge>{notifications.length}</Badge>}
+          {notifications.length === 0 ? null : (
+            <Badge>{notifications.length}</Badge>
+          )}
         </Button>
 
         <Overlay
-          placement='bottom'
+          placement="bottom"
           rootClose={false}
           onExit={this.unExpand}
           show={items.length > 0}
@@ -173,14 +200,16 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       return item.displayMS;
     }
 
-    return {
-      warning: 10000,
-      error: 10000,
-      success: 5000,
-      info: 5000,
-      activity: null,
-    }[item.type] || 10000;
-  }
+    return (
+      {
+        warning: 10000,
+        error: 10000,
+        success: 5000,
+        info: 5000,
+        activity: null,
+      }[item.type] || 10000
+    );
+  };
 
   private quickUpdate() {
     // updating only progress and message
@@ -189,12 +218,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     for (let i = 0; i < filtered.length; ++i) {
       // there shouldn't be notifications without id here but just to be safe
       if (filtered[i].id !== undefined) {
-        const ref = notifications.find(n => n.id === filtered[i].id);
+        const ref = notifications.find((n) => n.id === filtered[i].id);
         // if the notification no longer exists we're not removing it here,
         // it will be removed in the "big" update (updateFiltered) a bit later
-        if ((ref !== undefined)
-            && ((filtered[i].message !== ref.message)
-                || (filtered[i].progress !== ref.progress))) {
+        if (
+          ref !== undefined &&
+          (filtered[i].message !== ref.message ||
+            filtered[i].progress !== ref.progress)
+        ) {
           this.nextState.filtered[i] = {
             ...filtered[i],
             message: ref.message,
@@ -211,12 +242,12 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
     this.resizeUpdate();
     this.resizeUpdating();
-  }
+  };
 
   private triggerFilter = () => {
     this.updateFiltered();
     return Promise.resolve();
-  }
+  };
 
   private updateFiltered() {
     const { notifications } = this.props;
@@ -228,20 +259,23 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    let filtered = notifications.slice().filter(item => item.type !== 'silent');
+    let filtered = notifications
+      .slice()
+      .filter((item) => item.type !== "silent");
     let nextTimeout = null;
     const now = Date.now();
     if (!open) {
-      filtered = filtered.filter(item => {
+      filtered = filtered.filter((item) => {
         const displayTime = this.displayTime(item);
         if (displayTime === null) {
           return true;
         }
 
-        const timeout = (item.type === 'activity' ? item.createdTime : item.updatedTime)
-                      + displayTime;
+        const timeout =
+          (item.type === "activity" ? item.createdTime : item.updatedTime) +
+          displayTime;
         if (timeout > now) {
-          if ((nextTimeout === null) || (timeout < nextTimeout)) {
+          if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;
           }
           return true;
@@ -262,7 +296,10 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         if (nextTimeout !== null) {
           // if one of the displayed notifications has a timeout, refresh once that timeout expires
           // (adding 100ms for good measure)
-          this.mUpdateTimer = setTimeout(this.triggerFilter, (nextTimeout - now) + 100);
+          this.mUpdateTimer = setTimeout(
+            this.triggerFilter,
+            nextTimeout - now + 100,
+          );
         }
       }
     }
@@ -271,20 +308,25 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private toggle = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
     this.context.api.events.emit(
-      'analytics-track-click-event',
-      'Notifications',
-      `${this.state.open ? 'Close' : 'Open'} Notifications`,
+      "analytics-track-click-event",
+      "Notifications",
+      `${this.state.open ? "Close" : "Open"} Notifications`,
     );
     this.nextState.open = !this.state.open;
     setTimeout(() => {
       this.mUpdateDebouncer.runNow(() => null);
     }, 0);
-  }
+  };
 
-  private groupNotifications = (previous: INotification[],
-                                notification: INotification,
-                                collapsed: { [groupId: string]: number }) => {
-    if ((notification.group !== undefined) && (notification.group !== this.state.expand)) {
+  private groupNotifications = (
+    previous: INotification[],
+    notification: INotification,
+    collapsed: { [groupId: string]: number },
+  ) => {
+    if (
+      notification.group !== undefined &&
+      notification.group !== this.state.expand
+    ) {
       if (collapsed[notification.group] === undefined) {
         previous.push(notification);
         collapsed[notification.group] = 0;
@@ -294,31 +336,36 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       previous.push(notification);
     }
     return previous;
-  }
+  };
 
   private expand = (groupId: string) => {
     this.nextState.expand = groupId;
-  }
+  };
 
   private unExpand = () => {
     this.nextState.expand = undefined;
-  }
+  };
 
-  private renderNotification = (notification: INotification,
-                                collapsed: { [groupId: string]: number }) => {
+  private renderNotification = (
+    notification: INotification,
+    collapsed: { [groupId: string]: number },
+  ) => {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
-    translated.title = ((translated.title !== undefined)
-      && ((notification.localize === undefined) || (notification.localize.title !== false)))
-      ? t(translated.title, { replace: translated.replace })
-      : translated.title;
+    translated.title =
+      translated.title !== undefined &&
+      (notification.localize === undefined ||
+        notification.localize.title !== false)
+        ? t(translated.title, { replace: translated.replace })
+        : translated.title;
 
-    if ((collapsed[notification.group] > 1) && (translated.title !== undefined)) {
-      translated.message = t('<Multiple>');
+    if (collapsed[notification.group] > 1 && translated.title !== undefined) {
+      translated.message = t("<Multiple>");
     } else {
       translated.message =
-        ((notification.localize === undefined) || (notification.localize.message !== false))
+        notification.localize === undefined ||
+        notification.localize.message !== false
           ? t(translated.message, { replace: translated.replace })
           : translated.message;
     }
@@ -335,16 +382,20 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         onSuppress={this.suppress}
       />
     );
-  }
+  };
 
   private triggerAction = (notificationId: string, actionTitle: string) => {
     const { notifications, onDismiss } = this.props;
-    const noti = notifications.find(iter => iter.id === notificationId);
+    const noti = notifications.find((iter) => iter.id === notificationId);
     if (noti === undefined) {
       return;
     }
 
-    const callAction = (id: string, action: INotificationAction, idx: number) => {
+    const callAction = (
+      id: string,
+      action: INotificationAction,
+      idx: number,
+    ) => {
       if (idx === -1) {
         return;
       }
@@ -356,37 +407,49 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       }
     };
 
-    if ((noti.group === undefined) || (noti.group === this.state.expand)) {
-      const actionIdx = noti.actions.findIndex(iter => iter.title === actionTitle);
+    if (noti.group === undefined || noti.group === this.state.expand) {
+      const actionIdx = noti.actions.findIndex(
+        (iter) => iter.title === actionTitle,
+      );
       callAction(noti.id, noti.actions[actionIdx], actionIdx);
     } else {
-      notifications.filter(iter => iter.group === noti.group).forEach(iter => {
-        const actionIdx = iter.actions.findIndex(actIter => actIter.title === actionTitle);
-        callAction(iter.id, iter.actions[actionIdx], actionIdx);
-      });
+      notifications
+        .filter((iter) => iter.group === noti.group)
+        .forEach((iter) => {
+          const actionIdx = iter.actions.findIndex(
+            (actIter) => actIter.title === actionTitle,
+          );
+          callAction(iter.id, iter.actions[actionIdx], actionIdx);
+        });
     }
-  }
+  };
 
   private dismissAll = (notificationId: string) => {
     const { notifications, onDismiss } = this.props;
-    const noti = notifications.find(iter => iter.id === notificationId);
-    this.context.api.events.emit('analytics-track-click-event', 'Notifications', 'Dismiss');
+    const noti = notifications.find((iter) => iter.id === notificationId);
+    this.context.api.events.emit(
+      "analytics-track-click-event",
+      "Notifications",
+      "Dismiss",
+    );
     if (noti === undefined) {
       return;
     }
-    if ((noti.group === undefined) || (noti.group === this.state.expand)) {
+    if (noti.group === undefined || noti.group === this.state.expand) {
       onDismiss(notificationId);
     } else {
-      notifications.filter(iter => iter.group === noti.group).forEach(iter => {
-        onDismiss(iter.id);
-      });
+      notifications
+        .filter((iter) => iter.group === noti.group)
+        .forEach((iter) => {
+          onDismiss(iter.id);
+        });
     }
-  }
+  };
 
   private suppress = (notificationId: string) => {
     this.props.onDismiss(notificationId);
     this.props.onSuppress(notificationId);
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -402,7 +465,6 @@ function mapDispatchToProps(dispatch): IActionProps {
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      NotificationButton)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(NotificationButton),
+) as React.ComponentClass<IBaseProps>;

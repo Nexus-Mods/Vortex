@@ -1,8 +1,8 @@
-import { log } from '../../../util/log';
+import { log } from "../../../util/log";
 
-import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
+import { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
 
-import NexusT, { IModCategory } from '@nexusmods/nexus-api';
+import NexusT, { IModCategory } from "@nexusmods/nexus-api";
 
 interface IGameInfo {
   categories: IModCategory[];
@@ -12,7 +12,7 @@ function hasLoop(categories: ICategoryDictionary, category: string): boolean {
   const visited: string[] = [];
 
   let iter = category;
-  while ((iter !== undefined) && (categories[iter] !== undefined)) {
+  while (iter !== undefined && categories[iter] !== undefined) {
     if (visited.includes(iter)) {
       return true;
     }
@@ -25,7 +25,7 @@ function hasLoop(categories: ICategoryDictionary, category: string): boolean {
 }
 
 function fixLoops(dict: ICategoryDictionary) {
-  Object.keys(dict).forEach(key => {
+  Object.keys(dict).forEach((key) => {
     if (hasLoop(dict, key)) {
       dict[key].parentCategory = undefined;
     }
@@ -45,16 +45,18 @@ function retrieveCategoryList(
   nexus: NexusT,
 ): Promise<ICategoryDictionary> {
   return new Promise<ICategoryDictionary>((resolve, reject) => {
-    nexus.getGameInfo(activeGameId)
+    nexus
+      .getGameInfo(activeGameId)
       .then((gameInfo: IGameInfo) => {
         if (gameInfo.categories !== undefined) {
           const res: ICategoryDictionary = {};
           let counter: number = 1;
 
           gameInfo.categories.forEach((category: IModCategory) => {
-            const parent = category.parent_category === false
-              ? undefined
-              : category.parent_category.toString();
+            const parent =
+              category.parent_category === false
+                ? undefined
+                : category.parent_category.toString();
 
             res[category.category_id.toString()] = {
               name: category.name,
@@ -69,7 +71,9 @@ function retrieveCategoryList(
         }
       })
       .catch((err) => {
-        log('error', 'Failed to retrieve game information', { err: err.message });
+        log("error", "Failed to retrieve game information", {
+          err: err.message,
+        });
         reject(err);
       });
   });

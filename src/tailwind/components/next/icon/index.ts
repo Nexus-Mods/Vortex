@@ -1,4 +1,4 @@
 /**
  * Icon Component - Exports
  */
-export * from './Icon';
+export * from "./Icon";

@@ -17,7 +17,7 @@ export interface IEditStarterInfo {
   environment: { [key: string]: string };
   shell: boolean;
   detach: boolean;
-  onStart?: 'hide' | 'hide_recover' | 'close';
+  onStart?: "hide" | "hide_recover" | "close";
   defaultPrimary?: boolean;
   exclusive?: boolean;
 }

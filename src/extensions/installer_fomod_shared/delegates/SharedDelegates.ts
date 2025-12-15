@@ -1,9 +1,12 @@
-import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
-import { IState } from '../../../types/IState';
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import { getApplication } from '../../../util/application';
-import { getGame } from '../../gamemode_management/util/getGame';
-import { hasLoadOrder, hasSessionPlugins } from '../utils/guards';
+import {
+  currentGame,
+  currentGameDiscovery,
+} from "../../gamemode_management/selectors";
+import { IState } from "../../../types/IState";
+import { IExtensionApi } from "../../../types/IExtensionContext";
+import { getApplication } from "../../../util/application";
+import { getGame } from "../../gamemode_management/util/getGame";
+import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
 
 /**
  * Core delegates for FOMOD installer IPC communication
@@ -29,7 +32,7 @@ export class SharedDelegates {
     const discovery = currentGameDiscovery(state);
     const gameInfo = getGame(game.id);
     this.mGameVersion = await gameInfo.getInstalledVersion(discovery);
-  }
+  };
 
   /**
    * Get the application version
@@ -38,9 +41,9 @@ export class SharedDelegates {
     try {
       return getApplication().version;
     } catch (error) {
-      return '';
+      return "";
     }
-  }
+  };
 
   /**
    * Get the current game version
@@ -49,9 +52,9 @@ export class SharedDelegates {
     try {
       return this.mGameVersion.split(/\-+/)[0];
     } catch (error) {
-      return '';
+      return "";
     }
-  }
+  };
 
   /**
    * Get the version of a script extender (e.g., SKSE, F4SE)
@@ -60,9 +63,9 @@ export class SharedDelegates {
     try {
       return this.mGameVersion.split(/\-+/)[0];
     } catch (error) {
-      return '';
+      return "";
     }
-  }
+  };
 
   /**
    * Get all plugins (mods with .esp/.esm/.esl files)
@@ -77,16 +80,25 @@ export class SharedDelegates {
       const pluginList = state.session.plugins?.pluginList ?? {};
       let plugins = Object.keys(pluginList);
       if (activeOnly === true) {
-        plugins = plugins.filter(name => this.isPluginEnabled(state, pluginList, plugins, name));
+        plugins = plugins.filter((name) =>
+          this.isPluginEnabled(state, pluginList, plugins, name),
+        );
       }
       return plugins;
     } catch (error) {
       return [];
     }
-  }
+  };
 
-  private isPluginEnabled = (state: IState, pluginList: any, plugins: string[], pluginName: string) => {
-    const existingPluginName = plugins.find(plugin => plugin.toLowerCase() === pluginName.toLowerCase());
+  private isPluginEnabled = (
+    state: IState,
+    pluginList: any,
+    plugins: string[],
+    pluginName: string,
+  ) => {
+    const existingPluginName = plugins.find(
+      (plugin) => plugin.toLowerCase() === pluginName.toLowerCase(),
+    );
     if (existingPluginName === undefined) {
       // unknown plugin can't be enabled
       return false;
@@ -100,5 +112,5 @@ export class SharedDelegates {
     }
 
     return state.loadOrder[existingPluginName]?.enabled ?? false;
-  }
+  };
 }

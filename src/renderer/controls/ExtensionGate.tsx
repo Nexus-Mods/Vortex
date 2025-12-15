@@ -1,9 +1,9 @@
-import { log } from '../../util/log';
-import { truthy } from '../../util/util';
-import { Icon } from './TooltipControls';
+import { log } from "../../util/log";
+import { truthy } from "../../util/util";
+import { Icon } from "./TooltipControls";
 
-import * as _ from 'lodash';
-import * as React from 'react';
+import * as _ from "lodash";
+import * as React from "react";
 
 /**
  * wraps a control that was added by an extension.
@@ -28,11 +28,15 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
 
   public componentWillUnmount() {
     if (this.mValid) {
-      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
-      Object.keys(props).forEach(key => {
-        if (truthy(props[key])
-          && (props[key].attach !== undefined)
-          && (props[key].detach !== undefined)) {
+      const props = (
+        React.Children.only(this.props.children) as React.ReactElement<any>
+      ).props;
+      Object.keys(props).forEach((key) => {
+        if (
+          truthy(props[key]) &&
+          props[key].attach !== undefined &&
+          props[key].detach !== undefined
+        ) {
           props[key].detach(this);
         }
       });
@@ -53,15 +57,19 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       return (
         <Icon
           id={this.props.id}
-          tooltip='Extension failed to render'
-          name='extension-render-failed'
+          tooltip="Extension failed to render"
+          name="extension-render-failed"
         />
       );
     }
     this.updateWrappers(
-      (React.Children.only(this.props.children) as React.ReactElement<any>).props);
-    return React.cloneElement(React.Children.only(this.props.children) as React.ReactElement<any>,
-                              this.mWrappers);
+      (React.Children.only(this.props.children) as React.ReactElement<any>)
+        .props,
+    );
+    return React.cloneElement(
+      React.Children.only(this.props.children) as React.ReactElement<any>,
+      this.mWrappers,
+    );
   }
 
   private initialize() {
@@ -69,13 +77,16 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       return;
     }
     try {
-      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
-      Object.keys(props).forEach(key => {
-        if (truthy(props[key])
-          && (props[key].attach !== undefined)
-          && (props[key].detach !== undefined)) {
-
-          if (typeof (props[key]) === 'object') {
+      const props = (
+        React.Children.only(this.props.children) as React.ReactElement<any>
+      ).props;
+      Object.keys(props).forEach((key) => {
+        if (
+          truthy(props[key]) &&
+          props[key].attach !== undefined &&
+          props[key].detach !== undefined
+        ) {
+          if (typeof props[key] === "object") {
             this.mWrappers[key] = { ...props[key] };
           }
           props[key].attach(this);
@@ -83,13 +94,13 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       });
       this.mValid = true;
     } catch (err) {
-      log('warn', 'failed to mount extension control', { err });
+      log("warn", "failed to mount extension control", { err });
       this.mValid = false;
     }
   }
 
   private updateWrappers(props: { [key: string]: any }) {
-    Object.keys(this.mWrappers).forEach(key => {
+    Object.keys(this.mWrappers).forEach((key) => {
       if (!_.isEqual(this.mWrappers[key], props[key])) {
         this.mWrappers[key] = { ...props[key] };
       }

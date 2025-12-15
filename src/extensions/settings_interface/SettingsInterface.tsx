@@ -1,41 +1,68 @@
-import { showDialog } from '../../actions/notifications';
-import { resetSuppression } from '../../actions/notificationSettings';
-import { setCustomTitlebar } from '../../actions/window';
+import { showDialog } from "../../actions/notifications";
+import { resetSuppression } from "../../actions/notificationSettings";
+import { setCustomTitlebar } from "../../actions/window";
 
-import More from '../../renderer/controls/More';
-import Toggle from '../../renderer/controls/Toggle';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
-import { IState } from '../../types/IState';
-import { IParameters, relaunch } from '../../util/commandLine';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import getVortexPath from '../../util/getVortexPath';
-import lazyRequire from '../../util/lazyRequire';
-import { log } from '../../util/log';
-import { truthy } from '../../util/util';
+import More from "../../renderer/controls/More";
+import Toggle from "../../renderer/controls/Toggle";
+import {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  IDialogResult,
+} from "../../types/IDialog";
+import { IState } from "../../types/IState";
+import { IParameters, relaunch } from "../../util/commandLine";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import getVortexPath from "../../util/getVortexPath";
+import lazyRequire from "../../util/lazyRequire";
+import { log } from "../../util/log";
+import { truthy } from "../../util/util";
 
-import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
-import { readExtensibleDir } from '../extension_manager/util';
-import getTextModManagement from '../mod_management/texts';
-import getTextProfiles from '../profile_management/texts';
+import {
+  IAvailableExtension,
+  IExtensionDownloadInfo,
+} from "../extension_manager/types";
+import { readExtensibleDir } from "../extension_manager/util";
+import getTextModManagement from "../mod_management/texts";
+import getTextProfiles from "../profile_management/texts";
 
-import { setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setStartMinimized } from './actions/automation';
-import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLevelCategory,
-         setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
-import { nativeCountryName, nativeLanguageName } from './languagemap';
-import getText from './texts';
+import {
+  setAutoDeployment,
+  setAutoEnable,
+  setAutoInstall,
+  setAutoStart,
+  setStartMinimized,
+} from "./actions/automation";
+import {
+  setAdvancedMode,
+  setDesktopNotifications,
+  setForegroundDL,
+  setHideTopLevelCategory,
+  setLanguage,
+  setProfilesVisible,
+  setRelativeTimes,
+} from "./actions/interface";
+import { nativeCountryName, nativeLanguageName } from "./languagemap";
+import getText from "./texts";
 
-import type * as remoteT from '@electron/remote';
-import Promise from 'bluebird';
-import { app } from 'electron';
-import * as path from 'path';
-import * as React from 'react';
-import { Alert, Button, ControlLabel,
-         FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import type * as remoteT from "@electron/remote";
+import Promise from "bluebird";
+import { app } from "electron";
+import * as path from "path";
+import * as React from "react";
+import {
+  Alert,
+  Button,
+  ControlLabel,
+  FormControl,
+  FormGroup,
+  HelpBlock,
+} from "react-bootstrap";
+import { useSelector } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
-const remote: typeof remoteT = lazyRequire(() => require('@electron/remote'));
+const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 
 interface ILanguage {
   key: string;
@@ -75,8 +102,12 @@ interface IActionProps {
   onSetStartMinimized: (minimized: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
-  onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
+  onShowDialog: (
+    type: DialogType,
+    title: string,
+    content: IDialogContent,
+    actions: DialogActions,
+  ) => Promise<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
@@ -85,12 +116,14 @@ interface IActionProps {
   onSetForegroundDL: (enabled: boolean) => void;
 }
 
-type IProps = IBaseProps & IActionProps & IConnectedProps & {
-  currentLanguage: string;
-  extensions: IAvailableExtension[];
-  languages: ILanguage[];
-  onReloadLanguages: () => void;
-};
+type IProps = IBaseProps &
+  IActionProps &
+  IConnectedProps & {
+    currentLanguage: string;
+    extensions: IAvailableExtension[];
+    languages: ILanguage[];
+    onReloadLanguages: () => void;
+  };
 
 class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   private mInitialTitlebar: boolean;
@@ -110,39 +143,55 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, autoDeployment, autoEnable, autoInstall, autoStart, currentLanguage,
-            customTitlebar, desktopNotifications, foregroundDL, languages, profilesVisible,
-            hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
-            suppressedNotifications } = this.props;
+    const {
+      t,
+      autoDeployment,
+      autoEnable,
+      autoInstall,
+      autoStart,
+      currentLanguage,
+      customTitlebar,
+      desktopNotifications,
+      foregroundDL,
+      languages,
+      profilesVisible,
+      hideTopLevelCategory,
+      onSetForegroundDL,
+      relativeTimes,
+      startup,
+      startMinimized,
+      suppressedNotifications,
+    } = this.props;
 
-    const needRestart = (customTitlebar !== this.mInitialTitlebar);
+    const needRestart = customTitlebar !== this.mInitialTitlebar;
 
-    const startMinimizedToggle = (autoStart) ? (
-      <Toggle
-        checked={startMinimized}
-        onToggle={this.toggleMinimized}
-      >
-        {t('Start Vortex in the background (Minimized)')}
+    const startMinimizedToggle = autoStart ? (
+      <Toggle checked={startMinimized} onToggle={this.toggleMinimized}>
+        {t("Start Vortex in the background (Minimized)")}
       </Toggle>
     ) : null;
 
     const restartNotification = needRestart ? (
       <HelpBlock>
         <Alert>
-          {t('You need to restart Vortex to activate this change')}
-          <Button onClick={this.restart} style={{ marginLeft: '1em' }}>{t('Restart now')}</Button>
+          {t("You need to restart Vortex to activate this change")}
+          <Button onClick={this.restart} style={{ marginLeft: "1em" }}>
+            {t("Restart now")}
+          </Button>
         </Alert>
       </HelpBlock>
     ) : null;
 
-    const numSuppressed = Object.values(suppressedNotifications).filter(val => val === true).length;
+    const numSuppressed = Object.values(suppressedNotifications).filter(
+      (val) => val === true,
+    ).length;
 
     return (
       <form>
-        <FormGroup controlId='languageSelect'>
-          <ControlLabel>{t('Language')}</ControlLabel>
+        <FormGroup controlId="languageSelect">
+          <ControlLabel>{t("Language")}</ControlLabel>
           <FormControl
-            componentClass='select'
+            componentClass="select"
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
@@ -150,24 +199,28 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
               if (language.ext.length < 2) {
                 prev.push(this.renderLanguage(language));
               } else {
-                language.ext.forEach(ext => prev.push(this.renderLanguage(language, ext)));
+                language.ext.forEach((ext) =>
+                  prev.push(this.renderLanguage(language, ext)),
+                );
               }
               return prev;
             }, [])}
           </FormControl>
           <ControlLabel>
-            {t('When you select a language for the first time you may have to restart Vortex.')}
+            {t(
+              "When you select a language for the first time you may have to restart Vortex.",
+            )}
           </ControlLabel>
         </FormGroup>
-        <FormGroup controlId='customization'>
-          <ControlLabel>{t('Customisation')}</ControlLabel>
+        <FormGroup controlId="customization">
+          <ControlLabel>{t("Customisation")}</ControlLabel>
           <div>
             <div>
               <Toggle
                 checked={customTitlebar}
                 onToggle={this.toggleCustomTitlebar}
               >
-                {t('Custom Window Title Bar')}
+                {t("Custom Window Title Bar")}
               </Toggle>
             </div>
             <div>
@@ -175,7 +228,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
                 checked={desktopNotifications !== false}
                 onToggle={this.toggleDesktopNotifications}
               >
-                {t('Enable Desktop Notifications')}
+                {t("Enable Desktop Notifications")}
               </Toggle>
             </div>
             <div>
@@ -183,9 +236,12 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
                 checked={hideTopLevelCategory}
                 onToggle={this.toggleHideTopLevelCategory}
               >
-                {t('Hide Top-Level Category')}
-                <More id='more-hide-toplevel-category' name={t('Top-Level Categories')}>
-                  {getText('toplevel-categories', t)}
+                {t("Hide Top-Level Category")}
+                <More
+                  id="more-hide-toplevel-category"
+                  name={t("Top-Level Categories")}
+                >
+                  {getText("toplevel-categories", t)}
                 </More>
               </Toggle>
             </div>
@@ -199,16 +255,15 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
             </div>
           </div>
           <div>
-            <Toggle
-              checked={foregroundDL}
-              onToggle={onSetForegroundDL}
-            >
-              {t('Bring Vortex to foreground when starting downloads in browser')}
+            <Toggle checked={foregroundDL} onToggle={onSetForegroundDL}>
+              {t(
+                "Bring Vortex to foreground when starting downloads in browser",
+              )}
             </Toggle>
           </div>
         </FormGroup>
-        <FormGroup controlId='advanced'>
-          <ControlLabel>{t('Advanced')}</ControlLabel>
+        <FormGroup controlId="advanced">
+          <ControlLabel>{t("Advanced")}</ControlLabel>
           <div>
             {/*
             <div>
@@ -224,13 +279,14 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
             </div>
             */}
             <div>
-              <Toggle
-                checked={profilesVisible}
-                onToggle={this.toggleProfiles}
-              >
-                {t('Enable Profile Management')}
-                <More id='more-profile-settings' name={t('Profiles')} wikiId='profiles'>
-                  {getTextProfiles('profiles', t)}
+              <Toggle checked={profilesVisible} onToggle={this.toggleProfiles}>
+                {t("Enable Profile Management")}
+                <More
+                  id="more-profile-settings"
+                  name={t("Profiles")}
+                  wikiId="profiles"
+                >
+                  {getTextProfiles("profiles", t)}
                 </More>
               </Toggle>
             </div>
@@ -239,59 +295,54 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
                 checked={startup.disableGPU !== true}
                 onToggle={this.toggleAcceleration}
               >
-                {t('Enable GPU Acceleration')}
+                {t("Enable GPU Acceleration")}
               </Toggle>
-              {(startup.disableGPU === true) ? (
+              {startup.disableGPU === true ? (
                 <ControlLabel>
-                  <Alert bsStyle='warning'>
-                    {t('Disabling GPU acceleration will make the Vortex UI significantly less '
-                      + 'responsive in places.')}
+                  <Alert bsStyle="warning">
+                    {t(
+                      "Disabling GPU acceleration will make the Vortex UI significantly less " +
+                        "responsive in places.",
+                    )}
                   </Alert>
                 </ControlLabel>
               ) : null}
             </div>
           </div>
         </FormGroup>
-        <FormGroup controlId='automation'>
-          <ControlLabel>{t('Automation')}</ControlLabel>
+        <FormGroup controlId="automation">
+          <ControlLabel>{t("Automation")}</ControlLabel>
           <div>
             <Toggle
               checked={autoDeployment}
               onToggle={this.toggleAutoDeployment}
             >
-              {t('Deploy Mods when Enabled')}
-              <More id='more-deploy-settings' name={t('Deployment')}>
-                {getTextModManagement('deployment', t)}
+              {t("Deploy Mods when Enabled")}
+              <More id="more-deploy-settings" name={t("Deployment")}>
+                {getTextModManagement("deployment", t)}
               </More>
             </Toggle>
-            <Toggle
-              checked={autoInstall}
-              onToggle={this.toggleAutoInstall}
-            >
-              {t('Install Mods when downloaded')}
+            <Toggle checked={autoInstall} onToggle={this.toggleAutoInstall}>
+              {t("Install Mods when downloaded")}
             </Toggle>
-            <Toggle
-              checked={autoEnable}
-              onToggle={this.toggleAutoEnable}
-            >
-              {t('Enable Mods when installed (in current profile)')}
+            <Toggle checked={autoEnable} onToggle={this.toggleAutoEnable}>
+              {t("Enable Mods when installed (in current profile)")}
             </Toggle>
-            <Toggle
-              checked={autoStart}
-              onToggle={this.toggleAutoStart}
-            >
-              {t('Run Vortex when my computer starts')}
+            <Toggle checked={autoStart} onToggle={this.toggleAutoStart}>
+              {t("Run Vortex when my computer starts")}
             </Toggle>
             {startMinimizedToggle}
           </div>
         </FormGroup>
-        <FormGroup controlId='notifications'>
-          <ControlLabel>{t('Notifications')}</ControlLabel>
+        <FormGroup controlId="notifications">
+          <ControlLabel>{t("Notifications")}</ControlLabel>
           <div>
-            <Button onClick={this.resetSuppression}>{t('Reset suppressed notifications')}</Button>
-            {' '}
-            {t('({{count}} notification is being suppressed)',
-              { replace: { count: numSuppressed } })}
+            <Button onClick={this.resetSuppression}>
+              {t("Reset suppressed notifications")}
+            </Button>{" "}
+            {t("({{count}} notification is being suppressed)", {
+              replace: { count: numSuppressed },
+            })}
           </div>
         </FormGroup>
         {restartNotification}
@@ -300,33 +351,41 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   }
 
   private toggleAcceleration = () => {
-    this.props.changeStartup('disableGPU', this.props.startup.disableGPU !== true);
-  }
+    this.props.changeStartup(
+      "disableGPU",
+      this.props.startup.disableGPU !== true,
+    );
+  };
 
   private toggleRelativeTimes = () => {
     this.props.onSetRelativeTimes(!this.props.relativeTimes);
-  }
+  };
 
   private selectLanguage = (evt) => {
     const { extensions } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    const extName: string = target.selectedOptions[0]?.getAttribute('data-ext');
+    const extName: string = target.selectedOptions[0]?.getAttribute("data-ext");
     if (extName === undefined) {
       // no language selected? How did this happen?
       return;
     }
-    const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
+    const ext: { modId?: number } =
+      extensions.find((iter) => iter.name === extName) || {};
     const { value } = target;
-    const dlProm: Promise<boolean[]> = ext.modId !== undefined
-      ? this.context.api.emitAndAwait('install-extension', ext)
-        .tap(success => success ? this.props.onReloadLanguages() : Promise.resolve())
-      : Promise.resolve([true]);
+    const dlProm: Promise<boolean[]> =
+      ext.modId !== undefined
+        ? this.context.api
+            .emitAndAwait("install-extension", ext)
+            .tap((success) =>
+              success ? this.props.onReloadLanguages() : Promise.resolve(),
+            )
+        : Promise.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
         this.props.onSetLanguage(value);
       }
     });
-  }
+  };
 
   private languageName(language: ILanguage): string {
     return language.country === undefined
@@ -334,21 +393,24 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       : `${language.language} (${language.country})`;
   }
 
-  private renderLanguage(language: ILanguage, ext?: Partial<IExtensionDownloadInfo>): JSX.Element {
+  private renderLanguage(
+    language: ILanguage,
+    ext?: Partial<IExtensionDownloadInfo>,
+  ): JSX.Element {
     const { t } = this.props;
     if (ext === undefined) {
       ext = language.ext.length > 0 ? language.ext[0] : { name: undefined };
     }
     return (
       <option
-        key={`${language.key}-${ext['author'] || 'local'}`}
+        key={`${language.key}-${ext["author"] || "local"}`}
         value={language.key}
         data-ext={ext.name}
       >
-      {this.languageName(language)}
-      {(ext.modId !== undefined)
-        ? ` (${t('Extension')} by ${ext['author'] || 'unknown author'})`
-        : null}
+        {this.languageName(language)}
+        {ext.modId !== undefined
+          ? ` (${t("Extension")} by ${ext["author"] || "unknown author"})`
+          : null}
       </option>
     );
   }
@@ -356,21 +418,22 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   private toggleAutoDeployment = () => {
     const { autoDeployment, onSetAutoDeployment } = this.props;
     onSetAutoDeployment(!autoDeployment);
-  }
+  };
 
   private toggleAutoInstall = () => {
     const { autoInstall, onSetAutoInstall } = this.props;
     onSetAutoInstall(!autoInstall);
-  }
+  };
 
   private toggleAutoEnable = () => {
     const { autoEnable, onSetAutoEnable } = this.props;
     onSetAutoEnable(!autoEnable);
-  }
+  };
 
   private toggleAutoStart = () => {
-    const { autoStart, startMinimized, onSetAutoStart, onSetStartMinimized } = this.props;
-    const startOnBoot = ((!autoStart) === true);
+    const { autoStart, startMinimized, onSetAutoStart, onSetStartMinimized } =
+      this.props;
+    const startOnBoot = !autoStart === true;
     onSetAutoStart(startOnBoot);
     if (!startOnBoot) {
       // We only want to allow the user to start Vortex minimized
@@ -379,72 +442,83 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       //  bug reports.
       onSetStartMinimized(false);
     }
-    const uniApp = (process.type === 'renderer') ? remote.app : app;
+    const uniApp = process.type === "renderer" ? remote.app : app;
     uniApp.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
-      args: (startOnBoot) ? (startMinimized) ? ['--start-minimized'] : [] : [],
+      args: startOnBoot ? (startMinimized ? ["--start-minimized"] : []) : [],
     });
-  }
+  };
 
   private toggleMinimized = () => {
     const { autoStart, startMinimized, onSetStartMinimized } = this.props;
-    const isMinimized = ((!startMinimized) === true);
+    const isMinimized = !startMinimized === true;
     onSetStartMinimized(isMinimized);
-    const uniApp = (process.type === 'renderer') ? remote.app : app;
+    const uniApp = process.type === "renderer" ? remote.app : app;
     uniApp.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
-      args: (isMinimized) ? ['--start-minimized'] : [],
+      args: isMinimized ? ["--start-minimized"] : [],
     });
-  }
+  };
 
   private resetSuppression = () => {
     const { onResetNotificationSuppression } = this.props;
     onResetNotificationSuppression();
-  }
+  };
 
   private toggleDesktopNotifications = () => {
     const { desktopNotifications, onSetDesktopNotifications } = this.props;
     onSetDesktopNotifications(!desktopNotifications);
-  }
+  };
 
   private toggleHideTopLevelCategory = () => {
     const { hideTopLevelCategory, onSetHideTopLevelCategory } = this.props;
     onSetHideTopLevelCategory(!hideTopLevelCategory);
-  }
+  };
 
   private toggleProfiles = () => {
-    const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
+    const { t, profilesVisible, onSetProfilesVisible, onShowDialog } =
+      this.props;
     if (profilesVisible) {
-      onShowDialog('question', t('Disabling Profile Management'), {
-        text: t('Please be aware that toggling this only disables the interface for profiles, '
-          + 'meaning profiles don\'t get deleted and an active profile doesn\'t '
-          + 'get disabled. The last active profile for each game will still be used '
-          + '(i.e. its mod selection and local savegames).'),
-        options: { translated: true, wrap: true },
-      }, [
-        { label: 'Cancel' },
-        { label: 'Continue', action: () => onSetProfilesVisible(!profilesVisible) },
-      ]);
+      onShowDialog(
+        "question",
+        t("Disabling Profile Management"),
+        {
+          text: t(
+            "Please be aware that toggling this only disables the interface for profiles, " +
+              "meaning profiles don't get deleted and an active profile doesn't " +
+              "get disabled. The last active profile for each game will still be used " +
+              "(i.e. its mod selection and local savegames).",
+          ),
+          options: { translated: true, wrap: true },
+        },
+        [
+          { label: "Cancel" },
+          {
+            label: "Continue",
+            action: () => onSetProfilesVisible(!profilesVisible),
+          },
+        ],
+      );
     } else {
       onSetProfilesVisible(!profilesVisible);
     }
-  }
+  };
 
   private toggleCustomTitlebar = () => {
     const { customTitlebar, onSetCustomTitlebar } = this.props;
     onSetCustomTitlebar(!customTitlebar);
-  }
+  };
 
   private toggleAdvanced = () => {
     const { advanced, onSetAdvancedMode } = this.props;
     onSetAdvancedMode(!advanced);
-  }
+  };
 
   private restart = () => {
     relaunch();
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -466,7 +540,9 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetLanguage: (newLanguage: string): void => {
       dispatch(setLanguage(newLanguage));
@@ -512,9 +588,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-const SettingsInterfaceMapped = translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      SettingsInterfaceImpl));
+const SettingsInterfaceMapped = translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceImpl),
+);
 
 function isValidLanguageCode(langId: string) {
   if (!truthy(langId)) {
@@ -524,26 +600,32 @@ function isValidLanguageCode(langId: string) {
     new Date().toLocaleString(langId);
     return true;
   } catch (err) {
-    log('warn', 'Not a valid language code', langId);
+    log("warn", "Not a valid language code", langId);
     return false;
   }
 }
 
 function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
-  const bundledLanguages = getVortexPath('locales');
-  const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
+  const bundledLanguages = getVortexPath("locales");
+  const userLanguages = path.normalize(
+    path.join(getVortexPath("userData"), "locales"),
+  );
 
-  const translationExts = extensions.filter(ext => ext.type === 'translation');
+  const translationExts = extensions.filter(
+    (ext) => ext.type === "translation",
+  );
 
   let local: string[] = [];
 
-  return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
-    .map((file: string) => path.basename(file))
-    .tap(files => local = files),
-    translationExts.map(ext => ext.language))
-    .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+  return Promise.join(
+    readExtensibleDir("translation", bundledLanguages, userLanguages)
+      .map((file: string) => path.basename(file))
+      .tap((files) => (local = files)),
+    translationExts.map((ext) => ext.language),
+  )
+    .then((fileLists) => Array.from(new Set([].concat(...fileLists))))
     .filter((langId: string) => isValidLanguageCode(langId))
-    .then(files => {
+    .then((files) => {
       // files contains just the unique languages being supported, but there
       // may be multiple extensions providing the same language
       const loc = new Set(local);
@@ -551,7 +633,7 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
         let language;
         let country;
 
-        const [languageKey, countryKey] = key.split('-');
+        const [languageKey, countryKey] = key.split("-");
         language = nativeLanguageName(languageKey);
         if (countryKey !== undefined) {
           country = nativeCountryName(countryKey);
@@ -559,14 +641,14 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
 
         const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
           ? []
-          : translationExts.filter(iter => iter.language === key);
+          : translationExts.filter((iter) => iter.language === key);
         return { key, language, country, ext };
       });
 
       return locales;
     })
-    .catch(err => {
-      log('warn', 'failed to read locales', err);
+    .catch((err) => {
+      log("warn", "failed to read locales", err);
       return [];
     });
 }
@@ -575,13 +657,15 @@ function SettingsInterface(props: IBaseProps) {
   const [languages, setLanguages] = React.useState<ILanguage[]>([]);
   const [iteration, setIteration] = React.useState<number>(0);
 
-  const { lang, exts } = useSelector<IState, { lang: string, exts: IAvailableExtension[] }>(
-    state => ({
-      lang: state.settings.interface.language,
-      exts: state.session.extensions.available,
-    }));
+  const { lang, exts } = useSelector<
+    IState,
+    { lang: string; exts: IAvailableExtension[] }
+  >((state) => ({
+    lang: state.settings.interface.language,
+    exts: state.session.extensions.available,
+  }));
 
-  const forceReload = React.useCallback(() => setIteration(i => i + 1), []);
+  const forceReload = React.useCallback(() => setIteration((i) => i + 1), []);
 
   React.useEffect(() => {
     (async () => {

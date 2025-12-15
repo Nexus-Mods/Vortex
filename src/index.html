@@ -1,29 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="script-src 'self' 'sha256-MCx+U3fU6hJNKvWqT8cJrZb2MfZlyUfg8oXORz+vn6M='"
+        />
+        <title>Vortex</title>
+        <link rel="stylesheet" href="assets/css/loadingScreen.css" />
+        <link rel="stylesheet" href="assets/css/tailwind-v4.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-l79sJzHJh565MFGsGc3eRtVLuzYq8SIYejDd4skEaQQ='">
-    <title>Vortex</title>
-    <link rel="stylesheet" href="assets/css/loadingScreen.css"/>
-    <link rel="stylesheet" href="assets/css/tailwind-v4.css">
-</head>
+    <body>
+        <svg>
+            <defs>
+                <linearGradient
+                    id="graph-gradient"
+                    x1="0%"
+                    y1="0%"
+                    x2="0%"
+                    y2="100%"
+                >
+                    <stop class="graph-gradient-start" offset="0%" />
+                    <stop class="graph-gradient-end" offset="100%" />
+                </linearGradient>
+            </defs>
+        </svg>
 
-<body>
-    <svg>
-      <defs>
-        <linearGradient id='graph-gradient' x1='0%' y1='0%' x2='0%' y2='100%'>
-          <stop class='graph-gradient-start' offset='0%'/>
-          <stop class='graph-gradient-end' offset='100%'/>
-        </linearGradient>
-      </defs>
-    </svg>
+        <div id="icon-sets" style="display: none"></div>
+        <div id="content"></div>
+        <div id="overlays"></div>
+    </body>
 
-  <div id="icon-sets" style="display: none;"></div>
-  <div id="content"></div>
-  <div id="overlays"></div>
-</body>
-
-<script>require('./renderer.js');</script>
-
+    <script>
+        require("./renderer.js");
+    </script>
 </html>

@@ -1,51 +1,51 @@
 // classes for our custom progress bar control (not the bootstrap one)
 
 .progressbar {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 
-  .progressbar-container {
-    flex: 1 1 0;
-
-    .progressbar-track {
-      background-color: $gray-dark;
-      border-radius: 4px;
-      .progressbar-progress {
-        background-color: $brand-secondary;
-        height: 4px;
-        border-radius: 4px;
-      }
-    }
-    .progressbar-labels {
-      display: flex;
-      justify-content: space-between;
-      font-style: italic;
-      font-size: 0.85em;
-      > * {
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      > *:first-child {
+    .progressbar-container {
         flex: 1 1 0;
-        text-align: left;
-      }
-      > *:last-child {
-        width: 4em;
-        text-align: right;
-        // without this padding the last letter is cut off because of italic font
-        padding-right: 1px;
-      }
+
+        .progressbar-track {
+            background-color: $gray-dark;
+            border-radius: 4px;
+            .progressbar-progress {
+                background-color: $brand-secondary;
+                height: 4px;
+                border-radius: 4px;
+            }
+        }
+        .progressbar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-style: italic;
+            font-size: 0.85em;
+            > * {
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            > *:first-child {
+                flex: 1 1 0;
+                text-align: left;
+            }
+            > *:last-child {
+                width: 4em;
+                text-align: right;
+                // without this padding the last letter is cut off because of italic font
+                padding-right: 1px;
+            }
+        }
     }
-  }
 
-  .progressbar-percentage {
-    padding-left: 0.5em;
-    font-style: italic;
-  }
+    .progressbar-percentage {
+        padding-left: 0.5em;
+        font-style: italic;
+    }
 
-  .progressbar-timeleft {
-    padding-left: 0.5em;
-    font-style: italic;
-  }
+    .progressbar-timeleft {
+        padding-left: 0.5em;
+        font-style: italic;
+    }
 }

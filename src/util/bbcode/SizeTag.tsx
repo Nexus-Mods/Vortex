@@ -1,5 +1,5 @@
-import { Tag } from 'bbcode-to-react';
-import * as React from 'react';
+import { Tag } from "bbcode-to-react";
+import * as React from "react";
 
 class SizeTag extends Tag {
   public toHTML(): string[] {
@@ -9,7 +9,11 @@ class SizeTag extends Tag {
       return [this.getContent()];
     }
 
-    return [`<span style="font-size:${this.calc(size)}">`, this.getContent(), '</span>'];
+    return [
+      `<span style="font-size:${this.calc(size)}">`,
+      this.getContent(),
+      "</span>",
+    ];
   }
 
   public toReact(): React.ReactChild[] {
@@ -19,9 +23,9 @@ class SizeTag extends Tag {
       return this.getComponents();
     }
 
-    return [(
-      <span style={{ fontSize: this.calc(size) }}>{this.getComponents()}</span>
-    )];
+    return [
+      <span style={{ fontSize: this.calc(size) }}>{this.getComponents()}</span>,
+    ];
   }
 
   private calc(sizeFactor: number): string {

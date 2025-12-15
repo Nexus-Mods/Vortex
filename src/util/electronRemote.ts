@@ -1,10 +1,10 @@
-import { ipcMain, ipcRenderer } from 'electron';
-import * as electron from 'electron';
-import { generate as shortid } from 'shortid';
-import { log } from './log';
+import { ipcMain, ipcRenderer } from "electron";
+import * as electron from "electron";
+import { generate as shortid } from "shortid";
+import { log } from "./log";
 
-const IPC_CHANNEL = '__remote_electron_invocation';
-const IPC_CHANNEL_REPLY = IPC_CHANNEL + '_reply';
+const IPC_CHANNEL = "__remote_electron_invocation";
+const IPC_CHANNEL_REPLY = IPC_CHANNEL + "_reply";
 
 type StoredCB = (mainElectron: typeof electron, ...args: any[]) => Promise<any>;
 type StoredSyncCB = (mainElectron: typeof electron, ...args: any[]) => any;
@@ -22,8 +22,10 @@ const outstandingCalls: { [callId: string]: IOutstandingCall } = {};
 ipcMain?.on?.(IPC_CHANNEL, async (event, arg) => {
   const { id, callId, args } = JSON.parse(arg);
   if (knownCalls[id] === undefined) {
-    event.sender.send(IPC_CHANNEL_REPLY,
-                      JSON.stringify({ callId, error: new Error('invalid remote call') }));
+    event.sender.send(
+      IPC_CHANNEL_REPLY,
+      JSON.stringify({ callId, error: new Error("invalid remote call") }),
+    );
     return;
   }
 
@@ -38,7 +40,7 @@ ipcMain?.on?.(IPC_CHANNEL, async (event, arg) => {
 ipcRenderer?.on?.(IPC_CHANNEL_REPLY, (event, arg) => {
   const { callId, error, result } = JSON.parse(arg);
   if (outstandingCalls[callId] === undefined) {
-    log('warn', 'unexpected remote reply', arg);
+    log("warn", "unexpected remote reply", arg);
     return;
   }
 
@@ -50,7 +52,7 @@ ipcRenderer?.on?.(IPC_CHANNEL_REPLY, (event, arg) => {
   delete outstandingCalls[callId];
 });
 
-ipcMain?.on?.(IPC_CHANNEL + '_sync', (event, arg) => {
+ipcMain?.on?.(IPC_CHANNEL + "_sync", (event, arg) => {
   const { id, callId, args } = JSON.parse(arg);
   try {
     event.returnValue = {
@@ -66,13 +68,19 @@ type Arr = readonly unknown[];
 
 export function makeRemoteCallSync<T, ArgsT extends Arr>(
   id: string,
-  cb: (mainElectron: typeof electron, window: electron.WebContents, ...args: ArgsT) => T)
-  : (...args: ArgsT) => T {
-
+  cb: (
+    mainElectron: typeof electron,
+    window: electron.WebContents,
+    ...args: ArgsT
+  ) => T,
+): (...args: ArgsT) => T {
   if (ipcRenderer !== undefined) {
     return (...args: ArgsT) => {
       const callId = shortid();
-      const res = ipcRenderer.sendSync(IPC_CHANNEL + '_sync', JSON.stringify({ id, args, callId }));
+      const res = ipcRenderer.sendSync(
+        IPC_CHANNEL + "_sync",
+        JSON.stringify({ id, args, callId }),
+      );
       if (res.error !== null) {
         throw res.error;
       } else {
@@ -82,16 +90,23 @@ export function makeRemoteCallSync<T, ArgsT extends Arr>(
   } else {
     knownCallsSync[id] = cb;
     return (...args: ArgsT) => {
-      return cb(electron, electron.webContents?.getFocusedWebContents?.(), ...args);
+      return cb(
+        electron,
+        electron.webContents?.getFocusedWebContents?.(),
+        ...args,
+      );
     };
   }
 }
 
-function makeRemoteCall<T, ArgsT extends Arr>(id: string,
-                                              cb: (mainElectron: typeof electron,
-                                                   window: electron.WebContents,
-                                                   ...args: ArgsT) => Promise<T>)
-                                              : (...args: ArgsT) => Promise<T> {
+function makeRemoteCall<T, ArgsT extends Arr>(
+  id: string,
+  cb: (
+    mainElectron: typeof electron,
+    window: electron.WebContents,
+    ...args: ArgsT
+  ) => Promise<T>,
+): (...args: ArgsT) => Promise<T> {
   if (ipcRenderer !== undefined) {
     return (...args: ArgsT) => {
       const callId = shortid();
@@ -103,7 +118,11 @@ function makeRemoteCall<T, ArgsT extends Arr>(id: string,
   } else {
     knownCalls[id] = cb;
     return (...args: ArgsT) => {
-      return cb(electron, electron.webContents.getFocusedWebContents(), ...args);
+      return cb(
+        electron,
+        electron.webContents.getFocusedWebContents(),
+        ...args,
+      );
     };
   }
 }

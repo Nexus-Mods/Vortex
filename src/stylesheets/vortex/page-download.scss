@@ -1,107 +1,107 @@
 #downloads-action-icons .btn {
-  @extend .btn-embed;
+    @extend .btn-embed;
 }
 
 .download-panel {
-  height: 100%;
-  background-color: $brand-bg;
-  display: flex;
-  flex-direction: column;
-  > .panel-body {
     height: 100%;
-    padding-right: 0;
-    padding-top: $gutter-width;
-  }
+    background-color: $brand-bg;
+    display: flex;
+    flex-direction: column;
+    > .panel-body {
+        height: 100%;
+        padding-right: 0;
+        padding-top: $gutter-width;
+    }
 }
 
 .download-graph-panel {
-  position: relative;
-  border-width: 0 0 1px 0;
-  height: auto;
-  // necessary so that the button to un-hide the panel remains visible
-  overflow: visible;
+    position: relative;
+    border-width: 0 0 1px 0;
+    height: auto;
+    // necessary so that the button to un-hide the panel remains visible
+    overflow: visible;
 }
 
 .download-drop-container {
-  margin-top: $half-gutter;
+    margin-top: $half-gutter;
 }
 
 #table-downloads {
-  .header-game {
-    min-width: 80px;
-  }
+    .header-game {
+        min-width: 80px;
+    }
 }
 
 .active-downloads-slim {
-  white-space: nowrap;
-  font-size: 0.75em;
+    white-space: nowrap;
+    font-size: 0.75em;
 }
 
 .active-downloads-container {
-  display: flex;
-  flex-direction: column;
-  padding: 18px;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
 
-  span {
-    font-size: small;
-  }
-
-  .progressbar {
-    margin: 8px 0px;
-
-    .progressbar-labels {
-      > *:first-child {
-        width: 0;
-      }
+    span {
+        font-size: small;
     }
-  }
+
+    .progressbar {
+        margin: 8px 0px;
+
+        .progressbar-labels {
+            > *:first-child {
+                width: 0;
+            }
+        }
+    }
 }
 
 .main-page-body > .download-drop-panel {
-  height: auto;
+    height: auto;
 }
 
 .btn-download-go-premium {
-  margin-left: 5px;
-  background-color: $brand-highlight;
+    margin-left: 5px;
+    background-color: $brand-highlight;
 }
 
 #table-downloads {
-  // prevent word wrap
-  .table-header-cell {
-    white-space: nowrap;
-  }
-  .header-game,
-  .header-progress,
-  .header-filetime {
-    // need a bit of space so the dropdown menu is readable
-    min-width: 150px;
-  }
-  .cell-filesize {
-    white-space: nowrap;
-  }
+    // prevent word wrap
+    .table-header-cell {
+        white-space: nowrap;
+    }
+    .header-game,
+    .header-progress,
+    .header-filetime {
+        // need a bit of space so the dropdown menu is readable
+        min-width: 150px;
+    }
+    .cell-filesize {
+        white-space: nowrap;
+    }
 }
 
 .progressbar-progress {
-  transition: width ease 1s;
+    transition: width ease 1s;
 }
 
 .archive-game-list {
-  max-height: 200px;
-  overflow-y: auto;
-  .primary-game {
-    font-weight: bold;
-  }
+    max-height: 200px;
+    overflow-y: auto;
+    .primary-game {
+        font-weight: bold;
+    }
 
-  .list-group-item {
-    display: flex;
-    justify-content: space-between;
-  }
+    .list-group-item {
+        display: flex;
+        justify-content: space-between;
+    }
 }
 
 .game-list-container {
-  .dropdown-menu {
-    max-height: 300px;
-    overflow-y: auto;
-  }
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
 }

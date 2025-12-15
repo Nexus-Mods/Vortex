@@ -1,21 +1,25 @@
-import Nexus, { IModFile, IModFileQuery, IOAuthCredentials } from '@nexusmods/nexus-api';
-import { TFunction } from 'i18next';
-import * as React from 'react';
-import { Button, Panel } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import { util } from '../../..';
-import Modal from '../../../renderer/controls/Modal';
-import { IState } from '../../../types/IState';
-import { log } from '../../../util/log';
-import { NEXUS_BASE_URL, PREMIUM_PATH } from '../constants';
-import NXMUrl from '../NXMUrl';
-import { makeFileUID } from '../util/UIDs';
-import { IValidateKeyDataV2 } from '../types/IValidateKeyData';
-import NewFreeDownloadModal from './NewFreeDownloadModal';
-import { MainContext } from '../../../renderer/views/MainWindow';
-import { IComponentContext } from '../../../types/IComponentContext';
-import opn from '../../../util/opn';
-import { Campaign, Content, nexusModsURL, Section } from '../../../util/util';
+import Nexus, {
+  IModFile,
+  IModFileQuery,
+  IOAuthCredentials,
+} from "@nexusmods/nexus-api";
+import { TFunction } from "i18next";
+import * as React from "react";
+import { Button, Panel } from "react-bootstrap";
+import { useSelector } from "react-redux";
+import { util } from "../../..";
+import Modal from "../../../renderer/controls/Modal";
+import { IState } from "../../../types/IState";
+import { log } from "../../../util/log";
+import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
+import NXMUrl from "../NXMUrl";
+import { makeFileUID } from "../util/UIDs";
+import { IValidateKeyDataV2 } from "../types/IValidateKeyData";
+import NewFreeDownloadModal from "./NewFreeDownloadModal";
+import { MainContext } from "../../../renderer/views/MainWindow";
+import { IComponentContext } from "../../../types/IComponentContext";
+import opn from "../../../util/opn";
+import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -49,56 +53,70 @@ const FILE_QUERY: IModFileQuery = {
 };
 
 type RecursivePartial<T> = {
-  [P in keyof T]?:
-  T[P] extends Array<(infer U)> ? Array<RecursivePartial<U>> :
-  T[P] extends object ? RecursivePartial<T[P]> :
-  T[P];
+  [P in keyof T]?: T[P] extends Array<infer U>
+    ? Array<RecursivePartial<U>>
+    : T[P] extends object
+      ? RecursivePartial<T[P]>
+      : T[P];
 };
 
-const makeUnknown: (t: TFunction, url: NXMUrl) => RecursivePartial<IModFile> =
-  (t: TFunction, url: NXMUrl) => {
-    return {
-      modId: undefined,
-      mod: {
-        summary: t('N/A'),
-        name: t('Mod with id {{modId}}', { modId: url.modId }),
-        pictureUrl: null,
-        uploader: {
-          name: t('N/A'),
-          avatar: undefined,
-        },
+const makeUnknown: (t: TFunction, url: NXMUrl) => RecursivePartial<IModFile> = (
+  t: TFunction,
+  url: NXMUrl,
+) => {
+  return {
+    modId: undefined,
+    mod: {
+      summary: t("N/A"),
+      name: t("Mod with id {{modId}}", { modId: url.modId }),
+      pictureUrl: null,
+      uploader: {
+        name: t("N/A"),
+        avatar: undefined,
       },
-      game: {
-        domainName: undefined,
-      },
-      name: t('N/A'),
-      owner: {
-        member_id: undefined,
-      } as any,
-    };
+    },
+    game: {
+      domainName: undefined,
+    },
+    name: t("N/A"),
+    owner: {
+      member_id: undefined,
+    } as any,
   };
+};
 
 function nop() {
   // nop
 }
 
 function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
+  const {
+    t,
+    nexus,
+    onCancel,
+    onDownload,
+    onSkip,
+    onUpdated,
+    onRetry,
+    onCheckStatus,
+  } = props;
 
-  const { t, nexus, onCancel, onDownload, onSkip, onUpdated, onRetry, onCheckStatus } = props;
+  const urls: string[] = useSelector<IState, string[]>(
+    (state) => state.session["nexus"].freeUserDLQueue,
+  );
 
-  const urls: string[] = useSelector<IState, string[]>(state =>
-    state.session['nexus'].freeUserDLQueue);
+  const userInfo = useSelector<IState, IValidateKeyDataV2>(
+    (state) => state.persistent["nexus"].userInfo,
+  );
 
-  const userInfo = useSelector<IState, IValidateKeyDataV2>(state =>
-    state.persistent['nexus'].userInfo);
-
-  const collectionInstallSession = useSelector<IState, any>(state =>
-    state.session?.['collections']?.activeSession);
+  const collectionInstallSession = useSelector<IState, any>(
+    (state) => state.session?.["collections"]?.activeSession,
+  );
   const context = React.useContext<IComponentContext>(MainContext);
 
   const [fileInfo, setFileInfo] = React.useState<any>(null);
   const [campaign, setCampaign] = React.useState<string>(undefined);
-  const [positionText, setPositionText] = React.useState<string>('1/1');
+  const [positionText, setPositionText] = React.useState<string>("1/1");
   const lastFetchUrl = React.useRef<string>();
 
   const show = urls.length > 0 && !userInfo?.isPremium;
@@ -107,21 +125,25 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     if (!show) return;
 
     const handleFocus = () => {
-      console.log('Window gained focus. Modal is open');
+      console.log("Window gained focus. Modal is open");
       checkStatus();
     };
 
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [show]);
 
   React.useEffect(() => {
     if (collectionInstallSession?.downloadedCount != null) {
       const position = collectionInstallSession.downloadedCount + 1;
-      const total = Math.max(collectionInstallSession.totalRequired + collectionInstallSession.totalOptional, 1);
+      const total = Math.max(
+        collectionInstallSession.totalRequired +
+          collectionInstallSession.totalOptional,
+        1,
+      );
       setPositionText(`${position}/${total}`);
     }
   }, [collectionInstallSession]);
@@ -129,8 +151,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   React.useEffect(() => {
     // if userInfo is updated, and isPremium is true, then retry
     if (userInfo !== undefined)
-      if (userInfo?.isPremium && urls.length > 0)
-        retry();
+      if (userInfo?.isPremium && urls.length > 0) retry();
   }, [userInfo]);
 
   React.useEffect(() => {
@@ -139,24 +160,27 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
 
       onUpdated();
       setFileInfo(null);
-      setCampaign(url.getParam('campaign'));
+      setCampaign(url.getParam("campaign"));
 
       try {
-        const fileInfoList = await nexus.modFilesByUid(
-          FILE_QUERY,
-          [makeFileUID({ fileId: url.fileId.toString(), gameId: url.gameId })]);
+        const fileInfoList = await nexus.modFilesByUid(FILE_QUERY, [
+          makeFileUID({ fileId: url.fileId.toString(), gameId: url.gameId }),
+        ]);
         if (fileInfoList.length > 0) {
           setFileInfo(fileInfoList[0]);
         } else {
           setFileInfo(makeUnknown(t, url));
         }
       } catch (err) {
-        log('error', 'failed to fetch file information', { url, error: err.message });
+        log("error", "failed to fetch file information", {
+          url,
+          error: err.message,
+        });
         setFileInfo(makeUnknown(t, url));
       }
     };
 
-    if ((urls.length > 0) && (urls[0] !== lastFetchUrl.current)) {
+    if (urls.length > 0 && urls[0] !== lastFetchUrl.current) {
       lastFetchUrl.current = urls[0];
       fetchFileInfo();
     }
@@ -183,42 +207,55 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [onSkip, urls]);
 
   const openModPage = React.useCallback(() => {
-    util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`);
+    util.opn(
+      `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`,
+    );
   }, [fileInfo]);
 
   const openAuthorPage = React.useCallback(() => {
-    util.opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
+    util.opn(
+      `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`,
+    );
   }, [fileInfo]);
 
   const goPremium = React.useCallback(() => {
-    context.api.events.emit('analytics-track-click-event', 'Go Premium', 'Download Mod');
+    context.api.events.emit(
+      "analytics-track-click-event",
+      "Go Premium",
+      "Download Mod",
+    );
 
-    opn(nexusModsURL(PREMIUM_PATH, {
-      section: Section.Users,
-      campaign: Campaign.BuyPremium,
-      content: Content.DownloadModModal
-    })).catch(() => null);
+    opn(
+      nexusModsURL(PREMIUM_PATH, {
+        section: Section.Users,
+        campaign: Campaign.BuyPremium,
+        content: Content.DownloadModModal,
+      }),
+    ).catch(() => null);
   }, [campaign]);
 
   return (
-    <Modal show={show} onHide={nop} id='free-user-dl-dialog'>
+    <Modal show={show} onHide={nop} id="free-user-dl-dialog">
       <Modal.Header>
-        <Modal.Title>
-          {t('Download mod')}
-        </Modal.Title>
+        <Modal.Title>{t("Download mod")}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <NewFreeDownloadModal
           positionText={positionText}
-          fileInfo={fileInfo} 
-          t={t} 
-          openModPage={openModPage} 
-          goPremium={goPremium} 
-          onDownload={download} />
+          fileInfo={fileInfo}
+          t={t}
+          openModPage={openModPage}
+          goPremium={goPremium}
+          onDownload={download}
+        />
       </Modal.Body>
       <Modal.Footer>
-        <Button id='cancel-button' onClick={cancel}>{t('Cancel install')}</Button>
-        <Button id='skip-button' onClick={skip}>{t('Skip mod')}</Button>
+        <Button id="cancel-button" onClick={cancel}>
+          {t("Cancel install")}
+        </Button>
+        <Button id="skip-button" onClick={skip}>
+          {t("Skip mod")}
+        </Button>
       </Modal.Footer>
     </Modal>
   );

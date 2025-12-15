@@ -1,9 +1,15 @@
-import * as actions from '../actions/session';
-import { IReducerSpec } from '../types/IExtensionContext';
+import * as actions from "../actions/session";
+import { IReducerSpec } from "../types/IExtensionContext";
 
-import { addUniqueSafe, deleteOrNop, pushSafe, removeValue, setSafe } from '../util/storeHelper';
+import {
+  addUniqueSafe,
+  deleteOrNop,
+  pushSafe,
+  removeValue,
+  setSafe,
+} from "../util/storeHelper";
 
-import * as path from 'path';
+import * as path from "path";
 
 export function makeExeId(exePath: string): string {
   // TODO: stripping the path means that we can't distinguish between different installations
@@ -20,65 +26,69 @@ export function makeExeId(exePath: string): string {
 export const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.displayGroup as any]: (state, payload) =>
-      setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId),
+      setSafe(state, ["displayGroups", payload.groupId], payload.itemId),
     [actions.setDialogVisible as any]: (state, payload) =>
-      setSafe(state, [ 'visibleDialog' ], payload.dialogId),
+      setSafe(state, ["visibleDialog"], payload.dialogId),
     [actions.setSettingsPage as any]: (state, payload) =>
-      setSafe(state, [ 'settingsPage' ], payload.pageId),
+      setSafe(state, ["settingsPage"], payload.pageId),
     [actions.startActivity as any]: (state, payload) =>
-      addUniqueSafe(state, [ 'activity', payload.group ], payload.activityId),
+      addUniqueSafe(state, ["activity", payload.group], payload.activityId),
     [actions.stopActivity as any]: (state, payload) =>
-      removeValue(state, [ 'activity', payload.group ], payload.activityId),
+      removeValue(state, ["activity", payload.group], payload.activityId),
     [actions.setProgress as any]: (state, payload) =>
-      setSafe(state, ['progress', payload.group, payload.progressId],
-              { text: payload.text, percent: Math.round(payload.percent) }),
+      setSafe(state, ["progress", payload.group, payload.progressId], {
+        text: payload.text,
+        percent: Math.round(payload.percent),
+      }),
     [actions.setOpenMainPage as any]: (state, payload) => {
       if (payload.secondary) {
-        return setSafe(state, [ 'secondaryPage' ], payload.page);
+        return setSafe(state, ["secondaryPage"], payload.page);
       } else {
         return setSafe(
-          setSafe(state, [ 'mainPage' ], payload.page),
-          [ 'secondaryPage' ], '');
+          setSafe(state, ["mainPage"], payload.page),
+          ["secondaryPage"],
+          "",
+        );
       }
     },
     [actions.setExtensionLoadFailures as any]: (state, payload) =>
-      setSafe(state, ['extLoadFailures'], payload),
+      setSafe(state, ["extLoadFailures"], payload),
     [actions.setToolRunning as any]: (state, payload) =>
-      setSafe(state, ['toolsRunning', makeExeId(payload.exePath)], {
+      setSafe(state, ["toolsRunning", makeExeId(payload.exePath)], {
         exePath: payload.exePath,
         started: payload.started,
         pid: undefined,
         exclusive: payload.exclusive || false,
       }),
     [actions.setToolPid as any]: (state, payload) =>
-      setSafe(state, ['toolsRunning', makeExeId(payload.exePath)], {
+      setSafe(state, ["toolsRunning", makeExeId(payload.exePath)], {
         exePath: payload.exePath,
         started: payload.started,
         pid: payload.pid,
         exclusive: payload.exclusive || false,
       }),
     [actions.setToolStopped as any]: (state, payload) =>
-      deleteOrNop(state, ['toolsRunning', makeExeId(payload.exePath)]),
+      deleteOrNop(state, ["toolsRunning", makeExeId(payload.exePath)]),
     [actions.setUIBlocker as any]: (state, payload) =>
-      setSafe(state, ['uiBlockers', payload.id], {
+      setSafe(state, ["uiBlockers", payload.id], {
         icon: payload.icon,
         description: payload.description,
         mayCancel: payload.mayCancel,
       }),
     [actions.clearUIBlocker as any]: (state, payload) =>
-      deleteOrNop(state, ['uiBlockers', payload]),
+      deleteOrNop(state, ["uiBlockers", payload]),
     [actions.setNetworkConnected as any]: (state, payload) =>
-      setSafe(state, ['networkConnected'], payload),
+      setSafe(state, ["networkConnected"], payload),
     [actions.setCommandLine as any]: (state, payload) =>
-      setSafe(state, ['commandLine'], payload),
+      setSafe(state, ["commandLine"], payload),
   },
   defaults: {
     displayGroups: {},
     visibleDialog: undefined,
     overlayOpen: false,
     networkConnected: true,
-    mainPage: '',
-    secondaryPage: '',
+    mainPage: "",
+    secondaryPage: "",
     activity: {},
     progress: {},
     settingsPage: undefined,

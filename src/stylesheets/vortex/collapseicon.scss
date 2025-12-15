@@ -1,55 +1,55 @@
 $collapseicon-offset: 0;
 
 .collapseicon {
-  position: absolute;
-  visibility: visible !important;
-  padding: 0;
-  line-height: 1;
+    position: absolute;
+    visibility: visible !important;
+    padding: 0;
+    line-height: 1;
 }
 
 .collapseicon-topleft {
-  &.collapseicon-show {
-    top: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    bottom: $collapseicon-offset;
-  }
-  left: $collapseicon-offset;
+    &.collapseicon-show {
+        top: $collapseicon-offset;
+    }
+    &.collapseicon-hide {
+        bottom: $collapseicon-offset;
+    }
+    left: $collapseicon-offset;
 }
 .collapseicon-topright {
-  &.collapseicon-show {
-    top: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    bottom: $collapseicon-offset;
-  }
-  right: $collapseicon-offset;
+    &.collapseicon-show {
+        top: $collapseicon-offset;
+    }
+    &.collapseicon-hide {
+        bottom: $collapseicon-offset;
+    }
+    right: $collapseicon-offset;
 }
 .collapseicon-bottomleft {
-  &.collapseicon-show {
-    bottom: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    top: $collapseicon-offset;
-  }
-  left: $collapseicon-offset;
+    &.collapseicon-show {
+        bottom: $collapseicon-offset;
+    }
+    &.collapseicon-hide {
+        top: $collapseicon-offset;
+    }
+    left: $collapseicon-offset;
 }
 .collapseicon-bottomright {
-  &.collapseicon-show {
-    bottom: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    top: $collapseicon-offset;
-  }
-  right: $collapseicon-offset;
+    &.collapseicon-show {
+        bottom: $collapseicon-offset;
+    }
+    &.collapseicon-hide {
+        top: $collapseicon-offset;
+    }
+    right: $collapseicon-offset;
 }
 
 @keyframes collapseIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    visibility: visible;
-    opacity: 1;
-  }
+    0% {
+        opacity: 0;
+    }
+    100% {
+        visibility: visible;
+        opacity: 1;
+    }
 }

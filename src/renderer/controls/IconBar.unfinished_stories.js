@@ -1,11 +1,11 @@
 import { withInfo } from "@storybook/addon-info";
-import { withKnobs } from '@storybook/addon-knobs';
-import React from 'react';
-import IconBase from './IconBase';
-import IconBar from './IconBar';
+import { withKnobs } from "@storybook/addon-knobs";
+import React from "react";
+import IconBase from "./IconBase";
+import IconBar from "./IconBar";
 
 const sets = {
-  icons: new Set(['sample', 'spinner']),
+  icons: new Set(["sample", "spinner"]),
 };
 
 function getSet(set) {
@@ -17,18 +17,14 @@ function Icon(props) {
 }
 
 export default {
-  title: 'IconBar',
+  title: "IconBar",
   parameters: {
-    componentSubtitle: 'Control containing multiple buttons',
+    componentSubtitle: "Control containing multiple buttons",
     decorators: [withInfo, withKnobs],
     info: {
       inline: true,
-    }
-  }
+    },
+  },
 };
 
-export const simple = () => (
-  <IconBar
-    IconComponent={Icon}
-  />
-);
+export const simple = () => <IconBar IconComponent={Icon} />;

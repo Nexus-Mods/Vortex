@@ -1,10 +1,10 @@
-import type * as RemoteT from '@electron/remote';
-import { BrowserWindow } from 'electron';
-import * as React from 'react';
-import { IconButton } from '../controls/TooltipControls';
-import lazyRequire from '../../util/lazyRequire';
+import type * as RemoteT from "@electron/remote";
+import { BrowserWindow } from "electron";
+import * as React from "react";
+import { IconButton } from "../controls/TooltipControls";
+import lazyRequire from "../../util/lazyRequire";
 
-const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
+const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 const window = (() => {
   let res: BrowserWindow;
@@ -28,15 +28,15 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   }
 
   public componentDidMount() {
-    window().on('maximize', this.onMaximize);
-    window().on('unmaximize', this.onUnMaximize);
-    window().on('close', this.onClose);
+    window().on("maximize", this.onMaximize);
+    window().on("unmaximize", this.onUnMaximize);
+    window().on("close", this.onClose);
   }
 
   public componentWillUnmount() {
-    window().removeListener('maximize', this.onMaximize);
-    window().removeListener('unmaximize', this.onUnMaximize);
-    window().removeListener('close', this.onClose);
+    window().removeListener("maximize", this.onMaximize);
+    window().removeListener("unmaximize", this.onUnMaximize);
+    window().removeListener("close", this.onClose);
   }
 
   public render(): JSX.Element {
@@ -45,26 +45,26 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
       return null;
     }
     return (
-      <div id='window-controls'>
+      <div id="window-controls">
         <IconButton
-          id='window-minimize'
-          className='window-control'
-          tooltip=''
-          icon='window-minimize'
+          id="window-minimize"
+          className="window-control"
+          tooltip=""
+          icon="window-minimize"
           onClick={this.minimize}
         />
         <IconButton
-          id='window-maximize'
-          className='window-control'
-          tooltip=''
-          icon={isMaximized ? 'window-restore' : 'window-maximize'}
+          id="window-maximize"
+          className="window-control"
+          tooltip=""
+          icon={isMaximized ? "window-restore" : "window-maximize"}
           onClick={this.toggleMaximize}
         />
         <IconButton
-          id='window-close'
-          className='window-control'
-          tooltip=''
-          icon='window-close'
+          id="window-close"
+          className="window-control"
+          tooltip=""
+          icon="window-close"
           onClick={this.close}
         />
       </div>
@@ -73,30 +73,30 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
 
   private minimize = () => {
     window().minimize();
-  }
+  };
 
   private onMaximize = () => {
     this.setState({ isMaximized: true });
     this.forceUpdate();
-  }
+  };
 
   private onUnMaximize = () => {
     this.setState({ isMaximized: false });
     this.forceUpdate();
-  }
+  };
 
   private onClose = () => {
     this.mClosed = true;
-  }
+  };
 
   private toggleMaximize = () => {
     const wasMaximized = window().isMaximized();
     wasMaximized ? window().unmaximize() : window().maximize();
-  }
+  };
 
   private close = () => {
     window().close();
-  }
+  };
 }
 
 export default WindowControls;

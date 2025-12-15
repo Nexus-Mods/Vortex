@@ -1,6 +1,6 @@
-import { ToDoType } from '../../types/IExtensionContext';
+import { ToDoType } from "../../types/IExtensionContext";
 
-import { TFunction } from 'i18next';
+import { TFunction } from "i18next";
 
 export interface IToDo {
   id: string;

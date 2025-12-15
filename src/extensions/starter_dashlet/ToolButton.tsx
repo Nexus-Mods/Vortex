@@ -1,12 +1,12 @@
-import IconBar from '../../renderer/controls/IconBar';
-import { TFunction } from '../../util/i18n';
-import StarterInfo from '../../util/StarterInfo';
-import ToolIcon from '../../renderer/controls/ToolIcon';
+import IconBar from "../../renderer/controls/IconBar";
+import { TFunction } from "../../util/i18n";
+import StarterInfo from "../../util/StarterInfo";
+import ToolIcon from "../../renderer/controls/ToolIcon";
 
-import { IStarterInfo } from '../../util/StarterInfo';
+import { IStarterInfo } from "../../util/StarterInfo";
 
-import React from 'react';
-import { useDrop } from 'react-dnd';
+import React from "react";
+import { useDrop } from "react-dnd";
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
@@ -25,8 +25,18 @@ export interface IToolButtonProps {
 }
 
 function ToolButton(props: IToolButtonProps) {
-  const { t, counter, item, primary, running, onRun,
-          onMakePrimary, onRemove, onEdit, valid } = props;
+  const {
+    t,
+    counter,
+    item,
+    primary,
+    running,
+    onRun,
+    onMakePrimary,
+    onRemove,
+    onEdit,
+    valid,
+  } = props;
 
   let imageSrc;
   const starter = item as StarterInfo;
@@ -56,45 +66,47 @@ function ToolButton(props: IToolButtonProps) {
 
   const staticElements = [
     {
-      title: 'Run',
-      icon: 'launch-simple',
+      title: "Run",
+      icon: "launch-simple",
       action: run,
-      condition: () => valid ? true : t('Not configured') as string,
+      condition: () => (valid ? true : (t("Not configured") as string)),
     },
     {
-      title: primary ? 'Unset as primary' : 'Set as primary',
-      icon: 'plugin-master',
+      title: primary ? "Unset as primary" : "Set as primary",
+      icon: "plugin-master",
       action: setPrimaryTool,
-      condition: () => (primary || valid) ? true : t('Not configured') as string,
+      condition: () =>
+        primary || valid ? true : (t("Not configured") as string),
     },
     {
-      title: 'Edit',
-      icon: 'edit',
+      title: "Edit",
+      icon: "edit",
       action: edit,
     },
     {
-      title: 'Remove',
-      icon: 'remove',
+      title: "Remove",
+      icon: "remove",
       action: remove,
       condition: () => !starter.isGame,
     },
   ];
 
-  const classes = ['tool-button'];
+  const classes = ["tool-button"];
   if (primary) {
-    classes.push('tool-button-primary');
+    classes.push("tool-button-primary");
   }
   const [spec, dropRef] = useDrop({
-    accept: 'TOOL',
+    accept: "TOOL",
     hover: (hoveredOverItem: any) => {
       if (hoveredOverItem.id !== props.item.id) {
         props.onMoveItem(hoveredOverItem.id, props.item.id);
       }
-  }});
+    },
+  });
   return (
     <>
-      <div ref={dropRef} className={classes.join(' ')}>
-        <div className='tool-icon-container'>
+      <div ref={dropRef} className={classes.join(" ")}>
+        <div className="tool-icon-container">
           <ToolIcon
             t={t}
             item={props.item}
@@ -105,15 +117,17 @@ function ToolButton(props: IToolButtonProps) {
             onRun={run}
           />
         </div>
-        <div className='tool-icon-text'>
-          <div className='tool-icon-name'>{starter.name}</div>
-          {running ? <div className='tool-icon-running'>{t('Running...')}</div> : null}
+        <div className="tool-icon-text">
+          <div className="tool-icon-name">{starter.name}</div>
+          {running ? (
+            <div className="tool-icon-running">{t("Running...")}</div>
+          ) : null}
         </div>
       </div>
       <IconBar
         id={`tool-starter-${starter.id}`}
-        className='buttons'
-        group='tool-starter'
+        className="buttons"
+        group="tool-starter"
         instanceId={starter.id}
         staticElements={staticElements}
         collapse={true}

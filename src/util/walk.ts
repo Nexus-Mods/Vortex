@@ -1,8 +1,8 @@
-import * as fs from './fs';
+import * as fs from "./fs";
 
-import Promise from 'bluebird';
-import * as fsOrig from 'fs-extra';
-import * as path from 'path';
+import Promise from "bluebird";
+import * as fsOrig from "fs-extra";
+import * as path from "path";
 
 export interface IWalkOptions {
   ignoreErrors?: string[] | true;
@@ -18,21 +18,28 @@ export interface IWalkOptions {
  *                       rejected, the walk is interrupted
  * @returns {Promise<void>} a promise that is resolved once the search is complete
  */
-function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>,
-              options?: IWalkOptions): Promise<void> {
+function walk(
+  target: string,
+  callback: (iterPath: string, stats: fs.Stats) => Promise<any>,
+  options?: IWalkOptions,
+): Promise<void> {
   const opt = options || {};
   let allFileNames: string[];
 
-  return fs.readdirAsync(target)
-    .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve([])
-      : Promise.reject(err))
+  return fs
+    .readdirAsync(target)
+    .catch((err) =>
+      err.code === "ENOENT" ? Promise.resolve([]) : Promise.reject(err),
+    )
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
-        Promise.resolve(fsOrig.lstat([target, statPath].join(path.sep))).reflect());
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
+        Promise.resolve(
+          fsOrig.lstat([target, statPath].join(path.sep)),
+        ).reflect(),
+      );
+    })
+    .then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];
@@ -43,17 +50,21 @@ function walk(target: string,
         }
         const fullPath: string = path.join(target, allFileNames[idx]);
         cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory() && (path.extname(fullPath) !== '.asar')) {
+        if (stat.value().isDirectory() && path.extname(fullPath) !== ".asar") {
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
-                         walk(subDir, callback))));
+      return Promise.all(
+        cbPromises.concat(
+          Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback)),
+        ),
+      );
     })
-    .catch(err => {
-      if ((opt.ignoreErrors !== undefined)
-          && ((opt.ignoreErrors === true)
-              || (opt.ignoreErrors.indexOf(err.code) !== -1))) {
+    .catch((err) => {
+      if (
+        opt.ignoreErrors !== undefined &&
+        (opt.ignoreErrors === true || opt.ignoreErrors.indexOf(err.code) !== -1)
+      ) {
         return Promise.resolve();
       } else {
         return Promise.reject(err);

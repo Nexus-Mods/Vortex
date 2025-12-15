@@ -1,12 +1,12 @@
-import { IBannerOptions } from '../../types/IBannerOptions';
-import { IExtensibleProps } from '../../types/IExtensionProvider';
-import { connect } from '../../util/ComponentEx';
-import { extend } from '../../util/ExtensionProvider';
-import { truthy } from '../../util/util';
+import { IBannerOptions } from "../../types/IBannerOptions";
+import { IExtensibleProps } from "../../types/IExtensionProvider";
+import { connect } from "../../util/ComponentEx";
+import { extend } from "../../util/ExtensionProvider";
+import { truthy } from "../../util/util";
 
-import * as _ from 'lodash';
-import * as React from 'react';
-import { setInterval } from 'timers';
+import * as _ from "lodash";
+import * as React from "react";
+import { setInterval } from "timers";
 
 interface IBannerDefinition {
   component: React.ComponentClass<any>;
@@ -25,12 +25,15 @@ interface IExtensionProps {
 interface IConnectedProps {
   bannerProps: {
     [bannerIdx: number]: {
-      [key: string]: any,
+      [key: string]: any;
     };
   };
 }
 
-type IProps = IBaseProps & IConnectedProps & IExtensionProps & React.HTMLAttributes<any>;
+type IProps = IBaseProps &
+  IConnectedProps &
+  IExtensionProps &
+  React.HTMLAttributes<any>;
 
 class Banner extends React.Component<IProps, {}> {
   private mRef: Element;
@@ -44,14 +47,17 @@ class Banner extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { bannerProps, className, objects, style } = this.props;
 
-    this.mBanners = objects.filter((obj, idx) =>
-      (obj.options.condition === undefined) || obj.options.condition(bannerProps[idx]));
+    this.mBanners = objects.filter(
+      (obj, idx) =>
+        obj.options.condition === undefined ||
+        obj.options.condition(bannerProps[idx]),
+    );
 
-    const classes = className !== undefined ? className.split(' ') : [];
-    classes.push('banner');
+    const classes = className !== undefined ? className.split(" ") : [];
+    classes.push("banner");
 
-    return (this.mBanners.length > 0) ? (
-      <div className={classes.join(' ')} style={style} ref={this.setRef}>
+    return this.mBanners.length > 0 ? (
+      <div className={classes.join(" ")} style={style} ref={this.setRef}>
         {this.mBanners.map(this.renderBanner)}
       </div>
     ) : null;
@@ -59,36 +65,40 @@ class Banner extends React.Component<IProps, {}> {
 
   private renderBanner = (banner: IBannerDefinition, idx: number) => {
     return (
-      <div key={idx} className={idx === this.mCurrentBanner ? 'active' : undefined}>
+      <div
+        key={idx}
+        className={idx === this.mCurrentBanner ? "active" : undefined}
+      >
         <banner.component />
       </div>
     );
-  }
+  };
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
-  }
+  };
 
   private cycle = () => {
     if (truthy(this.mRef)) {
-      const prev = (this.mRef.childNodes.item(this.mCurrentBanner) as any);
-      prev?.attributes?.removeNamedItem?.('class');
+      const prev = this.mRef.childNodes.item(this.mCurrentBanner) as any;
+      prev?.attributes?.removeNamedItem?.("class");
 
       this.mCurrentBanner = (this.mCurrentBanner + 1) % this.mBanners.length;
-      const attr = document.createAttribute('class');
-      attr.value = 'active';
+      const attr = document.createAttribute("class");
+      attr.value = "active";
 
-      const current = (this.mRef.childNodes.item(this.mCurrentBanner) as any);
+      const current = this.mRef.childNodes.item(this.mCurrentBanner) as any;
       current?.attributes?.setNamedItem?.(attr);
     }
-  }
+  };
 }
 
-function registerBanner(instanceGroup: string,
-                        group: string,
-                        component: React.ComponentClass<any>,
-                        options: IBannerOptions,
-                        ): IBannerDefinition {
+function registerBanner(
+  instanceGroup: string,
+  group: string,
+  component: React.ComponentClass<any>,
+  options: IBannerOptions,
+): IBannerDefinition {
   if (instanceGroup === group) {
     return { component, options };
   } else {
@@ -96,7 +106,10 @@ function registerBanner(instanceGroup: string,
   }
 }
 
-export type ExportType = IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any;
+export type ExportType = IBaseProps &
+  IExtensibleProps &
+  React.HTMLAttributes<any> &
+  any;
 
 let lastBannerProps: { [idx: number]: any };
 
@@ -111,7 +124,9 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
         }, {});
       }
       return prev;
-  }, {});
+    },
+    {},
+  );
   if (!_.isEqual(lastBannerProps, bannerProps)) {
     lastBannerProps = bannerProps;
   }
@@ -120,7 +135,7 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
   };
 }
 
-export default
-  extend(registerBanner, 'group')(
-    connect(mapStateToProps)(
-      Banner) as any) as React.ComponentClass<ExportType>;
+export default extend(
+  registerBanner,
+  "group",
+)(connect(mapStateToProps)(Banner) as any) as React.ComponentClass<ExportType>;

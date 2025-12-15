@@ -3,4 +3,4 @@
  *
  * Exports all custom Nexus Mods icon paths for use in components.
  */
-export * from './icon-paths';
+export * from "./icon-paths";

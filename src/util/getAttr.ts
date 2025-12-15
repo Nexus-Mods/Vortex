@@ -1,5 +1,5 @@
 function getAttr<T>(dict: any, key: string, def: T): T {
-  if ((dict === undefined) || (dict === null)) {
+  if (dict === undefined || dict === null) {
     return def;
   }
 

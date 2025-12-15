@@ -1,6 +1,9 @@
-import { ISupportedResult, ITestSupportedDetails } from '../mod_management/types/TestSupported';
+import {
+  ISupportedResult,
+  ITestSupportedDetails,
+} from "../mod_management/types/TestSupported";
 
-import { VortexModTester } from './utils/VortexModTester';
+import { VortexModTester } from "./utils/VortexModTester";
 
 let testerInstance: VortexModTester | null = null;
 
@@ -10,12 +13,12 @@ let testerInstance: VortexModTester | null = null;
 export const testSupported = async (
   files: string[],
   details: ITestSupportedDetails | undefined,
-  isBasic: boolean
+  isBasic: boolean,
 ): Promise<ISupportedResult> => {
   if (!isBasic && details && details.hasXmlConfigXML === false) {
-    return { 
+    return {
       supported: false,
-      requiredFiles: []
+      requiredFiles: [],
     };
   }
 
@@ -23,6 +26,9 @@ export const testSupported = async (
     testerInstance = new VortexModTester();
   }
 
-  const result = testerInstance.testSupport(files, isBasic ? ['Basic'] : ['XmlScript']);
+  const result = testerInstance.testSupport(
+    files,
+    isBasic ? ["Basic"] : ["XmlScript"],
+  );
   return Promise.resolve(result);
-}
+};

@@ -1,10 +1,10 @@
-import Icon from '../controls/Icon';
-import Spinner from '../controls/Spinner';
-import { IMainPage } from '../../types/IMainPage';
-import { TFunction } from '../../util/i18n';
+import Icon from "../controls/Icon";
+import Spinner from "../controls/Spinner";
+import { IMainPage } from "../../types/IMainPage";
+import { TFunction } from "../../util/i18n";
 
-import * as React from 'react';
-import { Badge } from 'react-bootstrap';
+import * as React from "react";
+import { Badge } from "react-bootstrap";
 
 interface IPageButtonProps {
   t: TFunction;
@@ -38,9 +38,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
     return (
       <div>
         <Icon name={page.icon} />
-        <span className='menu-label'>
-          {t(page.title, { ns: namespace })}
-        </span>
+        <span className="menu-label">{t(page.title, { ns: namespace })}</span>
         {this.renderBadge()}
         {this.renderActivity()}
       </div>
@@ -60,7 +58,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
   private renderActivity() {
     const { page } = this.props;
 
-    if ((page.activity === undefined) || !page.activity.calculate()) {
+    if (page.activity === undefined || !page.activity.calculate()) {
       return null;
     }
 

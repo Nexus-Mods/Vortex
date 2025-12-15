@@ -1,4 +1,4 @@
 /**
  * Link Component - Exports
  */
-export * from './Link';
+export * from "./Link";

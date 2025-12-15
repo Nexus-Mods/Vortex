@@ -1,5 +1,5 @@
-import { Tag } from 'bbcode-to-react';
-import * as React from 'react';
+import { Tag } from "bbcode-to-react";
+import * as React from "react";
 
 function nop() {
   // nop
@@ -12,7 +12,11 @@ class TooltipTag extends Tag {
 
   public toReact() {
     const { tooltip } = this.params;
-    return <a onClick={nop} title={tooltip}>{this.getComponents()}</a>;
+    return (
+      <a onClick={nop} title={tooltip}>
+        {this.getComponents()}
+      </a>
+    );
   }
 }
 

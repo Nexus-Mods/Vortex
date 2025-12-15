@@ -1,5 +1,5 @@
-import {IExtensionApi} from '../types/IExtensionContext';
-import {getSafe} from './storeHelper';
+import { IExtensionApi } from "../types/IExtensionContext";
+import { getSafe } from "./storeHelper";
 
 class ReduxProp<T> {
   private mInputs: string[][];
@@ -34,8 +34,9 @@ class ReduxProp<T> {
     if (this.mApi === undefined) {
       return undefined;
     }
-    const values = this.mInputs.map(
-      valPath => getSafe(this.mApi.store.getState(), valPath, undefined));
+    const values = this.mInputs.map((valPath) =>
+      getSafe(this.mApi.store.getState(), valPath, undefined),
+    );
     return this.mFunc(...values);
   }
 
@@ -45,13 +46,15 @@ class ReduxProp<T> {
     }
     let oldState = this.mApi.store.getState();
     this.mUnsubscribe = this.mApi.store.subscribe(() => {
-      const changed = this.mInputs.find(valPath =>
-        getSafe(oldState, valPath, undefined)
-        !== getSafe(this.mApi.store.getState(), valPath, undefined));
+      const changed = this.mInputs.find(
+        (valPath) =>
+          getSafe(oldState, valPath, undefined) !==
+          getSafe(this.mApi.store.getState(), valPath, undefined),
+      );
 
       oldState = this.mApi.store.getState();
       if (changed !== undefined) {
-        this.mSubscribers.forEach(sub => sub.forceUpdate());
+        this.mSubscribers.forEach((sub) => sub.forceUpdate());
       }
     });
   }

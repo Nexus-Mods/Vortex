@@ -1,31 +1,41 @@
-import Icon from '../../renderer/controls/Icon';
-import InputButton from '../../renderer/controls/InputButton';
-import More from '../../renderer/controls/More';
-import { Button } from '../../renderer/controls/TooltipControls';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { TFunction } from '../../util/i18n';
-import { log } from '../../util/log';
-import { setSafe } from '../../util/storeHelper';
-import DNDContainer from '../../renderer/views/DNDContainer';
+import Icon from "../../renderer/controls/Icon";
+import InputButton from "../../renderer/controls/InputButton";
+import More from "../../renderer/controls/More";
+import { Button } from "../../renderer/controls/TooltipControls";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { TFunction } from "../../util/i18n";
+import { log } from "../../util/log";
+import { setSafe } from "../../util/storeHelper";
+import DNDContainer from "../../renderer/views/DNDContainer";
 
-import { addMetaserver, removeMetaserver, setPriorities } from './actions';
-import getText from './texts';
+import { addMetaserver, removeMetaserver, setPriorities } from "./actions";
+import getText from "./texts";
 
-import * as _ from 'lodash';
-import * as React from 'react';
+import * as _ from "lodash";
+import * as React from "react";
 import {
-  ControlLabel, FormGroup, HelpBlock,
-  ListGroup, ListGroupItem
-} from 'react-bootstrap';
+  ControlLabel,
+  FormGroup,
+  HelpBlock,
+  ListGroup,
+  ListGroupItem,
+} from "react-bootstrap";
 import {
-  ConnectDragSource, ConnectDropTarget,
-  DragSource, DragSourceConnector, DragSourceMonitor, DragSourceSpec,
-  DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec
-} from 'react-dnd';
-import { findDOMNode } from 'react-dom';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { generate as shortid } from 'shortid';
+  ConnectDragSource,
+  ConnectDropTarget,
+  DragSource,
+  DragSourceConnector,
+  DragSourceMonitor,
+  DragSourceSpec,
+  DropTarget,
+  DropTargetConnector,
+  DropTargetMonitor,
+  DropTargetSpec,
+} from "react-dnd";
+import { findDOMNode } from "react-dom";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { generate as shortid } from "shortid";
 
 interface IServerEntry {
   url: string;
@@ -42,8 +52,7 @@ interface IActionProps {
   onSetMetaserverPriority: (ids: string[]) => void;
 }
 
-interface IState {
-}
+interface IState {}
 
 type IProps = IActionProps & IConnectedProps;
 
@@ -70,7 +79,7 @@ const serverTarget: DropTargetSpec<any> = {
     const source = (monitor.getItem() as any).id;
     const target = props.serverId;
 
-    if ((source !== target) && (target !== undefined)) {
+    if (source !== target && target !== undefined) {
       const cursorPos = monitor.getClientOffset();
       try {
         const domNode = findDOMNode(component) as Element;
@@ -78,22 +87,28 @@ const serverTarget: DropTargetSpec<any> = {
 
         props.onHover(source, target, cursorPos.y > box.top + box.height / 2);
       } catch (err) {
-        log('warn', 'failed to determine component bounds', { error: err.message });
+        log("warn", "failed to determine component bounds", {
+          error: err.message,
+        });
       }
     }
   },
 };
 
-function collectDrag(connector: DragSourceConnector,
-                     monitor: DragSourceMonitor) {
+function collectDrag(
+  connector: DragSourceConnector,
+  monitor: DragSourceMonitor,
+) {
   return {
     connectDragSource: connector.dragSource(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connector: DropTargetConnector,
-                     monitor: DropTargetMonitor) {
+function collectDrop(
+  connector: DropTargetConnector,
+  monitor: DropTargetMonitor,
+) {
   return {
     connectDropTarget: connector.dropTarget(),
     isOver: monitor.isOver(),
@@ -124,9 +139,10 @@ type RowProps = IRowProps & IDragProps & IDropProps;
  */
 class ServerRow extends React.Component<RowProps, {}> {
   public render(): JSX.Element {
-    const {t, connectDragSource, connectDropTarget, isDragging, server} = this.props;
+    const { t, connectDragSource, connectDropTarget, isDragging, server } =
+      this.props;
     return connectDropTarget(
-      connectDragSource((
+      connectDragSource(
         <div>
           <ListGroupItem
             active={isDragging}
@@ -134,29 +150,31 @@ class ServerRow extends React.Component<RowProps, {}> {
           >
             {server.url}
             <Button
-              className='btn-embed pull-right'
-              id='remove'
-              tooltip={t('Remove')}
+              className="btn-embed pull-right"
+              id="remove"
+              tooltip={t("Remove")}
               onClick={this.removeServer}
             >
-              <Icon name='remove' />
+              <Icon name="remove" />
             </Button>
           </ListGroupItem>
-        </div>
-        )));
+        </div>,
+      ),
+    );
   }
   private removeServer = () => {
-    const {serverId, onRemoveMetaserver} = this.props;
+    const { serverId, onRemoveMetaserver } = this.props;
     onRemoveMetaserver(serverId);
-  }
+  };
 }
 
-const type = 'settings-metaserver-row';
+const type = "settings-metaserver-row";
 
-const ServerRowDrag =
-  DropTarget(type, serverTarget, collectDrop)(
-    DragSource(type, serverSource, collectDrag)(
-      ServerRow)) as any;
+const ServerRowDrag = DropTarget(
+  type,
+  serverTarget,
+  collectDrop,
+)(DragSource(type, serverSource, collectDrag)(ServerRow)) as any;
 
 interface IListProps {
   t: TFunction;
@@ -193,27 +211,29 @@ class ServerList extends React.Component<IListProps, IListState> {
   }
 
   public render(): JSX.Element {
-    const {t, onAddMetaserver} = this.props;
+    const { t, onAddMetaserver } = this.props;
     const { orderedServers } = this.state;
     const keys = Object.keys(orderedServers);
     const sorted = keys.sort(
-      (lhs: string, rhs: string) => orderedServers[lhs].priority - orderedServers[rhs].priority);
+      (lhs: string, rhs: string) =>
+        orderedServers[lhs].priority - orderedServers[rhs].priority,
+    );
 
     return (
       <div>
-      <ListGroup>
-        {sorted.map(this.renderServer)}
-        <ListGroupItem>
-          <InputButton
-            id='input-add-metaserver'
-            key='input-add-metaserver'
-            groupId='settings-buttons'
-            icon='add'
-            tooltip={t('Add a Metaserver')}
-            onConfirmed={onAddMetaserver}
-          />
-        </ListGroupItem>
-      </ListGroup>
+        <ListGroup>
+          {sorted.map(this.renderServer)}
+          <ListGroupItem>
+            <InputButton
+              id="input-add-metaserver"
+              key="input-add-metaserver"
+              groupId="settings-buttons"
+              icon="add"
+              tooltip={t("Add a Metaserver")}
+              onConfirmed={onAddMetaserver}
+            />
+          </ListGroupItem>
+        </ListGroup>
       </div>
     );
   }
@@ -231,8 +251,8 @@ class ServerList extends React.Component<IListProps, IListState> {
   }
 
   private renderServer = (serverId: string) => {
-    const {t, onRemoveMetaserver} = this.props;
-    const {orderedServers} = this.state;
+    const { t, onRemoveMetaserver } = this.props;
+    const { orderedServers } = this.state;
     return (
       <ServerRowDrag
         t={t}
@@ -245,49 +265,64 @@ class ServerList extends React.Component<IListProps, IListState> {
         onCancel={this.handleCancel}
       />
     );
-  }
+  };
 
-  private handleHover = (sourceId: string, targetId: string, bottomHalf: boolean) => {
-    if ((sourceId !== targetId) && (targetId !== undefined)) {
-      this.setState(setSafe(this.state, ['orderedServers', sourceId, 'priority'],
-        this.state.orderedServers[targetId].priority + (bottomHalf ? 1 : -1)));
+  private handleHover = (
+    sourceId: string,
+    targetId: string,
+    bottomHalf: boolean,
+  ) => {
+    if (sourceId !== targetId && targetId !== undefined) {
+      this.setState(
+        setSafe(
+          this.state,
+          ["orderedServers", sourceId, "priority"],
+          this.state.orderedServers[targetId].priority + (bottomHalf ? 1 : -1),
+        ),
+      );
     }
-  }
+  };
 
   private handleDrop = () => {
-    const {onSetMetaserverPriority} = this.props;
-    const {orderedServers} = this.state;
-    const sorted = Object.keys(orderedServers).sort((lhs: string, rhs: string) => {
-      return orderedServers[lhs].priority - orderedServers[rhs].priority;
-    });
+    const { onSetMetaserverPriority } = this.props;
+    const { orderedServers } = this.state;
+    const sorted = Object.keys(orderedServers).sort(
+      (lhs: string, rhs: string) => {
+        return orderedServers[lhs].priority - orderedServers[rhs].priority;
+      },
+    );
     onSetMetaserverPriority(sorted);
     this.pullServerState();
-  }
+  };
 
   private handleCancel = () => {
     this.pullServerState();
-  }
+  };
 }
 
 class SettingsMetaserver extends ComponentEx<IProps, IState> {
   constructor(props) {
     super(props);
 
-    this.state = {
-    };
+    this.state = {};
   }
 
   public render(): JSX.Element {
-    const { t, metaservers, onAddMetaserver,
-            onRemoveMetaserver, onSetMetaserverPriority } = this.props;
+    const {
+      t,
+      metaservers,
+      onAddMetaserver,
+      onRemoveMetaserver,
+      onSetMetaserverPriority,
+    } = this.props;
 
     return (
       <form>
         <FormGroup>
           <ControlLabel>
-            {t('Meta Server')}
-            <More id='more-metaserver' name={t('Meta Server')}>
-              {getText('meta-server', t)}
+            {t("Meta Server")}
+            <More id="more-metaserver" name={t("Meta Server")}>
+              {getText("meta-server", t)}
             </More>
           </ControlLabel>
           <DNDContainer>
@@ -299,7 +334,7 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
               onSetMetaserverPriority={onSetMetaserverPriority}
             />
           </DNDContainer>
-          <HelpBlock>{t('Servers to query for meta data.')}</HelpBlock>
+          <HelpBlock>{t("Servers to query for meta data.")}</HelpBlock>
         </FormGroup>
       </form>
     );
@@ -312,7 +347,9 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onAddMetaserver: (url: string): void => {
       dispatch(addMetaserver(shortid(), url));
@@ -326,7 +363,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      SettingsMetaserver)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(SettingsMetaserver),
+) as React.ComponentClass<{}>;

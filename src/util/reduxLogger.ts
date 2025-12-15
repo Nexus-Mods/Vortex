@@ -1,6 +1,6 @@
-import { objDiff } from './util';
+import { objDiff } from "./util";
 
-import * as Redux from 'redux';
+import * as Redux from "redux";
 
 interface IActionLog {
   before: any;
@@ -27,8 +27,7 @@ export function reduxLogger() {
         if (actions.length > 0) {
           actions[actions.length - 1].after = store.getState();
         }
-        actions.push({ before: store.getState(),
-                       action });
+        actions.push({ before: store.getState(), action });
         if (actions.length > MAX_ENTRIES + BUFFER) {
           truncateActions();
         }
@@ -39,7 +38,7 @@ export function reduxLogger() {
 }
 
 export interface ILog {
-  action: { type: string, payload: any };
+  action: { type: string; payload: any };
   delta: any;
 }
 
@@ -51,11 +50,16 @@ export function getReduxLog(): Promise<ILog[]> {
   if (actions.length > 0) {
     actions[actions.length - 1].after = store.getState();
   }
-  return Promise.resolve(actions.map((action: IActionLog, idx: number) => {
-    const res: ILog = {
-      action: action.action,
-      delta: action.after !== undefined ? objDiff(action.before, action.after) : {},
-    };
-    return res;
-  }));
+  return Promise.resolve(
+    actions.map((action: IActionLog, idx: number) => {
+      const res: ILog = {
+        action: action.action,
+        delta:
+          action.after !== undefined
+            ? objDiff(action.before, action.after)
+            : {},
+      };
+      return res;
+    }),
+  );
 }

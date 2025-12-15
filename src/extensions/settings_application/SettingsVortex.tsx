@@ -1,15 +1,21 @@
-import { setMultiUser } from '../../actions/user';
-import More from '../../renderer/controls/More';
-import { IState } from '../../types/IState';
-import { relaunch } from '../../util/commandLine';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { setMultiUser } from "../../actions/user";
+import More from "../../renderer/controls/More";
+import { IState } from "../../types/IState";
+import { relaunch } from "../../util/commandLine";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
 
-import getText from './texts';
+import getText from "./texts";
 
-import * as React from 'react';
-import { Alert, Button, FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import * as React from "react";
+import {
+  Alert,
+  Button,
+  FormControl,
+  FormGroup,
+  HelpBlock,
+} from "react-bootstrap";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 interface IConnectedProps {
   multiUser: boolean;
@@ -35,34 +41,37 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {t, multiUser} = this.props;
-    const {oldMultiUser} = this.state;
+    const { t, multiUser } = this.props;
+    const { oldMultiUser } = this.state;
 
-    const restartNoti = (multiUser === oldMultiUser) ? null : (
-      <HelpBlock>
-        <Alert>
-          {t('You need to restart Vortex to activate this change')}
-          <Button onClick={this.restart} style={{ marginLeft: '1em' }}>{t('Restart now')}</Button>
-        </Alert>
-      </HelpBlock>
-    );
+    const restartNoti =
+      multiUser === oldMultiUser ? null : (
+        <HelpBlock>
+          <Alert>
+            {t("You need to restart Vortex to activate this change")}
+            <Button onClick={this.restart} style={{ marginLeft: "1em" }}>
+              {t("Restart now")}
+            </Button>
+          </Alert>
+        </HelpBlock>
+      );
 
     return (
       <form>
-        <FormGroup controlId='muMode'>
-          <FormControl.Static componentClass='div'>
-            {t('Multi-User Mode')}
-            <More id='more-multi-user' name={t('Multi-User Mode')}>
-              {getText('multi-user', t)}
+        <FormGroup controlId="muMode">
+          <FormControl.Static componentClass="div">
+            {t("Multi-User Mode")}
+            <More id="more-multi-user" name={t("Multi-User Mode")}>
+              {getText("multi-user", t)}
             </More>
           </FormControl.Static>
           <FormControl
-            componentClass='select'
+            componentClass="select"
             onChange={this.selectMode}
-            value={multiUser ? 'on' : 'off'}
+            value={multiUser ? "on" : "off"}
           >
-            <option value='on'>{t('Shared')}</option>
-            <option value='off'>{t('Per-User')}</option>
+            <option value="on">{t("Shared")}</option>
+            <option value="off">{t("Per-User")}</option>
           </FormControl>
           {restartNoti}
         </FormGroup>
@@ -72,12 +81,12 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
 
   private selectMode = (evt) => {
     const { onSetMultiUser } = this.props;
-    onSetMultiUser(evt.currentTarget.value === 'on');
-  }
+    onSetMultiUser(evt.currentTarget.value === "on");
+  };
 
   private restart = () => {
     relaunch();
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -86,12 +95,14 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetMultiUser: (multiUser: boolean) => dispatch(setMultiUser(multiUser)),
   };
 }
 
-export default translate(['common'])(
-  connect(mapStateToProps, mapDispatchToProps)(
-    SettingsVortex)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(SettingsVortex),
+) as React.ComponentClass<{}>;

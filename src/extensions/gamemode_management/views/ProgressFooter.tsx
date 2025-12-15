@@ -1,11 +1,11 @@
-import Icon from '../../../renderer/controls/Icon';
-import ProgressBar from '../../../renderer/controls/ProgressBar';
-import RadialProgress from '../../../renderer/controls/RadialProgress';
-import { IDiscoveryPhase, IDiscoveryState } from '../../../types/IState';
-import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
-import { sum } from '../../../util/util';
+import Icon from "../../../renderer/controls/Icon";
+import ProgressBar from "../../../renderer/controls/ProgressBar";
+import RadialProgress from "../../../renderer/controls/RadialProgress";
+import { IDiscoveryPhase, IDiscoveryState } from "../../../types/IState";
+import { connect, PureComponentEx, translate } from "../../../util/ComponentEx";
+import { sum } from "../../../util/util";
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface IBaseProps {
   slim: boolean;
@@ -28,22 +28,25 @@ class ProgressFooter extends PureComponentEx<IProps, {}> {
     }
 
     const totalProgress =
-      sum(phaseIds.map(idx => discovery.phases[idx].progress)) / phaseIds.length;
+      sum(phaseIds.map((idx) => discovery.phases[idx].progress)) /
+      phaseIds.length;
 
     if (slim) {
       return (
         <div>
-          <div className='discovery-footer-label'>{t('Scan')}</div>
+          <div className="discovery-footer-label">{t("Scan")}</div>
           <RadialProgress
             totalRadius={32}
-            data={[{ min: 0, max: 100, value: totalProgress, class: 'running' }]}
+            data={[
+              { min: 0, max: 100, value: totalProgress, class: "running" },
+            ]}
           />
         </div>
       );
     } else {
       return (
-        <div className='discovery-footer'>
-          <div className='discovery-footer-label'>{t('Game discovery')}</div>
+        <div className="discovery-footer">
+          <div className="discovery-footer-label">{t("Game discovery")}</div>
           <ProgressBar min={0} max={100} now={totalProgress} />
         </div>
       );
@@ -57,7 +60,6 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps)(
-      ProgressFooter)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps)(ProgressFooter),
+) as React.ComponentClass<IBaseProps>;

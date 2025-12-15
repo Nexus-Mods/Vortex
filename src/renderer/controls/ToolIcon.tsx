@@ -1,10 +1,10 @@
-import Icon from './Icon';
+import Icon from "./Icon";
 
-import * as React from 'react';
-import { Image } from 'react-bootstrap';
-import { pathToFileURL } from 'url';
-import { IconButton } from './TooltipControls';
-import { TFunction } from '../../util/i18n';
+import * as React from "react";
+import { Image } from "react-bootstrap";
+import { pathToFileURL } from "url";
+import { IconButton } from "./TooltipControls";
+import { TFunction } from "../../util/i18n";
 
 export interface IItemProps {
   name: string;
@@ -23,44 +23,36 @@ export interface IToolIconProps {
 }
 
 const ToolIcon = (props: IToolIconProps) => {
-  const validClass = props.valid ? 'valid' : 'invalid';
+  const validClass = props.valid ? "valid" : "invalid";
   let iconImage;
   if (props.imageUrl !== undefined) {
     let src = pathToFileURL(props.imageUrl).href;
     if (props.imageId !== undefined) {
-      src += '?' + props.imageId;
+      src += "?" + props.imageId;
     }
-    iconImage = (
-      <Image
-        src={src}
-        className={'tool-icon ' + validClass}
-      />
-    );
+    iconImage = <Image src={src} className={"tool-icon " + validClass} />;
   } else {
     iconImage = (
-      <Icon
-        name='executable'
-        className={'tool-icon ' + validClass}
-      />
+      <Icon name="executable" className={"tool-icon " + validClass} />
     );
   }
 
   const classes = props.classes ?? [];
   const containerClasses = props.isPrimary
-    ? ['starter-tool-icon-container', 'primary', ...classes]
-    : ['starter-tool-icon-container', ...classes];
+    ? ["starter-tool-icon-container", "primary", ...classes]
+    : ["starter-tool-icon-container", ...classes];
   return (
-    <div className={containerClasses.join(' ')}>
+    <div className={containerClasses.join(" ")}>
       {iconImage}
-      {props.isPrimary ? <div className='primary-star'>★</div> : null}
-      {props.valid && props.t
-        ? <IconButton
-            icon='launch-simple'
-            tooltip={props.item.name}
-            onClick={props.onRun}
-            className='run-tool'
-          />
-        : null}
+      {props.isPrimary ? <div className="primary-star">★</div> : null}
+      {props.valid && props.t ? (
+        <IconButton
+          icon="launch-simple"
+          tooltip={props.item.name}
+          onClick={props.onRun}
+          className="run-tool"
+        />
+      ) : null}
       {props.children}
     </div>
   );

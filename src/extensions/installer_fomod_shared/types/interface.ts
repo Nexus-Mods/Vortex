@@ -4,14 +4,21 @@ export interface IHeaderImage {
   height: number;
 }
 
-export type OrderType =
-  'AlphaAsc' | 'AlphaDesc' | 'Explicit';
+export type OrderType = "AlphaAsc" | "AlphaDesc" | "Explicit";
 
 export type GroupType =
-  'SelectAtLeastOne' | 'SelectAtMostOne' | 'SelectExactlyOne' | 'SelectAll' | 'SelectAny';
+  | "SelectAtLeastOne"
+  | "SelectAtMostOne"
+  | "SelectExactlyOne"
+  | "SelectAll"
+  | "SelectAny";
 
 export type PluginType =
-  'Required' | 'Optional' | 'Recommended' | 'NotUsable' | 'CouldBeUsable';
+  | "Required"
+  | "Optional"
+  | "Recommended"
+  | "NotUsable"
+  | "CouldBeUsable";
 
 export interface IPlugin {
   id: number;
@@ -43,7 +50,7 @@ export interface IInstallStep {
   optionalFileGroups?: IGroupList;
 }
 
-export type Direction = 'forward' | 'back';
+export type Direction = "forward" | "back";
 
 export interface IStateParameters {
   stepId: number;
@@ -79,21 +86,23 @@ export interface IReportError {
   details: string;
 }
 
-export type IChoices = {
-    name: string;
-    groups: {
+export type IChoices =
+  | {
+      name: string;
+      groups: {
         name: string;
         choices: {
-            name: string;
-            idx: number;
+          name: string;
+          idx: number;
         }[];
-    }[];
-}[] | undefined
+      }[];
+    }[]
+  | undefined;
 
 export type IChoiceType = {
   type: string;
   options: IChoices;
-}
+};
 
 export interface IFOMODStateInstance {
   info: IInstallerInfoState | undefined;

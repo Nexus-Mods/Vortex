@@ -1,20 +1,20 @@
-import { IExtension } from '../extensions/extension_manager/types';
+import { IExtension } from "../extensions/extension_manager/types";
 
-import * as fs from './fs';
-import getVortexPath from './getVortexPath';
-import { log } from './log';
+import * as fs from "./fs";
+import getVortexPath from "./getVortexPath";
+import { log } from "./log";
 
-import Bluebird from 'bluebird';
-import I18next, { i18n, TOptions } from 'i18next';
-import * as path from 'path';
-import { initReactI18next } from 'react-i18next';
+import Bluebird from "bluebird";
+import I18next, { i18n, TOptions } from "i18next";
+import * as path from "path";
+import { initReactI18next } from "react-i18next";
 
 type TFunction = typeof I18next.t;
 
 let debugging = false;
-let currentLanguage = 'en';
-const fallbackTFunc: TFunction =
-  str => (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
+let currentLanguage = "en";
+const fallbackTFunc: TFunction = (str) =>
+  (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
 
 let actualT: TFunction = fallbackTFunc;
 
@@ -28,10 +28,10 @@ export interface IInitResult {
   error?: Error;
 }
 
-type BackendType = 'bundled' | 'custom' | 'extension';
+type BackendType = "bundled" | "custom" | "extension";
 
 class MultiBackend {
-  private static type = 'backend';
+  private static type = "backend";
   private mOptions: any;
   private mServices: any;
   private mCurrentBackend: any;
@@ -50,9 +50,10 @@ class MultiBackend {
   public read(language: string, namespace: string, callback) {
     (async () => {
       const { backendType, extPath } = this.backendType(language);
-      if ((backendType !== this.mBackendType)
-        || ((backendType === 'extension')
-          && (language !== this.mLastReadLanguage))) {
+      if (
+        backendType !== this.mBackendType ||
+        (backendType === "extension" && language !== this.mLastReadLanguage)
+      ) {
         this.mCurrentBackend = await this.initBackend(backendType, extPath);
       }
 
@@ -62,20 +63,20 @@ class MultiBackend {
   }
 
   private async initBackend(type: BackendType, extPath: string) {
-    const FSBackend = await (await import('i18next-fs-backend')).default;
+    const FSBackend = await (await import("i18next-fs-backend")).default;
     const res = new FSBackend();
 
     let basePath: string;
-    if (type === 'bundled') {
+    if (type === "bundled") {
       basePath = this.mOptions.bundled;
-    } else if (type === 'custom') {
+    } else if (type === "custom") {
       basePath = this.mOptions.user;
     } else {
       basePath = extPath;
     }
 
     res.init(this.mServices, {
-      loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
+      loadPath: path.join(basePath, "{{lng}}", "{{ns}}.json"),
       ident: 2,
     });
 
@@ -84,11 +85,14 @@ class MultiBackend {
     return res;
   }
 
-  private backendType(language: string): { backendType: BackendType, extPath?: string } {
+  private backendType(language: string): {
+    backendType: BackendType;
+    extPath?: string;
+  } {
     try {
       // translations from the user directory (custom installs or in-development)
       fs.statSync(path.join(this.mOptions.user, language));
-      return { backendType: 'custom' };
+      return { backendType: "custom" };
     } catch (err) {
       // extension-provided
       const ext = this.mOptions.translationExts().find((iter: IExtension) => {
@@ -100,15 +104,15 @@ class MultiBackend {
         }
       });
       if (ext !== undefined) {
-        return { backendType: 'extension', extPath: ext.path };
+        return { backendType: "extension", extPath: ext.path };
       }
 
       try {
         // finally, see if we have the language bundled
         fs.statSync(path.join(this.mOptions.bundled, language));
-        return { backendType: 'bundled' };
+        return { backendType: "bundled" };
       } catch (err) {
-        return { backendType: 'custom' };
+        return { backendType: "custom" };
       }
     }
   }
@@ -116,18 +120,18 @@ class MultiBackend {
 
 class HighlightPP {
   public name: string;
-  public type: 'postProcessor';
+  public type: "postProcessor";
 
   constructor() {
-    this.type = 'postProcessor';
-    this.name = 'HighlightPP';
+    this.type = "postProcessor";
+    this.name = "HighlightPP";
   }
 
   public process(value: string, key, options, translator) {
-    if (value.startsWith('TT:')) {
-      console.trace('duplicate translation', key, value);
+    if (value.startsWith("TT:")) {
+      console.trace("duplicate translation", key, value);
     }
-    return 'TT:' + value.toUpperCase();
+    return "TT:" + value.toUpperCase();
   }
 }
 
@@ -138,47 +142,49 @@ class HighlightPP {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: () => IExtension[]): Bluebird<IInitResult> {
+function init(
+  language: string,
+  translationExts: () => IExtension[],
+): Bluebird<IInitResult> {
   // reset to english if the language isn't valid
   try {
-    (new Date()).toLocaleString(language);
+    new Date().toLocaleString(language);
   } catch (err) {
-    language = 'en';
+    language = "en";
   }
 
   currentLanguage = language;
 
   const i18nObj = I18next;
-  if (process.env.HIGHLIGHT_I18N === 'true') {
+  if (process.env.HIGHLIGHT_I18N === "true") {
     i18nObj.use(new HighlightPP());
   }
-  i18nObj.use(MultiBackend as any)
-    .use(initReactI18next)
-    ;
+  i18nObj.use(MultiBackend as any).use(initReactI18next);
 
-  return Bluebird.resolve(i18nObj.init(
-    {
+  return Bluebird.resolve(
+    i18nObj.init({
       lng: language,
-      fallbackLng: 'en',
-      fallbackNS: 'common',
+      fallbackLng: "en",
+      fallbackNS: "common",
 
       ns: [
-        'common',
-        'collection',
-        'mod_management',
-        'download_management',
-        'profile_management',
-        'nexus_integration',
-        'gamemode_management',
-        'extension_manager',
+        "common",
+        "collection",
+        "mod_management",
+        "download_management",
+        "profile_management",
+        "nexus_integration",
+        "gamemode_management",
+        "extension_manager",
       ],
-      defaultNS: 'common',
+      defaultNS: "common",
 
-      nsSeparator: ':::',
-      keySeparator: '::',
+      nsSeparator: ":::",
+      keySeparator: "::",
 
       debug: false,
-      postProcess: (process.env.HIGHLIGHT_I18N === 'true') ? 'HighlightPP' : false,
+      postProcess:
+        process.env.HIGHLIGHT_I18N === "true" ? "HighlightPP" : false,
 
       react: {
         // afaict this is simply broken at this time. With this enabled the React.Suspense will
@@ -190,7 +196,7 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
       } as any,
 
       saveMissing: debugging,
-      saveMissingTo: 'current',
+      saveMissingTo: "current",
 
       missingKeyHandler: (lng, ns, key, fallbackValue) => {
         if (missingKeys[ns] === undefined) {
@@ -204,16 +210,21 @@ function init(language: string, translationExts: () => IExtension[]): Bluebird<I
       },
 
       backend: {
-        bundled: getVortexPath('locales'),
-        user: path.normalize(path.join(getVortexPath('userData'), 'locales')),
+        bundled: getVortexPath("locales"),
+        user: path.normalize(path.join(getVortexPath("userData"), "locales")),
         translationExts,
       },
-    }))
-    .tap(tFunc => { actualT = tFunc; })
-    .then(tFunc => Bluebird.resolve({
-      i18n: i18nObj,
-      tFunc,
-    }))
+    }),
+  )
+    .tap((tFunc) => {
+      actualT = tFunc;
+    })
+    .then((tFunc) =>
+      Bluebird.resolve({
+        i18n: i18nObj,
+        tFunc,
+      }),
+    )
     .catch((error) => ({
       i18n: i18nObj,
       tFunc: fallbackTFunc,
@@ -225,7 +236,10 @@ export function getCurrentLanguage() {
   return currentLanguage;
 }
 
-export function changeLanguage(lng: string, cb?: (err: Error) => void): Promise<TFunction> {
+export function changeLanguage(
+  lng: string,
+  cb?: (err: Error) => void,
+): Promise<TFunction> {
   currentLanguage = lng;
   return I18next.changeLanguage(lng, cb);
 }
@@ -235,9 +249,7 @@ export function globalT(key: string | string[], options: TOptions) {
 }
 
 export function debugTranslations(enable?: boolean) {
-  debugging = (enable !== undefined)
-    ? enable
-    : !debugging;
+  debugging = enable !== undefined ? enable : !debugging;
   missingKeys = { common: {} };
   init(I18next.language, () => []);
 }
@@ -277,14 +289,17 @@ export class TString implements ITString {
   }
 }
 
-export const laterT: TFunction =
-  (key: string, optionsOrDefault?: TOptions | string, options?: TOptions): ITString => {
-    if (typeof(optionsOrDefault) === 'string') {
-      return new TString(key, options, 'common');
-    } else {
-      return new TString(key, optionsOrDefault, 'common');
-    }
-  };
+export const laterT: TFunction = (
+  key: string,
+  optionsOrDefault?: TOptions | string,
+  options?: TOptions,
+): ITString => {
+  if (typeof optionsOrDefault === "string") {
+    return new TString(key, options, "common");
+  } else {
+    return new TString(key, optionsOrDefault, "common");
+  }
+};
 
 /**
  * translate an input string. If key is a string or string array, this just
@@ -298,14 +313,16 @@ export const laterT: TFunction =
  * @param onlyTString if set to true and the key is a string, assume it's already the translated
  *                    string and don't translate again. This is mostly for backwards compatibility
  */
-export function preT(t: TFunction,
-                     key: string | string[] | ITString,
-                     options?: TOptions,
-                     onlyTString?: boolean) {
+export function preT(
+  t: TFunction,
+  key: string | string[] | ITString,
+  options?: TOptions,
+  onlyTString?: boolean,
+) {
   if ([undefined, null].includes(key)) {
-    return '';
+    return "";
   }
-  if (typeof(key) === 'string') {
+  if (typeof key === "string") {
     if (onlyTString === true) {
       return key;
     } else {

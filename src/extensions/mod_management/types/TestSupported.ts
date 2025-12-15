@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 export interface ISupportedResult {
   supported: boolean;
@@ -10,5 +10,9 @@ export interface ITestSupportedDetails {
   hasCSScripts?: boolean;
 }
 
-export type TestSupported =
-  (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => Promise<ISupportedResult>;
+export type TestSupported = (
+  files: string[],
+  gameId: string,
+  archivePath?: string,
+  details?: ITestSupportedDetails,
+) => Promise<ISupportedResult>;

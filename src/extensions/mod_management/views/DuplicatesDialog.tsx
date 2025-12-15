@@ -1,18 +1,20 @@
-import React from 'react';
-import { Button, Checkbox } from 'react-bootstrap';
-import { useTranslation } from 'react-i18next';
-import { Modal } from '../../../renderer/controls/api';
+import React from "react";
+import { Button, Checkbox } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { Modal } from "../../../renderer/controls/api";
 
-import { activeGameId } from '../../../util/selectors';
-import { useSelector } from 'react-redux';
-import { renderModName } from '../../../util/api';
+import { activeGameId } from "../../../util/selectors";
+import { useSelector } from "react-redux";
+import { renderModName } from "../../../util/api";
 
 export interface IDuplicatesMap {
   duplicates: { [modName: string]: string[] };
   preselected: string[];
 }
 
-export interface IRemoveDuplicateMap { [modId: string]: string }
+export interface IRemoveDuplicateMap {
+  [modId: string]: string;
+}
 
 interface IBaseProps {
   visible: boolean;
@@ -20,31 +22,43 @@ interface IBaseProps {
   onGetDuplicates: () => IDuplicatesMap;
   onRemoveMods: (remove: IRemoveDuplicateMap) => void;
   openDuplicateLocation: (modId: string) => void;
-  getModInfo: (gameMode: string, modId: string) => string,
+  getModInfo: (gameMode: string, modId: string) => string;
 }
 
 export default function DuplicatesDialog(props: IBaseProps) {
-  const { visible, onHide, onGetDuplicates, onRemoveMods, openDuplicateLocation, getModInfo } = props;
+  const {
+    visible,
+    onHide,
+    onGetDuplicates,
+    onRemoveMods,
+    openDuplicateLocation,
+    getModInfo,
+  } = props;
   const [t] = useTranslation();
   const gameMode = useSelector(activeGameId);
   const [checked, setChecked] = React.useState([]);
   const [duplicates, setDuplicates] = React.useState({});
-  const onSetChecked = React.useCallback((modId: string) => {
-    const newState = (checked.includes(modId))
-      ? checked.filter(id => id !== modId)
-      : [].concat(checked, modId);
-    setChecked(newState);
-  }, [checked, setChecked]);
+  const onSetChecked = React.useCallback(
+    (modId: string) => {
+      const newState = checked.includes(modId)
+        ? checked.filter((id) => id !== modId)
+        : [].concat(checked, modId);
+      setChecked(newState);
+    },
+    [checked, setChecked],
+  );
 
   const removeMods = React.useCallback(() => {
     const removeMap = checked.reduce((accum, iter) => {
-      const modName = Object.keys(duplicates).find(id => duplicates[id].includes(iter));
-      accum[iter] = duplicates[modName].find(id => !checked.includes(id));
+      const modName = Object.keys(duplicates).find((id) =>
+        duplicates[id].includes(iter),
+      );
+      accum[iter] = duplicates[modName].find((id) => !checked.includes(id));
       return accum;
     }, {});
     onRemoveMods(removeMap);
-    onHide()
-  }, [checked, duplicates, onHide, onRemoveMods])
+    onHide();
+  }, [checked, duplicates, onHide, onRemoveMods]);
 
   React.useEffect(() => {
     const duplicateData = onGetDuplicates();
@@ -55,12 +69,15 @@ export default function DuplicatesDialog(props: IBaseProps) {
     return () => {
       setDuplicates({});
       setChecked([]);
-    }
+    };
   }, [gameMode]);
 
-  const getInfo = React.useCallback((modId) => {
-    return getModInfo(gameMode, modId)
-  }, [getModInfo, gameMode]);
+  const getInfo = React.useCallback(
+    (modId) => {
+      return getModInfo(gameMode, modId);
+    },
+    [getModInfo, gameMode],
+  );
 
   const renderDuplicates = Object.keys(duplicates).map((name, idx) => {
     return (
@@ -73,27 +90,30 @@ export default function DuplicatesDialog(props: IBaseProps) {
         getModInfo={getInfo}
         openDuplicateLocation={openDuplicateLocation}
       />
-    )
-  })
+    );
+  });
 
-  const paragraph = t('Vortex may have pre-selected some of the mods for you '
-    + '(if they were not referenced by any of your profiles) It\'s always a good '
-    + 'idea to double check the mod itself in the staging folder before removing '
-    + 'anything. The selected mods will be removed.')
+  const paragraph = t(
+    "Vortex may have pre-selected some of the mods for you " +
+      "(if they were not referenced by any of your profiles) It's always a good " +
+      "idea to double check the mod itself in the staging folder before removing " +
+      "anything. The selected mods will be removed.",
+  );
 
-  return (<Modal show={visible} onHide={onHide}>
-    <Modal.Header>
-      <Modal.Title>{t('Choose Duplicates')}</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-      {paragraph}
-      {renderDuplicates}
-    </Modal.Body>
-    <Modal.Footer>
-      <Button onClick={onHide}>{t('Cancel')}</Button>
-      <Button onClick={removeMods}>{t('Remove Duplicates')}</Button>
-    </Modal.Footer>
-  </Modal>
+  return (
+    <Modal show={visible} onHide={onHide}>
+      <Modal.Header>
+        <Modal.Title>{t("Choose Duplicates")}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {paragraph}
+        {renderDuplicates}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button onClick={onHide}>{t("Cancel")}</Button>
+        <Button onClick={removeMods}>{t("Remove Duplicates")}</Button>
+      </Modal.Footer>
+    </Modal>
   );
 }
 
@@ -103,20 +123,33 @@ interface ISegmentProps {
   checked: string[];
   onSetCheckbox: (modId: string) => void;
   openDuplicateLocation: (modId: string) => void;
-  getModInfo: (modId: string) => string,
+  getModInfo: (modId: string) => string;
 }
 
 function DuplicateSegment(props: ISegmentProps) {
-  const { modName, entries, checked, onSetCheckbox, openDuplicateLocation, getModInfo } = props;
+  const {
+    modName,
+    entries,
+    checked,
+    onSetCheckbox,
+    openDuplicateLocation,
+    getModInfo,
+  } = props;
   const [modData, setModData] = React.useState({});
-  const onChange = React.useCallback((evt) => {
-    const modId: string = evt.target.value;
-    onSetCheckbox(modId);
-  }, [onSetCheckbox]);
-  const onOpenFolder = React.useCallback((evt) => {
-    const modId = evt.target.getAttribute('data-id');
-    openDuplicateLocation(modId);
-  }, [openDuplicateLocation]);
+  const onChange = React.useCallback(
+    (evt) => {
+      const modId: string = evt.target.value;
+      onSetCheckbox(modId);
+    },
+    [onSetCheckbox],
+  );
+  const onOpenFolder = React.useCallback(
+    (evt) => {
+      const modId = evt.target.getAttribute("data-id");
+      openDuplicateLocation(modId);
+    },
+    [openDuplicateLocation],
+  );
   React.useEffect(() => {
     const data = entries.reduce((accum, iter) => {
       accum[iter] = getModInfo(iter);
@@ -124,7 +157,7 @@ function DuplicateSegment(props: ISegmentProps) {
     }, {});
     setModData(data);
     return () => {
-      setModData({})
+      setModData({});
     };
   }, [entries]);
   return (
@@ -132,7 +165,9 @@ function DuplicateSegment(props: ISegmentProps) {
       <h5>{modName}</h5>
       {entries.map((modId, idx) => (
         <div key={modId + idx}>
-          <a data-id={modId} onClick={onOpenFolder}>{modId}</a>
+          <a data-id={modId} onClick={onOpenFolder}>
+            {modId}
+          </a>
           <Checkbox
             key={modId}
             checked={checked.includes(modId)}

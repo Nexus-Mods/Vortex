@@ -1,5 +1,5 @@
-import { isEqual } from 'lodash';
-import * as Redux from 'redux';
+import { isEqual } from "lodash";
+import * as Redux from "redux";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);
@@ -11,7 +11,6 @@ interface IParameters<T, U> {
   currentState: T;
   prevValue: U;
   currentValue: U;
-
 }
 
 type WatchCallback<T, U> = (parameters: IParameters<T, U>) => void;
@@ -32,7 +31,10 @@ class ReduxWatcher<T> {
   private mWatchList: { [key: string]: IWatch<T, any> } = {};
   private mLastState: T;
 
-  constructor(store: Redux.Store<T>, onError: (err: Error, selector: string[]) => void) {
+  constructor(
+    store: Redux.Store<T>,
+    onError: (err: Error, selector: string[]) => void,
+  ) {
     this.mLastState = store.getState();
 
     store.subscribe(() => {
@@ -52,7 +54,7 @@ class ReduxWatcher<T> {
               prevValue,
               currentValue,
             };
-            listeners.forEach(listener => listener(parameters));
+            listeners.forEach((listener) => listener(parameters));
           }
         } catch (err) {
           onError(err, selector);

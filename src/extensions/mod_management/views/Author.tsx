@@ -1,27 +1,26 @@
-import { Button, IconButton } from '../../../renderer/controls/TooltipControls';
-import { TFunction } from '../../../util/i18n';
-import { truthy } from '../../../util/util';
-import { setModAttributes } from '../actions/mods';
-import { IModWithState } from '../types/IModProps';
+import { Button, IconButton } from "../../../renderer/controls/TooltipControls";
+import { TFunction } from "../../../util/i18n";
+import { truthy } from "../../../util/util";
+import { setModAttributes } from "../actions/mods";
+import { IModWithState } from "../types/IModProps";
 
-import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
-import { useDispatch } from 'react-redux';
+import * as React from "react";
+import { FormControl } from "react-bootstrap";
+import { useDispatch } from "react-redux";
 
-function Input(props: { value: string, onChange: (newValue: string) => void }) {
-  const onChange = React.useCallback((evt: React.FormEvent<any>) => {
-    props.onChange(evt.currentTarget.value);
-  }, [props.onChange]);
+function Input(props: { value: string; onChange: (newValue: string) => void }) {
+  const onChange = React.useCallback(
+    (evt: React.FormEvent<any>) => {
+      props.onChange(evt.currentTarget.value);
+    },
+    [props.onChange],
+  );
   return (
-    <FormControl
-      type='text'
-      value={props.value ?? ''}
-      onChange={onChange}
-    />
+    <FormControl type="text" value={props.value ?? ""} onChange={onChange} />
   );
 }
 
-function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
+function Author(props: { t: TFunction; gameId: string; mod: IModWithState }) {
   const { t, gameId, mod } = props;
   const [edit, setEdit] = React.useState(false);
   const [authorTemp, setAuthor] = React.useState(mod.attributes?.author);
@@ -29,12 +28,15 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
   const [urlTemp, setURL] = React.useState(mod.attributes?.uploaderUrl);
   const dispatch = useDispatch();
 
-  const changeEdit = React.useCallback((doEdit: boolean = true) => {
-    setAuthor(mod.attributes?.author);
-    setUploader(mod.attributes?.uploader);
-    setURL(mod.attributes?.uploaderUrl);
-    setEdit(doEdit);
-  }, [setEdit, mod, setAuthor, setUploader, setURL]);
+  const changeEdit = React.useCallback(
+    (doEdit: boolean = true) => {
+      setAuthor(mod.attributes?.author);
+      setUploader(mod.attributes?.uploader);
+      setURL(mod.attributes?.uploaderUrl);
+      setEdit(doEdit);
+    },
+    [setEdit, mod, setAuthor, setUploader, setURL],
+  );
 
   const startEdit = React.useCallback(() => {
     changeEdit(true);
@@ -45,11 +47,13 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
   }, [changeEdit]);
 
   const save = React.useCallback(() => {
-    dispatch(setModAttributes(gameId, mod.id, {
-      author: authorTemp,
-      uploader: uploaderTemp,
-      uploaderUrl: urlTemp,
-    }));
+    dispatch(
+      setModAttributes(gameId, mod.id, {
+        author: authorTemp,
+        uploader: uploaderTemp,
+        uploaderUrl: urlTemp,
+      }),
+    );
     changeEdit(false);
   }, [mod, dispatch, authorTemp, uploaderTemp, urlTemp, changeEdit]);
 
@@ -59,19 +63,31 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
         <table>
           <tbody>
             <tr>
-              <td>{t('Author')}</td><td><Input value={authorTemp} onChange={setAuthor} /></td>
+              <td>{t("Author")}</td>
+              <td>
+                <Input value={authorTemp} onChange={setAuthor} />
+              </td>
             </tr>
             <tr>
-              <td>{t('Uploader')}</td><td><Input value={uploaderTemp} onChange={setUploader} /></td>
+              <td>{t("Uploader")}</td>
+              <td>
+                <Input value={uploaderTemp} onChange={setUploader} />
+              </td>
             </tr>
             <tr>
-              <td>{t('Uploader URL')}</td><td><Input value={urlTemp} onChange={setURL} /></td>
+              <td>{t("Uploader URL")}</td>
+              <td>
+                <Input value={urlTemp} onChange={setURL} />
+              </td>
             </tr>
           </tbody>
         </table>
-        <Button onClick={cancel} tooltip={t('Cancel')}>{t('Cancel')}</Button>
-        {' '}
-        <Button onClick={save} tooltip={t('Save')}>{t('Save')}</Button>
+        <Button onClick={cancel} tooltip={t("Cancel")}>
+          {t("Cancel")}
+        </Button>{" "}
+        <Button onClick={save} tooltip={t("Save")}>
+          {t("Save")}
+        </Button>
       </div>
     );
   } else {
@@ -79,33 +95,38 @@ function Author(props: { t: TFunction, gameId: string, mod: IModWithState }) {
     if (truthy(mod.attributes?.author)) {
       authors.push(mod.attributes.author);
     }
-    if (truthy(mod.attributes?.uploader)
-        && (mod.attributes?.uploader !== mod.attributes?.author)) {
+    if (
+      truthy(mod.attributes?.uploader) &&
+      mod.attributes?.uploader !== mod.attributes?.author
+    ) {
       authors.push(mod.attributes.uploader);
     }
 
-    const authorP = (mod.attributes?.uploaderUrl !== undefined)
-      ? <a href={mod.attributes?.uploaderUrl}>{authors.join(' & ')}</a>
-      : <p>{authors.join(' & ')}</p>;
+    const authorP =
+      mod.attributes?.uploaderUrl !== undefined ? (
+        <a href={mod.attributes?.uploaderUrl}>{authors.join(" & ")}</a>
+      ) : (
+        <p>{authors.join(" & ")}</p>
+      );
 
     return (
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          maxWidth: '20em',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          maxWidth: "20em",
         }}
       >
-        {authorP}
-        {' '}
-        {
-        (mod.state === 'installed')
-          ? (
-            <IconButton icon='edit' tooltip={t('Edit')} onClick={startEdit} className='btn-embed' />
-            )
-          : null
-        }
+        {authorP}{" "}
+        {mod.state === "installed" ? (
+          <IconButton
+            icon="edit"
+            tooltip={t("Edit")}
+            onClick={startEdit}
+            className="btn-embed"
+          />
+        ) : null}
       </div>
     );
   }
