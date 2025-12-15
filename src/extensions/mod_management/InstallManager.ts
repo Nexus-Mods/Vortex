@@ -120,6 +120,7 @@ import { DOWNLOADS_DIR_TAG } from "../download_management/util/downloadDirectory
 import getDownloadGames from "../download_management/util/getDownloadGames";
 
 import { IModType } from "../gamemode_management/types/IModType";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
 import modName, { renderModReference } from "../mod_management/util/modName";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
@@ -1333,6 +1334,14 @@ class InstallManager {
                     modId,
                   });
                   installGameId = currentProfile.gameId;
+                }
+                const discovery = discoveryByGame(state, installGameId);
+                if (discovery?.path === undefined) {
+                  return Promise.reject(
+                    new ProcessCanceled(
+                      "You need to manage a game before installing this mod",
+                    ),
+                  );
                 }
                 if (installGameId !== currentProfile?.gameId) {
                   const installProfileId = lastActiveProfileForGame(

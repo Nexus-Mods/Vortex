@@ -10,8 +10,9 @@ export class VortexModInstaller {
   public static async create(
     api: IExtensionApi,
     instanceId: string,
+    gameId: string,
   ): Promise<VortexModInstaller> {
-    const delegates = new VortexModInstaller(api, instanceId);
+    const delegates = new VortexModInstaller(api, instanceId, gameId);
     await delegates.initialize();
     return delegates;
   }
@@ -20,11 +21,12 @@ export class VortexModInstaller {
   private mModInstaller: fomodT.NativeModInstaller;
   private mApi: IExtensionApi;
   private mInstanceId: string;
+  private mGameId: string;
   private mScriptPath: string;
   private mDialogManager: DialogManager | undefined;
   private mSharedDelegates: SharedDelegates;
 
-  private constructor(api: IExtensionApi, instanceId: string) {
+  private constructor(api: IExtensionApi, instanceId: string, gameId: string) {
     this.fomod = lazyRequire<typeof fomodT>(() =>
       require("fomod-installer-native"),
     );
@@ -40,10 +42,11 @@ export class VortexModInstaller {
 
     this.mApi = api;
     this.mInstanceId = instanceId;
+    this.mGameId = gameId;
   }
 
   private async initialize(): Promise<void> {
-    this.mSharedDelegates = await SharedDelegates.create(this.mApi);
+    this.mSharedDelegates = await SharedDelegates.create(this.mApi, this.mGameId);
   }
 
   public dispose() {

@@ -4,14 +4,14 @@ import * as actions from "../actions/installerUI";
 import { IFOMODStateDialog } from "../types/interface";
 
 import { IReducerSpec } from "../../../types/api";
-import { createReducer, ReducerHandler } from "../../../util/reducers";
+import { createReducer } from "../../../util/reducers";
 
 const defaults: IFOMODStateDialog = {
   activeInstanceId: null,
   instances: {},
 };
 
-const reducers: { [key: string]: ReducerHandler<IFOMODStateDialog, any> } = {};
+const reducers: IReducerSpec<IFOMODStateDialog>['reducers'] = {};
 
 createReducer(
   actions.startDialog,
