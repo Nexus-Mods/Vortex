@@ -92,6 +92,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import {
   batchDispatch,
+  delay,
   isPathValid,
   setdefault,
   toPromise,
@@ -3481,6 +3482,10 @@ class InstallManager {
   }
 
   private isCritical(error: string): boolean {
+    // Don't treat file-in-use errors as critical - they can be retried
+    if (this.isFileInUse(error)) {
+      return false;
+    }
     return (
       error.indexOf("Unexpected end of archive") !== -1 ||
       error.indexOf("ERROR: Data Error") !== -1 ||
@@ -3488,6 +3493,55 @@ class InstallManager {
       error.indexOf("Cannot open the file as archive") !== -1 ||
       error.indexOf("Can not open the file as archive") !== -1
     );
+  }
+
+  private isFileInUse(error: string): boolean {
+    return (
+      error.indexOf("being used by another process") !== -1 ||
+      error.indexOf("locked by another process") !== -1
+    );
+  }
+
+  private extractWithRetry(
+    zip: Zip,
+    archivePath: string,
+    tempPath: string,
+    progress: (files: string[], percent: number) => void,
+    queryPassword: () => Bluebird<string>,
+    maxRetries: number = 3,
+    retryDelayMs: number = 1000,
+  ): Bluebird<{ code: number; errors: string[] }> {
+    const attemptExtract = (
+      retriesLeft: number,
+    ): Bluebird<{ code: number; errors: string[] }> => {
+      return zip
+        .extractFull(
+          archivePath,
+          tempPath,
+          { ssc: false },
+          progress,
+          queryPassword as any,
+        )
+        .catch((err: Error) => {
+          if (this.isFileInUse(err.message) && retriesLeft > 0) {
+            log("info", "archive file in use, retrying extraction", {
+              archivePath: path.basename(archivePath),
+              retriesLeft,
+              retryDelayMs,
+            });
+            return delay(retryDelayMs).then(() =>
+              attemptExtract(retriesLeft - 1),
+            );
+          }
+          if (this.isCritical(err.message)) {
+            return Bluebird.reject(
+              new ArchiveBrokenError(path.basename(archivePath), err.message),
+            );
+          }
+          return Bluebird.reject(err);
+        });
+    };
+    return attemptExtract(maxRetries);
   }
 
   /**
@@ -3526,21 +3580,13 @@ class InstallManager {
         ),
       );
     } else {
-      extractProm = installationZip
-        .extractFull(
-          archivePath,
-          tempPath,
-          { ssc: false },
-          progress,
-          () => this.queryPassword(api.store) as any,
-        )
-        .catch((err: Error) =>
-          this.isCritical(err.message)
-            ? Bluebird.reject(
-                new ArchiveBrokenError(path.basename(archivePath), err.message),
-              )
-            : Bluebird.reject(err),
-        );
+      extractProm = this.extractWithRetry(
+        installationZip,
+        archivePath,
+        tempPath,
+        progress,
+        () => this.queryPassword(api.store),
+      );
       (extractProm as any).startTime = extractionStart;
     }
 

@@ -59,9 +59,7 @@ export default function(rules: CSSStyleRule[]) {
       style: {
         width: 2,
         'curve-style': 'bezier',
-        'mid-target-arrow-shape': 'triangle',
         'arrow-scale': 1.25,
-        'target-endpoint': 'inside-to-node',
         'text-rotation': 'autorotate',
       },
     },
@@ -69,14 +67,18 @@ export default function(rules: CSSStyleRule[]) {
       selector: 'edge.masterlist',
       style: {
         'line-color': variables['text-color-disabled'],
-        'mid-target-arrow-color': variables['text-color-disabled'],
+        'mid-source-arrow-shape': 'triangle',
+        'mid-source-arrow-color': variables['text-color-disabled'],
+        'source-endpoint': 'inside-to-node',
       },
     },
     {
       selector: 'edge.userlist',
       style: {
         'line-color': variables['link-color'],
+        'mid-target-arrow-shape': 'triangle',
         'mid-target-arrow-color': variables['link-color'],
+        'target-endpoint': 'inside-to-node',
       },
     },
     {

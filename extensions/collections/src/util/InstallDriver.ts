@@ -808,7 +808,7 @@ class InstallDriver {
     //   collection_revision_number: this.revisionNumber
     // });
 
-    const nexusIds = selectors.nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
+    const nexusIds = selectors.nexusIdsFromDownloadId(this.mApi.getState(), collection.archiveId);
     if (nexusIds?.collectionId != null) {
       this.mApi.events.emit('analytics-track-mixpanel-event',
         new util.CollectionsInstallationStartedEvent(nexusIds.collectionId, nexusIds.revisionId, nexusIds.numericGameId, this.numRequired));

@@ -283,8 +283,9 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
       added.data('targetOrig', dataTargetTitle);
       added.data('readonly', false);
       
-      // Ensure it has the correct styling
+      // Ensure it has the correct styling - userlist for user-created edges
       added.addClass(this.props.className + '-edge');
+      added.addClass('userlist');
       
       // Mark this edge as recently created to prevent accidental removal
       this.mRecentlyCreatedEdges.add(edgeId);

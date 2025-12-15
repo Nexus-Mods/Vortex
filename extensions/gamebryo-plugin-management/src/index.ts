@@ -526,8 +526,6 @@ function register(context: IExtensionContextExt,
     () => testMissingGroups(context.api.translate, context.api.store));
   context.registerTest('exceeded-plugin-limit', 'plugins-changed',
     () => testExceededPluginLimit(context.api, pluginInfoCache));
-  context.registerTest('trigger-sort', 'collections-changed',
-     () => testTriggerSort(context.api));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
   context.registerDialog('group-editor', GroupEditor);
