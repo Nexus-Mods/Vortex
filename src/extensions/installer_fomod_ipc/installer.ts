@@ -1,17 +1,21 @@
-import path from 'path';
-import shortid from 'shortid';
-import { SecurityLevel } from 'fomod-installer-ipc';
-import { CSharpDelegates } from './delegates/CSharpDelegates';
-import { VortexIPCConnection } from './utils/VortexIPCConnection';
-import { createConnectionStrategies } from './utils/connectionStrategy';
-import { IInstallationDetails } from '../mod_management/types/InstallFunc';
-import { SharedDelegates } from '../installer_fomod_shared/delegates/SharedDelegates';
-import { IChoices } from '../installer_fomod_shared/types/interface';
-import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_shared/utils/gameSupport';
-import { getGame } from '../gamemode_management/util/getGame';
-import { log } from '../../util/log';
-import { IExtensionApi, IInstallResult } from '../../types/api';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import path from "path";
+import shortid from "shortid";
+import { SecurityLevel } from "fomod-installer-ipc";
+import { CSharpDelegates } from "./delegates/CSharpDelegates";
+import { VortexIPCConnection } from "./utils/VortexIPCConnection";
+import { createConnectionStrategies } from "./utils/connectionStrategy";
+import { IInstallationDetails } from "../mod_management/types/InstallFunc";
+import { SharedDelegates } from "../installer_fomod_shared/delegates/SharedDelegates";
+import { IChoices } from "../installer_fomod_shared/types/interface";
+import {
+  getPluginPath,
+  getStopPatterns,
+  uniPatterns,
+} from "../installer_fomod_shared/utils/gameSupport";
+import { getGame } from "../gamemode_management/util/getGame";
+import { log } from "../../util/log";
+import { IExtensionApi, IInstallResult } from "../../types/api";
+import { ProcessCanceled } from "../../util/CustomErrors";
 
 /**
  * Install a FOMOD mod
@@ -146,18 +150,23 @@ export const install = async (
       throw new ProcessCanceled("Installation cancelled by user");
     }
 
-    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+    if (
+      result.instructions.length === 1 &&
+      (result.instructions[0].type as string) === "enableallplugins"
+    ) {
       const generateResult: IInstallResult = {
-        instructions: [{
-          type: 'generatefile',
-          data: 'This is a placeholder file generated because the mod had no files to copy.',
-          destination: `placeholder_${shortid()}.txt`,
-        }],
-      }
+        instructions: [
+          {
+            type: "generatefile",
+            data: "This is a placeholder file generated because the mod had no files to copy.",
+            destination: `placeholder_${shortid()}.txt`,
+          },
+        ],
+      };
       return generateResult;
     }
 
-    log('info', 'FOMOD installation completed', { gameId });
+    log("info", "FOMOD installation completed", { gameId });
 
     if (
       result.instructions !== undefined &&
