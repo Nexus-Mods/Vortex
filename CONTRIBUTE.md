@@ -6,10 +6,11 @@ Recommended editor: [VS Code](https://code.visualstudio.com/) with workspace ext
 
 ### Requirements
 
-- Windows 10/11
-- PowerShell 5.1 or later
+- Windows 11
 - Administrator privileges
-- [winget](https://aka.ms/getwinget) (App Installer from Microsoft Store)
+- [winget](https://aka.ms/getwinget)
+    - Should work out of the box.
+    - If it doesn't it's called `App Installer` on Microsoft Store
 
 ### Setup
 
