@@ -320,16 +320,14 @@ export function dealWithExternalChanges(
         );
 
         if (merged.length > 0) {
-          automaticActions.push(
-            ...merged.map((change) => defaultMergedAction(typeId, change)),
+          merged.forEach((change) =>
+            automaticActions.push(defaultMergedAction(typeId, change)),
           );
         }
 
         if (isInstallingCollection && collection.length > 0) {
-          automaticActions.push(
-            ...collection.map((change) =>
-              defaultCollectionAction(typeId, change),
-            ),
+          collection.forEach((change) =>
+            automaticActions.push(defaultCollectionAction(typeId, change)),
           );
         }
 
