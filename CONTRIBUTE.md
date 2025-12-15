@@ -40,12 +40,18 @@ The script is idempotent - it detects existing installations and only adds missi
 
 - editor
 - git
-- [`volta`](https://volta.sh/)
+- [`volta`](https://volta.sh/) - manages Node.js and Yarn versions
     - `curl https://get.volta.sh | bash`
+    - Versions are pinned in `package.json` under the `volta` key
+    - Volta automatically uses the pinned versions when you enter the project directory
 
-For [node-gyp](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-unix) and native module compilation, you'll need Python 3.12 with `setuptools` (`distutils` was removed in 3.12+), a C/C++ toolchain, and [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download) (verify with `dotnet --list-sdks`).
+For [node-gyp](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-unix) and native module compilation, you'll need:
 
-> **Note:** Package names below are updated on a best-effort basis. If a package is not found, search your distro's repository:
+- A recent supported version of Python with `setuptools` (`distutils` was removed in 3.12+)
+- A C/C++ toolchain
+- [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download) (verify with `dotnet --list-sdks`)
+
+> **Note:** The install commands below should give you what you need. If a package is not found, search your distro's repository:
 > [Ubuntu](https://launchpad.net/ubuntu/+search) | [Fedora](https://packages.fedoraproject.org/) | [Arch](https://archlinux.org/packages/)
 
 #### Ubuntu
