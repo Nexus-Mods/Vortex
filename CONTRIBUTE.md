@@ -62,7 +62,6 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Install dependencies: `yarn install`
 - Build: `yarn build`
 - Start: `yarn start`
-    - Wayland: `yarn start --ozone-platform-hint=auto`
 
 ## Editor Setup
 

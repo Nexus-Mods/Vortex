@@ -29,7 +29,7 @@
             llvmPackages.libcxx
 
             # Electron (wrapped with GTK dependencies)
-            electron_37
+            electron_39 # 14 Dec 2025: We're ahead of Vortex which is on 37. Doing this for default Wayland support.
 
             # GTK dependencies for Electron runtime
             gtk3
@@ -52,7 +52,7 @@
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
             # Point to Nix-provided Electron
-            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_37}/libexec/electron";
+            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
           };
 
           # Set up GTK environment (mimics wrapGAppsHook3)
