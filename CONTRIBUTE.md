@@ -2,6 +2,38 @@
 
 Recommended editor: [VS Code](https://code.visualstudio.com/) with workspace extensions (you'll be prompted to install them on first open).
 
+## Windows
+
+### Requirements
+
+- Windows 10/11
+- PowerShell 5.1 or later
+- Administrator privileges
+- [winget](https://aka.ms/getwinget) (App Installer from Microsoft Store)
+
+### Setup
+
+A bootstrap script is provided that installs all dependencies (Git, Python 3.10, CMake, VS 2022 Build Tools, NVM, Node.js, Yarn) and clones the repository to `C:\vortex\Vortex`.
+
+1. Open PowerShell as Administrator (`Win + X`, then `A`)
+2. Allow script execution (if needed):
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+    ```
+3. Run the bootstrap script:
+    ```powershell
+    .\windows_dev_setup.ps1
+    ```
+4. After completion:
+    ```powershell
+    cd C:\vortex\Vortex
+    yarn install
+    yarn build
+    yarn start
+    ```
+
+The script is idempotent - it detects existing installations and only adds missing components.
+
 ## Generic Linux
 
 ### Requirements
