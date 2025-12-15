@@ -563,12 +563,36 @@ async function gatherDependenciesGraph(
 }
 
 function flatten(nodes: IDependencyNode[]): IDependencyNode[] {
-  return nodes.reduce((agg: IDependencyNode[], node: IDependencyNode) => {
-    if (node === null || node.redundant) {
-      return agg;
+  // Use iterative approach with a stack to avoid call stack overflow
+  // with circular dependencies or very deep dependency trees
+  const result: IDependencyNode[] = [];
+  const stack: IDependencyNode[] = [...nodes];
+  const visited = new Set<IDependencyNode>();
+  
+  while (stack.length > 0) {
+    const node = stack.pop();
+    
+    if (node === null || node === undefined || node.redundant) {
+      continue;
     }
-    return [].concat(agg, node, flatten(node.dependencies));
-  }, []);
+    
+    // Skip if we've already processed this node (circular dependency protection)
+    if (visited.has(node)) {
+      continue;
+    }
+    
+    visited.add(node);
+    result.push(node);
+    
+    // Add dependencies to stack for processing (in reverse to maintain order)
+    if (node.dependencies && node.dependencies.length > 0) {
+      for (let i = node.dependencies.length - 1; i >= 0; i--) {
+        stack.push(node.dependencies[i]);
+      }
+    }
+  }
+  
+  return result;
 }
 
 /**
