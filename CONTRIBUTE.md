@@ -11,11 +11,57 @@ Recommended editor: [VS Code](https://code.visualstudio.com/) with workspace ext
 - [`volta`](https://volta.sh/)
     - `curl https://get.volta.sh | bash`
 
-For [node-gyp](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-unix):
+For [node-gyp](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-unix) and native module compilation, you'll need Python 3.12 with `setuptools` (`distutils` was removed in 3.12+), a C/C++ toolchain, and [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download) (verify with `dotnet --list-sdks`).
 
-- A [supported 3.x version of Python](https://devguide.python.org/versions/)
-- `make` and a C/C++ toolchain (`build-essentials` on Debian/Ubuntu)
-- [.NET 9](https://dotnet.microsoft.com/en-us/download)
+> **Note:** Package names below are updated on a best-effort basis. If a package is not found, search your distro's repository:
+> [Ubuntu](https://launchpad.net/ubuntu/+search) | [Fedora](https://packages.fedoraproject.org/) | [Arch](https://archlinux.org/packages/)
+
+#### Ubuntu
+
+Refer to [.NET 9 install docs for Ubuntu](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-install).
+
+```bash
+# Build tools and Python
+sudo apt install build-essential python3 python3-setuptools
+
+# .NET 9 SDK (requires Microsoft's package repository)
+source /etc/os-release
+wget https://packages.microsoft.com/config/$ID/$VERSION_ID/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+sudo apt update
+sudo apt install dotnet-sdk-9.0
+```
+
+#### Debian
+
+Refer to [.NET 9 install docs for Debian](https://learn.microsoft.com/en-us/dotnet/core/install/linux-debian).
+
+```bash
+# Build tools and Python
+sudo apt install build-essential python3 python3-setuptools
+
+# .NET 9 SDK (requires Microsoft's package repository)
+source /etc/os-release
+wget https://packages.microsoft.com/config/$ID/$VERSION_ID/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+sudo apt update
+sudo apt install dotnet-sdk-9.0
+```
+
+#### Fedora
+
+```bash
+sudo dnf groupinstall "Development Tools"
+sudo dnf install python3 python3-setuptools dotnet-sdk-9.0
+```
+
+#### Arch Linux
+
+```bash
+sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
+```
 
 ### Setup
 
