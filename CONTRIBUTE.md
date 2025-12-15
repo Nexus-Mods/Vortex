@@ -24,6 +24,7 @@ For [node-gyp](https://github.com/nodejs/node-gyp?tab=readme-ov-file#on-unix):
 - Install dependencies: `yarn install`
 - Build: `yarn build`
 - Start: `yarn start`
+    - Wayland: `yarn start --ozone-platform-hint=auto`
 
 To get `nxm` protocol handler to work you need to run the script `./scripts/linux-protocol-registration.sh`. This script only needs to be run once.
 
@@ -61,6 +62,7 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Install dependencies: `yarn install`
 - Build: `yarn build`
 - Start: `yarn start`
+    - Wayland: `yarn start --ozone-platform-hint=auto`
 
 ## Editor Setup
 
