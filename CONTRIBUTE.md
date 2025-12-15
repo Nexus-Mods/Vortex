@@ -57,7 +57,7 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 
 - Clone repository
 - Enter development shell: `nix develop`
-    - Or if using direnv: `direnv allow` (from now on shell will auto-activate)
+    - Or if using direnv: `direnv allow` (from now on shell will auto-activate when you `cd` into this folder)
 - Install dependencies: `yarn install`
 - Build: `yarn build`
 - Start: `yarn start`
