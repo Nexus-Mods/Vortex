@@ -1,4 +1,4 @@
-import Icon from "../../renderer/controls/Icon";
+import Icon from "../Icon";
 
 import { Tag } from "bbcode-to-react";
 import * as React from "react";

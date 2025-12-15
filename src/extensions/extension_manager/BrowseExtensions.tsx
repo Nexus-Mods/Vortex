@@ -8,7 +8,7 @@ import ZoomableImage from "../../renderer/controls/ZoomableImage";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 
 import { IState } from "../../types/IState";
-import bbcode from "../../util/bbcode";
+import bbcode from "../../renderer/controls/bbcode";
 import { ComponentEx, connect, translate } from "../../util/ComponentEx";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
