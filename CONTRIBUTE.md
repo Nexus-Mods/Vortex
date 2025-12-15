@@ -1,5 +1,7 @@
 # Contributing
 
+Recommended editor: [VS Code](https://code.visualstudio.com/) with workspace extensions (you'll be prompted to install them on first open).
+
 ## Generic Linux
 
 ### Requirements
@@ -59,3 +61,14 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Install dependencies: `yarn install`
 - Build: `yarn build`
 - Start: `yarn start`
+
+## Editor Setup
+
+### VS Code
+
+Install the recommended workspace extensions when prompted, or manually install:
+
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) - code linting
+- [Prettier](https://marketplace.visualstudio.com/items?itemName=prettier.prettier-vscode) - code formatting
+
+These are configured in `.vscode/extensions.json`.
