@@ -1238,12 +1238,12 @@ class InstallManager {
     };
 
     const state = api.getState();
-    const batchedContext = getBatchContext(
+    const batchContext = getBatchContext(
       ["install-dependencies", "install-recommendations"],
       "",
     );
     const profileId =
-      batchedContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const currentProfile = profileById(state, profileId);
 
     // Use parallel installation concurrency limiter instead of sequential mQueue
@@ -1349,7 +1349,7 @@ class InstallManager {
                     state,
                     installGameId,
                   );
-                  batchedContext?.set("profileId", installProfileId);
+                  batchContext?.set("profileId", installProfileId);
                   installProfile = profileById(state, installProfileId);
                 } else if (
                   info.profileId &&
@@ -2540,7 +2540,7 @@ class InstallManager {
 
             const batchedActions = [];
             // Enable the mod only for the target profile to avoid affecting other profiles
-            const batchedContext = getBatchContext(
+            const batchContext = getBatchContext(
               [
                 "install-dependencies",
                 "install-collections",
@@ -2549,7 +2549,7 @@ class InstallManager {
               "",
             );
             const targetProfileId =
-              batchedContext?.get<string>("profileId") ??
+              batchContext?.get<string>("profileId") ??
               activeProfile(state)?.id;
             const targetProfile = targetProfileId
               ? profileById(state, targetProfileId)
@@ -2936,12 +2936,12 @@ class InstallManager {
     modsNeedingRequeue: number;
   } {
     const state = api.getState();
-    const batchedContext = getBatchContext(
+    const batchContext = getBatchContext(
       ["install-dependencies", "install-recommendations"],
       "",
     );
     const profileId =
-      batchedContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
     const profile = profileById(state, profileId);
     const sessionId = generateCollectionSessionId(sourceModId, profile?.id);
     const activeCollectionSession = getCollectionSessionById(state, sessionId);
@@ -3421,10 +3421,8 @@ class InstallManager {
           ["install-dependencies", "install-recommendations"],
           "",
         );
-        const profileId = batchContext?.get<string>(
-          "profileId",
-          activeProfile(apiState)?.id,
-        );
+        const profileId =
+          batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
         const gameId = profileById(apiState, profileId)?.gameId;
         if (!gameId) {
           continue;
@@ -4684,10 +4682,8 @@ class InstallManager {
         ["install-dependencies", "install-recommendations"],
         "",
       );
-      const profileId = batchContext?.get<string>(
-        "profileId",
-        activeProfile(api.store.getState())?.id,
-      );
+      const profileId =
+        batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
       const currentProfile = profileById(api.store.getState(), profileId);
       if (mods.length === 0) {
         // Technically for this to happen the timing must be *perfect*,
@@ -5560,7 +5556,7 @@ class InstallManager {
               const state = api.getState();
               const batchedActions = [];
               // Enable the mod only for the target profile to avoid affecting other profiles
-              const batchedContext = getBatchContext(
+              const batchContext = getBatchContext(
                 [
                   "install-dependencies",
                   "install-collections",
@@ -5569,7 +5565,7 @@ class InstallManager {
                 "",
               );
               const targetProfileId =
-                batchedContext?.get<string>("profileId") ??
+                batchContext?.get<string>("profileId") ??
                 activeProfile(state)?.id;
               const targetProfile = targetProfileId
                 ? profileById(state, targetProfileId)
