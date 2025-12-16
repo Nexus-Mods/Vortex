@@ -1,535 +1,522 @@
-$font-size-large:         1.25em;
-$font-size-small:         0.9em;
+$font-size-large: 1.25em;
+$font-size-small: 0.9em;
 
-$font-size-h1:            2.5rem;
-$font-size-h2:            2rem;
-$font-size-h3:            1.75rem;
-$font-size-h4:            1.4rem;
-$font-size-h5:            1.1rem;
-$font-size-h6:            1rem;
+$font-size-h1: 2.5rem;
+$font-size-h2: 2rem;
+$font-size-h3: 1.75rem;
+$font-size-h4: 1.4rem;
+$font-size-h5: 1.1rem;
+$font-size-h6: 1rem;
 
-$line-height-computed:    1.5;
-$line-height-base:        $line-height-computed;
+$line-height-computed: 1.5;
+$line-height-base: $line-height-computed;
 
-$headings-font-family:    $font-family-headings;
+$headings-font-family: $font-family-headings;
 
 //== Tables
-$table-cell-padding:            0.75rem;
-$table-condensed-cell-padding:  2px;
-$table-bg:                      $brand-menu;
-$table-bg-accent:               #e9e9e9;
-$table-bg-hover:                $gray-lighter;
-$table-bg-active:               $table-bg-hover;
-$table-border-color:            $border-color;
+$table-cell-padding: 0.75rem;
+$table-condensed-cell-padding: 2px;
+$table-bg: $brand-menu;
+$table-bg-accent: #e9e9e9;
+$table-bg-hover: $gray-lighter;
+$table-bg-active: $table-bg-hover;
+$table-border-color: $border-color;
 
 //== Buttons
-$btn-font-weight:                normal;
+$btn-font-weight: normal;
 
-$btn-default-color:              $text-color;
-$btn-default-bg:                 $brand-clickable;
-$btn-default-border:             $btn-default-bg;
+$btn-default-color: $text-color;
+$btn-default-bg: $brand-clickable;
+$btn-default-border: $btn-default-bg;
 
-$btn-primary-color:              $btn-default-color;
-$btn-primary-bg:                 $brand-primary;
-$btn-primary-border:             $btn-primary-bg;
+$btn-primary-color: $btn-default-color;
+$btn-primary-bg: $brand-primary;
+$btn-primary-border: $btn-primary-bg;
 
-$btn-success-color:              $btn-default-color;
-$btn-success-bg:                 $brand-success;
-$btn-success-border:             $btn-success-bg;
+$btn-success-color: $btn-default-color;
+$btn-success-bg: $brand-success;
+$btn-success-border: $btn-success-bg;
 
-$btn-info-color:                 $btn-default-color;
-$btn-info-bg:                    $brand-info;
-$btn-info-border:                $btn-info-bg;
+$btn-info-color: $btn-default-color;
+$btn-info-bg: $brand-info;
+$btn-info-border: $btn-info-bg;
 
-$btn-warning-color:              $btn-default-color;
-$btn-warning-bg:                 $brand-warning;
-$btn-warning-border:             $btn-warning-bg;
+$btn-warning-color: $btn-default-color;
+$btn-warning-bg: $brand-warning;
+$btn-warning-border: $btn-warning-bg;
 
-$btn-danger-color:               $btn-default-color;
-$btn-danger-bg:                  $brand-danger;
-$btn-danger-border:              $btn-danger-bg;
+$btn-danger-color: $btn-default-color;
+$btn-danger-bg: $brand-danger;
+$btn-danger-border: $btn-danger-bg;
 
-$btn-link-disabled-color:        $text-color-disabled;
+$btn-link-disabled-color: $text-color-disabled;
 
-$btn-border-radius-base:         $border-radius-base;
-$btn-border-radius-large:        $border-radius-large;
-$btn-border-radius-small:        $border-radius-small;
-
+$btn-border-radius-base: $border-radius-base;
+$btn-border-radius-large: $border-radius-large;
+$btn-border-radius-small: $border-radius-small;
 
 //== Forms
-$input-bg:                       $brand-bg;
-$input-bg-disabled:              $brand-menu;
+$input-bg: $brand-bg;
+$input-bg-disabled: $brand-menu;
 
-$input-color:                    $text-color;
-$input-border:                   rgba(255,255,255,0.2);
+$input-color: $text-color;
+$input-border: rgba(255, 255, 255, 0.2);
 
-$input-border-radius:            $border-radius-base;
-$input-border-radius-large:      $border-radius-large;
-$input-border-radius-small:      $border-radius-small;
+$input-border-radius: $border-radius-base;
+$input-border-radius-large: $border-radius-large;
+$input-border-radius-small: $border-radius-small;
 
-$input-border-focus:             $brand-primary;
+$input-border-focus: $brand-primary;
 
-$input-color-placeholder:        $gray-dark;
+$input-color-placeholder: $gray-dark;
 
-$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 0.6);
-$input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3);
-$input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 0.3);
+$input-height-base: (
+    $line-height-computed + ($padding-base-vertical * 2) + 0.6
+);
+$input-height-large: (
+    ceil($font-size-large * $line-height-large) +
+        ($padding-large-vertical * 2) + 0.3
+);
+$input-height-small: (
+    floor($font-size-small * $line-height-small) +
+        ($padding-small-vertical * 2) + 0.3
+);
 
-$form-group-margin-bottom:       floor($gutter-width / 2);
+$form-group-margin-bottom: floor($gutter-width / 2);
 
-$legend-color:                   $text-color;
-$legend-border-color:            transparent;
+$legend-color: $text-color;
+$legend-border-color: transparent;
 
-$input-group-addon-bg:           $brand-bg;
+$input-group-addon-bg: $brand-bg;
 $input-group-addon-border-color: $input-border;
 
-$cursor-disabled:                not-allowed;
-
+$cursor-disabled: not-allowed;
 
 //== Dropdowns
-$dropdown-bg:                    $brand-bg;
-$dropdown-border:                $border-color;
-$dropdown-fallback-border:       $gray-light;
-$dropdown-divider-bg:            $gray-lighter;
+$dropdown-bg: $brand-bg;
+$dropdown-border: $border-color;
+$dropdown-fallback-border: $gray-light;
+$dropdown-divider-bg: $gray-lighter;
 
-$dropdown-link-color:            $text-color;
-$dropdown-link-hover-color:      $text-color;
-$dropdown-link-hover-bg:         $component-active-bg;
+$dropdown-link-color: $text-color;
+$dropdown-link-hover-color: $text-color;
+$dropdown-link-hover-bg: $component-active-bg;
 
-$dropdown-link-active-color:     $text-color;
-$dropdown-link-active-bg:        $component-active-bg;
-$dropdown-link-disabled-color:   $text-color-disabled;
+$dropdown-link-active-color: $text-color;
+$dropdown-link-active-bg: $component-active-bg;
+$dropdown-link-disabled-color: $text-color-disabled;
 
-$dropdown-header-color:          $gray-light;
+$dropdown-header-color: $gray-light;
 
-$dropdown-caret-color:           black;
+$dropdown-caret-color: black;
 
 //== Media queries breakpoints (not actually used since we're not using a grid layout)
-$screen-xs:                  480px;
-$screen-xs-min:              $screen-xs;
-$screen-phone:               $screen-xs-min;
+$screen-xs: 480px;
+$screen-xs-min: $screen-xs;
+$screen-phone: $screen-xs-min;
 
-$screen-sm:                  768px;
-$screen-sm-min:              $screen-sm;
-$screen-tablet:              $screen-sm-min;
+$screen-sm: 768px;
+$screen-sm-min: $screen-sm;
+$screen-tablet: $screen-sm-min;
 
-$screen-md:                  992px;
-$screen-md-min:              $screen-md;
-$screen-desktop:             $screen-md-min;
+$screen-md: 992px;
+$screen-md-min: $screen-md;
+$screen-desktop: $screen-md-min;
 
-$screen-lg:                  1200px;
-$screen-lg-min:              $screen-lg;
-$screen-lg-desktop:          $screen-lg-min;
+$screen-lg: 1200px;
+$screen-lg-min: $screen-lg;
+$screen-lg-desktop: $screen-lg-min;
 
-$screen-xs-max:              ($screen-sm-min - 1);
-$screen-sm-max:              ($screen-md-min - 1);
-$screen-md-max:              ($screen-lg-min - 1);
+$screen-xs-max: ($screen-sm-min - 1);
+$screen-sm-max: ($screen-md-min - 1);
+$screen-md-max: ($screen-lg-min - 1);
 
 //== z-order (not intended to be changed, may break functionality)
-$zindex-navbar:            1000;
-$zindex-dropdown:          1000;
-$zindex-navbar-fixed:      1030;
+$zindex-navbar: 1000;
+$zindex-dropdown: 1000;
+$zindex-navbar-fixed: 1030;
 // notifications need to be below the modal because clicking the
 // button on a notification often opens the modal and we then can't have the modal covered by
 // the notifications that opened it. We also don't want the user to be able to invoke further
 // dialogs while one is being shown.
-$zindex-notifications:     1033;
-$zindex-menu-layer:        1035;
-$zindex-modal-background:  1040;
-$zindex-modal:             1050;
-$zindex-popover:           1060;
-$zindex-tooltip:           1070;
+$zindex-notifications: 1033;
+$zindex-menu-layer: 1035;
+$zindex-modal-background: 1040;
+$zindex-modal: 1050;
+$zindex-popover: 1060;
+$zindex-tooltip: 1070;
 
 //== Grid system (not used)
-$grid-columns:              12;
-$grid-gutter-width:         $gutter-width;
-$grid-float-breakpoint:     $screen-sm-min;
+$grid-columns: 12;
+$grid-gutter-width: $gutter-width;
+$grid-float-breakpoint: $screen-sm-min;
 $grid-float-breakpoint-max: ($grid-float-breakpoint - 1);
 
-
 //== Container sizes
-$container-tablet:             (720px + $grid-gutter-width);
-$container-sm:                 $container-tablet;
+$container-tablet: (720px + $grid-gutter-width);
+$container-sm: $container-tablet;
 
-$container-desktop:            (940px + $grid-gutter-width);
-$container-md:                 $container-desktop;
+$container-desktop: (940px + $grid-gutter-width);
+$container-md: $container-desktop;
 
-$container-large-desktop:      (1140px + $grid-gutter-width);
-$container-lg:                 $container-large-desktop;
-
+$container-large-desktop: (1140px + $grid-gutter-width);
+$container-lg: $container-large-desktop;
 
 //== Navbar (unused)
 
-$navbar-height:                    4.5em;
-$navbar-margin-bottom:             $line-height-computed;
-$navbar-border-radius:             $border-radius-base;
-$navbar-padding-horizontal:        floor(($grid-gutter-width / 2));
-$navbar-padding-vertical:          (($navbar-height - $line-height-computed) / 2);
-$navbar-collapse-max-height:       340px;
+$navbar-height: 4.5em;
+$navbar-margin-bottom: $line-height-computed;
+$navbar-border-radius: $border-radius-base;
+$navbar-padding-horizontal: floor(($grid-gutter-width / 2));
+$navbar-padding-vertical: (($navbar-height - $line-height-computed) / 2);
+$navbar-collapse-max-height: 340px;
 
-$navbar-default-color:             #fff;
-$navbar-default-bg:                $brand-primary;
-$navbar-default-border:            transparent;
+$navbar-default-color: #fff;
+$navbar-default-bg: $brand-primary;
+$navbar-default-border: transparent;
 
-$navbar-default-link-color:                #fff;
-$navbar-default-link-hover-color:          $brand-success;
-$navbar-default-link-hover-bg:             transparent;
-$navbar-default-link-active-color:         #fff;
-$navbar-default-link-active-bg:            darken($navbar-default-bg, 10%);
-$navbar-default-link-disabled-color:       #ccc;
-$navbar-default-link-disabled-bg:          transparent;
+$navbar-default-link-color: #fff;
+$navbar-default-link-hover-color: $brand-success;
+$navbar-default-link-hover-bg: transparent;
+$navbar-default-link-active-color: #fff;
+$navbar-default-link-active-bg: darken($navbar-default-bg, 10%);
+$navbar-default-link-disabled-color: #ccc;
+$navbar-default-link-disabled-bg: transparent;
 
-$navbar-default-brand-color:               $navbar-default-link-color;
-$navbar-default-brand-hover-color:         $navbar-default-link-hover-color;
-$navbar-default-brand-hover-bg:            transparent;
+$navbar-default-brand-color: $navbar-default-link-color;
+$navbar-default-brand-hover-color: $navbar-default-link-hover-color;
+$navbar-default-brand-hover-bg: transparent;
 
-$navbar-default-toggle-hover-bg:           darken($navbar-default-bg, 10%);
-$navbar-default-toggle-icon-bar-bg:        #fff;
-$navbar-default-toggle-border-color:       darken($navbar-default-bg, 10%);
-
+$navbar-default-toggle-hover-bg: darken($navbar-default-bg, 10%);
+$navbar-default-toggle-icon-bar-bg: #fff;
+$navbar-default-toggle-border-color: darken($navbar-default-bg, 10%);
 
 //=== Inverted navbar
-$navbar-inverse-color:                      #fff;
-$navbar-inverse-bg:                         $brand-success;
-$navbar-inverse-border:                     transparent;
+$navbar-inverse-color: #fff;
+$navbar-inverse-bg: $brand-success;
+$navbar-inverse-border: transparent;
 
-$navbar-inverse-link-color:                 #fff;
-$navbar-inverse-link-hover-color:           $brand-primary;
-$navbar-inverse-link-hover-bg:              transparent;
-$navbar-inverse-link-active-color:          #fff;
-$navbar-inverse-link-active-bg:             darken($navbar-inverse-bg, 5%);
-$navbar-inverse-link-disabled-color:        #ccc;
-$navbar-inverse-link-disabled-bg:           transparent;
+$navbar-inverse-link-color: #fff;
+$navbar-inverse-link-hover-color: $brand-primary;
+$navbar-inverse-link-hover-bg: transparent;
+$navbar-inverse-link-active-color: #fff;
+$navbar-inverse-link-active-bg: darken($navbar-inverse-bg, 5%);
+$navbar-inverse-link-disabled-color: #ccc;
+$navbar-inverse-link-disabled-bg: transparent;
 
-$navbar-inverse-brand-color:                $navbar-inverse-link-color;
-$navbar-inverse-brand-hover-color:          $navbar-inverse-link-hover-color;
-$navbar-inverse-brand-hover-bg:             transparent;
+$navbar-inverse-brand-color: $navbar-inverse-link-color;
+$navbar-inverse-brand-hover-color: $navbar-inverse-link-hover-color;
+$navbar-inverse-brand-hover-bg: transparent;
 
-$navbar-inverse-toggle-hover-bg:            darken($navbar-inverse-bg, 10%);
-$navbar-inverse-toggle-icon-bar-bg:         #fff;
-$navbar-inverse-toggle-border-color:        darken($navbar-inverse-bg, 10%);
-
+$navbar-inverse-toggle-hover-bg: darken($navbar-inverse-bg, 10%);
+$navbar-inverse-toggle-icon-bar-bg: #fff;
+$navbar-inverse-toggle-border-color: darken($navbar-inverse-bg, 10%);
 
 //== Navs
-$nav-link-padding:                          10px 15px;
-$nav-link-hover-bg:                         $gray-lighter;
+$nav-link-padding: 10px 15px;
+$nav-link-hover-bg: $gray-lighter;
 
-$nav-disabled-link-color:                   $gray-light;
-$nav-disabled-link-hover-color:             $gray-light;
+$nav-disabled-link-color: $gray-light;
+$nav-disabled-link-hover-color: $gray-light;
 
-$nav-tabs-border-color:                     $border-color;
+$nav-tabs-border-color: $border-color;
 
-$nav-tabs-link-hover-border-color:          rgba(255, 255, 255, 0.5);
-$nav-tabs-active-link-hover-bg:             $body-bg;
-$nav-tabs-active-link-hover-color:          $gray-darker;
-$nav-tabs-active-link-hover-border-color:   $border-color;
+$nav-tabs-link-hover-border-color: rgba(255, 255, 255, 0.5);
+$nav-tabs-active-link-hover-bg: $body-bg;
+$nav-tabs-active-link-hover-color: $gray-darker;
+$nav-tabs-active-link-hover-border-color: $border-color;
 
-$nav-tabs-justified-link-border-color:            $gray-darker;
-$nav-tabs-justified-active-link-border-color:     $body-bg;
+$nav-tabs-justified-link-border-color: $gray-darker;
+$nav-tabs-justified-active-link-border-color: $body-bg;
 
-$nav-pills-border-radius:                   $border-radius-base;
-$nav-pills-active-link-hover-bg:            $component-active-bg;
-$nav-pills-active-link-hover-color:         $component-active-color;
+$nav-pills-border-radius: $border-radius-base;
+$nav-pills-active-link-hover-bg: $component-active-bg;
+$nav-pills-active-link-hover-color: $component-active-color;
 
 //== Pagination
-$pagination-color:                     $text-color;
-$pagination-bg:                        $brand-secondary;
-$pagination-border:                    transparent;
+$pagination-color: $text-color;
+$pagination-bg: $brand-secondary;
+$pagination-border: transparent;
 
-$pagination-hover-color:               $text-color;
-$pagination-hover-bg:                  darken($pagination-bg, 15%);
-$pagination-hover-border:              transparent;
+$pagination-hover-color: $text-color;
+$pagination-hover-bg: darken($pagination-bg, 15%);
+$pagination-hover-border: transparent;
 
-$pagination-active-color:              $text-color;
-$pagination-active-bg:                 darken($pagination-bg, 15%);
-$pagination-active-border:             transparent;
+$pagination-active-color: $text-color;
+$pagination-active-bg: darken($pagination-bg, 15%);
+$pagination-active-border: transparent;
 
-$pagination-disabled-color:            $gray-lighter;
-$pagination-disabled-bg:               lighten($pagination-bg, 15%);
-$pagination-disabled-border:           transparent;
-
+$pagination-disabled-color: $gray-lighter;
+$pagination-disabled-bg: lighten($pagination-bg, 15%);
+$pagination-disabled-border: transparent;
 
 //== Pager
-$pager-bg:                             $pagination-bg;
-$pager-border:                         $pagination-border;
-$pager-border-radius:                  15px;
+$pager-bg: $pagination-bg;
+$pager-border: $pagination-border;
+$pager-border-radius: 15px;
 
-$pager-hover-bg:                       $pagination-hover-bg;
+$pager-hover-bg: $pagination-hover-bg;
 
-$pager-active-bg:                      $pagination-active-bg;
-$pager-active-color:                   $pagination-active-color;
+$pager-active-bg: $pagination-active-bg;
+$pager-active-color: $pagination-active-color;
 
-$pager-disabled-color:                 $gray-dark;
-
+$pager-disabled-color: $gray-dark;
 
 //== Jumbotron
-$jumbotron-padding:              $gutter-width;
-$jumbotron-color:                inherit;
-$jumbotron-bg:                   $brand-secondary;
-$jumbotron-heading-color:        inherit;
-$jumbotron-font-size:            1.5em;
-$jumbotron-heading-font-size:    4.5em;
+$jumbotron-padding: $gutter-width;
+$jumbotron-color: inherit;
+$jumbotron-bg: $brand-secondary;
+$jumbotron-heading-color: inherit;
+$jumbotron-font-size: 1.5em;
+$jumbotron-heading-font-size: 4.5em;
 
 //== Form states and alerts
-$state-success-text:             $white;
-$state-success-bg:               $brand-success;
-$state-success-border:           $brand-success;
+$state-success-text: $white;
+$state-success-bg: $brand-success;
+$state-success-border: $brand-success;
 
-$state-info-text:                $white;
-$state-info-bg:                  $brand-info;
-$state-info-border:              $brand-info;
+$state-info-text: $white;
+$state-info-bg: $brand-info;
+$state-info-border: $brand-info;
 
-$state-warning-text:             $black;
-$state-warning-bg:               $brand-warning;
-$state-warning-border:           $brand-warning;
+$state-warning-text: $black;
+$state-warning-bg: $brand-warning;
+$state-warning-border: $brand-warning;
 
-$state-danger-text:              $white;
-$state-danger-bg:                $brand-danger;
-$state-danger-border:            $brand-danger;
-
+$state-danger-text: $white;
+$state-danger-bg: $brand-danger;
+$state-danger-border: $brand-danger;
 
 //== Tooltips
 
-$tooltip-max-width:           200px;
-$tooltip-color:               $text-color;
-$tooltip-bg:                  $brand-menu;
-$tooltip-opacity:             .9;
+$tooltip-max-width: 200px;
+$tooltip-color: $text-color;
+$tooltip-bg: $brand-menu;
+$tooltip-opacity: 0.9;
 
-$tooltip-arrow-width:         5px;
-$tooltip-arrow-color:         $tooltip-bg;
-
+$tooltip-arrow-width: 5px;
+$tooltip-arrow-color: $tooltip-bg;
 
 //== Popovers
 
-$popover-bg:                          $brand-bg;
-$popover-max-width:                   400px;
-$popover-border-color:                $border-color;
-$popover-fallback-border-color:       $gray-light;
+$popover-bg: $brand-bg;
+$popover-max-width: 400px;
+$popover-border-color: $border-color;
+$popover-fallback-border-color: $gray-light;
 
-$popover-title-bg:                    darken($popover-bg, 3%);
+$popover-title-bg: darken($popover-bg, 3%);
 
-$popover-arrow-width:                 10px;
-$popover-arrow-color:                 $popover-bg;
+$popover-arrow-width: 10px;
+$popover-arrow-color: $popover-bg;
 
-$popover-arrow-outer-width:           ($popover-arrow-width + 1);
-$popover-arrow-outer-color:           $popover-border-color;
-$popover-arrow-outer-fallback-color:  darken($popover-fallback-border-color, 20%);
-
+$popover-arrow-outer-width: ($popover-arrow-width + 1);
+$popover-arrow-outer-color: $popover-border-color;
+$popover-arrow-outer-fallback-color: darken(
+    $popover-fallback-border-color,
+    20%
+);
 
 //== Labels
 
-$label-default-bg:            $btn-default-bg;
-$label-primary-bg:            $brand-primary;
-$label-success-bg:            $brand-success;
-$label-info-bg:               $brand-info;
-$label-warning-bg:            $brand-warning;
-$label-danger-bg:             $brand-danger;
+$label-default-bg: $btn-default-bg;
+$label-primary-bg: $brand-primary;
+$label-success-bg: $brand-success;
+$label-info-bg: $brand-info;
+$label-warning-bg: $brand-warning;
+$label-danger-bg: $brand-danger;
 
-$label-color:                 $text-color;
-$label-link-hover-color:      $text-color;
-
+$label-color: $text-color;
+$label-link-hover-color: $text-color;
 
 //== Modals
 
-$modal-inner-padding:         $gutter-width / 2;
-$modal-title-padding:         $gutter-width / 2;
-$modal-title-line-height:     1.4em;
+$modal-inner-padding: $gutter-width / 2;
+$modal-title-padding: $gutter-width / 2;
+$modal-title-line-height: 1.4em;
 
-$modal-content-bg:                             $brand-menu;
-$modal-content-border-color:                   $border-color;
-$modal-content-fallback-border-color:          $gray-light;
+$modal-content-bg: $brand-menu;
+$modal-content-border-color: $border-color;
+$modal-content-fallback-border-color: $gray-light;
 
-$modal-backdrop-bg:           #000000;
-$modal-backdrop-opacity:      0.8;
-$modal-header-border-color:   $border-color;
-$modal-footer-border-color:   $modal-header-border-color;
+$modal-backdrop-bg: #000000;
+$modal-backdrop-opacity: 0.8;
+$modal-header-border-color: $border-color;
+$modal-footer-border-color: $modal-header-border-color;
 
-$modal-lg:                    900px;
-$modal-md:                    600px;
-$modal-sm:                    300px;
-
+$modal-lg: 900px;
+$modal-md: 600px;
+$modal-sm: 300px;
 
 //== Alerts
 
-$alert-padding:               $gutter-width / 3;
-$alert-border-radius:         $border-radius-base;
-$alert-link-font-weight:      bold;
+$alert-padding: $gutter-width / 3;
+$alert-border-radius: $border-radius-base;
+$alert-link-font-weight: bold;
 
-$alert-success-bg:            $state-success-bg;
-$alert-success-text:          $state-success-text;
-$alert-success-border:        $state-success-border;
+$alert-success-bg: $state-success-bg;
+$alert-success-text: $state-success-text;
+$alert-success-border: $state-success-border;
 
-$alert-info-bg:               $state-info-bg;
-$alert-info-text:             $state-info-text;
-$alert-info-border:           $state-info-border;
+$alert-info-bg: $state-info-bg;
+$alert-info-text: $state-info-text;
+$alert-info-border: $state-info-border;
 
-$alert-warning-bg:            $state-warning-bg;
-$alert-warning-text:          $state-warning-text;
-$alert-warning-border:        $state-warning-border;
+$alert-warning-bg: $state-warning-bg;
+$alert-warning-text: $state-warning-text;
+$alert-warning-border: $state-warning-border;
 
-$alert-danger-bg:             $state-danger-bg;
-$alert-danger-text:           $state-danger-text;
-$alert-danger-border:         $state-danger-border;
-
+$alert-danger-bg: $state-danger-bg;
+$alert-danger-text: $state-danger-text;
+$alert-danger-border: $state-danger-border;
 
 //== Progress bars
 
-$progress-bg:                 $gray-lighter;
-$progress-bar-color:          $text-color;
-$progress-border-radius:      $border-radius-base;
+$progress-bg: $gray-lighter;
+$progress-bar-color: $text-color;
+$progress-border-radius: $border-radius-base;
 
-$progress-bar-bg:             $brand-menu;
-$progress-bar-success-bg:     $brand-success;
-$progress-bar-warning-bg:     $brand-warning;
-$progress-bar-danger-bg:      $brand-danger;
-$progress-bar-info-bg:        $brand-info;
-
+$progress-bar-bg: $brand-menu;
+$progress-bar-success-bg: $brand-success;
+$progress-bar-warning-bg: $brand-warning;
+$progress-bar-danger-bg: $brand-danger;
+$progress-bar-info-bg: $brand-info;
 
 //== List group
 
-$list-group-bg:                 initial;
-$list-group-border:             $border-color;
-$list-group-border-radius:      $border-radius-base;
+$list-group-bg: initial;
+$list-group-border: $border-color;
+$list-group-border-radius: $border-radius-base;
 
-$list-group-hover-bg:           $gray-lighter;
-$list-group-active-color:       $component-active-color;
-$list-group-active-bg:          $component-active-bg;
-$list-group-active-border:      $list-group-border;
-$list-group-active-text-color:  lighten($list-group-active-bg, 40%);
+$list-group-hover-bg: $gray-lighter;
+$list-group-active-color: $component-active-color;
+$list-group-active-bg: $component-active-bg;
+$list-group-active-border: $list-group-border;
+$list-group-active-text-color: lighten($list-group-active-bg, 40%);
 
-$list-group-disabled-color:      $gray-light;
-$list-group-disabled-bg:         $gray-lighter;
+$list-group-disabled-color: $gray-light;
+$list-group-disabled-bg: $gray-lighter;
 $list-group-disabled-text-color: $list-group-disabled-color;
 
-$list-group-link-color:         $text-color;
-$list-group-link-hover-color:   $list-group-link-color;
+$list-group-link-color: $text-color;
+$list-group-link-hover-color: $list-group-link-color;
 $list-group-link-heading-color: $text-color;
-
 
 //== Panels
 
-$panel-bg:                    $brand-bg;
-$panel-body-padding:          $gutter-width / 2;
-$panel-heading-padding:       $gutter-width / 3 $gutter-width / 2;
-$panel-footer-padding:        $panel-heading-padding;
-$panel-border-radius:         $border-radius-base;
+$panel-bg: $brand-bg;
+$panel-body-padding: $gutter-width / 2;
+$panel-heading-padding: $gutter-width / 3 $gutter-width / 2;
+$panel-footer-padding: $panel-heading-padding;
+$panel-border-radius: $border-radius-base;
 
-$panel-inner-border:          $gray-lighter;
-$panel-footer-bg:             $gray-lighter;
+$panel-inner-border: $gray-lighter;
+$panel-footer-bg: $gray-lighter;
 
-$panel-default-text:          $text-color;
-$panel-default-border:        $border-color;
-$panel-default-heading-bg:    $gray-lighter;
+$panel-default-text: $text-color;
+$panel-default-border: $border-color;
+$panel-default-heading-bg: $gray-lighter;
 
-$panel-primary-text:          $text-color;
-$panel-primary-border:        $border-color;
-$panel-primary-heading-bg:    $brand-menu;
+$panel-primary-text: $text-color;
+$panel-primary-border: $border-color;
+$panel-primary-heading-bg: $brand-menu;
 
-$panel-success-text:          $state-success-text;
-$panel-success-border:        $state-success-border;
-$panel-success-heading-bg:    $state-success-bg;
+$panel-success-text: $state-success-text;
+$panel-success-border: $state-success-border;
+$panel-success-heading-bg: $state-success-bg;
 
-$panel-info-text:             $state-info-text;
-$panel-info-border:           $state-info-border;
-$panel-info-heading-bg:       $state-info-bg;
+$panel-info-text: $state-info-text;
+$panel-info-border: $state-info-border;
+$panel-info-heading-bg: $state-info-bg;
 
-$panel-warning-text:          $state-warning-text;
-$panel-warning-border:        $state-warning-border;
-$panel-warning-heading-bg:    $state-warning-bg;
+$panel-warning-text: $state-warning-text;
+$panel-warning-border: $state-warning-border;
+$panel-warning-heading-bg: $state-warning-bg;
 
-$panel-danger-text:           $state-danger-text;
-$panel-danger-border:         $state-danger-border;
-$panel-danger-heading-bg:     $state-danger-bg;
-
+$panel-danger-text: $state-danger-text;
+$panel-danger-border: $state-danger-border;
+$panel-danger-heading-bg: $state-danger-bg;
 
 //== Thumbnails
 
-$thumbnail-padding:           4px;
-$thumbnail-bg:                $body-bg;
-$thumbnail-border:            $gray-darker;
-$thumbnail-border-radius:     $border-radius-base;
-$thumbnail-caption-color:     $text-color;
-$thumbnail-caption-padding:   9px;
-
+$thumbnail-padding: 4px;
+$thumbnail-bg: $body-bg;
+$thumbnail-border: $gray-darker;
+$thumbnail-border-radius: $border-radius-base;
+$thumbnail-caption-color: $text-color;
+$thumbnail-caption-padding: 9px;
 
 //== Badges
 
-$badge-color:                 $text-color;
-$badge-link-hover-color:      $text-color;
-$badge-bg:                    $brand-primary;
+$badge-color: $text-color;
+$badge-link-hover-color: $text-color;
+$badge-bg: $brand-primary;
 
-$badge-active-color:          $brand-primary;
-$badge-active-bg:             $text-color;
+$badge-active-color: $brand-primary;
+$badge-active-bg: $text-color;
 
-$badge-font-weight:           bold;
-$badge-line-height:           1;
-$badge-border-radius:         20px;
-
+$badge-font-weight: bold;
+$badge-line-height: 1;
+$badge-border-radius: 20px;
 
 //== Wells (not used)
 
-$well-bg:                     $gray-lighter;
-$well-border:                 transparent;
-
+$well-bg: $gray-lighter;
+$well-border: transparent;
 
 //== Breadcrumbs (not used)
 
-$breadcrumb-padding-vertical:   8px;
+$breadcrumb-padding-vertical: 8px;
 $breadcrumb-padding-horizontal: 15px;
-$breadcrumb-bg:                 $gray-lighter;
-$breadcrumb-color:              $text-color;
-$breadcrumb-active-color:       $gray-dark;
-$breadcrumb-separator:          "/";
-
+$breadcrumb-bg: $gray-lighter;
+$breadcrumb-color: $text-color;
+$breadcrumb-active-color: $gray-dark;
+$breadcrumb-separator: "/";
 
 //== Carousel (not used)
 
-$carousel-text-shadow:                        0 1px 2px rgba(0,0,0,.6);
+$carousel-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 
-$carousel-control-color:                      $text-color;
-$carousel-control-width:                      15%;
-$carousel-control-opacity:                    .5;
-$carousel-control-font-size:                  $font-size-large;
+$carousel-control-color: $text-color;
+$carousel-control-width: 15%;
+$carousel-control-opacity: 0.5;
+$carousel-control-font-size: $font-size-large;
 
-$carousel-indicator-active-bg:                $text-color;
-$carousel-indicator-border-color:             $gray-darker;
+$carousel-indicator-active-bg: $text-color;
+$carousel-indicator-border-color: $gray-darker;
 
-$carousel-caption-color:                      $text-color;
-
+$carousel-caption-color: $text-color;
 
 //== Close (not used)
 
-$close-font-weight:           bold;
-$close-color:                 #000;
-$close-text-shadow:           none;
-
+$close-font-weight: bold;
+$close-color: #000;
+$close-text-shadow: none;
 
 //== Code highlighting (not used)
 
-$code-color:                  $text-color;
-$code-bg:                     inherit;
+$code-color: $text-color;
+$code-bg: inherit;
 
-$kbd-color:                   $text-color;
-$kbd-bg:                      #333;
+$kbd-color: $text-color;
+$kbd-bg: #333;
 
-$pre-bg:                      inherit;
-$pre-color:                   $text-color;
-$pre-border-color:            inherit;
-$pre-scrollable-max-height:   340px;
-
+$pre-bg: inherit;
+$pre-color: $text-color;
+$pre-border-color: inherit;
+$pre-scrollable-max-height: 340px;
 
 //== Type (not used)
 
 $component-offset-horizontal: 180px;
-$text-muted:                  $gray-light;
-$headings-small-color:        $gray-light;
-$blockquote-small-color:      $gray-light;
-$blockquote-font-size:        1.25em;
-$blockquote-border-color:     $gray-lighter;
-$page-header-border-color:    transparent;
-$dl-horizontal-offset:        $component-offset-horizontal;
-$dl-horizontal-breakpoint:    $grid-float-breakpoint;
-$hr-border:                   $gray-dark;
+$text-muted: $gray-light;
+$headings-small-color: $gray-light;
+$blockquote-small-color: $gray-light;
+$blockquote-font-size: 1.25em;
+$blockquote-border-color: $gray-lighter;
+$page-header-border-color: transparent;
+$dl-horizontal-offset: $component-offset-horizontal;
+$dl-horizontal-breakpoint: $grid-float-breakpoint;
+$hr-border: $gray-dark;
 
 $half-gutter: floor($gutter-width / 2);
 $slim-gutter: floor($gutter-width / 4);

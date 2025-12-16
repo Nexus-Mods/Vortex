@@ -1,11 +1,11 @@
-import * as Promise from 'bluebird';
-import { IActionDefinitionEx } from '../../../renderer/controls/ActionControl';
-import { IMod } from '../../../types/IState';
-import { ICollection } from '../types/collections';
+import * as Promise from "bluebird";
+import { IActionDefinitionEx } from "../../../renderer/controls/ActionControl";
+import { IMod } from "../../../types/IState";
+import { ICollection } from "../types/collections";
 
-export type SortType = 'ascending' | 'descending';
+export type SortType = "ascending" | "descending";
 
-export type ListViewType = 'compact' | 'full';
+export type ListViewType = "compact" | "full";
 
 // Adds the ability to discern why the LO callback or presort has been
 //  called. At the time of writing there were only 2 potential
@@ -19,7 +19,7 @@ export type ListViewType = 'compact' | 'full';
 //  refresh: a refresh event has been called by the user OR by the
 //    render call when a difference between display items and managed
 //    mods is detected.
-export type UpdateType = 'drag-n-drop' | 'props-update' | 'refresh';
+export type UpdateType = "drag-n-drop" | "props-update" | "refresh";
 
 // A set of props forwarded to game extensions which
 //  will allow these to control certain aspects of the
@@ -120,9 +120,11 @@ export interface ILoadOrderDisplayItem {
   //  during the preSort function call. This is useful if
   //  the game extension wants to impose some DnD restrictions
   //  e.g. Disallow ESP's or ESL's from being positioned above an ESM
-  condition?: (lhs: ILoadOrderDisplayItem,
-               rhs: ILoadOrderDisplayItem,
-               predictedResult: ILoadOrderDisplayItem[]) => IDnDConditionResult;
+  condition?: (
+    lhs: ILoadOrderDisplayItem,
+    rhs: ILoadOrderDisplayItem,
+    predictedResult: ILoadOrderDisplayItem[],
+  ) => IDnDConditionResult;
 }
 
 export interface IGameLoadOrderEntry {
@@ -152,9 +154,11 @@ export interface IGameLoadOrderEntry {
 
   // Give the game extension the opportunity to modify the load order
   //  before we start sorting the mods.
-  preSort?: (items: ILoadOrderDisplayItem[],
-             sortDir: SortType,
-             updateType?: UpdateType) => Promise<ILoadOrderDisplayItem[]>;
+  preSort?: (
+    items: ILoadOrderDisplayItem[],
+    sortDir: SortType,
+    updateType?: UpdateType,
+  ) => Promise<ILoadOrderDisplayItem[]>;
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.

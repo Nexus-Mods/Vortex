@@ -1,14 +1,17 @@
 /* eslint-disable */
-import { IExtensionApi, IMod } from '../../types/api';
-import { getSafe } from '../../util/storeHelper';
+import { IExtensionApi, IMod } from "../../types/api";
+import { getSafe } from "../../util/storeHelper";
 
-import * as _ from 'lodash';
-import { ILoadOrderEntry, ILoadOrderEntryExt } from './types/types';
-import { log } from '../../util/log';
-import { activeGameId, lastActiveProfileForGame } from '../profile_management/selectors';
-import { toExtendedLoadOrderEntry } from './util';
-import { util } from 'vortex-api';
-import { currentLoadOrderForProfile } from './selectors';
+import * as _ from "lodash";
+import { ILoadOrderEntry, ILoadOrderEntryExt } from "./types/types";
+import { log } from "../../util/log";
+import {
+  activeGameId,
+  lastActiveProfileForGame,
+} from "../profile_management/selectors";
+import { toExtendedLoadOrderEntry } from "./util";
+import { util } from "vortex-api";
+import { currentLoadOrderForProfile } from "./selectors";
 
 export default class UpdateSet {
   private mApi: IExtensionApi;
@@ -36,22 +39,26 @@ export default class UpdateSet {
 
   public forceReset = () => {
     this.reset();
-  }
+  };
 
   public addEntry = (lo: ILoadOrderEntryExt) => {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const modId = lo.modId ?? lo.id;
-    const mod = util.getSafe(state, ['persistent', 'mods', gameMode, modId], undefined);
+    const mod = util.getSafe(
+      state,
+      ["persistent", "mods", gameMode, modId],
+      undefined,
+    );
     if (modId === undefined) return;
 
     let key;
-    const numericId = getSafe(mod, ['attributes', 'modId'], -1);
-    key = (numericId !== -1) ? numericId : lo.id;
+    const numericId = getSafe(mod, ["attributes", "modId"], -1);
+    key = numericId !== -1 ? numericId : lo.id;
     const target = lo.modId ? this.mModEntries : this.mExternalEntries;
     if (!target[key]) {
       target[key] = [lo];
-    } else if (!target[key].some(entry => entry.id === lo.id)) {
+    } else if (!target[key].some((entry) => entry.id === lo.id)) {
       target[key].push(lo);
     }
   };
@@ -64,12 +71,13 @@ export default class UpdateSet {
       this.reset();
     }
     this.mInitialized = true;
-    modEntries = (!!modEntries && Array.isArray(modEntries))
-      ? modEntries
-      : this.genExtendedItemsFromState();
+    modEntries =
+      !!modEntries && Array.isArray(modEntries)
+        ? modEntries
+        : this.genExtendedItemsFromState();
 
     modEntries.forEach((iter: ILoadOrderEntryExt) => this.addEntry(iter));
-  }
+  };
 
   private genExtendedItemsFromState = () => {
     const state = this.mApi.getState();
@@ -81,12 +89,15 @@ export default class UpdateSet {
     if (!profileId) {
       return [];
     }
-    const loadOrder: ILoadOrderEntry[] = currentLoadOrderForProfile(state, profileId);
+    const loadOrder: ILoadOrderEntry[] = currentLoadOrderForProfile(
+      state,
+      profileId,
+    );
     if (!loadOrder || !Array.isArray(loadOrder)) {
       return [];
     }
 
-    const extended = loadOrder.map(toExtendedLoadOrderEntry(this.mApi))
+    const extended = loadOrder.map(toExtendedLoadOrderEntry(this.mApi));
     return extended;
   };
 
@@ -95,22 +106,29 @@ export default class UpdateSet {
     this.mExternalEntries = {};
     this.mInitialized = false;
     this.mShouldRestore = false;
-  }
+  };
 
   public has = (value: number | string): boolean => {
-    return (typeof value === 'string')
+    return typeof value === "string"
       ? this.mExternalEntries[value] !== undefined
       : this.mModEntries[value] !== undefined;
-  }
+  };
 
   public hasEntry = (entry: ILoadOrderEntry): boolean => {
     return !!entry.modId
-      ? Object.values(this.mModEntries).some(l => l.some(m => m.modId === entry.modId || m.id === entry.id))
-      : Object.values(this.mExternalEntries).some(l => l.some(m => m.id === entry.id));
-  }
+      ? Object.values(this.mModEntries).some((l) =>
+          l.some((m) => m.modId === entry.modId || m.id === entry.id),
+        )
+      : Object.values(this.mExternalEntries).some((l) =>
+          l.some((m) => m.id === entry.id),
+        );
+  };
 
   public restore = (loadOrder: ILoadOrderEntry[]): ILoadOrderEntry[] => {
-    if (Object.keys(this.mModEntries).length === 0 && Object.keys(this.mExternalEntries).length === 0) {
+    if (
+      Object.keys(this.mModEntries).length === 0 &&
+      Object.keys(this.mExternalEntries).length === 0
+    ) {
       // Nothing to restore
       return loadOrder;
     }
@@ -120,10 +138,13 @@ export default class UpdateSet {
       if (!stored) {
         // This is probably an entry for a manually added mod/native game entry
         //  use the existing index.
-        return { ...entry, index: loadOrder.findIndex(l => l.name === entry.name) };
+        return {
+          ...entry,
+          index: loadOrder.findIndex((l) => l.name === entry.name),
+        };
       }
-      return stored.entries.find(l => l.name === entry.name) || null;
-    }
+      return stored.entries.find((l) => l.name === entry.name) || null;
+    };
     restoredLO.sort((lhs, rhs) => {
       const lhsEntry = getEntryExt(lhs);
       const rhsEntry = getEntryExt(rhs);
@@ -138,49 +159,53 @@ export default class UpdateSet {
     this.init(gameMode, remapped);
     this.mShouldRestore = false;
     return remapped;
-  }
+  };
 
   // The modId of the mod we are looking for as stored in Vortex's state.
-  public findEntry = (lookUpEntry: ILoadOrderEntry): { entries: ILoadOrderEntryExt[] } | null => {
+  public findEntry = (
+    lookUpEntry: ILoadOrderEntry,
+  ): { entries: ILoadOrderEntryExt[] } | null => {
     if (!this.hasEntry(lookUpEntry)) {
       return null;
     }
 
     if (lookUpEntry.modId === undefined) {
       // This is an external entry, we need to find it in the external entries.
-      const extEntry = Object.entries(this.mExternalEntries).find(entry => {
+      const extEntry = Object.entries(this.mExternalEntries).find((entry) => {
         const [eId, loEntries] = entry;
-        return loEntries.some(l => l.id === lookUpEntry.id);
+        return loEntries.some((l) => l.id === lookUpEntry.id);
       });
       if (extEntry !== undefined) {
         return { entries: this.mExternalEntries[extEntry[0]] };
       }
     } else {
-      const numericId = Object.entries(this.mModEntries).find(entry => {
+      const numericId = Object.entries(this.mModEntries).find((entry) => {
         const [nId, loEntries] = entry;
-        return loEntries.some(l => l.modId === lookUpEntry.modId || l.id === lookUpEntry.id);
+        return loEntries.some(
+          (l) => l.modId === lookUpEntry.modId || l.id === lookUpEntry.id,
+        );
       })?.[0];
       if (numericId === undefined) {
         return null;
       }
       return { entries: this.mModEntries[numericId] };
     }
-  }
+  };
 
   public get = (modId: number | string): ILoadOrderEntryExt[] => {
-    if (typeof modId === 'string') {
+    if (typeof modId === "string") {
       return this.mExternalEntries[modId] || [];
     } else {
       return this.mModEntries[modId] || [];
     }
-  }
+  };
 
   public add = (x: number): this => {
-    log('warn', 'Use addEntry', x);
+    log("warn", "Use addEntry", x);
     return;
-  }
+  };
 
   public isInitialized = (): boolean => {
     return this.mInitialized;
-  }
+  };
 }

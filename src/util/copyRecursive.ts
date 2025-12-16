@@ -1,6 +1,6 @@
-import Promise from 'bluebird';
-import * as fs from 'fs';
-import * as path from 'path';
+import Promise from "bluebird";
+import * as fs from "fs";
+import * as path from "path";
 
 const MAX_PARALLEL_DIR = 16;
 const MAX_PARALLEL_FILE = 4;
@@ -11,10 +11,17 @@ interface IQueueEntry {
   isDir: boolean;
 }
 
-function copyFile(source: string, destination: string,
-                  callback: (err: Error) => void) {
-  const readStream = fs.createReadStream(source, { highWaterMark: BUFFER_SIZE } as any);
-  const writeStream = fs.createWriteStream(destination, { highWaterMark: BUFFER_SIZE } as any);
+function copyFile(
+  source: string,
+  destination: string,
+  callback: (err: Error) => void,
+) {
+  const readStream = fs.createReadStream(source, {
+    highWaterMark: BUFFER_SIZE,
+  } as any);
+  const writeStream = fs.createWriteStream(destination, {
+    highWaterMark: BUFFER_SIZE,
+  } as any);
 
   const onError = (err: Error) => {
     readStream.close();
@@ -22,18 +29,22 @@ function copyFile(source: string, destination: string,
     callback(err);
   };
 
-  readStream.on('error', onError);
-  writeStream.on('error', onError);
+  readStream.on("error", onError);
+  writeStream.on("error", onError);
 
-  writeStream.on('open', () => readStream.pipe(writeStream));
+  writeStream.on("open", () => readStream.pipe(writeStream));
 
-  writeStream.once('close', () => callback(null));
+  writeStream.once("close", () => callback(null));
 }
 
-function copyDir(sourcePath: string, destinationPath: string, relPath: string,
-                 callback: (err: Error, entries?: IQueueEntry[]) => void) {
-  fs.mkdir(path.join(destinationPath, relPath), err => {
-    if ((err !== null) && (err.code !== 'EEXIST')) {
+function copyDir(
+  sourcePath: string,
+  destinationPath: string,
+  relPath: string,
+  callback: (err: Error, entries?: IQueueEntry[]) => void,
+) {
+  fs.mkdir(path.join(destinationPath, relPath), (err) => {
+    if (err !== null && err.code !== "EEXIST") {
       return callback(err);
     }
 
@@ -47,7 +58,7 @@ function copyDir(sourcePath: string, destinationPath: string, relPath: string,
         return callback(null, []);
       }
       const entries: IQueueEntry[] = [];
-      files.forEach(file => {
+      files.forEach((file) => {
         fs.stat(path.join(sourcePath, relPath, file), (statErr, stats) => {
           if (statErr === null) {
             // TODO: ignoring error
@@ -90,18 +101,18 @@ function copyRecursive(source: string, destination: string): Promise<void> {
       file: MAX_PARALLEL_FILE,
     };
 
-    function next(type: 'dir' | 'file') {
+    function next(type: "dir" | "file") {
       --slots[type];
 
       const job = queue[type].shift();
-      if (type === 'dir') {
+      if (type === "dir") {
         copyDir(source, destination, job, (err, entries) => {
           if (err !== null) {
             return reject(err);
           }
 
-          entries.forEach(entry => {
-            queue[entry.isDir ? 'dir' : 'file'].push(entry.relPath);
+          entries.forEach((entry) => {
+            queue[entry.isDir ? "dir" : "file"].push(entry.relPath);
           });
           done(type);
         });
@@ -115,21 +126,24 @@ function copyRecursive(source: string, destination: string): Promise<void> {
       }
     }
 
-    function done(type: 'dir' | 'file') {
+    function done(type: "dir" | "file") {
       ++slots[type];
-      while ((slots['dir'] > 0) && (queue['dir'].length > 0)) {
-        next('dir');
+      while (slots["dir"] > 0 && queue["dir"].length > 0) {
+        next("dir");
       }
-      while ((slots['file'] > 0) && (queue['file'].length > 0)) {
-        next('file');
+      while (slots["file"] > 0 && queue["file"].length > 0) {
+        next("file");
       }
-      if ((slots['dir'] === MAX_PARALLEL_DIR) && (slots['file'] === MAX_PARALLEL_FILE)) {
+      if (
+        slots["dir"] === MAX_PARALLEL_DIR &&
+        slots["file"] === MAX_PARALLEL_FILE
+      ) {
         return resolve();
       }
     }
 
-    queue['dir'].push('');
-    next('dir');
+    queue["dir"].push("");
+    next("dir");
   });
 }
 

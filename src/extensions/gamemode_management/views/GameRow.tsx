@@ -1,24 +1,24 @@
-import IconBar from '../../../renderer/controls/IconBar';
-import OverlayTrigger from '../../../renderer/controls/OverlayTrigger';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { IActionDefinition } from '../../../types/IActionDefinition';
-import { ComponentEx } from '../../../util/ComponentEx';
-import opn from '../../../util/opn';
+import IconBar from "../../../renderer/controls/IconBar";
+import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { IActionDefinition } from "../../../types/IActionDefinition";
+import { ComponentEx } from "../../../util/ComponentEx";
+import opn from "../../../util/opn";
 
-import { IMod } from '../../mod_management/types/IMod';
+import { IMod } from "../../mod_management/types/IMod";
 
-import { IDiscoveryResult } from '../types/IDiscoveryResult';
-import { IGameStored } from '../types/IGameStored';
+import { IDiscoveryResult } from "../types/IDiscoveryResult";
+import { IGameStored } from "../types/IGameStored";
 
-import GameInfoPopover from './GameInfoPopover';
+import GameInfoPopover from "./GameInfoPopover";
 
-import Promise from 'bluebird';
-import { TFunction } from 'i18next';
-import * as path from 'path';
-import * as React from 'react';
-import { ListGroupItem, Media, Popover } from 'react-bootstrap';
-import { Provider } from 'react-redux';
-import { pathToFileURL } from 'url';
+import Promise from "bluebird";
+import { TFunction } from "i18next";
+import * as path from "path";
+import * as React from "react";
+import { ListGroupItem, Media, Popover } from "react-bootstrap";
+import { Provider } from "react-redux";
+import { pathToFileURL } from "url";
 
 export interface IProps {
   t: TFunction;
@@ -42,41 +42,51 @@ class GameRow extends ComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, container, discovery,
-            game, getBounds, onRefreshGameInfo, type } = this.props;
+    const {
+      t,
+      active,
+      container,
+      discovery,
+      game,
+      getBounds,
+      onRefreshGameInfo,
+      type,
+    } = this.props;
 
     if (game === undefined) {
       return null;
     }
 
-    const logoPath: string = game.extensionPath !== undefined
-      ? path.join(game.extensionPath, game.logo)
-      : game.imageURL;
+    const logoPath: string =
+      game.extensionPath !== undefined
+        ? path.join(game.extensionPath, game.logo)
+        : game.imageURL;
 
-    const location = (discovery !== undefined) && (discovery.path !== undefined)
-      ? <a onClick={this.openLocation}>{discovery.path}</a>
-      : null;
+    const location =
+      discovery !== undefined && discovery.path !== undefined ? (
+        <a onClick={this.openLocation}>{discovery.path}</a>
+      ) : null;
 
-    const classes = [ 'game-list-item' ];
+    const classes = ["game-list-item"];
     if (active) {
-      classes.push('game-list-selected');
+      classes.push("game-list-selected");
     }
     if (discovery === undefined) {
-      classes.push('game-list-undiscovered');
+      classes.push("game-list-undiscovered");
     }
 
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
+      <Popover id={`popover-info-${game.id}`} className="popover-game-info">
         <Provider store={this.context.api.store}>
           <IconBar
             id={`game-thumbnail-${game.id}`}
-            className='buttons'
+            className="buttons"
             group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
             collapse={false}
-            buttonType='text'
-            orientation='vertical'
+            buttonType="text"
+            orientation="vertical"
             filter={this.lowPriorityButtons}
             t={t}
           />
@@ -91,21 +101,26 @@ class GameRow extends ComponentEx<IProps, {}> {
     );
 
     const protocol = new URL(logoPath).protocol;
-    const imgurl = ((protocol !== null) && (protocol.startsWith('http')))
-      ? logoPath
-      : pathToFileURL(logoPath).href;
+    const imgurl =
+      protocol !== null && protocol.startsWith("http")
+        ? logoPath
+        : pathToFileURL(logoPath).href;
 
     return (
-      <ListGroupItem className={classes.join(' ')}>
+      <ListGroupItem className={classes.join(" ")}>
         <Media>
           <Media.Left>
-            <div className='game-thumbnail-container-list'>
-              <img className='game-thumbnail-img-list' src={imgurl} />
+            <div className="game-thumbnail-container-list">
+              <img className="game-thumbnail-img-list" src={imgurl} />
             </div>
           </Media.Left>
           <Media.Body>
-            <Media.Heading>{t(game.name.replace(/\t/g, ' '))}</Media.Heading>
-            {(location !== null) ? (<p>{t('Location')}: {location}</p>) : null}
+            <Media.Heading>{t(game.name.replace(/\t/g, " "))}</Media.Heading>
+            {location !== null ? (
+              <p>
+                {t("Location")}: {location}
+              </p>
+            ) : null}
           </Media.Body>
           <Media.Right>
             <OverlayTrigger
@@ -113,28 +128,28 @@ class GameRow extends ComponentEx<IProps, {}> {
               getBounds={getBounds}
               container={container}
               overlay={gameInfoPopover}
-              orientation='horizontal'
+              orientation="horizontal"
               shouldUpdatePosition={true}
-              trigger='click'
+              trigger="click"
               rootClose={true}
             >
               <IconButton
                 id={`btn-info-${game.id}`}
-                icon='game-menu'
-                className='btn-embed'
-                tooltip={t('Show Details')}
+                icon="game-menu"
+                className="btn-embed"
+                tooltip={t("Show Details")}
               />
             </OverlayTrigger>
             <IconBar
               t={t}
-              className='btngroup-game-list'
+              className="btngroup-game-list"
               group={`game-${type}-buttons`}
               instanceId={game.id}
               staticElements={[]}
               collapse={false}
               filter={this.priorityButtons}
               clickAnywhere={true}
-              buttonType='icon'
+              buttonType="icon"
               showAll
             />
           </Media.Right>
@@ -143,9 +158,9 @@ class GameRow extends ComponentEx<IProps, {}> {
     );
   }
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
-  }
+  };
 
   private redraw = () => {
     if (this.mRef !== null) {
@@ -156,22 +171,22 @@ class GameRow extends ComponentEx<IProps, {}> {
         }
       }, 100);
     }
-  }
+  };
 
   private openLocation = () => {
     const { discovery } = this.props;
     opn(discovery.path).catch(() => null);
-  }
+  };
 
   private changeLocation = () => {
     this.props.onBrowseGameLocation(this.props.game.id);
-  }
+  };
 
   private priorityButtons = (action: IActionDefinition) =>
-    action.position < 100
+    action.position < 100;
 
   private lowPriorityButtons = (action: IActionDefinition) =>
-    action.position >= 100
+    action.position >= 100;
 }
 
 export default GameRow as React.ComponentClass<IProps>;

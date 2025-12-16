@@ -1,3 +1,3 @@
-const ext = jest.genMockFromModule('../log');
+const ext = jest.genMockFromModule("../log");
 
 module.exports = ext;

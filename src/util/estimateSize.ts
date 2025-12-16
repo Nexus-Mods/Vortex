@@ -6,15 +6,15 @@ function estimateSize(object: any) {
   while (stack.length > 0) {
     const value = stack.pop();
 
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       bytes += 4;
-    } else if (typeof value === 'string') {
+    } else if (typeof value === "string") {
       bytes += value.length * 2;
-    } else if (typeof value === 'number') {
+    } else if (typeof value === "number") {
       bytes += 8;
     } else if (value == null) {
       /* nop */
-    } else if ((typeof value === 'object') && !visited.has(value)) {
+    } else if (typeof value === "object" && !visited.has(value)) {
       visited.add(value);
 
       Object.keys(value).forEach((key: string) => {

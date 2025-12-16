@@ -1,77 +1,77 @@
 .xtable {
-  > .xthead,
-  > .xtbody,
-  > .xtfoot {
-    background-color: $table-bg;
-    > .xtr {
-      > .xth,
-      > .xtd {
-        padding: $table-cell-padding;
-        line-height: $line-height-base;
-        border-top: $table-row-gap solid $table-border-color;
-      }
-      > .xtd {
-        vertical-align: middle;
-      }
+    > .xthead,
+    > .xtbody,
+    > .xtfoot {
+        background-color: $table-bg;
+        > .xtr {
+            > .xth,
+            > .xtd {
+                padding: $table-cell-padding;
+                line-height: $line-height-base;
+                border-top: $table-row-gap solid $table-border-color;
+            }
+            > .xtd {
+                vertical-align: middle;
+            }
+        }
     }
-  }
-  > .xthead > .xtr > .xth {
-    border-bottom: $table-header-separator solid $table-border-color;
-  }
-  > .xthead:first-child {
-    > .xtr:first-child {
-      > .xth,
-      > .xtd {
-        border-top: 0;
-      }
+    > .xthead > .xtr > .xth {
+        border-bottom: $table-header-separator solid $table-border-color;
     }
-  }
+    > .xthead:first-child {
+        > .xtr:first-child {
+            > .xth,
+            > .xtd {
+                border-top: 0;
+            }
+        }
+    }
 }
 
 .table-condensed {
-  > .xthead,
-  > .xtbody,
-  > .xtfoot {
-    > .xtr {
-      > .xth,
-      > .xtd {
-        padding: $table-condensed-cell-padding;
-      }
+    > .xthead,
+    > .xtbody,
+    > .xtfoot {
+        > .xtr {
+            > .xth,
+            > .xtd {
+                padding: $table-condensed-cell-padding;
+            }
+        }
     }
-  }
 }
 
 .table-bordered {
-  border: 1px solid $table-border-color;
-  > .xthead,
-  > .xtbody,
-  > .xtfoot {
-    > .xtr {
-      > .xth,
-      > .xtd {
-        border: 1px solid $table-border-color;
-      }
+    border: 1px solid $table-border-color;
+    > .xthead,
+    > .xtbody,
+    > .xtfoot {
+        > .xtr {
+            > .xth,
+            > .xtd {
+                border: 1px solid $table-border-color;
+            }
+        }
     }
-  }
 
-  > .xthead > .xtr {
-    > .xth,
-    > .xtd {
-      border-bottom-width: 2px;
+    > .xthead > .xtr {
+        > .xth,
+        > .xtd {
+            border-bottom-width: 2px;
+        }
     }
-  }
 }
 
 .table-striped {
-  > .xtbody > .xtr::nth-of-type(odd) {
-    background-color: $table-bg-accent;
-  }
+    > .xtbody > .xtr::nth-of-type(odd) {
+        background-color: $table-bg-accent;
+    }
 }
 
 .table-hover {
-  > .xtbody > .xtr:hover {
-    background-color: $table-bg-hover;
-  }
+    > .xtbody > .xtr:hover {
+        background-color: $table-bg-hover;
+    }
 }
 
 .table > .xthead > .xtr > .xth,
@@ -80,5 +80,5 @@
 .table > .xtbody > .xtr > .xtd,
 .table > .xtfoot > .xtr > .xth,
 .table > .xtfoot > .xtr > .xtd {
-  line-height: $line-height-base;
+    line-height: $line-height-base;
 }

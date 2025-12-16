@@ -1,68 +1,84 @@
-import update from 'immutability-helper';
+import update from "immutability-helper";
 
-import * as actions from '../actions/installerUI';
-import { IFOMODStateDialog } from '../types/interface';
+import * as actions from "../actions/installerUI";
+import { IFOMODStateDialog } from "../types/interface";
 
-import { IReducerSpec } from '../../../types/api';
-import { createReducer, ReducerHandler } from '../../../util/reducers';
+import { IReducerSpec } from "../../../types/api";
+import { createReducer } from "../../../util/reducers";
 
 const defaults: IFOMODStateDialog = {
   activeInstanceId: null,
   instances: {},
 };
 
-const reducers: { [key: string]: ReducerHandler<IFOMODStateDialog, any> } = {};
+const reducers: IReducerSpec<IFOMODStateDialog>["reducers"] = {};
 
-createReducer(actions.startDialog, (state, payload) => {
-  const { instanceId, info } = payload;
-  const existingInstance = state.instances?.[instanceId];
+createReducer(
+  actions.startDialog,
+  (state, payload) => {
+    const { instanceId, info } = payload;
+    const existingInstance = state.instances?.[instanceId];
 
-  return update(state, {
-    activeInstanceId: { $set: instanceId },
-    instances: {
-      [instanceId]: existingInstance
-        ? { $merge: { info } }
-        : { $set: { info, state: undefined } }
-    }
-  });
-}, reducers);
+    return update(state, {
+      activeInstanceId: { $set: instanceId },
+      instances: {
+        [instanceId]: existingInstance
+          ? { $merge: { info } }
+          : { $set: { info, state: undefined } },
+      },
+    });
+  },
+  reducers,
+);
 
-createReducer(actions.endDialog, (state, payload) => {
-  const { instanceId } = payload;
-  const existingInstance = state.instances?.[instanceId];
+createReducer(
+  actions.endDialog,
+  (state, payload) => {
+    const { instanceId } = payload;
+    const existingInstance = state.instances?.[instanceId];
 
-  return update(state, {
-    activeInstanceId: { $set: null },
-    instances: existingInstance
-      ? {
-          [instanceId]: {
-            info: { $set: null }
+    return update(state, {
+      activeInstanceId: { $set: null },
+      instances: existingInstance
+        ? {
+            [instanceId]: {
+              info: { $set: null },
+            },
           }
-        }
-      : {}
-  });
-}, reducers);
+        : {},
+    });
+  },
+  reducers,
+);
 
-createReducer(actions.clearDialog, (state, payload) => {
-  const { instanceId } = payload;
-  
-  return update(state, {
-    instances: { $unset: [instanceId] }
-  });
-}, reducers);
+createReducer(
+  actions.clearDialog,
+  (state, payload) => {
+    const { instanceId } = payload;
 
-createReducer(actions.setDialogState, (state, payload) => {
-  const { instanceId, dialogState } = payload;
-  const existingInstance = state.instances?.[instanceId];
+    return update(state, {
+      instances: { $unset: [instanceId] },
+    });
+  },
+  reducers,
+);
 
-  return update(state, {
-    instances: {
-      [instanceId]: existingInstance
-        ? { $merge: { state: dialogState } }
-        : { $set: { info: undefined, state: dialogState } }
-    }
-  });
-}, reducers);
+createReducer(
+  actions.setDialogState,
+  (state, payload) => {
+    const { instanceId, dialogState } = payload;
+    const existingInstance = state.instances?.[instanceId];
+
+    return update(state, {
+      instances: {
+        [instanceId]: existingInstance
+          ? { $merge: { state: dialogState } }
+          : { $set: { info: undefined, state: dialogState } },
+      },
+    });
+  },
+  reducers,
+);
 
 const reducer: IReducerSpec<IFOMODStateDialog> = {
   reducers,

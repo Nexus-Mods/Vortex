@@ -1,33 +1,47 @@
-import { ILink, triggerDialogLink } from '../../actions';
-import { closeDialog, closeDialogs, DialogContentItem } from '../../actions/notifications';
-import Collapse from '../controls/Collapse';
-import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
-import Icon from '../controls/Icon';
-import Webview from '../controls/Webview';
+import { ILink, triggerDialogLink } from "../../actions";
 import {
-  ConditionResults, DialogType, ICheckbox, IConditionResult, IDialog,
-  IDialogContent, IInput,
-} from '../../types/IDialog';
-import { IState } from '../../types/IState';
-import bbcode from '../../util/bbcode';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { TFunction } from '../../util/i18n';
-import lazyRequire from '../../util/lazyRequire';
-import { MutexWrapper } from '../../util/MutexContext';
-
-import type * as RemoteT from '@electron/remote';
-import update from 'immutability-helper';
-import * as React from 'react';
+  closeDialog,
+  closeDialogs,
+  DialogContentItem,
+} from "../../actions/notifications";
+import Collapse from "../controls/Collapse";
+import ErrorBoundary, { ErrorContext } from "../controls/ErrorBoundary";
+import Icon from "../controls/Icon";
+import Webview from "../controls/Webview";
 import {
-  Button, Checkbox, ControlLabel, FormControl, FormGroup,
-  Modal, Radio,
-} from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
-import ReactMarkdown from 'react-markdown';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+  ConditionResults,
+  DialogType,
+  ICheckbox,
+  IConditionResult,
+  IDialog,
+  IDialogContent,
+  IInput,
+} from "../../types/IDialog";
+import { IState } from "../../types/IState";
+import bbcode from "../controls/bbcode";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { TFunction } from "../../util/i18n";
+import lazyRequire from "../../util/lazyRequire";
+import { MutexWrapper } from "../../util/MutexContext";
 
-const remote = lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
+import type * as RemoteT from "@electron/remote";
+import update from "immutability-helper";
+import * as React from "react";
+import {
+  Button,
+  Checkbox,
+  ControlLabel,
+  FormControl,
+  FormGroup,
+  Modal,
+  Radio,
+} from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import ReactMarkdown from "react-markdown";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+
+const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 const nop = () => undefined;
 
@@ -44,9 +58,9 @@ class Action extends React.Component<IActionProps, {}> {
     const { t, action, isDefault, isDisabled } = this.props;
     return (
       <Button
-        id='close'
+        id="close"
         onClick={this.dismiss}
-        bsStyle={isDefault ? 'primary' : undefined}
+        bsStyle={isDefault ? "primary" : undefined}
         ref={isDefault ? this.focus : undefined}
         disabled={isDisabled}
       >
@@ -55,16 +69,16 @@ class Action extends React.Component<IActionProps, {}> {
     );
   }
 
-  private focus = ref => {
+  private focus = (ref) => {
     if (ref !== null) {
       (ReactDOM.findDOMNode(ref) as HTMLElement).focus();
     }
-  }
+  };
 
   private dismiss = () => {
     const { onDismiss, action } = this.props;
     onDismiss(action);
-  }
+  };
 }
 
 interface IDialogConnectedProps {
@@ -73,7 +87,11 @@ interface IDialogConnectedProps {
 
 interface IDialogActionProps {
   onDismiss: (id: string, action: string, input: IDialogContent) => void;
-  onDismissMultiple: (ids: string[], action: string, input: IDialogContent) => void;
+  onDismissMultiple: (
+    ids: string[],
+    action: string,
+    input: IDialogContent,
+  ) => void;
 }
 
 interface IComponentState {
@@ -106,7 +124,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
         const validationResults = this.validateContent(newState.dialogState);
         if (validationResults !== undefined) {
-          newState = {...newState, conditionResults: validationResults};
+          newState = { ...newState, conditionResults: validationResults };
         }
 
         this.setState(newState);
@@ -118,7 +136,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         window.setAlwaysOnTop(true);
         window.show();
         window.setAlwaysOnTop(false);
-      } else if (this.props.dialogs[0]?.content !== newProps.dialogs[0]?.content) {
+      } else if (
+        this.props.dialogs[0]?.content !== newProps.dialogs[0]?.content
+      ) {
         // same dialog id but maybe the content changed?
         let newState = update(this.state, {
           dialogState: { $set: newProps.dialogs[0].content },
@@ -126,7 +146,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
         const validationResults = this.validateContent(newState.dialogState);
         if (validationResults !== undefined) {
-          newState = {...newState, conditionResults: validationResults};
+          newState = { ...newState, conditionResults: validationResults };
         }
 
         this.setState(newState);
@@ -136,10 +156,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     if (this.props.dialogs.length > 0) {
-      this.setState(update(this.state, {
-        currentDialogId: { $set: this.props.dialogs[0].id },
-        dialogState: { $set: this.props.dialogs[0].content },
-      }));
+      this.setState(
+        update(this.state, {
+          currentDialogId: { $set: this.props.dialogs[0].id },
+          dialogState: { $set: this.props.dialogs[0].content },
+        }),
+      );
     }
   }
 
@@ -149,13 +171,15 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
 
-    if ((dialog === undefined) || (dialogState === undefined)) {
+    if (dialog === undefined || dialogState === undefined) {
       return null;
     }
 
-    const type = (dialog.content.htmlFile !== undefined) || (dialog.content.htmlText !== undefined)
-      ? 'wide'
-      : 'regular';
+    const type =
+      dialog.content.htmlFile !== undefined ||
+      dialog.content.htmlText !== undefined
+        ? "wide"
+        : "regular";
     return (
       <MutexWrapper show={dialog !== undefined}>
         <Modal
@@ -166,10 +190,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           onKeyPress={this.handleKeyPress}
         >
           <Modal.Header>
-            <Modal.Title>{this.iconForType(dialog.type)}{' '}{
-              t(dialog.title,
-                { replace: dialog.content.parameters, count: dialog.content.parameters?.count })
-            }</Modal.Title>
+            <Modal.Title>
+              {this.iconForType(dialog.type)}{" "}
+              {t(dialog.title, {
+                replace: dialog.content.parameters,
+                count: dialog.content.parameters?.count,
+              })}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <ErrorBoundary visible={true}>
@@ -177,10 +204,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
             </ErrorBoundary>
           </Modal.Body>
           <Modal.Footer>
-            {
-              dialog.actions.map((action) =>
-                this.renderAction(action, action === dialog.defaultAction))
-            }
+            {dialog.actions.map((action) =>
+              this.renderAction(action, action === dialog.defaultAction),
+            )}
           </Modal.Footer>
         </Modal>
       </MutexWrapper>
@@ -190,13 +216,17 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private translateParts(message: string, t: TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
-    return (message || '')
-      .split('\n')
-      .map((line: string) => line
-        .split('\t')
-        .map((block: string) => t(block, { replace: parameters, count: parameters?.count }))
-        .join(' '))
-      .join('\n');
+    return (message || "")
+      .split("\n")
+      .map((line: string) =>
+        line
+          .split("\t")
+          .map((block: string) =>
+            t(block, { replace: parameters, count: parameters?.count }),
+          )
+          .join(" "),
+      )
+      .join("\n");
   }
 
   private renderContent(content: IDialogContent): JSX.Element {
@@ -204,18 +234,24 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.options?.translated) {
       // bit of a hack, setting lngs to empty list so that no translation happens,
       // but we still make use of the i18next interpolator
-      t = (input: string, options) => this.props.t(input, { ...options, lngs: [] });
+      t = (input: string, options) =>
+        this.props.t(input, { ...options, lngs: [] });
     }
 
-    const controls: Array<{ id: DialogContentItem, control: JSX.Element }> = [];
+    const controls: Array<{ id: DialogContentItem; control: JSX.Element }> = [];
 
     if (content.text) {
-      controls.push({ id: 'text', control: (
-        <div key='dialog-content-text' className='dialog-content-text'>
-          {t(content.text,
-             { replace: content.parameters, count: content.parameters?.count })}
-        </div>
-      ) });
+      controls.push({
+        id: "text",
+        control: (
+          <div key="dialog-content-text" className="dialog-content-text">
+            {t(content.text, {
+              replace: content.parameters,
+              count: content.parameters?.count,
+            })}
+          </div>
+        ),
+      });
     }
 
     if (content.bbcode !== undefined) {
@@ -225,127 +261,182 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
       // Manual parameter interpolation
       if (content.parameters) {
-        Object.keys(content.parameters).forEach(key => {
-          const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-          bbcodeContent = bbcodeContent.replace(regex, String(content.parameters[key]));
+        Object.keys(content.parameters).forEach((key) => {
+          const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+          bbcodeContent = bbcodeContent.replace(
+            regex,
+            String(content.parameters[key]),
+          );
         });
       }
 
-      controls.push({ id: 'bbcode', control: (
-        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
-          {bbcode(bbcodeContent, content.options?.bbcodeContext)}
-        </div>
-      ) });
+      controls.push({
+        id: "bbcode",
+        control: (
+          <div key="dialog-content-bbcode" className="dialog-content-bbcode">
+            {bbcode(bbcodeContent, content.options?.bbcodeContext)}
+          </div>
+        ),
+      });
     }
 
     if (content.md !== undefined) {
-      controls.push({ id: 'md', control: (
-        <div key='dialog-content-markdown' className='dialog-content-markdown'>
-          <ReactMarkdown>
-            {t(content.md,
-              { replace: content.parameters, count: content.parameters?.count })}
-          </ReactMarkdown>
-        </div>
-      ) });
+      controls.push({
+        id: "md",
+        control: (
+          <div
+            key="dialog-content-markdown"
+            className="dialog-content-markdown"
+          >
+            <ReactMarkdown>
+              {t(content.md, {
+                replace: content.parameters,
+                count: content.parameters?.count,
+              })}
+            </ReactMarkdown>
+          </div>
+        ),
+      });
     }
 
     if (content.message !== undefined) {
-      const wrap = ((content.options !== undefined) && (content.options.wrap === true))
-                 ? 'on' : 'off';
+      const wrap =
+        content.options !== undefined && content.options.wrap === true
+          ? "on"
+          : "off";
       const ctrl = (
         <textarea
-          key='dialog-content-message'
+          key="dialog-content-message"
           wrap={wrap}
           value={this.translateParts(content.message, t, content.parameters)}
           readOnly={true}
         />
       );
-      if ((content.options !== undefined) && (content.options.hideMessage === true)) {
-        controls.push({ id: 'message', control: (
-          <Collapse
-            key='dialog-content-message-wrapper'
-            showText={t('Show Details')}
-            hideText={t('Hide Details')}
-          >
-            {ctrl}
-          </Collapse>
-          ) });
+      if (
+        content.options !== undefined &&
+        content.options.hideMessage === true
+      ) {
+        controls.push({
+          id: "message",
+          control: (
+            <Collapse
+              key="dialog-content-message-wrapper"
+              showText={t("Show Details")}
+              hideText={t("Hide Details")}
+            >
+              {ctrl}
+            </Collapse>
+          ),
+        });
       } else {
-        controls.push({ id: 'message', control: ctrl });
+        controls.push({ id: "message", control: ctrl });
       }
     }
 
     if (content.htmlFile !== undefined) {
-      controls.push({ id: 'htmlFile', control: (
-        <div key='dialog-content-html-file'>
-          <Webview src={`file://${content.htmlFile}`} />
-        </div>
-      ) });
+      controls.push({
+        id: "htmlFile",
+        control: (
+          <div key="dialog-content-html-file">
+            <Webview src={`file://${content.htmlFile}`} />
+          </div>
+        ),
+      });
     }
 
     if (content.htmlText !== undefined) {
-      controls.push({ id: 'htmlText', control: (
-        <div
-          key='dialog-content-html-text'
-          className='dialog-content-html'
-          dangerouslySetInnerHTML={{ __html: content.htmlText }}
-        />
-      ) });
+      controls.push({
+        id: "htmlText",
+        control: (
+          <div
+            key="dialog-content-html-text"
+            className="dialog-content-html"
+            dangerouslySetInnerHTML={{ __html: content.htmlText }}
+          />
+        ),
+      });
     }
 
     if (content.input !== undefined) {
-      controls.push({ id: 'input', control: (
-      <div key='dialog-form-content' className='dialog-content-input'>
-        {content.input.map(this.renderInput)}
-      </div>
-      ) });
+      controls.push({
+        id: "input",
+        control: (
+          <div key="dialog-form-content" className="dialog-content-input">
+            {content.input.map(this.renderInput)}
+          </div>
+        ),
+      });
     }
 
     if (content.checkboxes !== undefined) {
-      controls.push({ id: 'checkboxes', control: (
-        <div key='dialog-content-checkboxes' className='dialog-content-choices'>
-          {(content.checkboxes.length > 3) ? (
-            <div className='dialog-apply-all-btns'>
-              <a onClick={this.enableAll}>{t('Enable all')}</a>
-              &nbsp;
-              <a onClick={this.disableAll}>{t('Disable all')}</a>
+      controls.push({
+        id: "checkboxes",
+        control: (
+          <div
+            key="dialog-content-checkboxes"
+            className="dialog-content-choices"
+          >
+            {content.checkboxes.length > 3 ? (
+              <div className="dialog-apply-all-btns">
+                <a onClick={this.enableAll}>{t("Enable all")}</a>
+                &nbsp;
+                <a onClick={this.disableAll}>{t("Disable all")}</a>
+              </div>
+            ) : null}
+            <div>
+              {content.checkboxes.map((checkbox) =>
+                this.renderCheckbox(checkbox, content),
+              )}
             </div>
-          ) : null}
-          <div>
-            {content.checkboxes.map(checkbox => this.renderCheckbox(checkbox, content))}
           </div>
-        </div>
-      ) });
+        ),
+      });
     }
 
     if (content.choices !== undefined) {
-      controls.push({ id: 'choices', control: (
-        <div key='dialog-content-choices' className='dialog-content-choices'>
-          <div>
-            {content.choices.map(this.renderRadiobutton)}
+      controls.push({
+        id: "choices",
+        control: (
+          <div key="dialog-content-choices" className="dialog-content-choices">
+            <div>{content.choices.map(this.renderRadiobutton)}</div>
           </div>
-        </div>
-      ) });
+        ),
+      });
     }
 
     if (content.links !== undefined) {
-      controls.push({ id: 'links', control: (
-        <div key='dialog-form-links'>
-          {content.links.map(content.options?.linksAsButtons ? this.renderButton : this.renderLink)}
-        </div>
-      ) });
+      controls.push({
+        id: "links",
+        control: (
+          <div key="dialog-form-links">
+            {content.links.map(
+              content.options?.linksAsButtons
+                ? this.renderButton
+                : this.renderLink,
+            )}
+          </div>
+        ),
+      });
     }
 
     if (content.options?.order !== undefined) {
       const { order } = content.options;
       controls.sort((lhs, rhs) => {
-        const lIdx = order.includes(lhs.id) ? (100 + order.indexOf(lhs.id)) : controls.indexOf(lhs);
-        const rIdx = order.includes(rhs.id) ? (100 + order.indexOf(rhs.id)) : controls.indexOf(rhs);
+        const lIdx = order.includes(lhs.id)
+          ? 100 + order.indexOf(lhs.id)
+          : controls.indexOf(lhs);
+        const rIdx = order.includes(rhs.id)
+          ? 100 + order.indexOf(rhs.id)
+          : controls.indexOf(rhs);
         return lIdx - rIdx;
       });
     }
 
-    return <div className='dialog-container'>{controls.map(iter => iter.control)}</div>;
+    return (
+      <div className="dialog-container">
+        {controls.map((iter) => iter.control)}
+      </div>
+    );
   }
 
   private handleKeyPress = (evt: React.KeyboardEvent<Modal>) => {
@@ -354,12 +445,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (!evt.defaultPrevented) {
       const { dialogs } = this.props;
       const dialog = dialogs[0];
-      if (evt.key === 'Enter') {
+      if (evt.key === "Enter") {
         if (dialog.defaultAction !== undefined) {
           evt.preventDefault();
 
-          const filterFunc = res =>
-            res.actions.find(act => act === dialog.defaultAction) !== undefined;
+          const filterFunc = (res) =>
+            res.actions.find((act) => act === dialog.defaultAction) !==
+            undefined;
           const isDisabled = conditionResults.find(filterFunc) !== undefined;
           if (!isDisabled) {
             this.dismiss(dialog.defaultAction);
@@ -367,11 +459,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         }
       }
     }
-  }
+  };
 
   private validateContent(dialogState: IDialogContent): ConditionResults {
     const { conditionResults } = this.state;
-    if ((conditionResults === undefined) || (dialogState.condition === undefined)) {
+    if (conditionResults === undefined || dialogState.condition === undefined) {
       return undefined;
     }
 
@@ -380,7 +472,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private getValidationResult(input: IInput): IConditionResult[] {
     const { conditionResults } = this.state;
-    return conditionResults.filter(res => res.id === input.id);
+    return conditionResults.filter((res) => res.id === input.id);
   }
 
   private renderInput = (input: IInput, idx: number) => {
@@ -391,70 +483,84 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       valRes = this.getValidationResult(input);
     }
 
-    const validationState = valRes !== undefined
-        ? (valRes.length !== 0) ? 'error' : 'success'
-        : null;
+    const validationState =
+      valRes !== undefined ? (valRes.length !== 0 ? "error" : "success") : null;
 
-    let effectiveType = input.type || 'text';
-    if (input.type === 'multiline') {
-      effectiveType = 'text';
+    let effectiveType = input.type || "text";
+    if (input.type === "multiline") {
+      effectiveType = "text";
     }
 
     return (
       <FormGroup key={input.id} validationState={validationState}>
-      { input.label ? (
-        <ControlLabel>{t(input.label)}</ControlLabel>
-      ) : null }
-      <FormControl
-        id={`dialoginput-${input.id}`}
-        componentClass={(input.type === 'multiline') ? 'textarea' : undefined}
-        type={effectiveType}
-        value={input.value || ''}
-        label={input.label}
-        placeholder={input.placeholder}
-        onChange={this.changeInput}
-        ref={idx === 0 ? this.focusMe : undefined}
-      />
-      {((valRes !== undefined) && (valRes.length !== 0))
-        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
-        : null}
+        {input.label ? <ControlLabel>{t(input.label)}</ControlLabel> : null}
+        <FormControl
+          id={`dialoginput-${input.id}`}
+          componentClass={input.type === "multiline" ? "textarea" : undefined}
+          type={effectiveType}
+          value={input.value || ""}
+          label={input.label}
+          placeholder={input.placeholder}
+          onChange={this.changeInput}
+          ref={idx === 0 ? this.focusMe : undefined}
+        />
+        {valRes !== undefined && valRes.length !== 0 ? (
+          <label className="control-label">
+            {valRes.map((res) => res.errorText).join("\n")}
+          </label>
+        ) : null}
       </FormGroup>
     );
-  }
+  };
 
   private renderButton = (link: ILink, idx: number) => {
     return (
       <div key={idx}>
-        <Button onClick={this.triggerLink} data-linkidx={idx}>{link.label}</Button>
+        <Button onClick={this.triggerLink} data-linkidx={idx}>
+          {link.label}
+        </Button>
       </div>
     );
-  }
+  };
 
   private renderLink = (link: ILink, idx: number) => {
     return (
       <div key={idx}>
-        <a onClick={this.triggerLink} data-linkidx={idx}>{link.label}</a>
+        <a onClick={this.triggerLink} data-linkidx={idx}>
+          {link.label}
+        </a>
       </div>
     );
-  }
+  };
 
   private triggerLink = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
-    triggerDialogLink(this.props.dialogs[0].id, evt.currentTarget.getAttribute('data-linkidx'));
-  }
+    triggerDialogLink(
+      this.props.dialogs[0].id,
+      evt.currentTarget.getAttribute("data-linkidx"),
+    );
+  };
 
   private renderCheckbox = (checkbox: ICheckbox, content: IDialogContent) => {
     const { t } = this.props;
     const translated = content.options?.translated !== false;
-    const text = checkbox.bbcode !== undefined
-      ? bbcode(translated
-                 ? t(checkbox.bbcode,
-                    { replace: content.parameters, count: content.parameters?.count })
-                 : checkbox.bbcode,
-               content.options?.bbcodeContext)
-      : (translated
-          ? t(checkbox.text, { replace: content.parameters, count: content.parameters?.count })
-          : checkbox.text);
+    const text =
+      checkbox.bbcode !== undefined
+        ? bbcode(
+            translated
+              ? t(checkbox.bbcode, {
+                  replace: content.parameters,
+                  count: content.parameters?.count,
+                })
+              : checkbox.bbcode,
+            content.options?.bbcodeContext,
+          )
+        : translated
+          ? t(checkbox.text, {
+              replace: content.parameters,
+              count: content.parameters?.count,
+            })
+          : checkbox.text;
     return (
       <Checkbox
         id={checkbox.id}
@@ -466,28 +572,28 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {text}
       </Checkbox>
     );
-  }
+  };
 
   private renderRadiobutton = (checkbox: ICheckbox) => {
     const { t } = this.props;
-    const content = 
-    <div>{
-      checkbox.subText !== undefined
-      ? (
-      <>
-        <div className='choice-maintext'>{t(checkbox.text)}</div>
-        <div className='choice-subtext'>{t(checkbox.subText)}</div>
-      </> )           
-      : 
-      (<div className='choice-text'>{t(checkbox.text)}</div>)
-      }
-    </div>
+    const content = (
+      <div>
+        {checkbox.subText !== undefined ? (
+          <>
+            <div className="choice-maintext">{t(checkbox.text)}</div>
+            <div className="choice-subtext">{t(checkbox.subText)}</div>
+          </>
+        ) : (
+          <div className="choice-text">{t(checkbox.text)}</div>
+        )}
+      </div>
+    );
 
     return (
       <Radio
         id={checkbox.id}
         key={checkbox.id}
-        name='dialog-radio'
+        name="dialog-radio"
         checked={checkbox.value}
         onChange={this.toggleRadio}
         disabled={checkbox.disabled}
@@ -495,22 +601,21 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {content}
       </Radio>
     );
-  }
+  };
 
   private focusMe = (ref: React.ReactInstance) => {
     if (ref !== null) {
       const ele = ReactDOM.findDOMNode(ref) as HTMLElement;
       setTimeout(() => ele.focus(), 100);
     }
-  }
+  };
 
-  private changeInput = evt => {
+  private changeInput = (evt) => {
     const { dialogState } = this.state;
 
-    const id = evt.currentTarget.id.split('-').slice(1).join('-');
+    const id = evt.currentTarget.id.split("-").slice(1).join("-");
 
-    const idx = dialogState.input.findIndex(
-      form => form.id === id);
+    const idx = dialogState.input.findIndex((form) => form.id === id);
 
     const newInput = { ...dialogState.input[idx] };
     newInput.value = evt.currentTarget.value;
@@ -523,11 +628,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const validationResults = this.validateContent(newState.dialogState);
     if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults};
+      newState = { ...newState, conditionResults: validationResults };
     }
 
     this.setState(newState);
-  }
+  };
 
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
     const { dialogState } = this.state;
@@ -539,28 +644,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    const newCheckboxes = JSON.parse(JSON.stringify(dialogState.checkboxes.slice(0)));
+    const newCheckboxes = JSON.parse(
+      JSON.stringify(dialogState.checkboxes.slice(0)),
+    );
     newCheckboxes[idx].value = !newCheckboxes[idx].value;
-
-    let newState = update(this.state, {
-      dialogState: {
-        checkboxes: { $set: newCheckboxes },
-      },
-    });
-
-    const validationResults = this.validateContent(newState.dialogState);
-    if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults};
-    }
-
-    this.setState(newState);
-  }
-
-  private enableMultiple = (enabled: boolean = true) => {
-    const { dialogState } = this.state;
-
-    const newCheckboxes = JSON.parse(JSON.stringify(dialogState.checkboxes.slice(0)))
-      .map(box => ({ ...box, value: enabled }));
 
     let newState = update(this.state, {
       dialogState: {
@@ -574,15 +661,36 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     this.setState(newState);
-  }
+  };
+
+  private enableMultiple = (enabled: boolean = true) => {
+    const { dialogState } = this.state;
+
+    const newCheckboxes = JSON.parse(
+      JSON.stringify(dialogState.checkboxes.slice(0)),
+    ).map((box) => ({ ...box, value: enabled }));
+
+    let newState = update(this.state, {
+      dialogState: {
+        checkboxes: { $set: newCheckboxes },
+      },
+    });
+
+    const validationResults = this.validateContent(newState.dialogState);
+    if (validationResults !== undefined) {
+      newState = { ...newState, conditionResults: validationResults };
+    }
+
+    this.setState(newState);
+  };
 
   private enableAll = () => {
     this.enableMultiple(true);
-  }
+  };
 
   private disableAll = () => {
     this.enableMultiple(false);
-  }
+  };
 
   private toggleRadio = (evt: React.MouseEvent<any>) => {
     const { dialogState } = this.state;
@@ -597,7 +705,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const newChoices = dialogState.choices.map((choice: ICheckbox) => ({
       ...choice,
       value: false,
-     }));
+    }));
     newChoices[idx].value = true;
 
     let newState = update(this.state, {
@@ -608,17 +716,19 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const validationResults = this.validateContent(newState.dialogState);
     if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults};
+      newState = { ...newState, conditionResults: validationResults };
     }
 
     this.setState(newState);
-  }
+  };
 
   private renderAction = (action: string, isDefault: boolean): JSX.Element => {
     const { conditionResults } = this.state;
     const { t } = this.props;
-    const isDisabled = conditionResults
-      .find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
+    const isDisabled =
+      conditionResults.find(
+        (res) => res.actions.find((act) => act === action) !== undefined,
+      ) !== undefined;
     return (
       <Action
         t={t}
@@ -628,21 +738,19 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onDismiss={this.dismiss}
         isDisabled={isDisabled}
       />
-      );
-  }
+    );
+  };
 
   private iconForType(type: DialogType) {
     switch (type) {
-      case 'info': return (
-        <Icon name='dialog-info' className='icon-info'/>
-      );
-      case 'error': return (
-        <Icon name='dialog-error' className='icon-error'/>
-      );
-      case 'question': return (
-        <Icon name='dialog-question' className='icon-question'/>
-      );
-      default: return null;
+      case "info":
+        return <Icon name="dialog-info" className="icon-info" />;
+      case "error":
+        return <Icon name="dialog-error" className="icon-error" />;
+      case "question":
+        return <Icon name="dialog-question" className="icon-question" />;
+      default:
+        return null;
     }
   }
 
@@ -664,31 +772,37 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (dialogState.input !== undefined) {
-      dialogState.input.forEach(input => {
+      dialogState.input.forEach((input) => {
         data[input.id] = input.value;
       });
     }
 
-    this.setState(update(this.state, {
-      currentDialogId: { $set: undefined },
-      dialogState: { $set: undefined },
-    }));
+    this.setState(
+      update(this.state, {
+        currentDialogId: { $set: undefined },
+        dialogState: { $set: undefined },
+      }),
+    );
 
     // If "remember" is checked, apply to all pending dialogs with the same title
-    const rememberChecked = data['remember'] === true;
+    const rememberChecked = data["remember"] === true;
     if (rememberChecked && dialogs.length > 1) {
       const currentDialog = dialogs[0];
       const dialogActions = currentDialog.actions;
       // Find all pending dialogs with the same title (indicating same type of dialog)
       const matchingDialogIds = dialogs
-        .filter(dialog => dialog.title === currentDialog.title || JSON.stringify(dialogActions) === JSON.stringify(dialog.actions))
-        .map(dialog => dialog.id);
+        .filter(
+          (dialog) =>
+            dialog.title === currentDialog.title ||
+            JSON.stringify(dialogActions) === JSON.stringify(dialog.actions),
+        )
+        .map((dialog) => dialog.id);
 
       onDismissMultiple(matchingDialogIds, action, data);
     } else {
       onDismiss(dialogs[0].id, action, data);
     }
-  }
+  };
 }
 
 function mapStateToProps(state: IState): IDialogConnectedProps {
@@ -697,7 +811,9 @@ function mapStateToProps(state: IState): IDialogConnectedProps {
   };
 }
 
-function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): IDialogActionProps {
+function mapDispatchToProps<S>(
+  dispatch: ThunkDispatch<S, null, Redux.Action>,
+): IDialogActionProps {
   return {
     onDismiss: (id: string, action: string, input: any) =>
       dispatch(closeDialog(id, action, input)),
@@ -706,6 +822,6 @@ function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): 
   };
 }
 
-export default translate(['common'])(
-  connect(mapStateToProps, mapDispatchToProps)(
-    Dialog)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(Dialog),
+) as React.ComponentClass<{}>;

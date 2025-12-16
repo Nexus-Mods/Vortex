@@ -11,14 +11,14 @@
  */
 
 // Import all components and utilities
-import * as typography from './components/next/typography';
-import * as button from './components/next/button';
-import * as icon from './components/next/icon';
-import * as link from './components/next/link';
-import * as collectiontile from './components/next/collectiontile';
-import * as form from './components/next/form';
-import * as tabs from './components/next/tabs';
-import * as iconPaths from './lib/icon-paths';
+import * as typography from "./components/next/typography";
+import * as button from "./components/next/button";
+import * as icon from "./components/next/icon";
+import * as link from "./components/next/link";
+import * as collectiontile from "./components/next/collectiontile";
+import * as form from "./components/next/form";
+import * as tabs from "./components/next/tabs";
+import * as iconPaths from "./lib/icon-paths";
 
 /**
  * Tailwind namespace containing all Tailwind components and utilities
@@ -74,23 +74,23 @@ export type {
   // Typography types
   TypographyProps,
   TypographyTypes,
-} from './components/next/typography/Typography';
+} from "./components/next/typography/Typography";
 
 export type {
   // Button types
   ButtonType,
-} from './components/next/button/Button';
+} from "./components/next/button/Button";
 
 export type {
   // Icon types
   IconProps,
   IconSize,
-} from './components/next/icon/Icon';
+} from "./components/next/icon/Icon";
 
 export type {
   // CollectionTile types
   CollectionTileProps,
-} from './components/next/collectiontile/CollectionTile';
+} from "./components/next/collectiontile/CollectionTile";
 
 export type {
   // Form types
@@ -98,7 +98,7 @@ export type {
   BaseFormFieldProps,
   InputProps,
   SelectProps,
-} from './components/next/form';
+} from "./components/next/form";
 
 export type {
   // Tabs types
@@ -106,4 +106,4 @@ export type {
   TabProviderProps,
   TabButtonProps,
   TabLinkProps,
-} from './components/next/tabs';
+} from "./components/next/tabs";

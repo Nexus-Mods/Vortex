@@ -1,6 +1,9 @@
 import { IModRule } from '../mod_management/types/IMod';
 
-export function generateCollectionSessionId(collectionId: string, profileId: string): string {
+export function generateCollectionSessionId(
+  collectionId: string,
+  profileId: string,
+): string {
   if (!profileId || !collectionId) {
     return null;
   }
@@ -8,12 +11,14 @@ export function generateCollectionSessionId(collectionId: string, profileId: str
 }
 
 export function modRuleId(input: IModRule): string {
-  return input.type + '_' + (
-    input.reference.tag
-    || input.reference.fileMD5
-    || input.reference.id
-    || input.reference.logicalFileName
-    || input.reference.fileExpression
-    || input.reference.description
+  return (
+    input.type +
+    "_" +
+    (input.reference.tag ||
+      input.reference.fileMD5 ||
+      input.reference.id ||
+      input.reference.logicalFileName ||
+      input.reference.fileExpression ||
+      input.reference.description)
   );
 }

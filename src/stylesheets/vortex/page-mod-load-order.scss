@@ -1,319 +1,308 @@
 #collections-load-order-list,
 #page-file-based-loadorder,
 #page-generic-loadorder {
-
-  .layout-flex {
-    flex: 1 1 0;
-    position: relative;
-    overflow: auto;
-  }
-
-  .layout-container {
-    gap: 8px;
-  }
-
-
-  .file-based-load-order-container {
-    gap: 8px;
-  }
-
-  .file-based-load-order-list {
-    
-    .list-group {
-      display: flex;
-      align-items: stretch;
-      flex-direction: column;
-      gap: 4px;
-      margin: 0;      
-      padding: 0 8px 0 0; // padding between scrollbar and list items
+    .layout-flex {
+        flex: 1 1 0;
+        position: relative;
+        overflow: auto;
     }
 
-    .fblo-spinner-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      width: 100%;
-      .file-based-load-order-spinner {
-        display: flex;
-        height: 64px;
-        width: 64px;
-      }
+    .layout-container {
+        gap: 8px;
     }
 
-    &.disabled {
-      opacity: 0.5;
-    }
-  }
-
-  #file-based-load-order-filter {
-    width: 49%;
-    margin-bottom: 8px;
-  }
-  .load-order-entry {
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    background-color: $brand-bg;
-    gap: 8px;
-
-    height: 100%;
-    overflow: auto;
-
-    margin: 0;
-    border: 1px solid $border-color;
-    border-radius: 4px;
-    padding: 0 12px 0 12px;
-
-    h1:has(+ p) {
-      margin-bottom: 0;
+    .file-based-load-order-container {
+        gap: 8px;
     }
 
-    .drag-handle-icon {
-      fill: $border-color;
-    }
-  
-    .load-order-index {
-      //padding: 2px 2px;
-      // margin-right: 15px;
-      min-width: 24px;
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button,
-      input {
-        -webkit-appearance: none;
-        margin: 0;
-        border: none;
-        background: $brand-bg;
-        max-width: fit-content;
-      }
-    }
-
-    .load-order-name-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .load-order-name {
-      flex: 1 1 0;
-    }
-
-    .locked-entry-logo {
-      margin: 0;
-    }
-
-    .fblo-invalid-entry {
-      margin-right: 5px;
-      color: $brand-danger;
-    }
-
-    .entry-checkbox {
-      //margin-right: 15px;
-      //margin-left: auto;
-      
-      // This shouldn't be necessary. But hey ho lets go.
-      &.disabled {
-        display: none;
-      }   
-
-      label {
-        padding: 0;
-
-        input[type="checkbox"] {
-          margin-left: initial;
-          position: initial;
-        }
-
-      } 
-    }
-
-    &.collection-tab {
-      padding: 0px 0px 0px 15px;
-    }
-
-    &.dragging {
-      opacity: 0;
-    }
-
-    &.selected {
-      border: 2px solid #A1A1AA;
-    }
-
-    &.locked {
-      background-color: $brand-primary;
-    }
-
-    .drag-handle-icon:has(~.locked-entry-logo) {
-      visibility: hidden;
-    }
-
-    &.external { 
-      
-      .load-order-unmanaged-banner {
-
-        text-align: center;
-        bottom: 0;
-
-        display: flex;
-        background: transparent;
-        color: gray;
-        border-radius: 16px;
-        align-items: center;
-        //position: initial;
-        border: 1px $gray-light solid;
-        padding: 2px;
-        margin-right: 8px;
-      }
-
-      .external-caution-logo {
-        margin-right: 5px;
-        margin-left: 5px;
-      }
-
-      .external-text-area {
-        margin-right: 5px;
-      }
-    }
-
-    >.layout-container {
-      align-items: center;
-    }
-  }
-
-  #fb-lo-errorbox {
-
-    background-color: $brand-bg;
-    width: 100%;
-    overflow: auto;
-    border: none;
-
-    p {
-      padding: 4px 0 0 8px;
-    }
-
-    &.valid {
-      p {
-        color: $brand-success-lighter;
-      }
-    }
-
-    &.invalid {
-      p {
-        color: $brand-danger;
-      }
-    }
-  }
-
-
-
-  #loadorderinfo {
-
-    padding: 0 12px;
-    border: none;
-
-    display: block;
-
-    height: 100%;
-    overflow: auto;
-
-    > .layout-container {
-      gap: 8px;
-      display: flex;
-      flex-direction: column;
-
-      > * {
-        padding: 12px;
-        border: 1px $border-color solid;
-        border-radius: 4px;
-
-        > .layout-flex-inner {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-
-          // fblo component is adding a dirty p above what the extension can add
-          > p {
+    .file-based-load-order-list {
+        .list-group {
             display: flex;
+            align-items: stretch;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
             margin: 0;
-          }
+            padding: 0 8px 0 0; // padding between scrollbar and list items
         }
+
+        .fblo-spinner-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            .file-based-load-order-spinner {
+                display: flex;
+                height: 64px;
+                width: 64px;
+            }
+        }
+
+        &.disabled {
+            opacity: 0.5;
+        }
+    }
+
+    #file-based-load-order-filter {
+        width: 49%;
+        margin-bottom: 8px;
+    }
+    .load-order-entry {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        background-color: $brand-bg;
+        gap: 8px;
+
+        height: 100%;
+        overflow: auto;
+
+        margin: 0;
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        padding: 0 12px 0 12px;
+
+        h1:has(+ p) {
+            margin-bottom: 0;
+        }
+
+        .drag-handle-icon {
+            fill: $border-color;
+        }
+
+        .load-order-index {
+            //padding: 2px 2px;
+            // margin-right: 15px;
+            min-width: 24px;
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button,
+            input {
+                -webkit-appearance: none;
+                margin: 0;
+                border: none;
+                background: $brand-bg;
+                max-width: fit-content;
+            }
+        }
+
+        .load-order-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .load-order-name {
+            flex: 1 1 0;
+        }
+
+        .locked-entry-logo {
+            margin: 0;
+        }
+
+        .fblo-invalid-entry {
+            margin-right: 5px;
+            color: $brand-danger;
+        }
+
+        .entry-checkbox {
+            //margin-right: 15px;
+            //margin-left: auto;
+
+            // This shouldn't be necessary. But hey ho lets go.
+            &.disabled {
+                display: none;
+            }
+
+            label {
+                padding: 0;
+
+                input[type="checkbox"] {
+                    margin-left: initial;
+                    position: initial;
+                }
+            }
+        }
+
+        &.collection-tab {
+            padding: 0px 0px 0px 15px;
+        }
+
+        &.dragging {
+            opacity: 0;
+        }
+
+        &.selected {
+            border: 2px solid #a1a1aa;
+        }
+
+        &.locked {
+            background-color: $brand-primary;
+        }
+
+        .drag-handle-icon:has(~ .locked-entry-logo) {
+            visibility: hidden;
+        }
+
+        &.external {
+            .load-order-unmanaged-banner {
+                text-align: center;
+                bottom: 0;
+
+                display: flex;
+                background: transparent;
+                color: gray;
+                border-radius: 16px;
+                align-items: center;
+                //position: initial;
+                border: 1px $gray-light solid;
+                padding: 2px;
+                margin-right: 8px;
+            }
+
+            .external-caution-logo {
+                margin-right: 5px;
+                margin-left: 5px;
+            }
+
+            .external-text-area {
+                margin-right: 5px;
+            }
+        }
+
+        > .layout-container {
+            align-items: center;
+        }
+    }
+
+    #fb-lo-errorbox {
+        background-color: $brand-bg;
+        width: 100%;
+        overflow: auto;
+        border: none;
 
         p {
-          margin: 0;
+            padding: 4px 0 0 8px;
         }
 
-        .alert {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          border-radius: 2px;
+        &.valid {
+            p {
+                color: $brand-success-lighter;
+            }
         }
 
-        h1, h2, h3, h4, h5, h6 {
-          margin: 0;
+        &.invalid {
+            p {
+                color: $brand-danger;
+            }
         }
-
-      }
-
-      // top box (information)
-
-      > :first-child {
-        //background-color: #acff2f60;
-        flex: 1 1 0; // default
-        min-height: 200px; // don't think we need this as max-height on next child is 50%
-      }
-
-      // bottom box (validation console)
-
-      > :last-child {
-        //background-color: #892be26b;
-        flex: unset; // shrinks to whatever space is needed, preferably none
-        max-height: 50%; // don't ever take up more than 50% of height
-
-        background-color: $brand-bg;
-      }
-
-
     }
-  }
-  
-  #mod-info {
-    font-size: 1.2em;
-  }
-  
-  #mod-img {
-    width: 150px;
-    height: 90px;
-    margin: 5px 10px 5px 5px;
-    border: 1px solid $brand-secondary;
-  }
+
+    #loadorderinfo {
+        padding: 0 12px;
+        border: none;
+
+        display: block;
+
+        height: 100%;
+        overflow: auto;
+
+        > .layout-container {
+            gap: 8px;
+            display: flex;
+            flex-direction: column;
+
+            > * {
+                padding: 12px;
+                border: 1px $border-color solid;
+                border-radius: 4px;
+
+                > .layout-flex-inner {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+
+                    // fblo component is adding a dirty p above what the extension can add
+                    > p {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        margin: 0;
+                    }
+                }
+
+                p {
+                    margin: 0;
+                }
+
+                .alert {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    border-radius: 2px;
+                }
+
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                h6 {
+                    margin: 0;
+                }
+            }
+
+            // top box (information)
+
+            > :first-child {
+                //background-color: #acff2f60;
+                flex: 1 1 0; // default
+                min-height: 200px; // don't think we need this as max-height on next child is 50%
+            }
+
+            // bottom box (validation console)
+
+            > :last-child {
+                //background-color: #892be26b;
+                flex: unset; // shrinks to whatever space is needed, preferably none
+                max-height: 50%; // don't ever take up more than 50% of height
+
+                background-color: $brand-bg;
+            }
+        }
+    }
+
+    #mod-info {
+        font-size: 1.2em;
+    }
+
+    #mod-img {
+        width: 150px;
+        height: 90px;
+        margin: 5px 10px 5px 5px;
+        border: 1px solid $brand-secondary;
+    }
 }
 
 #collection-edit-loadorder-edit-info-container {
-  border: 2px solid $brand-info;
-  box-sizing: border-box;
-  border-radius: 8px;
-  padding: 8px;
-  margin-bottom: 15px;
-  height: auto;
-  gap: 8px;
-  align-items: center;
+    border: 2px solid $brand-info;
+    box-sizing: border-box;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 15px;
+    height: auto;
+    gap: 8px;
+    align-items: center;
 
-  .loadorder-edit-info-icon {
-    color: $brand-info;
-    size: 3em;
-    //margin-right: 20px;
-  }
-
-  .collection-edit-loadorder-edit-info {
-    letter-spacing: 0.25px;
-    a {
-      color: $link-color;
+    .loadorder-edit-info-icon {
+        color: $brand-info;
+        size: 3em;
+        //margin-right: 20px;
     }
-  }
 
-
+    .collection-edit-loadorder-edit-info {
+        letter-spacing: 0.25px;
+        a {
+            color: $link-color;
+        }
+    }
 }

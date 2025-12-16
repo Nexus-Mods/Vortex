@@ -1,6 +1,6 @@
-import { extend } from '../../util/ExtensionProvider';
+import { extend } from "../../util/ExtensionProvider";
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface IExtensibleControlProps {
   wrapperProps?: any;
@@ -23,20 +23,21 @@ function ExtensibleControl(props: React.PropsWithChildren<IProps>) {
   let cur = <>{props.children}</>;
 
   for (const wrapper of wrappers) {
-    cur = (<wrapper.wrapper {...(wrapperProps ?? {})}>{cur}</wrapper.wrapper>);
+    cur = <wrapper.wrapper {...(wrapperProps ?? {})}>{cur}</wrapper.wrapper>;
   }
 
   return cur;
 }
 
-function registerControlWrapper(instanceGroup: string,
-                                group: string,
-                                priority: number,
-                                wrapper: React.ComponentType<{}>) {
-
+function registerControlWrapper(
+  instanceGroup: string,
+  group: string,
+  priority: number,
+  wrapper: React.ComponentType<{}>,
+) {
   if (instanceGroup === group) {
     return { priority, wrapper };
   }
 }
 
-export default extend(registerControlWrapper, 'group')(ExtensibleControl);
+export default extend(registerControlWrapper, "group")(ExtensibleControl);

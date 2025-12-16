@@ -1,14 +1,14 @@
-import { IModType } from '../extensions/gamemode_management/types/IModType';
+import { IModType } from "../extensions/gamemode_management/types/IModType";
 
-import { IDiscoveryResult, IMod } from './IState';
-import { ITool } from './ITool';
+import { IDiscoveryResult, IMod } from "./IState";
+import { ITool } from "./ITool";
 
-import Promise from 'bluebird';
-import { IStoreQuery } from '../util/GameStoreHelper';
+import Promise from "bluebird";
+import { IStoreQuery } from "../util/GameStoreHelper";
 
 export { IModType };
 
-export type DirectoryCleaningMode = 'tag' | 'all';
+export type DirectoryCleaningMode = "tag" | "all";
 
 /**
  * interface for game extensions
@@ -93,10 +93,12 @@ export interface IGame extends ITool {
    *
    * @param gamePath path where the game is installed.
    * @param store id of the store the game was detected through
-   * 
+   *
    */
-  requiresLauncher?: (gamePath: string, store?: string)
-    => Promise<{ launcher: string, addInfo?: any }>;
+  requiresLauncher?: (
+    gamePath: string,
+    store?: string,
+  ) => Promise<{ launcher: string; addInfo?: any }>;
 
   /**
    * returns the mod type extensions applicable to this game (all

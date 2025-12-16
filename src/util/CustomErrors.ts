@@ -1,8 +1,8 @@
-import { log } from './log';
+import { log } from "./log";
 
 export class NotSupportedError extends Error {
   constructor() {
-    super('Not supported');
+    super("Not supported");
     Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name;
@@ -12,7 +12,7 @@ export class NotSupportedError extends Error {
 export class CleanupFailedException extends Error {
   private mErrorObject: Error;
   constructor(error: Error) {
-    super('Cleanup process has failed');
+    super("Cleanup process has failed");
     this.name = this.constructor.name;
     this.mErrorObject = error;
   }
@@ -24,14 +24,16 @@ export class CleanupFailedException extends Error {
 
 export class ServiceTemporarilyUnavailable extends Error {
   constructor(service: string) {
-    super(`${service} service is temporarily unavailable. Please try again later.`);
+    super(
+      `${service} service is temporarily unavailable. Please try again later.`,
+    );
     this.name = this.constructor.name;
   }
 }
 
 export class UnsupportedOperatingSystem extends Error {
   constructor() {
-    super('Not supported on current Operating System');
+    super("Not supported on current Operating System");
     this.name = this.constructor.name;
   }
 }
@@ -93,35 +95,42 @@ interface IUserCanceled extends Error {
   timed: number;
 }
 
-type IUserCanceledConstructor = new(skipped?: boolean) => IUserCanceled;
+type IUserCanceledConstructor = new (skipped?: boolean) => IUserCanceled;
 
-const UserCanceled: IUserCanceledConstructor = function(this: IUserCanceled, skipped?: boolean) {
+const UserCanceled: IUserCanceledConstructor = function (
+  this: IUserCanceled,
+  skipped?: boolean,
+) {
   if (!(this instanceof UserCanceled)) {
-    log('error', 'UserCanceled invoked without new', Error.captureStackTrace(this, UserCanceled));
-    return new Error('UserCanceled invoked without new');
+    log(
+      "error",
+      "UserCanceled invoked without new",
+      Error.captureStackTrace(this, UserCanceled),
+    );
+    return new Error("UserCanceled invoked without new");
   }
 
-  this.message = 'canceled by user';
+  this.message = "canceled by user";
   this.skipped = skipped ?? false;
   Error.captureStackTrace(this, UserCanceled);
 } as unknown as IUserCanceledConstructor;
 
 UserCanceled.prototype = Object.create(Error.prototype);
-UserCanceled.prototype.name = 'UserCanceled';
+UserCanceled.prototype.name = "UserCanceled";
 UserCanceled.prototype.constructor = UserCanceled;
 
 export { UserCanceled };
 
 export class MissingDependency extends Error {
   constructor() {
-    super('Dependency is missing');
+    super("Dependency is missing");
     this.name = this.constructor.name;
   }
 }
 
 export class DocumentsPathMissing extends Error {
   constructor() {
-    super('Failed to query the current user\'s documents folder');
+    super("Failed to query the current user's documents folder");
     this.name = this.constructor.name;
   }
 }
@@ -200,7 +209,7 @@ export class StalledError extends Error {
 
 export class TimeoutError extends Error {
   constructor() {
-    super('Operation timed out');
+    super("Operation timed out");
     this.name = this.constructor.name;
   }
 }
@@ -217,7 +226,9 @@ export class ThirdPartyError extends Error {
 
 export class SelfCopyCheckError extends Error {
   constructor(src: string, dest: string, ino: BigInt) {
-    super(`Source "${src}" and destination "${dest}" are the same file (id "${ino}").`);
+    super(
+      `Source "${src}" and destination "${dest}" are the same file (id "${ino}").`,
+    );
     this.name = this.constructor.name;
   }
 }

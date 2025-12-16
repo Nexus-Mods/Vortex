@@ -1,11 +1,11 @@
-import { log } from './log';
+import { log } from "./log";
 
-import Promise from 'bluebird';
-import * as https from 'https';
-import * as _ from 'lodash';
-import * as semver from 'semver';
-import * as url from 'url';
-import { DataInvalid } from './CustomErrors';
+import Promise from "bluebird";
+import * as https from "https";
+import * as _ from "lodash";
+import * as semver from "semver";
+import * as url from "url";
+import { DataInvalid } from "./CustomErrors";
 
 export interface IGitHubUser {
   login: string;
@@ -67,7 +67,7 @@ export interface IGitHubRelease {
 
 export class RateLimitExceeded extends Error {
   constructor() {
-    super('Too many requests to GitHub');
+    super("Too many requests to GitHub");
     this.name = this.constructor.name;
   }
 }
@@ -79,22 +79,20 @@ export class RateLimitExceeded extends Error {
  */
 class GitHub {
   // oldest release to be returned when retrieving releases
-  private static RELEASE_CUTOFF = '0.12.7';
-  private static USER_AGENT = 'Vortex';
-  private static CONFIG_BRANCH = 'announcements';
+  private static RELEASE_CUTOFF = "0.12.7";
+  private static USER_AGENT = "Vortex";
+  private static CONFIG_BRANCH = "announcements";
 
   private static repoUrl() {
-    
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
-    const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
+    const repo = isPreviewBuild ? "Vortex-Staging" : "Vortex";
 
     return `https://api.github.com/repos/Nexus-Mods/${repo}`;
   }
 
   private static rawUrl() {
-
-    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === 'true';
-    const repo = isPreviewBuild ? 'Vortex-Staging' : 'Vortex'
+    const isPreviewBuild = process.env.IS_PREVIEW_BUILD === "true";
+    const repo = isPreviewBuild ? "Vortex-Staging" : "Vortex";
 
     return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;
   }
@@ -104,81 +102,99 @@ class GitHub {
 
   public releases(): Promise<IGitHubRelease[]> {
     if (this.mReleaseCache === undefined) {
-      this.mReleaseCache = this.queryReleases()
-        .catch(err => {
-          this.mReleaseCache = undefined;
-          return Promise.reject(err);
-        });
+      this.mReleaseCache = this.queryReleases().catch((err) => {
+        this.mReleaseCache = undefined;
+        return Promise.reject(err);
+      });
     }
 
     return this.mReleaseCache;
   }
 
   public fetchConfig(config: string): Promise<any> {
-    return this.query(GitHub.rawUrl(), `${GitHub.CONFIG_BRANCH}/${config}.json`);
+    return this.query(
+      GitHub.rawUrl(),
+      `${GitHub.CONFIG_BRANCH}/${config}.json`,
+    );
   }
 
   private query(baseUrl: string, request: string): Promise<any> {
-    if ((this.mRatelimitReset !== undefined) && (this.mRatelimitReset > Date.now())) {
+    if (
+      this.mRatelimitReset !== undefined &&
+      this.mRatelimitReset > Date.now()
+    ) {
       return Promise.reject(new RateLimitExceeded());
     }
     const stackErr = new Error();
 
     return new Promise((resolve, reject) => {
-        const relUrl = new URL(`${baseUrl}/${request}`);
-        const options: https.RequestOptions = {
-          port: relUrl.port,
-          hostname: relUrl.hostname,
-          path: relUrl.pathname + relUrl.search,
-          headers: {
-            'User-Agent': GitHub.USER_AGENT,
-          },
-        };
+      const relUrl = new URL(`${baseUrl}/${request}`);
+      const options: https.RequestOptions = {
+        port: relUrl.port,
+        hostname: relUrl.hostname,
+        path: relUrl.pathname + relUrl.search,
+        headers: {
+          "User-Agent": GitHub.USER_AGENT,
+        },
+      };
 
-        https.get(options, res => {
-          res.setEncoding('utf-8');
-          const callsRemaining = parseInt(res.headers['x-ratelimit-remaining'] as string, 10);
-          if ((res.statusCode === 403) && (callsRemaining === 0)) {
-            const resetDate = parseInt(res.headers['x-ratelimit-reset'] as string, 10) * 1000;
-            log('info', 'GitHub rate limit exceeded',
-              { reset_at: (new Date(resetDate)).toString() });
+      https
+        .get(options, (res) => {
+          res.setEncoding("utf-8");
+          const callsRemaining = parseInt(
+            res.headers["x-ratelimit-remaining"] as string,
+            10,
+          );
+          if (res.statusCode === 403 && callsRemaining === 0) {
+            const resetDate =
+              parseInt(res.headers["x-ratelimit-reset"] as string, 10) * 1000;
+            log("info", "GitHub rate limit exceeded", {
+              reset_at: new Date(resetDate).toString(),
+            });
             this.mRatelimitReset = resetDate;
             return reject(new RateLimitExceeded());
           }
 
-          let output = '';
+          let output = "";
           res
-            .on('data', data => output += data)
-            .on('end', () => {
+            .on("data", (data) => (output += data))
+            .on("end", () => {
               try {
                 return resolve(JSON.parse(output));
               } catch (parseErr) {
-                const message = output.split('\n')[0];
+                const message = output.split("\n")[0];
                 const error = new Error(message);
                 error.stack = stackErr.stack;
                 reject(error);
               }
             });
         })
-          .on('error', err => {
-            reject(err);
-          })
-          .end();
-      });
+        .on("error", (err) => {
+          reject(err);
+        })
+        .end();
+    });
   }
 
   private queryReleases(): Promise<IGitHubRelease[]> {
-    return this.query(GitHub.repoUrl(), 'releases')
-      .then((releases: IGitHubRelease[]) => {
+    return this.query(GitHub.repoUrl(), "releases").then(
+      (releases: IGitHubRelease[]) => {
         if (!Array.isArray(releases)) {
-          return Promise.reject(new DataInvalid('expected array of github releases'));
+          return Promise.reject(
+            new DataInvalid("expected array of github releases"),
+          );
         }
         const current = releases
-          .filter(rel => semver.valid(rel.name) && semver.gte(rel.name, GitHub.RELEASE_CUTOFF))
+          .filter(
+            (rel) =>
+              semver.valid(rel.name) &&
+              semver.gte(rel.name, GitHub.RELEASE_CUTOFF),
+          )
           .sort((lhs, rhs) => semver.compare(lhs.name, rhs.name));
 
         return Promise.resolve(current);
-      });
+      },
+    );
   }
 }
 

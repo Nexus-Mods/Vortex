@@ -1,68 +1,84 @@
-import * as os from 'os';
-import { IExtensionContext } from '../../types/IExtensionContext';
-import { analyticsLog } from './utils/analyticsLog';
-import { getCPUArch } from './../../util/nativeArch';
-import { setAnalytics } from './actions/analytics.action';
-import AnalyticsMixpanel from './mixpanel/MixpanelAnalytics';
-import { AppCrashedEvent, AppLaunchedEvent, MixpanelEvent, ModsInstallationCompletedEvent } from './mixpanel/MixpanelEvents';
-import { HELP_ARTICLE, PRIVACY_POLICY } from './constants';
-import settingsReducer from './reducers/settings.reducer';
-import SettingsAnalytics from './views/SettingsAnalytics';
-
+import * as os from "os";
+import { IExtensionContext } from "../../types/IExtensionContext";
+import { analyticsLog } from "./utils/analyticsLog";
+import { getCPUArch } from "./../../util/nativeArch";
+import { setAnalytics } from "./actions/analytics.action";
+import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
+import {
+  AppCrashedEvent,
+  AppLaunchedEvent,
+  MixpanelEvent,
+  ModsInstallationCompletedEvent,
+} from "./mixpanel/MixpanelEvents";
+import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
+import settingsReducer from "./reducers/settings.reducer";
+import SettingsAnalytics from "./views/SettingsAnalytics";
 
 let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
-  context.registerReducer(['settings', 'analytics'], settingsReducer);
-  context.registerSettings('Vortex', SettingsAnalytics);
+  context.registerReducer(["settings", "analytics"], settingsReducer);
+  context.registerSettings("Vortex", SettingsAnalytics);
 
   context.once(() => {
-
     // Capture uncaught exceptions
-    process.on('uncaughtException', (err: any) => {
+    process.on("uncaughtException", (err: any) => {
       try {
         if (enabled() && AnalyticsMixpanel.isUserSet()) {
-          AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
-            process.platform,
-            err.code || 'unknown',
-            err.message || 'Unknown uncaught exception'
-          ));
+          AnalyticsMixpanel.trackEvent(
+            new AppCrashedEvent(
+              process.platform,
+              err.code || "unknown",
+              err.message || "Unknown uncaught exception",
+            ),
+          );
         }
-        analyticsLog('error', 'Uncaught exception', { error: err.message, code: err.code, stack: err.stack });
+        analyticsLog("error", "Uncaught exception", {
+          error: err.message,
+          code: err.code,
+          stack: err.stack,
+        });
       } catch (trackingError) {
         // Don't let analytics tracking cause additional crashes
-        console.error('Failed to track crash event:', trackingError);
+        console.error("Failed to track crash event:", trackingError);
       }
       // Note: Process will still terminate unless you handle it differently
     });
 
     // Capture unhandled rejections
-    process.on('unhandledRejection', (err: any) => {
+    process.on("unhandledRejection", (err: any) => {
       try {
         if (enabled() && AnalyticsMixpanel.isUserSet()) {
-          AnalyticsMixpanel.trackEvent(new AppCrashedEvent(
-            process.platform,
-            err.code || 'unknown',
-            err.message || 'Unknown unhandled rejection'
-          ));
+          AnalyticsMixpanel.trackEvent(
+            new AppCrashedEvent(
+              process.platform,
+              err.code || "unknown",
+              err.message || "Unknown unhandled rejection",
+            ),
+          );
         }
-        analyticsLog('error', 'Unhandled rejection', { error: err.message, code: err.code, stack: err.stack });
+        analyticsLog("error", "Unhandled rejection", {
+          error: err.message,
+          code: err.code,
+          stack: err.stack,
+        });
       } catch (trackingError) {
         // Don't let analytics tracking cause additional crashes
-        console.error('Failed to track crash event:', trackingError);
+        console.error("Failed to track crash event:", trackingError);
       }
       // Note: Process will still terminate unless you handle it differently
     });
 
     const instanceId = context.api.store.getState().app.instanceId;
     const updateChannel = context.api.store.getState().settings.update.channel;
-    const enabled = () => context.api.store.getState().settings.analytics.enabled;
-    const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
+    const enabled = () =>
+      context.api.store.getState().settings.analytics.enabled;
+    const getUserInfo = () =>
+      context.api.store.getState().persistent.nexus.userInfo;
 
     // check for update when the user changes the analytics, toggle
-    const analyticsSettings = ['settings', 'analytics', 'enabled'];
+    const analyticsSettings = ["settings", "analytics", "enabled"];
     context.api.onStateChange(analyticsSettings, (oldState, newState) => {
-
       if (ignoreNextAnalyticsStateChange) {
         ignoreNextAnalyticsStateChange = false;
         return;
@@ -75,21 +91,23 @@ function init(context: IExtensionContext): boolean {
     });
 
     // Check for user login
-    context.api.onStateChange(['persistent', 'nexus', 'userInfo'], (previous, current) => {
+    context.api.onStateChange(
+      ["persistent", "nexus", "userInfo"],
+      (previous, current) => {
+        //showConsentDialog();
 
-      //showConsentDialog();
-
-      if (enabled() && current) {
-        // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
-        startAnalytics()
-      } else if (enabled() === undefined && !!current) {
-        // If I was not logged it, and the tracking is undefined ask me for the tracking
-        showConsentDialog();
-      } else if (!current) {
-        // If logging out, disable tracking
-        stopAnalytics();
-      }
-    });
+        if (enabled() && current) {
+          // If the setting is set to true, and I just logged in, skip the Dialog and just turn on Analytics
+          startAnalytics();
+        } else if (enabled() === undefined && !!current) {
+          // If I was not logged it, and the tracking is undefined ask me for the tracking
+          showConsentDialog();
+        } else if (!current) {
+          // If logging out, disable tracking
+          stopAnalytics();
+        }
+      },
+    );
 
     // EVENTS THAT WE NEED TO HUNT DOWN IN CODEBASE
     // 'analytics-track-navigation'
@@ -100,16 +118,21 @@ function init(context: IExtensionContext): boolean {
     // Extra listener in case I need to set a custom navigation,
 
     // Mixpanel specific event
-    context.api.events.on('analytics-track-mixpanel-event', (event: MixpanelEvent) => {
-      AnalyticsMixpanel.trackEvent(event);
-    });
+    context.api.events.on(
+      "analytics-track-mixpanel-event",
+      (event: MixpanelEvent) => {
+        AnalyticsMixpanel.trackEvent(event);
+      },
+    );
 
     async function startAnalytics() {
-
       try {
         const userInfo = getUserInfo();
         if (userInfo === undefined) {
-          analyticsLog('warn', 'Tried to start analytics but user not logged in');
+          analyticsLog(
+            "warn",
+            "Tried to start analytics but user not logged in",
+          );
           return;
         }
 
@@ -117,69 +140,82 @@ function init(context: IExtensionContext): boolean {
 
         // Determine environment for analytics routing
         // Development environment uses dev token, production uses prod token
-        const isProduction = process.env.NODE_ENV !== 'development';
+        const isProduction = process.env.NODE_ENV !== "development";
 
         AnalyticsMixpanel.start(userInfo, isProduction);
 
         // Send app_launched event
-        AnalyticsMixpanel.trackEvent(new AppLaunchedEvent(
-          process.platform,  // OS platform (e.g., "win32", "darwin", "linux")
-          os.release(),      // OS version (e.g., "10.0.22000" for Windows 11)
-          getCPUArch()       // Architecture (e.g., "x64", "arm64")
-        ));
+        AnalyticsMixpanel.trackEvent(
+          new AppLaunchedEvent(
+            process.platform, // OS platform (e.g., "win32", "darwin", "linux")
+            os.release(), // OS version (e.g., "10.0.22000" for Windows 11)
+            getCPUArch(), // Architecture (e.g., "x64", "arm64")
+          ),
+        );
 
-        analyticsLog('info', 'Analytics started');
-
+        analyticsLog("info", "Analytics started");
       } catch (err) {
         // there is no error handling anywhere invoking initializeAnalytics,
         // the results aren't even adviced, so any unhandled exception here would
         // crash the application.
-        analyticsLog('warn', 'Failed to start analytics', { error: err.message });
+        analyticsLog("warn", "Failed to start analytics", {
+          error: err.message,
+        });
       }
     }
 
     async function stopAnalytics() {
       AnalyticsMixpanel.stop();
-      analyticsLog('info', 'Analytics stopped');
+      analyticsLog("info", "Analytics stopped");
     }
 
     function showConsentDialog() {
       context.api.sendNotification({
-        id: 'vortex-analytics-consent',
-        type: 'info',
-        title: 'Help us improve your modding experience',
-        message: 'Find out more about how your data helps us improve',
+        id: "vortex-analytics-consent",
+        type: "info",
+        title: "Help us improve your modding experience",
+        message: "Find out more about how your data helps us improve",
         actions: [
           {
-            title: 'More', action: dismiss => {
-              context.api.showDialog('question', 'Help us improve your modding experience', {
-                bbcode:
-                  'With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.'
-                  + '[br][/br][br][/br][url={{help-article}}]More about the data we track[/url] | [url={{privacy-policy}}]Privacy Policy[/url]',
-                parameters: {
-                  'help-article': HELP_ARTICLE,
-                  'privacy-policy': PRIVACY_POLICY,
-                }
-              }, [
-                {
-                  label: 'No, don’t share data', action: () => {
-                    context.api.store.dispatch(setAnalytics(false));
-                  }
-                },
-                {
-                  label: 'Yes, share anonymous data', action: () => {
-                    startAnalytics();
-                    ignoreNextAnalyticsStateChange = true;
-                    context.api.store.dispatch(setAnalytics(true));
-                  }, default: true
-                },
-              ])
-                .then(result => {
+            title: "More",
+            action: (dismiss) => {
+              context.api
+                .showDialog(
+                  "question",
+                  "Help us improve your modding experience",
+                  {
+                    bbcode:
+                      "With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party." +
+                      "[br][/br][br][/br][url={{help-article}}]More about the data we track[/url] | [url={{privacy-policy}}]Privacy Policy[/url]",
+                    parameters: {
+                      "help-article": HELP_ARTICLE,
+                      "privacy-policy": PRIVACY_POLICY,
+                    },
+                  },
+                  [
+                    {
+                      label: "No, don’t share data",
+                      action: () => {
+                        context.api.store.dispatch(setAnalytics(false));
+                      },
+                    },
+                    {
+                      label: "Yes, share anonymous data",
+                      action: () => {
+                        startAnalytics();
+                        ignoreNextAnalyticsStateChange = true;
+                        context.api.store.dispatch(setAnalytics(true));
+                      },
+                      default: true,
+                    },
+                  ],
+                )
+                .then((result) => {
                   dismiss();
                   return Promise.resolve();
                 });
-            }
-          }
+            },
+          },
         ],
       });
     }

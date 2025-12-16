@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { Toggle } from '../../..';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { setAnalytics } from '../actions/analytics.action';
-import { HELP_ARTICLE, PRIVACY_POLICY } from '../constants';
+import * as React from "react";
+import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { Toggle } from "../../..";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import { setAnalytics } from "../actions/analytics.action";
+import { HELP_ARTICLE, PRIVACY_POLICY } from "../constants";
 
 interface IConnectedProps {
   analytics: boolean;
@@ -23,23 +23,30 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
     const { t, analytics, userInfo } = this.props;
     return (
       <form>
-        <FormGroup controlId='analytics'>
-          <ControlLabel>{t('Data & Privacy')}</ControlLabel>
+        <FormGroup controlId="analytics">
+          <ControlLabel>{t("Data & Privacy")}</ControlLabel>
           <Toggle
             checked={analytics}
             onToggle={this.toggleAnalytics}
             disabled={!userInfo}
           >
-            {t('Allow this app to collect usage data to improve your experience')}
+            {t(
+              "Allow this app to collect usage data to improve your experience",
+            )}
           </Toggle>
           <HelpBlock>
-            {t('Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.')}
-            <br /><br />
-            <a style={{ marginLeft: '0.25rem' }} href={HELP_ARTICLE}>
-              {t('More about the data we track')}
-            </a> | <a style={{ marginLeft: '0.25rem' }} href={PRIVACY_POLICY}>
-              {t('Privacy Policy')}
-            </a>            
+            {t(
+              "Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.",
+            )}
+            <br />
+            <br />
+            <a style={{ marginLeft: "0.25rem" }} href={HELP_ARTICLE}>
+              {t("More about the data we track")}
+            </a>{" "}
+            |{" "}
+            <a style={{ marginLeft: "0.25rem" }} href={PRIVACY_POLICY}>
+              {t("Privacy Policy")}
+            </a>
           </HelpBlock>
         </FormGroup>
       </form>
@@ -48,7 +55,7 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
 
   private toggleAnalytics = () => {
     this.props.onSetAnalytics(!this.props.analytics);
-  }
+  };
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -58,7 +65,9 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     onSetAnalytics: (analytics: boolean): void => {
       dispatch(setAnalytics(analytics));
@@ -66,7 +75,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      SettingsAnalytics)) as React.ComponentClass<{}>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(SettingsAnalytics),
+) as React.ComponentClass<{}>;

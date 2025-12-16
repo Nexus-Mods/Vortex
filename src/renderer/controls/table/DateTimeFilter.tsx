@@ -1,37 +1,37 @@
-import { Button } from '../TooltipControls';
-import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
-import { ComponentEx } from '../../../util/ComponentEx';
-import { getDateFormat, getLocale } from '../../../util/datelocales';
-import { truthy } from '../../../util/util';
+import { Button } from "../TooltipControls";
+import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import { ComponentEx } from "../../../util/ComponentEx";
+import { getDateFormat, getLocale } from "../../../util/datelocales";
+import { truthy } from "../../../util/util";
 
-import * as React from 'react';
-import { InputGroup } from 'react-bootstrap';
-import ReactDatePicker from 'react-datepicker';
+import * as React from "react";
+import { InputGroup } from "react-bootstrap";
+import ReactDatePicker from "react-datepicker";
 
 export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
-  private currentComparison: 'eq' | 'ge' | 'le';
+  private currentComparison: "eq" | "ge" | "le";
   private currentValue: Date;
   private comparisons;
 
   constructor(props: IFilterProps) {
     super(props);
 
-    const filt = props.filter || { comparison: 'eq', value: '' };
+    const filt = props.filter || { comparison: "eq", value: "" };
     this.currentValue = filt.value;
     this.currentComparison = filt.comparison;
 
     this.comparisons = {
       eq: {
-        symbol: '=',
-        tooltip: props.t('Equal'),
+        symbol: "=",
+        tooltip: props.t("Equal"),
       },
       ge: {
-        symbol: '\u2265',
-        tooltip: props.t('Greater-than or Equal'),
+        symbol: "\u2265",
+        tooltip: props.t("Greater-than or Equal"),
       },
       le: {
-        symbol: '\u2264',
-        tooltip: props.t('Less-than or Equal'),
+        symbol: "\u2264",
+        tooltip: props.t("Less-than or Equal"),
       },
     };
   }
@@ -41,33 +41,33 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
 
     const filt = this.hasValidComparison(filter)
       ? filter
-      : { comparison: 'eq', value: '' };
+      : { comparison: "eq", value: "" };
 
     const currentComparison = this.comparisons[filt.comparison];
 
     const locale = this.context.api.locale();
 
     return (
-        <InputGroup className='datetime-filter'>
-          <InputGroup.Addon className='group-addon-btn'>
-            <Button
-              id='btn-date-direction'
-              className='btn-embed'
-              onClick={this.toggleDirection}
-              tooltip={currentComparison.tooltip}
-            >
-              {currentComparison.symbol}
-            </Button>
-          </InputGroup.Addon>
-          <ReactDatePicker
-            selected={truthy(filt.value) ? new Date(filt.value) : null}
-            onChange={this.changeFilter}
-            locale={getLocale(locale)}
-            dateFormat={getDateFormat(locale)}
-            isClearable={true}
-            className='datetime-picker'
-          />
-        </InputGroup>
+      <InputGroup className="datetime-filter">
+        <InputGroup.Addon className="group-addon-btn">
+          <Button
+            id="btn-date-direction"
+            className="btn-embed"
+            onClick={this.toggleDirection}
+            tooltip={currentComparison.tooltip}
+          >
+            {currentComparison.symbol}
+          </Button>
+        </InputGroup.Addon>
+        <ReactDatePicker
+          selected={truthy(filt.value) ? new Date(filt.value) : null}
+          onChange={this.changeFilter}
+          locale={getLocale(locale)}
+          dateFormat={getDateFormat(locale)}
+          isClearable={true}
+          className="datetime-picker"
+        />
+      </InputGroup>
     );
   }
 
@@ -79,22 +79,27 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   private changeFilter = (date) => {
     const { attributeId, onSetFilter } = this.props;
     this.currentValue = date;
-    onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
-  }
+    onSetFilter(attributeId, {
+      comparison: this.currentComparison,
+      value: this.currentValue,
+    });
+  };
 
   private toggleDirection = (evt) => {
-    const { attributeId, filter, onSetFilter }  = this.props;
+    const { attributeId, filter, onSetFilter } = this.props;
 
-    const filt = filter || { comparison: 'eq', value: '' };
+    const filt = filter || { comparison: "eq", value: "" };
 
-    const options = ['eq', 'ge', 'le'];
-    this.currentComparison =
-      options[(options.indexOf(filt.comparison) + 1) % options.length] as any;
+    const options = ["eq", "ge", "le"];
+    this.currentComparison = options[
+      (options.indexOf(filt.comparison) + 1) % options.length
+    ] as any;
 
-    onSetFilter(attributeId,
-      { comparison: this.currentComparison, value: this.currentValue });
-  }
+    onSetFilter(attributeId, {
+      comparison: this.currentComparison,
+      value: this.currentValue,
+    });
+  };
 }
 
 function roundToDay(date: Date): Date {

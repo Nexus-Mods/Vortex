@@ -1,4 +1,4 @@
-import {PropsCallback} from '../../../types/IExtensionContext';
+import { PropsCallback } from "../../../types/IExtensionContext";
 
 export interface IDashletProps {
   title: string;

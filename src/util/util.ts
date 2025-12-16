@@ -1,21 +1,27 @@
 /* eslint-disable */
-import { NEXUS_DOMAIN, NEXUS_FLAMEWORK_SUBDOMAIN, NEXUS_NEXT_SUBDOMAIN, NEXUS_PROTOCOL, NEXUS_USERS_SUBDOMAIN } from '../extensions/nexus_integration/constants';
+import {
+  NEXUS_DOMAIN,
+  NEXUS_FLAMEWORK_SUBDOMAIN,
+  NEXUS_NEXT_SUBDOMAIN,
+  NEXUS_PROTOCOL,
+  NEXUS_USERS_SUBDOMAIN,
+} from "../extensions/nexus_integration/constants";
 
-import { TimeoutError } from './CustomErrors';
-import { Normalize } from './getNormalizeFunc';
-import getVortexPath from './getVortexPath';
-import { log } from './log';
+import { TimeoutError } from "./CustomErrors";
+import { Normalize } from "./getNormalizeFunc";
+import getVortexPath from "./getVortexPath";
+import { log } from "./log";
 
-import Bluebird from 'bluebird';
-import { spawn } from 'child_process';
-import * as _ from 'lodash';
-import * as path from 'path';
-import * as process from 'process';
-import * as Redux from 'redux';
-import { batch } from 'redux-act';
-import * as semver from 'semver';
-import * as tmp from 'tmp';
-import { dequal } from 'dequal';
+import Bluebird from "bluebird";
+import { spawn } from "child_process";
+import * as _ from "lodash";
+import * as path from "path";
+import * as process from "process";
+import * as Redux from "redux";
+import { batch } from "redux-act";
+import * as semver from "semver";
+import * as tmp from "tmp";
+import { dequal } from "dequal";
 
 /**
  * count the elements in an array for which the predicate matches
@@ -26,7 +32,10 @@ import { dequal } from 'dequal';
  * @param {(value: T) => boolean} predicate
  * @returns {number}
  */
-export function countIf<T>(container: T[], predicate: (value: T) => boolean): number {
+export function countIf<T>(
+  container: T[],
+  predicate: (value: T) => boolean,
+): number {
   return container.reduce((count: number, value: T): number => {
     return count + (predicate(value) ? 1 : 0);
   }, 0);
@@ -40,8 +49,10 @@ export function countIf<T>(container: T[], predicate: (value: T) => boolean): nu
  * @returns {number}
  */
 export function sum(container: number[]): number {
-  return container.reduce((total: number, value: number): number =>
-    total + value, 0);
+  return container.reduce(
+    (total: number, value: number): number => total + value,
+    0,
+  );
 }
 
 /**
@@ -49,7 +60,11 @@ export function sum(container: number[]): number {
  * returns the attribute "key" from "obj". If that attribute doesn't exist
  * on obj, it will be set to the default value and that is returned.
  */
-export function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K] {
+export function setdefault<T, K extends keyof T>(
+  obj: T,
+  key: K,
+  def: T[K],
+): T[K] {
   if (!obj.hasOwnProperty(key)) {
     obj[key] = def;
   }
@@ -71,9 +86,9 @@ export function midClip(input: string, maxLength: number): string {
   }
 
   const half = maxLength / 2;
-  return input.substr(0, half - 2)
-    + '...'
-    + input.substr(input.length - (half - 1));
+  return (
+    input.substr(0, half - 2) + "..." + input.substr(input.length - (half - 1))
+  );
 }
 
 /**
@@ -81,7 +96,7 @@ export function midClip(input: string, maxLength: number): string {
  * @param {string} check the string to check
  */
 export function isNullOrWhitespace(check: string): boolean {
-  return (!check || (check.trim().length === 0));
+  return !check || check.trim().length === 0;
 }
 
 /**
@@ -98,7 +113,7 @@ export function truthy(val: any): boolean {
 
 // Helper to check for plain objects (not null, not array)
 function isPlainObject(obj: any): boolean {
-  return Object.prototype.toString.call(obj) === '[object Object]';
+  return Object.prototype.toString.call(obj) === "[object Object]";
 }
 
 /**
@@ -107,7 +122,11 @@ function isPlainObject(obj: any): boolean {
  * @param rhs the right, "after", object
  * @param skip properties to skip in the diff, string array
  */
-export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string, any> {
+export function objDiff(
+  lhs: any,
+  rhs: any,
+  skip: string[] = [],
+): Record<string, any> {
   // The current objDiff implementation only performs deep diffs between plain objects.
   //  Arrays and other non-plain-object inputs are treated as non-comparable types.
   //  - If both inputs are the same reference or deeply equal arrays, objDiff returns an empty object `{}`.
@@ -122,7 +141,7 @@ export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string,
     for (const key of Object.keys(lhs)) {
       if (skipArray.includes(key)) continue;
       if (!(key in rhs)) {
-        res['-' + key] = lhs[key];
+        res["-" + key] = lhs[key];
         continue;
       }
 
@@ -131,8 +150,8 @@ export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string,
 
       if (Array.isArray(lhsVal) && Array.isArray(rhsVal)) {
         if (!dequal(lhsVal, rhsVal)) {
-          res['-' + key] = lhsVal;
-          res['+' + key] = rhsVal;
+          res["-" + key] = lhsVal;
+          res["+" + key] = rhsVal;
         }
       } else if (isPlainObject(lhsVal) && isPlainObject(rhsVal)) {
         const sub = objDiff(lhsVal, rhsVal, skip);
@@ -140,15 +159,15 @@ export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string,
           res[key] = sub;
         }
       } else if (!dequal(lhsVal, rhsVal)) {
-        res['-' + key] = lhsVal;
-        res['+' + key] = rhsVal;
+        res["-" + key] = lhsVal;
+        res["+" + key] = rhsVal;
       }
     }
 
     for (const key of Object.keys(rhs)) {
       if (skipArray.includes(key)) continue;
       if (!(key in lhs)) {
-        res['+' + key] = rhs[key];
+        res["+" + key] = rhs[key];
       }
     }
   }
@@ -157,14 +176,19 @@ export function objDiff(lhs: any, rhs: any, skip: string[] = []): Record<string,
 }
 
 export function restackErr(error: Error, stackErr: Error): Error {
-  if ((error === null) || (typeof error !== 'object')) {
+  if (error === null || typeof error !== "object") {
     return error;
   }
   const oldGetStack = error.stack;
   // resolve the stack at the last possible moment because stack is actually a getter
   // that will apply expensive source mapping when called
-  Object.defineProperty(error, 'stack', {
-    get: () => error.message + '\n' + oldGetStack + '\nPrior Context:\n' + (stackErr.stack ?? '').split('\n').slice(1).join('\n'),
+  Object.defineProperty(error, "stack", {
+    get: () =>
+      error.message +
+      "\n" +
+      oldGetStack +
+      "\nPrior Context:\n" +
+      (stackErr.stack ?? "").split("\n").slice(1).join("\n"),
     set: () => null,
   });
   return error;
@@ -190,9 +214,10 @@ export function makeQueue<T>() {
   const tick = () => {
     processing = pending.shift();
     if (processing !== undefined) {
-      processing.func()
+      processing
+        .func()
         .then(processing.resolve)
-        .catch(err => processing.reject(restackErr(err, processing.stackErr)))
+        .catch((err) => processing.reject(restackErr(err, processing.stackErr)))
         .finally(() => {
           tick();
         });
@@ -203,7 +228,7 @@ export function makeQueue<T>() {
     const stackErr = new Error();
 
     return new Bluebird<T>((resolve, reject) => {
-      if (tryOnly && (processing !== undefined)) {
+      if (tryOnly && processing !== undefined) {
         return resolve();
       }
       pending.push({ func, stackErr, resolve, reject });
@@ -219,21 +244,25 @@ export function makeQueue<T>() {
  * @param args
  */
 export function spawnSelf(args: string[]) {
-  if (process.execPath.endsWith('electron.exe')) {
+  if (process.execPath.endsWith("electron.exe")) {
     // development version
-    args = [getVortexPath('package')].concat(args);
+    args = [getVortexPath("package")].concat(args);
   }
   spawn(process.execPath, args, {
     detached: true,
-    stdio: 'ignore',
+    stdio: "ignore",
   })
-  .on('error', (err) => {
-    log('error', 'Failed to spawn self', { execPath: process.execPath, args, error: err.message });
-  })
-  .unref();
+    .on("error", (err) => {
+      log("error", "Failed to spawn self", {
+        execPath: process.execPath,
+        args,
+        error: err.message,
+      });
+    })
+    .unref();
 }
 
-const BYTE_LABELS = ['B', 'KB', 'MB', 'GB', 'TB'];
+const BYTE_LABELS = ["B", "KB", "MB", "GB", "TB"];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;
@@ -242,43 +271,45 @@ export function bytesToString(bytes: number): string {
     bytes /= 1024;
   }
   try {
-    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + BYTE_LABELS[labelIdx];
+    return (
+      bytes.toFixed(Math.max(0, labelIdx - 1)) + " " + BYTE_LABELS[labelIdx]
+    );
   } catch (err) {
-    return '???';
+    return "???";
   }
 }
 
-const NUM_LABELS = ['', 'K', 'M'];
+const NUM_LABELS = ["", "K", "M"];
 
 export function largeNumToString(num: number): string {
   let labelIdx = 0;
-  while ((num >= 1000) && (labelIdx < (NUM_LABELS.length - 1))) {
+  while (num >= 1000 && labelIdx < NUM_LABELS.length - 1) {
     ++labelIdx;
     num /= 1000;
   }
   try {
-    return num.toFixed(Math.max(0, labelIdx - 1)) + ' ' + NUM_LABELS[labelIdx];
+    return num.toFixed(Math.max(0, labelIdx - 1)) + " " + NUM_LABELS[labelIdx];
   } catch (err) {
-    return '???';
+    return "???";
   }
 }
 
 export function pad(value: number, padding: string, width: number) {
   const temp = `${value}`;
-  return (temp.length >= width)
+  return temp.length >= width
     ? temp
     : new Array(width - temp.length + 1).join(padding) + temp;
 }
 
 export function timeToString(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor(seconds / 60) - (hours * 60);
+  const minutes = Math.floor(seconds / 60) - hours * 60;
   seconds = Math.floor(seconds - minutes * 60 - hours * 3600);
 
   if (hours > 0) {
-    return `${pad(hours, '0', 2)}:${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
+    return `${pad(hours, "0", 2)}:${pad(minutes, "0", 2)}:${pad(seconds, "0", 2)}`;
   } else {
-    return `${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
+    return `${pad(minutes, "0", 2)}:${pad(seconds, "0", 2)}`;
   }
 }
 
@@ -289,7 +320,7 @@ export function encodeHTML(input: string): string {
     return undefined;
   }
   if (convertDiv === undefined) {
-    convertDiv = document.createElement('div');
+    convertDiv = document.createElement("div");
   }
   convertDiv.innerText = input;
   return convertDiv.innerHTML;
@@ -300,24 +331,26 @@ export function decodeHTML(input: string): string {
     return undefined;
   }
   if (convertDiv === undefined) {
-    convertDiv = document.createElement('div');
+    convertDiv = document.createElement("div");
   }
   convertDiv.innerHTML = input;
   return convertDiv.innerText;
 }
 
-const PROP_BLACKLIST = ['constructor',
-  '__defineGetter__',
-  '__defineSetter__',
-  'hasOwnProperty',
-  '__lookupGetter__',
-  '__lookupSetter__',
-  'isPrototypeOf',
-  'propertyIsEnumerable',
-  'toString',
-  'valueOf',
-  '__proto__',
-  'toLocaleString'];
+const PROP_BLACKLIST = [
+  "constructor",
+  "__defineGetter__",
+  "__defineSetter__",
+  "hasOwnProperty",
+  "__lookupGetter__",
+  "__lookupSetter__",
+  "isPrototypeOf",
+  "propertyIsEnumerable",
+  "toString",
+  "valueOf",
+  "__proto__",
+  "toLocaleString",
+];
 
 export function getAllPropertyNames(obj: object): string[] {
   let props: string[] = [];
@@ -325,7 +358,7 @@ export function getAllPropertyNames(obj: object): string[] {
   while (obj !== null) {
     const objProps = Object.getOwnPropertyNames(obj);
     // don't want the properties of the "base" object
-    if (objProps.indexOf('__defineGetter__') !== -1) {
+    if (objProps.indexOf("__defineGetter__") !== -1) {
       break;
     }
     props = props.concat(objProps);
@@ -340,11 +373,16 @@ export function getAllPropertyNames(obj: object): string[] {
  * @param child path of the presumed sub-directory
  * @param parent path of the presumed parent directory
  */
-export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
+export function isChildPath(
+  child: string,
+  parent: string,
+  normalize?: Normalize,
+): boolean {
   if (normalize === undefined) {
-    normalize = (input) => process.platform === 'win32'
-      ? path.normalize(input.toUpperCase())
-      : path.normalize(input);
+    normalize = (input) =>
+      process.platform === "win32"
+        ? path.normalize(input.toUpperCase())
+        : path.normalize(input);
   }
 
   const childNorm = normalize(child);
@@ -353,17 +391,25 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
     return false;
   }
 
-  const tokens = parentNorm.split(path.sep).filter(token => token.length > 0);
-  const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
+  const tokens = parentNorm.split(path.sep).filter((token) => token.length > 0);
+  const childTokens = childNorm
+    .split(path.sep)
+    .filter((token) => token.length > 0);
 
-  return tokens.every((token: string, idx: number) => childTokens[idx] === token);
+  return tokens.every(
+    (token: string, idx: number) => childTokens[idx] === token,
+  );
 }
 
-export function isReservedDirectory(dirPath: string, normalize?: Normalize): boolean {
+export function isReservedDirectory(
+  dirPath: string,
+  normalize?: Normalize,
+): boolean {
   if (normalize === undefined) {
-    normalize = (input) => process.platform === 'win32'
-      ? path.normalize(input.toUpperCase())
-      : path.normalize(input);
+    normalize = (input) =>
+      process.platform === "win32"
+        ? path.normalize(input.toUpperCase())
+        : path.normalize(input);
   }
 
   const normalized = normalize(dirPath);
@@ -371,18 +417,33 @@ export function isReservedDirectory(dirPath: string, normalize?: Normalize): boo
     ? normalized.slice(0, -1)
     : normalized;
 
-  const vortexAppData = getVortexPath('userData');
-  const invalidDirs = ['blob_storage', 'Cache', 'Code Cache', 'Dictionaries',
-    'extensions', 'GPUCache', 'metadb', 'Partitions', 'plugins', 'Session Storage',
-    'shared_proto_db', 'state.v2', 'temp', 'VideoDecodeStats']
-    .map(inv => normalize(path.join(vortexAppData, inv)));
+  const vortexAppData = getVortexPath("userData");
+  const invalidDirs = [
+    "blob_storage",
+    "Cache",
+    "Code Cache",
+    "Dictionaries",
+    "extensions",
+    "GPUCache",
+    "metadb",
+    "Partitions",
+    "plugins",
+    "Session Storage",
+    "shared_proto_db",
+    "state.v2",
+    "temp",
+    "VideoDecodeStats",
+  ].map((inv) => normalize(path.join(vortexAppData, inv)));
   invalidDirs.push(normalize(vortexAppData));
 
-  return (invalidDirs.includes(trimmed));
+  return invalidDirs.includes(trimmed);
 }
 
 export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
-  return (lhs ?? '').localeCompare((rhs ?? ''), locale, { sensitivity: 'accent' }) === 0;
+  return (
+    (lhs ?? "").localeCompare(rhs ?? "", locale, { sensitivity: "accent" }) ===
+    0
+  );
 }
 
 const sanitizeRE = /[ .#()]/g;
@@ -391,10 +452,9 @@ const sanitizeRE = /[ .#()]/g;
  * take any input string and sanitize it into a valid css id
  */
 export function sanitizeCSSId(input: string) {
-  let res = input.toLowerCase()
-    .replace(sanitizeRE, '-');
-  if (res.endsWith('-')) {
-    res += '_';
+  let res = input.toLowerCase().replace(sanitizeRE, "-");
+  if (res.endsWith("-")) {
+    res += "_";
   }
 
   return res;
@@ -404,7 +464,7 @@ export function sanitizeCSSId(input: string) {
  * remove the BOM from the input string. doesn't do anything if there is none.
  */
 export function deBOM(input: string) {
-  return input.replace(/^\uFEFF/, '');
+  return input.replace(/^\uFEFF/, "");
 }
 
 /**
@@ -412,7 +472,7 @@ export function deBOM(input: string) {
  * @param string
  */
 export function escapeRE(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export interface ITimeoutOptions {
@@ -428,10 +488,11 @@ export interface ITimeoutOptions {
  * @param delayMS the time in milliseconds after which this should return
  * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Bluebird<T>,
+export function timeout<T>(
+  prom: Bluebird<T>,
   delayMS: number,
-  options?: ITimeoutOptions)
-  : Bluebird<T> {
+  options?: ITimeoutOptions,
+): Bluebird<T> {
   let timedOut: boolean = false;
   let resolved: boolean = false;
 
@@ -449,27 +510,28 @@ export function timeout<T>(prom: Bluebird<T>,
       return Bluebird.resolve();
     }
     if (options?.queryContinue !== undefined) {
-      return options?.queryContinue()
-        .then(requestContinue => {
-          if (requestContinue) {
-            delayMS *= 2;
-            return Bluebird.delay(delayMS).then(onTimeExpired);
-          } else {
-            return doTimeout();
-          }
-        });
+      return options?.queryContinue().then((requestContinue) => {
+        if (requestContinue) {
+          delayMS *= 2;
+          return Bluebird.delay(delayMS).then(onTimeExpired);
+        } else {
+          return doTimeout();
+        }
+      });
     } else {
       return doTimeout();
     }
   };
 
-  return Bluebird.race<T>([prom, Bluebird.delay(delayMS).then(onTimeExpired)])
-    .finally(() => {
-      resolved = true;
-      if (timedOut && (options?.cancel === true)) {
-        prom.cancel();
-      }
-    });
+  return Bluebird.race<T>([
+    prom,
+    Bluebird.delay(delayMS).then(onTimeExpired),
+  ]).finally(() => {
+    resolved = true;
+    if (timedOut && options?.cancel === true) {
+      prom.cancel();
+    }
+  });
 }
 
 /**
@@ -477,7 +539,7 @@ export function timeout<T>(prom: Bluebird<T>,
  * Bluebird has this feature as Promise.delay but when using es6 default promises this can be used
  */
 export function delay(timeoutMS: number): Bluebird<void> {
-  return new Bluebird(resolve => {
+  return new Bluebird((resolve) => {
     setTimeout(resolve, timeoutMS);
   });
 }
@@ -485,35 +547,66 @@ export function delay(timeoutMS: number): Bluebird<void> {
 /**
  * characters invalid in a file path
  */
-const INVALID_FILEPATH_CHARACTERS = process.platform === 'win32'
-  ? ['/', '?', '*', ':', '|', '"', '<', '>']
-  : [];
+const INVALID_FILEPATH_CHARACTERS =
+  process.platform === "win32" ? ["/", "?", "*", ":", "|", '"', "<", ">"] : [];
 
 /**
  * characters invalid in a file name
  */
-const INVALID_FILENAME_CHARACTERS = [].concat(INVALID_FILEPATH_CHARACTERS, path.sep);
+const INVALID_FILENAME_CHARACTERS = [].concat(
+  INVALID_FILEPATH_CHARACTERS,
+  path.sep,
+);
 
-const INVALID_FILENAME_RE = new RegExp(`[${escapeRE(INVALID_FILENAME_CHARACTERS.join(''))}]`, 'g');
+const INVALID_FILENAME_RE = new RegExp(
+  `[${escapeRE(INVALID_FILENAME_CHARACTERS.join(""))}]`,
+  "g",
+);
 
-const RESERVED_NAMES = new Set(process.platform === 'win32'
-  ? [
-    'CON', 'PRN', 'AUX', 'NUL',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
-    '..', '.',
-  ]
-  : ['..', '.']);
+const RESERVED_NAMES = new Set(
+  process.platform === "win32"
+    ? [
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+        "..",
+        ".",
+      ]
+    : ["..", "."],
+);
 
 export function isFilenameValid(input: string): boolean {
   if (input.length === 0) {
     return false;
   }
-  if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
+  if (
+    RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())
+  ) {
     return false;
   }
-  if ((process.platform === 'win32')
-    && (input.endsWith(' ') || input.endsWith('.'))) {
+  if (
+    process.platform === "win32" &&
+    (input.endsWith(" ") || input.endsWith("."))
+  ) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
     return false;
@@ -522,9 +615,7 @@ export function isFilenameValid(input: string): boolean {
 }
 
 function isDriveLetter(input: string): boolean {
-  return (process.platform === 'win32')
-    && (input.length === 2)
-    && (input[1] === ':');
+  return process.platform === "win32" && input.length === 2 && input[1] === ":";
 }
 
 /**
@@ -532,32 +623,42 @@ function isDriveLetter(input: string): boolean {
  */
 export function sanitizeFilename(input: string): string {
   if (input.length === 0) {
-    return '_empty_';
+    return "_empty_";
   }
-  if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
-    return path.join(path.dirname(input), '_reserved_' + path.basename(input));
+  if (
+    RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())
+  ) {
+    return path.join(path.dirname(input), "_reserved_" + path.basename(input));
   }
-  if ((process.platform === 'win32')
-    && (input.endsWith(' ') || input.endsWith('.'))) {
+  if (
+    process.platform === "win32" &&
+    (input.endsWith(" ") || input.endsWith("."))
+  ) {
     // Although Windows' underlying file system may support
     //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
-    return input + '_';
+    return input + "_";
   }
-  return input.replace(INVALID_FILENAME_RE, invChar => `_${invChar.charCodeAt(0)}_`);
+  return input.replace(
+    INVALID_FILENAME_RE,
+    (invChar) => `_${invChar.charCodeAt(0)}_`,
+  );
 }
 
-const trimTrailingSep = new RegExp(`\\${path.sep}*$`, 'g');
+const trimTrailingSep = new RegExp(`\\${path.sep}*$`, "g");
 
-export function isPathValid(input: string, allowRelative: boolean = false): boolean {
-  if ((process.platform === 'win32') && input.startsWith('\\\\')) {
+export function isPathValid(
+  input: string,
+  allowRelative: boolean = false,
+): boolean {
+  if (process.platform === "win32" && input.startsWith("\\\\")) {
     // UNC path, skip the leading \\ for validation
     input = input.slice(2);
-  } else if ((process.platform !== 'win32') && input.startsWith('/')) {
+  } else if (process.platform !== "win32" && input.startsWith("/")) {
     input = input.slice(1);
   }
-  let split = input.replace(trimTrailingSep, '').split(path.sep);
+  let split = input.replace(trimTrailingSep, "").split(path.sep);
   if (allowRelative) {
-    split = split.filter(segment => (segment !== '.') && (segment !== '..'));
+    split = split.filter((segment) => segment !== "." && segment !== "..");
   }
   const found = split.find((segment: string, idx: number) => {
     if (idx === 0 && isDriveLetter(segment)) {
@@ -609,17 +710,20 @@ export function flatten(obj: any, options?: IFlattenParameters): any {
   if (options === undefined) {
     options = {};
   }
-  options.separator = options.separator || '.';
+  options.separator = options.separator || ".";
   options.baseKey = options.baseKey || [];
 
   return flattenInner(obj, options.baseKey, [], options);
 }
 
-function flattenInner(obj: any, key: string[],
+function flattenInner(
+  obj: any,
+  key: string[],
   objStack: any[],
-  options: IFlattenParameters): any {
-  if ((obj.length !== undefined) && (obj.length > 10)) {
-    return { [key.join(options.separator)]: '<long array cut>' };
+  options: IFlattenParameters,
+): any {
+  if (obj.length !== undefined && obj.length > 10) {
+    return { [key.join(options.separator)]: "<long array cut>" };
   }
   const getKeys = options.nonEnumerable
     ? Object.getOwnPropertyNames
@@ -628,10 +732,15 @@ function flattenInner(obj: any, key: string[],
     if (objStack.indexOf(obj[attr]) !== -1) {
       return prev;
     }
-    if ((typeof (obj[attr]) === 'object') && (obj[attr] !== null)) {
+    if (typeof obj[attr] === "object" && obj[attr] !== null) {
       prev = {
         ...prev,
-        ...flattenInner(obj[attr], [...key, attr], [].concat(objStack, [obj[attr]]), options),
+        ...flattenInner(
+          obj[attr],
+          [...key, attr],
+          [].concat(objStack, [obj[attr]]),
+          options,
+        ),
       };
     } else {
       // POD
@@ -644,7 +753,7 @@ function flattenInner(obj: any, key: string[],
 export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
   return new Bluebird((resolve, reject) => {
     const cb = (err: Error, res: ResT) => {
-      if ((err !== null) && (err !== undefined)) {
+      if (err !== null && err !== undefined) {
         return reject(err);
       } else {
         return resolve(res);
@@ -666,7 +775,12 @@ export function makeUnique<T>(input: T[]): T[] {
  * @returns a list with duplicates removed
  */
 export function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[] {
-  return Object.values(input.reduce((prev, item) => { prev[key(item)] = item; return prev; }, {}));
+  return Object.values(
+    input.reduce((prev, item) => {
+      prev[key(item)] = item;
+      return prev;
+    }, {}),
+  );
 }
 
 export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
@@ -679,7 +793,7 @@ export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
           .then((out: T) => {
             resolve(out);
           })
-          .catch(tmpErr => {
+          .catch((tmpErr) => {
             reject(tmpErr);
           })
           .finally(() => {
@@ -687,7 +801,7 @@ export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
               cleanup();
             } catch (err) {
               // cleanup failed
-              log('warn', 'Failed to clean up temp file', { tmpPath });
+              log("warn", "Failed to clean up temp file", { tmpPath });
             }
           });
       }
@@ -714,42 +828,48 @@ export function delayed(delayMS: number): Promise<void> {
 }
 
 export function toBlue<T, ArgsT extends any[]>(
-  func: (...args: ArgsT) => Promise<T>)
-  : (...args: ArgsT) => Bluebird<T> {
+  func: (...args: ArgsT) => Promise<T>,
+): (...args: ArgsT) => Bluebird<T> {
   return (...args: ArgsT) => Bluebird.resolve(func(...args));
 }
 
 export function replaceRecursive(input: any, from: any, to: any) {
-  if ((input === undefined)
-    || (input === null)
-    || Array.isArray(input)) {
+  if (input === undefined || input === null || Array.isArray(input)) {
     return input;
   }
-  return Object.keys(input)
-    .reduce((prev: any, key: string) => {
-      if (input[key] === from) {
-        prev[key] = to;
-      } else if (typeof (input[key]) === 'object') {
-        prev[key] = replaceRecursive(input[key], from, to);
-      } else {
-        prev[key] = input[key];
-      }
-      return prev;
-    }, {});
+  return Object.keys(input).reduce((prev: any, key: string) => {
+    if (input[key] === from) {
+      prev[key] = to;
+    } else if (typeof input[key] === "object") {
+      prev[key] = replaceRecursive(input[key], from, to);
+    } else {
+      prev[key] = input[key];
+    }
+    return prev;
+  }, {});
 }
 
 function removeLeadingZeros(input: string): string {
-  if (!input) { return input; }
-  return input.split('.').map(seg => seg.replace(/^0+(\d+$)/, '$1')).join('.');
+  if (!input) {
+    return input;
+  }
+  return input
+    .split(".")
+    .map((seg) => seg.replace(/^0+(\d+$)/, "$1"))
+    .join(".");
 }
 
-export function semverCoerce(input: string, options?: semver.CoerceOptions): semver.SemVer {
+export function semverCoerce(
+  input: string,
+  options?: semver.CoerceOptions,
+): semver.SemVer {
   let res = semver.coerce(removeLeadingZeros(input), options);
 
   if (res === null) {
-    res = (input === '')
-      ? new semver.SemVer('0.0.0')
-      : new semver.SemVer(`0.0.0-${input}`);
+    res =
+      input === ""
+        ? new semver.SemVer("0.0.0")
+        : new semver.SemVer(`0.0.0-${input}`);
   }
 
   return res;
@@ -789,7 +909,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
       totalSize += JSON.stringify(actions[i]).length;
     } catch (err) {
       // If serialization fails, use conservative estimate
-      log('warn', 'failed to estimate action size for chunking', err);
+      log("warn", "failed to estimate action size for chunking", err);
       return 50;
     }
   }
@@ -801,7 +921,9 @@ function calculateChunkSize(actions: Redux.Action[]): number {
   const TARGET_CHUNK_SIZE_CHARS = TARGET_CHUNK_SIZE_MB * 1024 * 1024;
 
   // Calculate how many actions fit in target size
-  const calculatedChunkSize = Math.floor(TARGET_CHUNK_SIZE_CHARS / avgActionSize);
+  const calculatedChunkSize = Math.floor(
+    TARGET_CHUNK_SIZE_CHARS / avgActionSize,
+  );
 
   // Clamp between reasonable bounds
   // Min 10: Avoid too many chunks for very large actions
@@ -813,14 +935,17 @@ function calculateChunkSize(actions: Redux.Action[]): number {
     chunkSizeCache.set(firstActionType, chunkSize);
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    log('debug', 'calculated dynamic chunk size', {
+  if (process.env.NODE_ENV === "development") {
+    log("debug", "calculated dynamic chunk size", {
       actionType: firstActionType,
       totalActions: actions.length,
       avgActionSizeKB: (avgActionSize / 1024).toFixed(2),
       chunkSize,
-      estimatedChunkSizeMB: ((chunkSize * avgActionSize) / (1024 * 1024)).toFixed(2),
-      cached: false
+      estimatedChunkSizeMB: (
+        (chunkSize * avgActionSize) /
+        (1024 * 1024)
+      ).toFixed(2),
+      cached: false,
     });
   }
 
@@ -828,8 +953,11 @@ function calculateChunkSize(actions: Redux.Action[]): number {
 }
 
 // TODO: support thunk actions?
-export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Action[]) {
-  const dispatch = store['dispatch'] ?? store;
+export function batchDispatch(
+  store: Redux.Dispatch | Redux.Store,
+  actions: Redux.Action[],
+) {
+  const dispatch = store["dispatch"] ?? store;
   if (actions.length === 0) {
     return;
   }
@@ -843,27 +971,31 @@ export function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redu
   } else {
     // Large batch, chunk it with queuing to prevent interleaving
     // Queue ensures all chunks from this batch complete before next batch starts
-    batchQueue = batchQueue.then(() => {
-      if (process.env.NODE_ENV === 'development') {
-        log('debug', 'dispatching chunked batch', {
-          total: actions.length,
-          chunkSize,
-          chunks: Math.ceil(actions.length / chunkSize)
-        });
-      }
+    batchQueue = batchQueue
+      .then(() => {
+        if (process.env.NODE_ENV === "development") {
+          log("debug", "dispatching chunked batch", {
+            total: actions.length,
+            chunkSize,
+            chunks: Math.ceil(actions.length / chunkSize),
+          });
+        }
 
-      for (let i = 0; i < actions.length; i += chunkSize) {
-        const chunk = actions.slice(i, i + chunkSize);
-        dispatch(batch(chunk));
-      }
-    }).catch(err => {
-      log('error', 'failed to dispatch chunked batch', err);
-    });
+        for (let i = 0; i < actions.length; i += chunkSize) {
+          const chunk = actions.slice(i, i + chunkSize);
+          dispatch(batch(chunk));
+        }
+      })
+      .catch((err) => {
+        log("error", "failed to dispatch chunked batch", err);
+      });
   }
 }
 
 export function isFunction(functionToCheck) {
-  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+  return (
+    functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
+  );
 }
 
 /**
@@ -880,25 +1012,23 @@ export function isFunction(functionToCheck) {
  */
 export function wrapExtCBAsync<ArgT extends any[], ResT>(
   cb: (...args: ArgT) => PromiseLike<ResT>,
-  extInfo?: { name: string, official: boolean })
-  : (...args: ArgT) => Bluebird<ResT> {
-
+  extInfo?: { name: string; official: boolean },
+): (...args: ArgT) => Bluebird<ResT> {
   return (...args: ArgT): Bluebird<ResT> => {
     try {
-      return Bluebird.resolve(cb(...args))
-        .catch?.(err => {
-          if (typeof (err) === 'string') {
-            err = new Error(err);
-          }
-          if ((extInfo !== undefined) && !extInfo.official) {
-            err.allowReport = false;
-            err.extensionName = extInfo.name;
-          }
-          return Promise.reject(err);
-        });
+      return Bluebird.resolve(cb(...args)).catch?.((err) => {
+        if (typeof err === "string") {
+          err = new Error(err);
+        }
+        if (extInfo !== undefined && !extInfo.official) {
+          err.allowReport = false;
+          err.extensionName = extInfo.name;
+        }
+        return Promise.reject(err);
+      });
     } catch (err) {
       err.allowReport = false;
-      if ((extInfo !== undefined) && !extInfo.official) {
+      if (extInfo !== undefined && !extInfo.official) {
         err.extensionName = extInfo.name;
       }
       return Bluebird.reject(err);
@@ -908,14 +1038,13 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
 
 export function wrapExtCBSync<ArgT extends any[], ResT>(
   cb: (...args: ArgT) => ResT,
-  extInfo?: { name: string, official: boolean })
-  : (...args: ArgT) => ResT {
-
+  extInfo?: { name: string; official: boolean },
+): (...args: ArgT) => ResT {
   return (...args: ArgT): ResT => {
     try {
       return cb(...args);
     } catch (err) {
-      if ((extInfo !== undefined) && !extInfo.official) {
+      if (extInfo !== undefined && !extInfo.official) {
         err.allowReport = false;
         err.extensionName = extInfo.name;
       }
@@ -939,8 +1068,8 @@ export enum Section {
  * @property GeneralNavigation - Campaign for general navigation events.
  */
 export enum Campaign {
-  BuyPremium = 'buy_premium',
-  GeneralNavigation = 'general_navigation'
+  BuyPremium = "buy_premium",
+  GeneralNavigation = "general_navigation",
 }
 
 /**
@@ -953,12 +1082,12 @@ export enum Campaign {
  * @property SettingsDownloadAd - Advertisement displayed in the settings download section.
  */
 export enum Content {
-  HeaderAd = 'header_ad',
-  DownloadsBannerAd = 'downloads_banner_ad',
-  DownloadModModal = 'downloadmod_modal',
-  DashboardDashletAd = 'dashboard_dashlet_ad',
-  CollectionsDownloadAd = 'collections_download_ad',
-  SettingsDownloadAd = 'settings_download_ad'
+  HeaderAd = "header_ad",
+  DownloadsBannerAd = "downloads_banner_ad",
+  DownloadModModal = "downloadmod_modal",
+  DashboardDashletAd = "dashboard_dashlet_ad",
+  CollectionsDownloadAd = "collections_download_ad",
+  SettingsDownloadAd = "settings_download_ad",
 }
 
 export interface INexusURLOptions {
@@ -970,20 +1099,25 @@ export interface INexusURLOptions {
 
 function sectionHost(section?: Section) {
   switch (section) {
-    case Section.Collections: return `${NEXUS_NEXT_SUBDOMAIN}.${NEXUS_DOMAIN}`;
-    case Section.Users: return `${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}`;
-    default: return `${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+    case Section.Collections:
+      return `${NEXUS_NEXT_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+    case Section.Users:
+      return `${NEXUS_USERS_SUBDOMAIN}.${NEXUS_DOMAIN}`;
+    default:
+      return `${NEXUS_FLAMEWORK_SUBDOMAIN}.${NEXUS_DOMAIN}`;
   }
 }
 
-export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string {
-
+export function nexusModsURL(
+  reqPath: string[],
+  options?: INexusURLOptions,
+): string {
   // Build the base URL
   const url = new URL(`${NEXUS_PROTOCOL}//${sectionHost(options?.section)}`);
 
   // Add path segments
   if (reqPath.length > 0) {
-    url.pathname = '/' + reqPath.join('/');
+    url.pathname = "/" + reqPath.join("/");
   }
 
   // Add query parameters
@@ -992,7 +1126,7 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
   // Add existing parameters (they're already in "key=value" format)
   if (options?.parameters) {
     for (const param of options.parameters) {
-      const [key, value] = param.split('=', 2);
+      const [key, value] = param.split("=", 2);
       if (key && value) {
         searchParams.set(key, decodeURIComponent(value));
       }
@@ -1001,14 +1135,14 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
 
   // Add campaign tracking parameters if specified
   if (options?.campaign !== undefined) {
-    searchParams.set('utm_source', 'vortex');
-    searchParams.set('utm_medium', 'app');
+    searchParams.set("utm_source", "vortex");
+    searchParams.set("utm_medium", "app");
 
     if (options?.content !== undefined) {
-      searchParams.set('utm_content', options.content);
+      searchParams.set("utm_content", options.content);
     }
 
-    searchParams.set('utm_campaign', options.campaign.toString());
+    searchParams.set("utm_campaign", options.campaign.toString());
   }
 
   // Set search params if any exist
@@ -1021,10 +1155,18 @@ export function nexusModsURL(reqPath: string[], options?: INexusURLOptions): str
 
 // environment variables we might have set for ourselves or passed in by chrome/electron/node
 const noInheritEnv: string[] = [
-  'BLUEBIRD_DEBUG', 'CHROME_CRASHPAD_PIPE_NAME', 'DEBUG_REACT_RENDERS',
-  'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT',
-  'FORCE_ALLOW_ELEVATED_SYMLINKING', 'HIGHLIGHT_I18N', 'IS_PREVIEW_BUILD',
-  'NEXUS_NEXT_URL', 'NODE_ENV', 'NODE_OPTIONS', 'SIMULATE_FS_ERRORS', 'UV_THREADPOOL_SIZE',
+  "BLUEBIRD_DEBUG",
+  "CHROME_CRASHPAD_PIPE_NAME",
+  "DEBUG_REACT_RENDERS",
+  "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT",
+  "FORCE_ALLOW_ELEVATED_SYMLINKING",
+  "HIGHLIGHT_I18N",
+  "IS_PREVIEW_BUILD",
+  "NEXUS_NEXT_URL",
+  "NODE_ENV",
+  "NODE_OPTIONS",
+  "SIMULATE_FS_ERRORS",
+  "UV_THREADPOOL_SIZE",
 ];
 
 export function filteredEnvironment(): NodeJS.ProcessEnv {
@@ -1032,7 +1174,7 @@ export function filteredEnvironment(): NodeJS.ProcessEnv {
 }
 
 export function parseBool(input: string): boolean {
-  return ['true', 'yes', '1'].includes((input ?? '').toLowerCase());
+  return ["true", "yes", "1"].includes((input ?? "").toLowerCase());
 }
 
 export class Overlayable<KeyT extends string | number | symbol, ObjT> {
@@ -1040,8 +1182,10 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
   private mLayers: { [layer: string]: Record<KeyT, Partial<ObjT>> } = {};
   private mDeduce: (key: KeyT, extraArg: any) => string;
 
-  public constructor(baseData: Record<KeyT, ObjT>,
-    deduceLayer: (key: KeyT, extraArg: any) => string) {
+  public constructor(
+    baseData: Record<KeyT, ObjT>,
+    deduceLayer: (key: KeyT, extraArg: any) => string,
+  ) {
     this.mBaseData = baseData;
     this.mDeduce = deduceLayer;
   }
@@ -1059,14 +1203,17 @@ export class Overlayable<KeyT extends string | number | symbol, ObjT> {
   }
 
   public get<AttrT extends keyof ObjT, ValT extends ObjT[AttrT]>(
-    key: KeyT, attr: AttrT, extraArg?: any): ValT {
-
+    key: KeyT,
+    attr: AttrT,
+    extraArg?: any,
+  ): ValT {
     const layer = this.mDeduce(key, extraArg);
     if (layer === undefined) {
       return this.mBaseData[key]?.[attr] as ValT;
     }
-    return (this.mLayers[layer]?.[key]?.[attr] as any)
-      ?? this.mBaseData[key]?.[attr];
+    return (
+      (this.mLayers[layer]?.[key]?.[attr] as any) ?? this.mBaseData[key]?.[attr]
+    );
   }
 
   public get baseData() {
@@ -1084,7 +1231,7 @@ const proxyHandler: ProxyHandler<Overlayable<any, any>> = {
     } else {
       return {
         enumerable: true,
-        configurable: true
+        configurable: true,
       };
     }
   },
@@ -1094,21 +1241,24 @@ const proxyHandler: ProxyHandler<Overlayable<any, any>> = {
   get(target, prop, receiver) {
     return Reflect.get(target, prop, receiver) ?? target.baseData[prop as any];
   },
-}
+};
 
 /**
  * helper function to create a dictionary that can have conditional
  * overlays applied to it
  * @param baseData the base data object
- * @param layers keyed layers 
- * @param deduceLayer determine the layer to be used for a given key. If this returns 
- * @returns 
+ * @param layers keyed layers
+ * @param deduceLayer determine the layer to be used for a given key. If this returns
+ * @returns
  */
-export function makeOverlayableDictionary<KeyT extends string | number | symbol, ValueT>(
+export function makeOverlayableDictionary<
+  KeyT extends string | number | symbol,
+  ValueT,
+>(
   baseData: Record<KeyT, ValueT>,
   layers: { [layerId: string]: Record<KeyT, Partial<ValueT>> },
-  deduceLayer: (key: KeyT, extraArg: any) => string): Overlayable<KeyT, ValueT> {
-
+  deduceLayer: (key: KeyT, extraArg: any) => string,
+): Overlayable<KeyT, ValueT> {
   const res = new Overlayable<KeyT, ValueT>(baseData, deduceLayer);
   for (const layerId of Object.keys(layers)) {
     res.setLayer(layerId, layers[layerId]);

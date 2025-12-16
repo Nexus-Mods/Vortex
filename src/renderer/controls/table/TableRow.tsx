@@ -1,28 +1,28 @@
-import { IEditChoice, ITableAttribute } from '../../../types/ITableAttribute';
-import { preT, TFunction } from '../../../util/i18n';
+import { IEditChoice, ITableAttribute } from "../../../types/ITableAttribute";
+import { preT, TFunction } from "../../../util/i18n";
 
-import ContextMenu from '../ActionContextMenu';
-import ActionDropdown from '../ActionDropdown';
-import Dropdown, { DummyMenu } from '../Dropdown';
-import ExtensibleControl from '../ExtensibleControl';
-import ExtensionGate from '../ExtensionGate';
-import FormInput from '../FormInput';
-import Icon from '../Icon';
-import SelectUpDown from '../SelectUpDown';
-import {ITableRowAction} from '../Table';
-import Toggle from '../Toggle';
-import {Button, IconButton} from '../TooltipControls';
-import VisibilityProxy from '../VisibilityProxy';
+import ContextMenu from "../ActionContextMenu";
+import ActionDropdown from "../ActionDropdown";
+import Dropdown, { DummyMenu } from "../Dropdown";
+import ExtensibleControl from "../ExtensibleControl";
+import ExtensionGate from "../ExtensionGate";
+import FormInput from "../FormInput";
+import Icon from "../Icon";
+import SelectUpDown from "../SelectUpDown";
+import { ITableRowAction } from "../Table";
+import Toggle from "../Toggle";
+import { Button, IconButton } from "../TooltipControls";
+import VisibilityProxy from "../VisibilityProxy";
 
-import { TD, TR } from './MyTable';
+import { TD, TR } from "./MyTable";
 
-import * as _ from 'lodash';
-import * as React from 'react';
-import { MenuItem } from 'react-bootstrap';
+import * as _ from "lodash";
+import * as React from "react";
+import { MenuItem } from "react-bootstrap";
 
 const ValueComponent = (props) => (
-  <div className='Select-value' title={props.value.text}>
-    <span className='Select-value-label' role='option'>
+  <div className="Select-value" title={props.value.text}>
+    <span className="Select-value-label" role="option">
       {props.value.text}
     </span>
   </div>
@@ -49,12 +49,17 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     };
   }
 
-  public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
-    return ((newProps.attribute.customRenderer !== undefined)
-            && (this.props.rawData !== newProps.rawData))
-        || this.props.data !== newProps.data
-        || this.props.language !== newProps.language
-        || this.state.isOpen !== newState.isOpen;
+  public shouldComponentUpdate(
+    newProps: ICellProps,
+    newState: { isOpen: boolean },
+  ) {
+    return (
+      (newProps.attribute.customRenderer !== undefined &&
+        this.props.rawData !== newProps.rawData) ||
+      this.props.data !== newProps.data ||
+      this.props.language !== newProps.language ||
+      this.state.isOpen !== newState.isOpen
+    );
   }
 
   public render(): JSX.Element {
@@ -67,77 +72,89 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     let content = null;
 
     if (attribute.customRenderer !== undefined) {
-      const attrControl = attribute.customRenderer(rawData, false, t, {
-        onHighlight }) || null;
-      content = attrControl !== null ? (
-        <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
-          {attrControl}
-        </ExtensionGate>
-      ) : null;
+      const attrControl =
+        attribute.customRenderer(rawData, false, t, {
+          onHighlight,
+        }) || null;
+      content =
+        attrControl !== null ? (
+          <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
+            {attrControl}
+          </ExtensionGate>
+        ) : null;
     } else {
       content = this.renderDefault();
     }
 
-    return attribute.isExtensible
-      ? (
-        <ExtensibleControl
-          group={`${tableId}-${attribute.id}`}
-          wrapperProps={{ rowId }}
-        >
-          {content}
-        </ExtensibleControl>
-      ) : content;
+    return attribute.isExtensible ? (
+      <ExtensibleControl
+        group={`${tableId}-${attribute.id}`}
+        wrapperProps={{ rowId }}
+      >
+        {content}
+      </ExtensibleControl>
+    ) : (
+      content
+    );
   }
 
   private renderDefault(): JSX.Element {
     const { t, attribute, data, language, rowId } = this.props;
 
-    if ((data === undefined) || (data === null)) {
-      return <span>{' '}</span>;
-    } else if ((attribute.edit.onChangeValue !== undefined) && attribute.edit.inline) {
+    if (data === undefined || data === null) {
+      return <span> </span>;
+    } else if (
+      attribute.edit.onChangeValue !== undefined &&
+      attribute.edit.inline
+    ) {
       if (attribute.edit.choices !== undefined) {
         return this.renderChoices(data);
       }
     } else {
-      const cellType = typeof(data);
-      if (cellType === 'string') {
+      const cellType = typeof data;
+      if (cellType === "string") {
         return <span>{data}</span>;
-      } else if ((cellType === 'number') && (attribute.edit.onChangeValue !== undefined)) {
+      } else if (
+        cellType === "number" &&
+        attribute.edit.onChangeValue !== undefined
+      ) {
         return (
           <FormInput
             value={data}
             onChange={this.onChangeNumValue}
-            type='number'
+            type="number"
             validate={attribute.edit.validate}
             min={attribute.edit.min}
             max={attribute.edit.max}
           />
         );
-      } else if (cellType === 'boolean') {
+      } else if (cellType === "boolean") {
         if (attribute.edit.onChangeValue !== undefined) {
           return (
             <IconButton
-              className='btn-embed'
+              className="btn-embed"
               id={`toggle-${rowId}-${attribute.id}`}
               tooltip={preT(t, attribute.name, undefined, true)}
-              icon={data ? 'checkbox-checked' : 'checkbox-unchecked'}
+              icon={data ? "checkbox-checked" : "checkbox-unchecked"}
               onClick={this.toggle}
             />
           );
         } else {
           return (
             <IconButton
-              className='btn-embed'
-              icon={data ? 'toggle-enabled' : 'toggle-disabled'}
-              tooltip={preT(t, 'attribute.name, undefined, true')}
-              style={{ pointerEvents: 'none' }}
+              className="btn-embed"
+              icon={data ? "toggle-enabled" : "toggle-disabled"}
+              tooltip={preT(t, "attribute.name, undefined, true")}
+              style={{ pointerEvents: "none" }}
             />
           );
         }
-      } else if ((cellType === 'object') && (data instanceof Date)) {
+      } else if (cellType === "object" && data instanceof Date) {
         return (
           <span>
-            {data !== undefined ? data.toLocaleString(language) : t('Not installed')}
+            {data !== undefined
+              ? data.toLocaleString(language)
+              : t("Not installed")}
           </span>
         );
       }
@@ -158,7 +175,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     const { t, attribute, container, rawData, right, tableId } = this.props;
 
     const choices = attribute.edit.choices(rawData);
-    const currentChoice = choices.find(choice => choice.text === data);
+    const currentChoice = choices.find((choice) => choice.text === data);
     const key = currentChoice !== undefined ? currentChoice.key : undefined;
     return (
       <Dropdown
@@ -175,23 +192,26 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
           onSelect={this.changeCell}
           tooltip={preT(t, attribute.description, undefined, true)}
         >
-          {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
-            ? <Icon name={currentChoice.icon} /> : null}
-          {currentChoice !== undefined ? t(currentChoice.text) : ''}
+          {currentChoice !== undefined && currentChoice.icon !== undefined ? (
+            <Icon name={currentChoice.icon} />
+          ) : null}
+          {currentChoice !== undefined ? t(currentChoice.text) : ""}
         </Button>
         <Dropdown.Toggle
-          className={`toggle-${tableId}-${attribute.id} `
-            + `toggle-${tableId}-${attribute.id}-${key}`}
+          className={
+            `toggle-${tableId}-${attribute.id} ` +
+            `toggle-${tableId}-${attribute.id}-${key}`
+          }
         />
-        {this.state.isOpen
-          ? (
-            <Dropdown.Menu
-              onSelect={this.changeCell}
-            >
-              {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
-            </Dropdown.Menu>
-          )
-          : <DummyMenu />}
+        {this.state.isOpen ? (
+          <Dropdown.Menu onSelect={this.changeCell}>
+            {choices
+              .filter((choice) => choice.visible !== false)
+              .map(this.renderChoice)}
+          </Dropdown.Menu>
+        ) : (
+          <DummyMenu />
+        )}
       </Dropdown>
     );
   }
@@ -201,32 +221,40 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 
     const choices = attribute.edit.choices(rawData);
 
-    if ((choices.length === 2)
-        && (choices[0].bool !== undefined)
-        && (choices[1].bool !== undefined)) {
+    if (
+      choices.length === 2 &&
+      choices[0].bool !== undefined &&
+      choices[1].bool !== undefined
+    ) {
       // special case where we have exactly two choices: true and false
-      const currentChoice: IEditChoice = choices.find(choice => choice.bool === data);
+      const currentChoice: IEditChoice = choices.find(
+        (choice) => choice.bool === data,
+      );
 
       return (
         <Toggle
-          checked={(currentChoice !== undefined) && currentChoice.bool}
+          checked={currentChoice !== undefined && currentChoice.bool}
           onToggle={this.changeCellToggle}
-        />);
+        />
+      );
     } else {
-      const currentChoice: IEditChoice = choices.find(choice => choice.text === data);
+      const currentChoice: IEditChoice = choices.find(
+        (choice) => choice.text === data,
+      );
 
-      const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+      const choiceKey =
+        currentChoice !== undefined ? currentChoice.key : undefined;
       return (
         <SelectUpDown
           options={choices}
           value={choiceKey}
           onChange={this.changeCellSelect}
-          valueKey='key'
-          labelKey='text'
+          valueKey="key"
+          labelKey="text"
           valueComponent={ValueComponent}
           clearable={false}
           searchable={false}
-          placeholder={t('Select...')}
+          placeholder={t("Select...")}
           container={container}
         />
       );
@@ -236,12 +264,12 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   private cycle = () => {
     const { attribute, rawData } = this.props;
     attribute.edit.onChangeValue(rawData, undefined);
-  }
+  };
 
   private changeCell = (key) => {
     const { attribute, rawData } = this.props;
     attribute.edit.onChangeValue(rawData, key);
-  }
+  };
 
   private changeCellSelect = (value: any) => {
     if (value !== null) {
@@ -249,15 +277,15 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     } else {
       this.changeCell(undefined);
     }
-  }
+  };
 
   private changeCellToggle = (value: boolean) => {
     this.changeCell(value);
-  }
+  };
 
   private openChoice = (isOpen: boolean) => {
     this.setState({ isOpen });
-  }
+  };
 
   private renderChoice = (choice: IEditChoice): JSX.Element => {
     const { t, attribute, tableId } = this.props;
@@ -271,19 +299,19 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
         {t(choice.text)}
       </MenuItem>
     );
-  }
+  };
 
   private onChangeNumValue = (newValue: string) => {
     const { attribute, rawData } = this.props;
 
     attribute.edit.onChangeValue(rawData, parseInt(newValue, 10));
-  }
+  };
 
   private toggle = () => {
     const { attribute, data, rawData } = this.props;
     const value = data;
     attribute.edit.onChangeValue(rawData, !value);
-  }
+  };
 }
 
 export interface IRowProps {
@@ -313,7 +341,7 @@ export interface IRowProps {
 
 interface IRowState {
   contextVisible: boolean;
-  context?: { x: number, y: number };
+  context?: { x: number; y: number };
 }
 
 class TableRow extends React.Component<IRowProps, IRowState> {
@@ -328,60 +356,71 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   public shouldComponentUpdate(nextProps: IRowProps, nextState: IRowState) {
     // don't redraw if _just_ rawdata changed because the calculated data should always update
     // too (with a delay) so updating on both events would cause two updates for every data change
-    return (this.props.visible !== nextProps.visible)
-      || (this.props.data !== nextProps.data)
-      || (this.props.selected !== nextProps.selected)
-      || (this.props.grouped !== nextProps.grouped)
-      || (this.props.highlighted !== nextProps.highlighted)
-      || (this.props.attributes !== nextProps.attributes)
-      || (this.state.contextVisible !== nextState.contextVisible)
-      || (this.state.context !== nextState.context);
+    return (
+      this.props.visible !== nextProps.visible ||
+      this.props.data !== nextProps.data ||
+      this.props.selected !== nextProps.selected ||
+      this.props.grouped !== nextProps.grouped ||
+      this.props.highlighted !== nextProps.highlighted ||
+      this.props.attributes !== nextProps.attributes ||
+      this.state.contextVisible !== nextState.contextVisible ||
+      this.state.context !== nextState.context
+    );
   }
 
   public render(): JSX.Element | JSX.Element[] {
-    const { data, domRef, inlines, group, grouped, highlighted, id, onClick,
-            rowClasses, selected } = this.props;
+    const {
+      data,
+      domRef,
+      inlines,
+      group,
+      grouped,
+      highlighted,
+      id,
+      onClick,
+      rowClasses,
+      selected,
+    } = this.props;
 
     const classes = rowClasses;
 
     if (selected) {
-      classes.push('table-selected');
+      classes.push("table-selected");
     }
     if (highlighted) {
-      classes.push('table-highlighted');
+      classes.push("table-highlighted");
     }
     if (grouped) {
-      classes.push('table-row-grouped');
+      classes.push("table-row-grouped");
     }
 
-    const res = [(
+    const res = [
       <VisibilityProxy
         id={id}
         componentClass={TR}
         data-rowid={data.__id}
         data-group={group}
         key={data.__id}
-        className={classes.join(' ')}
+        className={classes.join(" ")}
         onClick={onClick}
         onContextMenu={this.onContext}
         ref={domRef}
-        style={{ position: 'relative' }}
-
+        style={{ position: "relative" }}
         visible={this.props.visible}
         setVisible={this.setVisible}
         container={this.props.container}
         placeholder={this.renderPlaceholder}
         content={this.renderRow}
-      />
-    )];
+      />,
+    ];
 
     if (this.props.visible) {
-      inlines.forEach(extra => {
-        res.push((
-          <tr key={data.__id + '_extra_' + extra.id}>
+      inlines.forEach((extra) => {
+        res.push(
+          <tr key={data.__id + "_extra_" + extra.id}>
             {this.renderAttributeExtra(extra)}
-          </tr>
-        ));
+          </tr>,
+        );
       });
     }
 
@@ -389,20 +428,17 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderPlaceholder = (): React.ReactNode => {
-    return (
-      <TD>{'\u00A0'}</TD>
-    );
-  }
+    return <TD>{"\u00A0"}</TD>;
+  };
 
   private renderRow = (): React.ReactNode => {
     const { t, actions, attributes, data, hasActions, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions
-      .filter(icon => {
+      .filter((icon) => {
         try {
-          return (icon.condition === undefined)
-            || icon.condition([data.__id]);
+          return icon.condition === undefined || icon.condition([data.__id]);
         } catch (err) {
           return false;
         }
@@ -410,10 +446,10 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       .sort((lhs, rhs) => lhs.position - rhs.position);
 
     if (hasActions) {
-      res.push((
+      res.push(
         <TD
-          style={{ textAlign: 'center' }}
-          key='action-cell'
+          style={{ textAlign: "center" }}
+          key="action-cell"
           className={`table-${tableId} cell-actions`}
         >
           <ContextMenu
@@ -421,7 +457,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             id={`${tableId}-${data.__id}-action-context`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
-            className='table-actions'
+            className="table-actions"
             staticElements={sorted}
             visible={this.state.contextVisible}
             position={this.state.context}
@@ -432,78 +468,76 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             id={`${tableId}-${data.__id}-action-icons`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
-            className='table-actions'
+            className="table-actions"
             staticElements={actions}
           />
-        </TD>
-      ),
+        </TD>,
       );
     } else {
-      res.push(<TD key='no-action' />);
+      res.push(<TD key="no-action" />);
     }
     return res;
-  }
+  };
 
   private setVisible = (visible: boolean) => {
     // it may be that this visible value is the same as the one in props, but
     // since rows are turned invisible with a delay, it's possible a row becomes invisible
     // and visible again without the prop changing, so we have to call this anyway.
     this.props.onSetVisible(this.props.id, visible);
-  }
+  };
 
-  private renderAttribute = (attribute: ITableAttribute, index: number,
-                             arr: ITableAttribute[]): JSX.Element => {
+  private renderAttribute = (
+    attribute: ITableAttribute,
+    index: number,
+    arr: ITableAttribute[],
+  ): JSX.Element => {
     const { t, data, rawData, sortAttribute, tableId } = this.props;
-    const classes = [
-      `table-${tableId}`,
-      `cell-${attribute.id}`,
-    ];
+    const classes = [`table-${tableId}`, `cell-${attribute.id}`];
 
     if (attribute.id === sortAttribute) {
-      classes.push('table-sort-column');
+      classes.push("table-sort-column");
     }
 
     return (
-      <TD
-        className={classes.join(' ')}
-        key={attribute.id}
-      >
-        {this.renderCell(attribute, rawData, data[attribute.id], t,
-                         index >= (arr.length / 2))}
+      <TD className={classes.join(" ")} key={attribute.id}>
+        {this.renderCell(
+          attribute,
+          rawData,
+          data[attribute.id],
+          t,
+          index >= arr.length / 2,
+        )}
       </TD>
     );
-  }
+  };
 
   private renderAttributeExtra = (attribute: ITableAttribute): JSX.Element => {
     const { t, attributes, data, hasActions, rawData, tableId } = this.props;
-    const classes = [
-      `table-${tableId}`,
-      `cell-${attribute.id}`,
-    ];
+    const classes = [`table-${tableId}`, `cell-${attribute.id}`];
 
     return (
       <TD
-        className={classes.join(' ')}
+        className={classes.join(" ")}
         key={attribute.id}
         colSpan={attributes.length + (hasActions ? 1 : 0)}
       >
         {this.renderCell(attribute, rawData, data[attribute.id], t, false)}
       </TD>
     );
-  }
+  };
 
   private highlight = (highlight: boolean) => {
-    const {data, onHighlight} = this.props;
+    const { data, onHighlight } = this.props;
     onHighlight(data.__id, highlight);
-  }
+  };
 
   private renderCell(
     attribute: ITableAttribute,
     rawData: any,
     calculatedData: any,
     t: TFunction,
-    right: boolean): JSX.Element {
-
+    right: boolean,
+  ): JSX.Element {
     const { container, data, language, tableId } = this.props;
 
     return (
@@ -523,12 +557,15 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private onContext = (event: React.MouseEvent<any>) => {
-    this.setState({ contextVisible: true, context: { x: event.clientX, y: event.clientY } });
-  }
+    this.setState({
+      contextVisible: true,
+      context: { x: event.clientX, y: event.clientY },
+    });
+  };
 
   private onHideContext = () => {
     this.setState({ contextVisible: false });
-  }
+  };
 }
 
 export default TableRow as React.ComponentClass<IRowProps>;

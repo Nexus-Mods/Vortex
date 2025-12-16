@@ -3,12 +3,12 @@
  * Provides consistent logging prefixes for all analytics-related components
  */
 
-import { log, LogLevel } from '../../../util/log';
+import { log, LogLevel } from "../../../util/log";
 
 /**
  * Log function specifically for analytics extension components
  * Automatically prefixes all log messages with [ANALYTICS]
- * 
+ *
  * @param level Log level
  * @param message Log message
  * @param metadata Optional metadata object
@@ -20,12 +20,17 @@ export function analyticsLog(level: LogLevel, message: string, metadata?: any) {
 /**
  * Log function for specific analytics services (e.g., Mixpanel, GA4)
  * Prefixes with [ANALYTICS:SERVICE]
- * 
+ *
  * @param service Service name (e.g., 'mixpanel', 'ga4')
  * @param level Log level
  * @param message Log message
  * @param metadata Optional metadata object
  */
-export function analyticsServiceLog(service: string, level: LogLevel, message: string, metadata?: any) {
+export function analyticsServiceLog(
+  service: string,
+  level: LogLevel,
+  message: string,
+  metadata?: any,
+) {
   log(level, `[ANALYTICS:${service.toUpperCase()}] ${message}`, metadata);
 }

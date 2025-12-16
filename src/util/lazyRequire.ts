@@ -1,6 +1,6 @@
-import * as reqResolve from 'resolve';
+import * as reqResolve from "resolve";
 
-export default function<T>(delayed: () => T, exportId?: string): T {
+export default function <T>(delayed: () => T, exportId?: string): T {
   const handler = {
     get(target, name) {
       if (target.mod === undefined) {
@@ -8,7 +8,7 @@ export default function<T>(delayed: () => T, exportId?: string): T {
       }
       if (exportId !== undefined) {
         return target.mod[exportId][name];
-      } else if (name === '__esModule') {
+      } else if (name === "__esModule") {
         return target.mod;
       } else {
         return target.mod[name];
@@ -24,7 +24,7 @@ export default function<T>(delayed: () => T, exportId?: string): T {
         target.mod[name] = value;
       }
       return true;
-    }
+    },
   };
   return new Proxy({}, handler);
 }

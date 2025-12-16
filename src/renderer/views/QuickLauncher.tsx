@@ -1,32 +1,42 @@
-import { util } from '../..';
-import { showDialog } from '../../actions/notifications';
-import EmptyPlaceholder from '../controls/EmptyPlaceholder';
-import Spinner from '../controls/Spinner';
-import { IconButton } from '../controls/TooltipControls';
-import { IDiscoveryResult } from '../../extensions/gamemode_management/types/IDiscoveryResult';
-import { IGameStored } from '../../extensions/gamemode_management/types/IGameStored';
-import { IProfile } from '../../extensions/profile_management/types/IProfile';
-import { makeExeId } from '../../reducers/session';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
-import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IRunningTool, IState } from '../../types/IState';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import Debouncer from '../../util/Debouncer';
-import { TFunction } from '../../util/i18n';
-import { log } from '../../util/log';
-import { showError } from '../../util/message';
-import { activeGameId, currentGame, currentGameDiscovery, activeProfile } from '../../util/selectors';
-import StarterInfo from '../../util/StarterInfo';
-import { getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { util } from "../..";
+import { showDialog } from "../../actions/notifications";
+import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import Spinner from "../controls/Spinner";
+import { IconButton } from "../controls/TooltipControls";
+import { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
+import { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
+import { IProfile } from "../../extensions/profile_management/types/IProfile";
+import { makeExeId } from "../../reducers/session";
+import {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  IDialogResult,
+} from "../../types/IDialog";
+import { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import { IRunningTool, IState } from "../../types/IState";
+import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import Debouncer from "../../util/Debouncer";
+import { TFunction } from "../../util/i18n";
+import { log } from "../../util/log";
+import { showError } from "../../util/message";
+import {
+  activeGameId,
+  currentGame,
+  currentGameDiscovery,
+  activeProfile,
+} from "../../util/selectors";
+import StarterInfo from "../../util/StarterInfo";
+import { getSafe } from "../../util/storeHelper";
+import { truthy } from "../../util/util";
 
-import Promise from 'bluebird';
-import * as React from 'react';
-import { DropdownButton, MenuItem } from 'react-bootstrap';
-import { WithTranslation } from 'react-i18next';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { pathToFileURL } from 'url';
+import Promise from "bluebird";
+import * as React from "react";
+import { DropdownButton, MenuItem } from "react-bootstrap";
+import { WithTranslation } from "react-i18next";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { pathToFileURL } from "url";
 
 export interface IBaseProps {
   t: TFunction;
@@ -49,15 +59,19 @@ interface IConnectedProps {
 
 interface IActionProps {
   onShowError: (message: string, details?: any, allowReport?: boolean) => void;
-  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+  onShowDialog: (
+    type: DialogType,
+    title: string,
+    content: IDialogContent,
+    actions: DialogActions,
+  ) => Promise<IDialogResult>;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
 interface IComponentState {
   starter: StarterInfo;
-  gameIconCache: { [gameId: string]: { icon: string, game: IGameStored } };
+  gameIconCache: { [gameId: string]: { icon: string; game: IGameStored } };
 }
 
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
@@ -68,26 +82,33 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   constructor(props: IProps) {
     super(props);
-    this.initState({ starter: this.makeStarter(props), gameIconCache: this.genGameIconCache() });
+    this.initState({
+      starter: this.makeStarter(props),
+      gameIconCache: this.genGameIconCache(),
+    });
   }
 
   public componentDidMount() {
-    this.context.api.events.on('quick-launch', this.start);
+    this.context.api.events.on("quick-launch", this.start);
   }
 
   public componentWillUnmount() {
-    this.context.api.events.removeListener('quick-launch', this.start);
+    this.context.api.events.removeListener("quick-launch", this.start);
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
-    if ((nextProps.discoveredTools !== this.props.discoveredTools)
-        || (nextProps.game !== this.props.game)
-        || (nextProps.gameDiscovery !== this.props.primaryTool)) {
+    if (
+      nextProps.discoveredTools !== this.props.discoveredTools ||
+      nextProps.game !== this.props.game ||
+      nextProps.gameDiscovery !== this.props.primaryTool
+    ) {
       this.nextState.starter = this.makeStarter(nextProps);
     }
 
-    if ((nextProps.profiles !== this.props.profiles)
-        || (nextProps.discoveredGames !== this.props.discoveredGames)) {
+    if (
+      nextProps.profiles !== this.props.profiles ||
+      nextProps.discoveredGames !== this.props.discoveredGames
+    ) {
       this.mCacheDebouncer.schedule();
     }
   }
@@ -101,16 +122,20 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     }
 
     const exclusiveRunning =
-      Object.keys(toolsRunning).find(exeId => toolsRunning[exeId].exclusive) !== undefined;
-    const primaryRunning = (truthy(starter.exePath))
-      && Object.keys(toolsRunning).find(exeId =>
-        exeId === makeExeId(starter.exePath)) !== undefined;
+      Object.keys(toolsRunning).find(
+        (exeId) => toolsRunning[exeId].exclusive,
+      ) !== undefined;
+    const primaryRunning =
+      truthy(starter.exePath) &&
+      Object.keys(toolsRunning).find(
+        (exeId) => exeId === makeExeId(starter.exePath),
+      ) !== undefined;
 
     return (
-      <div className='container-quicklaunch'>
+      <div className="container-quicklaunch">
         <DropdownButton
-          id='dropdown-quicklaunch'
-          className='btn-quicklaunch'
+          id="dropdown-quicklaunch"
+          className="btn-quicklaunch"
           title={this.renderGameOption(game.id) as any}
           key={game.id}
           onSelect={this.changeGame}
@@ -118,15 +143,15 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         >
           {this.renderGameOptions()}
         </DropdownButton>
-        <div className='container-quicklaunch-launch'>
+        <div className="container-quicklaunch-launch">
           {exclusiveRunning || primaryRunning ? (
             <Spinner />
           ) : (
             <IconButton
-              id='btn-quicklaunch-play'
+              id="btn-quicklaunch-play"
               onClick={this.start}
-              tooltip={t('Launch')}
-              icon='launch-application'
+              tooltip={t("Launch")}
+              icon="launch-application"
             />
           )}
         </div>
@@ -139,19 +164,19 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const { gameIconCache } = this.state;
     if (Object.keys(gameIconCache).length === 1) {
       return (
-        <MenuItem key='no-other-games' disabled={true}>
+        <MenuItem key="no-other-games" disabled={true}>
           <EmptyPlaceholder
-            icon='layout-list'
-            text={t('No other games managed')}
+            icon="layout-list"
+            text={t("No other games managed")}
           />
         </MenuItem>
       );
     }
 
     return Object.keys(gameIconCache)
-      .filter(gameId => gameId !== game.id)
-      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))
-      .map(gameId => (
+      .filter((gameId) => gameId !== game.id)
+      .filter((gameId) => !getSafe(discoveredGames, [gameId, "hidden"], false))
+      .map((gameId) => (
         <MenuItem key={gameId} eventKey={gameId}>
           {this.renderGameOption(gameId)}
         </MenuItem>
@@ -159,59 +184,71 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOption = (gameId: string) => {
-    const { t, discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
+    const { t, discoveredGames, lastActiveProfile, profiles, profilesVisible } =
+      this.props;
     const { gameIconCache } = this.state;
 
-    if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
-      log('error', 'failed to access game icon', { gameId });
-      return '';
+    if (gameIconCache === undefined || gameIconCache[gameId] === undefined) {
+      log("error", "failed to access game icon", { gameId });
+      return "";
     }
 
     const discovered = discoveredGames[gameId];
 
-    const iconPath = (gameIconCache[gameId].icon !== undefined)
-      ? pathToFileURL(gameIconCache[gameId].icon).href.replace('\'', '%27')
-      : undefined;
+    const iconPath =
+      gameIconCache[gameId].icon !== undefined
+        ? pathToFileURL(gameIconCache[gameId].icon).href.replace("'", "%27")
+        : undefined;
     const game = gameIconCache[gameId].game;
 
     const profile = profiles[lastActiveProfile[gameId]];
 
     let displayName =
-      getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
-      || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
+      getSafe(
+        discovered,
+        ["shortName"],
+        getSafe(game, ["shortName"], undefined),
+      ) || getSafe(discovered, ["name"], getSafe(game, ["name"], undefined));
 
     if (displayName !== undefined) {
-      displayName = displayName.replace(/\t/g, ' ');
+      displayName = displayName.replace(/\t/g, " ");
     }
 
     return (
       <div
-        className='tool-icon-container'
+        className="tool-icon-container"
         style={{ background: `url('${iconPath}')` }}
       >
-        <div className='quicklaunch-item'>
-          <div className='quicklaunch-name'>{t(displayName)}</div>
-          {profilesVisible
-            ? (
-              <div className='quicklaunch-profile'>
-                {t('Profile')} : {profile?.name ?? t('<None>')}
-              </div>
-            ) : null}
+        <div className="quicklaunch-item">
+          <div className="quicklaunch-name">{t(displayName)}</div>
+          {profilesVisible ? (
+            <div className="quicklaunch-profile">
+              {t("Profile")} : {profile?.name ?? t("<None>")}
+            </div>
+          ) : null}
         </div>
       </div>
     );
-  }
+  };
 
-  private genGameIconCache(): { [gameId: string]: { icon: string, game: IGameStored } } {
+  private genGameIconCache(): {
+    [gameId: string]: { icon: string; game: IGameStored };
+  } {
     const { discoveredGames, knownGames, profiles } = this.props;
 
-    const managedGamesIds = Array.from(new Set<string>(Object.keys(profiles)
-      .map(profileId => profiles[profileId].gameId)
-      .filter(gameId => truthy(getSafe(discoveredGames, [gameId, 'path'], undefined)))));
+    const managedGamesIds = Array.from(
+      new Set<string>(
+        Object.keys(profiles)
+          .map((profileId) => profiles[profileId].gameId)
+          .filter((gameId) =>
+            truthy(getSafe(discoveredGames, [gameId, "path"], undefined)),
+          ),
+      ),
+    );
 
     return managedGamesIds.reduce((prev, gameId) => {
-      const game = knownGames.find(iter => iter.id === gameId);
-      if ((game === undefined) || (discoveredGames[gameId] === undefined)) {
+      const game = knownGames.find((iter) => iter.id === gameId);
+      if (game === undefined || discoveredGames[gameId] === undefined) {
         return prev;
       }
       prev[gameId] = {
@@ -223,37 +260,57 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private changeGame = (gameId) => {
-    if (gameId === '__more') {
-      this.context.api.events.emit('show-main-page', 'Games');
+    if (gameId === "__more") {
+      this.context.api.events.emit("show-main-page", "Games");
     } else {
-      this.context.api.events.emit('activate-game', gameId);
+      this.context.api.events.emit("activate-game", gameId);
     }
-  }
+  };
 
   private start = () => {
     const { onShowError } = this.props;
     const { starter } = this.state;
     if (starter?.exePath === undefined) {
-      onShowError('Tool missing/misconfigured',
-        'Please ensure that the tool/game is configured correctly and try again', false);
+      onShowError(
+        "Tool missing/misconfigured",
+        "Please ensure that the tool/game is configured correctly and try again",
+        false,
+      );
       return;
     }
-    this.context.api.events.emit('analytics-track-click-event', 'Header', 'Play game');
+    this.context.api.events.emit(
+      "analytics-track-click-event",
+      "Header",
+      "Play game",
+    );
     const state: IState = this.context.api.store.getState();
     const profile = activeProfile(state);
-    const currentModsState = util.getSafe(profile, ['modState'], false)
+    const currentModsState = util.getSafe(profile, ["modState"], false);
     // Get total number of enabled mods (this includes collections)
-    const enabledMods = Object.keys(currentModsState).filter(modId => util.getSafe(currentModsState, [modId, 'enabled'], false));
+    const enabledMods = Object.keys(currentModsState).filter((modId) =>
+      util.getSafe(currentModsState, [modId, "enabled"], false),
+    );
     // Get total number of collections for game
     const gameMods = state.persistent.mods[profile.gameId] || {};
-    const collections = Object.values(gameMods).filter((val) => (val.type == 'collection')).map((val) => val.id);
+    const collections = Object.values(gameMods)
+      .filter((val) => val.type == "collection")
+      .map((val) => val.id);
     // Determine enabled collections
-    const enabledCollections = collections.filter((collectionId) => enabledMods.includes(collectionId));
+    const enabledCollections = collections.filter((collectionId) =>
+      enabledMods.includes(collectionId),
+    );
 
     const numberOfEnabledCollections = enabledCollections.length;
-    const numberOfEnabledModsExcludingCollections = enabledMods.length - numberOfEnabledCollections;
-    log('info', `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`)
-    log('info', `Enabled collections at game launch: ${numberOfEnabledCollections}`)
+    const numberOfEnabledModsExcludingCollections =
+      enabledMods.length - numberOfEnabledCollections;
+    log(
+      "info",
+      `Enabled mods at game launch: ${numberOfEnabledModsExcludingCollections}`,
+    );
+    log(
+      "info",
+      `Enabled collections at game launch: ${numberOfEnabledCollections}`,
+    );
 
     // this.context.api.events.emit('analytics-track-event-with-payload', 'Launch game', {
     //   game_id: profile.gameId,
@@ -262,39 +319,49 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     // });
 
     StarterInfo.run(starter, this.context.api, onShowError);
-  }
+  };
 
   private makeStarter(props: IProps): StarterInfo {
     const { discoveredTools, game, gameDiscovery, primaryTool } = props;
-    if ((gameDiscovery === undefined)
-        || (gameDiscovery.path === undefined)
-        || ((game === undefined) && (gameDiscovery.id === undefined))) {
+    if (
+      gameDiscovery === undefined ||
+      gameDiscovery.path === undefined ||
+      (game === undefined && gameDiscovery.id === undefined)
+    ) {
       return undefined;
     }
 
     try {
-      if (!truthy(primaryTool)
-        || ((game.supportedTools[primaryTool] === undefined)
-          && (discoveredTools[primaryTool] === undefined))) {
+      if (
+        !truthy(primaryTool) ||
+        (game.supportedTools[primaryTool] === undefined &&
+          discoveredTools[primaryTool] === undefined)
+      ) {
         return new StarterInfo(game, gameDiscovery);
       } else {
         try {
           if (truthy(discoveredTools[primaryTool].path)) {
-            return new StarterInfo(game, gameDiscovery,
+            return new StarterInfo(
+              game,
+              gameDiscovery,
               game !== undefined ? game.supportedTools[primaryTool] : undefined,
-              discoveredTools[primaryTool]);
+              discoveredTools[primaryTool],
+            );
           } else {
             // Annoying, but a valid issue where for some reason the tool's
             //  path has been manually deleted by the user OR is undefined.
-            throw new Error('invalid path to primary tool');
+            throw new Error("invalid path to primary tool");
           }
         } catch (err) {
-          log('warn', 'invalid primary tool', { err });
+          log("warn", "invalid primary tool", { err });
           return new StarterInfo(game, gameDiscovery);
         }
       }
     } catch (err) {
-      log('error', 'failed to create quick launcher entry', { error: err.message, stack: err.stack });
+      log("error", "failed to create quick launcher entry", {
+        error: err.message,
+        stack: err.stack,
+      });
       return undefined;
     }
   }
@@ -307,10 +374,21 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     game: currentGame(state),
     gameDiscovery: currentGameDiscovery(state),
-    discoveredTools: getSafe(state, [ 'settings', 'gameMode',
-                                      'discovered', gameMode, 'tools' ], {}),
-    primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
-    tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
+    discoveredTools: getSafe(
+      state,
+      ["settings", "gameMode", "discovered", gameMode, "tools"],
+      {},
+    ),
+    primaryTool: getSafe(
+      state,
+      ["settings", "interface", "primaryTool", gameMode],
+      undefined,
+    ),
+    tabsMinimized: getSafe(
+      state,
+      ["settings", "window", "tabsMinimized"],
+      false,
+    ),
 
     knownGames: state.session.gameMode.known,
     profiles: state.persistent.profiles,
@@ -321,14 +399,20 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
-    onShowError: (message: string, details?: string | Error, allowReport?: boolean) =>
-      showError(dispatch, message, details, { allowReport }),
+    onShowError: (
+      message: string,
+      details?: string | Error,
+      allowReport?: boolean,
+    ) => showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };
 }
 
-export default translate(['common'])(connect(mapStateToProps, mapDispatchToProps)(
-  QuickLauncher)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(QuickLauncher),
+) as React.ComponentClass<IBaseProps>;

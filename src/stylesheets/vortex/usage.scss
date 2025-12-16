@@ -1,27 +1,27 @@
 .usage-instructions {
-  // position: absolute;
-  // bottom: $gutter-width;
-  // left: $gutter-width;
-  background-color: $brand-bg;
-  border: $border-width solid $border-color;
-  padding: 4px;
-  position: relative;
-  &.usage-instructions-show {
-    padding-right: 32px;
-  }
+    // position: absolute;
+    // bottom: $gutter-width;
+    // left: $gutter-width;
+    background-color: $brand-bg;
+    border: $border-width solid $border-color;
+    padding: 4px;
+    position: relative;
+    &.usage-instructions-show {
+        padding-right: 32px;
+    }
 
-  &.usage-instructions-transparent {
-    opacity: 0.75;
-  }
+    &.usage-instructions-transparent {
+        opacity: 0.75;
+    }
 
-  .close-button {
-    top: 0;
-    height: 100%;
-  }
+    .close-button {
+        top: 0;
+        height: 100%;
+    }
 }
 
 .usage-instructions-content {
-  display: flex;
-  min-height: 32px;
-  align-items: center;
+    display: flex;
+    min-height: 32px;
+    align-items: center;
 }

@@ -1,34 +1,41 @@
-import { addNotification } from '../../../actions';
-import Modal from '../../../renderer/controls/Modal';
-import Spinner from '../../../renderer/controls/Spinner';
-import { IconButton } from '../../../renderer/controls/TooltipControls';
-import { WebviewEmbed, WebviewOverlay } from '../../../renderer/controls/Webview';
-import { INotification } from '../../../types/INotification';
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import Debouncer from '../../../util/Debouncer';
-import { log } from '../../../util/log';
-import { truthy } from '../../../util/util';
-import Notification from '../../../renderer/views/Notification';
+import { addNotification } from "../../../actions";
+import Modal from "../../../renderer/controls/Modal";
+import Spinner from "../../../renderer/controls/Spinner";
+import { IconButton } from "../../../renderer/controls/TooltipControls";
+import {
+  WebviewEmbed,
+  WebviewOverlay,
+} from "../../../renderer/controls/Webview";
+import { INotification } from "../../../types/INotification";
+import { IState } from "../../../types/IState";
+import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import Debouncer from "../../../util/Debouncer";
+import { log } from "../../../util/log";
+import { truthy } from "../../../util/util";
+import Notification from "../../../renderer/views/Notification";
 
-import { closeBrowser } from '../actions';
+import { closeBrowser } from "../actions";
 
-import Promise from 'bluebird';
-import { clipboard } from 'electron';
-import * as _ from 'lodash';
-import * as React from 'react';
-import { Breadcrumb, Button } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import * as nodeUrl from 'url';
+import Promise from "bluebird";
+import { clipboard } from "electron";
+import * as _ from "lodash";
+import * as React from "react";
+import { Breadcrumb, Button } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import * as nodeUrl from "url";
 
-export type SubscriptionResult = 'close' | 'continue' | 'ignore';
+export type SubscriptionResult = "close" | "continue" | "ignore";
 
 export interface IBaseProps {
   onHide: () => void;
   onNavigate: (url: string) => void;
-  onEvent: (subscriber: string, eventId: string, value: any) => SubscriptionResult;
+  onEvent: (
+    subscriber: string,
+    eventId: string,
+    value: any,
+  ) => SubscriptionResult;
   overlay: boolean;
 }
 
@@ -85,34 +92,38 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     this.mCurrentUrl = props.url;
 
-    this.mLoadingDebouncer = new Debouncer((loading: boolean) => {
-      if (loading !== this.state.loading) {
-        this.nextState.loading = loading;
-      }
-      return Promise.resolve();
-    }, 100, false);
+    this.mLoadingDebouncer = new Debouncer(
+      (loading: boolean) => {
+        if (loading !== this.state.loading) {
+          this.nextState.loading = loading;
+        }
+        return Promise.resolve();
+      },
+      100,
+      false,
+    );
 
     this.mCallbacks = {
-      'did-finish-load': () => {
+      "did-finish-load": () => {
         const newUrl: string = this.mCurrentUrl;
         this.nextState.url = newUrl;
-        this.props.onEvent(this.props.subscriber, 'navigate', newUrl);
+        this.props.onEvent(this.props.subscriber, "navigate", newUrl);
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {
-          this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, newUrl);
+          this.nextState.history.splice(
+            this.nextState.historyIdx + 1,
+            9999,
+            newUrl,
+          );
           ++this.nextState.historyIdx;
         }
       },
-      'did-navigate': (evt) => {
-        this.mCurrentUrl = (typeof(evt) === 'string')
-          ? evt
-          : evt.url;
+      "did-navigate": (evt) => {
+        this.mCurrentUrl = typeof evt === "string" ? evt : evt.url;
 
         this.navigate(this.mCurrentUrl);
       },
-      'did-navigate-in-page': (evt) => {
-        this.mCurrentUrl = (typeof(evt) === 'string')
-          ? evt
-          : evt.url;
+      "did-navigate-in-page": (evt) => {
+        this.mCurrentUrl = typeof evt === "string" ? evt : evt.url;
         this.navigate(this.mCurrentUrl);
       },
     };
@@ -138,8 +149,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.url !== this.props.url) {
-      if ((newProps.url === undefined) || (this.props.url === undefined)
-        || (new URL(newProps.url).hostname !== new URL(this.props.url).hostname)) {
+      if (
+        newProps.url === undefined ||
+        this.props.url === undefined ||
+        new URL(newProps.url).hostname !== new URL(this.props.url).hostname
+      ) {
         this.nextState.confirmed = false;
         this.nextState.opened = Date.now();
         if (newProps.url !== undefined) {
@@ -152,93 +166,97 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
-    const res = (this.props.url !== newProps.url)
-        || (this.props.instructions !== newProps.instructions)
-        || (this.props.notifications !== newProps.notifications)
-        || (this.state.url !== newState.url)
-        || (this.state.loading !== newState.loading)
-        || (this.state.confirmed !== newState.confirmed)
-        || (this.state.history !== newState.history)
-        || (this.state.historyIdx !== newState.historyIdx)
-        || (this.state.filtered !== newState.filtered);
+    const res =
+      this.props.url !== newProps.url ||
+      this.props.instructions !== newProps.instructions ||
+      this.props.notifications !== newProps.notifications ||
+      this.state.url !== newState.url ||
+      this.state.loading !== newState.loading ||
+      this.state.confirmed !== newState.confirmed ||
+      this.state.history !== newState.history ||
+      this.state.historyIdx !== newState.historyIdx ||
+      this.state.filtered !== newState.filtered;
     return res;
   }
 
   public render(): JSX.Element {
     const { t, overlay, instructions, skippable } = this.props;
-    const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
-    const referrer = (history.length > 0)
-      ? history[historyIdx - 1]
-      : undefined;
+    const { confirmed, filtered, history, historyIdx, loading, url } =
+      this.state;
+    const referrer = history.length > 0 ? history[historyIdx - 1] : undefined;
 
     const Webview = overlay ? WebviewOverlay : WebviewEmbed;
 
     return (
-      <Modal id='browser-dialog' show={url !== undefined} onHide={nop}>
+      <Modal id="browser-dialog" show={url !== undefined} onHide={nop}>
         <Modal.Header>
-          {this.renderNav()}{this.renderUrl(history[historyIdx])}
+          {this.renderNav()}
+          {this.renderUrl(history[historyIdx])}
           {loading ? <Spinner /> : null}
           <IconButton
-            icon='clipboard'
-            tooltip={t('Copy URL to clipboard')}
+            icon="clipboard"
+            tooltip={t("Copy URL to clipboard")}
             onClick={this.copyUrlToClipboard}
           />
         </Modal.Header>
         <Modal.Body>
-          {(instructions !== undefined) ? <p id='browser-instructions'>{instructions}</p> : null}
-          {confirmed
-            ? (
-              <Webview
-                id='browser-webview'
-                src={url}
-                ref={this.setRef as any}
-                httpreferrer={referrer}
-                onLoading={this.loading}
-                onNewWindow={this.newWindow}
-                events={this.mCallbacks}
-              />
-            ) : this.renderConfirm()}
-          <div className='browser-notifications'>
+          {instructions !== undefined ? (
+            <p id="browser-instructions">{instructions}</p>
+          ) : null}
+          {confirmed ? (
+            <Webview
+              id="browser-webview"
+              src={url}
+              ref={this.setRef as any}
+              httpreferrer={referrer}
+              onLoading={this.loading}
+              onNewWindow={this.newWindow}
+              events={this.mCallbacks}
+            />
+          ) : (
+            this.renderConfirm()
+          )}
+          <div className="browser-notifications">
             {filtered.map(this.renderNotification)}
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button onClick={this.close}>{t('Cancel')}</Button>
-          {skippable ? (
-            <Button onClick={this.skip}>{t('Skip')}</Button>
-          ) : null
-          }
+          <Button onClick={this.close}>{t("Cancel")}</Button>
+          {skippable ? <Button onClick={this.skip}>{t("Skip")}</Button> : null}
         </Modal.Footer>
       </Modal>
     );
   }
 
-  private renderNotification = (notification: INotification, idx: number): JSX.Element => {
+  private renderNotification = (
+    notification: INotification,
+    idx: number,
+  ): JSX.Element => {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
-    translated.title = ((translated.title !== undefined)
-      && ((notification.localize === undefined) || (notification.localize.title !== false)))
-      ? t(translated.title, { replace: translated.replace })
-      : translated.title;
+    translated.title =
+      translated.title !== undefined &&
+      (notification.localize === undefined ||
+        notification.localize.title !== false)
+        ? t(translated.title, { replace: translated.replace })
+        : translated.title;
 
     translated.message =
-      ((notification.localize === undefined) || (notification.localize.message !== false))
+      notification.localize === undefined ||
+      notification.localize.message !== false
         ? t(translated.message, { replace: translated.replace })
         : translated.message;
 
-    return (
-      <Notification
-        key={idx}
-        t={t}
-        collapsed={1}
-        params={translated}
-      />
-    );
-  }
+    return <Notification key={idx} t={t} collapsed={1} params={translated} />;
+  };
 
   private renderLoadingOverlay(): JSX.Element {
-    return <div className='browser-loading'><Spinner /></div>;
+    return (
+      <div className="browser-loading">
+        <Spinner />
+      </div>
+    );
   }
 
   private renderNav(): JSX.Element {
@@ -247,16 +265,16 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     return (
       <div>
         <IconButton
-          icon='nav-back'
+          icon="nav-back"
           onClick={this.navBack}
           disabled={historyIdx === 0}
-          tooltip={t('Back')}
+          tooltip={t("Back")}
         />
         <IconButton
-          icon='nav-forward'
+          icon="nav-forward"
           onClick={this.navForward}
           disabled={historyIdx === history.length - 1}
-          tooltip={t('Forward')}
+          tooltip={t("Forward")}
         />
       </div>
     );
@@ -267,12 +285,16 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       return null;
     }
     const parsed = nodeUrl.parse(input);
-    const segments = (parsed.pathname ?? '').split('/').filter(seg => seg.length > 0);
+    const segments = (parsed.pathname ?? "")
+      .split("/")
+      .filter((seg) => seg.length > 0);
     const Item: any = Breadcrumb.Item;
     return (
       <Breadcrumb>
-        <Item data-idx={-1} onClick={this.navCrumb}>{parsed.protocol}//{parsed.hostname}</Item>
-        {segments.map((seg, idx) =>
+        <Item data-idx={-1} onClick={this.navCrumb}>
+          {parsed.protocol}//{parsed.hostname}
+        </Item>
+        {segments.map((seg, idx) => (
           <Item
             data-idx={idx}
             key={`${idx}-${seg}`}
@@ -280,30 +302,39 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
             active={idx === segments.length - 1}
           >
             {seg}
-          </Item>)}
+          </Item>
+        ))}
         <Item active>{parsed.search}</Item>
       </Breadcrumb>
     );
   }
 
   private copyUrlToClipboard = () => {
-    clipboard.writeText(this.props.url ?? '');
-  }
+    clipboard.writeText(this.props.url ?? "");
+  };
 
   private renderConfirm() {
     const { t, url } = this.props;
     return (
       <div>
-        <h3>{t('Attention')}</h3>
-        <p>{t('Vortex is about to open an external web page:')}</p>
-        <a href='#'>{url}</a>
-        <p>{t('Please be aware that Vortex is based on Electron which in turn is based on '
-           + 'Chrome, but it will not always be the newest version. Also, we can\'t rule out '
-           + 'that electron might contain it\'s own security issues pertaining to website '
-           + 'access.')}</p>
-        <p>{t('If you have security concerns or don\'t fully trust this page, please don\'t '
-              + 'continue. Don\'t navigate away from pages you don\'t trust.')}</p>
-        <Button onClick={this.confirm}>{t('Continue')}</Button>
+        <h3>{t("Attention")}</h3>
+        <p>{t("Vortex is about to open an external web page:")}</p>
+        <a href="#">{url}</a>
+        <p>
+          {t(
+            "Please be aware that Vortex is based on Electron which in turn is based on " +
+              "Chrome, but it will not always be the newest version. Also, we can't rule out " +
+              "that electron might contain it's own security issues pertaining to website " +
+              "access.",
+          )}
+        </p>
+        <p>
+          {t(
+            "If you have security concerns or don't fully trust this page, please don't " +
+              "continue. Don't navigate away from pages you don't trust.",
+          )}
+        </p>
+        <Button onClick={this.confirm}>{t("Continue")}</Button>
       </div>
     );
   }
@@ -313,14 +344,16 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       return item.displayMS;
     }
 
-    return {
-      warning: 10000,
-      error: 10000,
-      success: 5000,
-      info: 5000,
-      activity: null,
-    }[item.type] || 5000;
-  }
+    return (
+      {
+        warning: 10000,
+        error: 10000,
+        success: 5000,
+        info: 5000,
+        activity: null,
+      }[item.type] || 5000
+    );
+  };
 
   private updateFiltered() {
     const { notifications } = this.props;
@@ -334,12 +367,15 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     const now = Date.now();
 
-    const filtered = notifications.filter(item => {
-      if (['activity', 'silent'].includes(item.type) || (item.createdTime < opened)) {
+    const filtered = notifications.filter((item) => {
+      if (
+        ["activity", "silent"].includes(item.type) ||
+        item.createdTime < opened
+      ) {
         return false;
       }
       const displayTime = this.displayTime(item);
-      return (displayTime === null) || (item.createdTime + displayTime > now);
+      return displayTime === null || item.createdTime + displayTime > now;
     });
 
     if (!_.isEqual(this.state.filtered, filtered)) {
@@ -361,44 +397,44 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     } else {
       this.mLoadingDebouncer.runNow(undefined, false);
     }
-  }
+  };
 
   private newWindow = (newUrl: string, disposition: string) => {
     const { onEvent, subscriber } = this.props;
 
     const urlParsed = nodeUrl.parse(newUrl);
-    if (urlParsed.hostname === 'drive.google.com') {
+    if (urlParsed.hostname === "drive.google.com") {
       this.nextState.url = newUrl;
       return;
     }
 
     // currently we try to download any url that isn't opened in the same window
-    const res = onEvent(subscriber, 'download-url', newUrl);
-    if (res === 'close') {
+    const res = onEvent(subscriber, "download-url", newUrl);
+    if (res === "close") {
       this.props.onClose();
-    } else if (res === 'continue') {
+    } else if (res === "continue") {
       // no handler for download-url? Then lets try to open the link
       this.nextState.url = newUrl;
     }
-  }
+  };
 
   private setRef = (ref: WebviewOverlay | WebviewEmbed) => {
     this.mRef = ref;
     if (ref !== null) {
       this.mWebView = ReactDOM.findDOMNode(this.mRef) as any;
       if (truthy(this.mWebView)) {
-        Object.keys(this.mCallbacks).forEach(event => {
+        Object.keys(this.mCallbacks).forEach((event) => {
           this.mWebView.addEventListener(event, this.mCallbacks[event]);
         });
       }
     } else {
       if (truthy(this.mWebView)) {
-        Object.keys(this.mCallbacks).forEach(event => {
+        Object.keys(this.mCallbacks).forEach((event) => {
           this.mWebView.removeEventListener(event, this.mCallbacks[event]);
         });
       }
     }
-  }
+  };
 
   private navBack = () => {
     const { history, historyIdx } = this.state;
@@ -409,10 +445,13 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       try {
         this.mRef.loadURL(history[newPos]);
       } catch (err) {
-        log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
+        log("warn", "failed to navigate", {
+          url: history[newPos],
+          error: err.message,
+        });
       }
     }
-  }
+  };
 
   private navForward = () => {
     const { history, historyIdx } = this.state;
@@ -423,20 +462,26 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       try {
         this.mRef.loadURL(history[newPos]);
       } catch (err) {
-        log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
+        log("warn", "failed to navigate", {
+          url: history[newPos],
+          error: err.message,
+        });
       }
     }
-  }
+  };
 
   private navCrumb = (evt) => {
     if (!truthy(this.mWebView) || !truthy(this.mCurrentUrl)) {
       return;
     }
 
-    const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
+    const idx = parseInt(evt.currentTarget.getAttribute("data-idx"), 10);
     // const parsed = nodeUrl.parse(this.mWebView.getURL());
     const parsed = nodeUrl.parse(this.mCurrentUrl);
-    parsed.pathname = (parsed.pathname ?? '').split('/').slice(0, idx + 2).join('/');
+    parsed.pathname = (parsed.pathname ?? "")
+      .split("/")
+      .slice(0, idx + 2)
+      .join("/");
     parsed.path = undefined;
     parsed.href = undefined;
     parsed.search = undefined;
@@ -446,13 +491,13 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     try {
       this.mRef.loadURL(nextUrl);
     } catch (err) {
-      log('warn', 'failed to navigate', { url: nextUrl, error: err.message });
+      log("warn", "failed to navigate", { url: nextUrl, error: err.message });
     }
-  }
+  };
 
   private confirm = () => {
     this.nextState.confirmed = true;
-  }
+  };
 
   private sanitised(input: string): string {
     const parsed = nodeUrl.parse(input);
@@ -463,7 +508,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private addToHistory(url: string) {
-    url = url.replace(/[\/]*$/, '');
+    url = url.replace(/[\/]*$/, "");
     if (url !== this.nextState.history[this.nextState.historyIdx]) {
       this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, url);
       ++this.nextState.historyIdx;
@@ -483,17 +528,17 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
   private skip = () => {
     const { onClose, onEvent, subscriber } = this.props;
-    if (onEvent(subscriber, 'close', true) !== 'ignore') {
+    if (onEvent(subscriber, "close", true) !== "ignore") {
       onClose();
     }
-  }
+  };
 
   private close = () => {
     const { onClose, onEvent, subscriber } = this.props;
-    if (onEvent(subscriber, 'close', false) !== 'ignore') {
+    if (onEvent(subscriber, "close", false) !== "ignore") {
       onClose();
     }
-  }
+  };
 }
 
 const emptyList = [];
@@ -508,14 +553,16 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<IState, null, Redux.Action>,
+): IActionProps {
   return {
     onClose: () => dispatch(closeBrowser()),
-    onNotification: (notification: INotification) => dispatch(addNotification(notification)),
+    onNotification: (notification: INotification) =>
+      dispatch(addNotification(notification)),
   };
 }
 
-export default
-  translate(['common'])(
-    connect(mapStateToProps, mapDispatchToProps)(
-      BrowserView)) as React.ComponentClass<IBaseProps>;
+export default translate(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(BrowserView),
+) as React.ComponentClass<IBaseProps>;

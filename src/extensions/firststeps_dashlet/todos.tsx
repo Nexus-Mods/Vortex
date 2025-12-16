@@ -1,30 +1,30 @@
-import { setSettingsPage } from '../../actions/session';
-import Icon from '../../renderer/controls/Icon';
-import Spinner from '../../renderer/controls/Spinner';
-import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
-import * as selectors from '../../util/selectors';
+import { setSettingsPage } from "../../actions/session";
+import Icon from "../../renderer/controls/Icon";
+import Spinner from "../../renderer/controls/Spinner";
+import { IExtensionApi, ToDoType } from "../../types/IExtensionContext";
+import * as selectors from "../../util/selectors";
 
-import { setProfilesVisible } from '../settings_interface/actions/interface';
+import { setProfilesVisible } from "../settings_interface/actions/interface";
 
-import { IToDo } from './IToDo';
+import { IToDo } from "./IToDo";
 
-import { TFunction } from 'i18next';
-import * as React from 'react';
-import * as winapi from 'winapi-bindings';
+import { TFunction } from "i18next";
+import * as React from "react";
+import * as winapi from "winapi-bindings";
 
 const ONE_GB = 1024 * 1024 * 1024;
 const MIN_DISK_SPACE = 200 * ONE_GB;
 
-const freeSpace: { [key: string]: { path: string, free: number } } = {};
+const freeSpace: { [key: string]: { path: string; free: number } } = {};
 
 function minDiskSpace(required: number, key: string) {
-  return props => {
+  return (props) => {
     const checkPath = props[key];
     if (checkPath === undefined) {
       return false;
     }
 
-    if ((freeSpace[key] === undefined) || (freeSpace[key].path !== checkPath)) {
+    if (freeSpace[key] === undefined || freeSpace[key].path !== checkPath) {
       try {
         freeSpace[key] = {
           path: checkPath,
@@ -44,49 +44,56 @@ function todos(api: IExtensionApi): IToDo[] {
   };
 
   const openSettingsPage = (page: string) => {
-    api.events.emit('show-main-page', 'application_settings');
+    api.events.emit("show-main-page", "application_settings");
     onSetSettingsPage(page);
   };
 
   const startManualSearch = () => {
-    api.events.emit('start-discovery');
+    api.events.emit("start-discovery");
   };
 
   const openGames = () => {
-    api.events.emit('show-main-page', 'Games');
+    api.events.emit("show-main-page", "Games");
   };
 
   return [
     {
-      id: 'pick-game',
-      icon: 'game',
-      type: 'search' as ToDoType,
+      id: "pick-game",
+      icon: "game",
+      type: "search" as ToDoType,
       priority: 10,
-      props: state => ({ gameMode: selectors.activeGameId(state) }),
-      condition: props => props.gameMode === undefined,
-      text: 'Select a game to manage',
+      props: (state) => ({ gameMode: selectors.activeGameId(state) }),
+      condition: (props) => props.gameMode === undefined,
+      text: "Select a game to manage",
       action: openGames,
     },
     {
-      id: 'profile-visibility',
-      icon: 'profile',
-      type: 'settings' as ToDoType,
+      id: "profile-visibility",
+      icon: "profile",
+      type: "settings" as ToDoType,
       priority: 20,
-      props: state => ({ profilesVisible: state.settings.interface.profilesVisible }),
-      text: 'Profile Management',
-      value: (t: TFunction, props: any) => props.profilesVisible ? t('Yes') : t('No'),
+      props: (state) => ({
+        profilesVisible: state.settings.interface.profilesVisible,
+      }),
+      text: "Profile Management",
+      value: (t: TFunction, props: any) =>
+        props.profilesVisible ? t("Yes") : t("No"),
       action: (props: any) => {
         api.store.dispatch(setProfilesVisible(!props.profilesVisible));
-        api.events.emit('analytics-track-click-event', 'Dashboard', `Profile management ${!props.profilesVisible ? 'ON' : 'OFF'}`);
+        api.events.emit(
+          "analytics-track-click-event",
+          "Dashboard",
+          `Profile management ${!props.profilesVisible ? "ON" : "OFF"}`,
+        );
       },
     },
     {
-      id: 'download-location',
-      icon: 'settings',
-      type: 'settings' as ToDoType,
+      id: "download-location",
+      icon: "settings",
+      type: "settings" as ToDoType,
       priority: 30,
-      props: state => ({ dlPath: selectors.downloadPath(state) }),
-      text: 'Downloads are on drive',
+      props: (state) => ({ dlPath: selectors.downloadPath(state) }),
+      text: "Downloads are on drive",
       value: (t: TFunction, props: any) => {
         try {
           return winapi.GetVolumePathName(props.dlPath);
@@ -96,53 +103,66 @@ function todos(api: IExtensionApi): IToDo[] {
         }
       },
       action: () => {
-        openSettingsPage('Download');
-        api.events.emit('analytics-track-click-event', 'Dashboard', 'Download drive');
-        api.highlightControl('#settings-tab-pane-Download #download-path-form', 5000,
-          api.translate('You can change the download location here'));
+        openSettingsPage("Download");
+        api.events.emit(
+          "analytics-track-click-event",
+          "Dashboard",
+          "Download drive",
+        );
+        api.highlightControl(
+          "#settings-tab-pane-Download #download-path-form",
+          5000,
+          api.translate("You can change the download location here"),
+        );
       },
-      condition: minDiskSpace(MIN_DISK_SPACE, 'dlPath'),
+      condition: minDiskSpace(MIN_DISK_SPACE, "dlPath"),
     },
     {
-      id: 'mod-location',
-      icon: 'settings',
-      type: 'settings' as ToDoType,
+      id: "mod-location",
+      icon: "settings",
+      type: "settings" as ToDoType,
       priority: 31,
-      props: state => ({ instPath: selectors.installPath(state) }),
-      text: 'Mods are staged on drive',
+      props: (state) => ({ instPath: selectors.installPath(state) }),
+      text: "Mods are staged on drive",
       value: (t: TFunction, props: any) => {
         try {
           if (props.instPath === undefined) {
-            return t('<No staging folder>');
+            return t("<No staging folder>");
           }
           return winapi.GetVolumePathName(props.instPath);
         } catch (err) {
-          return t('<Invalid Drive>');
+          return t("<Invalid Drive>");
         }
       },
       action: () => {
-        openSettingsPage('Mods');
-        api.events.emit('analytics-track-click-event', 'Dashboard', 'Staged drive');
-        api.highlightControl('#settings-tab-pane-Mods #install-path-form', 5000,
-          api.translate('You can change the mod staging location here'));
+        openSettingsPage("Mods");
+        api.events.emit(
+          "analytics-track-click-event",
+          "Dashboard",
+          "Staged drive",
+        );
+        api.highlightControl(
+          "#settings-tab-pane-Mods #install-path-form",
+          5000,
+          api.translate("You can change the mod staging location here"),
+        );
       },
-      condition: minDiskSpace(MIN_DISK_SPACE, 'instPath'),
+      condition: minDiskSpace(MIN_DISK_SPACE, "instPath"),
     },
     {
-      id: 'manual-scan',
-      icon: props => props.discoveryRunning
-        ? <Spinner />
-        : <Icon name='search' />,
-      type: 'search' as ToDoType,
+      id: "manual-scan",
+      icon: (props) =>
+        props.discoveryRunning ? <Spinner /> : <Icon name="search" />,
+      type: "search" as ToDoType,
       priority: 40,
-      props: state => ({
+      props: (state) => ({
         discoveryRunning: state.session.discovery.running,
       }),
-      condition: props => props.searchPaths !== undefined,
+      condition: (props) => props.searchPaths !== undefined,
       text: (t: TFunction, props: any): JSX.Element =>
         props.discoveryRunning
-          ? t('Discovery running')
-          : t('Scan for missing games'),
+          ? t("Discovery running")
+          : t("Scan for missing games"),
       action: startManualSearch,
     },
   ];

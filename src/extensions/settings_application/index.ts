@@ -1,13 +1,15 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
-import LazyComponent from '../../util/LazyComponent';
-import {} from './SettingsVortex';
+import { IExtensionContext } from "../../types/IExtensionContext";
+import LazyComponent from "../../util/LazyComponent";
+import {} from "./SettingsVortex";
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Vortex',
-    LazyComponent(() => require('./SettingsVortex')),
+  context.registerSettings(
+    "Vortex",
+    LazyComponent(() => require("./SettingsVortex")),
     undefined,
     undefined,
-    50);
+    50,
+  );
 
   return true;
 }

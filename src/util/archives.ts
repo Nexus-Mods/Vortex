@@ -1,6 +1,6 @@
-import { IArchiveHandler } from '../types/IExtensionContext';
+import { IArchiveHandler } from "../types/IExtensionContext";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 /**
  * wrapper around an format-specific archive handler
@@ -19,7 +19,7 @@ export class Archive {
    * list files at the specified path
    */
   public get readDir(): (archivePath: string) => Promise<string[]> {
-    return (this.mHandler.readDir !== undefined)
+    return this.mHandler.readDir !== undefined
       ? (archivePath: string) => this.mHandler.readDir(archivePath)
       : undefined;
   }
@@ -28,7 +28,7 @@ export class Archive {
    * read a file at the specified path via a stream
    */
   public get readFile(): (filePath: string) => NodeJS.ReadableStream {
-    return (this.mHandler.readFile !== undefined)
+    return this.mHandler.readFile !== undefined
       ? (filePath: string) => this.mHandler.readFile(filePath)
       : undefined;
   }
@@ -36,9 +36,13 @@ export class Archive {
   /**
    * extract a single file
    */
-  public get extractFile(): (filePath: string, outputPath: string) => Promise<void> {
-    return (this.mHandler.extractFile !== undefined)
-      ? (filePath: string, outputPath: string) => this.mHandler.extractFile(filePath, outputPath)
+  public get extractFile(): (
+    filePath: string,
+    outputPath: string,
+  ) => Promise<void> {
+    return this.mHandler.extractFile !== undefined
+      ? (filePath: string, outputPath: string) =>
+          this.mHandler.extractFile(filePath, outputPath)
       : undefined;
   }
 
@@ -46,7 +50,7 @@ export class Archive {
    * extract the entire archive
    */
   public get extractAll(): (outputPath: string) => Promise<void> {
-    return (this.mHandler.extractAll !== undefined)
+    return this.mHandler.extractAll !== undefined
       ? (outputPath: string) => this.mHandler.extractAll(outputPath)
       : undefined;
   }
@@ -55,7 +59,7 @@ export class Archive {
    * create this archive from the files in sourcePath
    */
   public get create(): (sourcePath: string) => Promise<void> {
-    return (this.mHandler.create !== undefined)
+    return this.mHandler.create !== undefined
       ? (sourcePath: string) => this.mHandler.create(sourcePath)
       : undefined;
   }
@@ -63,14 +67,18 @@ export class Archive {
   /**
    * add a single file to the archive
    */
-  public get addFile(): (filePath: string, sourcePath: string) => Promise<void> {
-    return (this.mHandler.addFile !== undefined)
-      ? (filePath: string, sourcePath: string) => this.mHandler.addFile(filePath, sourcePath)
+  public get addFile(): (
+    filePath: string,
+    sourcePath: string,
+  ) => Promise<void> {
+    return this.mHandler.addFile !== undefined
+      ? (filePath: string, sourcePath: string) =>
+          this.mHandler.addFile(filePath, sourcePath)
       : undefined;
   }
 
   public get write(): () => Promise<void> {
-    return (this.mHandler.write !== undefined)
+    return this.mHandler.write !== undefined
       ? () => this.mHandler.write()
       : undefined;
   }

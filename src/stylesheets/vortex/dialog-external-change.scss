@@ -1,82 +1,82 @@
 // dialog informing the user about external file changes
 
 #ext-change-dialog {
-  .modal-dialog {
-    width: 80%;
-    height: 80%;
-  }
+    .modal-dialog {
+        width: 80%;
+        height: 80%;
+    }
 
-  .modal-content {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+    .modal-content {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
 
-  .modal-body {
-    flex: 1 0%;
-    display: flex;
-    flex-direction: column;
-    //padding: 10px;
-  }
+    .modal-body {
+        flex: 1 0%;
+        display: flex;
+        flex-direction: column;
+        //padding: 10px;
+    }
 
-  td {
-    padding: 2px;
-  }
+    td {
+        padding: 2px;
+    }
 
-  select {
-    padding: 2px;
-    height: initial;
-  }
+    select {
+        padding: 2px;
+        height: initial;
+    }
 }
 
 .padded-text {
-  padding-top: 5px;
-  padding-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 .xtd.table-external-change-refchange.cell-name,
 .xtd.table-external-change-valchange.cell-name,
 .xtd.table-external-change-srcdeleted.cell-name,
 .xtd.table-external-change-deleted.cell-name {
-  width: 100%;
+    width: 100%;
 }
 
 #table-external-change-refchange,
 #table-external-change-valchange,
 #table-external-change-srcdeleted,
 #table-external-change-deleted {
-  .table-header-cell p {
-    white-space: nowrap;
-  }
+    .table-header-cell p {
+        white-space: nowrap;
+    }
 }
 
 .xtd.table-external-change-refchange.cell-file_count,
 .xtd.table-external-change-valchange.cell-file_count,
 .xtd.table-external-change-srcdeleted.cell-file_count,
 .xtd.table-external-change-deleted.cell-file_count {
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .xtd.table-external-change-refchange,
 .xtd.table-external-change-valchange,
 .xtd.table-external-change-srcdeleted,
 .xtd.table-external-change-deleted {
-  &.cell-action {
-    min-width: 20em;
-  }
-  &.cell-staged_changed,
-  &.cell-deployment_changed {
-    min-width: 15em;
-  }
+    &.cell-action {
+        min-width: 20em;
+    }
+    &.cell-staged_changed,
+    &.cell-deployment_changed {
+        min-width: 15em;
+    }
 }
 
 #dropdown-external-change-refchange-action,
 #dropdown-external-change-valchange-action,
 #dropdown-external-change-srcdeleted-action,
 #dropdown-external-change-deleted-action {
-  padding: 2px 5px;
-  border: 0px;
-  border-left: 1px solid $gray-light;
-  min-width: 0px;
+    padding: 2px 5px;
+    border: 0px;
+    border-left: 1px solid $gray-light;
+    min-width: 0px;
 }

@@ -1,126 +1,126 @@
 .container-quicklaunch {
-  margin: auto 0;
-  position: relative;
-
-  >.btn-group {
-    >.btn-quicklaunch {
-      padding: 0px !important;
-      display: inline-flex;
-      >div {
-        display: flex;
-        img {
-          width: auto;
-          height: auto;
-        }
-      }
-      >.caret {
-        margin: auto 0;
-      }
-    }
-  }
-
-  .quicklaunch-item {
     margin: auto 0;
-    padding: 0 1em;
-    width: 100%;
-    text-align: left;
-    white-space: normal;
-    text-shadow: 1px  1px 1px $gray-lighter,
-                -1px  1px 1px $gray-lighter,
-                 1px -1px 1px $gray-lighter,
-                -1px -1px 1px $gray-lighter
-  }
+    position: relative;
 
-  .quicklaunch-name {
-    font-size: larger;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow-x: hidden;
-  }
-
-  .quicklaunch-profile {
-    font-size: x-small;
-  }
-
-  .tool-icon-container {
-    width: 200px;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    background-size: cover !important;
-    overflow: hidden;
-
-    &:hover {
-      filter: brightness(70%);
+    > .btn-group {
+        > .btn-quicklaunch {
+            padding: 0px !important;
+            display: inline-flex;
+            > div {
+                display: flex;
+                img {
+                    width: auto;
+                    height: auto;
+                }
+            }
+            > .caret {
+                margin: auto 0;
+            }
+        }
     }
 
-    .tool-icon {
-      max-width: 100%;
-      max-height: 100%;
-      display: block;
+    .quicklaunch-item {
+        margin: auto 0;
+        padding: 0 1em;
+        width: 100%;
+        text-align: left;
+        white-space: normal;
+        text-shadow:
+            1px 1px 1px $gray-lighter,
+            -1px 1px 1px $gray-lighter,
+            1px -1px 1px $gray-lighter,
+            -1px -1px 1px $gray-lighter;
     }
 
-  }
-
-  .item-more-games {
-    width: 100%;
-    line-height: 40px;
-  }
-
-  a[role=menuitem] {
-    padding: 0px;
-  }
-
-  .dropdown-menu {
-    padding: 0px;
-    margin: 0px;
-    border: 0px;
-    overflow-y: auto;
-    max-height: 60vh;
-  }
-
-  .container-quicklaunch-launch {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    display: flex;
-
-    align-items: center;
-
-    .icon-spinner {
-      width: 3em;
-      height: 3em;
+    .quicklaunch-name {
+        font-size: larger;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow-x: hidden;
     }
-  }
+
+    .quicklaunch-profile {
+        font-size: x-small;
+    }
+
+    .tool-icon-container {
+        width: 200px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        background-size: cover !important;
+        overflow: hidden;
+
+        &:hover {
+            filter: brightness(70%);
+        }
+
+        .tool-icon {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+    }
+
+    .item-more-games {
+        width: 100%;
+        line-height: 40px;
+    }
+
+    a[role="menuitem"] {
+        padding: 0px;
+    }
+
+    .dropdown-menu {
+        padding: 0px;
+        margin: 0px;
+        border: 0px;
+        overflow-y: auto;
+        max-height: 60vh;
+    }
+
+    .container-quicklaunch-launch {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        display: flex;
+
+        align-items: center;
+
+        .icon-spinner {
+            width: 3em;
+            height: 3em;
+        }
+    }
 }
 
 .toolbar-app-region .container-quicklaunch .tool-icon-container {
-  width: 260px;
-  height: 104px;
+    width: 260px;
+    height: 104px;
 }
 
 #dropdown-quicklaunch {
-  border: 0;
+    border: 0;
 }
 
 .tool-icon-text {
-  flex: 1 1 0;
-  margin-left: 4px;
-  white-space: nowrap;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 30px;
+    flex: 1 1 0;
+    margin-left: 4px;
+    white-space: nowrap;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 30px;
 
-  .tool-icon-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+    .tool-icon-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-  .tool-icon-running {
-    color: $text-color-disabled;
-    font-size: x-small;
-  }
+    .tool-icon-running {
+        color: $text-color-disabled;
+        font-size: x-small;
+    }
 }

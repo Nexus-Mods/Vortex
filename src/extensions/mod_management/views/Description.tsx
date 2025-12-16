@@ -1,11 +1,11 @@
-import Icon from '../../../renderer/controls/Icon';
-import bbcode from '../../../util/bbcode';
-import { truthy } from '../../../util/util';
+import Icon from "../../../renderer/controls/Icon";
+import bbcode from "../../../renderer/controls/bbcode";
+import { truthy } from "../../../util/util";
 
-import { TFunction } from 'i18next';
-import memoizeOne from 'memoize-one';
-import * as React from 'react';
-import { Overlay, Popover } from 'react-bootstrap';
+import { TFunction } from "i18next";
+import memoizeOne from "memoize-one";
+import * as React from "react";
+import { Overlay, Popover } from "react-bootstrap";
 
 interface IBaseProps {
   t: TFunction;
@@ -45,35 +45,32 @@ class Description extends React.Component<IProps, IComponentState> {
     const { t, installed, short, source } = this.props;
 
     const popover = (
-      <Popover id='popover-mod-description'>
+      <Popover id="popover-mod-description">
         <div>{this.mLongBB}</div>
-        {truthy(source)
-          ? (
-            <a
-              onClick={nop}
-              className='fake-link-disabled'
-              title={t('Description is synchronized with an online source')}
-            >
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          )
-          : !installed
-          ? (
-            <a
-              onClick={nop}
-              className='fake-link-disabled'
-              title={t('Description can only be changed for installed mods')}
-            >
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          )
-          :
-          (
-            <a onClick={this.editDescription}>
-              <Icon name='edit'/>{t('Edit Description')}
-            </a>
-          )
-        }
+        {truthy(source) ? (
+          <a
+            onClick={nop}
+            className="fake-link-disabled"
+            title={t("Description is synchronized with an online source")}
+          >
+            <Icon name="edit" />
+            {t("Edit Description")}
+          </a>
+        ) : !installed ? (
+          <a
+            onClick={nop}
+            className="fake-link-disabled"
+            title={t("Description can only be changed for installed mods")}
+          >
+            <Icon name="edit" />
+            {t("Edit Description")}
+          </a>
+        ) : (
+          <a onClick={this.editDescription}>
+            <Icon name="edit" />
+            {t("Edit Description")}
+          </a>
+        )}
       </Popover>
     );
 
@@ -81,7 +78,7 @@ class Description extends React.Component<IProps, IComponentState> {
       <div>
         <Overlay
           rootClose
-          placement='left'
+          placement="left"
           onHide={this.hide}
           show={this.state.open}
           target={this.getRef}
@@ -89,7 +86,7 @@ class Description extends React.Component<IProps, IComponentState> {
           {popover}
         </Overlay>
         <a ref={this.setRef} onClick={this.toggle}>
-          {!short ? t('Description') : this.shortBB(short)}
+          {!short ? t("Description") : this.shortBB(short)}
         </a>
       </div>
     );
@@ -97,26 +94,25 @@ class Description extends React.Component<IProps, IComponentState> {
 
   private editDescription = () => {
     this.props.startEditDescription(this.props.modId);
-  }
+  };
 
   private getRef = () => this.mRef;
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
-  }
+  };
 
   private hide = () => {
     this.setState({ open: false });
-  }
+  };
 
   private toggle = () => {
     const { t } = this.props;
     if (!this.state.open) {
-      this.mLongBB = bbcode(this.props.long
-        || `<${t('No description')}>`);
+      this.mLongBB = bbcode(this.props.long || `<${t("No description")}>`);
     }
     this.setState({ open: !this.state.open });
-  }
+  };
 }
 
 export default Description;

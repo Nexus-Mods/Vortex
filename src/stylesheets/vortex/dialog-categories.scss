@@ -1,44 +1,46 @@
-#btn-search-category-prev, #btn-search-category-next {
-  padding: 0px;
+#btn-search-category-prev,
+#btn-search-category-next {
+    padding: 0px;
 }
 
-#btn-search-category-prev svg, #btn-search-category-next svg {
-  height: 24px;
+#btn-search-category-prev svg,
+#btn-search-category-next svg {
+    height: 24px;
 }
 
 .categories-dialog {
-  height: 75vh;
-  display: flex;
-  flex-direction: column;
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .categories-icons {
-  background-color: $brand-secondary;
-  margin: 0
+    background-color: $brand-secondary;
+    margin: 0;
 }
 
 .search-category-box {
-  margin: $half-gutter 10px;
+    margin: $half-gutter 10px;
 }
 
 #search-category-input {
-  padding-right: 50px;
-  padding-left: 20px;
-  border-width: 0 0 1px 0;
-  background-color: initial;
+    padding-right: 50px;
+    padding-left: 20px;
+    border-width: 0 0 1px 0;
+    background-color: initial;
 }
 
 .search-icon {
-  position: absolute;
-  left: 0;
-  top: 4px;
+    position: absolute;
+    left: 0;
+    top: 4px;
 }
 
 .search-position {
-  width: 100%;
-  text-align: right;
-  display: block;
-  margin-top: -25px;
-  margin-left: -5px;
-  pointer-events: none;
+    width: 100%;
+    text-align: right;
+    display: block;
+    margin-top: -25px;
+    margin-left: -5px;
+    pointer-events: none;
 }

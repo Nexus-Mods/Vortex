@@ -1,179 +1,178 @@
 #browse-extensions-dialog {
-  .modal-dialog {
-    width: 80%;
-  }
-  .modal-body {
-    height: 80vh;
-  }
-
-  .description-text {
-    img {
-      max-width: 100%;
-      padding: 0 1%;
+    .modal-dialog {
+        width: 80%;
     }
-  }
-
-  .menu-layer {
-    left: 0;
-  }
-
-  .extension-sort-container {
-    align-items: center;
-    padding-top: 0.5em;
-    > div:first-child {
-      margin-right: 1em;
+    .modal-body {
+        height: 80vh;
     }
-  }
+
+    .description-text {
+        img {
+            max-width: 100%;
+            padding: 0 1%;
+        }
+    }
+
+    .menu-layer {
+        left: 0;
+    }
+
+    .extension-sort-container {
+        align-items: center;
+        padding-top: 0.5em;
+        > div:first-child {
+            margin-right: 1em;
+        }
+    }
 }
 
 .extension-list {
-  width: 30%;
-  margin-right: 4px;
-  border-right: $border-width solid $border-color;
-  overflow: auto;
+    width: 30%;
+    margin-right: 4px;
+    border-right: $border-width solid $border-color;
+    overflow: auto;
 
-  .list-group {
-    overflow-y: auto;
-  }
+    .list-group {
+        overflow-y: auto;
+    }
 }
 
 .extension-list-time {
-  font-size: smaller;
-  font-style: italic;
-  color: $text-color-disabled;
+    font-size: smaller;
+    font-style: italic;
+    color: $text-color-disabled;
 
-  .btn {
-    @extend .btn-embed;
-    margin-left: 1em;
-  }
+    .btn {
+        @extend .btn-embed;
+        margin-left: 1em;
+    }
 }
 
 .extension-text {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .extension-item {
+    &.list-group-item.disabled {
+        background-color: $gray-lighter;
+        color: $gray-dark;
+    }
 
-  &.list-group-item.disabled {
-    background-color: $gray-lighter;
-    color: $gray-dark;
-  }
+    &.selected {
+        background-color: $table-bg-active;
+    }
 
-  &.selected {
-    background-color: $table-bg-active;
-  }
+    .extension-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        flex: 1 1 0;
 
-  .extension-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: nowrap;
-    overflow: hidden;
-    flex: 1 1 0;
+        .extension-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 1em;
 
-    .extension-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-right: 1em;
+            .extension-name {
+                @extend .extension-text;
+                font-weight: bolder;
+            }
 
-      .extension-name {
+            .extension-version {
+                opacity: 0.9;
+                font-size: small;
+                padding-left: 6px;
+            }
+        }
+
+        .extension-stats {
+            display: flex;
+            font-size: smaller;
+            > div {
+                white-space: nowrap;
+            }
+            .extension-endorsements {
+                margin-left: 1em;
+            }
+        }
+    }
+
+    .extension-description {
         @extend .extension-text;
-        font-weight: bolder;
-      }
-
-      .extension-version {
-        opacity: 0.9;
-        font-size: small;
-        padding-left: 6px;
-      }
-    }
-  
-    .extension-stats {
-      display: flex;
-      font-size: smaller;
-      > div {
-        white-space: nowrap;
-      }
-      .extension-endorsements {
-        margin-left: 1em;
-      }
-    }
-  }
-
-  .extension-description {
-    @extend .extension-text;
-  }
-
-  .extension-footer {
-    display: flex;
-    justify-content: space-between;
-
-    .extension-author {
-      @extend .extension-text;
-      font-weight: bold;
     }
 
-    .extension-subscribe {
-      padding: 0 4px;
+    .extension-footer {
+        display: flex;
+        justify-content: space-between;
+
+        .extension-author {
+            @extend .extension-text;
+            font-weight: bold;
+        }
+
+        .extension-subscribe {
+            padding: 0 4px;
+        }
     }
-  }
 }
 
 .description-header {
-  border-bottom: $border-width solid $border-color;
-  display: flex;
-  justify-content: center;
-
-  .description-header-content {
-    margin-left: $gutter-width;
-    justify-content: space-evenly;
-  }
-
-  .description-image-container {
-    width: 256px;
-    height: 192px;
-
+    border-bottom: $border-width solid $border-color;
     display: flex;
-    align-items: center;
+    justify-content: center;
 
-    .extension-picture {
-      max-width: 256px;
-      text-align: center;
-
-      .zoomable-image {
-        max-width: 100%;
-        max-height: 192px;
-      }
+    .description-header-content {
+        margin-left: $gutter-width;
+        justify-content: space-evenly;
     }
-  }
-  .description-name {
-    font-weight: bolder;
-    font-size: x-large;
-  }
 
-  .description-author {
-    font-weight: bold;
-    font-style: italic;
-    margin-left: 1em;
-  }
+    .description-image-container {
+        width: 256px;
+        height: 192px;
 
-  .description-stats {
-    display: flex;
-    > div {
-      margin-right: 1em;
+        display: flex;
+        align-items: center;
+
+        .extension-picture {
+            max-width: 256px;
+            text-align: center;
+
+            .zoomable-image {
+                max-width: 100%;
+                max-height: 192px;
+            }
+        }
     }
-  }
+    .description-name {
+        font-weight: bolder;
+        font-size: x-large;
+    }
+
+    .description-author {
+        font-weight: bold;
+        font-style: italic;
+        margin-left: 1em;
+    }
+
+    .description-stats {
+        display: flex;
+        > div {
+            margin-right: 1em;
+        }
+    }
 }
 
 .description-text {
-  height: 100%;
-  overflow: auto;
+    height: 100%;
+    overflow: auto;
 }
 
 .extensions-find-button-container-outer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

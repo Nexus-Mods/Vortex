@@ -1,29 +1,33 @@
-import {getSafe} from '../../../util/storeHelper';
+import { getSafe } from "../../../util/storeHelper";
 
-import {IMod, IModReference} from '../types/IMod';
+import { IMod, IModReference } from "../types/IMod";
 
 export interface INameOptions {
   version?: boolean;
   variant?: boolean;
 }
 
-export function modNameFromAttributes(mod: { [key: string]: any }, options?: INameOptions): string {
+export function modNameFromAttributes(
+  mod: { [key: string]: any },
+  options?: INameOptions,
+): string {
   const fields = [];
   fields.push(
-    getSafe(mod, ['customFileName'], '')
-    || getSafe(mod, ['logicalFileName'], '')
-    || getSafe(mod, ['fileName'], '')
-    || getSafe(mod, ['name'], ''));
+    getSafe(mod, ["customFileName"], "") ||
+      getSafe(mod, ["logicalFileName"], "") ||
+      getSafe(mod, ["fileName"], "") ||
+      getSafe(mod, ["name"], ""),
+  );
 
   if (options?.version) {
-    fields.push(`(v${getSafe(mod, ['version'], '?')})`);
+    fields.push(`(v${getSafe(mod, ["version"], "?")})`);
   }
 
-  if (options?.variant && (mod?.variant !== undefined)) {
+  if (options?.variant && mod?.variant !== undefined) {
     fields.push(`(${mod.variant})`);
   }
 
-  return fields.join(' ');
+  return fields.join(" ");
 }
 
 /**
@@ -36,7 +40,7 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
  * @returns {string}
  */
 function modName(mod: IMod, options?: INameOptions): string {
-  if ((mod === undefined) || (mod.attributes === undefined)) {
+  if (mod === undefined || mod.attributes === undefined) {
     return undefined;
   }
   return modNameFromAttributes(mod.attributes, options) || mod.installationPath;
@@ -46,28 +50,32 @@ export interface IRenderOptions {
   version?: boolean;
 }
 
-export function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions) {
-  const version = (options === undefined) || options.version !== false;
+export function renderModReference(
+  ref?: IModReference,
+  mod?: IMod,
+  options?: IRenderOptions,
+) {
+  const version = options === undefined || options.version !== false;
 
   if (mod !== undefined) {
     return modName(mod, { version });
   }
 
   if (ref === undefined) {
-    return '<Invalid reference>';
+    return "<Invalid reference>";
   }
 
   if (ref.description !== undefined) {
     return ref.description;
   }
 
-  if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
-    return ref.fileMD5 || ref.id || '<Invalid reference>';
+  if (ref.logicalFileName === undefined && ref.fileExpression === undefined) {
+    return ref.fileMD5 || ref.id || "<Invalid reference>";
   }
 
-  let name = ref.logicalFileName || ref.fileExpression || '<Invalid reference>';
-  if ((ref.versionMatch !== undefined) && version) {
-    name += ' v' + ref.versionMatch;
+  let name = ref.logicalFileName || ref.fileExpression || "<Invalid reference>";
+  if (ref.versionMatch !== undefined && version) {
+    name += " v" + ref.versionMatch;
   }
   return name;
 }

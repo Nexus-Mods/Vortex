@@ -1,17 +1,18 @@
-import Icon from '../../../renderer/controls/Icon';
-import { ComponentEx } from '../../../util/ComponentEx';
-import { TFunction } from '../../../util/i18n';
-import lazyRequire from '../../../util/lazyRequire';
-import { log } from '../../../util/log';
+import Icon from "../../../renderer/controls/Icon";
+import { ComponentEx } from "../../../util/ComponentEx";
+import { TFunction } from "../../../util/i18n";
+import lazyRequire from "../../../util/lazyRequire";
+import { log } from "../../../util/log";
 
-import type * as DraggabillyT from 'draggabilly';
-import * as PackeryT from 'packery';
-import { Resizable, ResizeDirection } from 're-resizable';
-import * as React from 'react';
-import { Button } from 'react-bootstrap';
+import type * as DraggabillyT from "draggabilly";
+import * as PackeryT from "packery";
+import { Resizable, ResizeDirection } from "re-resizable";
+import * as React from "react";
+import { Button } from "react-bootstrap";
 
-const Draggabilly =
-  lazyRequire<typeof DraggabillyT>(() => ({ default: require('draggabilly') }));
+const Draggabilly = lazyRequire<typeof DraggabillyT>(() => ({
+  default: require("draggabilly"),
+}));
 
 export interface IPackeryItemProps {
   t: TFunction;
@@ -49,14 +50,14 @@ function clamp(input: number, min: number, max: number): number {
 function ResizeHandle(props: { corner: string }) {
   return (
     <div className={`resize-handle-${props.corner}`}>
-      <Icon name='corner-handle' />
+      <Icon name="corner-handle" />
     </div>
   );
 }
 
 const emptyObject = {};
-const FULL_SIZE = { width: '100%', height: '100%' };
-const handleComponent = { bottomRight: <ResizeHandle corner='br'/> };
+const FULL_SIZE = { width: "100%", height: "100%" };
+const handleComponent = { bottomRight: <ResizeHandle corner="br" /> };
 
 class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
   private mRef: HTMLElement = null;
@@ -67,8 +68,12 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
   private mMinWidth: number = 0;
   private mMinHeight: number = 0;
   private mDrag: DraggabillyT.default = undefined;
-  private mResizeAnchor: { x: number, y: number, width: number, height: number } =
-    { x: 0, y: 0, width: 0, height: 0 };
+  private mResizeAnchor: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } = { x: 0, y: 0, width: 0, height: 0 };
   private mResizeUp: boolean = false;
   private mResizeLeft: boolean = false;
 
@@ -77,13 +82,15 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
 
     this.initState({
       context: undefined,
-      size: { width: '100%', height: '100%' },
+      size: { width: "100%", height: "100%" },
       resizing: false,
     });
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: React.PropsWithChildren<IPackeryItemProps>) {
-    if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
+  public UNSAFE_componentWillReceiveProps(
+    newProps: React.PropsWithChildren<IPackeryItemProps>,
+  ) {
+    if (!newProps.fixed && newProps.packery !== this.props.packery) {
       this.mPackeryItem = undefined;
       this.makeDraggable(newProps);
     }
@@ -99,23 +106,20 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
 
     // round to 2 positions after decimal point. It's fairly noticable if
     // widgets don't align even by a few pixels
-    const widthPerc = Math.floor(((width * 10000) / totalWidth)) / 100;
+    const widthPerc = Math.floor((width * 10000) / totalWidth) / 100;
 
-    const classes = [
-      `packery-height-${height}`,
-    ];
+    const classes = [`packery-height-${height}`];
 
     if (resizing) {
-      classes.push('stamp');
+      classes.push("stamp");
     } else {
-      classes.push('packery-item');
+      classes.push("packery-item");
     }
 
     if (editable) {
-      classes.push('packery-editmode');
-
+      classes.push("packery-editmode");
     } else {
-      classes.push('packery-viewmode');
+      classes.push("packery-viewmode");
     }
 
     return (
@@ -123,34 +127,34 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
         id={id}
         ref={this.setRef}
         style={{ width: `${widthPerc}%` }}
-        className={classes.join(' ')}
+        className={classes.join(" ")}
         onContextMenu={this.onContext}
       >
         <Resizable
-            ref={this.setResizableRef}
-            defaultSize={FULL_SIZE}
-            minWidth={resizing ? this.mMinWidth / 2 : undefined}
-            minHeight={resizing ? this.mMinHeight / 2 : undefined}
-            maxWidth={resizing ? 3 * this.mCellWidth : undefined}
-            maxHeight={resizing ? 6 * this.mCellHeight : undefined}
-            onResizeStart={this.resizeStart}
-            onResizeStop={this.resizeEnd}
-            onResize={this.resizeCallback}
-            enable={editable ? undefined : emptyObject}
-            handleComponent={handleComponent}
+          ref={this.setResizableRef}
+          defaultSize={FULL_SIZE}
+          minWidth={resizing ? this.mMinWidth / 2 : undefined}
+          minHeight={resizing ? this.mMinHeight / 2 : undefined}
+          maxWidth={resizing ? 3 * this.mCellWidth : undefined}
+          maxHeight={resizing ? 6 * this.mCellHeight : undefined}
+          onResizeStart={this.resizeStart}
+          onResizeStop={this.resizeEnd}
+          onResize={this.resizeCallback}
+          enable={editable ? undefined : emptyObject}
+          handleComponent={handleComponent}
         >
           {this.props.children}
-          <div key='drag-handle' className='drag-handle'/>
-          <div className='packery-buttons'>
-          {(editable && closable) ? (
-            <Button
-              className='dashlet-close-button'
-              onClick={this.dismissWidget}
-            >
-              <Icon name='close' />
-            </Button>
-          ) : null}
-        </div>
+          <div key="drag-handle" className="drag-handle" />
+          <div className="packery-buttons">
+            {editable && closable ? (
+              <Button
+                className="dashlet-close-button"
+                onClick={this.dismissWidget}
+              >
+                <Icon name="close" />
+              </Button>
+            ) : null}
+          </div>
         </Resizable>
       </div>
     );
@@ -163,9 +167,14 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
     return this.mPackeryItem;
   }
 
-  private setResizableRef = x => { this.mResizeRef = x; }
+  private setResizableRef = (x) => {
+    this.mResizeRef = x;
+  };
 
-  private resizeStart = (e: React.MouseEvent<HTMLElement>, dir: ResizeDirection) => {
+  private resizeStart = (
+    e: React.MouseEvent<HTMLElement>,
+    dir: ResizeDirection,
+  ) => {
     try {
       this.packeryItem.enablePlacing();
       this.nextState.resizing = true;
@@ -180,12 +189,12 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
         width: this.mResizeRef.size.width,
         height: this.mResizeRef.size.height,
       };
-      this.mResizeUp = ['top', 'topLeft', 'topRight'].includes(dir);
-      this.mResizeLeft = ['left', 'topLeft', 'bottomLeft'].includes(dir);
+      this.mResizeUp = ["top", "topLeft", "topRight"].includes(dir);
+      this.mResizeLeft = ["left", "topLeft", "bottomLeft"].includes(dir);
     } catch (err) {
-      log('error', 'failed to start resizing', { message: err.message });
+      log("error", "failed to start resizing", { message: err.message });
     }
-  }
+  };
 
   private resizeEnd = () => {
     this.nextState.resizing = false;
@@ -193,7 +202,7 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
 
     this.packeryItem.moveTo(this.mRef.offsetLeft, this.mRef.offsetTop);
 
-    this.mResizeRef.updateSize({ width: '100%', height: '100%' });
+    this.mResizeRef.updateSize({ width: "100%", height: "100%" });
 
     this.props.packery.layout();
     (this.props.packery as any).sortItemsByPosition();
@@ -202,10 +211,14 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
     this.props.packery.unstamp(this.mRef);
 
     this.props.onUpdateLayout?.();
-  }
+  };
 
-  private resizeCallback = (event: MouseEvent | TouchEvent, direction: any,
-                            refToElement: HTMLDivElement, delta: any) => {
+  private resizeCallback = (
+    event: MouseEvent | TouchEvent,
+    direction: any,
+    refToElement: HTMLDivElement,
+    delta: any,
+  ) => {
     const { size } = this.mResizeRef;
 
     if (this.mResizeLeft) {
@@ -225,38 +238,39 @@ class PackeryItem extends ComponentEx<IPackeryItemProps, IPackeryItemState> {
     if (newHeight !== this.props.height) {
       this.props.onSetHeight(this.props.id, newHeight);
     }
-  }
+  };
 
   private onContext = (event: React.MouseEvent<any>) => {
     this.nextState.context = {
-      x: event.clientX, y: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
     };
-  }
+  };
 
   private dismissWidget = () => {
     if (this.props.onDismiss !== undefined) {
       return this.props.onDismiss(this.props.id);
     }
-  }
+  };
 
   private setRef = (ref) => {
     const { fixed } = this.props;
-    if ((ref === null) && (this.mRef !== null)) {
+    if (ref === null && this.mRef !== null) {
       this.props.packery.remove(this.mRef);
     }
     this.mRef = ref;
     if (!fixed) {
       this.makeDraggable(this.props);
     }
-  }
+  };
 
   private makeDraggable(props: IPackeryItemProps) {
-    if ((this.mRef === null) || (props.packery === undefined)) {
+    if (this.mRef === null || props.packery === undefined) {
       return;
     }
 
     this.mDrag = new Draggabilly.default(this.mRef, {
-      handle: '.drag-handle',
+      handle: ".drag-handle",
     });
 
     props.packery.bindDraggabillyEvents(this.mDrag);

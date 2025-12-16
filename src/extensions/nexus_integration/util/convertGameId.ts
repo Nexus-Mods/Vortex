@@ -1,37 +1,47 @@
-import { inspect } from 'util';
-import { IGame } from '../../../types/IGame';
-import { log } from '../../../util/log';
-import { truthy } from '../../../util/util';
-import { SITE_ID } from '../../gamemode_management/constants';
-import { IGameStored, IGameStoredExt } from '../../gamemode_management/types/IGameStored';
+import { inspect } from "util";
+import { IGame } from "../../../types/IGame";
+import { log } from "../../../util/log";
+import { truthy } from "../../../util/util";
+import { SITE_ID } from "../../gamemode_management/constants";
+import {
+  IGameStored,
+  IGameStoredExt,
+} from "../../gamemode_management/types/IGameStored";
 
 /**
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string): string {
-  if ((game === undefined) && (fallbackGameId === undefined)) {
+export function nexusGameId(
+  game: IGameStored | IGame,
+  fallbackGameId?: string,
+): string {
+  if (game === undefined && fallbackGameId === undefined) {
     return undefined;
   }
 
-  if (truthy(game)
-      && (game.details !== undefined)
-      && (game.details.nexusPageId !== undefined)) {
+  if (
+    truthy(game) &&
+    game.details !== undefined &&
+    game.details.nexusPageId !== undefined
+  ) {
     return game.details.nexusPageId;
   }
 
   const gameId = game?.id ?? fallbackGameId;
 
   try {
-    return {
-      skyrimse: 'skyrimspecialedition',
-      skyrimvr: 'skyrimspecialedition',
-      falloutnv: 'newvegas',
-      fallout4vr: 'fallout4',
-      teso: 'elderscrollsonline',
-    }[gameId.toLowerCase()] || gameId;
+    return (
+      {
+        skyrimse: "skyrimspecialedition",
+        skyrimvr: "skyrimspecialedition",
+        falloutnv: "newvegas",
+        fallout4vr: "fallout4",
+        teso: "elderscrollsonline",
+      }[gameId.toLowerCase()] || gameId
+    );
   } catch (err) {
-    log('error', 'failed to convert game id to domain', {
+    log("error", "failed to convert game id to domain", {
       message: err.message,
       game: inspect(game),
       fallbackGameId,
@@ -43,16 +53,22 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
 /**
  * get our internal game id for a nexus page id
  */
-export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
+export function convertGameIdReverse(
+  knownGames: IGameStored[],
+  input: string,
+): string {
   if (input?.toLowerCase === undefined) {
     return undefined;
   }
 
-  const validGames = knownGames.filter(iter => iter.id === input.toLowerCase() ||
-    (iter.details !== undefined) && (iter.details.nexusPageId === input));
+  const validGames = knownGames.filter(
+    (iter) =>
+      iter.id === input.toLowerCase() ||
+      (iter.details !== undefined && iter.details.nexusPageId === input),
+  );
 
   // We obviously prefer the exact match first.
-  const game = validGames.find(iter => iter.id === input.toLowerCase());
+  const game = validGames.find((iter) => iter.id === input.toLowerCase());
   if (game !== undefined) {
     return game.id;
   }
@@ -62,29 +78,38 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
     return validGames[0].id;
   }
 
-  return {
-    skyrimspecialedition: 'skyrimse',
-    newvegas: 'falloutnv',
-    elderscrollsonline: 'teso',
-  }[input.toLowerCase()] || input.toLowerCase();
+  return (
+    {
+      skyrimspecialedition: "skyrimse",
+      newvegas: "falloutnv",
+      elderscrollsonline: "teso",
+    }[input.toLowerCase()] || input.toLowerCase()
+  );
 }
 
 /**
  * get our internal game id for a nxm link id
  */
-export function convertNXMIdReverse(knownGames: IGameStored[], input: string): string {
+export function convertNXMIdReverse(
+  knownGames: IGameStored[],
+  input: string,
+): string {
   if (input === undefined) {
     return undefined;
   }
 
-  const clearGameMatch = knownGames.find(iter => iter.id === input.toLowerCase());
+  const clearGameMatch = knownGames.find(
+    (iter) => iter.id === input.toLowerCase(),
+  );
   if (clearGameMatch) {
     return clearGameMatch.id;
   }
 
-  const game = knownGames.find(iter =>
-    (iter.details !== undefined) &&
-    ((iter.details.nxmLinkId === input) || (iter.details.nexusPageId === input)));
+  const game = knownGames.find(
+    (iter) =>
+      iter.details !== undefined &&
+      (iter.details.nxmLinkId === input || iter.details.nexusPageId === input),
+  );
 
   if (game !== undefined) {
     return game.id;
@@ -114,10 +139,10 @@ export function toNXMId(game: IGameStoredExt, gameId: string): string {
     gameId = game.downloadGameId || game.id;
   }
   const gameIdL = gameId.toLowerCase();
-  if (gameIdL === 'skyrimse') {
-    return 'SkyrimSE';
-  } else if (gameIdL === 'fallout4vr') {
-    return 'fallout4';
+  if (gameIdL === "skyrimse") {
+    return "SkyrimSE";
+  } else if (gameIdL === "fallout4vr") {
+    return "fallout4";
   } else {
     return gameId;
   }

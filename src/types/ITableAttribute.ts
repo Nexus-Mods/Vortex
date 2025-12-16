@@ -1,10 +1,10 @@
-import { ITString, TFunction } from '../util/i18n';
+import { ITString, TFunction } from "../util/i18n";
 
-export type AttributeRenderer = 'progress';
+export type AttributeRenderer = "progress";
 
-export type Placement = 'table' | 'detail' | 'both' | 'inline';
+export type Placement = "table" | "detail" | "both" | "inline";
 
-export type ValidationState = 'success' | 'warning' | 'error';
+export type ValidationState = "success" | "warning" | "error";
 
 export interface IEditChoice {
   key: string;
@@ -150,7 +150,7 @@ export interface ITableAttribute<T = any> {
    * if this is true and if the user hasn't changed column sorting yet, this column will be used
    * for sorting (ascending) as long as it's visible and no previous column had this flag set.
    */
-  isDefaultSort?: boolean | 'desc';
+  isDefaultSort?: boolean | "desc";
   /**
    * TODO: Obsolete
    * if true, the calc-function for this attribute is called whenever table data is refreshed,
@@ -195,8 +195,12 @@ export interface ITableAttribute<T = any> {
    * Also note that table cells using customRenderer will do more unnecessary rerenders than a
    * calc-based field so please use customRenderer only when necessary.
    */
-  customRenderer?: (object: T | T[], detailCell: boolean,
-                    t: TFunction, props: ICustomProps) => JSX.Element;
+  customRenderer?: (
+    object: T | T[],
+    detailCell: boolean,
+    t: TFunction,
+    props: ICustomProps,
+  ) => JSX.Element;
   /**
    * determine the display value for this attribute. This is used for display if customRenderer is
    * not specified. It's also used for sorting the table so unless isSortable is false and a
@@ -271,42 +275,42 @@ export interface ITableAttribute<T = any> {
      *       become read-only if this attribute is set and strings and dates don't get rendered
      *       properly any more.
      */
-    inline?: boolean,
+    inline?: boolean;
 
     /**
      * Affects how choices are displayed if you have a choice attribute
      * if true (or undefined) then we display a drop-down box where each item immediately triggers
      * an action. If false, render a selection box
      */
-    actions?: boolean,
+    actions?: boolean;
 
     /**
      * minimum value, minus infinity by default
      */
-    min?: number,
+    min?: number;
 
     /**
      * maximum value, infinity by default
      */
-    max?: number,
+    max?: number;
 
     /**
      * if set, this is called to determine the placeholder to be displayed when the input box is
      * empty. Has no effect if this edit config doesn't generate an input box
      */
-    placeholder?: () => string,
+    placeholder?: () => string;
 
     /**
      * if set, this field is a drop-down selection with the choices returned by this function.
      * Please note: the value returned by calc has to appear in the text-field of one of these
      *   choices
      */
-    choices?: (object: T) => IEditChoice[],
+    choices?: (object: T) => IEditChoice[];
 
     /**
      * if set, this field is a text field that validates its input
      */
-    validate?: (input: string) => ValidationState,
+    validate?: (input: string) => ValidationState;
 
     /**
      * called when this attribute was changed for an object. The way editing is presented to the
@@ -316,6 +320,6 @@ export interface ITableAttribute<T = any> {
      *
      * If this attribute is undefined, the field is readonly
      */
-    onChangeValue?: (objects: T | T[], newValue: any) => void,
+    onChangeValue?: (objects: T | T[], newValue: any) => void;
   };
 }

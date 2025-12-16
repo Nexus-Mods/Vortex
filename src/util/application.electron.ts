@@ -1,6 +1,6 @@
-import { app as appIn, BrowserWindow } from 'electron';
-import * as os from 'os';
-import { IApplication, setApplication } from './application';
+import { app as appIn, BrowserWindow } from "electron";
+import * as os from "os";
+import { IApplication, setApplication } from "./application";
 
 class ElectronApplication implements IApplication {
   private mName: string;
@@ -10,7 +10,8 @@ class ElectronApplication implements IApplication {
   private mApp: Electron.App;
 
   constructor() {
-    const remote = process.type === 'browser' ? undefined : require('@electron/remote');
+    const remote =
+      process.type === "browser" ? undefined : require("@electron/remote");
     this.mApp = remote?.app ?? appIn;
 
     this.mName = this.mApp.name;
@@ -20,9 +21,12 @@ class ElectronApplication implements IApplication {
     }
     // if called from renderer process, this will determine if this window is focused,
     // if called from browser process, it will determine if _any_ Vortex window is focused
-    this.mFocused = (remote !== undefined)
-      ? () => remote.getCurrentWindow().isFocused()
-      : () => BrowserWindow.getAllWindows().find(win => win.isFocused()) !== undefined;
+    this.mFocused =
+      remote !== undefined
+        ? () => remote.getCurrentWindow().isFocused()
+        : () =>
+            BrowserWindow.getAllWindows().find((win) => win.isFocused()) !==
+            undefined;
   }
 
   public get name() {
@@ -56,7 +60,7 @@ class ElectronApplication implements IApplication {
     return this.mFocused();
   }
 
-  public quit(exitCode?: number): void  {
+  public quit(exitCode?: number): void {
     this.mApp.exit(exitCode);
   }
 }

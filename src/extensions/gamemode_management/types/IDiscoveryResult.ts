@@ -1,4 +1,4 @@
-import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
+import { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 
 /**
  * describes parameters for the game set by the user

@@ -1,7 +1,7 @@
-import { IReducerSpec } from '../../types/IExtensionContext';
-import { setSafe } from '../../util/storeHelper';
+import { IReducerSpec } from "../../types/IExtensionContext";
+import { setSafe } from "../../util/storeHelper";
 
-import * as actions from './actions';
+import * as actions from "./actions";
 
 /**
  * reducer for changes to ephemeral session state
@@ -9,13 +9,13 @@ import * as actions from './actions';
 const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.setAvailableExtensions as any]: (state, payload) =>
-      setSafe(state, ['available'], payload),
+      setSafe(state, ["available"], payload),
     [actions.setInstalledExtensions as any]: (state, payload) =>
-      setSafe(state, ['installed'], payload),
+      setSafe(state, ["installed"], payload),
     [actions.setOptionalExtensions as any]: (state, payload) =>
-      setSafe(state, ['optional'], payload),
+      setSafe(state, ["optional"], payload),
     [actions.setExtensionsUpdate as any]: (state, payload) =>
-      setSafe(state, ['updateTime'], payload),
+      setSafe(state, ["updateTime"], payload),
   },
   defaults: {
     available: [],

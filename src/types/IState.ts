@@ -1,19 +1,25 @@
-import { IAttributeState } from './IAttributeState';
-import { IDialog } from './IDialog';
-import { INotification } from './INotification';
+import { IAttributeState } from "./IAttributeState";
+import { IDialog } from "./IDialog";
+import { INotification } from "./INotification";
 
-import { ICollectionInstallState } from '../extensions/collections_integration/types';
+import { ICollectionInstallState } from "../extensions/collections_integration/types";
 
-import { ICategoryDictionary } from '../extensions/category_management/types/ICategoryDictionary';
-import { IDownload } from '../extensions/download_management/types/IDownload';
-import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
-import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
-import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
-import { IHistoryPersistent, IHistoryState } from '../extensions/history_management/reducers';
-import { IMod } from '../extensions/mod_management/types/IMod';
-import { IProfile } from '../extensions/profile_management/types/IProfile';
-import { IParameters } from '../util/commandLine';
-import VortexInstallType from './VortexInstallType';
+import { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
+import { IDownload } from "../extensions/download_management/types/IDownload";
+import {
+  IAvailableExtension,
+  IExtension,
+} from "../extensions/extension_manager/types";
+import { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import {
+  IHistoryPersistent,
+  IHistoryState,
+} from "../extensions/history_management/reducers";
+import { IMod } from "../extensions/mod_management/types/IMod";
+import { IProfile } from "../extensions/profile_management/types/IProfile";
+import { IParameters } from "../util/commandLine";
+import VortexInstallType from "./VortexInstallType";
 
 // re-export these to keep the imports from extensions local
 export { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -74,7 +80,7 @@ export interface IExtensionLoadFailure {
 export interface IExtensionOptional {
   id: string;
   extensionPath: string;
-  args: { [key: string]: any }
+  args: { [key: string]: any };
 }
 
 export interface IProgress {
@@ -130,7 +136,7 @@ export interface ITableState {
 }
 
 export interface IExtensionState {
-  enabled: boolean | 'failed';
+  enabled: boolean | "failed";
   version: string;
   remove: boolean;
   endorsed: string;
@@ -206,7 +212,7 @@ export interface ISettingsProfiles {
 export interface ISettingsGameMode {
   discovered: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
-  pickerLayout: 'list' | 'small' | 'large';
+  pickerLayout: "list" | "small" | "large";
   sortManaged: string;
   sortUnmanaged: string;
 }
@@ -229,7 +235,7 @@ export interface IStatePaths {
   install: string;
 }
 
-export type InstallPathMode = 'userData' | 'suggested';
+export type InstallPathMode = "userData" | "suggested";
 
 export interface ISettingsMods {
   installPath: { [gameId: string]: string };
@@ -247,9 +253,9 @@ export interface ISettingsNotification {
   suppress: { [notificationId: string]: boolean };
 }
 
-export const UPDATE_CHANNELS = ['stable', 'beta', 'next', 'none'] as const;
+export const UPDATE_CHANNELS = ["stable", "beta", "next", "none"] as const;
 
-type ValuesOf<T extends readonly any[]>= T[number];
+type ValuesOf<T extends readonly any[]> = T[number];
 
 export type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
 
@@ -298,8 +304,8 @@ export interface IGameInfoEntry {
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
-      [key: string]: IGameInfoEntry,
-    },
+      [key: string]: IGameInfoEntry;
+    };
   };
 }
 
@@ -348,33 +354,33 @@ export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
-    account: { },
+    account: {};
   };
   session: {
-    base: ISession,
-    collections: ICollectionInstallState,
-    gameMode: ISessionGameMode,
-    discovery: IDiscoveryState,
+    base: ISession;
+    collections: ICollectionInstallState;
+    gameMode: ISessionGameMode;
+    discovery: IDiscoveryState;
     notifications: INotificationState;
     browser: IBrowserState;
     history: IHistoryState;
     overlays: IOverlaysState;
     extensions: {
-      available: IAvailableExtension[],
-      optional: { [extId: string]: IExtensionOptional[] },
-      installed: { [extId: string]: IExtension },
-      updateTime: number,
+      available: IAvailableExtension[];
+      optional: { [extId: string]: IExtensionOptional[] };
+      installed: { [extId: string]: IExtension };
+      updateTime: number;
     };
   };
   settings: ISettings;
   persistent: {
-    profiles: { [profileId: string]: IProfile },
-    mods: IModTable,
-    downloads: IStateDownloads,
-    categories: { [gameId: string]: ICategoryDictionary },
-    gameMode: IStateGameMode,
-    deployment: { needToDeploy: { [gameId: string]: boolean } },
-    transactions: IStateTransactions,
+    profiles: { [profileId: string]: IProfile };
+    mods: IModTable;
+    downloads: IStateDownloads;
+    categories: { [gameId: string]: ICategoryDictionary };
+    gameMode: IStateGameMode;
+    deployment: { needToDeploy: { [gameId: string]: boolean } };
+    transactions: IStateTransactions;
     history: IHistoryPersistent;
   };
 }
@@ -401,5 +407,4 @@ export interface IDiscoveryState {
  * @export
  * @interface ISettings
  */
-export interface IGameModeSettings {
-}
+export interface IGameModeSettings {}

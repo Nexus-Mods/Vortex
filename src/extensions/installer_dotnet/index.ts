@@ -1,48 +1,57 @@
-import path from 'path';
-import { execFile, spawn } from 'child_process';
-import { promisify } from 'util';
-import Bluebird from 'bluebird';
-import { NET_CORE_DOWNLOAD } from './constants';
-import { SITE_ID } from '../gamemode_management/constants';
-import { downloadPathForGame } from '../download_management/selectors';
-import { ITestResult, IExtensionApi, IExtensionContext } from '../../types/api';
-import { getVortexPath, UserCanceled } from '../../util/api';
-import { delayed, toPromise } from '../../util/util';
-import { log } from '../../util/log';
-import { platform } from 'process';
+import path from "path";
+import { execFile, spawn } from "child_process";
+import { promisify } from "util";
+import Bluebird from "bluebird";
+import { NET_CORE_DOWNLOAD } from "./constants";
+import { SITE_ID } from "../gamemode_management/constants";
+import { downloadPathForGame } from "../download_management/selectors";
+import { ITestResult, IExtensionApi, IExtensionContext } from "../../types/api";
+import { getVortexPath, UserCanceled } from "../../util/api";
+import { delayed, toPromise } from "../../util/util";
+import { log } from "../../util/log";
+import { platform } from "process";
 
 const spawnAsync = (command: string, args: string[]): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
       spawn(command, args)
-        .on('close', () => resolve())
-        .on('error', err => reject(err));
+        .on("close", () => resolve())
+        .on("error", (err) => reject(err));
     } catch (err) {
       reject(err);
     }
   });
-}
+};
 
-const spawnRetry = async (api: IExtensionApi, command: string, args: string[], tries = 3): Promise<void> => {
+const spawnRetry = async (
+  api: IExtensionApi,
+  command: string,
+  args: string[],
+  tries = 3,
+): Promise<void> => {
   try {
     return await spawnAsync(command, args);
   } catch (err: any) {
-    if (err.code === 'EBUSY') {
+    if (err.code === "EBUSY") {
       if (tries > 0) {
-        return delayed(100)
-          .then(() => spawnRetry(api, command, args, tries - 1));
+        return delayed(100).then(() =>
+          spawnRetry(api, command, args, tries - 1),
+        );
       } else {
-        return api.showDialog?.('error', 'File locked', {
-          text: 'The file "{{fileName}}" is locked, probably because it\'s being accessed by another process.',
-          parameters: {
-            fileName: command,
-          },
-        }, [
-          { label: 'Cancel' },
-          { label: 'Retry' },
-        ])
-          .then(result => {
-            if (result.action === 'Cancel') {
+        return api
+          .showDialog?.(
+            "error",
+            "File locked",
+            {
+              text: 'The file "{{fileName}}" is locked, probably because it\'s being accessed by another process.',
+              parameters: {
+                fileName: command,
+              },
+            },
+            [{ label: "Cancel" }, { label: "Retry" }],
+          )
+          .then((result) => {
+            if (result.action === "Cancel") {
               return Promise.reject(new UserCanceled());
             } else {
               return spawnRetry(api, command, args);
@@ -51,7 +60,7 @@ const spawnRetry = async (api: IExtensionApi, command: string, args: string[], t
       }
     }
   }
-}
+};
 
 let dotNetResolve: ((value: void) => void) | undefined;
 let dotNetReject: ((reason: any) => void) | undefined;
@@ -72,19 +81,36 @@ const onDotNetFailure = (error: any) => {
   dotNetReject = undefined;
 };
 
-const installDotNet = async (api: IExtensionApi, repair: boolean, dotnetVersion: number): Promise<void> => {
+const installDotNet = async (
+  api: IExtensionApi,
+  repair: boolean,
+  dotnetVersion: number,
+): Promise<void> => {
   if (process.platform !== "win32") {
-    const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
+    const error = new Error(
+      `Failed to download .NET Desktop Runtime ${dotnetVersion}`,
+    );
     throw "Automatic installation of .NET is only supported on Windows";
   }
 
   try {
-    const dlId: string = await toPromise(cb =>
-      api.events.emit('start-download', [NET_CORE_DOWNLOAD], { game: SITE_ID }, undefined, cb, 'replace', { allowInstall: false }));
+    const dlId: string = await toPromise((cb) =>
+      api.events.emit(
+        "start-download",
+        [NET_CORE_DOWNLOAD],
+        { game: SITE_ID },
+        undefined,
+        cb,
+        "replace",
+        { allowInstall: false },
+      ),
+    );
 
     if (dlId === undefined) {
-      const error = new Error(`Failed to download .NET Desktop Runtime ${dotnetVersion}`);
-      log('warn', 'failed to download .NET');
+      const error = new Error(
+        `Failed to download .NET Desktop Runtime ${dotnetVersion}`,
+      );
+      log("warn", "failed to download .NET");
       onDotNetFailure(error);
       throw error;
     }
@@ -92,87 +118,109 @@ const installDotNet = async (api: IExtensionApi, repair: boolean, dotnetVersion:
     const state = api.getState();
     const download = state.persistent.downloads.files[dlId];
 
-    if (download?.state !== 'finished') {
-      const error = new Error('.NET download not finished');
-      log('warn', '.NET download not finished');
+    if (download?.state !== "finished") {
+      const error = new Error(".NET download not finished");
+      log("warn", ".NET download not finished");
       onDotNetFailure(error);
       throw error;
     }
 
     const downloadsPath = downloadPathForGame(state, SITE_ID);
     if (!download?.localPath) {
-      const error = new Error('No downloads path for game');
-      log('error', 'No downloads path for game', { gameId: SITE_ID });
+      const error = new Error("No downloads path for game");
+      log("error", "No downloads path for game", { gameId: SITE_ID });
       onDotNetFailure(error);
       throw error;
     }
 
     const fullPath = path.join(downloadsPath, download.localPath);
 
-    api.showDialog?.('info', `Microsoft .NET Desktop Runtime ${dotnetVersion} is being installed`, {
-      bbcode: 'Please follow the instructions in the .NET installer. If you can\'t see the installer window, please check if it\'s hidden behind another window.'
-        + '[br][/br][br][/br]'
-        + 'Please note: In rare cases you will need to restart windows before .NET works properly.',
-    }, [
-      { label: 'Ok' },
-    ]);
+    api.showDialog?.(
+      "info",
+      `Microsoft .NET Desktop Runtime ${dotnetVersion} is being installed`,
+      {
+        bbcode:
+          "Please follow the instructions in the .NET installer. If you can't see the installer window, please check if it's hidden behind another window." +
+          "[br][/br][br][/br]" +
+          "Please note: In rare cases you will need to restart windows before .NET works properly.",
+      },
+      [{ label: "Ok" }],
+    );
 
-    const args = ['/passive', '/norestart'];
+    const args = ["/passive", "/norestart"];
     if (repair) {
-      args.push('/repair');
+      args.push("/repair");
     }
 
-    log('info', 'spawning dotnet installer', { fullPath, args });
+    log("info", "spawning dotnet installer", { fullPath, args });
     await spawnRetry(api, fullPath, args);
 
     // Installation completed successfully
-    log('info', `.NET Desktop Runtime ${dotnetVersion} installed successfully`);
+    log("info", `.NET Desktop Runtime ${dotnetVersion} installed successfully`);
     onDotNetSuccess();
   } catch (err) {
-    log('error', `Failed to install .NET Desktop Runtime ${dotnetVersion}`, err);
+    log(
+      "error",
+      `Failed to install .NET Desktop Runtime ${dotnetVersion}`,
+      err,
+    );
     onDotNetFailure(err);
     throw err;
   }
-}
+};
 
-function execFileWrapper(file: string, args: string[] = []): Promise<{ stdout: string, stderr: string, exitCode: number }> {
+function execFileWrapper(
+  file: string,
+  args: string[] = [],
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
     const child = execFile(file, args);
 
     let stdout = "";
     let stderr = "";
 
-    child.stdout?.on("data", data => {
+    child.stdout?.on("data", (data) => {
       stdout += data.toString();
     });
 
-    child.stderr?.on("data", data => {
+    child.stderr?.on("data", (data) => {
       stderr += data.toString();
     });
 
-    child.on("error", err => {
+    child.on("error", (err) => {
       reject(err);
     });
 
-    child.on("close", exitCode => {
+    child.on("close", (exitCode) => {
       resolve({
         stdout: stdout,
         stderr: stderr,
-        exitCode: exitCode ?? 0
+        exitCode: exitCode ?? 0,
       });
     });
   });
 }
 
-async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promise<ITestResult> {
+async function checkNetInstall(
+  api: IExtensionApi,
+  dotnetVersion: number,
+): Promise<ITestResult> {
   let probeExecutable: string | null = null;
 
   if (process.platform === "win32") {
-    probeExecutable = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe.exe');
+    probeExecutable = path.join(
+      getVortexPath("assets_unpacked"),
+      "dotnetprobe.exe",
+    );
   } else if (process.platform === "linux") {
-    probeExecutable = path.join(getVortexPath('assets_unpacked'), 'dotnetprobe');
+    probeExecutable = path.join(
+      getVortexPath("assets_unpacked"),
+      "dotnetprobe",
+    );
   } else {
-    const error = new Error(`.NET installation check is not supported on this platform ${process.platform}`);
+    const error = new Error(
+      `.NET installation check is not supported on this platform ${process.platform}`,
+    );
     onDotNetFailure(error);
     return undefined!;
   }
@@ -181,7 +229,9 @@ async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promi
   let exitCode: number;
 
   try {
-    const result = await execFileWrapper(probeExecutable, [dotnetVersion.toString()]);
+    const result = await execFileWrapper(probeExecutable, [
+      dotnetVersion.toString(),
+    ]);
     stderr = result.stderr;
     exitCode = result.exitCode;
   } catch (e) {
@@ -199,31 +249,34 @@ async function checkNetInstall(api: IExtensionApi, dotnetVersion: number): Promi
     return {
       description: {
         short: `Microsoft .NET Desktop Runtime ${dotnetVersion} required`,
-        long: `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.`
-          + '[br][/br][br][/br]'
-          + `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.`
-          + '[br][/br][br][/br]'
-          + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
-        replace: { stderr: stderr.replace(/\n/g, '[br][/br]') },
+        long:
+          `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.` +
+          "[br][/br][br][/br]" +
+          `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.` +
+          "[br][/br][br][/br]" +
+          '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+        replace: { stderr: stderr.replace(/\n/g, "[br][/br]") },
       },
-      severity: 'fatal'
-    }
+      severity: "fatal",
+    };
   }
 
   const result: ITestResult = {
     description: {
       short: `Microsoft .NET Desktop Runtime ${dotnetVersion} required`,
-      long: `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.`
-        + '[br][/br][br][/br]'
-        + `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.`
-        + '[br][/br][br][/br]'
-        + 'Click "Fix" below to install the required version.'
-        + '[br][/br][br][/br]'
-        + '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
-      replace: { stderr: stderr.replace(/\n/g, '[br][/br]') },
+      long:
+        `Vortex requires .NET Desktop Runtime ${dotnetVersion} to be installed to run FOMOD mod installers.` +
+        "[br][/br][br][/br]" +
+        `If you already have .NET Desktop Runtime ${dotnetVersion} installed then there may be a problem with your installation and a reinstall might be needed.` +
+        "[br][/br][br][/br]" +
+        'Click "Fix" below to install the required version.' +
+        "[br][/br][br][/br]" +
+        '[spoiler label="Show detailed error"]{{stderr}}[/spoiler]',
+      replace: { stderr: stderr.replace(/\n/g, "[br][/br]") },
     },
-    automaticFix: () => Bluebird.resolve(installDotNet(api, false, dotnetVersion)),
-    severity: 'fatal',
+    automaticFix: () =>
+      Bluebird.resolve(installDotNet(api, false, dotnetVersion)),
+    severity: "fatal",
   };
 
   return result;
@@ -236,14 +289,16 @@ const main = (context: IExtensionContext): boolean => {
   const dotnetVersion = 9;
 
   // Register .NET Desktop Runtime check
-  context.registerTest('dotnet-installed', 'startup', () => Bluebird.resolve(checkNetInstall(context.api, dotnetVersion)));
+  context.registerTest("dotnet-installed", "startup", () =>
+    Bluebird.resolve(checkNetInstall(context.api, dotnetVersion)),
+  );
 
   // Set up API extension once initialization is complete
   context.once(() => {
-    context.api.ext['awaitDotnetAssert'] = () => dotNetAssert;
+    context.api.ext["awaitDotnetAssert"] = () => dotNetAssert;
   });
 
   return true;
-}
+};
 
 export default main;

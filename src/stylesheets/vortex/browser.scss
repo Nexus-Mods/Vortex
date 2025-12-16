@@ -1,46 +1,46 @@
 #browser-dialog {
-  .modal-dialog {
-    width: 80%;
+    .modal-dialog {
+        width: 80%;
 
-    .modal-body {
-      height: 80vh;
-      display: flex;
-      flex-direction: column;
+        .modal-body {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
     }
-  }
-
-  .icon-button {
-    @extend .btn-embed;
-  }
-
-  .browser-loading {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background-color: rgba(128, 128, 128, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    .icon-spinner {
-      width: 64px;
-      height: 64px;
-    }
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
 
     .icon-button {
-      margin: 8px;
+        @extend .btn-embed;
     }
 
-    .breadcrumb {
-      flex: 1 1 0;
-      overflow: auto;
-      white-space: nowrap;
+    .browser-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-color: rgba(128, 128, 128, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .icon-spinner {
+            width: 64px;
+            height: 64px;
+        }
     }
-  }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+
+        .icon-button {
+            margin: 8px;
+        }
+
+        .breadcrumb {
+            flex: 1 1 0;
+            overflow: auto;
+            white-space: nowrap;
+        }
+    }
 }

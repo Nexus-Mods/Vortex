@@ -1,113 +1,113 @@
 // the topmost button bar
 // (containing the quick launcher, login control, game-specific action buttons)
 #main-toolbar {
-  background-color: $brand-bg;
-  display: flex;
-  border-bottom: $border-width solid $border-color;
-
-  #btn-quicklaunch-play,
-  .main-toolbar-right .btn {
-    background-color: transparent;
-    border-width: 0px;
-    color: $text-color;
-    padding: 8px;
-
-    &:hover {
-      background-color: transparent;
-      color: $brand-clickable;
-    }
-
-    >svg {
-      width: 24px;
-      height: 24px;
-    }
-
-    .icon-launch-application {
-      stroke: $border-color;
-      stroke-width: 1px;
-    }
-  }
-
-  .main-toolbar-right {
-    margin-top: auto;
-    margin-bottom: auto;
-    margin-right: 8px;
-    white-space: nowrap;
-  }
-
-  .dyndiv {
-    overflow-x: auto;
-  }
-
-  &.toolbar-app-region .main-toolbar-right {
-    margin-bottom: 8px;
-  }
-
-  .application-icons-group {
+    background-color: $brand-bg;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
-  }
+    border-bottom: $border-width solid $border-color;
 
-  .toolbar-version {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-right: 124px;
-    position: fixed;
-    right: 10px;
-    top: 10px;
-    //height: 30px;
+    #btn-quicklaunch-play,
+    .main-toolbar-right .btn {
+        background-color: transparent;
+        border-width: 0px;
+        color: $text-color;
+        padding: 8px;
 
-    .toolbar-version-dev {
-      background-color: $white;
-      color: $black;
+        &:hover {
+            background-color: transparent;
+            color: $brand-clickable;
+        }
+
+        > svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .icon-launch-application {
+            stroke: $border-color;
+            stroke-width: 1px;
+        }
     }
 
-    .toolbar-version-staging {
-      background-color: #f97316;
-      color: $black;
+    .main-toolbar-right {
+        margin-top: auto;
+        margin-bottom: auto;
+        margin-right: 8px;
+        white-space: nowrap;
     }
 
-    .toolbar-version-stable {
-      background-color: transparent;
-      color: $gray;
-    }
-    
-    .toolbar-version-beta {
-      background-color: $brand-info;
-      color: $white;
+    .dyndiv {
+        overflow-x: auto;
     }
 
-    .toolbar-version-alpha {
-      background-color: $brand-danger;
-      color: $white;
+    &.toolbar-app-region .main-toolbar-right {
+        margin-bottom: 8px;
     }
 
-    .toolbar-version-container {
-      border-radius: 24px;
-      border: none;
-      padding: 4px 10px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      text-transform: uppercase;
-      font-family: $font-family-base;
-      font-size: 0.8em;
-
-      .toolbar-version-text {
-        margin: 1px 0 0 0;
-      }
+    .application-icons-group {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
     }
-  }
+
+    .toolbar-version {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-right: 124px;
+        position: fixed;
+        right: 10px;
+        top: 10px;
+        //height: 30px;
+
+        .toolbar-version-dev {
+            background-color: $white;
+            color: $black;
+        }
+
+        .toolbar-version-staging {
+            background-color: #f97316;
+            color: $black;
+        }
+
+        .toolbar-version-stable {
+            background-color: transparent;
+            color: $gray;
+        }
+
+        .toolbar-version-beta {
+            background-color: $brand-info;
+            color: $white;
+        }
+
+        .toolbar-version-alpha {
+            background-color: $brand-danger;
+            color: $white;
+        }
+
+        .toolbar-version-container {
+            border-radius: 24px;
+            border: none;
+            padding: 4px 10px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-transform: uppercase;
+            font-family: $font-family-base;
+            font-size: 0.8em;
+
+            .toolbar-version-text {
+                margin: 1px 0 0 0;
+            }
+        }
+    }
 }
 
 // when the window titlebar is disabled, make the main toolbar region
 // the area where the user can drag the window around
 .toolbar-app-region {
-  height: 105px;
-  -webkit-app-region: drag;
+    height: 105px;
+    -webkit-app-region: drag;
 }
 
 // need to disable while modal is open because the modal might have controls inside
@@ -115,352 +115,370 @@
 // not currently used?
 .modal-open #main-toolbar.toolbar-app-region,
 .modal-open#overlays {
-  -webkit-app-region: no-drag;
+    -webkit-app-region: no-drag;
 }
 
 // disable drag while any menu is open. They should close anyway if you click outside the menu
 // and if you click inside you don't want to move the window
 .menu-open #main-toolbar.toolbar-app-region,
 .menu-open#overlays {
-  -webkit-app-region: no-drag;
+    -webkit-app-region: no-drag;
 }
 
 // we need a way to move the window while a modal is open though, otherwise a user
 // may get into a situation where the modal controls are off-screen so he can't close
 // the modal and he can't move it into view
 .dragbar {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 15px;
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 15px;
 }
 
 .modal-open.custom-titlebar-body .dragbar {
-  -webkit-app-region: drag;
-  display: block;
+    -webkit-app-region: drag;
+    display: block;
 }
 
-
 .window-frame {
-  border: 1px solid $gray;
+    border: 1px solid $gray;
 }
 
 .application-icons,
 .global-icons {
-  //margin-left: $half-gutter;
-  margin-top: auto;
-  margin-bottom: auto;
+    //margin-left: $half-gutter;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 // the naviation buttons on the left
 #main-nav-sidebar {
-  background-color: $brand-menu;
-  display: flex;
-  flex-direction: column;
-
-  // inside the main nav sidebar
-  // (contains everything except the minimize/maximize button)
-  #main-nav-container {
-    flex-direction: column;
-    transition: max-width $expand-sidebar-delay, min-width $expand-sidebar-delay;
-    height: 100%;
+    background-color: $brand-menu;
     display: flex;
-    overflow-y: auto;
-    flex: 1 1 0;
-    >:not(:last-child) {
-      box-shadow: 0 3px 0 0 rgba(221, 221, 221, 0.18);
-      margin-bottom: 3px;
-    }
-  }
+    flex-direction: column;
 
-  .main-nav-group-title {
-    font-size: $font-size-small;
-    margin: 8px 0 0 8px;
-    font-family: $headings-font-family;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: $gray-dark;
-    // text-transform: uppercase;
-    overflow-x: hidden;
-    white-space: nowrap;
-    display: inline-block;
-    text-overflow: ellipsis;
-    width: calc(90%);
-  }
-
-  .menu-label {
-    transition: opacity $expand-sidebar-delay, margin-left $expand-sidebar-delay;
-    vertical-align: middle;
-    font-size: $font-size-h6;
-    margin-left: 10px;
-    margin-right: 10px;
-    // text-transform: uppercase;
-  }
-
-  &.sidebar-expanded {
+    // inside the main nav sidebar
+    // (contains everything except the minimize/maximize button)
     #main-nav-container {
-      max-width: 200px;
+        flex-direction: column;
+        transition:
+            max-width $expand-sidebar-delay,
+            min-width $expand-sidebar-delay;
+        height: 100%;
+        display: flex;
+        overflow-y: auto;
+        flex: 1 1 0;
+        > :not(:last-child) {
+            box-shadow: 0 3px 0 0 rgba(221, 221, 221, 0.18);
+            margin-bottom: 3px;
+        }
+    }
+
+    .main-nav-group-title {
+        font-size: $font-size-small;
+        margin: 8px 0 0 8px;
+        font-family: $headings-font-family;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: $gray-dark;
+        // text-transform: uppercase;
+        overflow-x: hidden;
+        white-space: nowrap;
+        display: inline-block;
+        text-overflow: ellipsis;
+        width: calc(90%);
     }
 
     .menu-label {
-      opacity: 1;
+        transition:
+            opacity $expand-sidebar-delay,
+            margin-left $expand-sidebar-delay;
+        vertical-align: middle;
+        font-size: $font-size-h6;
+        margin-left: 10px;
+        margin-right: 10px;
+        // text-transform: uppercase;
     }
-    .badge {
-      margin-left: 5px;
-      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
-    }
-    .icon-spinner {
-      margin-left: 5px;
-      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
-    }
-  }
 
-  &.sidebar-compact {
-    #main-nav-container {
-      min-width: 0px;
-      max-width: 48px;
+    &.sidebar-expanded {
+        #main-nav-container {
+            max-width: 200px;
+        }
+
+        .menu-label {
+            opacity: 1;
+        }
+        .badge {
+            margin-left: 5px;
+            transition:
+                margin-left $expand-sidebar-delay,
+                padding $expand-sidebar-delay,
+                font-size $expand-sidebar-delay;
+        }
+        .icon-spinner {
+            margin-left: 5px;
+            transition:
+                margin-left $expand-sidebar-delay,
+                height $expand-sidebar-delay;
+        }
     }
-    #main-footer {
-      max-width: 48px;
+
+    &.sidebar-compact {
+        #main-nav-container {
+            min-width: 0px;
+            max-width: 48px;
+        }
+        #main-footer {
+            max-width: 48px;
+        }
+        .menu-label {
+            opacity: 0;
+            width: 0;
+            overflow-x: visible;
+            min-width: 0;
+            display: inline-block;
+            pointer-events: none;
+        }
+        .badge {
+            padding: 3px;
+            font-size: $font-size-small;
+            margin-left: -18px !important;
+            transition:
+                margin-left $expand-sidebar-delay,
+                padding $expand-sidebar-delay,
+                font-size $expand-sidebar-delay;
+        }
+        .icon-spinner {
+            margin-left: -12px;
+            height: 12px;
+            transition:
+                margin-left $expand-sidebar-delay,
+                height $expand-sidebar-delay;
+        }
     }
-    .menu-label {
-      opacity: 0;
-      width: 0;
-      overflow-x: visible;
-      min-width: 0;
-      display: inline-block;
-      pointer-events: none;
-    }
-    .badge {
-      padding: 3px;
-      font-size: $font-size-small;
-      margin-left: -18px !important;
-      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
-    }
-    .icon-spinner {
-      margin-left: -12px;
-      height: 12px;
-      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
-    }
-  }
 }
 
 // main window area
 #main-window-pane {
-  //background: url('assets/images/bg.png');
-  background-color: $brand-bg;
-  background-size: cover;
-  color: $text-color;
+    //background: url('assets/images/bg.png');
+    background-color: $brand-bg;
+    background-size: cover;
+    color: $text-color;
 
-  .overlay {
-    position: absolute;
-    height: 100%;
-    z-index: $zindex-navbar-fixed;
-    top: 0px;
-    right: 0px;
-    max-width: 0%;
-    background: $brand-menu;
-    border-style: solid;
-    border-color: lighten($brand-menu, 30%);
-    border-width: 0px;
-    transition: max-width $transition-time-half cubic-bezier(0, 1, 1, 1), border-width 0ms $transition-time-half;
-    display: flex;
-    flex-direction: column;
-    &.in {
-      max-width: 30%;
-      border-width: 2px;
-      transition: max-width $transition-time-half cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+    .overlay {
+        position: absolute;
+        height: 100%;
+        z-index: $zindex-navbar-fixed;
+        top: 0px;
+        right: 0px;
+        max-width: 0%;
+        background: $brand-menu;
+        border-style: solid;
+        border-color: lighten($brand-menu, 30%);
+        border-width: 0px;
+        transition:
+            max-width $transition-time-half cubic-bezier(0, 1, 1, 1),
+            border-width 0ms $transition-time-half;
+        display: flex;
+        flex-direction: column;
+        &.in {
+            max-width: 30%;
+            border-width: 2px;
+            transition:
+                max-width $transition-time-half cubic-bezier(1, 0, 1, 1),
+                border-width 0ms 0ms;
+        }
     }
-  }
 }
 
 // animation for switching between main pages
 .mainpage-enter {
-  opacity: 0;
-  &.mainpage-enter-active {
-    opacity: 1;
-    transition: opacity $transition-time-half ease-in;
-  }
+    opacity: 0;
+    &.mainpage-enter-active {
+        opacity: 1;
+        transition: opacity $transition-time-half ease-in;
+    }
 }
 
 .mainpage-leave {
-  opacity: 1;
-  &.mainpage-leave-active {
-    opacity: 0;
-    transition: opacity floor($transition-time-half / 2) ease-out;
-  }
+    opacity: 1;
+    &.mainpage-leave-active {
+        opacity: 0;
+        transition: opacity floor($transition-time-half / 2) ease-out;
+    }
 }
 
 .mainpage-header {
-  flex: 1 1 0%;
-  display: flex;
-  border: $brand-secondary solid;
-  border-width: 0;
-  height: 100%;
-  padding: 5px;
-  >div {
-    margin-top: auto;
-    margin-bottom: auto;
-  }
+    flex: 1 1 0%;
+    display: flex;
+    border: $brand-secondary solid;
+    border-width: 0;
+    height: 100%;
+    padding: 5px;
+    > div {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
 }
 
 .mainpage-header-container {
-  background-color: $brand-clickable;
-  >div {
-    width: 100%;
-    height: 100%;
-  }
+    background-color: $brand-clickable;
+    > div {
+        width: 100%;
+        height: 100%;
+    }
 }
 
 .mainpage-body-container {
-  flex: 1 1 0;
-  position: relative;
+    flex: 1 1 0;
+    position: relative;
 }
 
 // footer
 #main-footer {
-  background-color: $brand-bg;
-  > * {
-    overflow-x: hidden;
-    text-overflow: ellipsis;
-  }
-  .progressbar-container {
-    max-width: 15em;
-  }
+    background-color: $brand-bg;
+    > * {
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+    }
+    .progressbar-container {
+        max-width: 15em;
+    }
 }
 
 .main-page {
-  transition: opacity $transition-time;
-  flex: 1 1 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
+    transition: opacity $transition-time;
+    flex: 1 1 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 
-  &.current {
-    opacity: 1;
-    z-index: 1000;
-    transition-delay: 0s;
-  }
+    &.current {
+        opacity: 1;
+        z-index: 1000;
+        transition-delay: 0s;
+    }
 
-  &.page-hidden {
-    transition: visibility 0s $transition-time, opacity $transition-time;
-    opacity: 0;
-    z-index: 0;
-    visibility: hidden;
-    pointer-events: none;
+    &.page-hidden {
+        transition:
+            visibility 0s $transition-time,
+            opacity $transition-time;
+        opacity: 0;
+        z-index: 0;
+        visibility: hidden;
+        pointer-events: none;
 
-    // hack to make sure the page can fade out without looking
-    // too broken while not displacing the visible page
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
+        // hack to make sure the page can fade out without looking
+        // too broken while not displacing the visible page
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
 
-  &.secondary {
-    // make secondary page always show at the bottom
-    order: 1;
-  }
+    &.secondary {
+        // make secondary page always show at the bottom
+        order: 1;
+    }
 }
 
 .main-page-inner {
-  position: absolute;
-  top: $half-gutter;
-  bottom: $half-gutter;
-  left: $half-gutter;
-  right: $half-gutter;
+    position: absolute;
+    top: $half-gutter;
+    bottom: $half-gutter;
+    left: $half-gutter;
+    right: $half-gutter;
 }
 
 .main-page-body {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 #login-control {
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  .logout-button {
-    text-align: right;
-  }
-  .logout-button a {
-    font-size: 11px;
-  }
-
-  .icon-disconnected {
-    width: 24px;
-    height: 24px;
-  }
-
-  .membership-status {
-
-    width: fit-content;
-    margin-right: 8px; 
-
-    border-radius: 24px;
-    border: none;
-    padding: 4px 10px;
-    font-weight: 800;
-    display: flex;
+    height: 100%;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    text-transform: uppercase;
-    font-family: $font-family-base;
-    font-size: 0.8em;
-    background-color: white;
-    color: black;
+    gap: 8px;
 
-    .membership-status-text {
-      margin: 2px 0 0 0;
-    }    
-
-    &.premium {
-      background-color: $brand-primary;
-      color: black;
+    .logout-button {
+        text-align: right;
+    }
+    .logout-button a {
+        font-size: 11px;
     }
 
-    &.supporter {
-      background-color: black;
-      color: white;    
+    .icon-disconnected {
+        width: 24px;
+        height: 24px;
     }
-  }
+
+    .membership-status {
+        width: fit-content;
+        margin-right: 8px;
+
+        border-radius: 24px;
+        border: none;
+        padding: 4px 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        text-transform: uppercase;
+        font-family: $font-family-base;
+        font-size: 0.8em;
+        background-color: white;
+        color: black;
+
+        .membership-status-text {
+            margin: 2px 0 0 0;
+        }
+
+        &.premium {
+            background-color: $brand-primary;
+            color: black;
+        }
+
+        &.supporter {
+            background-color: black;
+            color: white;
+        }
+    }
 }
 
 .btn-menu-minimize {
-  border: 0px;
-  padding: 1px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
+    border: 0px;
+    padding: 1px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .ui-blocker {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: $text-color-disabled;
-  padding: $gutter-width;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: $text-color-disabled;
+    padding: $gutter-width;
 
-  .icon {
-    width: 92px;
-    height: 92px;
-  }
+    .icon {
+        width: 92px;
+        height: 92px;
+    }
 
-  .blocker-text {
-    font-family: $font-family-headings;
-    font-size: 2em;
-    //text-transform: uppercase;
-  }
+    .blocker-text {
+        font-family: $font-family-headings;
+        font-size: 2em;
+        //text-transform: uppercase;
+    }
 }

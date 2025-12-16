@@ -16,5 +16,5 @@ export interface IJWTAccessToken {
     premium_expiry: number;
     age_verified: boolean;
     username: string;
-  }
+  };
 }

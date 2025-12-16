@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { WithTranslation } from 'react-i18next';
-import { PureComponentEx, translate } from '../../util/ComponentEx';
+import * as React from "react";
+import { WithTranslation } from "react-i18next";
+import { PureComponentEx, translate } from "../../util/ComponentEx";
 
 export interface ICollapseProps extends WithTranslation {
   showText?: string;
@@ -24,30 +24,28 @@ class Collapse extends PureComponentEx<ICollapseProps, ICollapseState> {
     const { t, children, showText, hideText } = this.props;
     const { show } = this.state;
 
-    const classes = ['collapse-content'];
+    const classes = ["collapse-content"];
     if (!show) {
-      classes.push('collapse-content-hidden');
+      classes.push("collapse-content-hidden");
     }
 
     return (
-      <div className='collapse-container'>
+      <div className="collapse-container">
         <a onClick={show ? this.onHide : this.onShow}>
-          {show ? (hideText || t('Hide')) : (showText || t('Show'))}
+          {show ? hideText || t("Hide") : showText || t("Show")}
         </a>
-        <div className={classes.join(' ')}>
-          {children}
-        </div>
+        <div className={classes.join(" ")}>{children}</div>
       </div>
     );
   }
 
   private onShow = () => {
     this.setState({ show: true });
-  }
+  };
 
   private onHide = () => {
     this.setState({ show: false });
-  }
+  };
 }
 
-export default translate(['common'])(Collapse);
+export default translate(["common"])(Collapse);

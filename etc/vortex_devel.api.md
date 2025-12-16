@@ -81,8 +81,7 @@ import { default as Promise_2 } from 'bluebird';
 import * as Promise_3 from 'bluebird';
 import PromiseBB from 'bluebird';
 import * as React_2 from 'react';
-import React_3 = require('react');
-import { default as React_4 } from 'react';
+import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
 import { ReactSelectProps } from 'react-select';
 import { Readable } from 'stream';
@@ -417,7 +416,7 @@ function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, p
 };
 
 // @public
-function addUniqueSafe<T>(state: T, path: Array<(string | number)>, value: any): T;
+function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
 export const Advanced: React_2.ComponentType<{}>;
@@ -455,7 +454,7 @@ type AttributeExtractor = (modInfo: any, modPath: string) => Promise_2<{
 }>;
 
 // @public (undocumented)
-type AttributeRenderer = 'progress';
+type AttributeRenderer = "progress";
 
 // Warning: (ae-forgotten-export) The symbol "ExportType_3" needs to be exported by the entry point index.d.ts
 //
@@ -515,7 +514,7 @@ function changeFileAttributes(filePath: string, wantedAttributes: number, stat: 
 function changeFileOwnership(filePath: string, stat: fs_2.Stats): PromiseBB<void>;
 
 // @public
-function changeOrNop<T>(state: T, path: Array<(string | number)>, value: any): T;
+function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
 type CheckFunction = () => Promise_2<ITestResult>;
@@ -588,7 +587,7 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 }, {}>;
 
 // @public
-type CollectionModStatus = 'pending' | 'downloading' | 'downloaded' | 'installing' | 'installed' | 'failed' | 'skipped' | 'optional';
+type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "skipped" | "optional";
 
 // Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point index.d.ts
 //
@@ -803,7 +802,7 @@ function <T>(delayed: () => T, exportId?: string): T;
 function delay(timeoutMS: number): Bluebird<void>;
 
 // @public
-function deleteOrNop<T>(state: T, path: Array<(string | number)>): T;
+function deleteOrNop<T>(state: T, path: Array<string | number>): T;
 
 // @public (undocumented)
 function deriveModInstallName(archiveName: string, info: any): string;
@@ -812,13 +811,13 @@ function deriveModInstallName(archiveName: string, info: any): string;
 type DialogActions = IDialogAction[];
 
 // @public (undocumented)
-type DialogContentItem = 'htmlFile' | 'htmlText' | 'text' | 'message' | 'bbcode' | 'md' | 'checkboxes' | 'choices' | 'input' | 'links';
+type DialogContentItem = "htmlFile" | "htmlText" | "text" | "message" | "bbcode" | "md" | "checkboxes" | "choices" | "input" | "links";
 
 // @public (undocumented)
-type DialogType = 'success' | 'info' | 'error' | 'question';
+type DialogType = "success" | "info" | "error" | "question";
 
 // @public (undocumented)
-type DirectoryCleaningMode = 'tag' | 'all';
+type DirectoryCleaningMode = "tag" | "all";
 
 // @public (undocumented)
 const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
@@ -1189,7 +1188,7 @@ type GameInfoQuery = (game: any) => Promise_2<{
 }>;
 
 // @public (undocumented)
-type GameLaunchType = 'gamestore' | 'commandline';
+type GameLaunchType = "gamestore" | "commandline";
 
 // @public (undocumented)
 function gameName(state: any, gameId: string): string;
@@ -1439,10 +1438,10 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
 function getReduxLog(): Promise<ILog[]>;
 
 // @public
-function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T;
+function getSafe<T>(state: any, path: Array<string | number>, fallback: T): T;
 
 // @public
-function getSafeCI<T>(state: any, path: Array<(string | number)>, fallback: T): T;
+function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
 
 // @public (undocumented)
 function getText(group: TextGroup, textId: string, t: TFunction): string;
@@ -1560,7 +1559,7 @@ interface IAttachment {
     // (undocumented)
     id: string;
     // (undocumented)
-    type: 'file' | 'data';
+    type: "file" | "data";
 }
 
 // @public
@@ -1673,7 +1672,7 @@ interface ICollectionModInstallInfo {
     modId?: string;
     rule: IModRule;
     status: CollectionModStatus;
-    type: 'requires' | 'recommends';
+    type: "requires" | "recommends";
 }
 
 // @public
@@ -2173,7 +2172,7 @@ interface IExtensionApi {
     store?: ThunkStore<any>;
     suppressNotification?: (id: string, suppress?: boolean) => void;
     translate: TFunction;
-    withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise_2<T>) => ((...args: any[]) => Promise_2<T>);
+    withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise_2<T>) => (...args: any[]) => Promise_2<T>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "INexusAPIExtension" needs to be exported by the entry point index.d.ts
@@ -2279,7 +2278,7 @@ interface IExtensionOptional {
 // @public (undocumented)
 interface IExtensionState {
     // (undocumented)
-    enabled: boolean | 'failed';
+    enabled: boolean | "failed";
     // (undocumented)
     endorsed: string;
     // (undocumented)
@@ -2290,7 +2289,7 @@ interface IExtensionState {
 
 // @public
 interface IFileChange {
-    changeType: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
+    changeType: "refchange" | "valchange" | "deleted" | "srcdeleted";
     destTime?: Date;
     filePath: string;
     source: string;
@@ -2492,7 +2491,7 @@ interface IIconButtonExtraProps {
     // (undocumented)
     border?: boolean;
     // (undocumented)
-    flip?: 'horizontal' | 'vertical';
+    flip?: "horizontal" | "vertical";
     // (undocumented)
     hollow?: boolean;
     // (undocumented)
@@ -2522,7 +2521,7 @@ interface IInput extends IControlBase {
     // (undocumented)
     placeholder?: string;
     // (undocumented)
-    type?: 'text' | 'password' | 'number' | 'date' | 'time' | 'email' | 'url' | 'multiline';
+    type?: "text" | "password" | "number" | "date" | "time" | "email" | "url" | "multiline";
     // (undocumented)
     value?: string;
 }
@@ -2699,7 +2698,7 @@ interface IMainPageOptions {
     // (undocumented)
     badge?: ReduxProp<any>;
     // (undocumented)
-    group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
+    group: "dashboard" | "global" | "per-game" | "support" | "hidden";
     hotkey?: string;
     hotkeyRaw?: string;
     id?: string;
@@ -2983,7 +2982,7 @@ const installPathForGame: ParametricSelector<IState, string, string> & {
 };
 
 // @public (undocumented)
-type InstallPathMode = 'userData' | 'suggested';
+type InstallPathMode = "userData" | "suggested";
 
 // @public (undocumented)
 const instance: IGameStore;
@@ -2997,7 +2996,7 @@ const instance_2: GameStoreHelper;
 const instance_3: IGameStore;
 
 // @public (undocumented)
-type InstructionType = 'copy' | 'mkdir' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported' | 'attribute' | 'setmodtype' | 'error' | 'rule';
+type InstructionType = "copy" | "mkdir" | "submodule" | "generatefile" | "iniedit" | "unsupported" | "attribute" | "setmodtype" | "error" | "rule";
 
 // @public (undocumented)
 interface IOpenOptions {
@@ -3086,6 +3085,8 @@ interface IPrettifiedError {
     message: string;
     // (undocumented)
     replace?: any;
+    // (undocumented)
+    stack?: string;
 }
 
 // @public (undocumented)
@@ -3414,7 +3415,7 @@ interface ISettingsGameMode {
         [id: string]: IDiscoveryResult;
     };
     // (undocumented)
-    pickerLayout: 'list' | 'small' | 'large';
+    pickerLayout: "list" | "small" | "large";
     // (undocumented)
     searchPaths: string[];
     // (undocumented)
@@ -3554,7 +3555,7 @@ interface IStarterInfo {
     // (undocumented)
     name: string;
     // (undocumented)
-    onStart?: 'hide' | 'hide_recover' | 'close';
+    onStart?: "hide" | "hide_recover" | "close";
     // (undocumented)
     shell: boolean;
     // (undocumented)
@@ -3658,7 +3659,7 @@ interface IStateTransactions {
 // @public (undocumented)
 interface IStateVerifier {
     // (undocumented)
-    deleteBroken?: boolean | 'parent';
+    deleteBroken?: boolean | "parent";
     // (undocumented)
     description: (input: any) => string;
     // (undocumented)
@@ -3676,7 +3677,7 @@ interface IStateVerifier {
     // (undocumented)
     required?: boolean;
     // (undocumented)
-    type?: 'map' | 'string' | 'boolean' | 'number' | 'object' | 'array';
+    type?: "map" | "string" | "boolean" | "number" | "object" | "array";
 }
 
 // @public (undocumented)
@@ -3728,7 +3729,7 @@ interface ITableAttribute<T = any> {
     icon?: string;
     id: string;
     isDefaultFilter?: boolean;
-    isDefaultSort?: boolean | 'desc';
+    isDefaultSort?: boolean | "desc";
     isDefaultVisible?: boolean;
     isExtensible?: boolean;
     isGroupable?: boolean | ((object: T, t: TFunction) => string);
@@ -3864,7 +3865,7 @@ interface ITool {
     id: string;
     logo?: string;
     name: string;
-    onStart?: 'hide' | 'hide_recover' | 'close';
+    onStart?: "hide" | "hide_recover" | "close";
     parameters?: string[];
     queryPath?: () => string | Promise_2<string | IGameStoreEntry>;
     relative?: boolean;
@@ -3894,7 +3895,7 @@ interface IToolStored {
     // (undocumented)
     name: string;
     // (undocumented)
-    onStart?: 'hide' | 'hide_recover' | 'close';
+    onStart?: "hide" | "hide_recover" | "close";
     // (undocumented)
     parameters: string[];
     // (undocumented)
@@ -3912,7 +3913,7 @@ interface ITooltipIconProps {
     // (undocumented)
     fixedWidth?: boolean;
     // (undocumented)
-    flip?: 'horizontal' | 'vertical';
+    flip?: "horizontal" | "vertical";
     // (undocumented)
     hollow?: boolean;
     // (undocumented)
@@ -3922,7 +3923,7 @@ interface ITooltipIconProps {
     // (undocumented)
     pulse?: boolean;
     // (undocumented)
-    rotate?: '90' | '180' | '270';
+    rotate?: "90" | "180" | "270";
     // (undocumented)
     rotateId?: string;
     // (undocumented)
@@ -3946,7 +3947,7 @@ interface ITooltipProps {
     // (undocumented)
     id?: string;
     // (undocumented)
-    placement?: 'top' | 'right' | 'bottom' | 'left';
+    placement?: "top" | "right" | "bottom" | "left";
     // (undocumented)
     tooltip: string | React_2.ReactElement<any>;
 }
@@ -4058,13 +4059,13 @@ type LoadOrder = ILoadOrderEntry_2[];
 // Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function LoadOrderIndexInput(props: IProps_5): React_4.JSX.Element;
+export function LoadOrderIndexInput(props: IProps_5): React_3.JSX.Element;
 
 // @public
 function local<T>(id: string, init: T): T;
 
 // @public (undocumented)
-type LockedState = true | false | 'true' | 'false' | 'always' | 'never';
+type LockedState = true | false | "true" | "false" | "always" | "never";
 
 // Warning: (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
 //
@@ -4138,7 +4139,7 @@ modId: string;
 }, {}>;
 
 // @public
-function merge<T extends object>(state: T, path: Array<(string | number)>, value: any): T;
+function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
 const mergeDownloadModInfo: reduxAct.ComplexActionCreator2<string, any, {
@@ -4153,7 +4154,7 @@ type MergeFunc = (filePath: string, mergePath: string) => Promise_2<void>;
 type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 
 // @public (undocumented)
-type Method = 'GET' | 'POST' | 'PUT';
+type Method = "GET" | "POST" | "PUT";
 
 // @public (undocumented)
 class MissingInterpreter extends Error {
@@ -4233,7 +4234,7 @@ const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => Prom
 function moveRenameAsync(src: string, dest: string): PromiseBB<string>;
 
 // @public (undocumented)
-function mutateSafe<T>(state: T, path: Array<(string | number)>, value: any): void;
+function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void;
 
 // @public (undocumented)
 class NavItem_2 extends React_2.Component<NavItemProps, {}> {
@@ -4312,7 +4313,7 @@ class NotFound extends Error {
 type NotificationDismiss = () => void;
 
 // @public (undocumented)
-type NotificationType = 'activity' | 'global' | 'success' | 'info' | 'warning' | 'error' | 'silent';
+type NotificationType = "activity" | "global" | "success" | "info" | "warning" | "error" | "silent";
 
 // @public (undocumented)
 class NotSupportedError extends Error {
@@ -4400,13 +4401,13 @@ const pauseDownload: reduxAct.ComplexActionCreator3<string, boolean, IChunk[], {
 type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
 
 // @public
-type PersistingType = 'global' | 'game' | 'profile';
+type PersistingType = "global" | "game" | "profile";
 
 // @public (undocumented)
 type PersistorKey = string[];
 
 // @public (undocumented)
-type Placement = 'table' | 'detail' | 'both' | 'inline';
+type Placement = "table" | "detail" | "both" | "inline";
 
 // Warning: (ae-forgotten-export) The symbol "IPortalMenuProps" needs to be exported by the entry point index.d.ts
 //
@@ -4433,7 +4434,7 @@ function preProcess(input: string): string;
 function prettifyNodeErrorMessage(err: any, options?: IErrorOptions, fileName?: string): IPrettifiedError;
 
 // @public (undocumented)
-type ProblemSeverity = 'warning' | 'error' | 'fatal';
+type ProblemSeverity = "warning" | "error" | "fatal";
 
 // @public (undocumented)
 class ProcessCanceled extends Error {
@@ -4478,7 +4479,7 @@ export class PureComponentEx<P, S extends object> extends React_2.PureComponent<
 }
 
 // @public
-function pushSafe<T>(state: T, path: Array<(string | number)>, value: any): T;
+function pushSafe<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
 const queueClearingDownloads: ((state: IState) => {}) & OutputSelectorFields<(args_0: {
@@ -4612,10 +4613,10 @@ const removeProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 function removeSync(dirPath: string): void;
 
 // @public
-function removeValue<T>(state: T, path: Array<(string | number)>, value: any): T;
+function removeValue<T>(state: T, path: Array<string | number>, value: any): T;
 
 // @public
-function removeValueIf<T extends object>(state: T, path: Array<(string | number)>, predicate: (element: any) => boolean): T;
+function removeValueIf<T extends object>(state: T, path: Array<string | number>, predicate: (element: any) => boolean): T;
 
 // @public (undocumented)
 function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void>;
@@ -4628,7 +4629,7 @@ const renameCategory: reduxAct.ComplexActionCreator3<string, string, string, {
 }, {}>;
 
 // @public (undocumented)
-function renderBBCode(input: string, context?: any): React_3.ReactChild[];
+function renderBBCode(input: string, context?: unknown): React_2.ReactChild[];
 
 // @public
 function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered;
@@ -4651,7 +4652,7 @@ function resolveCategoryName(category: string | number, state: IState): string;
 function resolveCategoryPath(category: string | number, state: IState): string;
 
 // @public
-type Revertability = 'yes' | 'never' | 'invalid';
+type Revertability = "yes" | "never" | "invalid";
 
 // @public (undocumented)
 function rmdirAsync(dirPath: string): PromiseBB<void>;
@@ -4851,7 +4852,7 @@ const setCustomTitlebar: reduxAct.ComplexActionCreator1<any, any, {}>;
 function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K];
 
 // @public (undocumented)
-function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T;
+function setDefaultArray<T>(state: T, path: Array<string | number>, fallback: any[]): T;
 
 // @public (undocumented)
 const setDeploymentNecessary: reduxAct.ComplexActionCreator2<string, boolean, {
@@ -5185,7 +5186,7 @@ const setProgress: reduxAct.ComplexActionCreator4<string, string, string, number
 const setRelativeTimes: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
 // @public
-function setSafe<T extends object>(state: T, path: Array<(string | number)>, value: any): T;
+function setSafe<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
 const setSettingsPage: reduxAct.ComplexActionCreator1<string, {
@@ -5327,13 +5328,13 @@ const showUsageInstruction: reduxAct.ComplexActionCreator2<string, boolean, {
 }, {}>;
 
 // @public (undocumented)
-type SortDirection = 'none' | 'asc' | 'desc';
+type SortDirection = "none" | "asc" | "desc";
 
 // @public (undocumented)
 function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise_2<IMod[]>;
 
 // @public (undocumented)
-type SortType = 'ascending' | 'descending';
+type SortType = "ascending" | "descending";
 
 // Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point index.d.ts
 //
@@ -5402,7 +5403,7 @@ class StarterInfo implements IStarterInfo {
     // (undocumented)
     name: string;
     // (undocumented)
-    onStart?: 'hide' | 'hide_recover' | 'close';
+    onStart?: "hide" | "hide_recover" | "close";
     // (undocumented)
     originalEnvironment: {
         [key: string]: string;
@@ -5545,21 +5546,21 @@ export const Tailwind: {
     nxmStar: "M11.8759 0.933576C11.9276 0.729726 11.9536 0.615234 11.9536 0.615234L11.9536 1.23234C12.3305 2.648 13.391 6.18057 15.084 8.3419C16.9248 10.6919 21.528 12.2076 22.8318 12.5998L23.1848 12.5998C23.1848 12.5998 23.1211 12.617 23.0046 12.651C23.1186 12.6841 23.1808 12.701 23.1808 12.701L22.8357 12.701C21.5319 13.0932 16.9287 14.6089 15.0879 16.9589C13.3891 19.1277 12.3271 22.6772 11.9536 24.083L11.9536 24.6835C11.9536 24.6835 11.9283 24.5723 11.8781 24.3738C11.8279 24.5723 11.8026 24.6836 11.8026 24.6836L11.8026 24.0829C11.4291 22.6771 10.3672 19.1276 8.66837 16.9588C6.82467 14.6051 2.20975 13.0883 0.914406 12.699L0.571472 12.699C0.571472 12.699 0.633264 12.6823 0.746532 12.6494C0.633282 12.6164 0.571499 12.5997 0.571499 12.5997L0.914378 12.5997C2.20972 12.2105 6.82465 10.6937 8.66834 8.33994C10.3613 6.17862 11.4218 2.64605 11.7987 1.23038L11.7987 0.617189C11.7987 0.617189 11.8246 0.730949 11.8759 0.933576Z";
     nxmTailwind: "M12 6.036c-2.667 0-4.333 1.325-5 3.976 1-1.325 2.167-1.822 3.5-1.491.761.189 1.305.738 1.906 1.345C13.387 10.855 14.522 12 17 12c2.667 0 4.333-1.325 5-3.976-1 1.325-2.166 1.822-3.5 1.491-.761-.189-1.305-.738-1.907-1.345-.98-.99-2.114-2.134-4.593-2.134zM7 12c-2.667 0-4.333 1.325-5 3.976 1-1.326 2.167-1.822 3.5-1.491.761.189 1.305.738 1.907 1.345.98.989 2.115 2.134 4.594 2.134 2.667 0 4.333-1.325 5-3.976-1 1.325-2.167 1.822-3.5 1.491-.761-.189-1.305-.738-1.906-1.345C10.613 13.145 9.478 12 7 12z";
     getTabId: typeof tabs.getTabId;
-    TabBar: ({ children, className }: {
+    TabBar: ({ children, className, }: {
         children: ReactNode;
         className?: string;
     }) => JSX_2.Element;
     TabButton: ({ className, count, disabled, name, ...props }: tabs.TabButtonProps) => JSX_2.Element;
-    TabContent: ({ count, label }: {
+    TabContent: ({ count, label, }: {
         count?: number;
         label: string;
     }) => JSX_2.Element;
     TabLink: ({ className, count, name, ...props }: tabs.TabLinkProps) => JSX_2.Element;
-    TabPanel: ({ children, name }: {
+    TabPanel: ({ children, name, }: {
         children: ReactNode;
         name: string;
     }) => JSX_2.Element;
-    TabProvider: ({ children, onSetSelectedTab, tab, tabListId }: tabs.TabProviderProps) => JSX_2.Element;
+    TabProvider: ({ children, onSetSelectedTab, tab, tabListId, }: tabs.TabProviderProps) => JSX_2.Element;
     useTabContext: () => tabs.TabsState;
     FormField: ({ children, className, disabled, errorMessage, hideLabel, hints, hintsTypographyType, id, inputLength, label, maxLength, ref, showRequiredLabel, }: form.FormFieldProps) => JSX_2.Element;
     FormFieldWrap: ({ children }: {
@@ -5670,7 +5671,7 @@ function testRefByIdentifiers(identifiers: {
 type TestSupported = (files: string[], gameId: string, archivePath?: string, details?: ITestSupportedDetails) => Promise_2<ISupportedResult>;
 
 // @public (undocumented)
-type TextGroup = 'mod' | 'profile';
+type TextGroup = "mod" | "profile";
 
 // @public (undocumented)
 type TFunction = typeof I18next.t;
@@ -5690,7 +5691,7 @@ export function Timer(props: ITimerProps): React_2.JSX.Element;
 function toBlue<T, ArgsT extends any[]>(func: (...args: ArgsT) => Promise<T>): (...args: ArgsT) => Bluebird<T>;
 
 // @public (undocumented)
-type ToDoType = 'settings' | 'search' | 'workaround' | 'more';
+type ToDoType = "settings" | "search" | "workaround" | "more";
 
 // Warning: (ae-forgotten-export) The symbol "IProps_10" needs to be exported by the entry point index.d.ts
 //
@@ -6008,7 +6009,7 @@ const updateNotification: reduxAct.ComplexActionCreator3<string, number, string,
 }>;
 
 // @public (undocumented)
-type UpdateType = 'drag-n-drop' | 'props-update' | 'refresh';
+type UpdateType = "drag-n-drop" | "props-update" | "refresh";
 
 // @public (undocumented)
 function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer>;
@@ -6187,7 +6188,7 @@ export { util }
 const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void>;
 
 // @public (undocumented)
-type ValidationState = 'success' | 'warning' | 'error';
+type ValidationState = "success" | "warning" | "error";
 
 // @public
 class VerifierDrop extends Error {

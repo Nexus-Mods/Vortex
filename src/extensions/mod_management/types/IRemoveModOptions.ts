@@ -1,4 +1,4 @@
-import { IMod } from '../types/IMod';
+import { IMod } from "../types/IMod";
 
 export interface IRemoveModOptions {
   // if true will not raise any notifications/toasts

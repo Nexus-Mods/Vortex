@@ -1,12 +1,12 @@
-import * as _ from 'lodash';
-import * as React from 'react';
-import {OverlayTrigger} from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
+import * as _ from "lodash";
+import * as React from "react";
+import { OverlayTrigger } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
 
 export interface IBaseProps {
   triggerRef?: (ref: HTMLElement) => void;
   getBounds: () => ClientRect;
-  orientation: 'vertical' | 'horizontal';
+  orientation: "vertical" | "horizontal";
   shouldUpdatePosition?: boolean;
 }
 
@@ -36,7 +36,7 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
     super(props);
 
     this.state = {
-      placement: props.orientation === 'horizontal' ? 'right' : 'bottom',
+      placement: props.orientation === "horizontal" ? "right" : "bottom",
     };
   }
 
@@ -46,8 +46,12 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
 
   public render() {
     const { placement } = this.state;
-    const relayProps: any =
-      _.omit(this.props, ['getBounds', 'placement', 'onEnter', 'triggerRef']);
+    const relayProps: any = _.omit(this.props, [
+      "getBounds",
+      "placement",
+      "onEnter",
+      "triggerRef",
+    ]);
     return (
       <OverlayTrigger
         placement={placement}
@@ -63,24 +67,26 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
   private onEnter = () => {
     if (this.mNode) {
       const bounds: ClientRect = this.props.getBounds();
-      if (this.props.orientation === 'horizontal') {
+      if (this.props.orientation === "horizontal") {
         const rightOfMid =
-          this.mNode.getBoundingClientRect().left > bounds.left + bounds.width / 2;
+          this.mNode.getBoundingClientRect().left >
+          bounds.left + bounds.width / 2;
         this.setState({
-          placement: rightOfMid ? 'left' : 'right',
+          placement: rightOfMid ? "left" : "right",
         });
       } else {
         const belowMid =
-          this.mNode.getBoundingClientRect().top > bounds.top + bounds.height / 2;
+          this.mNode.getBoundingClientRect().top >
+          bounds.top + bounds.height / 2;
         this.setState({
-          placement: belowMid ? 'top' : 'bottom',
+          placement: belowMid ? "top" : "bottom",
         });
       }
     }
     if (this.props.onEnter) {
       this.props.onEnter();
     }
-  }
+  };
 }
 
 export default MyOverlayTrigger;

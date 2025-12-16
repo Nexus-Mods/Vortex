@@ -1,7 +1,7 @@
-import FeedParser from 'feedparser';
-import { IncomingMessage } from 'http';
-import { get } from 'https';
-import * as url from 'url';
+import FeedParser from "feedparser";
+import { IncomingMessage } from "http";
+import { get } from "https";
+import * as url from "url";
 
 export interface IEnclosure {
   length: string;
@@ -20,10 +20,10 @@ export interface IFeedMessage {
   descriptionShortened?: React.ReactChild;
   descriptionRendered?: React.ReactChild[];
   enclosures: IEnclosure[];
-  'nexusmods:downloads'?: { '#': string };
-  'nexusmods:endorsements'?: { '#': string };
-  'nexusmods:comments'?: { '#': string };
-  'nexusmods:summary'?: { '#': string };
+  "nexusmods:downloads"?: { "#": string };
+  "nexusmods:endorsements"?: { "#": string };
+  "nexusmods:comments"?: { "#": string };
+  "nexusmods:summary"?: { "#": string };
 }
 
 function retrieve(rssUrl: string): Promise<IFeedMessage[]> {
@@ -34,54 +34,55 @@ function retrieve(rssUrl: string): Promise<IFeedMessage[]> {
     } catch (err) {
       return reject(new Error(`Invalid RSS URL: ${rssUrl}`));
     }
-    get({
-      protocol: parsedUrl.protocol,
-      hostname: parsedUrl.hostname,
-      port: parsedUrl.port,
-      path: parsedUrl.pathname + parsedUrl.search,
-      headers: { 'User-Agent': 'Vortex', Cookie: 'rd=true' },
+    get(
+      {
+        protocol: parsedUrl.protocol,
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.pathname + parsedUrl.search,
+        headers: { "User-Agent": "Vortex", Cookie: "rd=true" },
+      } as any,
+      (res: IncomingMessage) => {
+        const { statusCode } = res;
+        const contentType = res.headers["content-type"];
 
-    } as any, (res: IncomingMessage) => {
-      const { statusCode } = res;
-      const contentType = res.headers['content-type'];
-
-      let err: string;
-      if (statusCode !== 200) {
-        err = `Request Failed. Status Code: ${statusCode}`;
-      }
-
-      const parser = new FeedParser();
-
-      const result: IFeedMessage[] = [];
-
-      parser.on('error', error => {
-        res.destroy();
-        reject(error);
-      });
-      parser.on('readable', () => {
-        while (true) {
-          const item = parser.read();
-          if (item === null) {
-            break;
-          } else {
-            result.push(item);
-          }
+        let err: string;
+        if (statusCode !== 200) {
+          err = `Request Failed. Status Code: ${statusCode}`;
         }
-      });
-      parser.on('end', () => {
-        resolve(result);
-      });
 
-      if (err !== undefined) {
-        res.resume();
-        return reject(new Error(err));
-      }
+        const parser = new FeedParser();
 
-      res.pipe(parser);
-    })
-      .on('error', (err: Error) => {
-        return reject(err);
-      });
+        const result: IFeedMessage[] = [];
+
+        parser.on("error", (error) => {
+          res.destroy();
+          reject(error);
+        });
+        parser.on("readable", () => {
+          while (true) {
+            const item = parser.read();
+            if (item === null) {
+              break;
+            } else {
+              result.push(item);
+            }
+          }
+        });
+        parser.on("end", () => {
+          resolve(result);
+        });
+
+        if (err !== undefined) {
+          res.resume();
+          return reject(new Error(err));
+        }
+
+        res.pipe(parser);
+      },
+    ).on("error", (err: Error) => {
+      return reject(err);
+    });
   });
 }
 

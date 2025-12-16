@@ -1,9 +1,9 @@
-import { ComponentEx } from '../../util/ComponentEx';
+import { ComponentEx } from "../../util/ComponentEx";
 
-import Body from './MainPageBody';
-import Header from './MainPageHeader';
+import Body from "./MainPageBody";
+import Header from "./MainPageHeader";
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface IBaseProps {
   id?: string;
@@ -20,7 +20,11 @@ class MainPage extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { children, className, domRef, id } = this.props;
     return (
-      <div id={id} ref={domRef} className={(className || '') + ' main-page-inner'}>
+      <div
+        id={id}
+        ref={domRef}
+        className={(className || "") + " main-page-inner"}
+      >
         {children}
       </div>
     );

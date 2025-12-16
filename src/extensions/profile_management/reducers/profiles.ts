@@ -1,9 +1,9 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
-import { log } from '../../../util/log';
-import { deleteOrNop, getSafe, setSafe } from '../../../util/storeHelper';
+import { IReducerSpec } from "../../../types/IExtensionContext";
+import { log } from "../../../util/log";
+import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
 
-import * as actions from '../actions/profiles';
-import { IProfile } from '../types/IProfile';
+import * as actions from "../actions/profiles";
+import { IProfile } from "../types/IProfile";
 
 /**
  * reducer for changes to ephemeral session state
@@ -16,12 +16,12 @@ export const profilesReducer: IReducerSpec = {
         ...payload,
       }),
     [actions.removeProfile as any]: (state, payload) =>
-      deleteOrNop(state, [ payload ]),
+      deleteOrNop(state, [payload]),
     [actions.willRemoveProfile as any]: (state, payload) => {
       if (state[payload] === undefined) {
         return state;
       }
-      return setSafe(state, [payload, 'pendingRemove'], true);
+      return setSafe(state, [payload, "pendingRemove"], true);
     },
     [actions.setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
@@ -31,22 +31,23 @@ export const profilesReducer: IReducerSpec = {
       }
 
       if (enable) {
-        state = setSafe(state, [profileId, 'modState', modId, 'enabledTime'], Date.now());
+        state = setSafe(
+          state,
+          [profileId, "modState", modId, "enabledTime"],
+          Date.now(),
+        );
       }
 
-      return setSafe(
-        state,
-        [profileId, 'modState', modId, 'enabled'],
-        enable);
+      return setSafe(state, [profileId, "modState", modId, "enabled"], enable);
     },
     [actions.setProfileActivated as any]: (state, payload) => {
       if (state[payload] === undefined) {
         return state;
       }
-      return setSafe(state, [payload, 'lastActivated'], Date.now());
+      return setSafe(state, [payload, "lastActivated"], Date.now());
     },
     [actions.forgetMod as any]: (state, payload) =>
-      deleteOrNop(state, [payload.profileId, 'modState', payload.modId]),
+      deleteOrNop(state, [payload.profileId, "modState", payload.modId]),
     [actions.setFeature as any]: (state, payload) => {
       const { profileId, featureId, value } = payload;
 
@@ -54,32 +55,33 @@ export const profilesReducer: IReducerSpec = {
         return state;
       }
 
-      return setSafe(state, [profileId, 'features', featureId], value);
+      return setSafe(state, [profileId, "features", featureId], value);
     },
   },
-  defaults: {
-  },
+  defaults: {},
   verifiers: {
     _: {
-      type: 'object',
+      type: "object",
       deleteBroken: true,
       description: () => `Invalid profile will be removed`,
       elements: {
         gameId: {
-          type: 'string',
-          description: (input) => `Profile ${input.id} has no game assigned and will be removed`,
+          type: "string",
+          description: (input) =>
+            `Profile ${input.id} has no game assigned and will be removed`,
           noUndefined: true,
           noNull: true,
           required: true,
-          deleteBroken: 'parent',
+          deleteBroken: "parent",
         },
         name: {
-          type: 'string',
-          description: (input) => `Profile ${input.id} is missing a name, will set a default`,
+          type: "string",
+          description: (input) =>
+            `Profile ${input.id} is missing a name, will set a default`,
           noUndefined: true,
           noNull: true,
           required: true,
-          repair: () => '<Invalid>',
+          repair: () => "<Invalid>",
         },
       },
     },

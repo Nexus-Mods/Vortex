@@ -1,8 +1,8 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { IReducerSpec } from "../../../types/IExtensionContext";
 
-import * as actions from '../actions/interface';
+import * as actions from "../actions/interface";
 
-import update from 'immutability-helper';
+import update from "immutability-helper";
 
 /**
  * reducer for changes to interface settings
@@ -27,7 +27,7 @@ const settingsReducer: IReducerSpec = {
       update(state, { foregroundDL: { $set: payload } }),
   },
   defaults: {
-    language: 'en',
+    language: "en",
     advanced: false,
     profilesVisible: false,
     desktopNotifications: false,

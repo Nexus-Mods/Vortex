@@ -1,8 +1,8 @@
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import { Normalize } from '../../../util/getNormalizeFunc';
-import { TFunction } from '../../../util/i18n';
+import { IExtensionApi } from "../../../types/IExtensionContext";
+import { Normalize } from "../../../util/getNormalizeFunc";
+import { TFunction } from "../../../util/i18n";
 
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 /**
  * details about a file change
@@ -30,7 +30,7 @@ export interface IFileChange {
    * deleted means that the file was deleted in the destination directory
    * srcdeleted means that the file was deleted in the source directory
    */
-  changeType: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
+  changeType: "refchange" | "valchange" | "deleted" | "srcdeleted";
   /**
    * time the deployed file was last changed
    */
@@ -97,7 +97,6 @@ export interface IUnavailableReason {
 }
 
 export interface IDeploymentMethod {
-
   /**
    * id of the activator for lookup in code
    *
@@ -166,7 +165,11 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
+  isSupported: (
+    state: any,
+    gameId: string,
+    modTypeId: string,
+  ) => IUnavailableReason;
 
   /**
    * if mod deployment in some way requires user interaction we should give the user control
@@ -197,8 +200,12 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
-            normalize: Normalize) => Promise<void>;
+  prepare: (
+    dataPath: string,
+    clean: boolean,
+    lastActivation: IDeployedFile[],
+    normalize: Normalize,
+  ) => Promise<void>;
 
   /**
    * called after an activate call was made for all active mods,
@@ -215,10 +222,12 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  finalize: (gameId: string,
-             dataPath: string,
-             installationPath: string,
-             progressCB?: (files: number, total: number) => void) => Promise<IDeployedFile[]>;
+  finalize: (
+    gameId: string,
+    dataPath: string,
+    installationPath: string,
+    progressCB?: (files: number, total: number) => void,
+  ) => Promise<IDeployedFile[]>;
 
   /**
    * if defined, this gets called instead of finalize if an error occurred since prepare was called.
@@ -227,9 +236,11 @@ export interface IDeploymentMethod {
    * If this is not defined, nothing gets called. In this case the deployment method can't have any
    * state set up in prepare that would cause issues if finalize doesn't get called.
    */
-  cancel?: (gameId: string,
-            dataPath: string,
-            installationPath: string) => Promise<void>;
+  cancel?: (
+    gameId: string,
+    dataPath: string,
+    installationPath: string,
+  ) => Promise<void>;
 
   /**
    * activate the specified mod in the specified location
@@ -241,8 +252,12 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  activate: (sourcePath: string, sourceName: string, deployPath: string,
-             blackList: Set<string>) => Promise<void>;
+  activate: (
+    sourcePath: string,
+    sourceName: string,
+    deployPath: string,
+    blackList: Set<string>,
+  ) => Promise<void>;
 
   /**
    * deactivate the specified mod, removing all files it has deployed to the destination
@@ -253,7 +268,11 @@ export interface IDeploymentMethod {
    * @todo sorry about the stupid parameter order, sourceName was added after release so to
    *   remain backwards compatible we have to append it
    */
-  deactivate: (sourcePath: string, dataPath: string, sourceName: string) => Promise<void>;
+  deactivate: (
+    sourcePath: string,
+    dataPath: string,
+    sourceName: string,
+  ) => Promise<void>;
 
   /**
    * called before mods are being purged. If multiple mod types are going to be purged,
@@ -277,8 +296,12 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  purge: (installPath: string, dataPath: string, gameId?: string,
-          onProgress?: (num: number, total: number) => void) => Promise<void>;
+  purge: (
+    installPath: string,
+    dataPath: string,
+    gameId?: string,
+    onProgress?: (num: number, total: number) => void,
+  ) => Promise<void>;
 
   /**
    * called after mods were purged. If multiple mod types wer purged, this is only called
@@ -295,8 +318,12 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  externalChanges: (gameId: string, installPath: string, dataPath: string,
-                    activation: IDeployedFile[]) => Promise<IFileChange[]>;
+  externalChanges: (
+    gameId: string,
+    installPath: string,
+    dataPath: string,
+    activation: IDeployedFile[],
+  ) => Promise<IFileChange[]>;
 
   /**
    * given a file path (relative to a staging path), return the name under which the
@@ -313,5 +340,9 @@ export interface IDeploymentMethod {
    * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    */
-  isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => Promise<boolean>;
+  isDeployed: (
+    installPath: string,
+    dataPath: string,
+    file: IDeployedFile,
+  ) => Promise<boolean>;
 }

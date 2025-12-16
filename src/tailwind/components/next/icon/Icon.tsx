@@ -17,26 +17,26 @@
  * - none: Size controlled via className
  */
 
-import * as React from 'react';
-import * as mdi from '@mdi/js';
-import * as nxm from '../../../lib/icon-paths';
-import { XOr } from '../utils';
+import * as React from "react";
+import * as mdi from "@mdi/js";
+import * as nxm from "../../../lib/icon-paths";
+import { XOr } from "../utils";
 
-export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'none';
+export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 
 /* eslint-disable sort-keys */
 const sizeMap: { [key in IconSize]: string | undefined } = {
-  'none': undefined,
-  'xs': 'var(--icon-size-xs)',
-  'sm': 'var(--icon-size-sm)',
-  'md': 'var(--icon-size-md)',
-  'lg': 'var(--icon-size-lg)',
-  'xl': 'var(--icon-size-xl)',
-  '2xl': 'var(--icon-size-2xl)',
+  none: undefined,
+  xs: "var(--icon-size-xs)",
+  sm: "var(--icon-size-sm)",
+  md: "var(--icon-size-md)",
+  lg: "var(--icon-size-lg)",
+  xl: "var(--icon-size-xl)",
+  "2xl": "var(--icon-size-2xl)",
 };
 /* eslint-enable sort-keys */
 
-export type IconProps = Omit<React.SVGProps<SVGSVGElement>, 'size' | 'path'> & {
+export type IconProps = Omit<React.SVGProps<SVGSVGElement>, "size" | "path"> & {
   /**
    * Icon path or name (REQUIRED):
    * - MDI icon name: 'mdiAccount', 'mdiDownload', etc.
@@ -50,21 +50,21 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, 'size' | 'path'> & {
    */
   title?: string;
 } & XOr<
-  {
-    /**
-     * Named size from design system (default: 'md')
-     * Cannot be used with sizeOverride
-     */
-    size?: IconSize;
-  },
-  {
-    /**
-     * Custom size override (e.g., '1.5rem', '24px', 'var(--custom-size)')
-     * Cannot be used with size
-     */
-    sizeOverride?: string;
-  }
->;
+    {
+      /**
+       * Named size from design system (default: 'md')
+       * Cannot be used with sizeOverride
+       */
+      size?: IconSize;
+    },
+    {
+      /**
+       * Custom size override (e.g., '1.5rem', '24px', 'var(--custom-size)')
+       * Cannot be used with size
+       */
+      sizeOverride?: string;
+    }
+  >;
 
 /**
  * Icon component that renders icons from multiple sources
@@ -78,38 +78,44 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, 'size' | 'path'> & {
  */
 export const Icon = ({
   path,
-  size = 'md',
+  size = "md",
   sizeOverride,
-  className = '',
+  className = "",
   title,
   ...rest
 }: IconProps) => {
   // Resolve path - if it's a string like 'mdiAccount' or 'nxmVortex', look it up
   let svgPath: string | undefined;
 
-  if (typeof path === 'string') {
+  if (typeof path === "string") {
     // Check if it's an icon name or already an SVG path
-    if (path.startsWith('mdi') && path.length > 3) {
+    if (path.startsWith("mdi") && path.length > 3) {
       // It's a Material Design Icon name like 'mdiAccount' - look it up in @mdi/js
       svgPath = (mdi as any)[path];
 
       if (!svgPath) {
-        console.warn(`Icon: Unknown MDI icon name "${path}". Check @mdi/js exports.`);
+        console.warn(
+          `Icon: Unknown MDI icon name "${path}". Check @mdi/js exports.`,
+        );
         return null;
       }
-    } else if (path.startsWith('nxm') && path.length > 3) {
+    } else if (path.startsWith("nxm") && path.length > 3) {
       // It's a Nexus Mods icon name like 'nxmVortex' - look it up in our icon paths
       svgPath = (nxm as any)[path];
 
       if (!svgPath) {
-        console.warn(`Icon: Unknown Nexus icon name "${path}". Check available nxm* icons.`);
+        console.warn(
+          `Icon: Unknown Nexus icon name "${path}". Check available nxm* icons.`,
+        );
         return null;
       }
-    } else if (path.startsWith('M') || path.startsWith('m')) {
+    } else if (path.startsWith("M") || path.startsWith("m")) {
       // It's already an SVG path data string
       svgPath = path;
     } else {
-      console.warn(`Icon: Invalid path "${path}". Expected MDI icon name (mdi*), Nexus icon name (nxm*), or SVG path data.`);
+      console.warn(
+        `Icon: Invalid path "${path}". Expected MDI icon name (mdi*), Nexus icon name (nxm*), or SVG path data.`,
+      );
       return null;
     }
   } else {
@@ -122,14 +128,14 @@ export const Icon = ({
   }
 
   // Determine size - use sizeOverride if provided, otherwise use size from map
-  const sizeValue = sizeOverride ?? sizeMap[size ?? 'md'];
+  const sizeValue = sizeOverride ?? sizeMap[size ?? "md"];
 
   return (
     <svg
       viewBox="0 0 24 24"
       style={{ width: sizeValue, height: sizeValue }}
       className={className}
-      role={title ? 'img' : 'presentation'}
+      role={title ? "img" : "presentation"}
       aria-label={title}
       {...rest}
     >

@@ -1,22 +1,22 @@
-import Icon from '../../renderer/controls/Icon';
+import Icon from "../Icon";
 
-import { Tag } from 'bbcode-to-react';
-import * as React from 'react';
+import { Tag } from "bbcode-to-react";
+import * as React from "react";
 
 class SvgTag extends Tag {
   public toHTML(): string[] {
-    return [`<svg
+    return [
+      `<svg
       preserveAspectRatio='xMidYMid meet'
       class='icon icon-${this.getContent()}'
     >
     <use xlink:href=#'${this.getContent()}'>
-    </svg>`];
+    </svg>`,
+    ];
   }
 
   public toReact() {
-    return (
-      <Icon name={this.getContent()} />
-    );
+    return <Icon name={this.getContent()} />;
   }
 }
 

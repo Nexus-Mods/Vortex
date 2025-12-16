@@ -12,20 +12,28 @@
  * the download button on google drive. (as of Electron 15.1.1)
  */
 
-import { log } from '../../util/log';
-import { truthy } from '../../util/util';
-import { closeBrowserView, makeBrowserView, positionBrowserView, updateViewURL } from '../../util/webview';
+import { log } from "../../util/log";
+import { truthy } from "../../util/util";
+import {
+  closeBrowserView,
+  makeBrowserView,
+  positionBrowserView,
+  updateViewURL,
+} from "../../util/webview";
 
-import { ipcRenderer } from 'electron';
-import { omit } from 'lodash';
-import * as React from 'react';
-import ReactDOM from 'react-dom';
-import { clearInterval } from 'timers';
+import { ipcRenderer } from "electron";
+import { omit } from "lodash";
+import * as React from "react";
+import ReactDOM from "react-dom";
+import { clearInterval } from "timers";
 
-const RESIZE_EVENTS = ['scroll', 'resize'];
+const RESIZE_EVENTS = ["scroll", "resize"];
 
-export interface IWebView extends
-      React.DetailedHTMLProps<React.WebViewHTMLAttributes<HTMLWebViewElement>, HTMLWebViewElement> {
+export interface IWebView
+  extends React.DetailedHTMLProps<
+    React.WebViewHTMLAttributes<HTMLWebViewElement>,
+    HTMLWebViewElement
+  > {
   src?: string;
   style?: any;
   autosize?: boolean;
@@ -72,7 +80,6 @@ function BrowserView(props: IBrowserViewProps) {
 
       positionBrowserView(viewId.current, bounds.current);
     }
-
   }, []);
 
   React.useEffect(() => {
@@ -81,15 +88,17 @@ function BrowserView(props: IBrowserViewProps) {
       if (truthy(bounds.current)) {
         // janky way of estimating a position that would be overlapped
         const x = bounds.current.x + bounds.current.width / 2;
-        const y1 = bounds.current.y + (bounds.current.height * 0.33);
-        const y2 = bounds.current.y + (bounds.current.height * 0.66);
+        const y1 = bounds.current.y + bounds.current.height * 0.33;
+        const y2 = bounds.current.y + bounds.current.height * 0.66;
         const ele1 = document.elementFromPoint(x, y1);
         const ele2 = document.elementFromPoint(x, y2);
-        const isVisible = (ele1 === container.current) && (ele2 === container.current);
+        const isVisible =
+          ele1 === container.current && ele2 === container.current;
         if (wasVisible !== isVisible) {
-          positionBrowserView(viewId.current, isVisible
-            ? bounds.current
-            : { x: 0, y: 0, width: 0, height: 0 });
+          positionBrowserView(
+            viewId.current,
+            isVisible ? bounds.current : { x: 0, y: 0, width: 0, height: 0 },
+          );
           wasVisible = isVisible;
         }
       }
@@ -105,18 +114,20 @@ function BrowserView(props: IBrowserViewProps) {
 
   React.useEffect(() => {
     const impl = async () => {
-      viewId.current = await makeBrowserView(props.src, Object.keys(props.events));
+      viewId.current = await makeBrowserView(
+        props.src,
+        Object.keys(props.events),
+      );
 
-      RESIZE_EVENTS.forEach(evtId => {
+      RESIZE_EVENTS.forEach((evtId) => {
         window.addEventListener(evtId, updateViewBounds);
       });
 
-      Object.keys(props.events)
-        .forEach(evtId => {
-          ipcRenderer.on(`view-${viewId.current}-${evtId}`, (evt, argsJSON) => {
-            props.events[evtId](...JSON.parse(argsJSON));
-          });
+      Object.keys(props.events).forEach((evtId) => {
+        ipcRenderer.on(`view-${viewId.current}-${evtId}`, (evt, argsJSON) => {
+          props.events[evtId](...JSON.parse(argsJSON));
         });
+      });
       updateViewBounds();
     };
 
@@ -124,14 +135,13 @@ function BrowserView(props: IBrowserViewProps) {
 
     return () => {
       closeBrowserView(viewId.current);
-      RESIZE_EVENTS.forEach(evtId => {
+      RESIZE_EVENTS.forEach((evtId) => {
         window.removeEventListener(evtId, updateViewBounds);
       });
 
-      Object.keys(props.events)
-        .forEach(evtId => {
-          ipcRenderer.removeAllListeners(`view-${viewId.current}-${evtId}`);
-        });
+      Object.keys(props.events).forEach((evtId) => {
+        ipcRenderer.removeAllListeners(`view-${viewId.current}-${evtId}`);
+      });
     };
   }, []);
 
@@ -139,8 +149,8 @@ function BrowserView(props: IBrowserViewProps) {
     <div
       ref={container}
       style={{
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
       }}
     />
   );
@@ -148,7 +158,10 @@ function BrowserView(props: IBrowserViewProps) {
 
 const emptyObject = {};
 
-export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { src: string }> {
+export class WebviewOverlay extends React.Component<
+  IWebviewProps & IWebView,
+  { src: string }
+> {
   constructor(props: IWebviewProps & IWebView) {
     super(props);
 
@@ -164,17 +177,17 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
   }
 
   public render(): JSX.Element {
-    const {events} = this.props;
+    const { events } = this.props;
     return truthy(this.props.src) ? (
       <BrowserView
         src={this.state.src}
         events={{
-          'did-start-loading': this.startLoad,
-          'did-stop-loading': this.stopLoad,
-          'console-message': this.logMessage,
-          'new-window': this.newWindow,
-          'enter-html-full-screen': this.enterFullscreen,
-          'leave-html-full-screen': this.leaveFullscreen,
+          "did-start-loading": this.startLoad,
+          "did-stop-loading": this.stopLoad,
+          "console-message": this.logMessage,
+          "new-window": this.newWindow,
+          "enter-html-full-screen": this.enterFullscreen,
+          "leave-html-full-screen": this.leaveFullscreen,
           ...(events ?? emptyObject),
         }}
       />
@@ -190,21 +203,21 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
     if (onLoading !== undefined) {
       onLoading(true);
     }
-  }
+  };
 
   private stopLoad = () => {
     const { onLoading } = this.props;
     if (onLoading !== undefined) {
       onLoading(false);
     }
-  }
+  };
 
   private newWindow = (url: string, frameName: string, disposition: string) => {
     const { onNewWindow } = this.props;
     if (onNewWindow !== undefined) {
       onNewWindow(url, disposition);
     }
-  }
+  };
 
   private enterFullscreen = () => {
     const { onFullscreen } = this.props;
@@ -212,7 +225,7 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
     if (onFullscreen !== undefined) {
       onFullscreen(true);
     }
-  }
+  };
 
   private leaveFullscreen = () => {
     const { onFullscreen } = this.props;
@@ -220,26 +233,29 @@ export class WebviewOverlay extends React.Component<IWebviewProps & IWebView, { 
     if (onFullscreen !== undefined) {
       onFullscreen(false);
     }
-  }
+  };
 
   private logMessage = (level, message) => {
     if (level > 2) {
-      log('info', 'from embedded page', { level, message });
+      log("info", "from embedded page", { level, message });
     }
-  }
+  };
 }
 
-export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> {
+export class WebviewEmbed extends React.Component<
+  IWebviewProps & IWebView,
+  {}
+> {
   private mNode: HTMLWebViewElement;
 
   public componentDidMount() {
     this.mNode = ReactDOM.findDOMNode(this) as HTMLWebViewElement;
-    this.mNode.addEventListener('did-start-loading', this.startLoad);
-    this.mNode.addEventListener('did-stop-loading', this.stopLoad);
-    this.mNode.addEventListener('dom-ready', () => {
-      const id = this.mNode['getWebContentsId']();
-      ipcRenderer.send('webview-dom-ready', id);
-      ipcRenderer.on('webview-open-url', (_, idInner, url, disposition) => {
+    this.mNode.addEventListener("did-start-loading", this.startLoad);
+    this.mNode.addEventListener("did-stop-loading", this.stopLoad);
+    this.mNode.addEventListener("dom-ready", () => {
+      const id = this.mNode["getWebContentsId"]();
+      ipcRenderer.send("webview-dom-ready", id);
+      ipcRenderer.on("webview-open-url", (_, idInner, url, disposition) => {
         if (id === idInner) {
           this.props.onNewWindow?.(url, disposition);
         }
@@ -250,30 +266,41 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
       */
       // (this.mNode as any).openDevTools();
     });
-    this.mNode.addEventListener('console-message', this.logMessage);
+    this.mNode.addEventListener("console-message", this.logMessage);
     // this.mNode.addEventListener('new-window', this.newWindow);
-    this.mNode.addEventListener('enter-html-full-screen', this.enterFullscreen);
-    this.mNode.addEventListener('leave-html-full-screen', this.leaveFullscreen);
+    this.mNode.addEventListener("enter-html-full-screen", this.enterFullscreen);
+    this.mNode.addEventListener("leave-html-full-screen", this.leaveFullscreen);
   }
 
   public componentWillUnmount() {
-    this.mNode.removeEventListener('did-start-loading', this.startLoad);
-    this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
-    this.mNode.removeEventListener('console-message', this.logMessage);
+    this.mNode.removeEventListener("did-start-loading", this.startLoad);
+    this.mNode.removeEventListener("did-stop-loading", this.stopLoad);
+    this.mNode.removeEventListener("console-message", this.logMessage);
     // this.mNode.removeEventListener('new-window', this.newWindow);
-    this.mNode.removeEventListener('enter-html-full-screen', this.enterFullscreen);
-    this.mNode.removeEventListener('leave-html-full-screen', this.leaveFullscreen);
+    this.mNode.removeEventListener(
+      "enter-html-full-screen",
+      this.enterFullscreen,
+    );
+    this.mNode.removeEventListener(
+      "leave-html-full-screen",
+      this.leaveFullscreen,
+    );
   }
 
   public render(): JSX.Element {
-    return React.createElement('webview', {
-      ...omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen', 'events']),
-      allowpopups: 'true',
+    return React.createElement("webview", {
+      ...omit(this.props, [
+        "onLoading",
+        "onNewWindow",
+        "onFullscreen",
+        "events",
+      ]),
+      allowpopups: "true",
     });
   }
 
   public loadURL(newUrl: string) {
-    this.mNode['loadURL'](newUrl);
+    this.mNode["loadURL"](newUrl);
   }
 
   private startLoad = () => {
@@ -281,21 +308,21 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
     if (onLoading !== undefined) {
       onLoading(true);
     }
-  }
+  };
 
   private stopLoad = () => {
     const { onLoading } = this.props;
     if (onLoading !== undefined) {
       onLoading(false);
     }
-  }
+  };
 
   private newWindow = (evt) => {
     const { onNewWindow } = this.props;
     if (onNewWindow !== undefined) {
       onNewWindow(evt.url, evt.disposition);
     }
-  }
+  };
 
   private enterFullscreen = (evt) => {
     const { onFullscreen } = this.props;
@@ -303,7 +330,7 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
     if (onFullscreen !== undefined) {
       onFullscreen(true);
     }
-  }
+  };
 
   private leaveFullscreen = (evt) => {
     const { onFullscreen } = this.props;
@@ -311,13 +338,16 @@ export class WebviewEmbed extends React.Component<IWebviewProps & IWebView, {}> 
     if (onFullscreen !== undefined) {
       onFullscreen(false);
     }
-  }
+  };
 
   private logMessage = (evt) => {
     if (evt.level > 2) {
-      log('info', 'from embedded page', { level: evt.level, message: evt.message });
+      log("info", "from embedded page", {
+        level: evt.level,
+        message: evt.message,
+      });
     }
-  }
+  };
 }
 
 export default WebviewEmbed;

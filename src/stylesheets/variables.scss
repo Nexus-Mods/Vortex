@@ -6,35 +6,33 @@
 // single reference to a gray color
 // $dark-theme: true;
 
-$white:                  #F4F4F5;
-$black:                  #09090B;
-$gray-darker:            #D4D4D8;
-$gray-dark:              #A1A1AA;
-$gray:                   #3F3F46;
-$gray-light:             #27272A;
-$gray-lighter:           #18181B;
+$white: #f4f4f5;
+$black: #09090b;
+$gray-darker: #d4d4d8;
+$gray-dark: #a1a1aa;
+$gray: #3f3f46;
+$gray-light: #27272a;
+$gray-lighter: #18181b;
 
-$brand-primary:         #C87B28;
-$brand-highlight:       #1D4ED8;
+$brand-primary: #c87b28;
+$brand-highlight: #1d4ed8;
 
-$brand-success:         #166534;
-$brand-success-lighter: #22C55E;
+$brand-success: #166534;
+$brand-success-lighter: #22c55e;
 
-$brand-info:            #1D4ED8;
-$brand-info-lighter:    #60A5FA;
+$brand-info: #1d4ed8;
+$brand-info-lighter: #60a5fa;
 
-$brand-warning:         #FACC15;
-$brand-warning-lighter: #FEF08A;
+$brand-warning: #facc15;
+$brand-warning-lighter: #fef08a;
 
-$brand-danger:          #991B1B;
-$brand-danger-lighter:  #EF4444;
+$brand-danger: #991b1b;
+$brand-danger-lighter: #ef4444;
 
-
-
-$brand-bg:              $gray-lighter;
-$brand-menu:            $gray-light;
-$brand-clickable:       $brand-primary;
-$brand-secondary:       $brand-primary;
+$brand-bg: $gray-lighter;
+$brand-menu: $gray-light;
+$brand-clickable: $brand-primary;
+$brand-secondary: $brand-primary;
 
 $border-color: rgba(255, 255, 255, 0.1);
 $border-width: 1px;
@@ -44,67 +42,66 @@ $table-header-border-color: $border-color;
 $table-row-gap: 0px;
 $table-header-separator: 1px;
 
-$body-bg:               $brand-menu;
-$text-color:            $white;
-$text-color-disabled:   darken($text-color, 40%);
+$body-bg: $brand-menu;
+$text-color: $white;
+$text-color-disabled: darken($text-color, 40%);
 
-$link-color:            $brand-clickable;
-$link-hover-color:      darken($link-color, 15%);
+$link-color: $brand-clickable;
+$link-hover-color: darken($link-color, 15%);
 $link-hover-decoration: underline;
 
 $highlight-list: (
-  ( 1, #6610f2 ),
-  ( 2, #9f0dff ),
-  ( 3, #ff00ba ),
-  ( 4, #dcff0d ),
-  ( 5, #13c8c4 ),
-  ( 6, #FF1C38 ),
-  ( 7, #26FF41 ),
-  ( 8, #262AFF ),
+    (1, #6610f2),
+    (2, #9f0dff),
+    (3, #ff00ba),
+    (4, #dcff0d),
+    (5, #13c8c4),
+    (6, #ff1c38),
+    (7, #26ff41),
+    (8, #262aff)
 );
 
-$component-active-color:    $white;
-$component-active-bg:       $brand-primary;
+$component-active-color: $white;
+$component-active-bg: $brand-primary;
 
 //== Base fonts
-$font-family-sans-serif:  sans-serif;
-$font-family-serif:       Georgia, "Times New Roman", Times, serif;
-$font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
-$font-family-base:        'Inter';
-$font-family-headings:    'Inter';
+$font-family-sans-serif: sans-serif;
+$font-family-serif: Georgia, "Times New Roman", Times, serif;
+$font-family-monospace: Menlo, Monaco, Consolas, "Courier New", monospace;
+$font-family-base: "Inter";
+$font-family-headings: "Inter";
 
-$font-size-base:          12px;
-$hidpi-scale-factor:      100%;
+$font-size-base: 12px;
+$hidpi-scale-factor: 100%;
 
-$headings-font-weight:    500;
-$headings-line-height:    1.5;
-$headings-color:          inherit;
-
+$headings-font-weight: 500;
+$headings-line-height: 1.5;
+$headings-color: inherit;
 
 //== Base Spacing
-$gutter-width:              24px;
+$gutter-width: 24px;
 
-$padding-base-vertical:     0.2em;
-$padding-base-horizontal:   0.5em;
+$padding-base-vertical: 0.2em;
+$padding-base-horizontal: 0.5em;
 
-$padding-large-vertical:    1em;
-$padding-large-horizontal:  1.8em;
+$padding-large-vertical: 1em;
+$padding-large-horizontal: 1.8em;
 
-$padding-small-vertical:    0.25em;
-$padding-small-horizontal:  0.5em;
+$padding-small-vertical: 0.25em;
+$padding-small-horizontal: 0.5em;
 
-$padding-xs-vertical:       0.1em;
-$padding-xs-horizontal:     0.4em;
+$padding-xs-vertical: 0.1em;
+$padding-xs-horizontal: 0.4em;
 
-$line-height-large:         1.5;
-$line-height-small:         1.5;
+$line-height-large: 1.5;
+$line-height-small: 1.5;
 
-$border-radius-base:        4px;
-$border-radius-large:       8px;
-$border-radius-small:       2px;
+$border-radius-base: 4px;
+$border-radius-large: 8px;
+$border-radius-small: 2px;
 
-$caret-width-base:          0.3em;
-$caret-width-large:         0.3em;
+$caret-width-base: 0.3em;
+$caret-width-large: 0.3em;
 
 //== Animation
 $expand-sidebar-delay: 100ms;
@@ -113,7 +110,7 @@ $thumbnail-zoom-scale: 1.03;
 $thumbnail-transition-duration: 100ms;
 
 //== Scrollbar
-$scrollbar-width:        8px;
+$scrollbar-width: 8px;
 
 // TODO: for reasons I don't fully understand, the support for touch actions
 // impacts scroll performance quite considerably, even when using the mouse.

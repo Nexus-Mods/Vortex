@@ -1,15 +1,15 @@
-import { ButtonType } from '../../../renderer/controls/IconBar';
-import ToolbarIcon from '../../../renderer/controls/ToolbarIcon';
-import { ComponentEx, connect } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
+import { ButtonType } from "../../../renderer/controls/IconBar";
+import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
+import { ComponentEx, connect } from "../../../util/ComponentEx";
+import { getSafe } from "../../../util/storeHelper";
 
-import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
+import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 
-import { setGameHidden } from '../actions/settings';
+import { setGameHidden } from "../actions/settings";
 
-import * as React from 'react';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import * as React from "react";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
 
 export interface IBaseProps {
   instanceId: string;
@@ -30,23 +30,23 @@ class HideGameIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { buttonType, instanceId, gamesDiscovered } = this.props;
     const t = this.context.api.translate;
-    const hidden = getSafe(gamesDiscovered, [instanceId, 'hidden'], false);
-    const icon = hidden ? 'show' : 'hide';
-    const text = hidden ? t('Show') : t('Hide');
+    const hidden = getSafe(gamesDiscovered, [instanceId, "hidden"], false);
+    const icon = hidden ? "show" : "hide";
+    const text = hidden ? t("Show") : t("Hide");
     return (
       <ToolbarIcon
         id={`hide-${instanceId}`}
-        icon={(['icon', 'both'].indexOf(buttonType) !== -1) ? icon : undefined}
-        text={(['text', 'both'].indexOf(buttonType) !== -1) ? text : undefined}
+        icon={["icon", "both"].indexOf(buttonType) !== -1 ? icon : undefined}
+        text={["text", "both"].indexOf(buttonType) !== -1 ? text : undefined}
         onClick={this.toggleHidden}
       />
     );
   }
   private toggleHidden = () => {
     const { instanceId, gamesDiscovered, onSetGameHidden } = this.props;
-    const hidden = getSafe(gamesDiscovered, [instanceId, 'hidden'], false);
+    const hidden = getSafe(gamesDiscovered, [instanceId, "hidden"], false);
     onSetGameHidden(instanceId, !hidden);
-  }
+  };
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -55,9 +55,12 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
-    onSetGameHidden: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
+    onSetGameHidden: (gameId: string, hidden: boolean) =>
+      dispatch(setGameHidden(gameId, hidden)),
   };
 }
 

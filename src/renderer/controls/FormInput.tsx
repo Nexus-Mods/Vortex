@@ -1,12 +1,12 @@
-import { ValidationState } from '../../types/ITableAttribute';
-import Debouncer from '../../util/Debouncer';
-import { isFunction } from '../../util/util';
+import { ValidationState } from "../../types/ITableAttribute";
+import Debouncer from "../../util/Debouncer";
+import { isFunction } from "../../util/util";
 
-import { IconButton } from './TooltipControls';
+import { IconButton } from "./TooltipControls";
 
-import * as React from 'react';
-import { FormGroup } from 'react-bootstrap';
-import FormFeedback from './FormFeedback';
+import * as React from "react";
+import { FormGroup } from "react-bootstrap";
+import FormFeedback from "./FormFeedback";
 
 export interface IProps {
   className?: string;
@@ -50,7 +50,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     this.state = {
       cachedValue: props.value,
     };
-    this.mDebouncer = new Debouncer(newValue => {
+    this.mDebouncer = new Debouncer((newValue) => {
       const { onChange, value } = this.props;
       this.mLastCommitted = newValue;
       onChange(newValue, props.id);
@@ -59,18 +59,34 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if ((newProps.value !== this.props.value)
-        && (this.mLastCommitted !== newProps.value)) {
+    if (
+      newProps.value !== this.props.value &&
+      this.mLastCommitted !== newProps.value
+    ) {
       this.mLastCommitted = newProps.value;
       this.setState({ cachedValue: newProps.value });
     }
   }
 
   public render(): JSX.Element {
-    const { className, clearable, emptyIcon, groupClass, id, label, min, max, maxLength,
-            placeholder, readOnly, style, type, validate } = this.props;
+    const {
+      className,
+      clearable,
+      emptyIcon,
+      groupClass,
+      id,
+      label,
+      min,
+      max,
+      maxLength,
+      placeholder,
+      readOnly,
+      style,
+      type,
+      validate,
+    } = this.props;
     const { cachedValue } = this.state;
-    const classes = ['form-input-container'];
+    const classes = ["form-input-container"];
     if (className !== undefined) {
       classes.push(className);
     }
@@ -86,14 +102,14 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     }
 
     if (icon !== null) {
-      classes.push('form-input-hasicon');
+      classes.push("form-input-hasicon");
     }
 
     const content = (
-      <div className={classes.join(' ')} style={style}>
+      <div className={classes.join(" ")} style={style}>
         <input
-          className={'form-control'}
-          type={type ?? 'text'}
+          className={"form-control"}
+          type={type ?? "text"}
           title={label}
           value={cachedValue}
           id={id}
@@ -114,10 +130,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       const validationState = this.validateRes(cachedValue);
 
       return (
-        <FormGroup
-          className={groupClass}
-          validationState={validationState}
-        >
+        <FormGroup className={groupClass} validationState={validationState}>
           {content}
           {readOnly ? null : <FormFeedback />}
         </FormGroup>
@@ -142,7 +155,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   private renderIcon(iconName: string) {
     return (
       <IconButton
-        className='form-input-clear btn-embed'
+        className="form-input-clear btn-embed"
         icon={iconName}
         tooltip={undefined}
       />
@@ -152,8 +165,8 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   private renderClear() {
     return (
       <IconButton
-        className='form-input-clear btn-embed'
-        icon='input-cancel'
+        className="form-input-clear btn-embed"
+        icon="input-cancel"
         tooltip={undefined}
         onClick={this.clear}
       />
@@ -161,9 +174,9 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   private clear = () => {
-    this.setState({ cachedValue: '' });
-    this.mDebouncer.schedule(undefined, '');
-  }
+    this.setState({ cachedValue: "" });
+    this.mDebouncer.schedule(undefined, "");
+  };
 
   private onBlur = (evt: React.FocusEvent<HTMLInputElement>) => {
     const { onFocus } = this.props;
@@ -171,7 +184,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     if (onFocus) {
       onFocus(false);
     }
-  }
+  };
 
   private onFocus = (evt: React.FocusEvent<HTMLInputElement>) => {
     const { onFocus } = this.props;
@@ -179,14 +192,14 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     if (onFocus) {
       onFocus(true);
     }
-  }
+  };
 
   private onChange = (evt: React.FormEvent<HTMLInputElement>) => {
     const { type, min, max } = this.props;
     evt.preventDefault();
     let newValue = evt.currentTarget.value;
 
-    if ((type === 'number') && (newValue.length > 0)) {
+    if (type === "number" && newValue.length > 0) {
       let numValue = parseFloat(newValue);
       if (Number.isNaN(numValue)) {
         // ignore input if it's not valid
@@ -204,7 +217,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
 
     this.setState({ cachedValue: newValue });
     this.mDebouncer.schedule(undefined, newValue);
-  }
+  };
 }
 
 export default FormInput as React.ComponentClass<IProps>;

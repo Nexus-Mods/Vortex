@@ -1,6 +1,6 @@
-import {IExtensionLoadFailure, IExtensionState} from '../../types/IState';
+import { IExtensionLoadFailure, IExtensionState } from "../../types/IState";
 
-export type ExtensionType = 'game' | 'translation' | 'theme';
+export type ExtensionType = "game" | "translation" | "theme";
 
 /**
  * Information about an extension available from the info.json file
@@ -28,9 +28,10 @@ export interface IExtension {
   issueTrackerURL?: string;
 }
 
-export type IExtensionWithState = IExtension & IExtensionState & {
-  loadFailures: IExtensionLoadFailure[];
-};
+export type IExtensionWithState = IExtension &
+  IExtensionState & {
+    loadFailures: IExtensionLoadFailure[];
+  };
 
 export interface IExtensionDownloadInfo {
   name: string;
