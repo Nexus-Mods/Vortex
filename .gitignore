@@ -63,6 +63,9 @@ nul
 # Claude Code directory
 .claude
 
+# direnv
+.direnv/
+
 # Serena (AI agent) memory files
 .serena
 

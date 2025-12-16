@@ -7,7 +7,7 @@ import * as reduxAct from "redux-act";
  */
 export const setLanguage = safeCreateAction(
   "SET_USER_LANGUAGE",
-  (lang) => lang,
+  (lang: string) => lang,
 );
 
 /**
