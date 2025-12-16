@@ -885,7 +885,10 @@ class InstallDriver {
         return undefined;
       }
       const modFiles = this.mRevisionInfo?.modFiles;
-      if ((modFiles != null) && !Array.isArray(modFiles)) {
+      if (modFiles == null) {
+        return undefined;
+      }
+      if (!Array.isArray(modFiles)) {
         // what?
         log('error', 'IRevision.modFiles is not an array', {
           unexpectedType: typeof modFiles,
