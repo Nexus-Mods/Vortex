@@ -7,6 +7,9 @@ IFS=$'\n\t'
 current_dir="$(dirname -- "$(readlink -f -- "$0";)";)"
 project_dir="$(dirname "${current_dir}")"
 electron_executable="${project_dir}/node_modules/electron/dist/electron"
+if ! [ -f "${electron_executable}" ]; then
+  electron_executable="$(which electron)"
+fi
 exec_path="${electron_executable} ${project_dir}"
 
 echo "Project: $project_dir"
