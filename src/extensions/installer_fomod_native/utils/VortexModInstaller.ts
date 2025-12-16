@@ -46,7 +46,10 @@ export class VortexModInstaller {
   }
 
   private async initialize(): Promise<void> {
-    this.mSharedDelegates = await SharedDelegates.create(this.mApi, this.mGameId);
+    this.mSharedDelegates = await SharedDelegates.create(
+      this.mApi,
+      this.mGameId,
+    );
   }
 
   public dispose() {

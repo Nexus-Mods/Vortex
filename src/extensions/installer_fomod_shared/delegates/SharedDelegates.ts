@@ -10,7 +10,10 @@ import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
  * These are called by the C# installer process to query game/mod state
  */
 export class SharedDelegates {
-  public static async create(api: IExtensionApi, gameId: string): Promise<SharedDelegates> {
+  public static async create(
+    api: IExtensionApi,
+    gameId: string,
+  ): Promise<SharedDelegates> {
     const delegates = new SharedDelegates(api);
     await delegates.initialize(gameId);
     return delegates;
@@ -27,7 +30,8 @@ export class SharedDelegates {
     const state = this.mApi.getState();
     const discovery = discoveryByGame(state, gameId);
     const gameInfo = getGame(gameId);
-    this.mGameVersion = await gameInfo?.getInstalledVersion?.(discovery) ?? null;
+    this.mGameVersion =
+      (await gameInfo?.getInstalledVersion?.(discovery)) ?? null;
   };
 
   /**
