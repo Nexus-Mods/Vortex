@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-beta.3] - 2025-12-16
+
+- Fixed master groups showing reversed arrows in plugins view ([#19072](https://github.com/Nexus-Mods/Vortex/issues/19072))
+- Fixed stack overflow when resolving external changes during deployment ([#19048](https://github.com/Nexus-Mods/Vortex/issues/19048))
+- Fixed extraction failures when archive files are temporarily locked ([#19049](https://github.com/Nexus-Mods/Vortex/issues/19049))
+- Fixed potential crash when collection becomes unavailable during installation ([#19063](https://github.com/Nexus-Mods/Vortex/issues/19063))
+- Fixed conflicting LOOT sort notifications appearing simultaneously ([#18985](https://github.com/Nexus-Mods/Vortex/issues/18985))
+- Fixed user cancellation error in Kingdom Come: Deliverance ([#19043](https://github.com/Nexus-Mods/Vortex/issues/19043))
+- Fixed master groups showing reversed arrows in groups graph view
+- Fixed event listeners executing for unrelated games ([#19043](https://github.com/Nexus-Mods/Vortex/issues/19043))
+- **stardewvalley**: Fixed exception when checking SMAPI version ([#19046](https://github.com/Nexus-Mods/Vortex/issues/19046))
+
+## [1.16.0-beta.2] - 2025-12-11
+
+- Fixed error when updating mods from 'site' domain ([#19011](https://github.com/Nexus-Mods/Vortex/issues/19011))
+- Added proper IPC chunking to loot forks ([#19014](https://github.com/Nexus-Mods/Vortex/issues/19014))
+- Added dialog multi-dismiss for instructions ([#19001](https://github.com/Nexus-Mods/Vortex/issues/19001))
+- Fixed error handling of 40x errors on free user skip ([#19012](https://github.com/Nexus-Mods/Vortex/issues/19012), [#19009](https://github.com/Nexus-Mods/Vortex/issues/19009))
+- Fixed loss of error stack information on dep install failure ([#19007](https://github.com/Nexus-Mods/Vortex/issues/19007))
+
 ## [1.16.0-beta.1] - 2025-12-09
 
 _Major refactor release with Electron 37, .NET 9 upgrade, complete Download/Install pipeline overhaul, FOMOD native port, and new Collection Browsing feature_
@@ -124,7 +144,6 @@ _Stability and deployment improvements_
 - Fixed incorrect stack information for aggregated error notifications ([#18949](https://github.com/Nexus-Mods/Vortex/issues/18949))
 - Fixed mod files query to only use domain name ([#18939](https://github.com/Nexus-Mods/Vortex/pull/18939))
 - Fixed storeHelper clone returning same array instead of cloning ([#18955](https://github.com/Nexus-Mods/Vortex/pull/18955))
-
 
 ## [1.16.0-alpha.5] - 2025-12-03
 
@@ -259,10 +278,9 @@ _Major refactor release with Electron 37, .NET 9 upgrade, complete Download/Inst
 - **halomasterchiefcollection**: Fixed unhandled event listener errors. ([#18257](https://github.com/Nexus-Mods/Vortex/issues/18257))
 - **7dtd**: Fixed fallbackPurge getting called during UDF setting. ([#18205](https://github.com/Nexus-Mods/Vortex/issues/18205))
 
-
 ## [1.15.1] - 2025-09-10
 
-_Stable release based on 1.15.0-beta.3_ 
+_Stable release based on 1.15.0-beta.3_
 
 - Fixed and consolidated multi-select update/update all functionality ([#18229](https://github.com/Nexus-Mods/Vortex/issues/18229))
 - Adding ability to update mods using multi-selection menu. ([#18209](https://github.com/Nexus-Mods/Vortex/issues/18209))
@@ -271,7 +289,7 @@ _Stable release based on 1.15.0-beta.3_
 - Fixed disabled plugins being sorted to the bottom of the plugins page ([#18137](https://github.com/Nexus-Mods/Vortex/issues/18137))
 - .NET 6 and MSVC 2022 are now bundled with the installer
 - Updated Premium branding
-- Optimized user subscription checking 
+- Optimized user subscription checking
 - Fixed download queue memory leak
 - Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
@@ -279,8 +297,8 @@ _Stable release based on 1.15.0-beta.3_
 - Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
 - Adding ability to view/copy modtype id using mods panel widget
 - Improved error message for expired/not valid certificates
-- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
-- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
+- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12))
+- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168))
 - **collections**: Added API-based metrics endpoint usage
 - **collections**: Fixed error message for mismatched hashes when using replicate option. ([#18186](https://github.com/Nexus-Mods/Vortex/issues/18186))
 - **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
@@ -303,7 +321,7 @@ _Stable release based on 1.15.0-beta.3_
 
 - .NET 6 and MSVC 2022 are now bundled with the installer
 - Updated Premium branding
-- Optimized user subscription checking 
+- Optimized user subscription checking
 - Fixed download queue memory leak
 - Fixed warnings raised on startup for old bundled extensions
 - Adding ability to update all nexus sourced mods in one go. ([#17612](https://github.com/Nexus-Mods/Vortex/issues/17612))
@@ -311,8 +329,8 @@ _Stable release based on 1.15.0-beta.3_
 - Fixed profile mod sanitization causing long profile switches. ([#18073](https://github.com/Nexus-Mods/Vortex/issues/18073))
 - Adding ability to view/copy modtype id using mods panel widget
 - Improved error message for expired/not valid certificates
-- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12)) 
-- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168)) 
+- **bepinex**: Fixed mod download loop when the custom package downloader is used. ([bepinex#12](https://github.com/Nexus-Mods/extension-modtype-bepinex/pull/12))
+- **fallout4/skyrimse**: FO4/SSE added epic launcher support. ([games#168](https://github.com/Nexus-Mods/vortex-games/pull/168))
 - **collections**: Added API-based metrics endpoint usage
 - **collections**: Fixed error message for mismatched hashes when using replicate option. ([#18186](https://github.com/Nexus-Mods/Vortex/issues/18186))
 - **collections**: Restrict blocked users from interacting with collection. ([#17636](https://github.com/Nexus-Mods/Vortex/issues/17636))
@@ -326,7 +344,7 @@ _Stable release based on 1.15.0-beta.3_
 
 ## 1.14.10 - 2025-08-06
 
-- Improved collection install tracking 
+- Improved collection install tracking
 
 ## 1.14.9 - 2025-07-31
 
@@ -392,7 +410,7 @@ Fixed inability to download community extensions through the games page.
 
 ## 1.14.1 - 2025-06-10
 
-_Stable release based on 1.14.0-beta.7_ 
+_Stable release based on 1.14.0-beta.7_
 
 - Updated libloot to 0.26.3
 - Updated loot masterlist
@@ -484,7 +502,7 @@ _Stable release based on 1.14.0-beta.7_
 ## 1.14.0-beta.2 - 2025-03-31
 
 - Updated copyright text
-- Fixed wrapping of some game titles on the Games page 
+- Fixed wrapping of some game titles on the Games page
 - Improved rule processing functionality
 - Removed next subdomain
 - Prefer game shortName for navigation title
@@ -494,8 +512,8 @@ _Stable release based on 1.14.0-beta.7_
 - **mod-dependency-manager**: Fixed log spam when installing collections
 - **plugin-management**: Load order attribute/column is now the default column
 - **collections**: Removed next subdomain
-- **collections**: Fixed invalid event handler. ([#17315](https://github.com/Nexus-Mods/Vortex/issues/17315)) 
-- **witcher3**: Fixed incorrect detection of certain menu mod structures. ([#17312](https://github.com/Nexus-Mods/Vortex/issues/17312)) 
+- **collections**: Fixed invalid event handler. ([#17315](https://github.com/Nexus-Mods/Vortex/issues/17315))
+- **witcher3**: Fixed incorrect detection of certain menu mod structures. ([#17312](https://github.com/Nexus-Mods/Vortex/issues/17312))
 
 ## 1.14.0-beta.1 - 2025-03-11
 
@@ -532,7 +550,7 @@ _Stable release based on 1.14.0-beta.7_
 - **nomanssky**: Adding custom game version resolution
 - **witcher3**: Several fixes and improvements to merging of .settings files
 - **witcher3**: Various game support fixes and improvements
-- **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable) 
+- **witcher3**: Modernised and improved XML configuration merging (all native .xml files are now mergeable)
 
 ## [1.13.7] - 2025-01-21
 
@@ -545,17 +563,17 @@ _Stable release based on 1.14.0-beta.7_
 - Added sanity check to the setLoadOrder action
 - **baldursgate3**: Fixed incorrect action use during import from file
 
-## [1.13.5] - 2025-01-07 
- 
-_Stable release based on 1.13.4-beta.1_ 
- 
-- Fixed intermittent Load Order reset when installing a mod 
- 
-## 1.13.4-beta.1 - 2024-12-19 
- 
-_Pre-release before xmas break. Barely distribtued._ 
- 
-- Fixed intermittent Load Order reset when installing a mod 
+## [1.13.5] - 2025-01-07
+
+_Stable release based on 1.13.4-beta.1_
+
+- Fixed intermittent Load Order reset when installing a mod
+
+## 1.13.4-beta.1 - 2024-12-19
+
+_Pre-release before xmas break. Barely distribtued._
+
+- Fixed intermittent Load Order reset when installing a mod
 
 ## [1.13.3] - 2024-12-10
 
@@ -565,7 +583,7 @@ _Pre-release before xmas break. Barely distribtued._
 
 ## [1.13.2] - 2024-12-03
 
-- Fixed rendering of categories 
+- Fixed rendering of categories
 - Added ability to define optional extension requirements
 - **stardewvalley**: Fixed potential attempts to parse manifests of uninstalled mods. ([#16650](https://github.com/Nexus-Mods/Vortex/issues/16650))
 - **falloutnv**: Sanity checks extension is now optional
@@ -600,9 +618,9 @@ _Stable release based on [1.13.0-beta.7]_
 - Fixed exception when attempting to resolve the version of manually added mods without metadata
 - Fixed crash when attempting to group by enabled state and mods are being actively removed. ([#16609](https://github.com/Nexus-Mods/Vortex/issues/16609))
 - Fixed exception when attempting to see if the user is logged in. ([#16600](https://github.com/Nexus-Mods/Vortex/issues/16600))
-- Fixed failed profile switch when managing game using symlinks 
+- Fixed failed profile switch when managing game using symlinks
 - Fixed download notification spamming the UI during collection install
-- Fixes GameId/domainName reverse conversion not catering for multiple compatible games 
+- Fixes GameId/domainName reverse conversion not catering for multiple compatible games
 - Improved Vortex corruption error message. ([#16591](https://github.com/Nexus-Mods/Vortex/issues/16591))
 - Fixes semantic coercion with leading zeroes
 - Fixed semver bug when whitespace in mod versions
@@ -656,9 +674,9 @@ _Stable release based on [1.13.0-beta.7]_
 
 ## [1.13.0-beta.4] - 2024-10-22
 
-- Fixed failed profile switch when managing game using symlinks 
+- Fixed failed profile switch when managing game using symlinks
 - Fixed download notification spamming the UI during collection install
-- Fixes GameId/domainName reverse conversion not catering for multiple compatible games 
+- Fixes GameId/domainName reverse conversion not catering for multiple compatible games
 - Improved Vortex corruption error message. ([#16591](https://github.com/Nexus-Mods/Vortex/issues/16591))
 - Fixes semantic coercion with leading zeroes
 - Fixed semver bug when whitespace in mod versions
@@ -773,7 +791,7 @@ _Stable release based on [1.12.0-beta.5]_
 - Added status pill to collection overview.
 - Fixes warning when potentially downgrading.
 - Changed how community game extensions are highlighted.
-- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648)) 
+- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648))
 - Added stricter diff check on skippable properties. ([#15721](https://github.com/Nexus-Mods/Vortex/issues/15721))
 - Fixes crash when attempting to untrack (untracked) mods. ([#15801](https://github.com/Nexus-Mods/Vortex/issues/15801))
 - Fixes error being missing if dotnet check fails
@@ -796,7 +814,7 @@ _Stable release based on [1.12.0-beta.5]_
 - **bladeandsorcery**: Removed legacy mod support. ([#16000](https://github.com/Nexus-Mods/Vortex/issues/16000))
 - **fallout4:** Adding Fallout: London game domain support
 - **witcher3**: Fixed crash if user has insufficient permissions. ([#15793](https://github.com/Nexus-Mods/Vortex/issues/15793))
-- **witcher3:** Fixed DLC entries displayed on Load Order page 
+- **witcher3:** Fixed DLC entries displayed on Load Order page
 
 ## [1.12.0-beta.5] - 2024-07-29
 
@@ -836,7 +854,7 @@ _Stable release based on [1.12.0-beta.5]_
 - Added status pill to collection overview.
 - Fixes warning when potentially downgrading.
 - Changed how community game extensions are highlighted.
-- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648)) 
+- Fixes potential crash when queryPath functor returns function. ([#15648](https://github.com/Nexus-Mods/Vortex/issues/15648))
 - Added stricter diff check on skippable properties. ([#15721](https://github.com/Nexus-Mods/Vortex/issues/15721))
 - Fixes crash when attempting to untrack (untracked) mods. ([#15801](https://github.com/Nexus-Mods/Vortex/issues/15801))
 - Fixes error being missing if dotnet check fails
@@ -852,12 +870,12 @@ _Stable release based on [1.12.0-beta.5]_
 - **collections**: Fixed crash if mods/downloads become unavailable. ([#15979](https://github.com/Nexus-Mods/Vortex/issues/15979))
 - **plugin-management**: Improve UI\UX for LOOT-enabled games. ([#15929 ](https://github.com/Nexus-Mods/Vortex/issues/15929))
 
-## [1.11.7] - 2024-06-11 
- 
-- Fixed excessive logging when downloading collections. ([#15883](https://github.com/Nexus-Mods/Vortex/issues/15883))  
-- **modtype-bepinex**: Fixed installation error for BepInEX 5.4.23 or higher. ([#15670](https://github.com/Nexus-Mods/Vortex/issues/15670))  
-- **mod-dependencies**: Added workaround setting for disabling modtype conflicts. 
-- **witcher3**: Fixed installer for mixed mods (both dlc and regular). 
+## [1.11.7] - 2024-06-11
+
+- Fixed excessive logging when downloading collections. ([#15883](https://github.com/Nexus-Mods/Vortex/issues/15883))
+- **modtype-bepinex**: Fixed installation error for BepInEX 5.4.23 or higher. ([#15670](https://github.com/Nexus-Mods/Vortex/issues/15670))
+- **mod-dependencies**: Added workaround setting for disabling modtype conflicts.
+- **witcher3**: Fixed installer for mixed mods (both dlc and regular).
 
 ## [1.11.6] - 2024-05-22
 
@@ -876,7 +894,7 @@ _Stable release based on [1.12.0-beta.5]_
 ## [1.11.4] - 2024-05-14
 
 - **collections**: Fixed re-install dialog showing when installing in unattended mode.
-- **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679)) 
+- **baldursgate3**: Fixed LSLib not executing with whitespace in path. ([#15679](https://github.com/Nexus-Mods/Vortex/issues/15679))
 
 ## [1.11.3] - 2024-05-13
 
@@ -885,21 +903,21 @@ _Stable release based on [1.11.2-beta]._
 - Fixed re-render issue when enabling/disabling mod entries in the file-based load order
 - libloot updated to 0.22.4
 - Add support for Fallout 4 on Epic ([#15580](https://github.com/Nexus-Mods/Vortex/issues/15580))
-- Add support for new BA2 archive headers in Gamebryo games 
+- Add support for new BA2 archive headers in Gamebryo games
 - New update workflow to better communicate What's New, minimize auto downloading (unless critical hotfixes) and more information when swapping update channels. ([#15363](https://github.com/Nexus-Mods/Vortex/issues/15363))
 - **vortex-api**: Fixed performance degradation when downloading collections for games that use the file based load order system. ([#15395](https://github.com/Nexus-Mods/Vortex/issues/15395))
 - **stardewvalley**: Fixed SMAPI update notification appearing while managing other games
 - **collections**: Added comparison of patches, installer choices, hashes when installing. ([#15396](https://github.com/Nexus-Mods/Vortex/issues/15396))
 - **collections**: Updated styles to fix update changelog bounds
 - **collections**: Better logging when profile switching
-- **collections**: Fixed rare crash where game version was being compared 
+- **collections**: Fixed rare crash where game version was being compared
 - **collections**: Improved error handling when displaying instructions. ([#14570](https://github.com/Nexus-Mods/Vortex/issues/14570))
 - **collections**: Instructions textarea now fills available space. ([#15394](https://github.com/Nexus-Mods/Vortex/issues/15394))
 - **collections**: Override overflow now scrolls vertically.
 - **modtype-bepinex**: Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
 - **mod-dependencies**: Suppress error report when user cancels purge
-- **mod-dependencies**: Fixed file overrides being cleared when switching to an empty profile 
-- **mod-dependencies**: Fixed rare issue where it was possible for mods to fail deploying certain types 
+- **mod-dependencies**: Fixed file overrides being cleared when switching to an empty profile
+- **mod-dependencies**: Fixed rare issue where it was possible for mods to fail deploying certain types
 - **plugin-management**: Fixed long delays when ascertaining if a plugin is marked light
 - **baldursgate3**: Performance improvements when installing collections and using LSLib
 - **baldursgate3**: Added caching to PAK reading
@@ -932,14 +950,14 @@ _Stable release based on [1.11.2-beta]._
 - (Collections) Added comparison of patches, installer choices, hashes when installing. ([#15396](https://github.com/Nexus-Mods/Vortex/issues/15396))
 - (Collections) Updated styles to fix update changelog bounds
 - (Collections) Better logging when profile switching
-- (Collections) Fixed rare crash where game version was being compared 
+- (Collections) Fixed rare crash where game version was being compared
 - (Collections) Improved error handling when displaying instructions. ([#14570](https://github.com/Nexus-Mods/Vortex/issues/14570))
 - (Collections) Instructions textarea now fills available space. ([#15394](https://github.com/Nexus-Mods/Vortex/issues/15394))
 - (Collections) Override overflow now scrolls vertically.
 - (BepInEx) Fixed download issues caused by package resolution applying the new archive format to 5.x.x versions of BepInEx
 - (Dependency Management) Suppress error report when user cancels purge
-- (Dependency Management) Fixed file overrides being cleared when switching to an empty profile 
-- (Dependency Management) Fixed rare issue where it was possible for mods to fail deploying certain types 
+- (Dependency Management) Fixed file overrides being cleared when switching to an empty profile
+- (Dependency Management) Fixed rare issue where it was possible for mods to fail deploying certain types
 - (Plugin Management) Fixed long delays when ascertaining if a plugin is marked light
 - (Baldur's Gate 3) Performance improvements when installing collections and using LSLib
 - (Baldur's Gate 3) Added caching to PAK reading
@@ -955,7 +973,7 @@ _Stable release based on [1.11.2-beta]._
 ## [1.10.8] - 2024-03-13
 
 - Fixed error when accessing conflicts before conflict calculation completed
-- Fixed another instance where redundant file overrides were *not* being removed
+- Fixed another instance where redundant file overrides were _not_ being removed
 - Fixed preview not working in override editor
 
 ## [1.10.7] - 2024-03-12
@@ -993,7 +1011,6 @@ _Yanked due to critical issue found with file overrides_
 
 - Fixed conflict editor rendering when game not discovered
 
-
 ## [1.10.1] - 2024-01-25
 
 - Fixed styles throughout
@@ -1021,13 +1038,13 @@ _Yanked due to critical issue found with file overrides_
 
 ## [1.9.13] - 2024-01-08
 
-- (API) Enhanced FBLO extension to maintain load order on purge 
-- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed  
-- Updated remote URLs for announcements, extensions and changelog 
+- (API) Enhanced FBLO extension to maintain load order on purge
+- (Baldur's Gate 3) Fix for modfixer notification not able to be supressed
+- Updated remote URLs for announcements, extensions and changelog
 - Updated layout for dashlets
 - Updated default theme colors
-- Updated notification colors to increase text legibility 
-- Updated uninstall feedback URL  
+- Updated notification colors to increase text legibility
+- Updated uninstall feedback URL
 
 ## [1.9.12] - 2023-12-14
 
@@ -1051,7 +1068,7 @@ _Yanked due to critical issue found with file overrides_
 ### Fixed
 
 - (Xbox Gamestore) Fixed file system error dialog being raised for encrypted drives
-- Drag handles correctly show on all draggable entries on the Load Order page 
+- Drag handles correctly show on all draggable entries on the Load Order page
 
 ## [1.9.10] - 2023-11-22
 
@@ -1068,7 +1085,7 @@ _Yanked due to critical issue found with file overrides_
 
 ### Added
 
-- Added deep merge to Vortex API 
+- Added deep merge to Vortex API
 
 ### Fixed
 
@@ -1087,7 +1104,7 @@ _Yanked due to critical issue found with file overrides_
 ### Fixed
 
 - Fixed game discovery for XBox Game Pass games
-- (Starfield) Fixed crash when attempting to create directory junction 
+- (Starfield) Fixed crash when attempting to create directory junction
 
 ## [1.9.7] - 2023-10-26
 
@@ -1132,7 +1149,7 @@ _Yanked due to critical issue found with file overrides_
 
 ### Changed
 
-- (Stardew Valley) Removal of recommendations 
+- (Stardew Valley) Removal of recommendations
 - Clearer error messages for startup problems and crashes
 - Game thumbnails scale better on Games page
 
@@ -1208,7 +1225,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-[1.16.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1
+[1.16.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.3
+[1.16.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.2
+[1.16.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.0-beta.1
 [1.16.0-alpha.6]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.6
 [1.16.0-alpha.5]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.5
 [1.16.0-alpha.4]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.4
@@ -1216,10 +1235,10 @@ _Yanked due to critical issue found with file overrides_
 [1.16.0-alpha.2]: https://github.com/Nexus-Mods/Vortex-Staging/releases/tag/v1.16.0-alpha.2
 [1.15.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.2
 [1.15.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.15.1
-[1.14.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.4 
-[1.14.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.3 
-[1.14.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.2 
-[1.14.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.1 
+[1.14.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.4
+[1.14.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.3
+[1.14.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.2
+[1.14.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.14.0-beta.1
 [1.13.7]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.7
 [1.13.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.6
 [1.13.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.13.5
@@ -1276,5 +1295,3 @@ _Yanked due to critical issue found with file overrides_
 [1.9.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.1
 [1.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.9.0
 [1.8.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.8.5
-
-
