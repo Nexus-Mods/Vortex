@@ -1,5 +1,5 @@
 import Icon from "../../../renderer/controls/Icon";
-import bbcode from "../../../util/bbcode";
+import bbcode from "../../../renderer/controls/bbcode";
 import { truthy } from "../../../util/util";
 
 import { TFunction } from "i18next";

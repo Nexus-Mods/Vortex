@@ -1,4 +1,4 @@
-import { IBBCodeContext } from "../util/bbcode";
+import { IBBCodeContext } from "../renderer/controls/bbcode";
 
 export type DialogType = "success" | "info" | "error" | "question";
 

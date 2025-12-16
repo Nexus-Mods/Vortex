@@ -81,8 +81,7 @@ import { default as Promise_2 } from 'bluebird';
 import * as Promise_3 from 'bluebird';
 import PromiseBB from 'bluebird';
 import * as React_2 from 'react';
-import React_3 = require('react');
-import { default as React_4 } from 'react';
+import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
 import { ReactSelectProps } from 'react-select';
 import { Readable } from 'stream';
@@ -4044,7 +4043,7 @@ type LoadOrder = ILoadOrderEntry_2[];
 // Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function LoadOrderIndexInput(props: IProps_5): React_4.JSX.Element;
+export function LoadOrderIndexInput(props: IProps_5): React_3.JSX.Element;
 
 // @public
 function local<T>(id: string, init: T): T;
@@ -4607,7 +4606,7 @@ const renameCategory: reduxAct.ComplexActionCreator3<string, string, string, {
 }, {}>;
 
 // @public (undocumented)
-function renderBBCode(input: string, context?: any): React_3.ReactChild[];
+function renderBBCode(input: string, context?: unknown): React_2.ReactChild[];
 
 // @public
 function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered;
