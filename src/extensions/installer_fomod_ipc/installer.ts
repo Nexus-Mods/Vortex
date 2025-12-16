@@ -65,7 +65,7 @@ export const install = async (
     await connection.initialize();
 
     // Register core delegates
-    const sharedDelegates = await SharedDelegates.create(api);
+    const sharedDelegates = await SharedDelegates.create(api, gameId);
     connection.registerCallback("getAppVersion", () =>
       sharedDelegates.getAppVersion(),
     );

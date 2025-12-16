@@ -47,7 +47,7 @@ export const install = async (
       ? null
       : getPluginPath(gameId);
 
-    const modInstaller = await VortexModInstaller.create(api, instanceId);
+    const modInstaller = await VortexModInstaller.create(api, instanceId, gameId);
 
     const result = await modInstaller.installAsync(
       files,
