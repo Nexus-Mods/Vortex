@@ -1649,7 +1649,7 @@ class DownloadManager {
       size: this.mMinChunkSize,
       options: download.options,
       extraCookies: [],
-      errorCB: (err) => {
+      errorCB: (err: Error) => {
         this.cancelDownload(download, err);
       },
       responseCB: (size: number, fileName: string, chunkable: boolean) =>
@@ -1663,6 +1663,10 @@ class DownloadManager {
   };
 
   private cancelDownload = (download: IRunningDownload, err: Error) => {
+    const isUserCanceled = err instanceof UserCanceled;
+    if (isUserCanceled) {
+      this.stop(download.id);
+    }
     for (const chunk of download.chunks) {
       if (chunk.state === "running") {
         if (this.mBusyWorkers[chunk.workerId] !== undefined) {
