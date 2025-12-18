@@ -1,20 +1,17 @@
-import path from "path";
-import { SecurityLevel } from "fomod-installer-ipc";
-import { CSharpDelegates } from "./delegates/CSharpDelegates";
-import { VortexIPCConnection } from "./utils/VortexIPCConnection";
-import { createConnectionStrategies } from "./utils/connectionStrategy";
-import { IInstallationDetails } from "../mod_management/types/InstallFunc";
-import { SharedDelegates } from "../installer_fomod_shared/delegates/SharedDelegates";
-import { IChoices } from "../installer_fomod_shared/types/interface";
-import {
-  getPluginPath,
-  getStopPatterns,
-  uniPatterns,
-} from "../installer_fomod_shared/utils/gameSupport";
-import { getGame } from "../gamemode_management/util/getGame";
-import { log } from "../../util/log";
-import { IExtensionApi, IInstallResult } from "../../types/api";
-import {} from "../installer_dotnet/";
+import path from 'path';
+import { SecurityLevel } from 'fomod-installer-ipc';
+import { CSharpDelegates } from './delegates/CSharpDelegates';
+import { VortexIPCConnection } from './utils/VortexIPCConnection';
+import { createConnectionStrategies } from './utils/connectionStrategy';
+import { IInstallationDetails } from '../mod_management/types/InstallFunc';
+import { SharedDelegates } from '../installer_fomod_shared/delegates/SharedDelegates';
+import { IChoices } from '../installer_fomod_shared/types/interface';
+import { getPluginPath, getStopPatterns, uniPatterns } from '../installer_fomod_shared/utils/gameSupport';
+import { getGame } from '../gamemode_management/util/getGame';
+import { log } from '../../util/log';
+import { IExtensionApi, IInstallResult } from '../../types/api';
+import { ProcessCanceled, InstallationSkipped } from '../../util/CustomErrors';
+import { } from '../installer_dotnet/';
 
 /**
  * Install a FOMOD mod
@@ -145,7 +142,15 @@ export const install = async (
       validate,
     );
 
-    log("info", "FOMOD installation completed", { gameId });
+    if (!result) {
+      throw new ProcessCanceled("Installation cancelled by user");
+    }
+
+    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+      throw new InstallationSkipped(); // No files to copy, skip the mod
+    }
+
+    log('info', 'FOMOD installation completed', { gameId });
 
     if (
       result.instructions !== undefined &&

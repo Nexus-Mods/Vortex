@@ -12,14 +12,9 @@ import { getChoicesFromState } from "../installer_fomod_shared/utils/helpers";
 
 import { IInstallationDetails } from "../mod_management/types/InstallFunc";
 
-import {
-  IExtensionApi,
-  IInstallResult,
-  IInstruction,
-  InstructionType,
-} from "../../types/api";
-import { getGame } from "../gamemode_management/util/getGame";
-import { ProcessCanceled } from "../../util/CustomErrors";
+import { IExtensionApi, IInstallResult, IInstruction, InstructionType } from '../../types/api';
+import { getGame } from '../gamemode_management/util/getGame';
+import { ProcessCanceled, InstallationSkipped } from '../../util/CustomErrors';
 
 export const install = async (
   api: IExtensionApi,
@@ -58,8 +53,12 @@ export const install = async (
       validate,
     );
 
-    if (result === null) {
+    if (!result) {
       throw new ProcessCanceled("Installation cancelled by user");
+    }
+
+    if (result.instructions.length === 1 && result.instructions[0].type as string === 'enableallplugins') {
+      throw new InstallationSkipped(); // No files to copy, skip the mod
     }
 
     const choices = getChoicesFromState(api, instanceId);
