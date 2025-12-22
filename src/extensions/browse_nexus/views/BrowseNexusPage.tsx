@@ -294,7 +294,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     return (
       <MainPage id="browse-collections-page">
         <MainPage.Body>
-          <div className="tw:p-5 tw:text-center">
+          <div className="p-5 text-center">
             <p>{t("collection:browse.selectGame")}</p>
           </div>
         </MainPage.Body>
@@ -306,7 +306,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     <MainPage id="browse-collections-page">
       <MainPage.Body style={{ overflowY: "auto" }}>
         <div
-          className="tw:h-full tw:p-5"
+          className="h-full p-5"
           ref={(node) => {
             if (node) {
               scrollContainerRef.current = node.parentElement as HTMLDivElement;
@@ -318,7 +318,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
             tabListId="browse-nexus-tabs"
             onSetSelectedTab={setSelectedTab}
           >
-            <Tailwind.TabBar className="tw:mb-5">
+            <Tailwind.TabBar className="mb-5">
               <Tailwind.TabButton
                 name={t("collection:browse.tabs.collections")}
                 count={allCollectionsTotal}
@@ -328,7 +328,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
             <Tailwind.TabPanel name={t("collection:browse.tabs.collections")}>
               {/* Search Bar */}
-              <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
+              <div className="flex gap-2.5 mb-4 items-start">
                 <Tailwind.Input
                   type="text"
                   onChange={(e) => {
@@ -341,7 +341,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   value={searchQuery}
                   placeholder={t("collection:browse.searchPlaceholder")}
                   onKeyDown={handleKeyDown}
-                  fieldClassName="tw:w-64 tw:shrink-0"
+                  fieldClassName="w-64 shrink-0"
                   errorMessage={searchValidationError || undefined}
                   hideLabel={true}
                   label={t("collection:browse.searchPlaceholder")}
@@ -369,8 +369,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
               {/* Conditional Content */}
               {loading ? (
-                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
-                  <div className="tw:text-center">
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="text-center">
                     <Tailwind.Typography
                       typographyType="body-lg"
                       appearance="subdued"
@@ -380,12 +380,12 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   </div>
                 </div>
               ) : error ? (
-                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
-                  <div className="tw:text-center">
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="text-center">
                     <Tailwind.Typography
                       typographyType="body-lg"
                       appearance="none"
-                      className="tw:mb-2 tw:text-danger-moderate"
+                      className="mb-2 text-danger-moderate"
                     >
                       {t("collection:browse.error")}
                     </Tailwind.Typography>
@@ -398,8 +398,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   </div>
                 </div>
               ) : collections.length === 0 ? (
-                <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
-                  <div className="tw:text-center">
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="text-center">
                     <Tailwind.Typography
                       typographyType="body-lg"
                       appearance="subdued"
@@ -411,7 +411,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               ) : (
                 <>
                   {/* Results count and sort */}
-                  <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
+                  <div className="flex justify-between items-center mb-5">
                     <Tailwind.Typography
                       typographyType="body-md"
                       appearance="moderate"
@@ -430,7 +430,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       onChange={(e) =>
                         setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
                       }
-                      className="tw:flex tw:items-center tw:gap-2.5 tw:max-w-64"
+                      className="flex items-center gap-2.5 max-w-64"
                     >
                       {SORT_OPTIONS.map((option, index) => (
                         <option key={option.field} value={index}>
@@ -441,7 +441,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   </div>
 
                   {/* Collection Tiles */}
-                  <div className="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(465px,1fr))] tw:gap-4">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(465px,1fr))] gap-4">
                     {collections.map((collection) => {
                       const tileImage =
                         (collection as any).tileImage?.thumbnailUrl ||
@@ -487,7 +487,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                             handleAddCollection(collection)
                           }
                           onViewPage={() => handleViewOnNexus(collection)}
-                          className="tw:max-w-none"
+                          className="max-w-none"
                         />
                       );
                     })}
@@ -495,7 +495,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
-                    <div className="tw:flex tw:items-center tw:justify-start tw:gap-2.5 tw:mt-8 tw:pb-5">
+                    <div className="flex items-center justify-start gap-2.5 mt-8 pb-5">
                       {/* Previous Button */}
                       <Tailwind.Button
                         buttonType="tertiary"
@@ -507,7 +507,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       />
 
                       {/* Page Numbers */}
-                      <div className="tw:flex tw:gap-1">
+                      <div className="flex gap-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                           .filter((page) => {
                             // Show first page, last page, current page, and 2 pages on each side of current
@@ -529,7 +529,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                             return (
                               <React.Fragment key={page}>
                                 {showEllipsis && (
-                                  <span className="tw:px-1 tw:py-2 tw:text-gray-500">
+                                  <span className="px-1 py-2 text-gray-500">
                                     ...
                                   </span>
                                 )}
@@ -560,7 +560,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       />
 
                       {/* Direct Page Input */}
-                      <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
+                      <div className="flex items-center gap-1 ml-5">
                         <Tailwind.Typography
                           typographyType="body-md"
                           appearance="subdued"
@@ -572,7 +572,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                           value={pageInput}
                           onChange={(e) => setPageInput(e.target.value)}
                           onKeyDown={handlePageInputKeyDown}
-                          className="tw:min-w-10 tw:text-center"
+                          className="min-w-10 text-center"
                           id="page-input"
                           label={t("collection:pagination.pageNumber")}
                           hideLabel={true}
@@ -595,19 +595,19 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
             </Tailwind.TabPanel>
 
             <Tailwind.TabPanel name={t("collection:browse.tabs.mods")}>
-              <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-16">
+              <div className="flex flex-col items-center gap-4 py-16">
                 {/* Icon */}
                 <Tailwind.Icon
                   path="mdiClockOutline"
                   size="xl"
-                  className="tw:w-9 tw:h-9 tw:text-neutral-subdued"
+                  className="w-9 h-9 text-neutral-subdued"
                 />
 
                 {/* Heading */}
                 <Tailwind.Typography
                   typographyType="body-xl"
                   appearance="subdued"
-                  className="tw:font-semibold"
+                  className="font-semibold"
                 >
                   {t("collection:browse.modsComingSoon.title")}
                 </Tailwind.Typography>
@@ -616,7 +616,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <Tailwind.Typography
                   typographyType="body-lg"
                   appearance="subdued"
-                  className="tw:text-center"
+                  className="text-center"
                 >
                   {t("collection:browse.modsComingSoon.description")}
                 </Tailwind.Typography>

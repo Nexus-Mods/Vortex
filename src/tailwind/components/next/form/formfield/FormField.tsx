@@ -96,13 +96,13 @@ export const FormField = ({
   return (
     <div
       ref={ref}
-      className={joinClasses(["tw:min-w-0", className], {
-        "tw:opacity-40 tw:pointer-events-none": disabled,
+      className={joinClasses(["min-w-0", className], {
+        "opacity-40 pointer-events-none": disabled,
       })}
     >
       <label
-        className={joinClasses(["tw:mb-2 tw:flex tw:gap-x-1 tw:text-sm"], {
-          "tw:sr-only": hideLabel,
+        className={joinClasses(["mb-2 flex gap-x-1 text-sm"], {
+          "sr-only": hideLabel,
         })}
         htmlFor={id}
       >
@@ -120,12 +120,12 @@ export const FormField = ({
       {children}
 
       {(!!errorMessage || !!hints.length || !!maxLength) && (
-        <div className="tw:flex tw:justify-between tw:pt-1">
+        <div className="flex justify-between pt-1">
           <div>
             {!!errorMessage && (
               <Typography
                 appearance="none"
-                className="tw:text-danger-strong"
+                className="text-danger-strong"
                 id={`${id}_error`}
               >
                 {errorMessage}
@@ -133,7 +133,7 @@ export const FormField = ({
             )}
 
             {!!hints.length && (
-              <ul className="tw:flex tw:flex-col tw:gap-y-1" id={`${id}_hints`}>
+              <ul className="flex flex-col gap-y-1" id={`${id}_hints`}>
                 {hints.map((hint) => (
                   <li key={`${id}_${hint}`}>
                     <Typography
@@ -154,12 +154,12 @@ export const FormField = ({
               appearance="none"
               aria-label="remaining character count"
               className={joinClasses([
-                "tw:font-semibold",
+                "font-semibold",
                 maxLength - inputLength <= maxLength * 0.1
-                  ? "tw:text-danger-strong"
+                  ? "text-danger-strong"
                   : maxLength - inputLength <= maxLength * 0.25
-                    ? "tw:text-warning-strong"
-                    : "tw:text-neutral-moderate",
+                    ? "text-warning-strong"
+                    : "text-neutral-moderate",
               ])}
             >
               {`${maxLength - inputLength} / ${maxLength}`}
@@ -172,5 +172,5 @@ export const FormField = ({
 };
 
 export const FormFieldWrap = ({ children }: { children: ReactNode }) => (
-  <div className="tw:flex tw:flex-col tw:gap-y-4">{children}</div>
+  <div className="flex flex-col gap-y-4">{children}</div>
 );

@@ -213,7 +213,7 @@ import { Typography } from "../../../tailwind/next/typography";
 
 function MyComponent() {
     return (
-        <Typography as="h1" typographyType="heading-2xl" appearance="strong">
+        <Typography as="h1" typographyType="heading-2xl">
             Hello World
         </Typography>
     );

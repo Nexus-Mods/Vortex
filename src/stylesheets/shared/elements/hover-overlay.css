@@ -1,0 +1,49 @@
+@utility hover-overlay {
+    position: relative;
+
+    &:before {
+        inset: 0;
+        opacity: 0;
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        border-radius: inherit;
+        background-color: var(--color-translucent-200);
+        transition-property: opacity;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+    }
+
+    &:hover,
+    &:focus-visible,
+    &[aria-expanded="true"] {
+        &:before {
+            opacity: 1;
+        }
+    }
+}
+
+@utility hover-dark-overlay {
+    position: relative;
+
+    &:before {
+        inset: 0;
+        opacity: 0;
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        border-radius: inherit;
+        background-color: var(--color-translucent-dark-200);
+        transition-property: opacity;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+    }
+
+    &:hover,
+    &:focus-visible,
+    &[aria-expanded="true"] {
+        &:before {
+            opacity: 1;
+        }
+    }
+}

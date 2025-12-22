@@ -20,13 +20,8 @@ export const ButtonDemo: React.ComponentType = () => {
   };
 
   return (
-    <div className="tw:p-6 tw:space-y-8">
-      <Typography
-        as="h1"
-        typographyType="heading-2xl"
-        appearance="strong"
-        className="tw:mb-6"
-      >
+    <div className="p-6 space-y-8">
+      <Typography as="h1" typographyType="heading-2xl" className="mb-6">
         Button System from Web Team
       </Typography>
 
@@ -34,7 +29,7 @@ export const ButtonDemo: React.ComponentType = () => {
         as="p"
         typographyType="body-md"
         appearance="subdued"
-        className="tw:mb-8"
+        className="mb-8"
       >
         This component is adapted from the web team's "next" project. It
         provides a consistent button system with multiple types, sizes, and
@@ -42,17 +37,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </Typography>
 
       {/* Primary Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Primary Buttons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="primary" size="md">
             Primary Medium
           </Button>
@@ -74,17 +64,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Secondary Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Secondary Buttons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="secondary" size="md">
             Secondary Medium
           </Button>
@@ -104,17 +89,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Tertiary Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Tertiary Buttons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="tertiary" size="md">
             Tertiary Medium
           </Button>
@@ -131,17 +111,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Success Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Success Buttons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="success" size="md">
             Success Medium
           </Button>
@@ -155,17 +130,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Premium Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Premium Buttons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="premium" size="md">
             Premium Medium
           </Button>
@@ -179,13 +149,8 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Responsive Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Responsive Buttons
         </Typography>
 
@@ -193,13 +158,13 @@ export const ButtonDemo: React.ComponentType = () => {
           as="p"
           typographyType="body-sm"
           appearance="subdued"
-          className="tw:mb-4"
+          className="mb-4"
         >
           These buttons change size based on screen width. Try resizing the
           window!
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="primary" size="sm" isResponsive>
             Responsive (sm on mobile, md on desktop)
           </Button>
@@ -207,17 +172,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Link Buttons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Button as Link
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button
             as="link"
             buttonType="primary"
@@ -234,22 +194,17 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Custom Content */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Custom Content
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button
             buttonType="primary"
             size="md"
             customContent={
-              <span className="tw:flex tw:items-center tw:gap-2">
+              <span className="flex items-center gap-2">
                 <span>🎮</span>
                 <span>Custom Content Button</span>
               </span>
@@ -259,17 +214,12 @@ export const ButtonDemo: React.ComponentType = () => {
       </div>
 
       {/* Buttons with Icons */}
-      <div className="tw:space-y-4">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="space-y-4">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Buttons with Icons
         </Typography>
 
-        <div className="tw:flex tw:gap-4 tw:flex-wrap tw:items-center">
+        <div className="flex gap-4 flex-wrap items-center">
           <Button buttonType="primary" size="md" leftIconPath="mdiDownload">
             Download
           </Button>

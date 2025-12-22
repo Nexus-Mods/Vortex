@@ -8,13 +8,8 @@ import { Typography } from "./Typography";
 
 export const TypographyDemo: React.ComponentType = () => {
   return (
-    <div className="tw:p-6">
-      <Typography
-        as="h1"
-        typographyType="heading-2xl"
-        appearance="strong"
-        className="tw:mb-6"
-      >
+    <div className="p-6">
+      <Typography as="h1" typographyType="heading-2xl" className="mb-6">
         🎨 Typography System from Web Team
       </Typography>
 
@@ -22,7 +17,7 @@ export const TypographyDemo: React.ComponentType = () => {
         as="p"
         typographyType="body-md"
         appearance="subdued"
-        className="tw:mb-8"
+        className="mb-8"
       >
         This component is adapted from the web team's "next" project. It
         provides a consistent typography system with predefined sizes and
@@ -30,17 +25,12 @@ export const TypographyDemo: React.ComponentType = () => {
       </Typography>
 
       {/* Headings */}
-      <div className="tw:mb-8">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="mb-8">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Heading Styles
         </Typography>
 
-        <div className="tw:space-y-2">
+        <div className="space-y-2">
           <Typography as="h1" typographyType="heading-2xl">
             heading-2xl: The quick brown fox
           </Typography>
@@ -63,17 +53,12 @@ export const TypographyDemo: React.ComponentType = () => {
       </div>
 
       {/* Titles */}
-      <div className="tw:mb-8">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="mb-8">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Title Styles
         </Typography>
 
-        <div className="tw:space-y-2">
+        <div className="space-y-2">
           <Typography as="p" typographyType="title-md">
             title-md: The quick brown fox
           </Typography>
@@ -87,17 +72,12 @@ export const TypographyDemo: React.ComponentType = () => {
       </div>
 
       {/* Body */}
-      <div className="tw:mb-8">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="mb-8">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Body Styles
         </Typography>
 
-        <div className="tw:space-y-2">
+        <div className="space-y-2">
           <Typography as="p" typographyType="body-2xl">
             body-2xl: The quick brown fox
           </Typography>
@@ -120,20 +100,13 @@ export const TypographyDemo: React.ComponentType = () => {
       </div>
 
       {/* Appearances */}
-      <div className="tw:mb-8">
-        <Typography
-          as="h2"
-          typographyType="heading-xl"
-          appearance="strong"
-          className="tw:mb-4"
-        >
+      <div className="mb-8">
+        <Typography as="h2" typographyType="heading-xl" className="mb-4">
           Text Appearances
         </Typography>
 
-        <div className="tw:space-y-2">
-          <Typography as="p" appearance="strong">
-            appearance="strong": Strong text emphasis
-          </Typography>
+        <div className="space-y-2">
+          <Typography as="p">: Strong text emphasis</Typography>
           <Typography as="p" appearance="moderate">
             appearance="moderate": Moderate text emphasis
           </Typography>
@@ -147,7 +120,7 @@ export const TypographyDemo: React.ComponentType = () => {
       </div>
 
       {/* Responsive */}
-      <div className="tw:mb-4 tw:p-4 tw:bg-blue-50 tw:rounded">
+      <div className="mb-4 p-4 bg-blue-50 rounded">
         <Typography
           as="p"
           typographyType={{
