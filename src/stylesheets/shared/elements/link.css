@@ -1,0 +1,113 @@
+@layer components {
+  .nxm-link {
+    display: inline-flex;
+    text-align: left;
+    column-gap: var(--spacing);
+    align-items: center;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+    transition-duration: var(--default-transition-duration);
+    transition-timing-function: var(--default-transition-timing-function);
+
+    &:focus-visible {
+      outline-style: var(--tw-outline-style);
+      outline-width: 1px;
+      outline-color: currentColor;
+    }
+
+    & svg,
+    & span {
+      transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+      transition-duration: var(--default-transition-duration);
+      transition-timing-function: var(--default-transition-timing-function);
+    }
+
+    &.nxm-link-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &:not(.nxm-link-disabled) {
+      cursor: pointer;
+    }
+  }
+
+  .nxm-link-variant-primary {
+    text-decoration-line: underline;
+
+    & span {
+      text-decoration-line: underline;
+    }
+
+    &:not(.nxm-link-disabled) {
+      &:hover,
+      &:focus,
+      & span:hover,
+      & span:focus {
+        text-decoration-line: underline;
+      }
+    }
+  }
+
+  .nxm-link-variant-secondary {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+
+    &:not(.nxm-link-disabled) {
+      &:hover,
+      &:focus,
+      & span:hover,
+      & span:focus {
+        text-decoration-line: underline;
+        text-decoration-color: currentColor;
+      }
+    }
+  }
+
+  .nxm-link-info {
+    color: var(--color-info-strong);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-info-moderate);
+    }
+  }
+
+  .nxm-link-premium {
+    color: var(--color-premium-strong);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-premium-moderate);
+    }
+  }
+
+  .nxm-link-primary {
+    color: var(--color-primary-moderate);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-primary-strong);
+    }
+  }
+
+  .nxm-link-moderate {
+    color: var(--color-neutral-moderate);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-neutral-strong);
+    }
+  }
+
+  .nxm-link-strong {
+    color: var(--color-neutral-strong);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-neutral-moderate);
+    }
+  }
+
+  .nxm-link-subdued {
+    color: var(--color-neutral-subdued);
+
+    &:not(.nxm-link-disabled):hover {
+      color: var(--color-neutral-moderate);
+    }
+  }
+}
