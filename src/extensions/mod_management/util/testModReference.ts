@@ -288,14 +288,8 @@ function testRef(
   }
 
   // Right patches?
-  if (
-    ref.patches != null &&
-    Object.keys(ref.patches).length > 0 &&
-    !_.isEqual(mod.patches, ref.patches)
-  ) {
-    if (mod?.patches != null) {
-      return false;
-    }
+  if (!_.isEqual(mod.patches ?? {}, ref.patches ?? {})) {
+    return false;
   }
 
   if (ref.tag != null) {
