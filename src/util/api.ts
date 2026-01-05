@@ -58,7 +58,7 @@ import { Archive } from "./archives";
 import bbcodeToReact, {
   bbcodeToHTML,
   preProcess as bbcodePreProcess,
-} from "./bbcode";
+} from "../renderer/controls/bbcode";
 import calculateFolderSize from "./calculateFolderSize";
 import { checksum, fileMD5 } from "./checksum";
 import ConcurrencyLimiter from "./ConcurrencyLimiter";

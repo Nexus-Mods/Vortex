@@ -1,4 +1,4 @@
-import bbcode, { stripBBCode } from "../../util/bbcode";
+import bbcode, { stripBBCode } from "../../renderer/controls/bbcode";
 import { ComponentEx, translate } from "../../util/ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";

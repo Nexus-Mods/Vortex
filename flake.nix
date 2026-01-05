@@ -68,6 +68,9 @@
 
             # Chromium sandbox
             export CHROME_DEVEL_SANDBOX="${pkgs.electron_37}/libexec/electron/chrome-sandbox"
+
+            # Register protocol handler
+            ./scripts/linux-protocol-registration.sh
           '';
         };
       });

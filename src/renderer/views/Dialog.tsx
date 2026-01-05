@@ -18,7 +18,7 @@ import {
   IInput,
 } from "../../types/IDialog";
 import { IState } from "../../types/IState";
-import bbcode from "../../util/bbcode";
+import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../../util/ComponentEx";
 import { TFunction } from "../../util/i18n";
 import lazyRequire from "../../util/lazyRequire";

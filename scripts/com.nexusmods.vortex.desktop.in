@@ -6,6 +6,7 @@ GenericName=Mod Manager
 Comment=Mod Manager for your games
 Categories=Game
 Terminal=false
+NoDisplay=true
 # StartupWMClass=Vortex
 # Icon=com.nexusmods.vortex
 Exec=@EXEC_PATH@ --download %u

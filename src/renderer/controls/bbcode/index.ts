@@ -1,19 +1,19 @@
-import BrTag from "./bbcode/BrTag";
-import FontTag from "./bbcode/FontTag";
-import HeadingTag from "./bbcode/HeadingTag";
-import IdentityTag from "./bbcode/IdentityTag";
-import LineTag from "./bbcode/LineTag";
-import LinkTag from "./bbcode/LinkTag";
-import MoreTag from "./bbcode/MoreTag";
-import SizeTag from "./bbcode/SizeTag";
-import SpoilerTag from "./bbcode/SpoilerTag";
-import StyleTag from "./bbcode/StyleTag";
-import SvgTag from "./bbcode/SvgTag";
-import TooltipTag from "./bbcode/TooltipTag";
-import YoutubeTag from "./bbcode/YoutubeTag";
+import BrTag from "./BrTag";
+import FontTag from "./FontTag";
+import HeadingTag from "./HeadingTag";
+import IdentityTag from "./IdentityTag";
+import LineTag from "./LineTag";
+import LinkTag from "./LinkTag";
+import MoreTag from "./MoreTag";
+import SizeTag from "./SizeTag";
+import SpoilerTag from "./SpoilerTag";
+import StyleTag from "./StyleTag";
+import SvgTag from "./SvgTag";
+import TooltipTag from "./TooltipTag";
+import YoutubeTag from "./YoutubeTag";
 
 import * as bbcode from "bbcode-to-react";
-import React = require("react");
+import * as React from "react";
 
 /**
  * options that can be passed into the bbcode parser to configure how bbcode
@@ -25,7 +25,7 @@ export interface IBBCodeContext {
    * callback functions registered here can be triggered with
    * [url=cb://<callback name>/<arg1>/<arg2>/...] (arguments are optional of course)
    */
-  callbacks?: { [name: string]: (...args: any[]) => void };
+  callbacks?: { [name: string]: (...args: unknown[]) => void };
   /**
    * if enabled, [link] or [url] tags may link to local files, which then get opened
    * with opn.
@@ -87,7 +87,7 @@ export function preProcess(input: string): string {
     .replace(/(&[^;]+;)/g, transformSymbol);
 }
 
-function renderBBCode(input: string, context?: any): React.ReactChild[] {
+function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
   if (input === undefined) {
     return [""];
   }

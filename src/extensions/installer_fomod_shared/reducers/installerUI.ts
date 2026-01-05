@@ -11,7 +11,7 @@ const defaults: IFOMODStateDialog = {
   instances: {},
 };
 
-const reducers: IReducerSpec<IFOMODStateDialog>['reducers'] = {};
+const reducers: IReducerSpec<IFOMODStateDialog>["reducers"] = {};
 
 createReducer(
   actions.startDialog,
