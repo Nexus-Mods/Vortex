@@ -568,6 +568,11 @@ export function getInfo(
   );
 }
 
+const modInfoCache: {
+  [key: string]: { data: IRemoteInfo; expires: number };
+} = {};
+const MOD_INFO_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes - we don't actually expect mod info to change, but just in case.
+
 // GraphQL-based version of getInfo function
 export function getInfoGraphQL(
   nexus: Nexus,
@@ -575,6 +580,14 @@ export function getInfoGraphQL(
   modId: number,
   fileId: number,
 ): BluebirdPromise<IRemoteInfo> {
+  const cacheKey = `${domain}_${modId}_${fileId}`;
+
+  // Check cache first
+  const cached = modInfoCache[cacheKey];
+  if (cached && Date.now() < cached.expires) {
+    return BluebirdPromise.resolve(cached.data);
+  }
+
   // Define the GraphQL query for file information
   const fileQuery: Partial<IModFileQuery> = {
     categoryId: true,
@@ -585,6 +598,7 @@ export function getInfoGraphQL(
     mod: {
       author: true,
       category: true,
+      directDownloadEnabled: true,
       game: {
         id: true,
         domainName: true,
@@ -639,7 +653,13 @@ export function getInfoGraphQL(
       .then((fileResult) => {
         const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
         const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
-        return resolve({ modInfo, fileInfo });
+        const result = { modInfo, fileInfo };
+        modInfoCache[cacheKey] = {
+          data: result,
+          expires: Date.now() + MOD_INFO_CACHE_DURATION,
+        };
+
+        return resolve(result);
       })
       .catch((err) => {
         err["attachLogOnReport"] = true;
@@ -680,6 +700,7 @@ function transformGraphQLModToIModInfo(graphqlFile: any): IModInfo {
     mod_downloads: mod?.modDownloads || 0,
     mod_unique_downloads: mod?.modUniqueDownloads || 0,
     uid: mod?.uid,
+    direct_download_enabled: mod?.directDownloadEnabled || false,
   } as unknown as IModInfo;
 }
 
