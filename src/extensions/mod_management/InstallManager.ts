@@ -4280,7 +4280,11 @@ class InstallManager {
     }
     const overrideMap = new Map<string, IInstruction>();
     result.overrideInstructions?.forEach((instr) => {
-      const key = (instr.source ?? instr.type).toUpperCase();
+      let key = instr.source ?? instr.type;
+      if (key == null) {
+        return;
+      }
+      key = key.toUpperCase();
       if (
         instr.type !== "setmodtype" ||
         this.modTypeExists(gameId, instr?.value)
@@ -4291,18 +4295,20 @@ class InstallManager {
       }
     });
 
-    const finalInstructions = result.instructions.map((instr) => {
-      const key = (instr.source ?? instr.type).toUpperCase();
-      const overrideEntry = overrideMap.get(key);
-      if (overrideEntry) {
-        log("debug", "overriding instruction", {
-          key,
-          type: instr.type,
-          override: JSON.stringify(overrideEntry),
-        });
-      }
-      return overrideEntry ?? instr;
-    });
+    const finalInstructions = result.instructions
+      .filter((instr) => (instr.source ?? instr.type) != null)
+      .map((instr) => {
+        const key = (instr.source ?? instr.type).toUpperCase();
+        const overrideEntry = overrideMap.get(key);
+        if (overrideEntry) {
+          log("debug", "overriding instruction", {
+            key,
+            type: instr.type,
+            override: JSON.stringify(overrideEntry),
+          });
+        }
+        return overrideEntry ?? instr;
+      });
 
     // Add instructions from result.overrideInstructions that are not already present in finalInstructions
     if (Array.isArray(result.overrideInstructions)) {
@@ -4312,7 +4318,11 @@ class InstallManager {
         ),
       );
       for (const instr of result.overrideInstructions) {
-        const key = (instr.source ?? instr.type).toUpperCase();
+        let key = instr.source ?? instr.type;
+        if (key == null) {
+          continue;
+        }
+        key = key.toUpperCase();
         // For copy instructions, ensure no duplicate destinations
         if (instr.type === "copy") {
           const isDuplicate = finalInstructions.some(
