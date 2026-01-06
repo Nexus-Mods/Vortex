@@ -459,13 +459,17 @@ describe('testModReference', () => {
   });
 
   describe('Installer choices and patches matching', () => {
-    it('should match when installer choices are identical', () => {
+    it('should match when installer choices and patches are identical', () => {
       const mod = sampleMods.skyrimse['BSA Version-68139-3-0-1685378500'];
       const reference: IModReference = {
         logicalFileName: 'BSA_Version.zip',
         installerChoices: {
           choice1: 'option1',
           choice2: 'option2'
+        },
+        patches: {
+          patch1: 'value1',
+          patch2: 'value2'
         }
       };
 
@@ -479,6 +483,10 @@ describe('testModReference', () => {
         installerChoices: {
           choice1: 'different_option',
           choice2: 'option2'
+        },
+        patches: {
+          patch1: 'value1',
+          patch2: 'value2'
         }
       };
 
