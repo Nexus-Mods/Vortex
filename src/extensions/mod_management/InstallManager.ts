@@ -1074,7 +1074,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find(this.isCritical);
+          const critical = errors.find(err => this.isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
               new ArchiveBrokenError(path.basename(archivePath), critical),
@@ -3612,7 +3612,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find(this.isCritical);
+          const critical = errors.find(err => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
           }
