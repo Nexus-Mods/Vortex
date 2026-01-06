@@ -194,6 +194,7 @@
     "babel-plugin-i18next-extract": "^0.4.0",
     "babel-polyfill": "^6.26.0",
     "bootswatch": "^4.3.1",
+    "concurrently": "^5.0.0",
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "dotenv": "^17.2.3",
