@@ -1,6 +1,6 @@
 import { IDownload, IState } from "../../../types/IState";
 import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
-import { connect } from "../../../util/ComponentEx";
+import { connect } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 

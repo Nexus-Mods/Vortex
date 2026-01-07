@@ -1,7 +1,7 @@
 import Icon from "../../../renderer/controls/Icon";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 
 import { TFunction } from "i18next";
 import * as React from "react";

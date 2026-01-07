@@ -3,7 +3,7 @@ import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import * as url from "url";
-import { ComponentEx, translate } from "../../../util/ComponentEx";
+import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
 
 import {
   IItemRendererOptions,

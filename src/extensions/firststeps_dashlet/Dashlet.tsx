@@ -2,7 +2,11 @@ import Dashlet from "../../renderer/controls/Dashlet";
 import Icon from "../../renderer/controls/Icon";
 import { IconButton } from "../../renderer/controls/TooltipControls";
 import { II18NProps } from "../../types/II18NProps";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 
 import { dismissStep } from "./actions";
 import { IToDo } from "./IToDo";

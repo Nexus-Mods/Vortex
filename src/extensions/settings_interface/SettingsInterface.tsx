@@ -12,7 +12,11 @@ import {
 } from "../../types/IDialog";
 import { IState } from "../../types/IState";
 import { IParameters, relaunch } from "../../util/commandLine";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 import getVortexPath from "../../util/getVortexPath";
 import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";

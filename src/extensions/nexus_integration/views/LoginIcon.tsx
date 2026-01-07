@@ -3,7 +3,11 @@ import Icon from "../../../renderer/controls/Icon";
 import Image from "../../../renderer/controls/Image";
 import * as tooltip from "../../../renderer/controls/TooltipControls";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import getVortexPath from "../../../util/getVortexPath";
 import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";

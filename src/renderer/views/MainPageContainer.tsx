@@ -1,7 +1,7 @@
 import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
 import { IMainPage } from "../../types/IMainPage";
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "../controls/ComponentEx";
 import { didIgnoreError, isOutdated } from "../../util/errorHandling";
 import { genHash } from "../../util/genHash";
 import { log } from "../../util/log";

@@ -1,6 +1,6 @@
 import Line from "./Line";
 
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
 import * as React from "react";

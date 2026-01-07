@@ -9,7 +9,7 @@ import {
 } from "../../actions/notifications";
 
 import { IState } from "../../types/IState";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { ComponentEx, connect, translate } from "./ComponentEx";
 import { truthy } from "../../util/util";
 
 import Icon from "./Icon";

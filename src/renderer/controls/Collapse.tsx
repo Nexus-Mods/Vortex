@@ -1,6 +1,6 @@
 import * as React from "react";
 import { WithTranslation } from "react-i18next";
-import { PureComponentEx, translate } from "../../util/ComponentEx";
+import { PureComponentEx, translate } from "./ComponentEx";
 
 export interface ICollapseProps extends WithTranslation {
   showText?: string;

@@ -1,6 +1,10 @@
 import Icon from "../../../renderer/controls/Icon";
 import ProgressBar from "../../../renderer/controls/ProgressBar";
-import { connect, PureComponentEx, translate } from "../../../util/ComponentEx";
+import {
+  connect,
+  PureComponentEx,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { bytesToString } from "../../../util/util";
 
 import * as React from "react";

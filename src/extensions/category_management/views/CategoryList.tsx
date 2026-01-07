@@ -15,7 +15,11 @@ import {
 } from "../../../types/IDialog";
 import { IErrorOptions } from "../../../types/IExtensionContext";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import lazyRequire from "../../../util/lazyRequire";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";

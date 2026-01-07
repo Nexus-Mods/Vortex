@@ -1,6 +1,6 @@
 import { displayGroup } from "../../actions/session";
 import { IState } from "../../types/IState";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { ComponentEx, connect, translate } from "./ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 
 import Icon from "./Icon";

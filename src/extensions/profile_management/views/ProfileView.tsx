@@ -5,7 +5,11 @@ import {
   showDialog,
 } from "../../../actions/notifications";
 import { IMod, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";

@@ -1,4 +1,4 @@
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import { userFriendlyTime } from "../../../util/relativeTime";
 

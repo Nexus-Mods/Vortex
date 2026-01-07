@@ -21,7 +21,11 @@ import {
 import { IState } from "../../../types/IState";
 import { ITableAttribute } from "../../../types/ITableAttribute";
 import { withBatchContext } from "../../../util/BatchContext";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import Debouncer from "../../../util/Debouncer";
 import * as selectors from "../../../util/selectors";

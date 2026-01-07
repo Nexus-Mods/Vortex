@@ -1,7 +1,7 @@
 import { setSettingsPage } from "../../../actions/session";
 import ErrorBoundary from "../../../renderer/controls/ErrorBoundary";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect } from "../../../util/ComponentEx";
+import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { bytesToString, truthy } from "../../../util/util";
 
 import { NUM_SPEED_DATA_POINTS } from "../reducers/state";

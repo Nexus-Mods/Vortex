@@ -1,7 +1,7 @@
 import { ActionDropdown } from "../../../renderer/controls/api";
 import { IActionDefinition } from "../../../types/IActionDefinition";
 import { IMod } from "../../../types/IState";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";

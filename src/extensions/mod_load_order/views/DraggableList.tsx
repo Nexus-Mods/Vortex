@@ -20,7 +20,7 @@ import * as ReactDOM from "react-dom";
 import { ContextMenu } from "../../../renderer/controls/api";
 
 import * as util from "../../../util/api";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import {
   IDnDConditionResult,
   ILoadOrder,

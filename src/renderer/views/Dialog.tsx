@@ -19,7 +19,7 @@ import {
 } from "../../types/IDialog";
 import { IState } from "../../types/IState";
 import bbcode from "../controls/bbcode";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import { TFunction } from "../../util/i18n";
 import lazyRequire from "../../util/lazyRequire";
 import { MutexWrapper } from "../../util/MutexContext";

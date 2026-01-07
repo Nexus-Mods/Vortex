@@ -1,4 +1,4 @@
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "./ComponentEx";
 import { didIgnoreError, isOutdated } from "../../util/errorHandling";
 import { genHash } from "../../util/genHash";
 import { renderError } from "../../util/message";

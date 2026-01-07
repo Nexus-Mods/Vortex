@@ -7,7 +7,11 @@ import { ToggleButton } from "../../../renderer/controls/TooltipControls";
 import { IActionDefinition } from "../../../types/IActionDefinition";
 import { IComponentContext } from "../../../types/IComponentContext";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import getAttr from "../../../util/getAttr";
 import opn from "../../../util/opn";
 import { activeGameId } from "../../../util/selectors";

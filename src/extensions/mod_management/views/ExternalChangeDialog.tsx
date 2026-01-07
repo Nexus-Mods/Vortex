@@ -3,7 +3,11 @@ import Table from "../../../renderer/controls/Table";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
 import { ITableAttribute } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { setdefault } from "../../../util/util";
 
 import {

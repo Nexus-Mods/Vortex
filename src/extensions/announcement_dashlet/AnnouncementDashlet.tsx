@@ -8,7 +8,7 @@ import { matchesGameMode, matchesVersion } from "./util";
 import Dashlet from "../../renderer/controls/Dashlet";
 import { Icon, IconButton } from "../../renderer/controls/TooltipControls";
 import { getApplication } from "../../util/application";
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
 import opn from "../../util/opn";
 import * as selectors from "../../util/selectors";
 

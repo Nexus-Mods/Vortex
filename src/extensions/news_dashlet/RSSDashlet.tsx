@@ -1,5 +1,5 @@
 import bbcode, { stripBBCode } from "../../renderer/controls/bbcode";
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { currentGame } from "../gamemode_management/selectors";

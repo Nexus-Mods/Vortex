@@ -1,6 +1,6 @@
 import IconBar from "../controls/IconBar";
 import { IActionDefinition } from "../../types/IActionDefinition";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "../controls/ComponentEx";
 
 import { TFunction } from "i18next";
 import * as React from "react";
