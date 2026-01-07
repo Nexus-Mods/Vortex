@@ -149,14 +149,13 @@ import getText from "./texts";
 import { findModByRef } from "./util/dependencies";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 
-import Promise from "bluebird";
+import Bluebird from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
 import React from "react";
 import * as Redux from "redux";
 import shortid = require("shortid");
 import { types } from "../..";
-import { ICollectionModInstallInfo } from "../collections_integration/types";
 
 interface IAppContext {
   isProfileChanging: boolean;
@@ -229,7 +228,7 @@ function bakeSettings(
   sortedModList: IMod[],
 ) {
   return shouldSuppressUpdate(api)
-    ? Promise.resolve()
+    ? Bluebird.resolve()
     : api.emitAndAwait("bake-settings", profile.gameId, sortedModList, profile);
 }
 
@@ -269,7 +268,7 @@ function deployModType(
   mergeResult: { [modType: string]: IMergeResultByType },
   lastDeployment: IDeployedFile[],
   onProgress: (text: string, perc: number) => void,
-): Promise<IDeployedFile[]> {
+): Bluebird<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(
     (mod) => (mod.type || "") === typeId,
   );
@@ -365,7 +364,7 @@ function deployAllModTypes(
 
   api.dismissNotification("redundant-mods");
 
-  return Promise.each(deployableModTypes(modPaths), (typeId) =>
+  return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
     deployModType(
       api,
       activator,
@@ -383,14 +382,14 @@ function deployAllModTypes(
     if (activator.noRedundancy !== true) {
       return reportRedundant(api, profile.id, overwritten);
     } else {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
   });
 }
 
 function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
   if (undiscovered.length === 0) {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
   return api
     .showDialog(
@@ -410,8 +409,8 @@ function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
     )
     .then((result) =>
       result.action === "Cancel"
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve(),
+        ? Bluebird.reject(new UserCanceled())
+        : Bluebird.resolve(),
     );
 }
 
@@ -476,9 +475,9 @@ function checkIncompatibilities(
         },
       ],
     });
-    return Promise.reject(new ProcessCanceled("Incompatible mods"));
+    return Bluebird.reject(new ProcessCanceled("Incompatible mods"));
   } else {
-    return Promise.resolve();
+    return Bluebird.resolve();
   }
 }
 
@@ -495,7 +494,7 @@ function doSortMods(
     .filter((mod: IMod) => getSafe(modState, [mod.id, "enabled"], false));
 
   return sortMods(profile.gameId, unsorted, api).catch(CycleError, (err) =>
-    Promise.reject(
+    Bluebird.reject(
       new ProcessCanceled(
         "Deployment is not possible when you have cyclical mod rules. " +
           err.message,
@@ -517,7 +516,7 @@ function doMergeMods(
   sortedModList: IMod[],
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
-): Promise<{ [typeId: string]: IMergeResultByType }> {
+): Bluebird<{ [typeId: string]: IMergeResultByType }> {
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
     if (match !== undefined) {
@@ -542,7 +541,7 @@ function doMergeMods(
 
   // clean up merged mods
   return (
-    Promise.mapSeries(mergeModTypes, (typeId) => {
+    Bluebird.mapSeries(mergeModTypes, (typeId) => {
       const mergePath = truthy(typeId)
         ? MERGED_PATH + "." + typeId
         : MERGED_PATH;
@@ -550,7 +549,7 @@ function doMergeMods(
     })
       // update merged mods
       .then(() =>
-        Promise.each(mergeModTypes, (typeId) =>
+        Bluebird.each(mergeModTypes, (typeId) =>
           mergeMods(
             api,
             game,
@@ -680,7 +679,7 @@ function reportRedundant(
       ],
     });
   }
-  return Promise.resolve();
+  return Bluebird.resolve();
 }
 
 function deployableModTypes(modPaths: { [typeId: string]: string }) {
@@ -694,7 +693,7 @@ function genUpdateModDeployment() {
     profileId?: string,
     progressCB?: (text: string, percent: number) => void,
     deployOptions?: IDeployOptions,
-  ): Promise<void> => {
+  ): Bluebird<void> => {
     const t = api.translate;
 
     const notification: INotification = {
@@ -726,7 +725,7 @@ function genUpdateModDeployment() {
         message: "Can't deploy while the game or a tool is running",
         displayMS: 5000,
       });
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     if (profile === undefined) {
@@ -734,7 +733,7 @@ function genUpdateModDeployment() {
       // can be delayed so it's completely possible there is no profile active at the the time
       // or has been deleted by then. Rare but not a bug
       api.store.dispatch(dismissNotification(notification.id));
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const gameId = profile.gameId;
     const gameDiscovery = getSafe(
@@ -746,7 +745,7 @@ function genUpdateModDeployment() {
     if (game === undefined || gameDiscovery?.path === undefined) {
       const err = new Error("Game no longer available");
       err["attachLogOnReport"] = true;
-      return Promise.reject(err);
+      return Bluebird.reject(err);
     }
     const stagingPath = installPathForGame(state, gameId);
 
@@ -793,7 +792,7 @@ function genUpdateModDeployment() {
           });
         }
       } // otherwise there should already be a notification
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const newDeployment: { [typeId: string]: IDeployedFile[] } = {};
@@ -811,7 +810,7 @@ function genUpdateModDeployment() {
     };
 
     // test if anything was changed by an external application
-    return (manual ? Promise.resolve() : userGate())
+    return (manual ? Bluebird.resolve() : userGate())
       .tap(() => {
         notification.id = api.sendNotification(notification);
       })
@@ -831,7 +830,7 @@ function genUpdateModDeployment() {
           api.store.dispatch(startActivity("mods", "deployment"));
           progress(t("Loading deployment manifest"), 0);
 
-          return Promise.each(deployableModTypes(modPaths), (typeId) =>
+          return Bluebird.each(deployableModTypes(modPaths), (typeId) =>
             loadActivation(
               api,
               gameId,
@@ -972,7 +971,7 @@ function genUpdateModDeployment() {
           .catch((err) => {
             if (err instanceof UserCanceled) {
               // not sure how we'd get here, UserCanceled is caught further up!
-              return Promise.resolve();
+              return Bluebird.resolve();
             }
             if (err.code === undefined && err.errno !== undefined) {
               // unresolved windows error code
@@ -1056,7 +1055,7 @@ function doSaveActivation(
               files,
               activatorId,
             )
-          : Promise.resolve(),
+          : Bluebird.resolve(),
       );
   });
 }
@@ -1148,7 +1147,7 @@ function genWebsiteAttribute(api: IExtensionApi): ITableAttribute<IMod> {
 
 function genValidActivatorCheck(api: IExtensionApi) {
   return () =>
-    new Promise<ITestResult>((resolve, reject) => {
+    new Bluebird<ITestResult>((resolve, reject) => {
       const state = api.store.getState();
       if (getSupportedActivators(state).length > 0) {
         return resolve(undefined);
@@ -1188,7 +1187,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
         },
         severity: "error",
         automaticFix: () =>
-          new Promise<void>((fixResolve, fixReject) => {
+          new Bluebird<void>((fixResolve, fixReject) => {
             api.store.dispatch(
               setDeploymentProblem(
                 reasons
@@ -1228,7 +1227,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
 }
 
 function attributeExtractor(input: any) {
-  return Promise.resolve({
+  return Bluebird.resolve({
     version: getSafe(input.meta, ["fileVersion"], undefined),
     logicalFileName: getSafe(input.meta, ["logicalFileName"], undefined),
     rules: getSafe(input.meta, ["rules"], undefined),
@@ -1242,7 +1241,7 @@ function attributeExtractor(input: any) {
 }
 
 function upgradeExtractor(input: any) {
-  return Promise.resolve({
+  return Bluebird.resolve({
     category: getSafe(input.previous, ["category"], undefined),
     customFileName: getSafe(input.previous, ["customFileName"], undefined),
     variant: getSafe(input.previous, ["variant"], undefined),
@@ -1336,7 +1335,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       discovery === undefined ||
       discovery.path === undefined
     ) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const mod: IMod = getSafe(
       state,
@@ -1344,17 +1343,17 @@ function onDeploySingleMod(api: IExtensionApi) {
       undefined,
     );
     if (mod === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const activator = getCurrentActivator(state, gameId, false);
 
     if (activator === undefined) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const dataPath = game.getModPaths(discovery.path)[mod.type || ""];
     if (!truthy(dataPath)) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     const stagingPath: string = installPathForGame(state, gameId);
     let modPath: string;
@@ -1368,7 +1367,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       api.showErrorNotification("Failed to deploy mod", err, {
         message: modId,
       });
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
 
     const subdir = genSubDirFunc(game, getModType(mod.type));
@@ -1399,7 +1398,7 @@ function onDeploySingleMod(api: IExtensionApi) {
                   new BlacklistSet(mod.fileOverrides ?? [], game, normalize),
                 )
               : activator.deactivate(modPath, subdir(mod), mod.installationPath)
-            : Promise.resolve(),
+            : Bluebird.resolve(),
         )
         .tapCatch(() => {
           if (activator.cancel !== undefined) {
@@ -1581,7 +1580,7 @@ function once(api: IExtensionApi) {
         displayMS: 3000,
       });
 
-      return Promise.resolve();
+      return Bluebird.resolve();
     },
     1000,
     true,
@@ -1603,7 +1602,7 @@ function once(api: IExtensionApi) {
       if (options?.silent !== true && options?.willBeReplaced !== true) {
         removeModToastDebouncer.schedule();
       }
-      return Promise.resolve();
+      return Bluebird.resolve();
     },
   );
 
@@ -1613,7 +1612,7 @@ function once(api: IExtensionApi) {
     "purge-mods-in-path",
     (gameId: string, modType: string, modPath: string) => {
       return purgeModsInPath(api, gameId, modType, modPath)
-        .catch(UserCanceled, () => Promise.resolve())
+        .catch(UserCanceled, () => Bluebird.resolve())
         .catch(NoDeployment, () => {
           api.showErrorNotification(
             "Failed to purge mods",
@@ -1635,7 +1634,7 @@ function once(api: IExtensionApi) {
     (allowFallback: boolean, callback: (err: Error) => void) => {
       purgeMods(api)
         .catch((err) =>
-          allowFallback ? fallbackPurge(api) : Promise.reject(err),
+          allowFallback ? fallbackPurge(api) : Bluebird.reject(err),
         )
         .then(() => callback(null))
         .catch((err) => callback(err));
@@ -1663,7 +1662,7 @@ function once(api: IExtensionApi) {
           undefined,
         );
 
-        Promise.map(modIds, (modId) =>
+        Bluebird.map(modIds, (modId) =>
           installManager
             .installDependencies(
               api,
@@ -1700,7 +1699,7 @@ function once(api: IExtensionApi) {
           );
         }
 
-        Promise.map(modIds, (modId) =>
+        Bluebird.map(modIds, (modId) =>
           installManager
             .installRecommendations(api, profile, gameId, modId)
             .catch(ProcessCanceled, () => null),
@@ -1872,7 +1871,7 @@ function once(api: IExtensionApi) {
       gameId: string,
       archiveId: string,
       options: IInstallOptions,
-      cb: (instructions: IInstallResult, tempPath: string) => Promise<void>,
+      cb: (instructions: IInstallResult, tempPath: string) => Bluebird<void>,
     ) => {
       const state = api.getState();
       const download = state.persistent.downloads.files[archiveId];
@@ -1915,7 +1914,7 @@ function once(api: IExtensionApi) {
   const cacheModRefActions: Redux.Action[] = [];
   const cacheModRefDebouncer = new Debouncer(() => {
     batchDispatch(api.store, cacheModRefActions);
-    return Promise.resolve();
+    return Bluebird.resolve();
   }, 500);
 
   setResolvedCB(
@@ -1933,13 +1932,13 @@ function once(api: IExtensionApi) {
   );
 }
 
-function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
+function checkPendingTransfer(api: IExtensionApi): Bluebird<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
   const gameMode = activeGameId(state);
   if (gameMode === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   const pendingTransfer: string[] = [
@@ -1950,7 +1949,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   ];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   result = {
@@ -1962,7 +1961,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
         "Vortex clean up now, otherwise you may be left with unnecessary copies of files.",
     },
     automaticFix: () =>
-      new Promise<void>((fixResolve, fixReject) => {
+      new Bluebird<void>((fixResolve, fixReject) => {
         return fs
           .removeAsync(transferDestination)
           .then(() => {
@@ -1981,7 +1980,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
       }),
   };
 
-  return Promise.resolve(result);
+  return Bluebird.resolve(result);
 }
 
 function openDuplicateLocation(api: IExtensionApi, modId: string) {
@@ -2081,11 +2080,11 @@ function getDuplicateMods(api: IExtensionApi): IDuplicatesMap {
     : undefined;
 }
 
-function checkDuplicateMods(api: IExtensionApi): Promise<ITestResult> {
+function checkDuplicateMods(api: IExtensionApi): Bluebird<ITestResult> {
   let result: ITestResult;
   const duplicateMap = getDuplicateMods(api);
   if (duplicateMap === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   const preSelectedTxt =
@@ -2106,7 +2105,7 @@ function checkDuplicateMods(api: IExtensionApi): Promise<ITestResult> {
         "Proceeding past this point will allow you to select which mods to remove.",
     },
     automaticFix: () =>
-      new Promise<void>((fixResolve, fixReject) => {
+      new Bluebird<void>((fixResolve, fixReject) => {
         api.store.dispatch(setDialogVisible("duplicates-dialog"));
         api.events.on("duplicates-removed", () => {
           fixResolve();
@@ -2114,10 +2113,10 @@ function checkDuplicateMods(api: IExtensionApi): Promise<ITestResult> {
       }),
   };
 
-  return Promise.resolve(result);
+  return Bluebird.resolve(result);
 }
 
-function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
+function checkStagingFolder(api: IExtensionApi): Bluebird<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
@@ -2125,7 +2124,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
 
   log("debug", "[checking staging folder]", { gameMode });
   if (gameMode === undefined) {
-    return Promise.resolve(result);
+    return Bluebird.resolve(result);
   }
 
   const discovery = currentGameDiscovery(state);
@@ -2165,7 +2164,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
           "application uses.",
       },
       automaticFix: () =>
-        new Promise<void>((fixResolve, fixReject) => {
+        new Bluebird<void>((fixResolve, fixReject) => {
           api.events.emit("show-main-page", "application_settings");
           api.store.dispatch(setSettingsPage("Mods"));
           api.highlightControl("#install-path-form", 5000);
@@ -2177,7 +2176,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
         }),
     };
   }
-  return Promise.resolve(result);
+  return Bluebird.resolve(result);
 }
 
 function init(context: IExtensionContext): boolean {
@@ -2227,7 +2226,7 @@ function init(context: IExtensionContext): boolean {
       const profile = activeProfile(context.api.getState());
       // installRecommendations should already do nothing if there are no recommendations
       // on a mod so no need to make the code more complicated here
-      Promise.mapSeries(instanceIds, (modId) =>
+      Bluebird.mapSeries(instanceIds, (modId) =>
         installManager.installRecommendations(
           context.api,
           profile,
