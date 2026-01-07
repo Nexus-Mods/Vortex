@@ -1,7 +1,6 @@
 import { IAttributeState } from "../../../types/IAttributeState";
 import { ITableAttribute } from "../../../types/ITableAttribute";
 import { SortDirection } from "../../../types/SortDirection";
-import getAttr from "../../../util/getAttr";
 import { preT, TFunction } from "../../../util/i18n";
 
 import { IconButton } from "../TooltipControls";
@@ -122,12 +121,7 @@ class HeaderCell extends React.Component<IProps, {}> {
 
   private renderSortIndicator(): JSX.Element {
     const { state } = this.props;
-
-    const direction: SortDirection = getAttr(
-      state,
-      "sortDirection",
-      "none",
-    ) as SortDirection;
+    const direction = state?.sortDirection ?? "none";
 
     return (
       <SortIndicator direction={direction} onSetDirection={this.setDirection} />
@@ -144,11 +138,7 @@ class HeaderCell extends React.Component<IProps, {}> {
       return;
     }
     if (attribute.isSortable) {
-      const direction: SortDirection = getAttr(
-        state,
-        "sortDirection",
-        "none",
-      ) as SortDirection;
+      const direction = state?.sortDirection ?? "none";
       onSetSortDirection(attribute.id, nextDirection(direction));
     }
   };
