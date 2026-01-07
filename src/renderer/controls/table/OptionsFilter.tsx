@@ -1,5 +1,4 @@
 import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
-import bindProps from "../../../util/bindProps";
 import { truthy } from "../../../util/util";
 
 import * as React from "react";
@@ -20,6 +19,21 @@ interface IBoundProps {
 }
 
 const dummy = "__undefined_BJL9vbThZ";
+
+function WrappedOptionsFilterComponent(boundProps: IBoundProps) {
+  return class extends React.Component<IFilterProps> {
+    public render() {
+      const { children } = this.props;
+
+      const wrapProps = {
+        ...boundProps,
+        ...this.props,
+      };
+
+      return React.createElement(OptionsFilterComponent, wrapProps, children);
+    }
+  };
+}
 
 function OptionsFilterComponent(props: IProps & IBoundProps) {
   const { t, attributeId, filter, multi, onSetFilter } = props;
@@ -87,7 +101,7 @@ function OptionsFilterComponent(props: IProps & IBoundProps) {
 }
 class OptionsFilter implements ITableFilter {
   public static EMPTY = "__empty";
-  public component: React.ComponentClass<any>;
+  public component: React.ComponentClass<IFilterProps>;
   public raw = true;
 
   private mMulti: boolean;
@@ -97,7 +111,7 @@ class OptionsFilter implements ITableFilter {
     multi: boolean,
     raw?: boolean,
   ) {
-    this.component = bindProps({ options, multi })(OptionsFilterComponent);
+    this.component = WrappedOptionsFilterComponent({ options, multi });
     this.mMulti = multi;
     this.raw = raw !== false;
   }

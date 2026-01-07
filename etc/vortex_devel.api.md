@@ -4314,7 +4314,7 @@ export class OptionsFilter implements ITableFilter {
     // Warning: (ae-forgotten-export) The symbol "Options" needs to be exported by the entry point index.d.ts
     constructor(options: Options | (() => Options), multi: boolean, raw?: boolean);
     // (undocumented)
-    component: React_2.ComponentClass<any>;
+    component: React_2.ComponentClass<IFilterProps>;
     // (undocumented)
     static EMPTY: string;
     // (undocumented)
