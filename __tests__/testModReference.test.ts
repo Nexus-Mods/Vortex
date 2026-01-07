@@ -372,7 +372,8 @@ describe('testModReference', () => {
       const mod = sampleMods.skyrimse['Tweaks for TTW 1.71-77934-1-71-1739639832'];
       const reference: IModReference = {
         gameId: 'fallout4',
-        fileMD5: '5f8a7b2c9d3e1f4a6b8c0d2e5f7a9b1c'
+        logicalFileName: 'Tweaks for TTW 1.71.7z',
+        versionMatch: '>=1.0.0'
       };
 
       expect(testModReference(mod, reference)).toBe(false);
