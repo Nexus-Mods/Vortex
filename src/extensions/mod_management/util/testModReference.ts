@@ -83,6 +83,7 @@ const REFERENCE_FIELDS = [
   "fileExpression",
   "versionMatch",
   "repo",
+  "tag",
 ];
 export function referenceEqual(
   lhs: IModReference,
@@ -288,8 +289,17 @@ function testRef(
   }
 
   // Right patches?
-  if (!_.isEqual(mod.patches ?? {}, ref.patches ?? {})) {
-    return false;
+  const refHasPatches =
+    ref.patches != null && Object.keys(ref.patches).length > 0;
+  const modHasPatches =
+    mod.patches != null && Object.keys(mod.patches).length > 0;
+  if (refHasPatches) {
+    if (!_.isEqual(mod.patches, ref.patches)) {
+      return false;
+    }
+    if (mod?.referenceTag !== ref?.tag) {
+      return false;
+    }
   }
 
   if (ref.tag != null) {
@@ -321,6 +331,13 @@ function testRef(
       // we already know it's the same repo and modId, if it's also the same
       // file id this is definitively the same file
       return ref.repo.fileId === (mod.fileId || -1).toString();
+    }
+  } else {
+    if (!!ref.fileMD5 && ref.fileMD5 === mod.fileMD5) {
+      // We don't have repo info which means that this is an external reference.
+      //  If we reached this point, that means we matched patches/installer choices/fileList
+      //  AND MD5 - this is good enough.
+      return true;
     }
   }
 
