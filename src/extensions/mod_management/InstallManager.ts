@@ -425,9 +425,14 @@ function findCollectionByDownload(
     }
 
     const lookup = lookupFromDownload(download);
-    const matchingRule = collectionMod.rules.find((rule) =>
-      testModReference(lookup, rule.reference),
-    );
+
+    // Download lookups will not hold any patch/filelist/installerChoices info.
+    //  Which is why in this case we want to ensure that we only match using regular reference fields.
+    const matchingRule = collectionMod.rules.find((rule) => {
+      const { patches, fileList, installerChoices, ...refWithoutExtras } =
+        rule.reference;
+      return testModReference(lookup, refWithoutExtras);
+    });
 
     if (matchingRule) {
       return { collectionMod, matchingRule, gameId };
@@ -5807,32 +5812,27 @@ class InstallManager {
           });
           const state = api.getState();
           const downloads = state.persistent.downloads.files;
-          const mods = state.persistent.mods[gameId] || {};
-          const collectionMod = mods[sourceModId];
+          let foundCount = 0;
+          dependencies.forEach((dep: IDependency) => {
+            const downloadId = getReadyDownloadId(
+              downloads,
+              dep.reference,
+              (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+            );
 
-          if (collectionMod?.rules) {
-            let foundCount = 0;
-            collectionMod.rules.forEach((rule: IModRule) => {
-              const downloadId = getReadyDownloadId(
-                downloads,
-                rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
-              );
-
-              if (downloadId) {
-                const rulePhase = rule.extra?.phase ?? 0;
-                // Only process downloads for the current allowed phase or earlier
-                if (rulePhase <= phaseState.allowedPhase) {
-                  this.handleDownloadFinished(api, downloadId, sourceModId);
-                  foundCount++;
-                }
+            if (downloadId) {
+              const rulePhase = dep.extra?.phase ?? 0;
+              // Only process downloads for the current allowed phase or earlier
+              if (rulePhase <= phaseState.allowedPhase) {
+                this.handleDownloadFinished(api, downloadId, sourceModId);
+                foundCount++;
               }
-            });
-            log("debug", "Finished scanning for unqueued downloads", {
-              sourceModId,
-              foundCount,
-            });
-          }
+            }
+          });
+          log("debug", "Finished scanning for unqueued downloads", {
+            sourceModId,
+            foundCount,
+          });
 
           this.maybeAdvancePhase(sourceModId, api);
         }
