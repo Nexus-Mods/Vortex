@@ -1,6 +1,5 @@
 import { IFOMODState, IPluginState } from "../types/interface";
 import { IState } from "../../../types/api";
-import { nameof } from "../../../util/nameof";
 
 type IStateSession = IState["session"];
 
@@ -10,8 +9,7 @@ interface IStateSessionWithFOMOD extends IStateSession {
 
 export const hasSessionFOMOD = (
   stateSession: IStateSession,
-): stateSession is IStateSessionWithFOMOD =>
-  nameof<IStateSessionWithFOMOD>("fomod") in stateSession;
+): stateSession is IStateSessionWithFOMOD => "fomod" in stateSession;
 
 interface IStateSessionWithPlugins extends IStateSession {
   plugins: IPluginState;
@@ -19,8 +17,7 @@ interface IStateSessionWithPlugins extends IStateSession {
 
 export const hasSessionPlugins = (
   stateSession: IStateSession,
-): stateSession is IStateSessionWithPlugins =>
-  nameof<IStateSessionWithPlugins>("plugins") in stateSession;
+): stateSession is IStateSessionWithPlugins => "plugins" in stateSession;
 
 interface IStateWithLoadOrder extends IState {
   loadOrder: {
@@ -33,4 +30,4 @@ interface IStateWithLoadOrder extends IState {
 }
 
 export const hasLoadOrder = (state: IState): state is IStateWithLoadOrder =>
-  nameof<IStateWithLoadOrder>("loadOrder") in state;
+  "loadOrder" in state;
