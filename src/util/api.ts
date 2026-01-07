@@ -91,7 +91,7 @@ import getNormalizeFunc, {
 import getVortexPath from "./getVortexPath";
 import github from "./github";
 import { getCurrentLanguage, TFunction } from "./i18n";
-import LazyComponent from "./LazyComponent";
+import LazyComponent from "../renderer/controls/LazyComponent";
 import lazyRequire from "./lazyRequire";
 import local from "./local";
 import makeReactive from "./makeReactive";

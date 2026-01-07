@@ -5023,7 +5023,7 @@ const setInstallType: reduxAct.ComplexActionCreator1<VortexInstallType, VortexIn
 const setInstanceId: reduxAct.ComplexActionCreator1<any, any, {}>;
 
 // @public
-const setLanguage: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setLanguage: reduxAct.ComplexActionCreator1<string, string, {}>;
 
 // @public
 const setLoadOrder: ComplexActionCreator2<string, any[], {
