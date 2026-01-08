@@ -228,6 +228,7 @@
     "resolve-url-loader": "^5.0.0-beta.1",
     "rm-local-modules": "^0.0.2",
     "sass-loader": "^8.0.0",
+    "strip-ansi": "6",
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
