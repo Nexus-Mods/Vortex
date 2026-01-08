@@ -60,7 +60,7 @@
     "build": "yarn run check_packages && yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
-    "gen": "yarn ts-to-zod src/types/IPreset.ts src/types/IPreset.gen.ts",
+    "gen": "yarn ts-to-zod --all",
     "update_aboutpage": "node ./updateLicenses.js",
     "check_packages": "node checkPackages.js",
     "test:e2e": "playwright test",
