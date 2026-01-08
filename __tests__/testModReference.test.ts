@@ -372,7 +372,8 @@ describe('testModReference', () => {
       const mod = sampleMods.skyrimse['Tweaks for TTW 1.71-77934-1-71-1739639832'];
       const reference: IModReference = {
         gameId: 'fallout4',
-        fileMD5: '5f8a7b2c9d3e1f4a6b8c0d2e5f7a9b1c'
+        logicalFileName: 'Tweaks for TTW 1.71.7z',
+        versionMatch: '>=1.0.0'
       };
 
       expect(testModReference(mod, reference)).toBe(false);
@@ -459,13 +460,17 @@ describe('testModReference', () => {
   });
 
   describe('Installer choices and patches matching', () => {
-    it('should match when installer choices are identical', () => {
+    it('should match when installer choices and patches are identical', () => {
       const mod = sampleMods.skyrimse['BSA Version-68139-3-0-1685378500'];
       const reference: IModReference = {
         logicalFileName: 'BSA_Version.zip',
         installerChoices: {
           choice1: 'option1',
           choice2: 'option2'
+        },
+        patches: {
+          patch1: 'value1',
+          patch2: 'value2'
         }
       };
 
@@ -479,6 +484,10 @@ describe('testModReference', () => {
         installerChoices: {
           choice1: 'different_option',
           choice2: 'option2'
+        },
+        patches: {
+          patch1: 'value1',
+          patch2: 'value2'
         }
       };
 

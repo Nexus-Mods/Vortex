@@ -321,7 +321,7 @@ function tagDuplicates(input: IDependencyNode[]): Bluebird<IDependencyNode[]> {
 
 export function lookupFromDownload(download: IDownload): IModLookupInfo {
   // depending on where Vortex got the id (metadb, rest api or graph api and in which version,
-  // the modid/fileid may be stored in differenent places).
+  // the modid/fileid may be stored in different places).
   // Newer versions should be more consistent but existing downloads may still be messy
   const modId =
     download.modInfo?.meta?.details?.modId ??
