@@ -14,7 +14,7 @@ import {
 import { getGame } from "../gamemode_management/util/getGame";
 import { log } from "../../util/log";
 import { IExtensionApi, IInstallResult } from "../../types/api";
-import {} from "../installer_dotnet/";
+import { UserCanceled } from "../../util/CustomErrors";
 
 /**
  * Install a FOMOD mod
@@ -144,6 +144,10 @@ export const install = async (
       fomodChoices,
       validate,
     );
+
+    if (!result) {
+      throw new UserCanceled();
+    }
 
     log("info", "FOMOD installation completed", { gameId });
 
