@@ -13,12 +13,7 @@ import { II18NProps } from "../../types/II18NProps";
 import { IRowState, IState, ITableState } from "../../types/IState";
 import { ITableAttribute } from "../../types/ITableAttribute";
 import { SortDirection } from "../../types/SortDirection";
-import {
-  ComponentEx,
-  connect,
-  extend,
-  translate,
-} from "../../util/ComponentEx";
+import { ComponentEx, connect, extend, translate } from "./ComponentEx";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
 import smoothScroll from "../../util/smoothScroll";

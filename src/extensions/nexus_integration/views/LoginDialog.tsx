@@ -8,7 +8,11 @@ import Spinner from "../../../renderer/controls/Spinner";
 import CopyClipboardInput from "../../../renderer/controls/CopyClipboardInput";
 import PlaceholderTextArea from "../../../renderer/controls/PlaceholderTextArea";
 import { Button, IconButton } from "../../../renderer/controls/TooltipControls";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import opn from "../../../util/opn";

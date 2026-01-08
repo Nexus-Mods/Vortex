@@ -1,7 +1,7 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
 import RadialProgress from "../../../renderer/controls/RadialProgress";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect } from "../../../util/ComponentEx";
+import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { bytesToString } from "../../../util/util";
 
 import { speedDataPoints } from "../reducers/state";

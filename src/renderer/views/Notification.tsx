@@ -7,7 +7,7 @@ import {
   INotificationAction,
   NotificationType,
 } from "../../types/INotification";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "../controls/ComponentEx";
 
 import { TFunction } from "../../util/i18n";
 

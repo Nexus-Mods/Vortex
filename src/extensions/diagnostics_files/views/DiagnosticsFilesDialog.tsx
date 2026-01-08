@@ -1,7 +1,11 @@
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { didIgnoreError, isOutdated } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";

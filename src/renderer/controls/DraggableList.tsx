@@ -8,7 +8,7 @@ import {
   DropTargetMonitor,
   DropTargetSpec,
 } from "react-dnd";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "./ComponentEx";
 import DraggableItem from "./DraggableListItem";
 
 export interface IDraggableListProps {

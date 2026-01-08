@@ -1,4 +1,4 @@
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "./ComponentEx";
 import { TFunction } from "../../util/i18n";
 
 import { IActionDefinitionEx } from "./ActionControl";

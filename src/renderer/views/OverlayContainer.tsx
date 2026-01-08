@@ -1,6 +1,6 @@
 import ErrorBoundary from "../controls/ErrorBoundary";
 import { PropsCallback } from "../../types/IExtensionContext";
-import { extend } from "../../util/ComponentEx";
+import { extend } from "../controls/ComponentEx";
 
 import * as React from "react";
 import ExtensionGate from "../controls/ExtensionGate";

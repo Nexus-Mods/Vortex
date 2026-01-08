@@ -1,5 +1,5 @@
 import { IState } from "../../types/IState";
-import { ComponentEx, connect } from "../../util/ComponentEx";
+import { ComponentEx, connect } from "./ComponentEx";
 
 import * as React from "react";
 

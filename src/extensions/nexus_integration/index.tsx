@@ -22,7 +22,7 @@ import {
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import LazyComponent from "../../util/LazyComponent";
+import LazyComponent from "../../renderer/controls/LazyComponent";
 import { log, LogLevel } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";

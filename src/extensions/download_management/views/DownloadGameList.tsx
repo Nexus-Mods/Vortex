@@ -2,7 +2,7 @@ import { SITE_GAME_NAME } from "../../../renderer/controls/constants";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { IGameStored } from "../../../types/IState";
-import { PureComponentEx } from "../../../util/ComponentEx";
+import { PureComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 
 import { SITE_ID } from "../../gamemode_management/constants";

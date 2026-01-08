@@ -16,7 +16,11 @@ import {
 } from "../../types/IState";
 import { ITableAttribute } from "../../types/ITableAttribute";
 import { relaunch } from "../../util/commandLine";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 import { log } from "../../util/log";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";

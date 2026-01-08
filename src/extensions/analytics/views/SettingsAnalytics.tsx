@@ -3,7 +3,11 @@ import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { Toggle } from "../../..";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { setAnalytics } from "../actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "../constants";
 

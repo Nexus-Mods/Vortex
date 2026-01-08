@@ -5,7 +5,7 @@ import { ThunkDispatch } from "redux-thunk";
 
 import { showUsageInstruction } from "../../actions";
 import { IState } from "../../types/IState";
-import { connect, PureComponentEx, translate } from "../../util/ComponentEx";
+import { connect, PureComponentEx, translate } from "./ComponentEx";
 import { IconButton } from "./TooltipControls";
 
 export interface IUsageProps {

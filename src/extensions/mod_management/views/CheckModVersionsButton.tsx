@@ -1,6 +1,10 @@
 import { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 

@@ -1,5 +1,5 @@
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 

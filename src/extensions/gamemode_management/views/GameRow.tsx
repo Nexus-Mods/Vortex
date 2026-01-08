@@ -2,7 +2,7 @@ import IconBar from "../../../renderer/controls/IconBar";
 import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { IActionDefinition } from "../../../types/IActionDefinition";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 
 import { IMod } from "../../mod_management/types/IMod";

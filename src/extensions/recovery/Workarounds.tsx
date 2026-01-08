@@ -16,7 +16,7 @@ import {
 } from "../../actions";
 import { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "../../renderer/controls/ComponentEx";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";

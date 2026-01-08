@@ -1,6 +1,6 @@
 import { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import { ComponentEx, connect } from "../../../util/ComponentEx";
+import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
 import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";

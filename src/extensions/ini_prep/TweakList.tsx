@@ -7,7 +7,7 @@ import {
   connect,
   PureComponentEx,
   translate,
-} from "../../util/ComponentEx";
+} from "../../renderer/controls/ComponentEx";
 import * as fs from "../../util/fs";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";

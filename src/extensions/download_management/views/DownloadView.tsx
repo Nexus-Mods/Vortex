@@ -17,7 +17,11 @@ import { IAttachment, IExtensionApi } from "../../../types/IExtensionContext";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import { IState } from "../../../types/IState";
 import { ITableAttribute } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import {
   DataInvalid,
   ProcessCanceled,

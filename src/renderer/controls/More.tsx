@@ -1,5 +1,5 @@
 import { IExtensionApi } from "../../types/api";
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "./ComponentEx";
 
 import Icon from "./Icon";
 import Overlay from "./Overlay";

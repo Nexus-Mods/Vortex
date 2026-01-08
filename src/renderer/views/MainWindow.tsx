@@ -20,7 +20,7 @@ import { IMainPage } from "../../types/IMainPage";
 import { IModifiers } from "../../types/IModifiers";
 import { INotification } from "../../types/INotification";
 import { IProfile, IProgress, IState, IUIBlocker } from "../../types/IState";
-import { connect, extend } from "../../util/ComponentEx";
+import { connect, extend } from "../controls/ComponentEx";
 import { IRegisteredExtension } from "../../util/ExtensionManager";
 import { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";

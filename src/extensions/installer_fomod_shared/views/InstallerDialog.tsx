@@ -4,7 +4,11 @@ import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import ZoomableImage from "../../../renderer/controls/ZoomableImage";
 import { IState } from "../../../types/api";
-import { connect, PureComponentEx, translate } from "../../../util/ComponentEx";
+import {
+  connect,
+  PureComponentEx,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { pushSafe, removeValue } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 

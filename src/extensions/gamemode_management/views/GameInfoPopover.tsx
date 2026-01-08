@@ -1,6 +1,6 @@
 import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
 import { IGameInfoEntry, IState } from "../../../types/IState";
-import { ComponentEx, connect } from "../../../util/ComponentEx";
+import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 import { bytesToString } from "../../../util/util";
 

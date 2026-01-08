@@ -4,7 +4,10 @@ import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { IActionDefinition } from "../../../types/api";
 import { IMod, IProfile, IState } from "../../../types/IState";
-import { connect, PureComponentEx } from "../../../util/ComponentEx";
+import {
+  connect,
+  PureComponentEx,
+} from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { countIf } from "../../../util/util";
 

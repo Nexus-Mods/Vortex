@@ -2,7 +2,11 @@ import Icon from "../../renderer/controls/Icon";
 import InputButton from "../../renderer/controls/InputButton";
 import More from "../../renderer/controls/More";
 import { Button } from "../../renderer/controls/TooltipControls";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 import { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { setSafe } from "../../util/storeHelper";

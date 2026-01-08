@@ -1,7 +1,7 @@
 import FormInput from "../../../renderer/controls/FormInput";
 import More from "../../../renderer/controls/More";
 import { ValidationState } from "../../../types/ITableAttribute";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { truthy } from "../../../util/util";
 
 import { setDownloadModInfo } from "../../download_management/actions/state";

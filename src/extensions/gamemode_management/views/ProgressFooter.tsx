@@ -2,7 +2,11 @@ import Icon from "../../../renderer/controls/Icon";
 import ProgressBar from "../../../renderer/controls/ProgressBar";
 import RadialProgress from "../../../renderer/controls/RadialProgress";
 import { IDiscoveryPhase, IDiscoveryState } from "../../../types/IState";
-import { connect, PureComponentEx, translate } from "../../../util/ComponentEx";
+import {
+  connect,
+  PureComponentEx,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { sum } from "../../../util/util";
 
 import * as React from "react";

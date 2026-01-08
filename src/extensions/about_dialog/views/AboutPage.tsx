@@ -1,5 +1,5 @@
 import More from "../../../renderer/controls/More";
-import { ComponentEx, translate } from "../../../util/ComponentEx";
+import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
 import github from "../../../util/github";
 import { log } from "../../../util/log";
 import MainPage from "../../../renderer/views/MainPage";

@@ -7,7 +7,7 @@ import {
   IDialogResult,
 } from "../../types/IDialog";
 import { IState } from "../../types/IState";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "../../renderer/controls/ComponentEx";
 
 import { enableUserSymlinks } from "./actions";
 
