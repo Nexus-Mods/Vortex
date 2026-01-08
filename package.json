@@ -231,6 +231,7 @@
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
+    "ts-to-zod": "^5.1.0",
     "ts-v-gen": "^1.0.1",
     "typescript": "^5.0.0",
     "typescript-eslint": "8.47.0",
@@ -341,7 +342,8 @@
     "write-file-atomic": "^3.0.1",
     "ws": "^7.4.6",
     "xml2js": "^0.5.0",
-    "xxhash-addon": "^2.0.3"
+    "xxhash-addon": "^2.0.3",
+    "zod": "^4.3.5"
   },
   "resolutions": {
     "node-gyp": "^10.0.0",
