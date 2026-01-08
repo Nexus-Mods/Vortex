@@ -15,7 +15,7 @@ import {
 import { getGame } from "../gamemode_management/util/getGame";
 import { log } from "../../util/log";
 import { IExtensionApi, IInstallResult } from "../../types/api";
-import { ProcessCanceled } from "../../util/CustomErrors";
+import { UserCanceled } from "../../util/CustomErrors";
 
 /**
  * Install a FOMOD mod
@@ -147,7 +147,7 @@ export const install = async (
     );
 
     if (!result) {
-      throw new ProcessCanceled("Installation cancelled by user");
+      throw new UserCanceled();
     }
 
     if (
