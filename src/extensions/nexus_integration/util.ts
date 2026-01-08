@@ -628,14 +628,22 @@ export function getInfoGraphQL(
   // } as any;
 
   return new BluebirdPromise((resolve, reject) => {
+    const uid = makeFileUID({
+      fileId: fileId.toString(),
+      modId: modId.toString(),
+      gameId: domain,
+    });
+
+    if (uid === undefined) {
+      return reject(
+        new Error(
+          `Unable to create file UID for game "${domain}", mod ${modId}, file ${fileId}`,
+        ),
+      );
+    }
+
     nexus
-      .modFilesByUid(fileQuery, [
-        makeFileUID({
-          fileId: fileId.toString(),
-          modId: modId.toString(),
-          gameId: domain,
-        }),
-      ])
+      .modFilesByUid(fileQuery, [uid])
       .then((fileResult) => {
         const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
         const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
