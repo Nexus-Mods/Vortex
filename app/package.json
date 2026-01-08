@@ -117,5 +117,9 @@
   "resolutions": {
     "node-gyp": "^10.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "volta": {
+    "node": "22.19.0",
+    "yarn": "1.22.19"
+  }
 }
