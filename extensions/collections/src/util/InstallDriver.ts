@@ -828,21 +828,29 @@ class InstallDriver {
       this.mCurrentSessionId = util.generateCollectionSessionId(collectionId, profile.id);
 
       const downloads = state.persistent.downloads.files;
+      const installedRuleIds = new Set(installed.map(r => util.modRuleId(r)));
+
       // Create mod info map
-      const mods = required.reduce((acc, rule) => {
-        const ruleId = util.modRuleId(rule);
-        const download = util.findDownloadByRef(rule.reference, downloads);
-        const isBundled = rule.extra?.localPath != null;
-        const isInstalled = installed.find(r => util.modRuleId(r) === ruleId) != null;
-        const isDownloaded = download != null || isBundled;
-        acc[ruleId] = {
-          rule,
-          status: isInstalled ? 'installed' : isDownloaded ? 'downloaded' : 'pending',
-          type: rule.type as 'requires' | 'recommends',
-          phase: rule.extra?.phase ?? 0,
-        };
-        return acc;
-      }, {});
+      const mods: { [ruleId: string]: types.ICollectionModInstallInfo } = Object.fromEntries(
+        required.map(rule => {
+          const ruleId = util.modRuleId(rule);
+          const download = util.findDownloadByRef(rule.reference, downloads);
+          const isBundled = rule.extra?.localPath != null;
+          const isInstalled = installedRuleIds.has(ruleId);
+          const isIgnored = rule['ignored'] === true;
+          const isDownloaded = download != null || isBundled;
+
+          const status: types.CollectionModStatus =
+            isIgnored ? 'skipped' : isInstalled ? 'installed' : isDownloaded ? 'downloaded' : 'pending';
+
+          return [ruleId, {
+            rule,
+            status,
+            type: rule.type as 'requires' | 'recommends',
+            phase: rule.extra?.phase ?? 0,
+          }];
+        })
+      );
 
       // Dispatch start session action (omitting computed properties)
       this.mApi.store.dispatch(installActions.startInstallSession({
