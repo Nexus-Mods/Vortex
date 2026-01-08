@@ -48,9 +48,6 @@ import {
   installPathForGame,
   modPathsForGame,
   profileById,
-  getCollectionActiveSession,
-  getCollectionModByReference,
-  getCollectionCurrentPhase,
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import {
@@ -1654,31 +1651,28 @@ function once(api: IExtensionApi) {
   api.events.on(
     "install-dependencies",
     (profileId: string, gameId: string, modIds: string[], silent?: boolean) => {
-      try {
-        const state: IState = api.store.getState();
-        const profile: IProfile = getSafe(
-          state,
-          ["persistent", "profiles", profileId],
-          undefined,
-        );
+      const state: IState = api.store.getState();
+      const profile: IProfile = getSafe(
+        state,
+        ["persistent", "profiles", profileId],
+        undefined,
+      );
 
-        Bluebird.map(modIds, (modId) =>
-          installManager
-            .installDependencies(
-              api,
-              profile,
-              gameId,
-              modId,
-              silent === true,
-              false,
-            )
-            .catch(ProcessCanceled, () => null),
-        ).catch((err) =>
-          api.showErrorNotification("Failed to install dependencies", err),
-        );
-      } catch (err) {
+      Bluebird.map(modIds, (modId) =>
+        installManager
+          .installDependencies(
+            api,
+            profile,
+            gameId,
+            modId,
+            silent === true,
+            false,
+          )
+          .catch(ProcessCanceled, () => null)
+          .catch(UserCanceled, () => null),
+      ).catch((err) => {
         api.showErrorNotification("Failed to install dependencies", err);
-      }
+      });
     },
   );
 
@@ -1734,10 +1728,10 @@ function once(api: IExtensionApi) {
           modId,
         ),
       )
+      .catch(ProcessCanceled, () => null)
+      .catch(UserCanceled, () => null)
       .catch((err) => {
-        if (!(err instanceof ProcessCanceled)) {
-          api.showErrorNotification("Failed to install dependencies", err);
-        }
+        api.showErrorNotification("Failed to install dependencies", err);
       });
   });
 

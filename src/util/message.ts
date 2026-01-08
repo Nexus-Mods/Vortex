@@ -16,6 +16,7 @@ import {
   TemporaryError,
   ThirdPartyError,
   ArchiveBrokenError,
+  UserCanceled,
 } from "./CustomErrors";
 import {
   didIgnoreError,
@@ -191,11 +192,17 @@ function shouldAllowReport(
   if (
     options?.allowReport === false ||
     options?.warning === true ||
-    err instanceof ThirdPartyError
+    err instanceof ThirdPartyError ||
+    err instanceof UserCanceled
   ) {
     return false;
   }
 
+  if (err instanceof UserCanceled) {
+    log("debug", "Incorrectly handled UserCanceled error", {
+      stack: err.stack,
+    });
+  }
   return !noReportErrors.includes(err.code);
 }
 
