@@ -3,7 +3,6 @@ import { clearPendingVote, updateSuccessRate } from './actions/persistent';
 import persistentReducer from './reducers/persistent';
 import sessionReducer from './reducers/session';
 import settingsReducer from './reducers/settings';
-import trackingReducer from './reducers/installTracking';
 import { ICollection } from './types/ICollection';
 import { IExtendedInterfaceProps } from './types/IExtendedInterfaceProps';
 import { genDefaultsAction } from './util/defaults';
@@ -602,7 +601,6 @@ const localState = util.makeReactive<{
 function register(context: types.IExtensionContext,
                   collectionsCB: ICallbackMap) {
   context.registerReducer(['session', 'collections'], sessionReducer);
-  context.registerReducer(['session', 'collections'], trackingReducer);
   context.registerReducer(['settings', 'collections'], settingsReducer);
   context.registerReducer(['persistent', 'collections'], persistentReducer);
 
