@@ -2997,6 +2997,11 @@ class InstallManager {
           downloadId = cache.byTag.get(reference.tag);
         } else if (md5Value && cache.byMd5.has(md5Value)) {
           downloadId = cache.byMd5.get(md5Value);
+        } else {
+          // This is probably a bundled mod - use full lookup
+          downloadId = getReadyDownloadId(downloads, reference, (id) =>
+            this.hasActiveOrPendingInstallation(sourceModId, id),
+          );
         }
         if (
           downloadId &&
