@@ -6,7 +6,9 @@ import {
   CollectionModStatus,
 } from "./types";
 
-import { modsForActiveGame, modsForGame } from "../mod_management/selectors";
+import * as path from "path";
+
+import { modsForActiveGame } from "../mod_management/selectors";
 
 import { IDownload, IMod, IState } from "../../types/IState";
 import { activeDownloads } from "../download_management/selectors";
@@ -158,6 +160,17 @@ export const getCollectionModByReference = (
 
   // Fall back to searching by rule reference fields
   return Object.values(mods).find((mod) => {
+    const isBundled = mod.rule?.extra?.localPath != null;
+    if (isBundled) {
+      return (
+        path.basename(mod.rule.extra.localPath) ===
+        path.basename(
+          searchParams.logicalFileName,
+          path.extname(searchParams.logicalFileName || ""),
+        )
+      );
+    }
+
     const ref = mod.rule?.reference;
     if (!ref) return false;
 
