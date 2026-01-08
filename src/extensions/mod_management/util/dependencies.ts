@@ -479,7 +479,9 @@ async function gatherDependenciesGraph(
       ...(rule.extra?.["rules"] ?? []),
       ...(lookupResults?.[0]?.value?.rules ?? []),
     ].filter(
-      (iter) => iter.type === (recommendations ? "recommends" : "requires"),
+      (iter) =>
+        iter.type === (recommendations ? "recommends" : "requires") &&
+        !iter["ignored"],
     );
 
     const dependencies =
