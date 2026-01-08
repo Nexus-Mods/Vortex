@@ -19,7 +19,7 @@ import {
   InstructionType,
 } from "../../types/api";
 import { getGame } from "../gamemode_management/util/getGame";
-import { ProcessCanceled } from "../../util/CustomErrors";
+import { UserCanceled } from "../../util/CustomErrors";
 
 export const install = async (
   api: IExtensionApi,
@@ -62,8 +62,8 @@ export const install = async (
       validate,
     );
 
-    if (result === null) {
-      throw new ProcessCanceled("Installation cancelled by user");
+    if (!result) {
+      throw new UserCanceled();
     }
 
     const choices = getChoicesFromState(api, instanceId);
