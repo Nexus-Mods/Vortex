@@ -71,19 +71,15 @@ export class VortexModInstaller {
     preset: any,
     validate: boolean,
   ): Promise<fomodT.types.InstallResult | null> => {
-    try {
-      this.mScriptPath = scriptPath;
-      return await this.mModInstaller.install(
-        files,
-        stopPatterns,
-        pluginPath,
-        scriptPath,
-        preset,
-        validate,
-      );
-    } catch (error) {
-      return null;
-    }
+    this.mScriptPath = scriptPath;
+    return await this.mModInstaller.install(
+      files,
+      stopPatterns,
+      pluginPath,
+      scriptPath,
+      preset,
+      validate,
+    );
   };
 
   /**
