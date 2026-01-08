@@ -25,10 +25,16 @@ export function makeFileUID(repoInfo: IModRepoId): string {
     ? parseInt(repoInfo.gameId, 10)
     : gameNum(repoInfo.gameId);
 
-  return (
-    (BigInt(gameIdNum) << BigInt(32)) |
-    BigInt(parseInt(repoInfo.fileId, 10))
-  ).toString();
+  if (gameIdNum === undefined || isNaN(gameIdNum)) {
+    return undefined;
+  }
+
+  const fileId = parseInt(repoInfo.fileId, 10);
+  if (isNaN(fileId)) {
+    return undefined;
+  }
+
+  return ((BigInt(gameIdNum) << BigInt(32)) | BigInt(fileId)).toString();
 }
 
 export function makeModUID(repoInfo: IModRepoId): string {
@@ -37,10 +43,16 @@ export function makeModUID(repoInfo: IModRepoId): string {
     ? parseInt(repoInfo.gameId, 10)
     : gameNum(repoInfo.gameId);
 
-  return (
-    (BigInt(gameIdNum) << BigInt(32)) |
-    BigInt(parseInt(repoInfo.modId, 10))
-  ).toString();
+  if (gameIdNum === undefined || isNaN(gameIdNum)) {
+    return undefined;
+  }
+
+  const modId = parseInt(repoInfo.modId, 10);
+  if (isNaN(modId)) {
+    return undefined;
+  }
+
+  return ((BigInt(gameIdNum) << BigInt(32)) | BigInt(modId)).toString();
 }
 
 export function makeModAndFileUIDs(

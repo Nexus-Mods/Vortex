@@ -425,9 +425,14 @@ function findCollectionByDownload(
     }
 
     const lookup = lookupFromDownload(download);
-    const matchingRule = collectionMod.rules.find((rule) =>
-      testModReference(lookup, rule.reference),
-    );
+
+    // Download lookups will not hold any patch/filelist/installerChoices info.
+    //  Which is why in this case we want to ensure that we only match using regular reference fields.
+    const matchingRule = collectionMod.rules.find((rule) => {
+      const { patches, fileList, installerChoices, ...refWithoutExtras } =
+        rule.reference;
+      return testModReference(lookup, refWithoutExtras);
+    });
 
     if (matchingRule) {
       return { collectionMod, matchingRule, gameId };
@@ -1074,7 +1079,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find(this.isCritical);
+          const critical = errors.find(err => this.isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
               new ArchiveBrokenError(path.basename(archivePath), critical),
@@ -2997,6 +3002,11 @@ class InstallManager {
           downloadId = cache.byTag.get(reference.tag);
         } else if (md5Value && cache.byMd5.has(md5Value)) {
           downloadId = cache.byMd5.get(md5Value);
+        } else {
+          // This is probably a bundled mod - use full lookup
+          downloadId = getReadyDownloadId(downloads, reference, (id) =>
+            this.hasActiveOrPendingInstallation(sourceModId, id),
+          );
         }
         if (
           downloadId &&
@@ -3612,7 +3622,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find(this.isCritical);
+          const critical = errors.find(err => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
           }
@@ -4280,7 +4290,11 @@ class InstallManager {
     }
     const overrideMap = new Map<string, IInstruction>();
     result.overrideInstructions?.forEach((instr) => {
-      const key = (instr.source ?? instr.type).toUpperCase();
+      let key = instr.source ?? instr.type;
+      if (key == null) {
+        return;
+      }
+      key = key.toUpperCase();
       if (
         instr.type !== "setmodtype" ||
         this.modTypeExists(gameId, instr?.value)
@@ -4291,18 +4305,20 @@ class InstallManager {
       }
     });
 
-    const finalInstructions = result.instructions.map((instr) => {
-      const key = (instr.source ?? instr.type).toUpperCase();
-      const overrideEntry = overrideMap.get(key);
-      if (overrideEntry) {
-        log("debug", "overriding instruction", {
-          key,
-          type: instr.type,
-          override: JSON.stringify(overrideEntry),
-        });
-      }
-      return overrideEntry ?? instr;
-    });
+    const finalInstructions = result.instructions
+      .filter((instr) => (instr.source ?? instr.type) != null)
+      .map((instr) => {
+        const key = (instr.source ?? instr.type).toUpperCase();
+        const overrideEntry = overrideMap.get(key);
+        if (overrideEntry) {
+          log("debug", "overriding instruction", {
+            key,
+            type: instr.type,
+            override: JSON.stringify(overrideEntry),
+          });
+        }
+        return overrideEntry ?? instr;
+      });
 
     // Add instructions from result.overrideInstructions that are not already present in finalInstructions
     if (Array.isArray(result.overrideInstructions)) {
@@ -4312,7 +4328,11 @@ class InstallManager {
         ),
       );
       for (const instr of result.overrideInstructions) {
-        const key = (instr.source ?? instr.type).toUpperCase();
+        let key = instr.source ?? instr.type;
+        if (key == null) {
+          continue;
+        }
+        key = key.toUpperCase();
         // For copy instructions, ensure no duplicate destinations
         if (instr.type === "copy") {
           const isDuplicate = finalInstructions.some(
@@ -5807,32 +5827,27 @@ class InstallManager {
           });
           const state = api.getState();
           const downloads = state.persistent.downloads.files;
-          const mods = state.persistent.mods[gameId] || {};
-          const collectionMod = mods[sourceModId];
+          let foundCount = 0;
+          dependencies.forEach((dep: IDependency) => {
+            const downloadId = getReadyDownloadId(
+              downloads,
+              dep.reference,
+              (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+            );
 
-          if (collectionMod?.rules) {
-            let foundCount = 0;
-            collectionMod.rules.forEach((rule: IModRule) => {
-              const downloadId = getReadyDownloadId(
-                downloads,
-                rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
-              );
-
-              if (downloadId) {
-                const rulePhase = rule.extra?.phase ?? 0;
-                // Only process downloads for the current allowed phase or earlier
-                if (rulePhase <= phaseState.allowedPhase) {
-                  this.handleDownloadFinished(api, downloadId, sourceModId);
-                  foundCount++;
-                }
+            if (downloadId) {
+              const rulePhase = dep.extra?.phase ?? 0;
+              // Only process downloads for the current allowed phase or earlier
+              if (rulePhase <= phaseState.allowedPhase) {
+                this.handleDownloadFinished(api, downloadId, sourceModId);
+                foundCount++;
               }
-            });
-            log("debug", "Finished scanning for unqueued downloads", {
-              sourceModId,
-              foundCount,
-            });
-          }
+            }
+          });
+          log("debug", "Finished scanning for unqueued downloads", {
+            sourceModId,
+            foundCount,
+          });
 
           this.maybeAdvancePhase(sourceModId, api);
         }

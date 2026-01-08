@@ -210,7 +210,10 @@ async function ensureStagingDirectoryImpl(
           message: "Purging mods",
         });
         try {
-          await fallbackPurge(api, gameId);
+          // Wrap Bluebird promise to ensure proper error handling with try/catch
+          await new Promise<void>((resolve, reject) => {
+            fallbackPurge(api, gameId).then(resolve).catch(reject);
+          });
           await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
         } catch (purgeErr) {
           if (!partitionExists) {

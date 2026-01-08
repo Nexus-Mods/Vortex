@@ -32,7 +32,7 @@ function init(context: IExtensionContext): boolean {
         return "<None>";
       }
       const options = Object.values(choices.options || {}).flatMap((step) =>
-        step.groups
+        (step?.groups ?? [])
           .filter((group) => group.choices.length > 0)
           .map(
             (group) =>

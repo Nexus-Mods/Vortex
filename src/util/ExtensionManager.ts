@@ -1125,17 +1125,25 @@ class ExtensionManager {
         noti.id = shortid();
       }
       if (this.canBeToast(noti)) {
-        let toastFunc = noti.type === "error" ? toast.error : toast.success;
-        const toastOptions: ToastOptions = {
-          id: noti.id,
-          duration: noti.displayMS,
-        };
-        const message =
-          noti.title !== undefined
-            ? `${noti.title}:\n${noti.message}`
-            : noti.message;
-        toastFunc(message, toastOptions);
-        return noti.id;
+        try {
+          const toastFunc = noti.type === "error" ? toast.error : toast.success;
+          const toastOptions: ToastOptions = {
+            id: noti.id,
+            duration: noti.displayMS,
+          };
+          const message =
+            noti.title !== undefined
+              ? `${noti.title}:\n${noti.message ?? ""}`
+              : (noti.message ?? "");
+          if (message.length > 0) {
+            toastFunc(message, toastOptions);
+            return noti.id;
+          }
+        } catch (err) {
+          // Toast rendering failed (e.g., goober styling error during race condition)
+          // Fall through to standard notification
+          log("warn", "Failed to show toast notification", err.message);
+        }
       }
       if (notification.type === "warning") {
         log("warn", "warning notification", {
