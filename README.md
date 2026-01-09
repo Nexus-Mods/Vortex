@@ -41,7 +41,7 @@ Our approach with Vortex aims to take complex tasks such as sorting your load or
 
 * **Modern, Easy-to-use UI** - Featuring a fully customisable interface, Vortex allows you to quickly and easily access tools and manage your games, plugins, downloads and save games.
 
-* **Extensions and Plugins** - Vortex is released under a GPL-3 License, giving our community the ability to write extensions and frameworks which can then interact with Vortex, continually adding to its functionality.
+* **Extensions and Plugins** - Vortex is released under a GPL-3.0 License, giving our community the ability to write extensions and frameworks which can then interact with Vortex, continually adding to its functionality.
 
 ## Getting Started
 
