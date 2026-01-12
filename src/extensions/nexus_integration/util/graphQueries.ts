@@ -1,4 +1,8 @@
-import { ICollectionQuery, IRevisionQuery, IModRequirementsQuery } from "@nexusmods/nexus-api";
+import {
+  ICollectionQuery,
+  IRevisionQuery,
+  IModRequirementsQuery,
+} from "@nexusmods/nexus-api";
 
 const revisionInfo: IRevisionQuery = {
   id: true,
@@ -155,13 +159,19 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
   },
 };
 
-export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery =  {
+export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
   dlcRequirements: {
     gameExpansion: { id: true, name: true },
     notes: true,
   },
   nexusRequirements: {
-    nodes: { id: true, modId: true, modName: true, url: true, externalRequirement: true },
+    nodes: {
+      id: true,
+      modId: true,
+      modName: true,
+      url: true,
+      externalRequirement: true,
+    },
     totalCount: true,
   },
   modsRequiringThisMod: {

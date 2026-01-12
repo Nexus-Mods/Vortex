@@ -1014,18 +1014,18 @@ export function onGetModRequirements(
       nexus.modRequirements(MOD_REQUIREMENTS_INFO, modId, nexusGameDomain),
     ).catch((err) => {
       if (err instanceof RateLimitError) {
-        log('warn', 'Rate limited when fetching mod requirements', {
+        log("warn", "Rate limited when fetching mod requirements", {
           gameId: nexusGameDomain,
           modId,
         });
       } else if (err instanceof TimeoutError) {
-        log('warn', 'Timeout when fetching mod requirements', {
+        log("warn", "Timeout when fetching mod requirements", {
           gameId: nexusGameDomain,
           modId,
         });
       } else {
         const detail = processErrorMessage(err);
-        api.showErrorNotification('Failed to get mod requirements', detail, {
+        api.showErrorNotification("Failed to get mod requirements", detail, {
           allowReport: detail.noReport ? false : true,
         });
       }
