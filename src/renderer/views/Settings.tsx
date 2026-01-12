@@ -7,7 +7,7 @@ import {
   connect,
   extend,
   translate,
-} from "../../util/ComponentEx";
+} from "../controls/ComponentEx";
 import lazyRequire from "../../util/lazyRequire";
 import makeReactive from "../../util/makeReactive";
 import type startupSettingsT from "../../util/startupSettings";

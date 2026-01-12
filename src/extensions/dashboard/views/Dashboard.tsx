@@ -3,7 +3,11 @@ import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { IDashletSettings, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import Debouncer from "../../../util/Debouncer";
 import lazyRequire from "../../../util/lazyRequire";
 import { getSafe } from "../../../util/storeHelper";

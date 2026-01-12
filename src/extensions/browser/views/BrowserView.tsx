@@ -8,7 +8,11 @@ import {
 } from "../../../renderer/controls/Webview";
 import { INotification } from "../../../types/INotification";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import Debouncer from "../../../util/Debouncer";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";

@@ -15,7 +15,7 @@ import {
 } from "../../types/IDialog";
 import { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import { IRunningTool, IState } from "../../types/IState";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import Debouncer from "../../util/Debouncer";
 import { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";

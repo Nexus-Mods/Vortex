@@ -21,7 +21,11 @@ import {
 import { IState } from "../../../types/IState";
 import { ITableAttribute } from "../../../types/ITableAttribute";
 import { withBatchContext } from "../../../util/BatchContext";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import Debouncer from "../../../util/Debouncer";
 import * as selectors from "../../../util/selectors";
@@ -243,18 +247,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         component: CheckModVersionsButton,
         title: "Check for Update",
         condition: (instanceId) => {
-          const { mods, modState } = this.props;
+          const { mods } = this.props;
           if (typeof instanceId === "string") {
-            return (
-              mods[instanceId] !== undefined &&
-              modState[instanceId]?.enabled === true
-            );
+            return mods[instanceId] !== undefined;
           } else {
             return (
-              instanceId.find(
-                (id) =>
-                  mods[id] !== undefined && modState[id]?.enabled === true,
-              ) !== undefined
+              instanceId.find((id) => mods[id] !== undefined) !== undefined
             );
           }
         },

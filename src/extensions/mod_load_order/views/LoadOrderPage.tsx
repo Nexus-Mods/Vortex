@@ -13,7 +13,7 @@ import {
 } from "../../../renderer/controls/api";
 import * as types from "../../../types/api";
 import * as util from "../../../util/api";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 import { DNDContainer, MainPage } from "../../../renderer/views/api";
 

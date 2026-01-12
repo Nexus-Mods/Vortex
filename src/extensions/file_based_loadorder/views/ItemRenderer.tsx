@@ -2,7 +2,7 @@ import * as React from "react";
 import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 
 import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
 

@@ -13,7 +13,7 @@ import Promise from "bluebird";
 export * from "./renderer/controls/api";
 export * from "./renderer/views/api";
 export { actions, Promise, fs, log, selectors, types, util };
-export { ComponentEx, PureComponentEx } from "./util/ComponentEx";
+export { ComponentEx, PureComponentEx } from "./renderer/controls/ComponentEx";
 
 // Tailwind component library (namespaced to avoid conflicts)
 export { Tailwind } from "./tailwind";

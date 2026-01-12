@@ -1,5 +1,5 @@
 import { PropsCallback } from "../../types/IExtensionContext";
-import { ComponentEx, extend, translate } from "../../util/ComponentEx";
+import { ComponentEx, extend, translate } from "../controls/ComponentEx";
 
 import * as React from "react";
 

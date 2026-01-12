@@ -1,5 +1,9 @@
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 
 import { TFunction } from "i18next";
 import * as React from "react";

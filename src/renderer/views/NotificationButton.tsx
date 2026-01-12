@@ -9,7 +9,7 @@ import {
   NotificationType,
 } from "../../types/INotification";
 import { IState } from "../../types/IState";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 
 import Icon from "../controls/Icon";
 import RadialProgress, { IBar } from "../controls/RadialProgress";

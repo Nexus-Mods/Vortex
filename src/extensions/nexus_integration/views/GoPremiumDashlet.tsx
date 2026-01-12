@@ -1,5 +1,5 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
-import { ComponentEx, translate } from "../../../util/ComponentEx";
+import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 
 import { PREMIUM_PATH } from "../constants";

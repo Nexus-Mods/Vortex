@@ -1,5 +1,5 @@
 import { IDynDivOptions } from "../../types/IDynDivOptions";
-import { connect } from "../../util/ComponentEx";
+import { connect } from "./ComponentEx";
 import { extend } from "../../util/ExtensionProvider";
 
 import * as React from "react";

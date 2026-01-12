@@ -1382,7 +1382,7 @@ function getGame(gameId: string): IGame;
 function getGames(): IGame[];
 
 // @public
-function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Promise_2<IDeploymentManifest>;
+function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Bluebird<IDeploymentManifest>;
 
 // @public (undocumented)
 const getMod: ((state: IState, gameId: string, modId: string | number) => IMod) & OutputSelectorFields<(args_0: {
@@ -1654,6 +1654,7 @@ interface ICollectionInstallState {
 // @public
 interface ICollectionModInstallInfo {
     modId?: string;
+    phase?: number;
     rule: IModRule;
     status: CollectionModStatus;
     type: "requires" | "recommends";
@@ -4314,7 +4315,7 @@ export class OptionsFilter implements ITableFilter {
     // Warning: (ae-forgotten-export) The symbol "Options" needs to be exported by the entry point index.d.ts
     constructor(options: Options | (() => Options), multi: boolean, raw?: boolean);
     // (undocumented)
-    component: React_2.ComponentClass<any>;
+    component: React_2.ComponentClass<IFilterProps>;
     // (undocumented)
     static EMPTY: string;
     // (undocumented)
@@ -5023,7 +5024,7 @@ const setInstallType: reduxAct.ComplexActionCreator1<VortexInstallType, VortexIn
 const setInstanceId: reduxAct.ComplexActionCreator1<any, any, {}>;
 
 // @public
-const setLanguage: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setLanguage: reduxAct.ComplexActionCreator1<string, string, {}>;
 
 // @public
 const setLoadOrder: ComplexActionCreator2<string, any[], {

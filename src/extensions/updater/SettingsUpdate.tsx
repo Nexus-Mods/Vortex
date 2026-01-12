@@ -1,6 +1,10 @@
 import More from "../../renderer/controls/More";
 import { UPDATE_CHANNELS, UpdateChannel, IState } from "../../types/IState";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 import { log } from "../../util/log";
 import { setUpdateChannel } from "./actions";
 

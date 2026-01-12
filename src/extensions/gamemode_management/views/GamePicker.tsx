@@ -7,8 +7,11 @@ import { ToggleButton } from "../../../renderer/controls/TooltipControls";
 import { IActionDefinition } from "../../../types/IActionDefinition";
 import { IComponentContext } from "../../../types/IComponentContext";
 import { IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
-import getAttr from "../../../util/getAttr";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
@@ -202,8 +205,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       showHidden || !!currentFilterValue
         ? knownGames
         : knownGames.filter(
-            (game: IGameStored) =>
-              !getAttr(discoveredGames, game.id, { hidden: false }).hidden,
+            (game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false),
           );
 
     const profileGames = new Set<string>(
@@ -242,9 +244,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           contributed: ext.author,
         }))
         .filter(
-          (ext) =>
-            showHidden ||
-            !getAttr(discoveredGames, ext.id, { hidden: false }).hidden,
+          (ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false),
         ),
     );
 

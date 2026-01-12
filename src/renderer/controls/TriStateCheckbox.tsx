@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ComponentEx, translate } from "../../util/ComponentEx";
+import { ComponentEx, translate } from "./ComponentEx";
 
 export type CheckboxState = "enabled" | "disabled" | "locked";
 

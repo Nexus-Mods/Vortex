@@ -3,7 +3,7 @@ import {
   ITableAttribute,
   ValidationState,
 } from "../../../types/ITableAttribute";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../ComponentEx";
 import { preT, TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";

@@ -11,7 +11,7 @@ import {
   FormGroup,
   InputGroup,
 } from "react-bootstrap";
-import { ComponentEx } from "../../util/ComponentEx";
+import { ComponentEx } from "./ComponentEx";
 import FormInput from "./FormInput";
 
 export interface IFormItemProps {

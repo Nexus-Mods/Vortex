@@ -14,7 +14,11 @@ import {
 } from "../../../types/IDialog";
 import { InstallPathMode, IState } from "../../../types/IState";
 import { ValidationState } from "../../../types/ITableAttribute";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import {
   CleanupFailedException,
   InsufficientDiskSpace,

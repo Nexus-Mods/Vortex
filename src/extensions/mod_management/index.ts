@@ -33,7 +33,7 @@ import * as fs from "../../util/fs";
 import getNormalizeFunc, { Normalize } from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import { laterT, TFunction } from "../../util/i18n";
-import LazyComponent from "../../util/LazyComponent";
+import LazyComponent from "../../renderer/controls/LazyComponent";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";

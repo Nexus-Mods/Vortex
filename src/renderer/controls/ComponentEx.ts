@@ -1,15 +1,15 @@
 import * as React from "react";
 
-import { IComponentContext } from "../types/IComponentContext";
+import { IComponentContext } from "../../types/IComponentContext";
 
-import { deleteOrNop, setSafe } from "./storeHelper";
+import { deleteOrNop, setSafe } from "../../util/storeHelper";
 
 import * as PropTypes from "prop-types";
 import { WithTranslation, withTranslation } from "react-i18next";
 import { clearImmediate, setImmediate } from "timers";
-import { truthy } from "./util";
+import { truthy } from "../../util/util";
 export { connect } from "react-redux";
-export { extend } from "./ExtensionProvider";
+export { extend } from "../../util/ExtensionProvider";
 
 const translate: any = withTranslation;
 

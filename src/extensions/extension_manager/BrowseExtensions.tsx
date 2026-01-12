@@ -9,7 +9,11 @@ import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 
 import { IState } from "../../types/IState";
 import bbcode from "../../renderer/controls/bbcode";
-import { ComponentEx, connect, translate } from "../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
 

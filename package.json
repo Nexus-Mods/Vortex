@@ -9,8 +9,8 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "scripts": {
-    "_assets_out": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css && yarn run build_tailwind_out",
-    "_assets_app": "yarn run update_aboutpage && tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css && yarn run build_tailwind_app",
+    "_assets_out": "yarn run update_aboutpage && node scripts/bundle-games.js && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css && yarn run build_tailwind_out",
+    "_assets_app": "yarn run update_aboutpage && node scripts/bundle-games.js && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css && yarn run build_tailwind_app",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn autoclean --force",
     "build_tailwind_out": "tailwindcss -i src/stylesheets/tailwind-v4.css -o out/assets/css/tailwind-v4.css --content 'src/**/*.{ts,tsx}'",
     "build_tailwind_app": "tailwindcss -i src/stylesheets/tailwind-v4.css -o app/assets/css/tailwind-v4.css",
@@ -19,7 +19,7 @@
     "subprojects_app": "node BuildSubprojects.js app",
     "subprojects_app_ci": "node BuildSubprojects.js app --noparallel",
     "build_api": "cd api && yarn run build && cd .. && yarn run docs",
-    "build_rest": "yarn run format && yarn run _assets_out && yarn run build_api && yarn run subprojects",
+    "build_rest": "yarn gen && yarn run format && yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-config.json --publish never",
@@ -60,7 +60,7 @@
     "build": "yarn run check_packages && yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
-    "generate_validation": "generate-validation .",
+    "gen": "yarn ts-to-zod --all",
     "update_aboutpage": "node ./updateLicenses.js",
     "check_packages": "node checkPackages.js",
     "test:e2e": "playwright test",
@@ -90,7 +90,8 @@
       "/node_modules/",
       "/dist/",
       "/app/",
-      "/playwright/"
+      "/playwright/",
+      "/extensions/fomod-installer/"
     ],
     "moduleFileExtensions": [
       "js",
@@ -231,6 +232,7 @@
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
+    "ts-to-zod": "^5.1.0",
     "ts-v-gen": "^1.0.1",
     "typescript": "^5.0.0",
     "typescript-eslint": "8.47.0",
@@ -341,7 +343,8 @@
     "write-file-atomic": "^3.0.1",
     "ws": "^7.4.6",
     "xml2js": "^0.5.0",
-    "xxhash-addon": "^2.0.3"
+    "xxhash-addon": "^2.0.3",
+    "zod": "^4.3.5"
   },
   "resolutions": {
     "node-gyp": "^10.0.0",

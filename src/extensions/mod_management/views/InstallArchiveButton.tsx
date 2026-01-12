@@ -2,7 +2,11 @@ import { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
 import { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
 

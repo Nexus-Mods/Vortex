@@ -1,5 +1,5 @@
 import Icon from "../../../renderer/controls/Icon";
-import { ComponentEx } from "../../../util/ComponentEx";
+import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { TFunction } from "../../../util/i18n";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";

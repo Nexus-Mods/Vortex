@@ -23,7 +23,7 @@ import {
 } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
-import LazyComponent from "../../util/LazyComponent";
+import LazyComponent from "../../renderer/controls/LazyComponent";
 import local from "../../util/local";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";

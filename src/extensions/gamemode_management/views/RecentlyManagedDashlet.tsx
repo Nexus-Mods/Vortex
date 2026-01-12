@@ -1,7 +1,11 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
 import Placeholder from "../../../renderer/controls/EmptyPlaceholder";
 import { IProfile, IState } from "../../../types/IState";
-import { ComponentEx, connect, translate } from "../../../util/ComponentEx";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
 import { activeGameId } from "../../profile_management/selectors";
