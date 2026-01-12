@@ -48,6 +48,7 @@ import {
   FULL_REVISION_INFO,
   CURRENT_REVISION_INFO,
   COLLECTION_SEARCH_QUERY,
+  MOD_REQUIREMENTS_INFO,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
 
@@ -78,6 +79,7 @@ import Nexus, {
   IIssue,
   IModFileContentPage,
   IModInfo,
+  IModRequirements,
   IRating,
   IRevision,
   NexusError,
@@ -987,6 +989,52 @@ export function onModFileContents(
         allowReport: false,
       });
       return Bluebird.resolve({});
+    });
+  };
+}
+
+/**
+ * Fetches mod requirements (dependencies) from the Nexus Mods API.
+ *
+ * @param api - The extension API
+ * @param nexus - The Nexus API client
+ * @returns A function that accepts gameId and modId and returns mod requirements
+ *
+ */
+export function onGetModRequirements(
+  api: IExtensionApi,
+  nexus: Nexus,
+): (gameId: string, modId: number) => Bluebird<Partial<IModRequirements>> {
+  return (gameId: string, modId: number) => {
+    const state = api.getState();
+    const game = gameById(state, gameId);
+    const nexusGameDomain = nexusGameId(game, gameId) || gameId;
+
+    return Bluebird.resolve(
+      nexus.modRequirements(MOD_REQUIREMENTS_INFO, modId, nexusGameDomain),
+    ).catch((err) => {
+      if (err instanceof RateLimitError) {
+        log('warn', 'Rate limited when fetching mod requirements', {
+          gameId: nexusGameDomain,
+          modId,
+        });
+      } else if (err instanceof TimeoutError) {
+        log('warn', 'Timeout when fetching mod requirements', {
+          gameId: nexusGameDomain,
+          modId,
+        });
+      } else {
+        const detail = processErrorMessage(err);
+        api.showErrorNotification('Failed to get mod requirements', detail, {
+          allowReport: detail.noReport ? false : true,
+        });
+      }
+
+      return Bluebird.resolve({
+        dlcRequirements: [],
+        nexusRequirements: { nodes: [], nodesCount: 0, totalCount: 0 },
+        modsRequiringThisMod: { nodes: [], nodesCount: 0, totalCount: 0 },
+      });
     });
   };
 }

@@ -1213,6 +1213,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
     nexusModFileContents: eh.onModFileContents(api, nexus),
+    nexusGetModRequirements: eh.onGetModRequirements(api, nexus),
     nexusGetPreferences: eh.onGetPreferences(api, nexus),
     nexusGetUserKeyData: eh.onGetUserKeyData(api),
   };
