@@ -9,7 +9,7 @@ import {
   PresetStepType,
 } from "../types/IPreset";
 
-import * as validation from "../validationCode/validation";
+import { iPresetSchema, iPresetsStateSchema } from "../types/IPreset.gen";
 import { makeRemoteCallSync } from "./electronRemote";
 
 import * as fs from "./fs";
@@ -20,32 +20,16 @@ const getAppName = makeRemoteCallSync("get-application-name", (electron) =>
   electron.app.getName(),
 );
 
-type StepCB = (step: IPresetStep, data: any) => PromiseLike<void>;
+type StepCB = (step: IPresetStep, data: unknown) => PromiseLike<void>;
 
-interface ISchemaViolation {
-  message: string;
+function validatePreset(input: unknown): IPreset {
+  const result = iPresetSchema.parse(input);
+  return result;
 }
 
-function validatePreset(input: any): IPreset {
-  const validationErrors: ISchemaViolation[] =
-    validation.validateIPreset(input);
-
-  if (validationErrors.length !== 0) {
-    throw new Error(validationErrors.map((error) => error.message).join("; "));
-  }
-
-  return input as IPreset;
-}
-
-function validateState(input: any): IPresetsState {
-  const validationErrors: ISchemaViolation[] =
-    validation.validateIPresetsState(input);
-
-  if (validationErrors.length !== 0) {
-    throw new Error(validationErrors.map((error) => error.message).join("; "));
-  }
-
-  return input as IPresetsState;
+function validateState(input: unknown): IPresetsState {
+  const result = iPresetsStateSchema.parse(input);
+  return result;
 }
 
 class PresetManager {
