@@ -4273,7 +4273,8 @@ class InstallManager {
 
     if (result.instructions === undefined || result.instructions.length === 0) {
       return Bluebird.reject(
-        new ProcessCanceled("Empty archive or no options selected"),
+        // Empty archive or no options selected
+        new UserCanceled(),
       );
     }
 
