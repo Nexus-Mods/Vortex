@@ -27,21 +27,21 @@
 
 Vortex is the current mod manager from Nexus Mods. It is designed to make modding your game as simple as possible for new users, while still providing enough control for more experienced veterans of the modding scene.
 
-Our approach with Vortex aims to take complex tasks such as sorting your load order or managing your mod files and automates as much of the process as possible with the goal of having you achieve a stable modded game with minimal effort. We want to help you spend less time modding and more time playing your games.
+Our approach with Vortex aims to take complex tasks such as sorting your load order or managing your mod files and automate as much of the process as possible with the goal of having you achieve a stable modded game with minimal effort. We want to help you spend less time modding and more time playing your games.
 
 ## Features
 
 * **Multi-game Support** - with mod support for over 250 different games and counting, Vortex is the most versatile mod manager available. This includes games such as [Skyrim](https://www.nexusmods.com/skyrimspecialedition), [Fallout 3](https://www.nexusmods.com/fallout3), [Fallout 4](https://www.nexusmods.com/fallout4), [Fallout: New Vegas](https://www.nexusmods.com/newvegas/), [Cyberpunk 2077](https://www.nexusmods.com/cyberpunk2077/), [Baldur's Gate 3](https://www.nexusmods.com/baldursgate3/), [Starfield](https://www.nexusmods.com/starfield/), [Stardew Valley](https://www.nexusmods.com/stardewvalley/), [Bannerlord](https://www.nexusmods.com/mountandblade2bannerlord), [Witcher 3](https://www.nexusmods.com/witcher3), [Elden Ring](https://www.nexusmods.com/eldenring), [The Sims 4](https://www.nexusmods.com/thesims4), [Monster Hunter: World](https://www.nexusmods.com/monsterhunterworld), [Oblivion](https://www.nexusmods.com/oblivion), [Palworld](https://www.nexusmods.com/palworld), [Blade & Sorcery](https://www.nexusmods.com/bladeandsorcery), [Valheim](https://www.nexusmods.com/valheim), [Hogwarts Legacy](https://www.nexusmods.com/hogwartslegacy/), [7 Days to Die](https://www.nexusmods.com/7daystodie/). 
 
-* **Close integration with Nexus Mods** - Vortex is designed to seamlessly interact with Nexus Mods allowing you to easily find, install, and play mods from our site, learn about new files and catch the latest news.
+* **Close integration with Nexus Mods** - Vortex is designed to seamlessly interact with Nexus Mods, allowing you to easily find, install, and play mods from our site, learn about new files and catch the latest news.
 
 * **Modding made easy** - The built-in auto-sorting system manages your load order and helps you to resolve mod conflicts with powerful, yet easy to use plugin management features.
 
-* **Mod Profiles** - Easily set up, switch between, and manage independent mod profiles enabling you to use exactly the combination of mods that you want for a particular playthrough.
+* **Mod Profiles** - Easily set up, switch between, and manage independent mod profiles, enabling you to use exactly the combination of mods that you want for a particular playthrough.
 
 * **Modern, Easy-to-use UI** - Featuring a fully customisable interface, Vortex allows you to quickly and easily access tools and manage your games, plugins, downloads and save games.
 
-* **Extensions and Plugins** - Vortex is released under a GPL-3 License giving our community the ability to write extensions and frameworks which can then interact with Vortex, continually adding to its functionality.
+* **Extensions and Plugins** - Vortex is released under a GPL-3.0 License, giving our community the ability to write extensions and frameworks which can then interact with Vortex, continually adding to its functionality.
 
 ## Getting Started
 
@@ -51,7 +51,7 @@ Additional information on Vortex and guides can be found in the [Vortex Wiki](ht
 
 ## Development
 
-The `windows-dev-setup.ps1` PowerShell script automatically sets up a complete Windows development environment for building the [Vortex](https://github.com/Nexus-Mods/Vortex) project. It installs all required tools and dependencies, then clones and prepares the repository.
+The `windows_dev_setup.ps1` PowerShell script automatically sets up a complete Windows development environment for building the [Vortex](https://github.com/Nexus-Mods/Vortex) project. It installs all required tools and dependencies, then clones and prepares the repository.
 
 ### What This Script Does
 
@@ -262,9 +262,9 @@ The following section aims to clarify and explain a few development decisions.
 
 The toolchain for development builds and release builds is quite different.
 
-In dev builds, the typescript compiler (tsc) is used directly to transliterate each `.ts` file to `.js` individually, electron runs those files directly, dependencies are loaded from `node_modules`.
+In dev builds, the typescript compiler (tsc) is used directly to transpile each `.ts` file to `.js` individually, electron runs those files directly, and dependencies are loaded from `node_modules`.
 
-In release builds we use webpack and ts-loader to bake all `.ts` files and dependencies into two javascript files (one for the main/browser process, one for the renderer). `electron-builder` is used to bundle code & assets, generate an nsis installer, build it into an exe installer and sign them (and all the executables and dlls we ship). There are mulitple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
+In release builds we use webpack and ts-loader to bake all `.ts` files and dependencies into two javascript files (one for the main/browser process, one for the renderer). `electron-builder` is used to bundle code & assets, generate an nsis installer, build it into an exe installer and sign them (and all the executables and dlls we ship). There are multiple electron-builder configuration files for multiple variants, only "oneclick" and "advanced" are used for release builds, the others may be in different states of disrepair (though ci should work as well)
 
 As a result, dev builds are easier to work with and building is much quicker but runtime is slower.
 
@@ -274,7 +274,7 @@ Bundled extensions on the other hand are built the same between dev and release:
 
 ### Yarn 1 vs Yarn 3 vs NPM vs PNPM
 
-This codebase still use yarn 1 (classic). Any attempt to use yarn 2 or 3 ended up with nonsensical errors (missing dependencies that are clearly listed, successive installs leading to missing packages) with no reasonable way to investigate why. npm and pnpm are quite slow in comparison. We don't really use any yarn-specific features (workspaces?) so switching shouldn't be too difficult but for now yarn "classic" works.
+This codebase still uses yarn 1 (classic). Any attempt to use yarn 2 or 3 ended up with nonsensical errors (missing dependencies that are clearly listed, successive installs leading to missing packages) with no reasonable way to investigate why. npm and pnpm are quite slow in comparison. We don't really use any yarn-specific features (workspaces?) so switching shouldn't be too difficult but for now yarn "classic" works.
 
 ### ESM vs CommonJS
 
@@ -320,7 +320,7 @@ TODO: Manual steps with dependencies and versions
 
 The majority of Vortex code is open-source. We are committed to a transparent development process and highly appreciate any contributions. Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - we would love to have you as a part of the Vortex community. 
 
-- Bug Report: If you see an error message or encounter an issue while using Amplication, please create a [bug report](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=).
+- Bug Report: If you see an error message or encounter an issue while using our application, please create a [bug report](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=).
 
 - Feature Request: If you have an idea or if there is a capability that is missing and would make development easier and more robust, please submit a [feature request](https://github.com/Nexus-Mods/Vortex/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=).
 
@@ -328,4 +328,4 @@ The majority of Vortex code is open-source. We are committed to a transparent de
 
 ## License
 
-A this project is licensed under the [GPL-3.0](https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md) license.
+This project is licensed under the [GPL-3.0](https://github.com/Nexus-Mods/Vortex/blob/master/LICENSE.md) license.
