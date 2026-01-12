@@ -9,7 +9,7 @@ import { activeProfile, currentGameDiscovery } from "../../util/selectors";
 
 import { getGame } from "../gamemode_management/util/getGame";
 
-import { createFullStateBackup } from "../../util/store";
+import { createFullStateBackup } from "../../store/store";
 
 import { setModEnabled } from "../../actions";
 import { IDeploymentManifest } from "../../types/api";

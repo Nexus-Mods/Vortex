@@ -36,12 +36,12 @@ import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
-import LevelPersist, { DatabaseLocked } from "../util/LevelPersist";
+import LevelPersist, { DatabaseLocked } from "../store/LevelPersist";
 import { log, setLogPath, setupLogging } from "../util/log";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
-import { StateError } from "../util/reduxSanity";
+import { StateError } from "../store/reduxSanity";
 import startupSettings from "../util/startupSettings";
 import {
   allHives,
@@ -54,9 +54,9 @@ import {
   insertPersistor,
   markImported,
   querySanitize,
-} from "../util/store";
+} from "../store/store";
 import {} from "../util/storeHelper";
-import SubPersistor from "../util/SubPersistor";
+import SubPersistor from "../store/SubPersistor";
 import {
   isMajorDowngrade,
   replaceRecursive,

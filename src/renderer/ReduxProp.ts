@@ -1,11 +1,12 @@
 import { IExtensionApi } from "../types/IExtensionContext";
-import { getSafe } from "./storeHelper";
+import { getSafe } from "../util/storeHelper";
+import * as React from "react";
 
 class ReduxProp<T> {
   private mInputs: string[][];
   private mFunc: (...args) => T;
   private mApi: IExtensionApi;
-  private mSubscribers: Array<React.Component<any, any>>;
+  private mSubscribers: Array<React.Component<unknown, unknown>>;
   private mUnsubscribe: () => void;
 
   constructor(api: IExtensionApi, inputs: string[][], func: (...args) => T) {
@@ -15,14 +16,14 @@ class ReduxProp<T> {
     this.mSubscribers = [];
   }
 
-  public attach(component: React.Component<any, any>) {
+  public attach(component: React.Component<unknown, unknown>) {
     if (this.mSubscribers.length === 0) {
       this.subscribe();
     }
     this.mSubscribers.push(component);
   }
 
-  public detach(component: React.Component<any, any>) {
+  public detach(component: React.Component<unknown, unknown>) {
     const idx = this.mSubscribers.indexOf(component);
     this.mSubscribers.splice(idx, 1);
     if (this.mSubscribers.length === 0) {

@@ -29,7 +29,7 @@ import { ThunkDispatch } from "redux-thunk";
 //  https://github.com/Nexus-Mods/Vortex/issues/7629
 import path from "path";
 import getVortexPath from "../../../util/getVortexPath";
-import { getReduxLog } from "../../../util/reduxLogger";
+import { getReduxLog } from "../../../store/reduxLogger";
 
 export interface IBaseProps {}
 

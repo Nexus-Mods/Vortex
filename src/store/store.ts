@@ -2,12 +2,12 @@ import reducer, { Decision } from "../reducers/index";
 import { IPersistor, PersistingType } from "../types/IExtensionContext";
 import { IState } from "../types/IState";
 
-import { DataInvalid } from "./CustomErrors";
-import { getVisibleWindow, terminate } from "./errorHandling";
-import ExtensionManager from "./ExtensionManager";
-import * as fs from "./fs";
-import { writeFileAtomic } from "./fsAtomic";
-import { log } from "./log";
+import { DataInvalid } from "../util/CustomErrors";
+import { getVisibleWindow, terminate } from "../util/errorHandling";
+import ExtensionManager from "../util/ExtensionManager";
+import * as fs from "../util/fs";
+import { writeFileAtomic } from "../util/fsAtomic";
+import { log } from "../util/log";
 import ReduxPersistor from "./ReduxPersistor";
 import { reduxSanity, StateError } from "./reduxSanity";
 
@@ -22,7 +22,7 @@ import * as path from "path";
 import * as Redux from "redux";
 import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
-import getVortexPath from "./getVortexPath";
+import getVortexPath from "../util/getVortexPath";
 
 let basePersistor: ReduxPersistor<IState>;
 

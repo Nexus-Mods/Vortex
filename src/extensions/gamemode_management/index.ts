@@ -28,7 +28,7 @@ import local from "../../util/local";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
-import ReduxProp from "../../util/ReduxProp";
+import ReduxProp from "../../renderer/ReduxProp";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 

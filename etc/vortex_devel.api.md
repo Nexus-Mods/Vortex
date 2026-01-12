@@ -4501,11 +4501,11 @@ function readlinkAsync(linkPath: string): PromiseBB<string>;
 class ReduxProp<T> {
     constructor(api: IExtensionApi, inputs: string[][], func: (...args: any[]) => T);
     // (undocumented)
-    attach(component: React.Component<any, any>): void;
+    attach(component: React_2.Component<unknown, unknown>): void;
     // (undocumented)
     calculate(): T;
     // (undocumented)
-    detach(component: React.Component<any, any>): void;
+    detach(component: React_2.Component<unknown, unknown>): void;
 }
 
 // @public (undocumented)

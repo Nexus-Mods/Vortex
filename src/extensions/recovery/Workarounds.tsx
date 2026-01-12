@@ -21,7 +21,7 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
-import { FULL_BACKUP_PATH } from "../../util/store";
+import { FULL_BACKUP_PATH } from "../../store/store";
 import { spawnSelf } from "../../util/util";
 
 export interface IBaseProps {

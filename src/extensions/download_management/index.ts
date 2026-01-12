@@ -16,7 +16,7 @@ import * as fs from "../../util/fs";
 import getNormalizeFunc, { Normalize } from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import presetManager from "../../util/PresetManager";
-import ReduxProp from "../../util/ReduxProp";
+import ReduxProp from "../../renderer/ReduxProp";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
