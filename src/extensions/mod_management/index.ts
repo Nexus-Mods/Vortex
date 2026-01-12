@@ -37,7 +37,7 @@ import LazyComponent from "../../renderer/controls/LazyComponent";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
-import ReduxProp from "../../util/ReduxProp";
+import ReduxProp from "../../renderer/ReduxProp";
 import {
   activeGameId,
   activeProfile,

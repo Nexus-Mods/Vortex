@@ -29,7 +29,7 @@ function smoothScroll(
     scrollJobs[element.id]();
   }
 
-  return new Promise<boolean>(resolve => {
+  return new Promise<boolean>((resolve) => {
     let canceled = false;
     let timer: number;
 

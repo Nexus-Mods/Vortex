@@ -35,7 +35,7 @@ import {
 import { Archive } from "../util/archives";
 import { IRegisteredExtension } from "../util/ExtensionManager";
 import { i18n, TFunction } from "../util/i18n";
-import ReduxProp from "../util/ReduxProp";
+import ReduxProp from "../renderer/ReduxProp";
 import { SanityCheck } from "../util/reduxSanity";
 
 import { ICollectionsGameSupportEntry } from "./collections/api";
