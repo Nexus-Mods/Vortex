@@ -1382,7 +1382,7 @@ function getGame(gameId: string): IGame;
 function getGames(): IGame[];
 
 // @public
-function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Promise_2<IDeploymentManifest>;
+function getManifest(api: IExtensionApi, modType?: string, gameId?: string): Bluebird<IDeploymentManifest>;
 
 // @public (undocumented)
 const getMod: ((state: IState, gameId: string, modId: string | number) => IMod) & OutputSelectorFields<(args_0: {
@@ -1654,6 +1654,7 @@ interface ICollectionInstallState {
 // @public
 interface ICollectionModInstallInfo {
     modId?: string;
+    phase?: number;
     rule: IModRule;
     status: CollectionModStatus;
     type: "requires" | "recommends";
