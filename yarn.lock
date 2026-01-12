@@ -1867,9 +1867,9 @@
     "@emnapi/runtime" "^1.5.0"
     "@tybys/wasm-util" "^0.10.1"
 
-"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
+"@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#feat/mod-requirements":
   version "1.4.44"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3a8c20c7cf770c9684ce6eda58fe56b04d095906"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/e90c9be678dc14152ef820790d2278456171f89e"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
