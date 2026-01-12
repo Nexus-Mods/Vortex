@@ -76,7 +76,7 @@ import { log } from "./util/log";
 import { initApplicationMenu } from "./util/menu";
 import { showError } from "./util/message";
 import "./util/monkeyPatching";
-import { reduxSanity, StateError } from "./util/reduxSanity";
+import { reduxSanity, StateError } from "./store/reduxSanity";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
 
@@ -111,7 +111,7 @@ import { UserCanceled } from "./util/CustomErrors";
 import {} from "./util/extensionRequire";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import presetManager from "./util/PresetManager";
-import { reduxLogger } from "./util/reduxLogger";
+import { reduxLogger } from "./store/reduxLogger";
 import { getSafe } from "./util/storeHelper";
 import {
   bytesToString,

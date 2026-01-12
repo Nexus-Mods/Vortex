@@ -1,6 +1,6 @@
 import { IPersistor } from "../types/IExtensionContext";
-import { DataInvalid } from "./CustomErrors";
-import { log } from "./log";
+import { DataInvalid } from "../util/CustomErrors";
+import { log } from "../util/log";
 
 import Promise from "bluebird";
 import encode from "encoding-down";
