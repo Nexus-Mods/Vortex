@@ -57,7 +57,11 @@ class ReduxWatcher<T> {
             listeners.forEach((listener) => listener(parameters));
           }
         } catch (err) {
-          onError(err, selector);
+          if (err instanceof Error) {
+            onError(err, selector);
+          } else {
+            onError(new Error("unknown error"), selector);
+          }
         }
       });
 

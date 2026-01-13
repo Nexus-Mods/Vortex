@@ -8,6 +8,7 @@ import { INotification, NotificationDismiss } from "../types/INotification";
 import local from "../util/local";
 import { log } from "../util/log";
 import { truthy } from "../util/util";
+import { getErrorMessage } from "../shared/errors";
 
 import safeCreateAction from "./safeCreateAction";
 
@@ -284,10 +285,11 @@ export function showDialog(
               });
             }
           } catch (err) {
+            const message = getErrorMessage(err) ?? "unknown error";
             log("error", "exception from dialog callback", {
               title,
               action: action.label,
-              message: err.message,
+              message: message,
             });
           }
         }

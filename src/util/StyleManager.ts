@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../shared/errors";
 import { IExtensionApi } from "../types/IExtensionContext";
 import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
@@ -289,7 +290,7 @@ class StyleManager {
       log("warn", "stylesheet can't be read", {
         key,
         path: filePath,
-        err: err.message,
+        err: getErrorMessage(err) ?? "unknown error",
       });
     }
   }

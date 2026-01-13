@@ -20,6 +20,7 @@ import opn from "./opn";
 import { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
+import { getErrorMessage } from "../shared/errors";
 
 const STORE_ID = "steam";
 const STORE_NAME = "Steam";
@@ -67,7 +68,7 @@ class Steam implements IGameStore {
         );
         this.mBaseFolder = Promise.resolve(steamPath.value as string);
       } catch (err) {
-        log("info", "steam not found", { error: err.message });
+        log("info", "steam not found", err);
         this.mBaseFolder = Promise.resolve(undefined);
       }
     } else {
@@ -108,7 +109,7 @@ class Steam implements IGameStore {
         opn(posix).catch((err) => Promise.resolve()),
       );
     }
-    const info = !!appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
+    const info = appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
     return this.getExecInfo(info).then((execInfo) =>
       api.runExecutable(execInfo.execPath, execInfo.arguments, {
         cwd: path.dirname(execInfo.execPath),
@@ -312,7 +313,7 @@ class Steam implements IGameStore {
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
-                    error: err.message,
+                    error: getErrorMessage(err) ?? "unknown error",
                   });
                   return undefined;
                 }
@@ -349,7 +350,7 @@ class Steam implements IGameStore {
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
-                    error: err.message,
+                    error: getErrorMessage(err) ?? "unknown error",
                   });
                   return undefined;
                 }

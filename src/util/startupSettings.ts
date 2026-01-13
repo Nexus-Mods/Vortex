@@ -7,6 +7,7 @@ import * as fs from "./fs";
 import { writeFileAtomic } from "./fsAtomic";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
+import { getErrorCode } from "../shared/errors";
 
 const startupPath = () =>
   path.join(getVortexPath("appData"), getApplication().name, "startup.json");
@@ -15,9 +16,11 @@ function read(): IParameters {
   try {
     return JSON.parse(fs.readFileSync(startupPath(), { encoding: "utf-8" }));
   } catch (err) {
-    if (err.code !== "ENOENT") {
-      log("warn", "failed to parse startup.json", { error: err.message });
+    const code = getErrorCode(err);
+    if (code !== "ENOENT") {
+      log("warn", "failed to parse startup.json", err);
     }
+
     return {};
   }
 }

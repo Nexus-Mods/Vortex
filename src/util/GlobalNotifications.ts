@@ -94,7 +94,7 @@ class GlobalNotifications {
         silent: true,
       });
     } catch (err) {
-      log("warn", "failed to show desktop notification", { err: err.message });
+      log("warn", "failed to show desktop notification", err);
     }
   }
 }

@@ -28,7 +28,7 @@ class TrayIcon {
         try {
           this.initTrayIcon();
         } catch (err) {
-          log("error", "failed to initialize tray icon", err.message);
+          log("error", "failed to initialize tray icon", err);
         }
       }, 500);
     }

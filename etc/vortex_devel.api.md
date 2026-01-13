@@ -4055,7 +4055,7 @@ type LockedState = true | false | "true" | "false" | "always" | "never";
 // Warning: (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function log(level: LogLevel, message: string, metadata?: any): void;
+export function log(level: LogLevel, message: string, metadata?: unknown): void;
 
 // @public (undocumented)
 function lookupFromDownload(download: IDownload): IModLookupInfo;
