@@ -175,11 +175,14 @@ export function objDiff(
   return res;
 }
 
-export function restackErr(error: Error, stackErr: Error): Error {
-  if (error === null || typeof error !== "object") {
-    return error;
+/** @deprecated */
+export function restackErr(error: unknown, stackErr: Error): Error {
+  if (!(error instanceof Error)) {
+    return stackErr;
   }
+
   const oldGetStack = error.stack;
+
   // resolve the stack at the last possible moment because stack is actually a getter
   // that will apply expensive source mapping when called
   Object.defineProperty(error, "stack", {
@@ -189,8 +192,9 @@ export function restackErr(error: Error, stackErr: Error): Error {
       oldGetStack +
       "\nPrior Context:\n" +
       (stackErr.stack ?? "").split("\n").slice(1).join("\n"),
-    set: () => null,
+    set: () => { },
   });
+
   return error;
 }
 
@@ -566,31 +570,31 @@ const INVALID_FILENAME_RE = new RegExp(
 const RESERVED_NAMES = new Set(
   process.platform === "win32"
     ? [
-        "CON",
-        "PRN",
-        "AUX",
-        "NUL",
-        "COM1",
-        "COM2",
-        "COM3",
-        "COM4",
-        "COM5",
-        "COM6",
-        "COM7",
-        "COM8",
-        "COM9",
-        "LPT1",
-        "LPT2",
-        "LPT3",
-        "LPT4",
-        "LPT5",
-        "LPT6",
-        "LPT7",
-        "LPT8",
-        "LPT9",
-        "..",
-        ".",
-      ]
+      "CON",
+      "PRN",
+      "AUX",
+      "NUL",
+      "COM1",
+      "COM2",
+      "COM3",
+      "COM4",
+      "COM5",
+      "COM6",
+      "COM7",
+      "COM8",
+      "COM9",
+      "LPT1",
+      "LPT2",
+      "LPT3",
+      "LPT4",
+      "LPT5",
+      "LPT6",
+      "LPT7",
+      "LPT8",
+      "LPT9",
+      "..",
+      ".",
+    ]
     : ["..", "."],
 );
 
