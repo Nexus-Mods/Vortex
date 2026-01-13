@@ -629,24 +629,25 @@ function transformGraphQLFileToIFileInfo(file: Partial<IModFile>): IFileInfo {
   const sizeInBytes: number = file.sizeInBytes
     ? Number.parseInt(file.sizeInBytes, 10)
     : file.size || 0;
-  return {
-    id: [file.fileId || parseInt(file.uid?.split(":")[2], 10) || 0],
+  const res: IFileInfo = {
     file_id: file.fileId || parseInt(file.uid?.split(":")[2], 10) || 0,
     name: file.name,
     version: file.version,
     category_name: file.mod?.category || "",
     category_id: file.categoryId || 1,
-    is_primary: file.primary || false,
+    is_primary: file.primary === file.fileId || false,
     size: sizeInBytes,
     size_kb: Math.round(sizeInBytes / 1024),
-    uploaded_timestamp: file.mod?.updatedAt || file.date,
+    uploaded_timestamp: file.mod?.updatedAt ? new Date(file.mod.updatedAt).getTime() : file.date,
+    uploaded_time: file.mod?.updatedAt || new Date(file.date).toString(),
     changelog_html: null, // Changelog HTML is not included in the GraphQL response
     file_name: file.uri,
     description: file.description || "",
     content_preview_link: "", // Default value
     external_virus_scan_url: "", // Default value
     mod_version: file.mod?.version || file.version,
-  } as unknown as IFileInfo;
+  };
+  return res;
 }
 
 export function getCollectionInfo(
