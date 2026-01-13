@@ -1869,7 +1869,7 @@
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api#feat/mod-requirements":
   version "1.4.44"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/e90c9be678dc14152ef820790d2278456171f89e"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/dca25c4a458983b46cc2fb99fd35e9a82dbd3993"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"
