@@ -67,19 +67,16 @@ VS Code debug configurations are defined in `.vscode/launch.json`. The default *
 
 #### Special Modes (Optional)
 
-| Profile                         | Purpose                                   | Notes                                                                     |
-| ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
-| Debug Electron (Staging)        | Main + renderer with preview updater      | Sets `IS_PREVIEW_BUILD=true` to test release updates via [Vortex-Staging] |
-| Debug Main Process (Staging)    | Main only with preview updater            | Same as above                                                             |
-| Debug Electron (Nexus Next)     | Main + renderer for Next/collections URLs | Set `NEXUS_NEXT_URL` or `NEXT_SUBDOMAIN` if needed                        |
-| Debug Main Process (Nexus Next) | Main only for Next/collections URLs       | Pair with Next environment variables                                      |
+| Profile                      | Purpose                              | Notes                                                                     |
+| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------- |
+| Debug Electron (Staging)     | Main + renderer with preview updater | Sets `IS_PREVIEW_BUILD=true` to test release updates via [Vortex-Staging] |
+| Debug Main Process (Staging) | Main only with preview updater       | Same as above                                                             |
 
-### Staging vs. Nexus Next
+### Staging
 
 - **Staging**: Preview build mode used to test release updates via [Vortex-Staging].
-- **Nexus Next**: Points collections/Next web links at a different site or subdomain so you can debug the Next experience.
 
-The update channel named `next` is unrelated and is forced back to `beta`, so it doesn't change these debug profiles.
+The update channel named `next` is unrelated and is forced back to `beta`, so it doesn't affect staging.
 
 ### Debug Only One Process (Optional)
 
@@ -89,7 +86,7 @@ The update channel named `next` is unrelated and is forced back to `beta`, so it
 
 ### Debugging Main Process Only
 
-Use **Debug Main Process** (or its staging/next variants) when you want to inspect startup, IPC, or background logic without attaching to the renderer. It launches Electron and also enables the renderer debugging port (`9222`) so you can attach later if needed.
+Use **Debug Main Process** (or its staging variant) when you want to inspect startup, IPC, or background logic without attaching to the renderer. It launches Electron and also enables the renderer debugging port (`9222`) so you can attach later if needed.
 
 ### Debugging Renderer Process Only
 
