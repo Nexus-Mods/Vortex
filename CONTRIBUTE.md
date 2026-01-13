@@ -158,3 +158,7 @@ Install the recommended workspace extensions when prompted, or manually install:
 - [Prettier](https://marketplace.visualstudio.com/items?itemName=prettier.prettier-vscode) - code formatting
 
 These are configured in `.vscode/extensions.json`.
+
+## Debugging
+
+See `docs/DEBUGGING-GUIDE.md` for VS Code launch profiles, main/renderer debugging, and troubleshooting tips.
