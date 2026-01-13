@@ -5,13 +5,8 @@ import Nexus, {
   IEndorsement,
   IFileInfo,
   IGameListEntry,
-  IModInfo,
   IOAuthCredentials,
   IModFile,
-  IModFileQuery,
-  IModFiles,
-  IModQuery,
-  ITrackResponse,
   IRevision,
   IRevisionQuery,
   IUpdateEntry,
@@ -21,58 +16,47 @@ import Nexus, {
   ICollectionSearchOptions,
   ICollectionSearchResult,
   IPreference,
+  ModStatus,
+  IGraphUser,
+  IModInfo,
 } from "@nexusmods/nexus-api";
-import { IModLookupResult } from "../../types/IModLookupResult";
-import { IModRepoId } from "../mod_management/types/IMod";
 import { makeFileUID } from "./util/UIDs";
 import BluebirdPromise from "bluebird";
-import { ipcRenderer } from "electron";
 import { TFunction } from "i18next";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
 import * as path from "path";
 import * as Redux from "redux";
-import * as semver from "semver";
-import { generate as shortId } from "shortid";
 import * as util from "util";
-import WebSocket from "ws";
 import {
   addNotification,
-  clearOAuthCredentials,
   dismissNotification,
   setDialogVisible,
   setExtensionEndorsed,
   setModAttribute,
   setOAuthCredentials,
-  setUserAPIKey,
 } from "../../actions";
 import { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import { IMod, IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
 import {
   DataInvalid,
   HTTPError,
   ProcessCanceled,
-  ServiceTemporarilyUnavailable,
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
 import { contextify, setApiKey, setOauthToken } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import github, { RateLimitExceeded } from "../../util/github";
+import { RateLimitExceeded } from "../../util/github";
 import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
-import {
-  calcDuration,
-  prettifyNodeErrorMessage,
-  showError,
-} from "../../util/message";
+import { calcDuration, showError } from "../../util/message";
 import { jsonRequest } from "../../util/network";
 import opn from "../../util/opn";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, toBlue, toPromise, truthy } from "../../util/util";
+import { batchDispatch, toPromise, truthy } from "../../util/util";
 import {
   AlreadyDownloaded,
   DownloadIsHTML,
@@ -82,17 +66,14 @@ import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
 import modName from "../mod_management/util/modName";
 import { setUserInfo } from "./actions/persistent";
-import { setLoginError, setLoginId, setOauthPending } from "./actions/session";
+import { setLoginId, setOauthPending } from "./actions/session";
 import {
-  NEXUS_DOMAIN,
-  NEXUS_BASE_URL,
   OAUTH_CLIENT_ID,
   OAUTH_REDIRECT_URL,
   OAUTH_URL,
   getOAuthRedirectUrl,
 } from "./constants";
 import NXMUrl from "./NXMUrl";
-import * as sel from "./selectors";
 import { isLoggedIn } from "./selectors";
 import { IJWTAccessToken } from "./types/IJWTAccessToken";
 import {
@@ -107,13 +88,9 @@ import {
   nexusGameId,
 } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
-import { FULL_REVISION_INFO } from "./util/graphQueries";
+import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
 import OAuth, { ITokenReply } from "./util/oauth";
-import {
-  IAccountStatus,
-  IValidateKeyData,
-  IValidateKeyDataV2,
-} from "./types/IValidateKeyData";
+import { IAccountStatus, IValidateKeyDataV2 } from "./types/IValidateKeyData";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -575,58 +552,6 @@ export function getInfoGraphQL(
   modId: number,
   fileId: number,
 ): BluebirdPromise<IRemoteInfo> {
-  // Define the GraphQL query for file information
-  const fileQuery: Partial<IModFileQuery> = {
-    categoryId: true,
-    count: true,
-    date: true,
-    description: true,
-    fileId: true,
-    mod: {
-      author: true,
-      category: true,
-      game: {
-        id: true,
-        domainName: true,
-      },
-      gameId: true,
-      id: true,
-      modCategory: {
-        id: true,
-        name: true,
-      },
-      pictureUrl: true,
-      status: true,
-      uid: true,
-    },
-    modId: true,
-    name: true,
-    primary: true,
-    size: true,
-    uid: true,
-    uri: true,
-    version: true,
-  } as any;
-  // const query: Partial<IModFileQuery> = {
-  //   name: true,
-  //   categoryId: true,
-  //   description: true,
-  //   size: true,
-  //   version: true,
-  //   game: {
-  //     id: true,
-  //     domainName: true,
-  //   },
-  //   uid: true,
-  //   uri: true,
-  //   mod: {
-  //     author: true,
-  //     modCategory: {
-  //       id: true,
-  //     },
-  //   },
-  // } as any;
-
   return new BluebirdPromise((resolve, reject) => {
     const uid = makeFileUID({
       fileId: fileId.toString(),
@@ -643,7 +568,7 @@ export function getInfoGraphQL(
     }
 
     nexus
-      .modFilesByUid(fileQuery, [uid])
+      .modFilesByUid(MOD_FILE_INFO, [uid])
       .then((fileResult) => {
         const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
         const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
@@ -657,10 +582,12 @@ export function getInfoGraphQL(
 }
 
 // Helper function to transform GraphQL mod data to IModInfo format
-function transformGraphQLModToIModInfo(graphqlFile: any): IModInfo {
-  const mod = graphqlFile.mod;
-  return {
-    mod_id: graphqlFile.modId || mod?.id,
+function transformGraphQLModToIModInfo(file: Partial<IModFile>): IModInfo {
+  const mod = file.mod;
+  const fileUser: IGraphUser = file.owner;
+  const res: IModInfo = {
+    endorsement_count: mod?.endorsements || 0,
+    mod_id: file.modId || mod?.id,
     name: mod?.name,
     summary: mod?.summary,
     description: mod?.description,
@@ -668,53 +595,55 @@ function transformGraphQLModToIModInfo(graphqlFile: any): IModInfo {
     version: mod?.version,
     author: mod?.author,
     uploaded_by: mod?.author,
-    uploaded_users_profile_url: mod?.user?.memberId
-      ? `https://www.nexusmods.com/users/${mod.user.memberId}`
+    uploaded_users_profile_url: fileUser?.memberId
+      ? `https://www.nexusmods.com/users/${fileUser?.memberId}`
       : "",
     allow_rating: true, // Default value, might need to be fetched separately
-    category_id: mod?.modCategory?.id || mod?.category?.id,
+    category_id: mod?.modCategory?.category_id,
     user: {
-      member_id: mod?.user?.memberId,
-      name: mod?.user?.name,
-      avatar: mod?.user?.avatar,
+      member_id: fileUser?.memberId,
+      name: fileUser?.name,
+      avatar: fileUser?.avatar,
+      member_group_id: null, // We're not using this anywhere right now anyway
     },
-    uploaded_timestamp: mod?.uploadedTimestamp,
-    updated_timestamp: mod?.updatedTimestamp,
+    created_time: mod?.createdAt,
+    updated_time: mod?.updatedAt,
+    created_timestamp: new Date(mod?.createdAt).getTime(),
+    updated_timestamp: new Date(mod?.updatedAt).getTime(),
     game_id: mod?.gameId || mod?.game?.id,
-    domain_name: mod?.domainName || mod?.game?.domainName,
+    domain_name: mod?.game?.domainName,
     contains_adult_content: mod?.adultContent || false,
-    status: mod?.status || "published",
-    available: mod?.available !== false,
-    mod_downloads: mod?.modDownloads || 0,
-    mod_unique_downloads: mod?.modUniqueDownloads || 0,
-    uid: mod?.uid,
-  } as unknown as IModInfo;
+    status: (mod?.status || "published") as ModStatus,
+    available: true, // Not sure why this is here, leaving it as true for now.
+    mod_downloads: file.totalDownloads || 0,
+    mod_unique_downloads: file.uniqueDownloads || 0,
+    requirements: mod?.modRequirements,
+  };
+  return res;
 }
 
 // Helper function to transform GraphQL file data to IFileInfo format
-function transformGraphQLFileToIFileInfo(graphqlFile: any): IFileInfo {
+function transformGraphQLFileToIFileInfo(file: Partial<IModFile>): IFileInfo {
+  const sizeInBytes: number = file.sizeInBytes
+    ? Number.parseInt(file.sizeInBytes, 10)
+    : file.size || 0;
   return {
-    id: [
-      graphqlFile.fileId || parseInt(graphqlFile.uid?.split(":")[2], 10) || 0,
-    ],
-    file_id:
-      graphqlFile.fileId || parseInt(graphqlFile.uid?.split(":")[2], 10) || 0,
-    name: graphqlFile.name,
-    version: graphqlFile.version,
-    category_name: graphqlFile.categoryName,
-    category_id: graphqlFile.categoryId || 1,
-    is_primary: graphqlFile.primary || false,
-    size: graphqlFile.sizeInBytes || graphqlFile.size || 0,
-    size_kb: Math.round(
-      (graphqlFile.sizeInBytes || graphqlFile.size || 0) / 1024,
-    ),
-    uploaded_timestamp: graphqlFile.uploadedTimestamp || graphqlFile.date,
-    changelog_html: graphqlFile.changelogHtml || "",
-    file_name: graphqlFile.uri,
-    description: graphqlFile.description || "",
+    id: [file.fileId || parseInt(file.uid?.split(":")[2], 10) || 0],
+    file_id: file.fileId || parseInt(file.uid?.split(":")[2], 10) || 0,
+    name: file.name,
+    version: file.version,
+    category_name: file.mod?.category || "",
+    category_id: file.categoryId || 1,
+    is_primary: file.primary || false,
+    size: sizeInBytes,
+    size_kb: Math.round(sizeInBytes / 1024),
+    uploaded_timestamp: file.mod?.updatedAt || file.date,
+    changelog_html: null, // Changelog HTML is not included in the GraphQL response
+    file_name: file.uri,
+    description: file.description || "",
     content_preview_link: "", // Default value
     external_virus_scan_url: "", // Default value
-    mod_version: graphqlFile.mod?.version || graphqlFile.version,
+    mod_version: file.mod?.version || file.version,
   } as unknown as IFileInfo;
 }
 

@@ -2,6 +2,7 @@ import {
   ICollectionQuery,
   IRevisionQuery,
   IModRequirementsQuery,
+  IModFileQuery,
 } from "@nexusmods/nexus-api";
 
 const revisionInfo: IRevisionQuery = {
@@ -157,6 +158,68 @@ export const COLLECTION_SEARCH_QUERY: ICollectionQuery = {
     memberId: true,
     name: true,
   },
+};
+
+export const MOD_FILE_INFO: Partial<IModFileQuery> = {
+  categoryId: true,
+  count: true,
+  date: true,
+  description: true,
+  fileId: true,
+  mod: {
+    adultContent: true,
+    category: true,
+    description: true,
+    downloads: true,
+    game: {
+      id: true,
+      domainName: true,
+    },
+    gameId: true,
+    id: true,
+    modCategory: {
+      id: true,
+      name: true,
+    },
+    name: true,
+    pictureUrl: true,
+    status: true,
+    summary: true,
+    uid: true,
+    updatedAt: true,
+    version: true,
+    modRequirements: {
+      dlcRequirements: {
+        gameExpansion: { id: true, name: true },
+        notes: true,
+      },
+      nexusRequirements: {
+        nodes: {
+          id: true,
+          modId: true,
+          modName: true,
+          url: true,
+          externalRequirement: true,
+        },
+        totalCount: true,
+      },
+    },
+  },
+  modId: true,
+  name: true,
+  owner: {
+    avatar: true,
+    memberId: true,
+    name: true,
+  },
+  primary: true,
+  size: true,
+  sizeInBytes: true,
+  totalDownloads: true,
+  uniqueDownloads: true,
+  uid: true,
+  uri: true,
+  version: true,
 };
 
 export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
