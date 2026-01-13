@@ -168,9 +168,12 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
   fileId: true,
   mod: {
     adultContent: true,
+    author: true,
     category: true,
+    createdAt: true,
     description: true,
     downloads: true,
+    endorsements: true,
     game: {
       id: true,
       domainName: true,
@@ -187,6 +190,11 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
     summary: true,
     uid: true,
     updatedAt: true,
+    uploader: {
+      avatar: true,
+      memberId: true,
+      name: true,
+    },
     version: true,
     modRequirements: {
       dlcRequirements: {
@@ -200,6 +208,7 @@ export const MOD_FILE_INFO: Partial<IModFileQuery> = {
           modName: true,
           url: true,
           externalRequirement: true,
+          gameId: true,
         },
         totalCount: true,
       },

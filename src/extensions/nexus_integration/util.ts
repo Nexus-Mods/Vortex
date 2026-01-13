@@ -584,7 +584,7 @@ export function getInfoGraphQL(
 // Helper function to transform GraphQL mod data to IModInfo format
 function transformGraphQLModToIModInfo(file: Partial<IModFile>): IModInfo {
   const mod = file.mod;
-  const fileUser: IGraphUser = file.owner;
+  const modUploader: IGraphUser = mod?.uploader;
   const res: IModInfo = {
     endorsement_count: mod?.endorsements || 0,
     mod_id: file.modId || mod?.id,
@@ -593,23 +593,25 @@ function transformGraphQLModToIModInfo(file: Partial<IModFile>): IModInfo {
     description: mod?.description,
     picture_url: mod?.pictureUrl,
     version: mod?.version,
-    author: mod?.author,
-    uploaded_by: mod?.author,
-    uploaded_users_profile_url: fileUser?.memberId
-      ? `https://www.nexusmods.com/users/${fileUser?.memberId}`
+    author: mod?.author || modUploader?.name || "",
+    uploaded_by: modUploader?.name || mod?.author || "",
+    uploaded_users_profile_url: modUploader?.memberId
+      ? `https://www.nexusmods.com/users/${modUploader?.memberId}`
       : "",
     allow_rating: true, // Default value, might need to be fetched separately
-    category_id: mod?.modCategory?.category_id,
+    category_id: mod?.modCategory?.id
+      ? Number.parseInt(mod.modCategory.id, 10)
+      : undefined,
     user: {
-      member_id: fileUser?.memberId,
-      name: fileUser?.name,
-      avatar: fileUser?.avatar,
+      member_id: modUploader?.memberId,
+      name: modUploader?.name,
+      avatar: modUploader?.avatar,
       member_group_id: null, // We're not using this anywhere right now anyway
     },
     created_time: mod?.createdAt,
     updated_time: mod?.updatedAt,
-    created_timestamp: new Date(mod?.createdAt).getTime(),
-    updated_timestamp: new Date(mod?.updatedAt).getTime(),
+    created_timestamp: mod?.createdAt ? new Date(mod.createdAt).getTime() : 0,
+    updated_timestamp: mod?.updatedAt ? new Date(mod.updatedAt).getTime() : 0,
     game_id: mod?.gameId || mod?.game?.id,
     domain_name: mod?.game?.domainName,
     contains_adult_content: mod?.adultContent || false,
