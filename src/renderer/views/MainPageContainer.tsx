@@ -105,7 +105,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
         </div>
       );
     } catch (err) {
-      log("warn", "error rendering extension main page", { err: err.message });
+      log("warn", "error rendering extension main page", err);
       return (
         <div className={classes.join(" ")}>
           <Jumbotron>

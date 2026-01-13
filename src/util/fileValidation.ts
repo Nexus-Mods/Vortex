@@ -4,6 +4,7 @@ import * as crypto from "crypto";
 import fs from "fs-extra";
 import * as path from "path";
 import * as process from "process";
+import { getErrorMessage } from "../shared/errors";
 
 async function readHashList(
   basePath: string,
@@ -33,7 +34,7 @@ export async function validateFiles(
     fileList = await readHashList(basePath);
   } catch (err) {
     // nop
-    log("info", "not validating vortex files", err.message);
+    log("info", "not validating vortex files", err);
     return { missing: [], changed: [] };
   }
 
@@ -59,7 +60,10 @@ export async function validateFiles(
           result.changed.push(fileName);
         }
       } catch (err) {
-        log("info", "file missing", { fileName, error: err.message });
+        log("info", "file missing", {
+          fileName,
+          error: getErrorMessage(err) ?? "unknown error",
+        });
         result.missing.push(fileName);
       }
     }),

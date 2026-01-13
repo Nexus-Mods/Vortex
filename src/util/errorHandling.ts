@@ -241,7 +241,7 @@ export function setOutdated(api: IExtensionApi) {
       outdated = semver.lt(version, state.persistent.nexus.newestVersion);
     } catch (err) {
       // not really a big issue
-      log("warn", "failed to update outdated status", { message: err.message });
+      log("warn", "failed to update outdated status", err);
     }
   }
   api.onStateChange(["persistent", "nexus", "newestVersion"], (prev, next) => {

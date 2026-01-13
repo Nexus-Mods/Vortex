@@ -1,12 +1,9 @@
 // dummy declarations. Filled with random data to ensure webpack (-plugins) don't try to
 // optimize these away
 let toolPath: string = `${Math.random()}`;
-// tslint:disable-next-line:prefer-const
-let toolCWD: string = `${Math.random()}`;
-// tslint:disable-next-line:prefer-const
-let parameters: string[] = [`${Math.random()}`];
-// tslint:disable-next-line:prefer-const
-let environment: any = { foobar: Math.random() };
+const toolCWD: string = `${Math.random()}`;
+const parameters: string[] = [`${Math.random()}`];
+const environment: any = { foobar: Math.random() };
 
 function runElevatedCustomTool(ipcClient, req: NodeRequire): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -49,7 +46,7 @@ function runElevatedCustomTool(ipcClient, req: NodeRequire): Promise<void> {
       emit("log", {
         level: "error",
         message: "Elevation Error",
-        meta: { err: err.message },
+        meta: err,
       });
       reject(err);
     }

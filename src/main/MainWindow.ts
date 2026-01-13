@@ -22,6 +22,7 @@ import * as path from "path";
 import * as Redux from "redux";
 import { pathToFileURL } from "url";
 import TrayIcon from "./TrayIcon";
+import { getErrorMessage } from "../shared/errors";
 
 const MIN_HEIGHT = 700;
 const REQUEST_HEADER_FILTER = {
@@ -198,7 +199,7 @@ class MainWindow {
             item.getFilename(),
           );
         } catch (err) {
-          log("warn", "starting download failed", err.message);
+          log("warn", "starting download failed", err);
         }
       }
     };
@@ -328,9 +329,10 @@ class MainWindow {
       try {
         this.mWindow.webContents.send("external-url", url, undefined, install);
       } catch (err) {
+        const message = getErrorMessage(err) ?? "unknown error";
         log("error", "failed to send external url", {
           url,
-          error: err.message,
+          error: message,
         });
       }
     }
@@ -341,9 +343,10 @@ class MainWindow {
       try {
         this.mWindow.webContents.send("install-archive", archivePath);
       } catch (err) {
+        const message = getErrorMessage(err) ?? "unknown error";
         log("error", "failed to send install-archive", {
           archivePath,
-          error: err.message,
+          error: message,
         });
       }
     }

@@ -1,3 +1,4 @@
+import { getErrorMessage, unknownToError } from "../shared/errors";
 import { delay } from "./util";
 
 const RETRIES = 5;
@@ -55,7 +56,9 @@ class ConcurrencyLimiter {
     try {
       // forward cb result
       return await cb();
-    } catch (err) {
+    } catch (unknownError) {
+      const err = unknownToError(unknownError);
+
       if (
         this.mRepeatTest !== undefined &&
         tries > 0 &&

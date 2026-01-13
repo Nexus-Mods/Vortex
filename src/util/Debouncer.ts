@@ -1,4 +1,5 @@
 import Promise from "bluebird";
+import { unknownToError } from "../shared/errors";
 
 type Callback = (err: Error) => void;
 
@@ -155,8 +156,9 @@ class Debouncer {
     try {
       prom = this.mFunc(...args);
     } catch (err) {
-      prom = err;
+      prom = unknownToError(err);
     }
+
     if (prom?.["then"] !== undefined) {
       this.mRunning = true;
       prom["then"](() => this.invokeCallbacks(callbacks, null))

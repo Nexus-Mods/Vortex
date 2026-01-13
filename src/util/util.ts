@@ -192,7 +192,7 @@ export function restackErr(error: unknown, stackErr: Error): Error {
       oldGetStack +
       "\nPrior Context:\n" +
       (stackErr.stack ?? "").split("\n").slice(1).join("\n"),
-    set: () => { },
+    set: () => {},
   });
 
   return error;
@@ -570,31 +570,31 @@ const INVALID_FILENAME_RE = new RegExp(
 const RESERVED_NAMES = new Set(
   process.platform === "win32"
     ? [
-      "CON",
-      "PRN",
-      "AUX",
-      "NUL",
-      "COM1",
-      "COM2",
-      "COM3",
-      "COM4",
-      "COM5",
-      "COM6",
-      "COM7",
-      "COM8",
-      "COM9",
-      "LPT1",
-      "LPT2",
-      "LPT3",
-      "LPT4",
-      "LPT5",
-      "LPT6",
-      "LPT7",
-      "LPT8",
-      "LPT9",
-      "..",
-      ".",
-    ]
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+        "..",
+        ".",
+      ]
     : ["..", "."],
 );
 
@@ -1031,10 +1031,13 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
         return Promise.reject(err);
       });
     } catch (err) {
-      err.allowReport = false;
-      if (extInfo !== undefined && !extInfo.official) {
-        err.extensionName = extInfo.name;
+      if (err instanceof Error) {
+        err["allowReport"] = false;
+        if (extInfo !== undefined && !extInfo.official) {
+          err["extensionName"] = extInfo.name;
+        }
       }
+
       return Bluebird.reject(err);
     }
   };
@@ -1048,10 +1051,13 @@ export function wrapExtCBSync<ArgT extends any[], ResT>(
     try {
       return cb(...args);
     } catch (err) {
-      if (extInfo !== undefined && !extInfo.official) {
-        err.allowReport = false;
-        err.extensionName = extInfo.name;
+      if (err instanceof Error) {
+        if (extInfo !== undefined && !extInfo.official) {
+          err["allowReport"] = false;
+          err["extensionName"] = extInfo.name;
+        }
       }
+
       throw err;
     }
   };

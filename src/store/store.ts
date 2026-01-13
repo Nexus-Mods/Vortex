@@ -23,6 +23,7 @@ import * as Redux from "redux";
 import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import getVortexPath from "../util/getVortexPath";
+import { getErrorCode } from "../shared/errors";
 
 let basePersistor: ReduxPersistor<IState>;
 
@@ -94,11 +95,19 @@ export function createVortexStore(
       store.dispatch(action);
     } catch (err) {
       log("error", "failed to forward redux action", payload);
+      let message = "unknown error";
+      let stack = undefined;
+
+      if (err instanceof Error) {
+        message = err.message;
+        stack = err.stack;
+      }
+
       terminate(
         {
           message: "Failed to store state change",
-          details: err.message,
-          stack: err.stack,
+          details: message,
+          stack: stack,
           allowReport: true,
           attachLog: true,
         },
@@ -203,11 +212,12 @@ function exists(filePath: string): boolean {
     fs.statSync(filePath);
     return true;
   } catch (err) {
-    if (err.code === "ENOENT") {
+    const code = getErrorCode(err);
+    if (code === "ENOENT") {
       return false;
-    } else {
-      throw err;
     }
+
+    throw err;
   }
 }
 
@@ -251,7 +261,7 @@ export function createFullStateBackup(
   try {
     serialized = JSON.stringify(state, undefined, 2);
   } catch (err) {
-    log("error", "Failed to create state backup", err.message);
+    log("error", "Failed to create state backup", err);
     return Promise.reject(new DataInvalid("Failed to create state backup"));
   }
 

@@ -25,7 +25,7 @@ function writeFileAtomicImpl(
       try {
         cleanup();
       } catch (err) {
-        log("error", "failed to clean up temporary file", err.message);
+        log("error", "failed to clean up temporary file", err);
       }
 
       cleanup = undefined;
@@ -144,7 +144,7 @@ export function copyFileAtomic(
         try {
           cleanup();
         } catch (cleanupErr) {
-          log("error", "failed to clean up temporary file", cleanupErr.message);
+          log("error", "failed to clean up temporary file", cleanupErr);
         }
       }
       return Promise.reject(err);

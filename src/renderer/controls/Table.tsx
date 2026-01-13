@@ -37,6 +37,7 @@ import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import * as Redux from "redux";
 import { createSelector, OutputSelector } from "reselect";
+import { getErrorMessage } from "../../shared/errors";
 
 export type ChangeDataHandler = (
   rowId: string,
@@ -584,7 +585,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         log("warn", "failed to scroll to item", {
           id,
           tableId: this.props.tableId,
-          error: err.message,
+          error: getErrorMessage(err) ?? "unknown error",
         });
       }
     }
@@ -1069,7 +1070,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
       }
     } catch (err) {
-      log("warn", "failed to handle keydown event", err.message);
+      log("warn", "failed to handle keydown event", err);
     }
   };
 
