@@ -65,16 +65,16 @@ VS Code debug configurations are defined in `.vscode/launch.json`. The default *
 | Debug Renderer Process | Attaches to renderer on port `9222`          | Start the main process first (`Debug Main Process` or `yarn start`) |
 | Debug Jest Tests       | Launches Jest with the args in `launch.json` | Update args per test                                                |
 
-#### Nix Profiles
+#### System Electron Profiles
 
 If your environment requires the system-provided Electron package (for example NixOS), use these profiles.
 
-| Profile                  | Purpose                             | Notes                            |
-| ------------------------ | ----------------------------------- | -------------------------------- |
-| Debug Electron (Nix)     | Launches main + renderer (compound) | Uses system Electron from `PATH` |
-| Debug Main Process (Nix) | Launches Electron main process only | Uses system Electron from `PATH` |
+| Profile                              | Purpose                             | Notes                            |
+| ------------------------------------ | ----------------------------------- | -------------------------------- |
+| Debug Electron (System Electron)     | Launches main + renderer (compound) | Uses system Electron from `PATH` |
+| Debug Main Process (System Electron) | Launches Electron main process only | Uses system Electron from `PATH` |
 
-**Note:** Start VS Code from `nix develop` (or via direnv) so `electron` is on `PATH`.
+**NixOS note:** Start VS Code from `nix develop` or use direnv so `electron` is on `PATH`.
 
 #### Special Modes (Optional)
 

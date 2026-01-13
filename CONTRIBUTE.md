@@ -148,7 +148,7 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Build: `yarn build`
 - Start: `yarn start`
 
-**Debugging (Nix):** start VS Code from `nix develop` (or via direnv), then use `Debug Electron (Nix)` to launch the system Electron from your Nix shell `PATH`.
+**Debugging (Nix):** start VS Code from `nix develop` (or via direnv), then use `Debug Electron (System Electron)` to launch the system Electron from your Nix shell `PATH`.
 
 ## Editor Setup
 

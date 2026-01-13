@@ -12,8 +12,11 @@
       "stopAll": true
     },
     {
-      "name": "Debug Electron (Nix)",
-      "configurations": ["Debug Main Process (Nix)", "Debug Renderer Process"],
+      "name": "Debug Electron (System Electron)",
+      "configurations": [
+        "Debug Main Process (System Electron)",
+        "Debug Renderer Process"
+      ],
       "presentation": {
         "hidden": false,
         "group": "",
@@ -57,7 +60,7 @@
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
     {
-      "name": "Debug Main Process (Nix)",
+      "name": "Debug Main Process (System Electron)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "electron",
