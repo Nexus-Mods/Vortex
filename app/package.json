@@ -14,7 +14,7 @@
     "@electron/remote": "^2.0.12",
     "@mdi/js": "6.6.96",
     "@msgpack/msgpack": "^2.7.0",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api#feat/mod-requirements",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "@tailwindcss/cli": "^4.1.15",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
