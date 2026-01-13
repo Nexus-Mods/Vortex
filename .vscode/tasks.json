@@ -1,59 +1,59 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "install",
-            "type": "shell",
-            "command": "yarn",
-            "args": ["install"]
-        },
-        {
-            "label": "prestart",
-            "type": "shell",
-            "command": "yarn",
-            "args": ["run", "prestart"]
-        },
-        {
-            "label": "start",
-            "type": "shell",
-            "command": "yarn",
-            "args": ["run", "start"]
-        },
-        {
-            "label": "update",
-            "type": "shell",
-            "command": "yarn",
-            "args": ["update"]
-        },
-        {
-            "label": "test",
-            "type": "shell",
-            "command": "yarn",
-            "args": ["run", "test"],
-            "group": "test"
-        },
-        {
-          "label": "buildwatch",
-          "type": "shell",
-          "command": "yarn",
-          "isBackground": true,
-          "presentation": {
-            "echo": true,
-            "reveal": "always",
-            "focus": false,
-            "panel": "dedicated"
-          },
-          "args": ["run", "buildwatch"],
-          "problemMatcher": "$tsc",
-          "group": "build"
-        },
-        {
-          "label": "lint",
-          "type": "npm",
-          "script": "lint",
-          "problemMatcher": {
-            "base": "$eslint-stylish"
-          }
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "install",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["install"]
+    },
+    {
+      "label": "prestart",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["run", "prestart"]
+    },
+    {
+      "label": "start",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["run", "start"]
+    },
+    {
+      "label": "update",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["update"]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["run", "test"],
+      "group": "test"
+    },
+    {
+      "label": "buildwatch",
+      "type": "shell",
+      "command": "yarn",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "args": ["run", "buildwatch"],
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "label": "lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": {
+        "base": "$eslint-stylish"
+      }
+    }
+  ]
 }
