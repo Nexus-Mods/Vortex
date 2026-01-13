@@ -151,8 +151,8 @@ const getButtonClasses = ({
       break;
     case "secondary":
       classes.push(
-        "tw:border tw:border-stroke-neutral-translucent-moderate",
-        canHover ? "tw:hover:border-stroke-neutral-translucent-strong" : "",
+        "tw:border tw:border-stroke-moderate",
+        canHover ? "tw:hover:border-stroke-strong" : "",
       );
 
       if (filled) {

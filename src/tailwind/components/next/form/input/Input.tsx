@@ -89,12 +89,12 @@ export const Input = ({
             ...(typeof errorMessage === "string"
               ? ["tw:bg-surface-translucent-mid tw:border-danger-strong"]
               : [
-                  "tw:bg-translucent-dark-400 tw:border-stroke-neutral-translucent-subdued",
+                  "tw:bg-translucent-dark-400 tw:border-stroke-subdued",
                   ...(readOnly || disabled
                     ? [""]
                     : [
-                        "tw:focus:bg-surface-translucent-mid tw:focus:border-stroke-neutral-translucent-strong",
-                        "tw:hover:bg-surface-translucent-low tw:hover:border-stroke-neutral-translucent-moderate",
+                        "tw:focus:bg-surface-translucent-mid tw:focus:border-stroke-strong",
+                        "tw:hover:bg-surface-translucent-low tw:hover:border-stroke-moderate",
                       ]),
                 ]),
             className,

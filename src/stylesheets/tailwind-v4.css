@@ -1,148 +1,32 @@
+/*
+ * Layer order (lowest to highest priority):
+ * 1. theme              - Tailwind theme variables
+ * 2. base               - Tailwind preflight
+ * 3. bootstrap-reset    - Bootstrap's normalize/scaffolding (overrides preflight)
+ * 4. bootstrap-components - Bootstrap components
+ * 5. components         - Tailwind components
+ * 6. utilities          - Tailwind utilities (highest priority)
+ */
+@layer theme, base, bootstrap-reset, bootstrap-components, components, utilities;
+
 @import "tailwindcss" prefix(tw);
 
 /* Import shared design system from nexus-next */
 @import "./shared/theme";
 @import "./shared/elements";
 
-/* ========================================
-   VORTEX-SPECIFIC OVERRIDES
-   ========================================
-
-   Legacy Vortex UI has a non-standard base font-size (12px) which affects
-   rem calculations. These overrides convert Tailwind's rem-based values
-   to fixed pixels to ensure consistent sizing/spacing.
-
-   Standard Tailwind v4 assumes 1rem = 16px:
-   - --tw-spacing: 0.25rem = 4px
-   - --tw-text-sm: 0.875rem = 14px
-   - --tw-text-lg: 1.125rem = 18px
-   - --tw-text-xl: 1.25rem = 20px
-   ======================================== */
-
 :root {
-    /* Spacing: 0.25rem → 4px (base unit for padding, margin, gap, width, height) */
-    --tw-spacing: 4px;
-
-    /* Typography: Convert rem to px for consistent font sizing */
-    --tw-text-sm: 14px;
-    --tw-text-lg: 18px;
-    --tw-text-xl: 20px;
-
-    /* Container breakpoints: Convert rem to px */
-    --tw-container-sm: 384px; /* 24rem = 384px */
-
-    /* Icon sizes: Convert rem to px for consistent icon sizing */
-    --icon-size-xs: 12px; /* 0.75rem → 12px */
-    --icon-size-sm: 16px; /* 1rem → 16px */
-    --icon-size-md: 20px; /* 1.25rem → 20px */
-    --icon-size-lg: 24px; /* 1.5rem → 24px */
-    --icon-size-xl: 32px; /* 2rem → 32px */
-    --icon-size-2xl: 48px; /* 3rem → 48px */
+    /* Icon sizes for consistent icon sizing, don't think this is needed anymore should be able to use `size-[x]` */
+    --icon-size-xs: 12px;
+    --icon-size-sm: 16px;
+    --icon-size-md: 20px;
+    --icon-size-lg: 24px;
+    --icon-size-xl: 32px;
+    --icon-size-2xl: 48px;
 }
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);
-
-/* ========================================
-   VORTEX TYPOGRAPHY OVERRIDES
-   ========================================
-
-   The shared typography uses rem-based Tailwind variables, but Vortex has
-   a 12px base font-size that breaks rem calculations. These overrides use
-   fixed pixel values to ensure consistent sizing.
-   ======================================== */
-
-/* Heading styles - fixed px values */
-@utility typography-heading-2xl {
-    font-size: 48px;
-    line-height: 1.2;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-
-@utility typography-heading-xl {
-    font-size: 36px;
-    line-height: 1.25;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-
-@utility typography-heading-lg {
-    font-size: 30px;
-    line-height: 1.3;
-    font-weight: 700;
-}
-
-@utility typography-heading-md {
-    font-size: 24px;
-    line-height: 1.35;
-    font-weight: 700;
-}
-
-@utility typography-heading-sm {
-    font-size: 20px;
-    line-height: 1.4;
-    font-weight: 600;
-}
-
-@utility typography-heading-xs {
-    font-size: 18px;
-    line-height: 1.45;
-    font-weight: 600;
-}
-
-/* Title styles - fixed px values */
-@utility typography-title-md {
-    font-size: 14px;
-    line-height: 1.5;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-@utility typography-title-sm {
-    font-size: 12px;
-    line-height: 1.5;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-@utility typography-title-xs {
-    font-size: 10px;
-    line-height: 1.5;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-/* Body styles - fixed px values */
-@utility typography-body-2xl {
-    font-size: 20px;
-    line-height: 1.6;
-}
-
-@utility typography-body-xl {
-    font-size: 18px;
-    line-height: 1.6;
-}
-
-@utility typography-body-lg {
-    font-size: 16px;
-    line-height: 1.6;
-}
-
-@utility typography-body-md {
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-@utility typography-body-sm {
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-@utility typography-body-xs {
-    font-size: 12px;
-    line-height: 1.5;
-}
 
 /* ========================================
    HOVER OVERLAY UTILITIES

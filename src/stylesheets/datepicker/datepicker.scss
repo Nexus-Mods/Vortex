@@ -26,11 +26,11 @@
     }
 
     .react-datepicker__time {
-        border-radius: 0.3rem;
+        border-radius: 4px;
     }
 
     .react-datepicker__time-box {
-        border-radius: 0.3rem;
+        border-radius: 4px;
     }
 }
 
@@ -206,7 +206,7 @@
     &--with-today-button {
         display: inline;
         border: 1px solid #aeaeae;
-        border-radius: 0.3rem;
+        border-radius: 4px;
         position: absolute;
         right: -72px;
         top: 0;
@@ -514,8 +514,8 @@
     .react-datepicker__day-name,
     .react-datepicker__day,
     .react-datepicker__time-name {
-        width: 3rem;
-        line-height: 3rem;
+        width: 36px; // was 3rem * 12px
+        line-height: 36px;
     }
 
     // Resize for small screens
@@ -523,8 +523,8 @@
         .react-datepicker__day-name,
         .react-datepicker__day,
         .react-datepicker__time-name {
-            width: 2rem;
-            line-height: 2rem;
+            width: 24px; // was 2rem * 12px
+            line-height: 24px;
         }
     }
 

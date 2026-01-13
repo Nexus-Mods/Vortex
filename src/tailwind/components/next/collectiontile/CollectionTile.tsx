@@ -219,7 +219,7 @@ export const CollectionTile: React.ComponentType<
                 )}
                 <Typography
                   as="div"
-                  typographyType="body-xs"
+                  typographyType="body-sm"
                   appearance="moderate"
                   className="tw:justify-center tw:tracking-tight"
                 >
@@ -231,14 +231,14 @@ export const CollectionTile: React.ComponentType<
             {/* Tags section */}
             {displayTags.length > 0 && (
               <div className="tw:self-stretch tw:pl-3 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
-                <div className="tw:self-stretch tw:py-1.5 tw:border-t tw:border-b tw:border-stroke-neutral-translucent-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
+                <div className="tw:self-stretch tw:py-1.5 tw:border-t tw:border-b tw:border-stroke-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
                   {displayTags.map((tag, index) => {
                     const tagText = getTagText(tag);
                     return (
                       <React.Fragment key={index}>
                         <Typography
                           as="div"
-                          typographyType="body-xs"
+                          typographyType="body-sm"
                           appearance="none"
                           className={`tw:justify-center tw:tracking-tight ${
                             tagText.toLowerCase() === "adult"
@@ -260,13 +260,13 @@ export const CollectionTile: React.ComponentType<
 
             {/* Stats section */}
             <div className="tw:self-stretch tw:pl-3 tw:inline-flex tw:justify-start tw:items-center tw:gap-5">
-              <div className="tw:flex-1 tw:py-1.5 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
+              <div className="tw:flex-1 tw:py-1.5 tw:border-b tw:border-stroke-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
                 {/* Endorsements */}
                 <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
                   <Icon path="mdiThumbUp" size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
@@ -279,7 +279,7 @@ export const CollectionTile: React.ComponentType<
                   <Icon path={nxmFileSize} size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
@@ -292,7 +292,7 @@ export const CollectionTile: React.ComponentType<
                   <Icon path={nxmMod} size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
                     className="tw:justify-start tw:tracking-tight"
                   >
@@ -308,7 +308,7 @@ export const CollectionTile: React.ComponentType<
                 as="div"
                 typographyType="body-md"
                 appearance="subdued"
-                className="tw:line-clamp-4 tw:wrap-break-word tw:leading-tight"
+                className="tw:line-clamp-4 tw:wrap-break-word"
               >
                 {description}
               </Typography>

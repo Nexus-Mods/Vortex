@@ -1,10 +1,12 @@
 html {
-    // for rem
-    font-size: $font-size-base;
+    // 16px base for correct rem calculations (Tailwind assumes 1rem = 16px)
+    font-size: 16px;
     letter-spacing: 0.02em;
 }
 
 body {
+    // Keep legacy 12px font size for existing UI
+    font-size: $font-size-base;
     touch-action: $touch-action;
     text-rendering: optimizeLegibility;
 

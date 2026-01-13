@@ -20,7 +20,7 @@ export const TabBar = ({
     ])}
     role="tablist"
   >
-    <div className="tw:bg-stroke-neutral-translucent-subdued tw:absolute tw:inset-x-0 tw:bottom-0 tw:h-px tw:w-full" />
+    <div className="tw:bg-stroke-subdued tw:absolute tw:inset-x-0 tw:bottom-0 tw:h-px tw:w-full" />
 
     {children}
   </div>

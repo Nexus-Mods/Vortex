@@ -1,20 +1,20 @@
 .no-scrollbar {
-  scrollbar-width: none;
+    scrollbar-width: none;
 }
 
 /* Legacy browsers with `::-webkit-scrollbar-*` support */
 @supports selector(::-webkit-scrollbar) {
-  .scrollbar::-webkit-scrollbar-thumb {
-    border-radius: calc(infinity * 1px);
-    background-color: var(--color-neutral-weak);
-  }
+    .scrollbar::-webkit-scrollbar-thumb {
+        border-radius: calc(infinity * 1px);
+        background-color: var(--tw-color-neutral-weak);
+    }
 
-  .scrollbar::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
+    .scrollbar::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
 
-  .scrollbar::-webkit-scrollbar {
-    max-width: calc(var(--spacing) * 1.5);
-    max-height: calc(var(--spacing) * 1.5);
-  }
+    .scrollbar::-webkit-scrollbar {
+        max-width: calc(var(--tw-spacing) * 1.5);
+        max-height: calc(var(--tw-spacing) * 1.5);
+    }
 }

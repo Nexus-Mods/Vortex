@@ -284,7 +284,7 @@
 .rst__rowTitleWithSubtitle {
     font-size: 85%;
     display: block;
-    height: 0.8rem;
+    height: 10px; // was 0.8rem * 12px
 }
 
 .rst__rowSubtitle {
