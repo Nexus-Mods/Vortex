@@ -16,14 +16,14 @@ export const SelectDemo = () => {
   const [game, setGame] = useState("");
 
   return (
-    <div className="p-8 bg-surface-base min-h-screen">
-      <Typography as="h1" typographyType="heading-xl" className="mb-8">
+    <div className="tw:p-8 tw:bg-surface-base tw:min-h-screen">
+      <Typography as="h1" typographyType="heading-xl" className="tw:mb-8">
         Select Component Demo
       </Typography>
 
       {/* Basic Select */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Basic Select
         </Typography>
         <FormFieldWrap>
@@ -72,8 +72,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* States */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Select States
         </Typography>
         <FormFieldWrap>
@@ -108,8 +108,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* Validation & Errors */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Validation & Error States
         </Typography>
         <FormFieldWrap>
@@ -138,8 +138,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* Hints & Helper Text */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Hints & Helper Text
         </Typography>
         <FormFieldWrap>
@@ -183,8 +183,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* Grouped Options (optgroup) */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Grouped Options
         </Typography>
         <FormFieldWrap>
@@ -235,8 +235,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* Many Options */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Many Options
         </Typography>
         <FormFieldWrap>
@@ -256,8 +256,8 @@ export const SelectDemo = () => {
       </div>
 
       {/* Combined Features */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="tw:mb-12">
+        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
           Combined Features
         </Typography>
         <FormFieldWrap>

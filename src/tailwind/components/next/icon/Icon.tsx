@@ -73,7 +73,7 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, "size" | "path"> & {
  * - With MDI icon name: <Icon path="mdiAccount" size="md" />
  * - With Nexus icon name: <Icon path="nxmVortex" size="lg" />
  * - With direct path: <Icon path={mdiAccount} size="sm" />
- * - With className sizing: <Icon path="mdiAccount" size="none" className="size-5" />
+ * - With className sizing: <Icon path="mdiAccount" size="none" className="tw:size-5" />
  * - With custom size: <Icon path="mdiDownload" sizeOverride="1.75rem" />
  */
 export const Icon = ({

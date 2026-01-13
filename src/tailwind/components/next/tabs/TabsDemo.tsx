@@ -17,13 +17,13 @@ export const TabsDemo = () => {
   const [selectedTab2, setSelectedTab2] = useState("overview");
 
   return (
-    <div className="space-y-8">
-      <Typography as="h2" typographyType="heading-lg">
+    <div className="tw:space-y-8">
+      <Typography as="h2" typographyType="heading-lg" appearance="strong">
         Tabs Component System
       </Typography>
 
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md">
+      <div className="tw:space-y-4">
+        <Typography as="h3" typographyType="heading-md" appearance="strong">
           Basic Tabs with Count Badges
         </Typography>
 
@@ -39,9 +39,9 @@ export const TabsDemo = () => {
             <TabButton name="Settings" />
           </TabBar>
 
-          <div className="mt-6">
+          <div className="tw:mt-6">
             <TabPanel name="Overview">
-              <div className="space-y-4">
+              <div className="tw:space-y-4">
                 <Typography typographyType="body-lg" appearance="moderate">
                   <strong>Overview Tab Content</strong>
                 </Typography>
@@ -53,7 +53,7 @@ export const TabsDemo = () => {
             </TabPanel>
 
             <TabPanel name="Files">
-              <div className="space-y-4">
+              <div className="tw:space-y-4">
                 <Typography typographyType="body-lg" appearance="moderate">
                   <strong>Files Tab Content (42 files)</strong>
                 </Typography>
@@ -65,7 +65,7 @@ export const TabsDemo = () => {
             </TabPanel>
 
             <TabPanel name="Comments">
-              <div className="space-y-4">
+              <div className="tw:space-y-4">
                 <Typography typographyType="body-lg" appearance="moderate">
                   <strong>Comments Tab Content (156 comments)</strong>
                 </Typography>
@@ -77,7 +77,7 @@ export const TabsDemo = () => {
             </TabPanel>
 
             <TabPanel name="Settings">
-              <div className="space-y-4">
+              <div className="tw:space-y-4">
                 <Typography typographyType="body-lg" appearance="moderate">
                   <strong>Settings Tab Content</strong>
                 </Typography>
@@ -90,8 +90,8 @@ export const TabsDemo = () => {
         </TabProvider>
       </div>
 
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md">
+      <div className="tw:space-y-4">
+        <Typography as="h3" typographyType="heading-md" appearance="strong">
           Tabs with Link Tab
         </Typography>
 
@@ -110,7 +110,7 @@ export const TabsDemo = () => {
             />
           </TabBar>
 
-          <div className="mt-6">
+          <div className="tw:mt-6">
             <TabPanel name="Overview">
               <Typography typographyType="body-md" appearance="subdued">
                 Overview content. Notice the "External Docs" tab is a link, not
@@ -128,12 +128,12 @@ export const TabsDemo = () => {
         </TabProvider>
       </div>
 
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md">
+      <div className="tw:space-y-4">
+        <Typography as="h3" typographyType="heading-md" appearance="strong">
           Keyboard Navigation
         </Typography>
 
-        <div className="bg-surface-mid p-4 rounded space-y-2">
+        <div className="tw:bg-surface-mid tw:p-4 tw:rounded tw:space-y-2">
           <Typography typographyType="body-sm" appearance="subdued">
             <strong>Arrow Left/Right:</strong> Navigate between tabs
           </Typography>
@@ -149,8 +149,8 @@ export const TabsDemo = () => {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md">
+      <div className="tw:space-y-4">
+        <Typography as="h3" typographyType="heading-md" appearance="strong">
           Features
         </Typography>
 
@@ -158,7 +158,7 @@ export const TabsDemo = () => {
           as="ul"
           typographyType="body-md"
           appearance="subdued"
-          className="list-disc list-inside space-y-2"
+          className="tw:list-disc tw:list-inside tw:space-y-2"
         >
           <li>Context-based state management with TabProvider</li>
           <li>Button tabs (selectable) and Link tabs (focusable only)</li>

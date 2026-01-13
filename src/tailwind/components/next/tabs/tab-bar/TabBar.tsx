@@ -15,12 +15,12 @@ export const TabBar = ({
 }) => (
   <div
     className={joinClasses([
-      "scrollbar relative flex gap-x-6 overflow-x-auto",
+      "tw:scrollbar tw:relative tw:flex tw:gap-x-6 tw:overflow-x-auto",
       className,
     ])}
     role="tablist"
   >
-    <div className="bg-stroke-neutral-translucent-subdued absolute inset-x-0 bottom-0 h-px w-full" />
+    <div className="tw:bg-stroke-neutral-translucent-subdued tw:absolute tw:inset-x-0 tw:bottom-0 tw:h-px tw:w-full" />
 
     {children}
   </div>

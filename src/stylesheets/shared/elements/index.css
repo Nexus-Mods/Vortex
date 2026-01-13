@@ -1,5 +1,4 @@
-@import "./button.css";
-@import "./hover-overlay.css";
-@import "./link.css";
-@import "./scrollbar.css";
+@import './button.css';
+@import './link.css';
+@import './scrollbar.css';
 /* @import './typography.css'; */

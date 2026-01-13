@@ -1,25 +1,17 @@
 @theme {
-    --text-2xs: 0.625rem;
-    --text-2xs--line-height: calc(1 / 0.625);
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: calc(1 / 0.625);
 
-    --leading-tighter: 1.2;
+  --leading-tighter: 1.2;
 
-    --z-index-panel: 10000;
-    --z-index-modal: 10001;
-    --z-index-dropdown: 10002;
-    --z-index-tooltip: 10003;
-    --z-index-toast: 10004;
+  --z-index-panel: 10000;
+  --z-index-modal: 10001;
+  --z-index-dropdown: 10002;
+  --z-index-tooltip: 10003;
+  --z-index-toast: 10004;
 
-    --shadow-sm:
-        0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%),
-        0px 1px 5px rgb(0 0 0 / 20%);
-    --shadow-md:
-        0px 6px 10px rgb(0 0 0 / 14%), 0px 1px 18px rgb(0 0 0 / 12%),
-        0px 3px 5px rgb(0 0 0 / 20%);
-    --shadow-lg:
-        0px 9px 12px 1px rgb(0 0 0 / 14%), 0px 3px 16px 2px rgb(0 0 0 / 12%),
-        0px 5px 6px rgb(0 0 0 / 20%);
-    --shadow-xl:
-        0px 24px 38px 3px rgb(0 0 0 / 14%), 0px 9px 46px 8px rgb(0 0 0 / 12%),
-        0px 11px 15px rgb(0 0 0 / 20%);
+  --shadow-sm: 0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%), 0px 1px 5px rgb(0 0 0 / 20%);
+  --shadow-md: 0px 6px 10px rgb(0 0 0 / 14%), 0px 1px 18px rgb(0 0 0 / 12%), 0px 3px 5px rgb(0 0 0 / 20%);
+  --shadow-lg: 0px 9px 12px 1px rgb(0 0 0 / 14%), 0px 3px 16px 2px rgb(0 0 0 / 12%), 0px 5px 6px rgb(0 0 0 / 20%);
+  --shadow-xl: 0px 24px 38px 3px rgb(0 0 0 / 14%), 0px 9px 46px 8px rgb(0 0 0 / 12%), 0px 11px 15px rgb(0 0 0 / 20%);
 }
