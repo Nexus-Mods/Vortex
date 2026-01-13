@@ -12,6 +12,16 @@
       "stopAll": true
     },
     {
+      "name": "Debug Electron (Nix)",
+      "configurations": ["Debug Main Process (Nix)", "Debug Renderer Process"],
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 1
+      },
+      "stopAll": true
+    },
+    {
       "name": "Debug Electron (Staging)",
       "configurations": [
         "Debug Main Process (Staging)",
@@ -43,6 +53,32 @@
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "autoAttachChildProcesses": true,
+      "timeout": 60000,
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
+    },
+    {
+      "name": "Debug Main Process (Nix)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "electron",
+      "runtimeArgs": ["--inspect-brk=9229", "--remote-debugging-port=9222"],
+      "args": ["."],
+      // NixOS: VS Code's default NODE_OPTIONS injection doesn't work with system Electron.
+      // Use --inspect-brk with attachSimplePort to bypass the bootloader and attach directly.
+      "attachSimplePort": 9229,
+      "cwd": "${workspaceRoot}",
+      "env": {
+        "NODE_ENV": "development",
+        "START_DEVTOOLS": "true"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
       "timeout": 60000,
       "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
@@ -93,11 +129,7 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-      "args": [
-        // "${file}", specify the test file to run or leave empty to run all tests
-        "__tests__/fblo.updateset.test.js",
-        "--runInBand"
-      ],
+      "args": ["__tests__/fblo.updateset.test.js", "--runInBand"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }
