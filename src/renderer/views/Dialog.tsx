@@ -1,14 +1,12 @@
-import { ILink, triggerDialogLink } from "../../actions";
-import {
-  closeDialog,
-  closeDialogs,
-  DialogContentItem,
-} from "../../actions/notifications";
+import type { ILink } from "../../actions";
+import { triggerDialogLink } from "../../actions";
+import type { DialogContentItem } from "../../actions/notifications";
+import { closeDialog, closeDialogs } from "../../actions/notifications";
 import Collapse from "../controls/Collapse";
 import ErrorBoundary, { ErrorContext } from "../controls/ErrorBoundary";
 import Icon from "../controls/Icon";
 import Webview from "../controls/Webview";
-import {
+import type {
   ConditionResults,
   DialogType,
   ICheckbox,
@@ -17,10 +15,10 @@ import {
   IDialogContent,
   IInput,
 } from "../../types/IDialog";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 import lazyRequire from "../../util/lazyRequire";
 import { MutexWrapper } from "../../util/MutexContext";
 
@@ -38,8 +36,8 @@ import {
 } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 

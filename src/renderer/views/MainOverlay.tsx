@@ -1,5 +1,5 @@
 import IconBar from "../controls/IconBar";
-import { IActionDefinition } from "../../types/IActionDefinition";
+import type { IActionDefinition } from "../../types/IActionDefinition";
 import { ComponentEx } from "../controls/ComponentEx";
 
 import * as React from "react";

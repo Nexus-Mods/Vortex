@@ -1,10 +1,10 @@
-import { IGameDetail } from "../../../types/IExtensionContext";
-import { IGame } from "../../../types/IGame";
-import * as fs from "../../../util/fs";
+import type { IGameDetail } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
+import type * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
 import walk from "../../../util/walk";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 import Promise from "bluebird";
 

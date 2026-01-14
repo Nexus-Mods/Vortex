@@ -1,7 +1,7 @@
-import { IDownload } from "../../download_management/types/IDownload";
-import { IProfileMod } from "../../profile_management/types/IProfile";
+import type { IDownload } from "../../download_management/types/IDownload";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
 
-import { IMod } from "./IMod";
+import type { IMod } from "./IMod";
 
 export interface IModProps {
   mods: { [modId: string]: IMod };

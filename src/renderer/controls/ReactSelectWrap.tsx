@@ -5,12 +5,12 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import Select, {
-  Creatable,
+import type {
   OptionValues,
   ReactCreatableSelectProps,
   ReactSelectProps,
 } from "react-select";
+import Select, { Creatable } from "react-select";
 
 export * from "react-select";
 

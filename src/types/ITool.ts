@@ -1,5 +1,5 @@
-import Promise from "bluebird";
-import { IGameStoreEntry } from "./IGameStoreEntry";
+import type Promise from "bluebird";
+import type { IGameStoreEntry } from "./IGameStoreEntry";
 
 /**
  * static information about a tool associated with a game.

@@ -1,5 +1,5 @@
 import * as actions from "../actions/session";
-import { IReducerSpec } from "../types/IExtensionContext";
+import type { IReducerSpec } from "../types/IExtensionContext";
 
 import {
   addUniqueSafe,

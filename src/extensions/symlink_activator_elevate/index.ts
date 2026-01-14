@@ -1,14 +1,13 @@
-/* eslint-disable */
 import { clearUIBlocker, setUIBlocker } from "../../actions";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
-import { IState } from "../../types/IState";
+import type { IGame } from "../../types/IGame";
+import type { IState } from "../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import { Normalize } from "../../util/getNormalizeFunc";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import makeReactive from "../../util/makeReactive";
@@ -17,7 +16,7 @@ import { getSafe } from "../../util/storeHelper";
 
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
@@ -29,10 +28,10 @@ import Settings from "./Settings";
 import walk from "./walk";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import JsonSocket from "json-socket";
 import * as net from "net";
-import * as os from "os";
+import type * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
@@ -385,7 +384,7 @@ class DeploymentMethod extends LinkingDeployment {
     return new Promise((resolve, reject) => {
       this.mIPCServer.close((err?: Error) => {
         // note: err may be undefined instead of null
-        if (!!err) {
+        if (err) {
           // afaik the server having already been closed is the only situation that would
           // trigger an error here
           log("warn", "failed to close ipc connection", err);
@@ -783,7 +782,7 @@ function installTask(scriptPath: string) {
         log(payload.level, payload.message, payload.meta);
       } else if (message === "quit") {
         ipcServer.close((err) => {
-          if (!!err) {
+          if (err) {
             log("warn", "failed to close ipc connection", err);
           }
         });
@@ -909,7 +908,7 @@ function removeTask(): Promise<void> {
         log(payload.level, payload.message, payload.meta);
       } else if (message === "quit") {
         ipcServer.close((err) => {
-          if (!!err) {
+          if (err) {
             log("warn", "failed to close ipc connection", err);
           }
         });
@@ -1033,7 +1032,7 @@ function giveSymlinkRight(enable: boolean) {
         log(payload.level, payload.message, payload.meta);
       } else if (message === "quit") {
         ipcServer.close((err) => {
-          if (!!err) {
+          if (err) {
             log("warn", "failed to close ipc connection", err);
           }
         });

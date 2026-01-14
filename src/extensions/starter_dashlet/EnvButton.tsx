@@ -1,7 +1,7 @@
 import React from "react";
 import { IconButton } from "../../renderer/controls/TooltipControls";
 import { FormControl, InputGroup } from "react-bootstrap";
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
 
 interface IEnvButtonProps {

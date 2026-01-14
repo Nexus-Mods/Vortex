@@ -6,14 +6,14 @@ import More from "../../../renderer/controls/More";
 import Spinner from "../../../renderer/controls/Spinner";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../../types/IDialog";
-import { InstallPathMode, IState } from "../../../types/IState";
-import { ValidationState } from "../../../types/ITableAttribute";
+import type { InstallPathMode, IState } from "../../../types/IState";
+import type { ValidationState } from "../../../types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -52,8 +52,8 @@ import {
   currentGame,
   currentGameDiscovery,
 } from "../../gamemode_management/selectors";
-import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 
 import { setDeploymentNecessary } from "../actions/deployment";
 import {
@@ -63,7 +63,7 @@ import {
 } from "../actions/settings";
 import { setTransferMods } from "../actions/transactions";
 
-import { IDeploymentMethod } from "../types/IDeploymentMethod";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { getSupportedActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
@@ -89,8 +89,8 @@ import {
   Panel,
   ProgressBar,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import * as winapi from "winapi-bindings";
 import { ProvidePlugin } from "webpack";
 

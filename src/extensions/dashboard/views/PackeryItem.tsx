@@ -1,12 +1,13 @@
 import Icon from "../../../renderer/controls/Icon";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";
 
 import type * as DraggabillyT from "draggabilly";
-import * as PackeryT from "packery";
-import { Resizable, ResizeDirection } from "re-resizable";
+import type * as PackeryT from "packery";
+import type { ResizeDirection } from "re-resizable";
+import { Resizable } from "re-resizable";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 

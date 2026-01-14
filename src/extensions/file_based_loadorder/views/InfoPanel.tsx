@@ -3,7 +3,7 @@ import { withTranslation } from "react-i18next";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import bbcode from "../../../renderer/controls/bbcode";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import { LoadOrderValidationError } from "../types/types";
+import type { LoadOrderValidationError } from "../types/types";
 
 interface IProps {
   info: string | React.ComponentType<{}>;

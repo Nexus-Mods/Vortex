@@ -1,4 +1,4 @@
-import { IModReference } from "./IMod";
+import type { IModReference } from "./IMod";
 
 /**
  * Thanks to the headless installer, we can now proceed with mod installations

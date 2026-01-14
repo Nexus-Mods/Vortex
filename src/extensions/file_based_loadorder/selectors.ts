@@ -1,5 +1,5 @@
-import { IModLookupInfo } from "../mod_management/util/testModReference";
-import { IState } from "../../types/IState";
+import type { IModLookupInfo } from "../mod_management/util/testModReference";
+import type { IState } from "../../types/IState";
 import { activeGameId } from "../profile_management/selectors";
 import { getSafe } from "../../util/storeHelper";
 

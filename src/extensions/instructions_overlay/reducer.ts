@@ -1,5 +1,6 @@
-import { addReducer, IReducerSpec } from "../../types/IExtensionContext";
-import { IOverlaysState } from "../../types/IState";
+import type { IReducerSpec } from "../../types/IExtensionContext";
+import { addReducer } from "../../types/IExtensionContext";
+import type { IOverlaysState } from "../../types/IState";
 import { deleteOrNop, setSafe } from "../../util/storeHelper";
 import * as actions from "./actions";
 

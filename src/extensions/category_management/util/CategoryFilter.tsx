@@ -1,12 +1,15 @@
-import { IDownload, IState } from "../../../types/IState";
-import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import type { IDownload, IState } from "../../../types/IState";
+import type {
+  IFilterProps,
+  ITableFilter,
+} from "../../../types/ITableAttribute";
 import { connect } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 
-import { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
+import type { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
 import getDownloadGames from "../../download_management/util/getDownloadGames";
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 import filterModInfo from "../../mod_management/util/filterModInfo";
 import { activeGameId } from "../../profile_management/selectors";
 

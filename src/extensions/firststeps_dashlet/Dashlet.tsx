@@ -1,7 +1,7 @@
 import Dashlet from "../../renderer/controls/Dashlet";
 import Icon from "../../renderer/controls/Icon";
 import { IconButton } from "../../renderer/controls/TooltipControls";
-import { II18NProps } from "../../types/II18NProps";
+import type { II18NProps } from "../../types/II18NProps";
 import {
   ComponentEx,
   connect,
@@ -9,13 +9,13 @@ import {
 } from "../../renderer/controls/ComponentEx";
 
 import { dismissStep } from "./actions";
-import { IToDo } from "./IToDo";
+import type { IToDo } from "./IToDo";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 interface ITodoProps {
   t: TFunction;

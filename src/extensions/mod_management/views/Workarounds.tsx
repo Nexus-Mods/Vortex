@@ -1,5 +1,5 @@
 import Toggle from "../../../renderer/controls/Toggle";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { setCleanupOnDeploy } from "../actions/settings";
 
@@ -7,8 +7,8 @@ import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 export interface IBaseProps {}
 

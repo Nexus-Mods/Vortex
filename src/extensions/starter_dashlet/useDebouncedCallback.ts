@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback, DependencyList } from "react";
+import type { DependencyList } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 export function useDebouncedCallback<T extends any[]>(
   callback: (...args: T) => void,

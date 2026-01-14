@@ -16,24 +16,21 @@
  *      enables or disables a mod in the current profile
  */
 
-import {
-  addNotification,
-  IDialogResult,
-  showDialog,
-} from "../../actions/notifications";
+import type { IDialogResult } from "../../actions/notifications";
+import { addNotification, showDialog } from "../../actions/notifications";
 
 import {
   clearUIBlocker,
   setProgress,
   setUIBlocker,
 } from "../../actions/session";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
   ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IPresetStep, IPresetStepSetGame } from "../../types/IPreset";
-import { IGameStored, IState } from "../../types/IState";
+import type { IGameStored, IState } from "../../types/IState";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,
@@ -42,7 +39,7 @@ import {
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import { IRegisteredExtension } from "../../util/ExtensionManager";
+import type { IRegisteredExtension } from "../../util/ExtensionManager";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
@@ -58,7 +55,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
-import { IExtension } from "../extension_manager/types";
+import type { IExtension } from "../extension_manager/types";
 import { readExtensions } from "../extension_manager/util";
 import { getGame } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
@@ -81,8 +78,8 @@ import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
 import { CorruptActiveProfile } from "./types/Errors";
-import { IProfile } from "./types/IProfile";
-import { IProfileFeature } from "./types/IProfileFeature";
+import type { IProfile } from "./types/IProfile";
+import type { IProfileFeature } from "./types/IProfileFeature";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
@@ -98,7 +95,7 @@ import { syncFromProfile, syncToProfile } from "./sync";
 
 import Promise from "bluebird";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
 const profileFiles: {

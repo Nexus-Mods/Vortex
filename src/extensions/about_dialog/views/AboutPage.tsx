@@ -4,7 +4,7 @@ import github from "../../../util/github";
 import { log } from "../../../util/log";
 import MainPage from "../../../renderer/views/MainPage";
 
-import { ILicense } from "../types/ILicense";
+import type { ILicense } from "../types/ILicense";
 
 import * as fs from "fs";
 import I18next from "i18next";

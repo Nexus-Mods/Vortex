@@ -1,8 +1,8 @@
 import { ipcMain, ipcRenderer } from "electron";
 import * as path from "path";
-import { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../types/IExtensionContext";
 
-import {
+import type {
   IPreset,
   IPresetsState,
   IPresetStep,

@@ -7,11 +7,12 @@ import { nexusGameId } from "../nexus_integration/util/convertGameId";
 
 import BaseDashlet from "./BaseDashlet";
 import { GAMEID_PLACEHOLDER, MAX_SUMMARY_LENGTH } from "./constants";
-import rss, { IFeedMessage } from "./rss";
+import type { IFeedMessage } from "./rss";
+import rss from "./rss";
 
 import * as React from "react";
 import { connect as redConnect } from "react-redux";
-import { IListItem } from "./types";
+import type { IListItem } from "./types";
 
 export interface IConnectedProps {
   nexusGameId: string;

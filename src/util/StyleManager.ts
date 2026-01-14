@@ -1,5 +1,5 @@
 import { getErrorMessage } from "../shared/errors";
-import { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../types/IExtensionContext";
 import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
@@ -11,7 +11,7 @@ import Promise from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
 import * as _ from "lodash";
 import * as path from "path";
-import * as sassT from "sass";
+import type * as sassT from "sass";
 import { pathToFileURL } from "url";
 
 function asarUnpacked(input: string): string {

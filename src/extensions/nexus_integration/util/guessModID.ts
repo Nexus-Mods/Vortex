@@ -1,5 +1,4 @@
-/* eslint-disable */
-import {
+import type {
   IExtensionApi,
   ILookupResult,
   IModInfo,
@@ -9,7 +8,7 @@ import { batchDispatch, truthy } from "../../../util/util";
 import { setDownloadModInfo } from "../../download_management/actions/state";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setModAttribute } from "../../mod_management/actions/mods";
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 import modName from "../../mod_management/util/modName";
 import { activeGameId } from "../../profile_management/selectors";
 import NXMUrl from "../NXMUrl";

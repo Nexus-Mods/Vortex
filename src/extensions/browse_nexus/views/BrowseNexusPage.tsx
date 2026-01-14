@@ -1,4 +1,4 @@
-import {
+import type {
   ICollection,
   ICollectionSearchOptions,
   CollectionSortField,
@@ -12,8 +12,8 @@ import { useSelector } from "react-redux";
 import MainPage from "../../../renderer/views/MainPage";
 import Tailwind from "../../../tailwind";
 import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
-import { IState } from "../../../types/IState";
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import opn from "../../../util/opn";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";

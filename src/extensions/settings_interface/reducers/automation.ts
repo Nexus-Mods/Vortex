@@ -1,5 +1,5 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
-import { ISettingsAutomation } from "../../../types/IState";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { ISettingsAutomation } from "../../../types/IState";
 
 import * as actions from "../actions/automation";
 

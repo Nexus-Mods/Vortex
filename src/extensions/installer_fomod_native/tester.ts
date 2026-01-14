@@ -1,4 +1,4 @@
-import {
+import type {
   ISupportedResult,
   ITestSupportedDetails,
 } from "../mod_management/types/TestSupported";

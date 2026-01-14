@@ -1,5 +1,5 @@
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { IDownload, IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IDownload, IState } from "../../types/IState";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -23,7 +23,7 @@ import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
 
 import installExtension from "./installExtension";
-import {
+import type {
   ExtensionType,
   IAvailableExtension,
   IExtension,

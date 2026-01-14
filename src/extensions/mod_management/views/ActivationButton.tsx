@@ -1,8 +1,8 @@
 import { addNotification } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import { INotificationAction } from "../../../types/INotification";
-import { IState } from "../../../types/IState";
+import type { INotificationAction } from "../../../types/INotification";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -14,12 +14,12 @@ import onceCB from "../../../util/onceCB";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IDeploymentMethod } from "../types/IDeploymentMethod";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
 
 import * as React from "react";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 interface IConnectedProps {
   activator: IDeploymentMethod;

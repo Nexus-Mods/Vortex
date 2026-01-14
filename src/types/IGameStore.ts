@@ -1,8 +1,8 @@
-import { IExecInfo } from "./IExecInfo";
-import { IExtensionApi } from "./IExtensionContext";
-import { IGameStoreEntry } from "./IGameStoreEntry";
+import type { IExecInfo } from "./IExecInfo";
+import type { IExtensionApi } from "./IExtensionContext";
+import type { IGameStoreEntry } from "./IGameStoreEntry";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 
 export type GameLaunchType = "gamestore" | "commandline";
 

@@ -1,13 +1,13 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
 import RadialProgress from "../../../renderer/controls/RadialProgress";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { bytesToString } from "../../../util/util";
 
 import { speedDataPoints } from "../reducers/state";
-import { IDownload } from "../types/IDownload";
+import type { IDownload } from "../types/IDownload";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 interface IBaseProps {

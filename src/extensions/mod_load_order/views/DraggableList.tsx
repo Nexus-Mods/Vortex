@@ -1,19 +1,18 @@
 import Promise from "bluebird";
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
-import {
+import type {
   ConnectDragPreview,
   ConnectDragSource,
   ConnectDropTarget,
-  DragSource,
   DragSourceConnector,
   DragSourceMonitor,
   DragSourceSpec,
-  DropTarget,
   DropTargetConnector,
   DropTargetMonitor,
   DropTargetSpec,
 } from "react-dnd";
+import { DragSource, DropTarget } from "react-dnd";
 
 import * as ReactDOM from "react-dom";
 
@@ -21,7 +20,7 @@ import { ContextMenu } from "../../../renderer/controls/api";
 
 import * as util from "../../../util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import {
+import type {
   IDnDConditionResult,
   ILoadOrder,
   ILoadOrderDisplayItem,

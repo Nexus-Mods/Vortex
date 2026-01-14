@@ -1,5 +1,5 @@
-import { IModSourceOptions } from "../../../types/IExtensionContext";
-import { IModSource } from "../types/IModSource";
+import type { IModSourceOptions } from "../../../types/IExtensionContext";
+import type { IModSource } from "../types/IModSource";
 
 const modSources: IModSource[] = [];
 

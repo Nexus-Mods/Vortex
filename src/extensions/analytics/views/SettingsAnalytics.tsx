@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { Toggle } from "../../..";
 import {
   ComponentEx,

@@ -1,5 +1,5 @@
 import { displayGroup } from "../../actions/session";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { ComponentEx, connect, translate } from "./ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 
@@ -10,8 +10,8 @@ import { Button } from "./TooltipControls";
 import update from "immutability-helper";
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 export interface IBaseProps {
   id: string;

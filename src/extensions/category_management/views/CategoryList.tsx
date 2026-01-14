@@ -3,9 +3,9 @@ import ActionDropdown from "../../../renderer/controls/ActionDropdown";
 import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IActionDefinition } from "../../../types/IActionDefinition";
-import { IComponentContext } from "../../../types/IComponentContext";
-import {
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IComponentContext } from "../../../types/IComponentContext";
+import type {
   DialogActions,
   DialogType,
   IConditionResult,
@@ -13,8 +13,8 @@ import {
   IDialogResult,
   IInput,
 } from "../../../types/IDialog";
-import { IErrorOptions } from "../../../types/IExtensionContext";
-import { IState } from "../../../types/IState";
+import type { IErrorOptions } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -24,7 +24,7 @@ import lazyRequire from "../../../util/lazyRequire";
 import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 
 import {
   removeCategory,
@@ -32,23 +32,27 @@ import {
   setCategory,
   setCategoryOrder,
 } from "../actions/category";
-import { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
-import { ICategoriesTree } from "../types/ITrees";
+import type {
+  ICategory,
+  ICategoryDictionary,
+} from "../types/ICategoryDictionary";
+import type { ICategoriesTree } from "../types/ITrees";
 import createTreeDataObject from "../util/createTreeDataObject";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
-import * as SortableTreeT from "react-sortable-tree";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as SortableTreeT from "react-sortable-tree";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
-import SortableTree, {
+import type {
   OnDragPreviousAndNextLocation,
   OnMovePreviousAndNextLocation,
   NodeData,
   FullTree,
 } from "react-sortable-tree";
+import SortableTree from "react-sortable-tree";
 
 const nop = () => undefined;
 

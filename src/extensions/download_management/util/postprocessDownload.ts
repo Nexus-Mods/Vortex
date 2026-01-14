@@ -1,4 +1,4 @@
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { delayed, toPromise } from "../../../util/util";
 import { log } from "../../../util/log";
 import {
@@ -11,7 +11,7 @@ import {
 import queryInfo from "./queryDLInfo";
 import { batchDispatch } from "../../../util/util";
 import path from "path";
-import { IHashResult } from "modmeta-db";
+import type { IHashResult } from "modmeta-db";
 
 export function finalizeDownload(
   api: IExtensionApi,

@@ -1,4 +1,4 @@
-import { IChunk } from "./IChunk";
+import type { IChunk } from "./IChunk";
 
 export type ProgressCallback = (
   received: number,

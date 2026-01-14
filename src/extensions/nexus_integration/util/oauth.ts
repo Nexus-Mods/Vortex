@@ -1,7 +1,6 @@
-/* eslint-disable */
 import * as http from "node:http";
 import * as https from "node:https";
-import { AddressInfo } from "node:net";
+import type { AddressInfo } from "node:net";
 import * as querystring from "node:querystring";
 import * as url from "node:url";
 import { log } from "../../../util/log";
@@ -39,9 +38,8 @@ interface IOAuthServerSettings {
   getRedirectUrl?: (port: number) => string; // New way to get redirect URL
 }
 
-/* eslint-disable max-len */
 function makeResultPage(success: boolean) {
-  var html = [];
+  const html = [];
 
   html.push(
     `<!DOCTYPE html>
@@ -84,7 +82,6 @@ function makeResultPage(success: boolean) {
 
   return html.join("");
 }
-/* eslint-enable max-len */
 
 /**
  * deals with token exchange for OAuth2

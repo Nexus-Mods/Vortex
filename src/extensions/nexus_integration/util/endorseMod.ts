@@ -1,4 +1,4 @@
-import NexusT from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
 import Promise from "bluebird";
 
 /**

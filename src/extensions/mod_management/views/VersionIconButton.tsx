@@ -2,12 +2,13 @@ import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IDownload } from "../../download_management/types/IDownload";
+import type { IDownload } from "../../download_management/types/IDownload";
 
-import { IModWithState } from "../types/IModProps";
-import { isIdValid, UpdateState } from "../util/modUpdateState";
+import type { IModWithState } from "../types/IModProps";
+import type { UpdateState } from "../util/modUpdateState";
+import { isIdValid } from "../util/modUpdateState";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 export interface IBaseProps {

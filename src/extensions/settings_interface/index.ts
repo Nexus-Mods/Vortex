@@ -1,5 +1,5 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import { setTimeMode } from "../../util/relativeTime";
 import automationReducer from "./reducers/automation";
 import settingsReducer from "./reducers/interface";

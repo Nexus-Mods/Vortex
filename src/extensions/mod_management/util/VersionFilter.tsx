@@ -1,4 +1,7 @@
-import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import type {
+  IFilterProps,
+  ITableFilter,
+} from "../../../types/ITableAttribute";
 
 import updateState, { isIdValid } from "./modUpdateState";
 

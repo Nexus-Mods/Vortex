@@ -12,7 +12,7 @@ import { ButtonDemo } from "../../../tailwind/components/next/button/ButtonDemo"
 import { CollectionTileDemo } from "../../../tailwind/components/next/collectiontile/CollectionTileDemo";
 import { InputDemo, SelectDemo } from "../../../tailwind/components/next/form";
 import { TabsDemo } from "../../../tailwind/components/next/tabs/TabsDemo";
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 interface ITailwindPageProps {
   // Props passed from extension context

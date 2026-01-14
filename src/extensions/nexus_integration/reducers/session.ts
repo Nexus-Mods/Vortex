@@ -1,4 +1,4 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { addUniqueSafe, removeValue, setSafe } from "../../../util/storeHelper";
 
 import * as actions from "../actions/session";

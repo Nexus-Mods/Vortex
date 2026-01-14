@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import * as url from "url";
 import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
 
-import {
+import type {
   IItemRendererOptions,
   ILoadOrder,
   ILoadOrderDisplayItem,
@@ -13,7 +13,7 @@ import {
 } from "../types/types";
 
 import { Icon } from "../../../renderer/controls/api";
-import { IProfile, IState } from "../../../types/api";
+import type { IProfile, IState } from "../../../types/api";
 
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";

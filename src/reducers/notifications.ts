@@ -1,5 +1,5 @@
 import * as actions from "../actions/notifications";
-import { IReducerSpec } from "../types/IExtensionContext";
+import type { IReducerSpec } from "../types/IExtensionContext";
 
 import { getSafe, pushSafe, removeValueIf, setSafe } from "../util/storeHelper";
 

@@ -7,10 +7,11 @@ import path from "path";
 import extractExeIcon from "../../util/exeIcon";
 import { ProcessCanceled } from "../../util/CustomErrors";
 
-import { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import { IEditStarterInfo } from "./types";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IEditStarterInfo } from "./types";
 
-import StarterInfo, { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../util/StarterInfo";
+import StarterInfo from "../../util/StarterInfo";
 
 import { truthy } from "../../util/util";
 

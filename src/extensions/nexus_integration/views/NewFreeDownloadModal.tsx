@@ -1,5 +1,5 @@
 import * as React from "react";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import { Button, Panel } from "react-bootstrap";
 import Image from "../../../renderer/controls/Image";

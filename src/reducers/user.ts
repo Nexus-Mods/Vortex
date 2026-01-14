@@ -1,5 +1,5 @@
 import * as actions from "../actions/user";
-import { IReducerSpec } from "../types/IExtensionContext";
+import type { IReducerSpec } from "../types/IExtensionContext";
 import { setSafe } from "../util/storeHelper";
 
 export const userReducer: IReducerSpec = {

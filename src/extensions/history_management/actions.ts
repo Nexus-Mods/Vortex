@@ -1,5 +1,5 @@
 import safeCreateAction from "../../actions/safeCreateAction";
-import { IHistoryEvent } from "./types";
+import type { IHistoryEvent } from "./types";
 
 export const addHistoryEvent = safeCreateAction(
   "HISTORY_ADD_EVENT",

@@ -1,29 +1,29 @@
 import { setSettingsPage } from "../../actions/session";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
+import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 
-import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
-import LinkingDeployment, {
-  IDeployment,
-} from "../mod_management/LinkingDeployment";
+import type { IDeployment } from "../mod_management/LinkingDeployment";
+import LinkingDeployment from "../mod_management/LinkingDeployment";
 import { installPathForGame } from "../mod_management/selectors";
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
-import turbowalk, { IEntry } from "turbowalk";
+import type { IEntry } from "turbowalk";
+import turbowalk from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
 

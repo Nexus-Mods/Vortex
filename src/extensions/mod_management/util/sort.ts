@@ -1,17 +1,17 @@
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 
 import { downloadPathForGame } from "../../download_management/selectors";
 
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 
 import testModReference, { isFuzzyVersion } from "./testModReference";
 
 import Promise from "bluebird";
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";
-import { ILookupResult, IReference, IRule } from "modmeta-db";
+import type { ILookupResult, IReference, IRule } from "modmeta-db";
 import * as path from "path";
 import { setModAttribute } from "../actions/mods";
 

@@ -1,16 +1,16 @@
-/* eslint-disable */
 import {
   setDownloadModInfo,
   setForcedLogout,
   setModAttribute,
 } from "../../actions";
-import { IDialogResult, showDialog } from "../../actions/notifications";
-import {
+import type { IDialogResult } from "../../actions/notifications";
+import { showDialog } from "../../actions/notifications";
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IModLookupResult } from "../../types/IModLookupResult";
-import { IState } from "../../types/IState";
+import type { IModLookupResult } from "../../types/IModLookupResult";
+import type { IState } from "../../types/IState";
 import { getApplication } from "../../util/application";
 import {
   DataInvalid,
@@ -23,7 +23,8 @@ import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import { log, LogLevel } from "../../util/log";
+import type { LogLevel } from "../../util/log";
+import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
 import presetManager from "../../util/PresetManager";
@@ -44,13 +45,13 @@ import {
   Campaign,
 } from "../../util/util";
 
-import { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
+import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import { DownloadIsHTML } from "../download_management/DownloadManager";
-import { IGameStored } from "../gamemode_management/types/IGameStored";
-import { IMod, IModRepoId } from "../mod_management/types/IMod";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IMod, IModRepoId } from "../mod_management/types/IMod";
 
-import { IDownload } from "../download_management/types/IDownload";
-import { IResolvedURL } from "../download_management/types/ProtocolHandlers";
+import type { IDownload } from "../download_management/types/IDownload";
+import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import {
   isDownloadIdValid,
@@ -68,7 +69,7 @@ import { accountReducer } from "./reducers/account";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
-import { INexusAPIExtension } from "./types/INexusAPIExtension";
+import type { INexusAPIExtension } from "./types/INexusAPIExtension";
 import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
 import {
   fillNexusIdByMD5,
@@ -103,13 +104,13 @@ import {
 import * as eh from "./eventHandlers";
 import NXMUrl from "./NXMUrl";
 import * as sel from "./selectors";
+import type { IRemoteInfo } from "./util";
 import {
   bringToFront,
   endorseThing,
   ensureLoggedIn,
   getCollectionInfo,
   getInfo,
-  IRemoteInfo,
   nexusGames,
   nexusGamesProm,
   oauthCallback,
@@ -123,7 +124,7 @@ import {
 } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
 
-import NexusT, {
+import type {
   IDownloadURL,
   IFileInfo,
   IFileUpdate,
@@ -133,20 +134,19 @@ import NexusT, {
   IRevision,
   IRevisionQuery,
   IValidateKeyResponse,
-  NexusError,
-  RateLimitError,
-  TimeoutError,
 } from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
+import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 
 import Promise from "bluebird";
 import * as fuzz from "fuzzball";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { Action } from "redux";
+import type { Action } from "redux";
 import {} from "uuid";
-import { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../../types/IComponentContext";
 import { MainContext } from "../../renderer/views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
 import { selectors } from "vortex-api";

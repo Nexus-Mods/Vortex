@@ -2,7 +2,7 @@ import Modal from "../../../renderer/controls/Modal";
 import Table from "../../../renderer/controls/Table";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
-import { ITableAttribute } from "../../../types/ITableAttribute";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -15,13 +15,13 @@ import {
   setExternalChangeAction,
 } from "../actions/session";
 
-import { FileAction, IFileEntry } from "../types/IFileEntry";
+import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import update from "immutability-helper";
 import * as React from "react";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 // Adding these to assist with capturing and debugging
 //  invalid action errors - will remove this once we're able

@@ -1,8 +1,8 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
 
-import { IFileChange } from "../types/IDeploymentMethod";
-import { IFileEntry } from "../types/IFileEntry";
+import type { IFileChange } from "../types/IDeploymentMethod";
+import type { IFileEntry } from "../types/IFileEntry";
 import { changeToEntry } from "../util/externalChanges";
 
 export interface IDeploymentProblem {

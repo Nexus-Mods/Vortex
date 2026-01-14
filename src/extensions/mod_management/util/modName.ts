@@ -1,6 +1,6 @@
 import { getSafe } from "../../../util/storeHelper";
 
-import { IMod, IModReference } from "../types/IMod";
+import type { IMod, IModReference } from "../types/IMod";
 
 export interface INameOptions {
   version?: boolean;

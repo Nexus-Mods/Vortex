@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   HTTPError,
   ProcessCanceled,
@@ -9,12 +8,12 @@ import makeRemoteCall from "../../util/electronRemote";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { delayed, INVALID_FILENAME_RE, truthy } from "../../util/util";
-import { IChunk } from "./types/IChunk";
-import { IDownloadOptions } from "./types/IDownload";
-import { IDownloadJob } from "./types/IDownloadJob";
-import { IDownloadResult } from "./types/IDownloadResult";
-import { ProgressCallback } from "./types/ProgressCallback";
-import {
+import type { IChunk } from "./types/IChunk";
+import type { IDownloadOptions } from "./types/IDownload";
+import type { IDownloadJob } from "./types/IDownloadJob";
+import type { IDownloadResult } from "./types/IDownloadResult";
+import type { ProgressCallback } from "./types/ProgressCallback";
+import type {
   IProtocolHandlers,
   IResolvedURL,
   IResolvedURLs,
@@ -32,9 +31,9 @@ import * as http from "http";
 import * as https from "https";
 import * as _ from "lodash";
 import * as path from "path";
-import * as stream from "stream";
+import type * as stream from "stream";
 import * as zlib from "zlib";
-import { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 
@@ -1717,8 +1716,8 @@ class DownloadManager {
   };
 
   private tickQueue(verbose: boolean = true) {
-    let busyWorkerIds = Object.keys(this.mBusyWorkers);
-    let busyCount = busyWorkerIds.reduce((count, key) => {
+    const busyWorkerIds = Object.keys(this.mBusyWorkers);
+    const busyCount = busyWorkerIds.reduce((count, key) => {
       const worker = this.mBusyWorkers[key];
       return (
         count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0)

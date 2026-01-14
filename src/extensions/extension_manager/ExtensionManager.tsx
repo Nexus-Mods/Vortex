@@ -4,17 +4,19 @@ import {
   setExtensionEnabled,
   setExtensionEndorsed,
 } from "../../actions/app";
-import Dropzone, { DropType } from "../../renderer/controls/Dropzone";
+import type { DropType } from "../../renderer/controls/Dropzone";
+import Dropzone from "../../renderer/controls/Dropzone";
 import FlexLayout from "../../renderer/controls/FlexLayout";
 import IconBar from "../../renderer/controls/IconBar";
-import Table, { ITableRowAction } from "../../renderer/controls/Table";
+import type { ITableRowAction } from "../../renderer/controls/Table";
+import Table from "../../renderer/controls/Table";
 import ToolbarIcon from "../../renderer/controls/ToolbarIcon";
-import {
+import type {
   IExtensionLoadFailure,
   IExtensionState,
   IState,
 } from "../../types/IState";
-import { ITableAttribute } from "../../types/ITableAttribute";
+import type { ITableAttribute } from "../../types/ITableAttribute";
 import { relaunch } from "../../util/commandLine";
 import {
   ComponentEx,
@@ -26,21 +28,21 @@ import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import MainPage from "../../renderer/views/MainPage";
 
-import { IDownload } from "../download_management/types/IDownload";
+import type { IDownload } from "../download_management/types/IDownload";
 import { SITE_ID } from "../gamemode_management/constants";
 
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
-import { IExtension, IExtensionWithState } from "./types";
+import type { IExtension, IExtensionWithState } from "./types";
 
-import { EndorsedStatus } from "@nexusmods/nexus-api";
+import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import Promise from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
 import * as React from "react";
 import { Alert, Button, Panel } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 export interface IExtensionManagerProps {
   localState: {

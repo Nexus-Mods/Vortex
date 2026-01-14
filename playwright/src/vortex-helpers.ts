@@ -1,8 +1,9 @@
 /* eslint-disable max-lines-per-function */
 import path from 'path';
 import fs from 'fs';
-import { _electron as electron, ElectronApplication, Page } from '@playwright/test';
-import { ChildProcess } from 'child_process';
+import type { ElectronApplication, Page } from '@playwright/test';
+import { _electron as electron } from '@playwright/test';
+import type { ChildProcess } from 'child_process';
 
 interface WindowInfo {
   url: string;

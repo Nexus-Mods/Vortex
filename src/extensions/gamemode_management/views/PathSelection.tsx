@@ -6,15 +6,16 @@ import {
   ListGroup,
   ListGroupItem,
 } from "react-bootstrap";
-import { withTranslation, WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
+import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { setGameSearchPaths } from "../../../actions";
 import Icon from "../../../renderer/controls/Icon";
 import Modal from "../../../renderer/controls/Modal";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IState } from "../../../types/IState";
-import { TFunction } from "../../../util/i18n";
+import type { IState } from "../../../types/IState";
+import type { TFunction } from "../../../util/i18n";
 
 export interface IGameSelectionDialogProps {
   visible: boolean;

@@ -1,19 +1,18 @@
-/* eslint-disable */
 import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import OptionsFilter, {
-  ISelectOption,
+  type ISelectOption,
 } from "../../renderer/controls/table/OptionsFilter";
-import {
+import type {
   GameInfoQuery,
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
+import type { IGame } from "../../types/IGame";
 import isIGame from "../../types/IGame.validator";
-import { IGameStore } from "../../types/IGameStore";
-import { IProfile, IRunningTool, IState } from "../../types/IState";
-import { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
+import type { IGameStore } from "../../types/IGameStore";
+import type { IProfile, IRunningTool, IState } from "../../types/IState";
+import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import {
   DataInvalid,
@@ -34,9 +33,9 @@ import { getSafe } from "../../util/storeHelper";
 
 import { batchDispatch } from "../../util/util";
 
-import { IExtensionDownloadInfo } from "../extension_manager/types";
+import type { IExtensionDownloadInfo } from "../extension_manager/types";
 import { setModType } from "../mod_management/actions/mods";
-import { IModWithState } from "../mod_management/views/CheckModVersionsButton";
+import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
 
@@ -51,9 +50,9 @@ import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
-import { IDiscoveryResult } from "./types/IDiscoveryResult";
-import { IGameStored } from "./types/IGameStored";
-import { IModType } from "./types/IModType";
+import type { IDiscoveryResult } from "./types/IDiscoveryResult";
+import type { IGameStored } from "./types/IGameStored";
+import type { IModType } from "./types/IModType";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
 import {
@@ -70,7 +69,8 @@ import PathSelectionDialog from "./views/PathSelection";
 import ProgressFooter from "./views/ProgressFooter";
 import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
 
-import GameModeManager, { IGameStub } from "./GameModeManager";
+import type GameModeManager from "./GameModeManager";
+import { type IGameStub } from "./GameModeManager";
 import {
   currentGame,
   currentGameDiscovery,
@@ -81,7 +81,7 @@ import {
 import Promise from "bluebird";
 import * as fsExtra from "fs-extra";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as semver from "semver";
 import React from "react";
 

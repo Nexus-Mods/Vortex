@@ -1,9 +1,9 @@
-import { IPersistor, PersistorKey } from "../types/IExtensionContext";
+import type { IPersistor, PersistorKey } from "../types/IExtensionContext";
 import { terminate } from "../util/errorHandling";
 import { log } from "../util/log";
 
 import Promise from "bluebird";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 function isObject(state: unknown): state is object {
   return state !== null && typeof state === "object" && !Array.isArray(state);

@@ -1,4 +1,4 @@
-import { ValidationState } from "../../types/ITableAttribute";
+import type { ValidationState } from "../../types/ITableAttribute";
 import Debouncer from "../../util/Debouncer";
 import { isFunction } from "../../util/util";
 

@@ -1,14 +1,14 @@
 import { setSettingsPage } from "../../actions/session";
 import Icon from "../../renderer/controls/Icon";
 import Spinner from "../../renderer/controls/Spinner";
-import { IExtensionApi, ToDoType } from "../../types/IExtensionContext";
+import type { IExtensionApi, ToDoType } from "../../types/IExtensionContext";
 import * as selectors from "../../util/selectors";
 
 import { setProfilesVisible } from "../settings_interface/actions/interface";
 
-import { IToDo } from "./IToDo";
+import type { IToDo } from "./IToDo";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import * as winapi from "winapi-bindings";
 

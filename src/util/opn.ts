@@ -2,7 +2,7 @@ import { log } from "./log";
 
 import Promise from "bluebird";
 import * as path from "path";
-import * as winapiT from "winapi-bindings";
+import type * as winapiT from "winapi-bindings";
 
 import { ipcMain, ipcRenderer, shell } from "electron";
 import { getErrorMessage } from "../shared/errors";

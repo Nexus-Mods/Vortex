@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { SourceMapConsumer, NullableMappedPosition } from 'source-map';
+import type { NullableMappedPosition } from 'source-map';
+import { SourceMapConsumer } from 'source-map';
 
 const sourceMappingRE = /^\/\/# sourceMappingURL=([a-zA-Z0-9._\-\/\\]+)$/;
 

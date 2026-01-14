@@ -1,10 +1,11 @@
-import {
+import type {
   IEditChoice,
   ITableAttribute,
   ValidationState,
 } from "../../../types/ITableAttribute";
 import { ComponentEx } from "../ComponentEx";
-import { preT, TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
+import { preT } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 

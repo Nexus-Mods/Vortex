@@ -1,4 +1,4 @@
-import { ILookupResult } from "modmeta-db";
+import type { ILookupResult } from "modmeta-db";
 
 function metaLookupMatch(
   input: ILookupResult[],

@@ -2,7 +2,7 @@ import Dropdown from "./Dropdown";
 
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { SelectCallback } from "react-bootstrap";
+import type { SelectCallback } from "react-bootstrap";
 import { Overlay } from "react-overlays";
 
 interface IPortalMenuProps {

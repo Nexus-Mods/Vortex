@@ -6,7 +6,7 @@ import { MainContext } from "../../renderer/views/MainWindow";
 import { activeGameId } from "../profile_management/selectors";
 import BaseDashlet from "./BaseDashlet";
 import { MAX_SUMMARY_LENGTH } from "./constants";
-import { IExtra, IListItem, IModListItem } from "./types";
+import type { IExtra, IListItem, IModListItem } from "./types";
 
 export interface ILatestModsDashletProps {
   title: string;

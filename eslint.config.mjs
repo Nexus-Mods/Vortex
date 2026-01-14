@@ -47,6 +47,12 @@ export default defineConfig([
     },
   },
   {
+    name: "Migrating Webpack to Vite",
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "error",
+    },
+  },
+  {
     // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)
     name: "Vortex legacy config",
     rules: {

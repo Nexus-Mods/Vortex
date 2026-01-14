@@ -1,6 +1,6 @@
-import { IModInfo } from "modmeta-db";
-import { IDependency } from "../types/IDependency";
-import { IMod } from "../types/IMod";
+import type { IModInfo } from "modmeta-db";
+import type { IDependency } from "../types/IDependency";
+import type { IMod } from "../types/IMod";
 
 /**
  * Converts a dependency object to an IModInfo object

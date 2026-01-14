@@ -1,15 +1,15 @@
 import { addNotification } from "../../actions/notifications";
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { DirectoryCleaningMode, IGame } from "../../types/IGame";
-import { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { DirectoryCleaningMode, IGame } from "../../types/IGame";
+import type { IState } from "../../types/IState";
 import { getGame, UserCanceled } from "../../util/api";
 import * as fs from "../../util/fs";
-import { Normalize } from "../../util/getNormalizeFunc";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { activeGameId } from "../../util/selectors";
 import { truthy } from "../../util/util";
 
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IFileChange,
@@ -17,11 +17,12 @@ import {
 } from "./types/IDeploymentMethod";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as path from "path";
-import turbowalk, { IEntry } from "turbowalk";
-import BlacklistSet from "./util/BlacklistSet";
+import type { IEntry } from "turbowalk";
+import turbowalk from "turbowalk";
+import type BlacklistSet from "./util/BlacklistSet";
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;

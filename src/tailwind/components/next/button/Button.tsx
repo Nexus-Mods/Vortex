@@ -6,7 +6,7 @@
  */
 
 import * as React from "react";
-import {
+import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   ComponentProps,
@@ -18,8 +18,9 @@ import {
 import { Icon } from "../icon";
 import { Link } from "../link";
 import { Typography } from "../typography/Typography";
-import { TypographyProps } from "../typography/Typography";
-import { XOr, joinClasses } from "../utils";
+import type { TypographyProps } from "../typography/Typography";
+import type { XOr } from "../utils";
+import { joinClasses } from "../utils";
 
 export type ButtonType =
   | "primary"

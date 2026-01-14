@@ -1,12 +1,10 @@
-import { IActionDefinition } from "../../types/IActionDefinition";
-import { IExtensibleProps } from "../../types/IExtensionProvider";
-import { TFunction } from "../../util/i18n";
+import type { IActionDefinition } from "../../types/IActionDefinition";
+import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { TFunction } from "../../util/i18n";
 import { setdefault } from "../../util/util";
 
-import ActionControl, {
-  IActionControlProps,
-  IActionDefinitionEx,
-} from "./ActionControl";
+import type { IActionControlProps, IActionDefinitionEx } from "./ActionControl";
+import ActionControl from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
 import Icon from "./Icon";
 import PortalMenu from "./PortalMenu";

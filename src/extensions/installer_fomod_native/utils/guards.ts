@@ -1,4 +1,4 @@
-import { ILoadOrderEntry, IState } from "../../../types/api";
+import type { ILoadOrderEntry, IState } from "../../../types/api";
 import { nameof } from "../../../util/nameof";
 
 type IStatePersistent = IState["persistent"];

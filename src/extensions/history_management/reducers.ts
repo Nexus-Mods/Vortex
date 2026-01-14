@@ -1,4 +1,5 @@
-import { addReducer, IReducerSpec } from "../../types/IExtensionContext";
+import type { IReducerSpec } from "../../types/IExtensionContext";
+import { addReducer } from "../../types/IExtensionContext";
 import {
   getSafe,
   pushSafe,
@@ -7,7 +8,7 @@ import {
 } from "../../util/storeHelper";
 
 import * as actions from "./actions";
-import { IHistoryEvent, IHistoryStack } from "./types";
+import type { IHistoryEvent } from "./types";
 
 export interface IHistoryPersistent {
   historyStacks: { [key: string]: IHistoryEvent[] };

@@ -1,7 +1,7 @@
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-import { IModWithState } from "../types/IModProps";
+import type { IModWithState } from "../types/IModProps";
 
 import { coerce, compare, valid } from "semver";
 

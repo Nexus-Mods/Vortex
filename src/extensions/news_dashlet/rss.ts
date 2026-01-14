@@ -1,5 +1,5 @@
 import FeedParser from "feedparser";
-import { IncomingMessage } from "http";
+import type { IncomingMessage } from "http";
 import { get } from "https";
 import * as url from "url";
 

@@ -19,7 +19,7 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
-import { TFunction } from "./i18n";
+import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
@@ -53,7 +53,8 @@ const dialog =
       require("@electron/remote").dialog
     : dialogIn;
 
-export { constants, FSWatcher, Stats, WriteStream } from "fs";
+export { constants, Stats, WriteStream } from "fs";
+export type { FSWatcher } from "fs";
 
 // simple re-export of functions we don't touch (yet)
 export {

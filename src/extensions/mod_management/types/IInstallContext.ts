@@ -1,4 +1,4 @@
-import { IMod } from "./IMod";
+import type { IMod } from "./IMod";
 
 export type InstallOutcome = "success" | "failed" | "canceled" | "ignore";
 

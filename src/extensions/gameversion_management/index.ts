@@ -1,9 +1,9 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import local from "../../util/local";
 import { wrapExtCBAsync } from "../../util/util";
 
 import GameVersionManager from "./GameVersionManager";
-import {
+import type {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IGameVersionProvider,

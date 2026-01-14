@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);

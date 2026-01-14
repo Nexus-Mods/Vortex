@@ -5,4 +5,4 @@
 // uninstalling.
 type VortexInstallType = "regular" | "managed";
 
-export default VortexInstallType;
+export type { VortexInstallType };

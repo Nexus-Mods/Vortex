@@ -6,10 +6,10 @@
  */
 
 import * as React from "react";
-import { HTMLAttributes, ReactNode, Ref } from "react";
+import type { HTMLAttributes, ReactNode, Ref } from "react";
 
 import { Typography } from "../../typography/Typography";
-import { TypographyTypes } from "../../typography/Typography";
+import type { TypographyTypes } from "../../typography/Typography";
 import { joinClasses } from "../../utils";
 
 export interface BaseFormFieldProps {

@@ -1,10 +1,11 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import opn from "../../util/opn";
 import { currentGame } from "../../util/storeHelper";
 import { dismissOverlay } from "../instructions_overlay/actions";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 import { nexusGameId } from "../nexus_integration/util/convertGameId";
-import Dashlet, { IOnCardClickPayload } from "./Dashlet";
+import type { IOnCardClickPayload } from "./Dashlet";
+import Dashlet from "./Dashlet";
 import settingsReducer from "./reducers";
 import { STEPS } from "./steps";
 import { Overlay } from "./views/Overlay";

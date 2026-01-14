@@ -1,4 +1,4 @@
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
@@ -6,7 +6,8 @@ import { UserCanceled } from "../../util/CustomErrors";
 import { getSafe } from "../../util/storeHelper";
 import { makeQueue, setdefault } from "../../util/util";
 
-import BrowserView, { SubscriptionResult } from "./views/BrowserView";
+import type { SubscriptionResult } from "./views/BrowserView";
+import BrowserView from "./views/BrowserView";
 
 import { closeBrowser, showURL } from "./actions";
 import { sessionReducer } from "./reducers";
@@ -15,7 +16,7 @@ import Promise from "bluebird";
 import { ipcRenderer } from "electron";
 import { generate as shortid } from "shortid";
 import * as url from "url";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 
 type SubscriptionFunction = (eventId: string, value: any) => SubscriptionResult;
 

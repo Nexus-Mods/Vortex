@@ -1,12 +1,12 @@
 import { showDialog } from "../../../actions/notifications";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IGame } from "../../../types/IGame";
-import { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
+import type { IState } from "../../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { writeFileAtomic } from "../../../util/fsAtomic";
 import getVortexPath from "../../../util/getVortexPath";
-import { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import {
   activeGameId,
@@ -18,16 +18,19 @@ import { deBOM, makeQueue, truthy } from "../../../util/util";
 
 import { getGame } from "../../gamemode_management/util/getGame";
 
-import {
+import type {
   IDeploymentManifest,
   ManifestFormat,
 } from "../types/IDeploymentManifest";
-import { IDeployedFile, IDeploymentMethod } from "../types/IDeploymentMethod";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+} from "../types/IDeploymentMethod";
 
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import format_1 from "./manifest_formats/format_1";
 
-import msgpackT from "@msgpack/msgpack";
+import type msgpackT from "@msgpack/msgpack";
 import Bluebird from "bluebird";
 import * as path from "path";
 import { sync as writeAtomicSync } from "write-file-atomic";

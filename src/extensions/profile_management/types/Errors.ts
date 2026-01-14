@@ -1,4 +1,4 @@
-import { IProfile } from "./IProfile";
+import type { IProfile } from "./IProfile";
 
 export class CorruptActiveProfile extends Error {
   constructor(profile: IProfile) {

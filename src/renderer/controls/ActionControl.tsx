@@ -1,10 +1,10 @@
 import { getErrorMessage } from "../../shared/errors";
-import {
+import type {
   ActionFunc,
   IActionDefinition,
   IActionOptions,
 } from "../../types/IActionDefinition";
-import { IRegisteredExtension } from "../../util/ExtensionManager";
+import type { IRegisteredExtension } from "../../util/ExtensionManager";
 import { extend } from "../../util/ExtensionProvider";
 
 import * as _ from "lodash";

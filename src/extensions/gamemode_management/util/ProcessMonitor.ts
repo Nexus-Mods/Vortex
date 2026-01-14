@@ -1,16 +1,16 @@
 import { setToolPid, setToolStopped } from "../../../actions";
 import { makeExeId } from "../../../reducers/session";
-import { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IState } from "../../../types/IState";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
 import { currentGame, currentGameDiscovery } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { setdefault } from "../../../util/util";
 
-import { BrowserWindow } from "electron";
+import type { BrowserWindow } from "electron";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as winapi from "winapi-bindings";
 
 class ProcessMonitor {

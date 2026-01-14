@@ -9,7 +9,7 @@ import { IconButton } from "./TooltipControls";
 import * as _ from "lodash";
 import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
 import { getApplication } from "../../util/application";
 import { unknownToError } from "../../shared/errors";
 

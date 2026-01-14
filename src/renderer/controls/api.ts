@@ -28,8 +28,8 @@ import SelectUpDown from "./SelectUpDown";
 import Spinner from "./Spinner";
 import Steps from "./Steps";
 import Table, {
-  ChangeDataHandler,
-  ITableRowAction,
+  type ChangeDataHandler,
+  type ITableRowAction,
   makeGetSelection,
 } from "./Table";
 import TableDateTimeFilter from "./table/DateTimeFilter";
@@ -54,7 +54,7 @@ export {
   ActionDropdown,
   Advanced,
   Banner,
-  ChangeDataHandler,
+  type ChangeDataHandler,
   ContextMenu,
   Dashlet,
   DraggableList,
@@ -72,7 +72,7 @@ export {
   Icon,
   IconBar,
   Image,
-  ITableRowAction,
+  type ITableRowAction,
   LoadOrderIndexInput,
   makeGetSelection,
   Modal,

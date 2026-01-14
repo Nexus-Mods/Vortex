@@ -1,6 +1,6 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
 import Placeholder from "../../../renderer/controls/EmptyPlaceholder";
-import { IProfile, IState } from "../../../types/IState";
+import type { IProfile, IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -10,8 +10,8 @@ import { getSafe } from "../../../util/storeHelper";
 
 import { activeGameId } from "../../profile_management/selectors";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IGameStored } from "../types/IGameStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
 import GameThumbnail from "./GameThumbnail";
 

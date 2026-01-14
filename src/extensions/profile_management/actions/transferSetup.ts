@@ -1,7 +1,5 @@
 import { createAction } from "redux-act";
 
-import { IProfile } from "../types/IProfile";
-
 export const setSource = createAction(
   "SET_PROFILE_CONNECTION_SOURCE",
   (id: string, pos: { x: number; y: number }) => ({ id, pos }),

@@ -1,6 +1,6 @@
-import { IPersistor, PersistorKey } from "../types/IExtensionContext";
+import type { IPersistor, PersistorKey } from "../types/IExtensionContext";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 
 class SubPersistor implements IPersistor {
   public getAllKVs: () => Promise<Array<{ key: string[]; value: string }>> =

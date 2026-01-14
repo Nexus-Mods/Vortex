@@ -3,16 +3,16 @@ import {
   fireNotificationAction,
 } from "../../actions/notifications";
 import { suppressNotification } from "../../actions/notificationSettings";
-import {
+import type {
   INotification,
   INotificationAction,
-  NotificationType,
 } from "../../types/INotification";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 
 import Icon from "../controls/Icon";
-import RadialProgress, { IBar } from "../controls/RadialProgress";
+import type { IBar } from "../controls/RadialProgress";
+import RadialProgress from "../controls/RadialProgress";
 import Debouncer from "../../util/Debouncer";
 import Notification from "./Notification";
 

@@ -4,14 +4,15 @@ import { setCustomTitlebar } from "../../actions/window";
 
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../types/IDialog";
-import { IState } from "../../types/IState";
-import { IParameters, relaunch } from "../../util/commandLine";
+import type { IState } from "../../types/IState";
+import type { IParameters } from "../../util/commandLine";
+import { relaunch } from "../../util/commandLine";
 import {
   ComponentEx,
   connect,
@@ -22,7 +23,7 @@ import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import { truthy } from "../../util/util";
 
-import {
+import type {
   IAvailableExtension,
   IExtensionDownloadInfo,
 } from "../extension_manager/types";
@@ -63,8 +64,8 @@ import {
   HelpBlock,
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 

@@ -1,7 +1,7 @@
-import { IInstallResult } from "./IInstallResult";
+import type { IInstallResult } from "./IInstallResult";
 
-import Promise from "bluebird";
-import { IModReference } from "./IMod";
+import type Promise from "bluebird";
+import type { IModReference } from "./IMod";
 
 export type ProgressDelegate = (perc: number) => void;
 export interface IInstallationDetails {

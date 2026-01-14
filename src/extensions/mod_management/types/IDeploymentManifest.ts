@@ -1,4 +1,4 @@
-import { IDeployedFile } from "./IDeploymentMethod";
+import type { IDeployedFile } from "./IDeploymentMethod";
 
 export interface IDeploymentManifest {
   version: number;

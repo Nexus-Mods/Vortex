@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   NEXUS_DOMAIN,
   NEXUS_FLAMEWORK_SUBDOMAIN,
@@ -8,7 +7,7 @@ import {
 } from "../extensions/nexus_integration/constants";
 
 import { TimeoutError } from "./CustomErrors";
-import { Normalize } from "./getNormalizeFunc";
+import type { Normalize } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 
@@ -17,7 +16,7 @@ import { spawn } from "child_process";
 import * as _ from "lodash";
 import * as path from "path";
 import * as process from "process";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { batch } from "redux-act";
 import * as semver from "semver";
 import * as tmp from "tmp";

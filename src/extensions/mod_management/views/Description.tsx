@@ -2,7 +2,7 @@ import Icon from "../../../renderer/controls/Icon";
 import bbcode from "../../../renderer/controls/bbcode";
 import { truthy } from "../../../util/util";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";

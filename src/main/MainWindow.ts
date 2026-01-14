@@ -4,24 +4,24 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "../actions/window";
-import { ThunkStore } from "../types/IExtensionContext";
-import { IState, IWindow } from "../types/IState";
+import type { ThunkStore } from "../types/IExtensionContext";
+import type { IState, IWindow } from "../types/IState";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
 import opn from "../util/opn";
 import { downloadPath } from "../util/selectors";
-import * as storeHelperT from "../util/storeHelper";
+import type * as storeHelperT from "../util/storeHelper";
 import { parseBool, truthy } from "../util/util";
 import { closeAllViews } from "../util/webview";
 
 import Promise from "bluebird";
 import { ipcMain, screen, webContents } from "electron";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { pathToFileURL } from "url";
-import TrayIcon from "./TrayIcon";
+import type TrayIcon from "./TrayIcon";
 import { getErrorMessage } from "../shared/errors";
 
 const MIN_HEIGHT = 700;

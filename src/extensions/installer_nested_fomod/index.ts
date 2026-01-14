@@ -6,7 +6,7 @@
 
 import Promise from "bluebird";
 import * as path from "path";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
   ISupportedResult,

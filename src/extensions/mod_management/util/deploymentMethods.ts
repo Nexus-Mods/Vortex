@@ -1,10 +1,10 @@
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { activeGameId } from "../../profile_management/selectors";
 
-import { IDeploymentMethod } from "../types/IDeploymentMethod";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 
 import allTypesSupported from "./allTypesSupported";
 

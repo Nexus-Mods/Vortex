@@ -84,13 +84,12 @@ import {
 import extractExeIcon from "./exeIcon";
 import { extend } from "./ExtensionProvider";
 import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
-import getNormalizeFunc, {
-  makeNormalizingDict,
-  Normalize,
-} from "./getNormalizeFunc";
+import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
+export type { Normalize } from "./getNormalizeFunc.ts";
 import getVortexPath from "./getVortexPath";
 import github from "./github";
-import { getCurrentLanguage, TFunction } from "./i18n";
+import type { TFunction } from "./i18n";
+import { getCurrentLanguage } from "./i18n";
 import LazyComponent from "../renderer/controls/LazyComponent";
 import lazyRequire from "./lazyRequire";
 import local from "./local";
@@ -101,7 +100,8 @@ import { getReduxLog } from "../store/reduxLogger";
 import ReduxProp from "../renderer/ReduxProp";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
-import steam, { GameNotFound, ISteamEntry } from "./Steam";
+import steam, { GameNotFound } from "./Steam";
+export type { ISteamEntry } from "./Steam.ts";
 import {
   batchDispatch,
   bytesToString,
@@ -129,7 +129,7 @@ import { Campaign, Section, Content, Overlayable } from "./util";
 import deepMerge from "./deepMerge";
 import walk from "./walk";
 
-import SevenZip = require("node-7z");
+import SevenZip from "node-7z";
 import { runElevated, runThreaded } from "vortex-run";
 
 import getTextModManagement from "../extensions/mod_management/texts";
@@ -216,7 +216,6 @@ export {
   MissingInterpreter,
   nexusGameId,
   nexusModsURL,
-  Normalize,
   NotFound,
   NotSupportedError,
   objDiff,
@@ -245,7 +244,6 @@ export {
   sortMods,
   StarterInfo,
   steam,
-  ISteamEntry,
   terminate,
   testModReference,
   testRefByIdentifiers,

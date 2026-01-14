@@ -6,8 +6,8 @@
 //
 
 import path from "path";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";

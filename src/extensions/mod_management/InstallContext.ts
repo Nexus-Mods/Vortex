@@ -4,9 +4,9 @@ import {
   updateNotification,
 } from "../../actions/notifications";
 import { startActivity, stopActivity } from "../../actions/session";
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { INotification } from "../../types/INotification";
-import { IDownload, IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { INotification } from "../../types/INotification";
+import type { IState } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
@@ -19,7 +19,7 @@ import {
 } from "../analytics/mixpanel/MixpanelEvents";
 
 import { setDownloadInstalled } from "../download_management/actions/state";
-import { NotificationAggregator } from "./NotificationAggregator";
+import type { NotificationAggregator } from "./NotificationAggregator";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import NXMUrl from "../nexus_integration/NXMUrl";
 import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
@@ -34,8 +34,8 @@ import {
   setModState,
   setModType,
 } from "./actions/mods";
-import { IInstallContext, InstallOutcome } from "./types/IInstallContext";
-import { IMod, ModState } from "./types/IMod";
+import type { IInstallContext, InstallOutcome } from "./types/IInstallContext";
+import type { IMod, ModState } from "./types/IMod";
 import getModName from "./util/modName";
 
 import Promise from "bluebird";

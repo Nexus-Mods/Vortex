@@ -1,4 +1,4 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import LazyComponent from "../../renderer/controls/LazyComponent";
 import settingsReducer from "./reducers";
 import {} from "./SettingsMetaserver";

@@ -1,8 +1,10 @@
 /* eslint-disable max-lines-per-function */
-import { Page, chromium, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext } from '@playwright/test';
+import { chromium } from '@playwright/test';
 import path from 'path';
 import dotenv from 'dotenv';
-import { launchRealChrome, closeRealChrome, ChromeBrowserInstance } from './chrome-browser-helpers';
+import type { ChromeBrowserInstance } from './chrome-browser-helpers';
+import { launchRealChrome, closeRealChrome } from './chrome-browser-helpers';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });

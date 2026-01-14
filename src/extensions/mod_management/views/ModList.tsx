@@ -1,25 +1,27 @@
 import { showDialog } from "../../../actions/notifications";
 import CollapseIcon from "../../../renderer/controls/CollapseIcon";
 import DropdownButton from "../../../renderer/controls/DropdownButton";
-import Dropzone, { DropType } from "../../../renderer/controls/Dropzone";
+import type { DropType } from "../../../renderer/controls/Dropzone";
+import Dropzone from "../../../renderer/controls/Dropzone";
 import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
-import SuperTable, { ITableRowAction } from "../../../renderer/controls/Table";
+import type { ITableRowAction } from "../../../renderer/controls/Table";
+import SuperTable from "../../../renderer/controls/Table";
 import OptionsFilter from "../../../renderer/controls/table/OptionsFilter";
 import TextFilter from "../../../renderer/controls/table/TextFilter";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import ZoomableImage from "../../../renderer/controls/ZoomableImage";
-import { IActionDefinition } from "../../../types/IActionDefinition";
-import {
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../../types/IDialog";
-import { IState } from "../../../types/IState";
-import { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IState } from "../../../types/IState";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
 import { withBatchContext } from "../../../util/BatchContext";
 import {
   ComponentEx,
@@ -45,19 +47,20 @@ import {
   setModEnabled,
   setModsEnabled,
 } from "../../profile_management/actions/profiles";
-import { IProfileMod } from "../../profile_management/types/IProfile";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import { IInstallOptions } from "../types/IInstallOptions";
-import { IMod } from "../types/IMod";
-import { IModProps } from "../types/IModProps";
-import { IModSource } from "../types/IModSource";
+import type { IInstallOptions } from "../types/IInstallOptions";
+import type { IMod } from "../types/IMod";
+import type { IModProps } from "../types/IModProps";
+import type { IModSource } from "../types/IModSource";
 import combineMods from "../util/combine";
 import filterModInfo from "../util/filterModInfo";
 import groupMods from "../util/modGrouping";
 import modName from "../util/modName";
-import modUpdateState, { isIdValid, UpdateState } from "../util/modUpdateState";
+import type { UpdateState } from "../util/modUpdateState";
+import modUpdateState, { isIdValid } from "../util/modUpdateState";
 import { removeMods } from "../util/removeMods";
 import VersionFilter from "../util/VersionFilter";
 import VersionChangelogButton from "../views/VersionChangelogButton";
@@ -72,14 +75,14 @@ import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import path from "path";
 import * as React from "react";
 import { Button, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
 import updateState from "../util/modUpdateState";
 

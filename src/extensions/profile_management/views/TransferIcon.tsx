@@ -1,5 +1,5 @@
 import * as tooltip from "../../../renderer/controls/TooltipControls";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import {
   setCreateTransfer,
@@ -7,24 +7,23 @@ import {
   setTarget,
 } from "../actions/transferSetup";
 import * as selectors from "../selectors";
-import { IProfile } from "../types/IProfile";
+import type { IProfile } from "../types/IProfile";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
-import {
+import type {
   ConnectDragPreview,
   ConnectDragSource,
   ConnectDropTarget,
-  DragSource,
   DragSourceConnector,
   DragSourceMonitor,
   DragSourceSpec,
-  DropTarget,
   DropTargetConnector,
   DropTargetMonitor,
   DropTargetSpec,
 } from "react-dnd";
+import { DragSource, DropTarget } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";

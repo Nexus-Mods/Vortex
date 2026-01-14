@@ -1,4 +1,4 @@
-import { IExtensionApi } from "../../../types/api";
+import type { IExtensionApi } from "../../../types/api";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";
 import { DialogManager } from "./DialogManager";

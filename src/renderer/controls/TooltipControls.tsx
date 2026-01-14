@@ -1,5 +1,5 @@
 import SvgIcon from "./Icon";
-import { ButtonType } from "./IconBar";
+import type { ButtonType } from "./IconBar";
 
 import update from "immutability-helper";
 import * as _ from "lodash";

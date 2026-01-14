@@ -1,9 +1,9 @@
 import Promise from "bluebird";
-import {
+import type {
   IDeploymentMethod,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
+import type { IGame } from "../../types/IGame";
 import { getGame } from "../gamemode_management/util/getGame";
 
 class DeploymentMethod implements IDeploymentMethod {

@@ -1,7 +1,7 @@
-import { IDownloadRemoveOptions } from "../types/IDownloadRemoveOptions";
-import { IDownloadResult } from "./IDownloadResult";
-import { IStartDownloadOptions } from "../types/IStartDownloadOptions";
-import { RedownloadMode } from "../DownloadManager";
+import type { IDownloadRemoveOptions } from "../types/IDownloadRemoveOptions";
+import type { IDownloadResult } from "./IDownloadResult";
+import type { IStartDownloadOptions } from "../types/IStartDownloadOptions";
+import type { RedownloadMode } from "../DownloadManager";
 
 export interface IDownloadsAPIExtension {
   removeDownload?: (

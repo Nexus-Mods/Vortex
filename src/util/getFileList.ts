@@ -1,7 +1,7 @@
 import walk from "./walk";
 
 import Promise from "bluebird";
-import * as fs from "fs";
+import type * as fs from "fs";
 
 export interface IFileEntry {
   filePath: string;
