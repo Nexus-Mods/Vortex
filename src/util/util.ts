@@ -175,11 +175,14 @@ export function objDiff(
   return res;
 }
 
-export function restackErr(error: Error, stackErr: Error): Error {
-  if (error === null || typeof error !== "object") {
-    return error;
+/** @deprecated */
+export function restackErr(error: unknown, stackErr: Error): Error {
+  if (!(error instanceof Error)) {
+    return stackErr;
   }
+
   const oldGetStack = error.stack;
+
   // resolve the stack at the last possible moment because stack is actually a getter
   // that will apply expensive source mapping when called
   Object.defineProperty(error, "stack", {
@@ -189,8 +192,9 @@ export function restackErr(error: Error, stackErr: Error): Error {
       oldGetStack +
       "\nPrior Context:\n" +
       (stackErr.stack ?? "").split("\n").slice(1).join("\n"),
-    set: () => null,
+    set: () => {},
   });
+
   return error;
 }
 
@@ -1027,10 +1031,13 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
         return Promise.reject(err);
       });
     } catch (err) {
-      err.allowReport = false;
-      if (extInfo !== undefined && !extInfo.official) {
-        err.extensionName = extInfo.name;
+      if (err instanceof Error) {
+        err["allowReport"] = false;
+        if (extInfo !== undefined && !extInfo.official) {
+          err["extensionName"] = extInfo.name;
+        }
       }
+
       return Bluebird.reject(err);
     }
   };
@@ -1044,10 +1051,13 @@ export function wrapExtCBSync<ArgT extends any[], ResT>(
     try {
       return cb(...args);
     } catch (err) {
-      if (extInfo !== undefined && !extInfo.official) {
-        err.allowReport = false;
-        err.extensionName = extInfo.name;
+      if (err instanceof Error) {
+        if (extInfo !== undefined && !extInfo.official) {
+          err["allowReport"] = false;
+          err["extensionName"] = extInfo.name;
+        }
       }
+
       throw err;
     }
   };

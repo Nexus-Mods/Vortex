@@ -11,6 +11,7 @@ import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
 import { WithTranslation } from "react-i18next";
 import { getApplication } from "../../util/application";
+import { unknownToError } from "../../shared/errors";
 
 export type CBFunction = (...args: any[]) => void;
 
@@ -53,7 +54,7 @@ class ErrorBoundary extends ComponentEx<
           try {
             cb(...args);
           } catch (err) {
-            this.setState({ error: err });
+            this.setState({ error: unknownToError(err) });
           }
         };
       },

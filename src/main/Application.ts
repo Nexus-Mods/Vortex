@@ -92,6 +92,7 @@ import * as semver from "semver";
 import type * as uuidT from "uuid";
 
 import type * as winapiT from "winapi-bindings";
+import { getErrorCode } from "../shared/errors";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
@@ -867,14 +868,16 @@ class Application {
       try {
         fs.ensureDirSync(muPath);
       } catch (err) {
+        const code = getErrorCode(err);
         // not sure why this would happen, ensureDir isn't supposed to report a problem if
         // the directory exists, but there was a single report of EEXIST in this place.
         // Probably a bug related to the filesystem used in C:\ProgramData, we had similar
         // problems with OneDrive paths
-        if (err.code !== "EEXIST") {
+        if (code !== "EEXIST") {
           throw err;
         }
       }
+
       return muPath;
     } else {
       log("error", "Multi-User mode not implemented outside windows");

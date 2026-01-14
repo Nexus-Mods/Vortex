@@ -118,6 +118,7 @@ import { fileMD5 } from "vortexmt";
 import * as fsVortex from "../util/fs";
 
 import { toast, ToastOptions } from "react-hot-toast";
+import { getErrorMessage, getErrorCode } from "../shared/errors";
 
 export function isExtSame(
   installed: IExtension,
@@ -1047,10 +1048,11 @@ class ExtensionManager {
           fs.unlinkSync(path.join(getVortexPath("temp"), ext));
         });
       } catch (err) {
+        const code = getErrorCode(err);
         // an ENOENT will happen on the first start where the dir doesn't
         // exist yet. No problem
-        if (err.code !== "ENOENT") {
-          log("error", "failed to read disabled extensions", err.message);
+        if (code !== "ENOENT") {
+          log("error", "failed to read disabled extensions", err);
         }
       }
 
@@ -1142,7 +1144,7 @@ class ExtensionManager {
         } catch (err) {
           // Toast rendering failed (e.g., goober styling error during race condition)
           // Fall through to standard notification
-          log("warn", "Failed to show toast notification", err.message);
+          log("warn", "Failed to show toast notification", err);
         }
       }
       if (notification.type === "warning") {
@@ -1430,13 +1432,16 @@ class ExtensionManager {
           func(...call.arguments);
         }
       } catch (err) {
+        const message = getErrorMessage(err) ?? "unknown error";
+        const stack = err instanceof Error ? err.stack : undefined;
+
         this.mApi.showErrorNotification(
           "Extension failed to initialize. If this isn't an official extension, " +
             "please report the error to the respective author.",
           {
             extension: call.extension,
-            err: err.message,
-            stack: err.stack,
+            err: message,
+            stack: stack,
           },
         );
       }
@@ -1453,14 +1458,19 @@ class ExtensionManager {
     );
 
     const reportError = (
-      err: Error,
+      err: unknown,
       call: IInitCall,
       allowReport: boolean = true,
     ) => {
-      log("warn", "failed to call once", {
-        err: err.message,
-        stack: err.stack,
-      });
+      if (err instanceof Error) {
+        log("warn", "failed to call once", {
+          err: err.message,
+          stack: err.stack,
+        });
+      } else {
+        log("warn", "failed to call once", err);
+      }
+
       err["extension"] = call.extension;
       this.mApi.showErrorNotification(
         "Extension failed to initialize. If this isn't an official extension, " +
@@ -1719,9 +1729,12 @@ class ExtensionManager {
         try {
           cb(prevValue, currentValue);
         } catch (err) {
+          const message = getErrorMessage(err);
+          const stack = err instanceof Error ? err.stack : undefined;
+
           log("error", "state change handler failed", {
-            message: err.message,
-            stack1: err.stack,
+            message: message,
+            stack1: stack,
             stack2: stackErr.stack,
             key,
           });
@@ -1772,16 +1785,19 @@ class ExtensionManager {
           // and the important reducers aren't loaded
           throw err;
         }
+        const message = getErrorMessage(err);
+        const stack = err instanceof Error ? err.stack : undefined;
+
         // make sure we're not calling any of the register calls if the extension
         // isn't fully initialized
         this.mContextProxyHandler.dropCalls(ext.name);
         this.mLoadFailures[ext.name] = [
-          { id: "exception", args: { message: err.message } },
+          { id: "exception", args: { message: message } },
         ];
         log("warn", "couldn't initialize extension", {
           name: ext.name,
-          err: err.message,
-          stack: err.stack,
+          err: message,
+          stack: stack,
         });
       }
     });
@@ -2504,7 +2520,8 @@ class ExtensionManager {
                   });
                 }
               } catch (err) {
-                if (err.code === "EINVAL") {
+                const code = getErrorCode(err);
+                if (code === "EINVAL") {
                   err["attachLogOnReport"] = true;
                   log("error", "Invalid spawn parameters", {
                     runExe,
@@ -2512,6 +2529,7 @@ class ExtensionManager {
                     options: JSON.stringify(options),
                   });
                 }
+
                 return reject(err);
               }
             }),
@@ -2828,11 +2846,16 @@ class ExtensionManager {
           }),
         );
       } catch (error) {
+        const errorCode = getErrorCode(error);
         const errMessage =
-          error.code === "ENOENT"
+          errorCode === "ENOENT"
             ? "extension has no info.json file"
             : "failed to parse info.json file";
-        log("warn", errMessage, { extensionPath, error: error.message });
+
+        log("warn", errMessage, {
+          extensionPath,
+          error: getErrorMessage(error),
+        });
       }
 
       const pathName = path.basename(extensionPath);
@@ -2889,7 +2912,7 @@ class ExtensionManager {
       } catch (err) {
         log("warn", "extension path missing and can't be created", {
           path: extension.path,
-          error: err.message,
+          error: getErrorMessage(err) ?? "unknown error",
         });
       }
       return [];
@@ -2955,13 +2978,15 @@ class ExtensionManager {
             }
           }
         } catch (err) {
+          const message = getErrorMessage(err);
+          const stack = err instanceof Error ? err.stack : undefined;
           log("warn", "failed to load dynamic extension", {
             name,
-            error: err.message,
-            stack: err.stack,
+            error: message,
+            stack: stack,
           });
           this.mLoadFailures[name] = [
-            { id: "exception", args: { message: err.message } },
+            { id: "exception", args: { message: message } },
           ];
         }
         return prev;

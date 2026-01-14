@@ -14,7 +14,9 @@
         "inlineSources": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "jsx":"react"
+        "jsx":"react",
+
+        "useUnknownInCatchVariables": false
     },
     "files": [
       "typings.custom/index.d.ts",

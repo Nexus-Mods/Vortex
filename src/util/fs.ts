@@ -39,6 +39,7 @@ import { generate as shortid } from "shortid";
 import * as tmp from "tmp";
 import type * as vortexRunT from "vortex-run";
 import type * as whoLocksT from "wholocks";
+import { getErrorMessage } from "../shared/errors";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
@@ -181,13 +182,13 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
   } catch (err) {
     log("warn", "failed to determine list of processes locking file", {
       filePath,
-      error: err.message,
+      error: getErrorMessage(err) ?? "unknown error",
     });
   }
 
   const baseMessage =
     processes.length === 0
-      ? `Vortex needs to access "${filePath}" but doesn\'t have permission to.`
+      ? `Vortex needs to access "${filePath}" but doesn't have permission to.`
       : `Vortex needs to access "${filePath}" but it either has too restrictive ` +
         "permissions or is locked by another process.";
 
@@ -312,14 +313,14 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
   } catch (err) {
     log("warn", "failed to determine list of processes locking file", {
       filePath,
-      error: err.message,
+      error: getErrorMessage(err) ?? "unkown error",
     });
   }
 
   const options: Electron.MessageBoxOptions = {
     title: "File busy",
     message:
-      `Vortex needs to access "${filePath}" but it\'s open in another application. ` +
+      `Vortex needs to access "${filePath}" but it's open in another application. ` +
       "Please close the file in all other applications and then retry.",
     detail:
       processes.length > 0
@@ -600,7 +601,7 @@ export function ensureDirAsync(
   //  implementation directly as there's no way for us to reliably determine
   //  whether the parent folder was empty. We're going to create the
   //  directories ourselves.
-  return !!onDirCreatedCB
+  return onDirCreatedCB
     ? ensureDir(dirPath, onDirCreatedCB)
     : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }

@@ -24,7 +24,7 @@ class SplashScreen {
             try {
               this.mWindow.webContents.send("fade-out");
             } catch (err) {
-              log("warn", "failed to fade out splash screen", err.message);
+              log("warn", "failed to fade out splash screen", err);
             }
           }
         })

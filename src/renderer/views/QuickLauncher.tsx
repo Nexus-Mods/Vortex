@@ -37,6 +37,7 @@ import { WithTranslation } from "react-i18next";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { pathToFileURL } from "url";
+import { getErrorMessage } from "../../shared/errors";
 
 export interface IBaseProps {
   t: TFunction;
@@ -358,9 +359,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         }
       }
     } catch (err) {
+      const message = getErrorMessage(err);
+      const stack = err instanceof Error ? err.stack : undefined;
       log("error", "failed to create quick launcher entry", {
-        error: err.message,
-        stack: err.stack,
+        error: message,
+        stack: stack,
       });
       return undefined;
     }

@@ -55,6 +55,7 @@ import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 
 import { Toaster } from "react-hot-toast"; // at top
+import { getErrorMessage } from "../../shared/errors";
 
 addStyle(ReactButton, "secondary");
 addStyle(ReactButton, "ad");
@@ -407,7 +408,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar, updateChannel, version } = this.props;
-    let parsedVersion = semver.parse(version);
+    const parsedVersion = semver.parse(version);
     const prerelease = parsedVersion?.prerelease[0] ?? "stable";
     const updateChannelClassName =
       "toolbar-version-container toolbar-version-" + prerelease;
@@ -558,7 +559,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         return page.group === key && page.visible();
       } catch (err) {
         log("error", "Failed to determine page visibility", {
-          error: err.message,
+          error: getErrorMessage(err) ?? "unknown error",
           page: page.id,
         });
         return false;

@@ -45,7 +45,10 @@ function insertValueAtLeaf<T, V>(
     const newErr = new Error(
       `Failed to load application state ${hive}.${key.join(".")}`,
     );
-    newErr.stack = err.stack;
+    if (err instanceof Error) {
+      newErr.stack = err.stack;
+    }
+
     throw newErr;
   }
 }

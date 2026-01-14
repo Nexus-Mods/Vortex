@@ -44,12 +44,22 @@ export function testPathTransfer(
   try {
     destinationRoot = winapi.GetVolumePathName(destination);
   } catch (err) {
-    // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
-    //  the only way for this error to be reported at this point is when
-    //  the destination path is pointing towards a non-existing partition.
-    return err.systemCode === 2
-      ? Promise.reject(new NotFound(err.path))
-      : Promise.reject(err);
+    if (err instanceof Error) {
+      if (
+        "systemCode" in err &&
+        (typeof err.systemCode === "number" ||
+          typeof err.systemCode === "bigint")
+      ) {
+        // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
+        //  the only way for this error to be reported at this point is when
+        //  the destination path is pointing towards a non-existing partition.
+        if (err.systemCode === 2) {
+          return Promise.reject(new NotFound(destination));
+        }
+      }
+    }
+
+    return Promise.reject(err);
   }
 
   const isOnSameVolume = (): Promise<boolean> => {

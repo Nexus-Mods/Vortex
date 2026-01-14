@@ -35,6 +35,7 @@ import { combineReducers, Reducer, ReducersMapObject } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
 import { IState } from "../types/IState";
+import { unknownToError } from "../shared/errors";
 
 export const STATE_BACKUP_PATH = "state_backups";
 
@@ -59,7 +60,7 @@ function safeCombineReducers(
         err["extension"] = action["meta"]?.["extension"];
       }
       setImmediate(() => {
-        onError?.(err);
+        onError?.(unknownToError(err));
       });
       return state;
     }

@@ -171,9 +171,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     // fails when this exe is called from chrome as a protocol handler. I've debugged as
     // far as I can, it fails in a stat call to asar. The parameter is fine, the file
     // exists and it worked in past versions so it appears to be a bug in electron
-    logger.log("error", "Failed to set up logging to file", {
-      error: err.message,
-    });
+    logger.log("error", "Failed to set up logging to file", err);
   }
 }
 
@@ -185,15 +183,18 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
  * @param {string} message The text message. Should contain no variable data
  * @param {any} [metadata] Additional information about the error instance
  */
-export function log(level: LogLevel, message: string, metadata?: any) {
+export function log(level: LogLevel, message: string, metadata?: unknown) {
   try {
-    if (metadata === undefined) {
+    if (!metadata) {
       logger.log(level, message);
     } else {
-      logger.log(level, message, metadata);
+      if (metadata instanceof Error) {
+        logger.log(level, message, metadata.message);
+      } else {
+        logger.log(level, message, metadata);
+      }
     }
   } catch (err) {
-    // tslint:disable-next-line:no-console
-    console.log("failed to log to file", { level, message, metadata });
+    console.log("failed to log to file", { level, message, metadata, err });
   }
 }

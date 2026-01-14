@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../shared/errors";
 import {
   ActionFunc,
   IActionDefinition,
@@ -90,7 +91,8 @@ class ActionControl extends React.Component<
       try {
         return def.condition(instanceIds);
       } catch (err) {
-        return `Error: ${err.message}`;
+        const message = getErrorMessage(err) ?? "unknown error";
+        return `Error: ${message}`;
       }
     };
 
