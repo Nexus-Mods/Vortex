@@ -5,7 +5,6 @@ import { clipboard } from "electron";
 import { MainContext } from "../views/MainWindow";
 import type { types } from "vortex-api";
 import { ContextMenu, FlexLayout, tooltip } from "vortex-api";
-import { StringLiteral } from "babel-types";
 import { event } from "d3";
 import type { IContextPosition } from "./ContextMenu";
 import { findDOMNode } from "react-dom";

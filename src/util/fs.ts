@@ -53,7 +53,8 @@ const dialog =
       require("@electron/remote").dialog
     : dialogIn;
 
-export { constants, FSWatcher, Stats, WriteStream } from "fs";
+export { constants, Stats, WriteStream } from "fs";
+export type { FSWatcher } from "fs";
 
 // simple re-export of functions we don't touch (yet)
 export {

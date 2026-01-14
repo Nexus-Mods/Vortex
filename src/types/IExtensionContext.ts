@@ -14,21 +14,21 @@ import type {
 } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IFileChange,
 } from "../extensions/mod_management/types/IDeploymentMethod";
-import {
+import type {
   IInstallResult,
   IInstruction,
   InstructionType,
 } from "../extensions/mod_management/types/IInstallResult";
-import {
+import type {
   InstallFunc,
   ProgressDelegate,
 } from "../extensions/mod_management/types/InstallFunc";
-import {
+import type {
   ISupportedResult,
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
@@ -61,7 +61,7 @@ import type { ITestResult } from "./ITestResult";
 
 import type Promise from "bluebird";
 import type { IHashResult, IServer } from "modmeta-db";
-import { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
+import type { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
 import type * as React from "react";
 import type * as Redux from "redux";
 import type { ComplexActionCreator } from "redux-act";
@@ -70,7 +70,7 @@ import type { INexusAPIExtension } from "../extensions/nexus_integration/types/I
 import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
 import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 
-export {
+export type {
   TestSupported,
   IInstallResult,
   IInstruction,

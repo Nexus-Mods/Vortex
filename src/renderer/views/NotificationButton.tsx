@@ -7,7 +7,6 @@ import type {
   INotification,
   INotificationAction,
 } from "../../types/INotification";
-import { NotificationType } from "../../types/INotification";
 import type { IState } from "../../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 

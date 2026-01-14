@@ -21,7 +21,7 @@ import {
 } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import type VortexInstallType from "../../types/VortexInstallType";
+import type { VortexInstallType } from "../../types/VortexInstallType";
 import { MainContext, util } from "vortex-api";
 
 interface IConnectedProps {

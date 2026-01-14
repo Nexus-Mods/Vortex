@@ -14,35 +14,34 @@ export * from "./ITestResult";
 export * from "./ITableAttribute";
 export * from "./SortDirection";
 
-export { ITool } from "./ITool";
+export type { ITool } from "./ITool";
 
-export { TFunction } from "../util/i18n";
-export { IDiscoveredTool } from "../types/IDiscoveredTool";
-export { IExecInfo } from "../types/IExecInfo";
-export { IStoreQuery } from "../util/GameStoreHelper";
-export { IGameStoreEntry } from "./IGameStoreEntry";
-export {
-  GameEntryNotFound,
-  GameStoreNotFound,
+export type { TFunction } from "../util/i18n";
+export type { IDiscoveredTool } from "../types/IDiscoveredTool";
+export type { IExecInfo } from "../types/IExecInfo";
+export type { IStoreQuery } from "../util/GameStoreHelper";
+export type { IGameStoreEntry } from "./IGameStoreEntry";
+export { GameEntryNotFound, GameStoreNotFound } from "./IGameStore";
+export type {
   ICustomExecutionInfo,
   IGameStore,
   GameLaunchType,
-} from "./IGameStore";
-export { IStarterInfo } from "../util/StarterInfo";
+} from "./IGameStore.ts";
+export type { IStarterInfo } from "../util/StarterInfo";
 
-export { IRegisteredExtension } from "../util/ExtensionManager";
+export type { IRegisteredExtension } from "../util/ExtensionManager";
 
-export {
+export type {
   ICollectionInstallState,
   ICollectionModInstallInfo,
   ICollectionInstallSession,
   CollectionModStatus,
 } from "../extensions/collections_integration/types";
-export {
+export type {
   IAvailableExtension,
   IExtension,
 } from "../extensions/extension_manager/types";
-export {
+export type {
   LoadOrder,
   LoadOrder as FBLOLoadOrder,
   LockedState as FBLOLockState,
@@ -55,46 +54,46 @@ export {
   IInvalidResult as IFBLOInvalidResult,
   IItemRendererProps as IFBLOItemRendererProps,
 } from "../extensions/file_based_loadorder/types/types";
-export {
+export type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../extensions/mod_management/types/IDeploymentMethod";
-export { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
-export { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-export { IDeploymentManifest } from "../extensions/mod_management/types/IDeploymentManifest";
-export { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
-export {
+export type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+export type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+export type { IDeploymentManifest } from "../extensions/mod_management/types/IDeploymentManifest";
+export type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+export type {
   IMod,
   IModReference,
   IModRepoId,
   IModRule,
 } from "../extensions/mod_management/types/IMod";
-export { IRemoveModOptions } from "../extensions/mod_management/types/IRemoveModOptions";
-export { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";
-export {
+export type { IRemoveModOptions } from "../extensions/mod_management/types/IRemoveModOptions";
+export type { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";
+export type {
   InstallFunc,
   IInstallationDetails,
   ProgressDelegate,
 } from "../extensions/mod_management/types/InstallFunc";
-export {
+export type {
   TestSupported,
   ITestSupportedDetails,
   ISupportedResult,
 } from "../extensions/mod_management/types/TestSupported";
-export { IInstallResult } from "../extensions/mod_management/types/IInstallResult";
-export { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
-export {
+export type { IInstallResult } from "../extensions/mod_management/types/IInstallResult";
+export type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
+export type {
   IHistoryEvent,
   IHistoryStack,
   Revertability,
 } from "../extensions/history_management/types";
-export {
+export type {
   IProfile,
   IProfileMod,
 } from "../extensions/profile_management/types/IProfile";
-export { IEnableOptions } from "../extensions/profile_management/actions/profiles";
-export { IValidateKeyData } from "../extensions/nexus_integration/types/IValidateKeyData";
-export {
+export type { IEnableOptions } from "../extensions/profile_management/actions/profiles";
+export type { IValidateKeyData } from "../extensions/nexus_integration/types/IValidateKeyData";
+export type {
   ILoadOrderDisplayItem,
   SortType,
   UpdateType,

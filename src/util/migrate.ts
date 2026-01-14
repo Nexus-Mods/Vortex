@@ -20,8 +20,8 @@ import { UserCanceled } from "./CustomErrors";
 import { log } from "./log";
 
 import Promise from "bluebird";
-import type { BrowserWindow } from "electron";
-import { MessageBoxOptions, dialog } from "electron";
+import type { BrowserWindow, MessageBoxOptions } from "electron";
+import { dialog } from "electron";
 import * as path from "path";
 import type * as Redux from "redux";
 import * as semver from "semver";

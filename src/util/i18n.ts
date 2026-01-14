@@ -5,8 +5,8 @@ import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 
 import Bluebird from "bluebird";
-import type { TOptions } from "i18next";
-import I18next, { i18n } from "i18next";
+import type { TOptions, i18n } from "i18next";
+import I18next from "i18next";
 import * as path from "path";
 import { initReactI18next } from "react-i18next";
 
@@ -19,7 +19,8 @@ const fallbackTFunc: TFunction = (str) =>
 
 let actualT: TFunction = fallbackTFunc;
 
-export { fallbackTFunc, i18n, TFunction };
+export { fallbackTFunc };
+export type { i18n, TFunction };
 
 let missingKeys = { common: {} };
 

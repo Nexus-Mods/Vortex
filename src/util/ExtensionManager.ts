@@ -8,27 +8,29 @@ import {
 import {
   addNotification,
   closeDialog,
-  DialogActions,
-  DialogType,
   dismissNotification,
   dismissAllNotifications,
-  IDialogContent,
   showDialog,
 } from "../actions/notifications";
+import type {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+} from "../actions/notifications.ts";
 import { suppressNotification } from "../actions/notificationSettings";
 import { setExtensionLoadFailures } from "../actions/session";
 
 import { setOptionalExtensions } from "../extensions/extension_manager/actions";
-import {
+import type {
   IAvailableExtension,
   IExtension,
 } from "../extensions/extension_manager/types";
-import {
+import type {
   IModReference,
   IModRepoId,
 } from "../extensions/mod_management/types/IMod";
-import { ExtensionInit } from "../types/Extension";
-import {
+import type { ExtensionInit } from "../types/Extension";
+import type {
   ArchiveHandlerCreator,
   IArchiveHandler,
   IArchiveOptions,
@@ -45,9 +47,12 @@ import {
   ThunkStore,
   ToolParameterCB,
 } from "../types/IExtensionContext";
-import { ILookupOptions, IModLookupResult } from "../types/IModLookupResult";
-import { INotification } from "../types/INotification";
-import {
+import type {
+  ILookupOptions,
+  IModLookupResult,
+} from "../types/IModLookupResult";
+import type { INotification } from "../types/INotification";
+import type {
   IExtensionLoadFailure,
   IExtensionOptional,
   IExtensionState,
@@ -66,11 +71,13 @@ import {
 } from "./CustomErrors";
 import { disableErrorReport, isOutdated } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
-import { i18n, TString } from "./i18n";
+import type { i18n } from "./i18n";
+import { TString } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { showError } from "./message";
-import { registerSanityCheck, SanityCheck } from "../store/reduxSanity";
+import { registerSanityCheck } from "../store/reduxSanity";
+import type { SanityCheck } from "../store/reduxSanity.ts";
 import ReduxWatcher from "../store/ReduxWatcher";
 import runElevatedCustomTool from "./runElevatedCustomTool";
 import { activeGameId } from "./selectors";
@@ -88,10 +95,10 @@ import {
 } from "./util";
 
 import Promise from "bluebird";
-import { spawn, SpawnOptions } from "child_process";
-import {
-  ipcMain,
-  ipcRenderer,
+import { spawn } from "child_process";
+import type { SpawnOptions } from "child_process";
+import { ipcMain, ipcRenderer } from "electron";
+import type {
   OpenDialogOptions,
   SaveDialogOptions,
   WebContents,
@@ -101,7 +108,7 @@ import * as fs from "fs-extra";
 import * as fuzz from "fuzzball";
 import JsonSocket from "json-socket";
 import * as _ from "lodash";
-import { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
+import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
 import type * as modmetaT from "modmeta-db";
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 import * as net from "net";
@@ -117,7 +124,8 @@ import { VCREDIST_URL } from "../constants";
 import { fileMD5 } from "vortexmt";
 import * as fsVortex from "../util/fs";
 
-import { toast, ToastOptions } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import type { ToastOptions } from "react-hot-toast";
 import { getErrorMessage, getErrorCode } from "../shared/errors";
 
 export function isExtSame(

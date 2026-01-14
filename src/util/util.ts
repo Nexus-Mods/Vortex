@@ -8,7 +8,7 @@ import {
 } from "../extensions/nexus_integration/constants";
 
 import { TimeoutError } from "./CustomErrors";
-import { Normalize } from "./getNormalizeFunc";
+import type { Normalize } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 

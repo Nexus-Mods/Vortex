@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { useEffect, useRef } from "react";
-import numeral = require("numeral");
+import numeral from "numeral";
 
 import { Typography } from "../../typography";
 import { getTabId, joinClasses } from "../../utils";

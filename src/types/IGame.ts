@@ -1,4 +1,4 @@
-import { IModType } from "../extensions/gamemode_management/types/IModType";
+import type { IModType } from "../extensions/gamemode_management/types/IModType";
 
 import type { IDiscoveryResult, IMod } from "./IState";
 import type { ITool } from "./ITool";
@@ -6,7 +6,7 @@ import type { ITool } from "./ITool";
 import type Promise from "bluebird";
 import type { IStoreQuery } from "../util/GameStoreHelper";
 
-export { IModType };
+export type { IModType };
 
 export type DirectoryCleaningMode = "tag" | "all";
 

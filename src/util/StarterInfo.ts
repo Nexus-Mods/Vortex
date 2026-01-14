@@ -1,19 +1,19 @@
 /* eslint-disable */
 import { setToolRunning } from "../actions";
-import { IDiscoveredTool } from "../types/IDiscoveredTool";
-import { IGame } from "../types/IGame";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
+import type { IGame } from "../types/IGame";
 import { log } from "../util/log";
 
 import GameStoreHelper from "./GameStoreHelper";
 
 import { getSafe } from "../util/storeHelper";
 
-import { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
-import { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-import { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 
-import { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../types/IExtensionContext";
 
 import { getApplication } from "./application";
 import {
