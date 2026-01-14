@@ -2,8 +2,8 @@
     "compileOnSave": true,
     "compilerOptions": {
         "target": "esnext",
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "allowJs": true,
         "noImplicitAny": false,
         "removeComments": true,
@@ -15,6 +15,10 @@
         "skipLibCheck": true,
         "esModuleInterop": true,
         "jsx":"react",
+
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "allowSyntheticDefaultImports": true,
 
         "useUnknownInCatchVariables": false
     },
