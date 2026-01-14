@@ -27,7 +27,7 @@ import { flatten, nexusModsURL, setdefault, truthy } from "./util";
 
 import type { IFeedbackResponse } from "@nexusmods/nexus-api";
 import Promise from "bluebird";
-import ZipT = require("node-7z");
+import type ZipT from "node-7z";
 import * as os from "os";
 import * as path from "path";
 import type * as Redux from "redux";

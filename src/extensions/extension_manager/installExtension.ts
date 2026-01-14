@@ -18,7 +18,7 @@ import { readExtensionInfo } from "./util";
 
 import Promise from "bluebird";
 import * as _ from "lodash";
-import ZipT = require("node-7z");
+import type ZipT from "node-7z";
 import * as path from "path";
 import rimraf from "rimraf";
 import type * as vortexRunT from "vortex-run";

@@ -13,7 +13,7 @@ import Bluebird from 'bluebird';
 import type { BrowserWindow } from 'electron';
 import { Button as Button_2 } from 'react-bootstrap';
 import { ButtonHTMLAttributes } from 'react';
-import { ClientRequest } from 'http';
+import type { ClientRequest } from 'http';
 import { closeSync } from 'original-fs';
 import type { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
@@ -33,7 +33,7 @@ import { ForwardRefExoticComponent } from 'react';
 import * as fs_2 from 'fs-extra';
 import { FSWatcher } from 'fs';
 import type { HTMLAttributes } from 'react';
-import { i18n } from 'i18next';
+import type { i18n } from 'i18next';
 import I18next from 'i18next';
 import { ICacheObject } from 're-reselect';
 import type { ICollection } from '@nexusmods/nexus-api';
@@ -45,20 +45,20 @@ import type { IFeedbackResponse } from '@nexusmods/nexus-api';
 import type { IFileInfo } from '@nexusmods/nexus-api';
 import type { IHashResult } from 'modmeta-db';
 import type { IIssue } from '@nexusmods/nexus-api';
-import { ILookupResult } from 'modmeta-db';
+import type { ILookupResult } from 'modmeta-db';
 import type { IModFileContentPage } from '@nexusmods/nexus-api';
 import type { IModFileContentPageQuery } from '@nexusmods/nexus-api';
 import type { IModFileContentSearchFilter } from '@nexusmods/nexus-api';
-import { IModInfo } from 'modmeta-db';
+import type { IModInfo } from 'modmeta-db';
 import type { IModRequirements } from '@nexusmods/nexus-api';
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'http';
 import type { InputHTMLAttributes } from 'react';
 import type { IPreference } from '@nexusmods/nexus-api';
 import type { IPreferenceQuery } from '@nexusmods/nexus-api';
-import { IQuery } from 'modmeta-db';
-import { IReference } from 'modmeta-db';
+import type { IQuery } from 'modmeta-db';
+import type { IReference } from 'modmeta-db';
 import type { IRevision } from '@nexusmods/nexus-api';
-import { IRule } from 'modmeta-db';
+import type { IRule } from 'modmeta-db';
 import type { IServer } from 'modmeta-db';
 import { JSX as JSX_2 } from 'react';
 import type { KeyboardEvent as KeyboardEvent_2 } from 'react';
@@ -85,10 +85,10 @@ import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
 import type { ReactSelectProps } from 'react-select';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { readdirSync } from 'original-fs';
 import { readFileSync } from 'original-fs';
-import * as Redux from 'redux';
+import type * as Redux from 'redux';
 import * as reduxAct from 'redux-act';
 import { Ref } from 'react';
 import { RefAttributes } from 'react';
@@ -97,7 +97,7 @@ import { runThreaded } from 'vortex-run';
 import type { SelectCallback } from 'react-bootstrap';
 import type { SelectHTMLAttributes } from 'react';
 import * as semver from 'semver';
-import SevenZip = require('node-7z');
+import SevenZip from 'node-7z';
 import { Stats } from 'fs';
 import { statSync } from 'original-fs';
 import { symlinkSync } from 'original-fs';
@@ -1095,9 +1095,9 @@ declare namespace fs {
         encodingFromBOM,
         readFileBOM,
         constants,
-        FSWatcher,
         Stats,
         WriteStream,
+        FSWatcher,
         accessSync,
         appendFileSync,
         closeSync,
@@ -4012,15 +4012,15 @@ const lastActiveProfileForGame: ParametricSelector<IState, string, string> & {
         [gameId: string]: string;
     }, res2: string) => string;
     dependencies: [ParametricSelector<IState, string, {
-        [gameId: string]: string;
+    [gameId: string]: string;
     }>, ParametricSelector<IState, string, string>];
     recomputations: () => number;
     resetRecomputations: () => number;
 } & {
     getMatchingSelector: (state: IState, props: string, ...args: any[]) => OutputParametricSelector<IState, string, string, (res1: {
-        [gameId: string]: string;
+    [gameId: string]: string;
     }, res2: string) => string, [ParametricSelector<IState, string, {
-        [gameId: string]: string;
+    [gameId: string]: string;
     }>, ParametricSelector<IState, string, string>]>;
     removeMatchingSelector: (state: IState, props: string, ...args: any[]) => void;
     clearCache: () => void;
@@ -5999,6 +5999,8 @@ function userFriendlyTime(date: Date, t: TFunction, locale: string): string;
 declare namespace util {
     export {
         getText,
+        Normalize,
+        ISteamEntry,
         Archive,
         ArgumentInvalid,
         batchDispatch,
@@ -6068,7 +6070,6 @@ declare namespace util {
         MissingInterpreter,
         nexusGameId,
         nexusModsURL,
-        Normalize,
         NotFound,
         NotSupportedError,
         objDiff,
@@ -6097,7 +6098,6 @@ declare namespace util {
         sortMods,
         StarterInfo,
         instance_3 as steam,
-        ISteamEntry,
         terminate,
         testModReference,
         testRefByIdentifiers,
