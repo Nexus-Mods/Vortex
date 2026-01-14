@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import OptionsFilter, {
@@ -70,7 +69,8 @@ import PathSelectionDialog from "./views/PathSelection";
 import ProgressFooter from "./views/ProgressFooter";
 import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
 
-import GameModeManager, { type IGameStub } from "./GameModeManager";
+import type GameModeManager from "./GameModeManager";
+import { type IGameStub } from "./GameModeManager";
 import {
   currentGame,
   currentGameDiscovery,
@@ -81,7 +81,7 @@ import {
 import Promise from "bluebird";
 import * as fsExtra from "fs-extra";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as semver from "semver";
 import React from "react";
 

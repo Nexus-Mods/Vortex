@@ -1,12 +1,7 @@
-/* eslint-disable */
-import {
-  get as getHTTP,
-  IncomingMessage,
-  request as requestHTTP,
-  ClientRequest,
-} from "http";
+import type { IncomingMessage, ClientRequest } from "http";
+import { get as getHTTP, request as requestHTTP } from "http";
 import { get as getHTTPS, request as requestHTTPS } from "https";
-import { Readable } from "stream";
+import type { Readable } from "stream";
 import * as url from "url";
 import { DataInvalid, TemporaryError } from "./CustomErrors";
 import { log } from "./log";
@@ -63,7 +58,7 @@ export function rawRequest(
         });
         res
           .on("end", () => {
-            if (!!err) {
+            if (err) {
               const errMsg = new TemporaryError(err);
               errMsg.message = rawData.toString(options?.encoding || "utf-8");
               return reject(errMsg);

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   forgetExtension,
   removeExtension,
@@ -113,7 +112,7 @@ import type * as modmetaT from "modmeta-db";
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 import * as net from "net";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";

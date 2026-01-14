@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
@@ -55,7 +54,7 @@ import { getGame } from "./util/getGame";
 import Promise from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;

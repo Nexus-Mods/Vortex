@@ -1,4 +1,3 @@
-/* eslint-disable */
 import type { IExtensionApi, IMod } from "../../types/api";
 import { getSafe } from "../../util/storeHelper";
 

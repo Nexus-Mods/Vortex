@@ -1,4 +1,3 @@
-/* eslint-disable */
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -28,7 +27,8 @@ import renderINITweaks from "./TweakList";
 import Promise from "bluebird";
 import type { TFunction } from "i18next";
 import * as path from "path";
-import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
+import type { IniFile } from "vortex-parse-ini";
+import IniParser, { WinapiFormat } from "vortex-parse-ini";
 
 function ensureIniBackups(
   t: TFunction,

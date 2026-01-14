@@ -1,5 +1,4 @@
-/* eslint-disable */
-import * as types from "../../types/api";
+import type * as types from "../../types/api";
 import * as util from "../../util/api";
 import {
   activeGameId,

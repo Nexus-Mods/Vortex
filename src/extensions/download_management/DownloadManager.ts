@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   HTTPError,
   ProcessCanceled,
@@ -32,7 +31,7 @@ import * as http from "http";
 import * as https from "https";
 import * as _ from "lodash";
 import * as path from "path";
-import * as stream from "stream";
+import type * as stream from "stream";
 import * as zlib from "zlib";
 import type { IExtensionApi } from "../../types/api";
 
@@ -1717,8 +1716,8 @@ class DownloadManager {
   };
 
   private tickQueue(verbose: boolean = true) {
-    let busyWorkerIds = Object.keys(this.mBusyWorkers);
-    let busyCount = busyWorkerIds.reduce((count, key) => {
+    const busyWorkerIds = Object.keys(this.mBusyWorkers);
+    const busyCount = busyWorkerIds.reduce((count, key) => {
       const worker = this.mBusyWorkers[key];
       return (
         count + (this.mSlowWorkers[key] == null && !worker.isPending() ? 1 : 0)

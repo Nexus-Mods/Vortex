@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import * as _ from "lodash";
 
 import * as path from "path";
@@ -25,7 +23,7 @@ import FileBasedLoadOrderPage from "./views/FileBasedLoadOrderPage";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { sessionReducer } from "./reducers/session";
 
-import * as types from "../../types/api";
+import type * as types from "../../types/api";
 import * as util from "../../util/api";
 import * as selectors from "../../util/selectors";
 
@@ -119,7 +117,7 @@ async function genLoadOrderChange(
   const prevLO: LoadOrder = Array.isArray(oldState[profile.id])
     ? oldState[profile.id]
     : [];
-  let loadOrder: LoadOrder = Array.isArray(newState[profile.id])
+  const loadOrder: LoadOrder = Array.isArray(newState[profile.id])
     ? newState[profile.id]
     : [];
   const prevIds = prevLO.map((lo) => lo.id);

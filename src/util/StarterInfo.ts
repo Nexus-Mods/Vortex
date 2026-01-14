@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { setToolRunning } from "../actions";
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IGame } from "../types/IGame";

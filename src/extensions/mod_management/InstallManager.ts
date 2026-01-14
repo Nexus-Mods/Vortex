@@ -39,8 +39,6 @@
  *
  * See AGENTS-COLLECTIONS.md for architectural overview.
  */
-
-/* eslint-disable */
 import {
   removeDownload,
   setDownloadModInfo,
@@ -198,7 +196,7 @@ import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
 import * as os from "os";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 import { generate as shortid } from "shortid";
 import type { IInstallOptions } from "./types/IInstallOptions";
@@ -3943,7 +3941,7 @@ class InstallManager {
     // Validate the ungrouped instructions and return errors (if any)
     const invalidDestinationErrors: IInvalidInstruction[] = instructions
       .filter((instr) => {
-        if (!!instr.destination) {
+        if (instr.destination) {
           // This is a temporary hack to avoid invalidating fomod instructions
           //  which will include a path separator at the beginning of a relative path
           //  when matching nested stop patterns.

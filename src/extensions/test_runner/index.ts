@@ -1,5 +1,4 @@
 // LEGACY FILE
-/* eslint-disable max-lines-per-function, indent */
 
 /**
  * This extension is a host for automated tests against the current

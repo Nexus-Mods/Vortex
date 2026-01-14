@@ -1,11 +1,10 @@
-/* eslint-disable */
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import * as fs from "../../util/fs";
 import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { truthy } from "../../util/util";
 
-import BlacklistSet from "./util/BlacklistSet";
+import type BlacklistSet from "./util/BlacklistSet";
 import type {
   IDeployedFile,
   IDeploymentMethod,

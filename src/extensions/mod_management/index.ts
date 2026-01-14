@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   dismissNotification,
   type ICheckbox,
@@ -155,9 +154,9 @@ import Bluebird from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
 import React from "react";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import shortid from "shortid";
-import { types } from "../..";
+import type { types } from "../..";
 
 interface IAppContext {
   isProfileChanging: boolean;
