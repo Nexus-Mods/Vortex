@@ -1,4 +1,4 @@
-import { SortDirection } from "../types/SortDirection";
+import type { SortDirection } from "../types/SortDirection";
 
 import safeCreateAction from "./safeCreateAction";
 

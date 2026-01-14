@@ -1,10 +1,9 @@
-/* eslint-disable */
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { NotificationDismiss } from "../../types/INotification";
-import { IExtensionLoadFailure, IState } from "../../types/IState";
+import type { NotificationDismiss } from "../../types/INotification";
+import type { IExtensionLoadFailure, IState } from "../../types/IState";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
 import { isExtSame } from "../../util/ExtensionManager";
@@ -19,7 +18,7 @@ import {
 import BrowseExtensions from "./BrowseExtensions";
 import ExtensionManager from "./ExtensionManager";
 import sessionReducer from "./reducers";
-import {
+import type {
   IAvailableExtension,
   IExtension,
   IExtensionDownloadInfo,

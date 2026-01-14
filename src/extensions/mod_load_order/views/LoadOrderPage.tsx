@@ -11,7 +11,7 @@ import {
   Spinner,
   ToolbarIcon,
 } from "../../../renderer/controls/api";
-import * as types from "../../../types/api";
+import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
@@ -19,7 +19,7 @@ import { DNDContainer, MainPage } from "../../../renderer/views/api";
 
 import { setGameLoadOrderRendererOptions } from "../actions/settings";
 
-import {
+import type {
   IGameLoadOrderEntry,
   IItemRendererOptions,
   ILoadOrder,

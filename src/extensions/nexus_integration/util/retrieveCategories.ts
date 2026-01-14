@@ -1,8 +1,9 @@
 import { log } from "../../../util/log";
 
-import { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
+import type { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
 
-import NexusT, { IModCategory } from "@nexusmods/nexus-api";
+import type { IModCategory } from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
 
 interface IGameInfo {
   categories: IModCategory[];

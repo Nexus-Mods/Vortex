@@ -1,5 +1,5 @@
 import * as actions from "../actions/tables";
-import { IReducerSpec } from "../types/IExtensionContext";
+import type { IReducerSpec } from "../types/IExtensionContext";
 
 import { pushSafe, removeValue, setSafe } from "../util/storeHelper";
 

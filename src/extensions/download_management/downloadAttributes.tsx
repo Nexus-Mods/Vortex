@@ -6,8 +6,8 @@ import GameFilter from "../../renderer/controls/table/GameFilter";
 import TextFilter from "../../renderer/controls/table/TextFilter";
 import { Icon } from "../../renderer/controls/TooltipControls";
 
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { ITableAttribute } from "../../types/ITableAttribute";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { ITableAttribute } from "../../types/ITableAttribute";
 import * as fs from "../../util/fs";
 import { getCurrentLanguage } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";
@@ -16,16 +16,16 @@ import { bytesToString, truthy } from "../../util/util";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameName } from "../gamemode_management/selectors";
 
-import { IDownload } from "./types/IDownload";
+import type { IDownload } from "./types/IDownload";
 import getDownloadGames from "./util/getDownloadGames";
 import setDownloadGames from "./util/setDownloadGames";
 import DownloadGameList from "./views/DownloadGameList";
 import DownloadProgressFilter from "./views/DownloadProgressFilter";
-import { IDownloadViewProps } from "./views/DownloadView";
+import type { IDownloadViewProps } from "./views/DownloadView";
 import FileTime from "./views/FileTime";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import * as url from "url";

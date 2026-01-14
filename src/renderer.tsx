@@ -71,7 +71,11 @@ import ExtensionManager from "./util/ExtensionManager";
 import { ExtensionContext } from "./util/ExtensionProvider";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
-import getI18n, { changeLanguage, fallbackTFunc, TFunction } from "./util/i18n";
+import getI18n, {
+  changeLanguage,
+  fallbackTFunc,
+  type TFunction,
+} from "./util/i18n";
 import { log } from "./util/log";
 import { initApplicationMenu } from "./util/menu";
 import { showError } from "./util/message";
@@ -104,8 +108,8 @@ import { generate as shortid } from "shortid";
 import crashDumpT from "crash-dump";
 
 import { setLanguage, setNetworkConnected } from "./actions";
-import { ThunkStore } from "./types/IExtensionContext";
-import { IState } from "./types/IState";
+import type { ThunkStore } from "./types/IExtensionContext";
+import type { IState } from "./types/IState";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import {} from "./util/extensionRequire";

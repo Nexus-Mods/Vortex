@@ -3,14 +3,14 @@
  * savegame in such a way that it can't be removed (at least not automatically)
  */
 
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 
 import renderModName from "../mod_management/util/modName";
-import { IProfile } from "../profile_management/types/IProfile";
+import type { IProfile } from "../profile_management/types/IProfile";
 
 function testModSticky(
   api: IExtensionApi,

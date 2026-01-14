@@ -11,7 +11,7 @@ import { showCategoriesDialog } from "../actions/session";
 import CategoryList from "./CategoryList";
 
 import * as React from "react";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 interface IConnectedProps {
   showDialog: boolean;

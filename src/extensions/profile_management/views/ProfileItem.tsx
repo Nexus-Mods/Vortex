@@ -1,6 +1,6 @@
 import { ActionDropdown } from "../../../renderer/controls/api";
-import { IActionDefinition } from "../../../types/IActionDefinition";
-import { IMod } from "../../../types/IState";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IMod } from "../../../types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
@@ -9,13 +9,13 @@ import { getSafe } from "../../../util/storeHelper";
 
 import { getGame } from "../../gamemode_management/util/getGame";
 
-import { IProfile } from "../types/IProfile";
-import { IProfileFeature } from "../types/IProfileFeature";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
 
 import TransferIcon from "./TransferIcon";
 
 import { nativeImage } from "electron";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { pathToFileURL } from "url";

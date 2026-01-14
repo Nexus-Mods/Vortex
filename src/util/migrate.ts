@@ -2,7 +2,7 @@ import getDownloadPath from "../extensions/download_management/util/getDownloadP
 import resolvePath, {
   pathDefaults,
 } from "../extensions/mod_management/util/resolvePath";
-import { IState } from "../types/IState";
+import type { IState } from "../types/IState";
 
 import {
   clearOAuthCredentials,
@@ -20,9 +20,10 @@ import { UserCanceled } from "./CustomErrors";
 import { log } from "./log";
 
 import Promise from "bluebird";
-import { BrowserWindow, MessageBoxOptions, dialog } from "electron";
+import type { BrowserWindow, MessageBoxOptions } from "electron";
+import { dialog } from "electron";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
 import { reinterpretUntilZeros } from "ref";

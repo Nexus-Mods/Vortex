@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useCallback, useRef } from "react";
-import { DragSourceMonitor, useDrag, useDrop } from "react-dnd";
+import { type DragSourceMonitor, useDrag, useDrop } from "react-dnd";
 
 export interface IDraggableListItemProps {
   disabled?: boolean;

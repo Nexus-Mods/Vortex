@@ -1,10 +1,10 @@
 import * as React from "react";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import { showUsageInstruction } from "../../actions";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { connect, PureComponentEx, translate } from "./ComponentEx";
 import { IconButton } from "./TooltipControls";
 

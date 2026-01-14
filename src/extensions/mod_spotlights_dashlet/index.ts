@@ -1,6 +1,5 @@
-/* eslint-disable */
-import { IExtensionContext } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { ParserError } from "../announcement_dashlet/types";
@@ -9,7 +8,7 @@ import path from "path";
 import url from "url";
 import https from "https";
 
-import {
+import type {
   IMOTMEntry,
   ModSpotlightEntry,
   ModSpotlightEntryExt,

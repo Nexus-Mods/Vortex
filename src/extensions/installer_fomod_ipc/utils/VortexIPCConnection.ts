@@ -1,14 +1,11 @@
-import {
-  BaseIPCConnection,
-  ConnectionStrategy,
-  TimeoutOptions,
-} from "fomod-installer-ipc";
-import { ISupportedResult } from "../../mod_management/types/TestSupported";
-import { IInstallResult } from "../../mod_management/types/IInstallResult";
+import type { ConnectionStrategy, TimeoutOptions } from "fomod-installer-ipc";
+import { BaseIPCConnection } from "fomod-installer-ipc";
+import type { ISupportedResult } from "../../mod_management/types/TestSupported";
+import type { IInstallResult } from "../../mod_management/types/IInstallResult";
 import { statAsync } from "../../../util/fs";
-import { IExtensionApi } from "../../../types/api";
+import type { IExtensionApi } from "../../../types/api";
 import { log } from "../../../util/log";
-import { IChoices } from "../../installer_fomod_shared/types/interface";
+import type { IChoices } from "../../installer_fomod_shared/types/interface";
 import path from "path";
 import getVortexPath from "../../../util/getVortexPath";
 

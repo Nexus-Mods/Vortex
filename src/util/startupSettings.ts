@@ -1,7 +1,7 @@
 import * as path from "path";
 import { getApplication } from "./application";
 
-import { IParameters } from "./commandLine";
+import type { IParameters } from "./commandLine";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
 import { writeFileAtomic } from "./fsAtomic";

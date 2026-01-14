@@ -3,7 +3,7 @@ import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 export interface IProps {

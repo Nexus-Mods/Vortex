@@ -4,7 +4,7 @@
  */
 
 import { ipcRenderer } from "electron";
-import { Store } from "redux";
+import type { Store } from "redux";
 
 const RENDERER_ID = `renderer-${process.pid}-${Date.now()}`;
 

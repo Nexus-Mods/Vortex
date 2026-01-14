@@ -1,9 +1,9 @@
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 
-import { IDiscoveryResult } from "./types/IDiscoveryResult";
-import { IGameStored } from "./types/IGameStored";
+import type { IDiscoveryResult } from "./types/IDiscoveryResult";
+import type { IGameStored } from "./types/IGameStored";
 
 import { SITE_ID } from "./constants";
 

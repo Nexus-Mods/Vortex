@@ -1,10 +1,13 @@
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../types/IDialog";
-import { INotification, NotificationDismiss } from "../types/INotification";
+import type {
+  INotification,
+  NotificationDismiss,
+} from "../types/INotification";
 import local from "../util/local";
 import { log } from "../util/log";
 import { truthy } from "../util/util";

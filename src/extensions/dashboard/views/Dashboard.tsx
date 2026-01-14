@@ -2,7 +2,7 @@ import DropdownButton from "../../../renderer/controls/DropdownButton";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -19,18 +19,19 @@ import {
   setDashletWidth,
   setLayout,
 } from "../actions";
-import { IDashletProps } from "../types/IDashletProps";
+import type { IDashletProps } from "../types/IDashletProps";
 
 import FixedItem from "./FixedItem";
 import PackeryGrid from "./PackeryGrid";
-import PackeryItem, { IPackeryItemProps } from "./PackeryItem";
+import type { IPackeryItemProps } from "./PackeryItem";
+import PackeryItem from "./PackeryItem";
 
 import type * as remoteT from "@electron/remote";
 import * as _ from "lodash";
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 

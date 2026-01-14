@@ -3,9 +3,9 @@ import { FormPathItem, FormTextItem } from "../../renderer/controls/FormFields";
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
 import { Button } from "../../renderer/controls/TooltipControls";
-import { ThunkDispatch } from "redux-thunk";
-import { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import StarterInfo from "../../util/StarterInfo";
+import type { ThunkDispatch } from "redux-thunk";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type StarterInfo from "../../util/StarterInfo";
 
 import {
   addDiscoveredTool,
@@ -27,9 +27,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { IGameStored } from "../gamemode_management/types/IGameStored";
-import { IToolStored } from "../gamemode_management/types/IToolStored";
+import type * as Redux from "redux";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IToolStored } from "../gamemode_management/types/IToolStored";
 import { useTranslation } from "react-i18next";
 
 import {

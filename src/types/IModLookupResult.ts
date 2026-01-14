@@ -1,4 +1,4 @@
-import { IRule } from "modmeta-db";
+import type { IRule } from "modmeta-db";
 
 export interface IModLookupData {
   // name of the file on disk

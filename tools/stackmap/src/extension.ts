@@ -2,10 +2,12 @@ import { paste } from 'copy-paste';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
-import { parse, StackFrame } from 'stack-trace';
+import type { StackFrame } from 'stack-trace';
+import { parse } from 'stack-trace';
 import * as vscode from 'vscode';
 import SourceMap from './SourceMap';
-import { Position, NullableMappedPosition } from 'source-map';
+import type { NullableMappedPosition } from 'source-map';
+import { Position } from 'source-map';
 
 let sourcemap: SourceMap;
 

@@ -1,6 +1,7 @@
 import * as reactSelect from "../renderer/controls/ReactSelectWrap";
 
-import ExtensionManager, { IRegisteredExtension } from "./ExtensionManager";
+import type { IRegisteredExtension } from "./ExtensionManager";
+import ExtensionManager from "./ExtensionManager";
 
 import {} from "module";
 import * as reduxAct from "redux-act";
@@ -10,7 +11,7 @@ import { dynreq } from "vortex-run";
 const Module = require("module");
 
 import * as api from "../index";
-import { LogLevel } from "./log";
+import type { LogLevel } from "./log";
 
 const identity = (input) => input;
 

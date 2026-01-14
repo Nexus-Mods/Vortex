@@ -4,12 +4,12 @@ import Icon from "../../../renderer/controls/Icon";
 import More from "../../../renderer/controls/More";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
 } from "../../../types/IDialog";
-import { IErrorOptions } from "../../../types/IExtensionContext";
+import type { IErrorOptions } from "../../../types/IExtensionContext";
 import {
   ComponentEx,
   connect,
@@ -26,8 +26,8 @@ import getText from "../texts";
 
 import * as React from "react";
 import { Alert, FormGroup, HelpBlock } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 function nop() {
   // nop

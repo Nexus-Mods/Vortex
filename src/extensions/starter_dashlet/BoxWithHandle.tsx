@@ -1,7 +1,8 @@
-import React, { FC, useRef } from "react";
+import type { FC } from "react";
+import React, { useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import Icon from "../../renderer/controls/Icon";
-import { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../util/StarterInfo";
 
 interface IProps {
   children?: any;

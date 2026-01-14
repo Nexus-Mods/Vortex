@@ -1,8 +1,11 @@
-import { IFilterProps, ITableFilter } from "../../../types/ITableAttribute";
+import type {
+  IFilterProps,
+  ITableFilter,
+} from "../../../types/ITableAttribute";
 
 import * as React from "react";
 import Select from "react-select";
-import { DownloadState } from "../types/IDownload";
+import type { DownloadState } from "../types/IDownload";
 
 export class DownloadSelectionFilterComponent extends React.Component<
   IFilterProps,

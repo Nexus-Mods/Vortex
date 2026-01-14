@@ -1,6 +1,8 @@
-import { IExtensibleProps } from "../../types/IExtensionProvider";
-import ActionControl, { IActionControlProps } from "./ActionControl";
-import ContextMenu, { IContextMenuProps } from "./ContextMenu";
+import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { IActionControlProps } from "./ActionControl";
+import ActionControl from "./ActionControl";
+import type { IContextMenuProps } from "./ContextMenu";
+import ContextMenu from "./ContextMenu";
 
 import * as _ from "lodash";
 import * as React from "react";

@@ -1,9 +1,8 @@
-/* eslint-disable */
-import { IExtensionApi, IMod } from "../../types/api";
+import type { IExtensionApi, IMod } from "../../types/api";
 import { getSafe } from "../../util/storeHelper";
 
 import * as _ from "lodash";
-import { ILoadOrderEntry, ILoadOrderEntryExt } from "./types/types";
+import type { ILoadOrderEntry, ILoadOrderEntryExt } from "./types/types";
 import { log } from "../../util/log";
 import {
   activeGameId,

@@ -1,11 +1,11 @@
-import {
+import type {
   ICollectionInfo,
   IRevision,
   SourceType,
   UpdatePolicy,
 } from "@nexusmods/nexus-api";
-import * as types from "../../../types/api";
-import { ILoadOrder } from "../types/types";
+import type * as types from "../../../types/api";
+import type { ILoadOrder } from "../types/types";
 
 export interface ICollectionLoadOrder {
   loadOrder: ILoadOrder;

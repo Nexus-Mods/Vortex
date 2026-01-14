@@ -2,14 +2,14 @@ import Dropdown from "../controls/Dropdown";
 import Icon from "../controls/Icon";
 import PortalMenu from "../controls/PortalMenu";
 import Spinner from "../controls/Spinner";
-import {
+import type {
   INotification,
   INotificationAction,
   NotificationType,
 } from "../../types/INotification";
 import { ComponentEx } from "../controls/ComponentEx";
 
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";

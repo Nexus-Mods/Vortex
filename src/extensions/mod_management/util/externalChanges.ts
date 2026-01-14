@@ -1,5 +1,4 @@
-/* eslint-disable */
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IExtensionApi,
@@ -18,7 +17,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { setdefault, truthy } from "../../../util/util";
 
 import { showExternalChanges } from "../actions/session";
-import { FileAction, IFileEntry } from "../types/IFileEntry";
+import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 import { MERGED_PATH } from "../modMerging";
 

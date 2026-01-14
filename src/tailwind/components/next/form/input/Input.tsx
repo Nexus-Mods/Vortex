@@ -6,9 +6,11 @@
  */
 
 import * as React from "react";
-import { InputHTMLAttributes, Ref, useState } from "react";
+import type { InputHTMLAttributes, Ref } from "react";
+import { useState } from "react";
 
-import { BaseFormFieldProps, FormField } from "../formfield";
+import type { BaseFormFieldProps } from "../formfield";
+import { FormField } from "../formfield";
 import { joinClasses } from "../../utils";
 
 export interface InputProps

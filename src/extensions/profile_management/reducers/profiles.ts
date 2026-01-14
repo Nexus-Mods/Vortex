@@ -1,9 +1,9 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
 
 import * as actions from "../actions/profiles";
-import { IProfile } from "../types/IProfile";
+import type { IProfile } from "../types/IProfile";
 
 /**
  * reducer for changes to ephemeral session state

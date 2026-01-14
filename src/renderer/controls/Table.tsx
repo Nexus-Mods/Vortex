@@ -6,13 +6,13 @@ import {
   setCollapsedGroups,
   setGroupingAttribute,
 } from "../../actions/tables";
-import { IActionDefinition } from "../../types/IActionDefinition";
-import { IAttributeState } from "../../types/IAttributeState";
-import { IExtensibleProps } from "../../types/IExtensionProvider";
-import { II18NProps } from "../../types/II18NProps";
-import { IRowState, IState, ITableState } from "../../types/IState";
-import { ITableAttribute } from "../../types/ITableAttribute";
-import { SortDirection } from "../../types/SortDirection";
+import type { IActionDefinition } from "../../types/IActionDefinition";
+import type { IAttributeState } from "../../types/IAttributeState";
+import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { II18NProps } from "../../types/II18NProps";
+import type { IRowState, IState, ITableState } from "../../types/IState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import type { SortDirection } from "../../types/SortDirection";
 import { ComponentEx, connect, extend, translate } from "./ComponentEx";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
@@ -35,8 +35,9 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
-import * as Redux from "redux";
-import { createSelector, OutputSelector } from "reselect";
+import type * as Redux from "redux";
+import type { OutputSelector } from "reselect";
+import { createSelector } from "reselect";
 import { getErrorMessage } from "../../shared/errors";
 
 export type ChangeDataHandler = (

@@ -3,8 +3,8 @@ import { Button } from "../../../renderer/controls/TooltipControls";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 
-import { IProfile } from "../types/IProfile";
-import { IProfileFeature } from "../types/IProfileFeature";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
 
 import update from "immutability-helper";
 import * as React from "react";

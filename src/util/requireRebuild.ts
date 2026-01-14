@@ -1,6 +1,7 @@
 import { log } from "./log";
 
-import { spawnSync, SpawnSyncOptions } from "child_process";
+import type { SpawnSyncOptions } from "child_process";
+import { spawnSync } from "child_process";
 import { createHash } from "crypto";
 import * as fs from "fs-extra";
 import {} from "module";

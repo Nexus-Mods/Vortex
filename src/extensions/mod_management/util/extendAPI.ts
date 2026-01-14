@@ -1,12 +1,12 @@
-import InstallManager from "../InstallManager";
-import { IExtensionApi } from "../../../types/api";
+import type InstallManager from "../InstallManager";
+import type { IExtensionApi } from "../../../types/api";
 import {
   getCollectionActiveSession,
   getCollectionCurrentPhase,
 } from "../../collections_integration/selectors";
-import { IModsAPIExtension } from "../types/IModsAPIExtension";
+import type { IModsAPIExtension } from "../types/IModsAPIExtension";
 import { log } from "../../../util/log";
-import { IDeployOptions } from "../types/IDeployOptions";
+import type { IDeployOptions } from "../types/IDeployOptions";
 
 function extendAPI(
   api: IExtensionApi,

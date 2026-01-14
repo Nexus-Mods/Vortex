@@ -1,7 +1,7 @@
 import { ComponentEx } from "./ComponentEx";
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 
-import { IActionDefinitionEx } from "./ActionControl";
+import type { IActionDefinitionEx } from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
 import Dropdown from "./Dropdown";
 import Icon from "./Icon";

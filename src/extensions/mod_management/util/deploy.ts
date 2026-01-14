@@ -1,12 +1,11 @@
 import { startActivity, stopActivity } from "../../../actions/session";
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IExtensionApi,
 } from "../../../types/IExtensionContext";
-import { IGame } from "../../../types/IGame";
-import { INotification } from "../../../types/INotification";
-import { IProfile } from "../../../types/IState";
+import type { IGame } from "../../../types/IGame";
+import type { IProfile } from "../../../types/IState";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import {
@@ -17,10 +16,10 @@ import {
 } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-import { IModType } from "../../gamemode_management/types/IModType";
+import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { installPath, installPathForGame } from "../selectors";
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 import {
   fallbackPurgeType,
   getManifest,

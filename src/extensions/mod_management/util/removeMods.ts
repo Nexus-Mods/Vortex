@@ -1,6 +1,6 @@
 import Promise from "bluebird";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { INotification } from "../../../types/INotification";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { INotification } from "../../../types/INotification";
 import { toPromise } from "../../../util/util";
 
 export function removeMod(

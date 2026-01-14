@@ -1,5 +1,5 @@
 import { createAction } from "redux-act";
-import { IAnnouncement, ISurveyInstance } from "./types";
+import type { IAnnouncement, ISurveyInstance } from "./types";
 
 export const setAnnouncements = createAction(
   "SET_ANNOUNCEMENTS",

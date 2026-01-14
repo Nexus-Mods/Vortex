@@ -1,4 +1,4 @@
-import { IRule } from "./IMod";
+import type { IRule } from "./IMod";
 
 export type InstructionType =
   | "copy"

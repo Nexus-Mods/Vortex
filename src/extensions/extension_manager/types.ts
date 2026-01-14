@@ -1,4 +1,7 @@
-import { IExtensionLoadFailure, IExtensionState } from "../../types/IState";
+import type {
+  IExtensionLoadFailure,
+  IExtensionState,
+} from "../../types/IState";
 
 export type ExtensionType = "game" | "translation" | "theme";
 

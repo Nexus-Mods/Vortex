@@ -2,11 +2,11 @@
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
 import {
-  ConnectDropTarget,
+  type ConnectDropTarget,
   DropTarget,
-  DropTargetConnector,
-  DropTargetMonitor,
-  DropTargetSpec,
+  type DropTargetConnector,
+  type DropTargetMonitor,
+  type DropTargetSpec,
 } from "react-dnd";
 import { ComponentEx } from "./ComponentEx";
 import DraggableItem from "./DraggableListItem";

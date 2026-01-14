@@ -1,4 +1,4 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 
 function init(context: IExtensionContext) {
   // We chose not to integrate collections into the core API to simplify debugging

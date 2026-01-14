@@ -1,10 +1,10 @@
 import * as os from "os";
 import * as path from "path";
-import {
+import type {
   IExtensionContext,
   IRunParameters,
 } from "../../types/IExtensionContext";
-import { IProfile, IState } from "../../types/IState";
+import type { IProfile, IState } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { activeProfile } from "../../util/selectors";

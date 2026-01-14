@@ -10,7 +10,7 @@ import { Typography } from "../typography/Typography";
 import { Icon } from "../icon";
 import { nxmFileSize, nxmMod } from "../../../lib/icon-paths";
 import numeral from "numeral";
-import { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import { isCollectionModPresent } from "../../../../util/selectors";
 import Debouncer from "../../../../util/Debouncer";
 import { delayed } from "../../../../util/util";

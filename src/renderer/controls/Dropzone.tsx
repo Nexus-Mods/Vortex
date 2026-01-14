@@ -1,26 +1,26 @@
-import {
+import type {
   DialogActions,
   DialogType,
   IConditionResult,
   IDialogContent,
   IDialogResult,
   IInput,
-  showDialog,
 } from "../../actions/notifications";
+import { showDialog } from "../../actions/notifications";
 
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { ComponentEx, connect, translate } from "./ComponentEx";
 import { truthy } from "../../util/util";
 
 import Icon from "./Icon";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 import { webUtils } from "electron";
 
 import * as React from "react";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import * as url from "url";
 
 export type DropType = "urls" | "files";

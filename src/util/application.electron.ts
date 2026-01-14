@@ -1,6 +1,7 @@
 import { app as appIn, BrowserWindow } from "electron";
 import * as os from "os";
-import { IApplication, setApplication } from "./application";
+import type { IApplication } from "./application";
+import { setApplication } from "./application";
 
 class ElectronApplication implements IApplication {
   private mName: string;

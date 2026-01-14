@@ -1,5 +1,5 @@
 import ErrorBoundary from "../controls/ErrorBoundary";
-import { PropsCallback } from "../../types/IExtensionContext";
+import type { PropsCallback } from "../../types/IExtensionContext";
 import { extend } from "../controls/ComponentEx";
 
 import * as React from "react";

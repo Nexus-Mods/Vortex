@@ -1,10 +1,10 @@
 import { fileMD5 } from "../../util/checksum";
 import * as fs from "../../util/fs";
-import { IInstruction } from "./types/IInstallResult";
-import { IFileListItem } from "./types/IMod";
-import { ISupportedInstaller } from "./types/IModInstaller";
-import { ProgressDelegate } from "./types/InstallFunc";
-import { ISupportedResult } from "./types/TestSupported";
+import type { IInstruction } from "./types/IInstallResult";
+import type { IFileListItem } from "./types/IMod";
+import type { ISupportedInstaller } from "./types/IModInstaller";
+import type { ProgressDelegate } from "./types/InstallFunc";
+import type { ISupportedResult } from "./types/TestSupported";
 
 import Promise from "bluebird";
 import * as path from "path";

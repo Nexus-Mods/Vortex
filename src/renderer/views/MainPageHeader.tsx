@@ -1,5 +1,5 @@
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import { connect } from "../controls/ComponentEx";
 import { truthy } from "../../util/util";
 

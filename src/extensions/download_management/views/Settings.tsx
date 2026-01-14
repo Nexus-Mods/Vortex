@@ -6,14 +6,14 @@ import More from "../../../renderer/controls/More";
 import Spinner from "../../../renderer/controls/Spinner";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../../types/IDialog";
-import { IDownload, IState } from "../../../types/IState";
-import { ValidationState } from "../../../types/ITableAttribute";
+import type { IDownload, IState } from "../../../types/IState";
+import type { ValidationState } from "../../../types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -86,8 +86,8 @@ import {
   Modal,
   ProgressBar,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import getVortexPath from "../../../util/getVortexPath";
 import Image from "../../../renderer/controls/Image";
 

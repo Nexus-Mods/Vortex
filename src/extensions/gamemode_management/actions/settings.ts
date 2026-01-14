@@ -1,7 +1,7 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
-import { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 import * as reduxAct from "redux-act";
 

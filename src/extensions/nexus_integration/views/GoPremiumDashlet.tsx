@@ -6,7 +6,7 @@ import { PREMIUM_PATH } from "../constants";
 
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
 import { Campaign, nexusModsURL, Section, Content } from "../../../util/util";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Image from "../../../renderer/controls/Image";

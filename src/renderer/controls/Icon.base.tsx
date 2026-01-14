@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import type Promise from "bluebird";
 import * as React from "react";
 
 const debugMissingIcons = process.env.NODE_ENV === "development";

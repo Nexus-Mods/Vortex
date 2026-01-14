@@ -1,12 +1,12 @@
 import { setSettingsPage } from "../../../actions/session";
 import ErrorBoundary from "../../../renderer/controls/ErrorBoundary";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { bytesToString, truthy } from "../../../util/util";
 
 import { NUM_SPEED_DATA_POINTS } from "../reducers/state";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import ResizeDetector from "react-resize-detector";
 import * as recharts from "recharts";

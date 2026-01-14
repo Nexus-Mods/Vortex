@@ -1,7 +1,7 @@
 import { setSettingsPage } from "../../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
-import { PropsCallback } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { PropsCallback } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -16,8 +16,8 @@ import MainPage from "./MainPage";
 
 import * as React from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 const startupSettings = lazyRequire<typeof startupSettingsT>(
   () => require("../../util/startupSettings"),

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { setInstallerSandbox } from "../actions/sandbox";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { MainContext } from "../../../renderer/views/MainWindow";
 import Toggle from "../../../renderer/controls/Toggle";
 

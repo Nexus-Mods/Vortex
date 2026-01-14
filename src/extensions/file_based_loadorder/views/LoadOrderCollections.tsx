@@ -9,13 +9,13 @@ import {
   FlexLayout,
   Icon,
 } from "../../../renderer/controls/api";
-import * as types from "../../../types/api";
+import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 
-import { IGameSpecificInterfaceProps } from "../types/collections";
-import { ILoadOrderEntry, LoadOrder } from "../types/types";
+import type { IGameSpecificInterfaceProps } from "../types/collections";
+import type { ILoadOrderEntry, LoadOrder } from "../types/types";
 
 import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
 

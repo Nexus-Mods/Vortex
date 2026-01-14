@@ -1,5 +1,5 @@
 import type * as RemoteT from "@electron/remote";
-import { BrowserWindow } from "electron";
+import type { BrowserWindow } from "electron";
 import * as React from "react";
 import { IconButton } from "../controls/TooltipControls";
 import lazyRequire from "../../util/lazyRequire";

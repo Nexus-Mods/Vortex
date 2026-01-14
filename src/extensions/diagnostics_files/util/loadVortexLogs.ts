@@ -1,7 +1,7 @@
 import * as fs from "../../../util/fs";
-import { LogLevel } from "../../../util/log";
+import type { LogLevel } from "../../../util/log";
 
-import { ILog, ISession } from "../types/ISession";
+import type { ILog, ISession } from "../types/ISession";
 
 import Promise from "bluebird";
 import * as path from "path";

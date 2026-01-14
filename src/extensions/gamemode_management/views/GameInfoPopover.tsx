@@ -1,14 +1,14 @@
 import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
-import { IGameInfoEntry, IState } from "../../../types/IState";
+import type { IGameInfoEntry, IState } from "../../../types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 import { bytesToString } from "../../../util/util";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IGameStored } from "../types/IGameStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
-import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type Promise from "bluebird";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 export interface IBaseProps {

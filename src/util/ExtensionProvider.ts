@@ -1,6 +1,9 @@
-import ExtensionManager from "./ExtensionManager";
+import type ExtensionManager from "./ExtensionManager";
 
-import { IExtendedProps, IExtensibleProps } from "../types/IExtensionProvider";
+import type {
+  IExtendedProps,
+  IExtensibleProps,
+} from "../types/IExtensionProvider";
 
 import * as _ from "lodash";
 import * as React from "react";

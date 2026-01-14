@@ -1,8 +1,8 @@
-import { IActionDefinition } from "../../types/IActionDefinition";
+import type { IActionDefinition } from "../../types/IActionDefinition";
 import Icon from "./Icon";
-import { ButtonType } from "./IconBar";
+import type { ButtonType } from "./IconBar";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button, Dropdown, DropdownButton, MenuItem } from "react-bootstrap";
 

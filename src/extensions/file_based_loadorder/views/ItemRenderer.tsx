@@ -4,10 +4,14 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 
-import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
+import type {
+  IItemRendererProps,
+  ILoadOrderEntry,
+  LoadOrder,
+} from "../types/types";
 
 import { Icon, tooltip } from "../../../renderer/controls/api";
-import { IProfile, IState } from "../../../types/api";
+import type { IProfile, IState } from "../../../types/api";
 
 import * as selectors from "../../../util/selectors";
 

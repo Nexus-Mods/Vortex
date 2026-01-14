@@ -3,7 +3,7 @@ import path from "path";
 import { COMPANY_ID } from "../../util/constants";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
-import { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from "./types/types";
+import type { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from "./types/types";
 
 const gameSupport: ILoadOrderGameInfoExt[] = [];
 export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {

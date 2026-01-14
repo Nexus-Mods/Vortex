@@ -1,7 +1,7 @@
 // features to help restore vortex to a working state
 
-import { IDialogResult } from "../../types/IDialog";
-import {
+import type { IDialogResult } from "../../types/IDialog";
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
@@ -12,7 +12,7 @@ import { getGame } from "../gamemode_management/util/getGame";
 import { createFullStateBackup } from "../../store/store";
 
 import { setModEnabled } from "../../actions";
-import { IDeploymentManifest } from "../../types/api";
+import type { IDeploymentManifest } from "../../types/api";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
@@ -20,7 +20,7 @@ import { getSafe } from "../../util/storeHelper";
 import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
 
-import Bluebird from "bluebird";
+import type Bluebird from "bluebird";
 
 const ONE_HOUR = 60 * 60 * 1000;
 

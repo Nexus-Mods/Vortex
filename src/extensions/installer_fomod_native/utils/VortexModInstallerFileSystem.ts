@@ -1,6 +1,8 @@
 import path from "path";
-import { Dirent, readdirSync, readFileSync } from "node:fs";
-import { FileHandle, open, readdir } from "node:fs/promises";
+import type { Dirent } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import type { FileHandle } from "node:fs/promises";
+import { open, readdir } from "node:fs/promises";
 import lazyRequire from "../../../util/lazyRequire";
 import type * as fomodT from "fomod-installer-native";
 

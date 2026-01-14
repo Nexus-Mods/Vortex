@@ -1,6 +1,6 @@
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
-import { WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
 import { matchesGameMode, matchesVersion } from "./util";
@@ -13,7 +13,7 @@ import opn from "../../util/opn";
 import * as selectors from "../../util/selectors";
 
 import { EmptyPlaceholder, FlexLayout } from "../../renderer/controls/api";
-import { AnnouncementSeverity, IAnnouncement } from "./types";
+import type { AnnouncementSeverity, IAnnouncement } from "./types";
 import ReactMarkdown from "react-markdown";
 
 import dayjs from "dayjs";

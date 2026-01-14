@@ -1,4 +1,4 @@
-import * as pathT from "path";
+import type * as pathT from "path";
 
 /**
  * Monkey patching is obviously considered evil but there may be cases where the alternative

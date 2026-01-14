@@ -13,7 +13,7 @@ import TooltipTag from "./TooltipTag";
 import YoutubeTag from "./YoutubeTag";
 
 import * as bbcode from "bbcode-to-react";
-import * as React from "react";
+import type * as React from "react";
 
 /**
  * options that can be passed into the bbcode parser to configure how bbcode

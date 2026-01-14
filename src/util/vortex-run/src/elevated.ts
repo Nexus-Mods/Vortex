@@ -1,4 +1,3 @@
-/* eslint-disable */
 import Bluebird from "bluebird";
 import * as fs from "fs";
 import * as path from "path";

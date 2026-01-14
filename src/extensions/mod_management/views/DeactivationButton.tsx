@@ -1,15 +1,14 @@
-import {
-  addNotification,
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-  showDialog,
 } from "../../../actions/notifications";
+import { addNotification, showDialog } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import { INotificationAction } from "../../../types/INotification";
-import { IState } from "../../../types/IState";
+import type { INotificationAction } from "../../../types/INotification";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -20,13 +19,13 @@ import { showError } from "../../../util/message";
 import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IDeploymentMethod } from "../types/IDeploymentMethod";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
 
 import Promise from "bluebird";
 import * as React from "react";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { setConfirmPurge } from "../actions/settings";
 
 interface IConnectedProps {

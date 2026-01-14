@@ -1,5 +1,5 @@
-import { IFOMODState, IPluginState } from "../types/interface";
-import { IState } from "../../../types/api";
+import type { IFOMODState, IPluginState } from "../types/interface";
+import type { IState } from "../../../types/api";
 
 type IStateSession = IState["session"];
 

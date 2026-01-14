@@ -1,5 +1,4 @@
-/* eslint-disable */
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 import { batchDispatch, truthy } from "../../../util/util";
@@ -7,23 +6,24 @@ import { nexusGameId } from "./convertGameId";
 
 import { gameById } from "../../gamemode_management/selectors";
 import { setModAttribute } from "../../mod_management/actions/mods";
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 
 import { setLastUpdateCheck } from "../actions/session";
 
-import NexusT, {
+import type {
   IFileInfo,
   IFileUpdate,
   IModFiles,
   IModInfo,
   IUpdateEntry,
   NexusError,
-  RateLimitError,
 } from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
+import { RateLimitError } from "@nexusmods/nexus-api";
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as semver from "semver";
 
 export const ONE_MINUTE = 60 * 1000;

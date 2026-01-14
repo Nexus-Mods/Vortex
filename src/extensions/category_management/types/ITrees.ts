@@ -1,4 +1,4 @@
-import { TreeItem } from "react-sortable-tree";
+import type { TreeItem } from "react-sortable-tree";
 
 export interface ICategoriesTree extends TreeItem {
   categoryId: string;

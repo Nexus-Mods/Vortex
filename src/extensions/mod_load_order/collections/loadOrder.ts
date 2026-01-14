@@ -1,18 +1,20 @@
-import React = require("react");
-import * as types from "../../../types/api";
+import * as React from "react";
+import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import * as selectors from "../../../util/selectors";
 
 import { setLoadOrder } from "../../../actions/loadOrder";
 
-import {
-  CollectionGenerateError,
-  CollectionParseError,
+import type {
   ICollection,
   ICollectionLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
-import { ILoadOrder } from "../types/types";
+import {
+  CollectionGenerateError,
+  CollectionParseError,
+} from "../types/collections";
+import type { ILoadOrder } from "../types/types";
 
 import { genCollectionLoadOrder } from "../util";
 

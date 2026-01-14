@@ -1,5 +1,5 @@
-import { IExtensionApi } from "./IExtensionContext";
-import { IModifiers } from "./IModifiers";
+import type { IExtensionApi } from "./IExtensionContext";
+import type { IModifiers } from "./IModifiers";
 
 /**
  * the context object passed along with all components

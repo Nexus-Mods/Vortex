@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { getTabId } from "../../utils";
 import { useTabContext } from "../tabs.context";

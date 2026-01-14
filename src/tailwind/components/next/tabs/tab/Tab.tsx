@@ -1,13 +1,9 @@
 "use client";
 
 import * as React from "react";
-import {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  useEffect,
-  useRef,
-} from "react";
-import numeral = require("numeral");
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import { useEffect, useRef } from "react";
+import numeral from "numeral";
 
 import { Typography } from "../../typography";
 import { getTabId, joinClasses } from "../../utils";

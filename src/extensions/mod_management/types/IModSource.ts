@@ -1,4 +1,4 @@
-import { IModSourceOptions } from "../../../types/IExtensionContext";
+import type { IModSourceOptions } from "../../../types/IExtensionContext";
 
 export interface IModSource {
   id: string;

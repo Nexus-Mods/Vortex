@@ -2,7 +2,7 @@ import { setDialogVisible } from "../../../actions/session";
 import Icon from "../../../renderer/controls/Icon";
 import Image from "../../../renderer/controls/Image";
 import * as tooltip from "../../../renderer/controls/TooltipControls";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -13,19 +13,16 @@ import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
-import {
-  IValidateKeyData,
-  IValidateKeyDataV2,
-} from "../types/IValidateKeyData";
+import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
 
-import NexusT from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
 import * as path from "path";
 import * as React from "react";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { pathToFileURL } from "url";
 import { isLoggedIn } from "../selectors";
 

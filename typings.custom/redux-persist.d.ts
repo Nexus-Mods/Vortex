@@ -448,7 +448,7 @@ export function compose<A, B, C, R>(
 declare module '~redux-persist/index' {
 import * as constants from '~redux-persist/constants'
 
-import { Store, StoreEnhancer, Reducer } from '~redux-persist~redux'
+import type { Store, StoreEnhancer, Reducer } from '~redux-persist~redux'
 
 interface CreateTransformConfig {
   whitelist?: string[]

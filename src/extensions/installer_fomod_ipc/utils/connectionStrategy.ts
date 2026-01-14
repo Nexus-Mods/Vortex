@@ -1,5 +1,5 @@
+import type { ConnectionStrategy } from "fomod-installer-ipc";
 import {
-  ConnectionStrategy,
   NamedPipeTransport,
   RegularProcessLauncher,
   SandboxProcessLauncher,

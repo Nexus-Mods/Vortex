@@ -10,14 +10,16 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import * as fs from "./fs";
-import getNormalizeFunc, { Normalize } from "./getNormalizeFunc";
+import type { Normalize } from "./getNormalizeFunc";
+import getNormalizeFunc from "./getNormalizeFunc";
 import { log } from "./log";
 import { isChildPath } from "./util";
 
 import Promise from "bluebird";
 import * as diskusage from "diskusage";
 import * as path from "path";
-import turbowalk, { IEntry } from "turbowalk";
+import type { IEntry } from "turbowalk";
+import turbowalk from "turbowalk";
 import * as winapi from "winapi-bindings";
 
 const MIN_DISK_SPACE_OFFSET = 512 * 1024 * 1024;

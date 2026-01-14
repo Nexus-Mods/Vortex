@@ -1,6 +1,6 @@
 import { removeExtension } from "../../actions";
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
@@ -13,12 +13,12 @@ import {
   languageExists,
 } from "../settings_interface/languagemap";
 
-import { ExtensionType, IExtension } from "./types";
+import type { ExtensionType, IExtension } from "./types";
 import { readExtensionInfo } from "./util";
 
 import Promise from "bluebird";
 import * as _ from "lodash";
-import ZipT = require("node-7z");
+import type ZipT from "node-7z";
 import * as path from "path";
 import rimraf from "rimraf";
 import type * as vortexRunT from "vortex-run";

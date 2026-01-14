@@ -1,4 +1,3 @@
-/* eslint-disable */
 export interface IWaitForConditionOptions {
   // Only call the callback if the condition is true
   condition: () => boolean;

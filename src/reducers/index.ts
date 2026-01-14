@@ -5,13 +5,9 @@
 /**
  * dummy comment
  */
-import { IExtensionReducer } from "../types/Extension";
-import {
-  IReducerSpec,
-  IStateVerifier,
-  VerifierDrop,
-  VerifierDropParent,
-} from "../types/IExtensionContext";
+import type { IExtensionReducer } from "../types/Extension";
+import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
+import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
 import { UserCanceled } from "../util/CustomErrors";
 import deepMerge from "../util/deepMerge";
 import * as fs from "../util/fs";
@@ -31,10 +27,11 @@ import { app } from "electron";
 import update from "immutability-helper";
 import { pick } from "lodash";
 import * as path from "path";
-import { combineReducers, Reducer, ReducersMapObject } from "redux";
+import type { Reducer, ReducersMapObject } from "redux";
+import { combineReducers } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
-import { IState } from "../types/IState";
+import type { IState } from "../types/IState";
 import { unknownToError } from "../shared/errors";
 
 export const STATE_BACKUP_PATH = "state_backups";

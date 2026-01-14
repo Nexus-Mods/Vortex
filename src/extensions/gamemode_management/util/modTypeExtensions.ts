@@ -1,10 +1,10 @@
-import {
+import type {
   IInstruction,
   IModTypeOptions,
 } from "../../../types/IExtensionContext";
-import { IGame, IModType } from "../../../types/IGame";
+import type { IGame, IModType } from "../../../types/IGame";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 
 const modTypeExtensions: IModType[] = [];
 

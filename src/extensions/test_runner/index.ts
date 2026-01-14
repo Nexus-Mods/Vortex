@@ -1,5 +1,4 @@
 // LEGACY FILE
-/* eslint-disable max-lines-per-function, indent */
 
 /**
  * This extension is a host for automated tests against the current
@@ -29,14 +28,15 @@
  * Further event types can be triggered by extensions
  */
 
-import { DialogActions, showDialog } from "../../actions/notifications";
-import {
+import type { DialogActions } from "../../actions/notifications";
+import { showDialog } from "../../actions/notifications";
+import type {
   CheckFunction,
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { INotificationAction } from "../../types/INotification";
-import { ITestResult } from "../../types/ITestResult";
+import type { INotificationAction } from "../../types/INotification";
+import type { ITestResult } from "../../types/ITestResult";
 import { getApplication } from "../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";

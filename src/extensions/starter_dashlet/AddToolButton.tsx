@@ -1,4 +1,4 @@
-import { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../util/StarterInfo";
 
 import { useTranslation } from "react-i18next";
 
@@ -15,11 +15,11 @@ import PortalMenu from "../../renderer/controls/PortalMenu";
 
 import { setToolVisible } from "../gamemode_management/actions/settings";
 
-import { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import { IState } from "../../types/IState";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IState } from "../../types/IState";
 import * as selectors from "../../util/selectors";
 
-import { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
 
 interface IBaseProps {
   onAddNewTool: () => void;

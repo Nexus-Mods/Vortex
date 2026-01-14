@@ -1,5 +1,5 @@
 import createAction from "../../../actions/safeCreateAction";
-import { IInstallerInfoState, IInstallerState } from "../types/interface";
+import type { IInstallerInfoState, IInstallerState } from "../types/interface";
 
 export const startDialog = createAction(
   "START_FOMOD_DIALOG",

@@ -1,5 +1,5 @@
 import createAction from "../../../actions/safeCreateAction";
-import { ILoadOrderEntry } from "../types/types";
+import type { ILoadOrderEntry } from "../types/types";
 
 // Change a specific load order entry.
 export const setLoadOrderEntry = createAction(

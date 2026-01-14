@@ -1,5 +1,8 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
-import { ICategory, ICategoryDictionary } from "../types/ICategoryDictionary";
+import type {
+  ICategory,
+  ICategoryDictionary,
+} from "../types/ICategoryDictionary";
 
 import * as reduxAct from "redux-act";
 

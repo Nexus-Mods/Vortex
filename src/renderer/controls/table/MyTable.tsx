@@ -6,7 +6,7 @@
 
 import * as _ from "lodash";
 import * as React from "react";
-import { TableProps } from "react-bootstrap";
+import type { TableProps } from "react-bootstrap";
 
 export function Table(props: TableProps) {
   const classes = ["table", "xtable"].concat(

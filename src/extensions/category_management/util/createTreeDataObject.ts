@@ -1,11 +1,11 @@
 import { getSafe, pushSafe } from "../../../util/storeHelper";
 
-import { IMod } from "../../mod_management/types/IMod";
-import { ICategory } from "../types/ICategoryDictionary";
-import { ICategoriesTree } from "../types/ITrees";
+import type { IMod } from "../../mod_management/types/IMod";
+import type { ICategory } from "../types/ICategoryDictionary";
+import type { ICategoriesTree } from "../types/ITrees";
 import generateSubtitle from "./generateSubtitle";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 
 function searchChildren(
   t: TFunction,

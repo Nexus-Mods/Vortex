@@ -1,4 +1,4 @@
-import {
+import type {
   EndorsedStatus,
   IModFileContentPage,
   ICollection,
@@ -14,11 +14,10 @@ import {
   IModFileContentPageQuery,
   IModFileContentSearchFilter,
   IRevision,
-  IModRequirementsQuery,
   IModRequirements,
 } from "@nexusmods/nexus-api";
-import { IMod } from "../../mod_management/types/IMod";
-import { IValidateKeyDataV2 } from "./IValidateKeyData";
+import type { IMod } from "../../mod_management/types/IMod";
+import type { IValidateKeyDataV2 } from "./IValidateKeyData";
 
 export interface INexusAPIExtension {
   nexusCheckModsVersion?: (

@@ -1,12 +1,11 @@
-/* eslint-disable */
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
-import { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
-import { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
-import { IState } from "../../types/IState";
-import { ITool } from "../../types/ITool";
+import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IGame } from "../../types/IGame";
+import type { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
+import type { IState } from "../../types/IState";
+import type { ITool } from "../../types/ITool";
 import { getNormalizeFunc } from "../../util/api";
 import {
   ProcessCanceled,
@@ -22,7 +21,7 @@ import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
-import { IExtensionDownloadInfo } from "../extension_manager/types";
+import type { IExtensionDownloadInfo } from "../extension_manager/types";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 
 import {
@@ -40,9 +39,9 @@ import {
   addDiscoveredTool,
   clearDiscoveredGame,
 } from "./actions/settings";
-import { IDiscoveryResult } from "./types/IDiscoveryResult";
-import { IGameStored } from "./types/IGameStored";
-import { IToolStored } from "./types/IToolStored";
+import type { IDiscoveryResult } from "./types/IDiscoveryResult";
+import type { IGameStored } from "./types/IGameStored";
+import type { IToolStored } from "./types/IToolStored";
 import {
   assertToolDir,
   discoverRelativeTools,
@@ -55,7 +54,7 @@ import { getGame } from "./util/getGame";
 import Promise from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;

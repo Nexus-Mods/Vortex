@@ -1,14 +1,19 @@
-import { IDeployedFile, IExtensionApi } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
+import type {
+  IDeployedFile,
+  IExtensionApi,
+} from "../../types/IExtensionContext";
+import type { IGame } from "../../types/IGame";
 import * as fs from "../../util/fs";
-import getFileList, { IFileEntry } from "../../util/getFileList";
-import getNormalizeFunc, { Normalize } from "../../util/getNormalizeFunc";
+import type { IFileEntry } from "../../util/getFileList";
+import getFileList from "../../util/getFileList";
+import type { Normalize } from "../../util/getNormalizeFunc";
+import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { setdefault, truthy } from "../../util/util";
 import walk from "../../util/walk";
 
-import { IMod } from "./types/IMod";
-import { IResolvedMerger } from "./types/IResolvedMerger";
+import type { IMod } from "./types/IMod";
+import type { IResolvedMerger } from "./types/IResolvedMerger";
 
 import { BACKUP_TAG } from "./LinkingDeployment";
 

@@ -1,15 +1,15 @@
-import { ButtonType } from "../../../renderer/controls/IconBar";
+import type { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 
 import { setGameHidden } from "../actions/settings";
 
 import * as React from "react";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 export interface IBaseProps {
   instanceId: string;

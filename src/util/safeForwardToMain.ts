@@ -7,7 +7,7 @@
  */
 
 import { ipcRenderer } from "electron";
-import { Middleware } from "redux";
+import type { Middleware } from "redux";
 
 const RENDERER_ID = `renderer-${process.pid}-${Date.now()}`;
 

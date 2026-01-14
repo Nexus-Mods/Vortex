@@ -1,5 +1,5 @@
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
 import {
   ProcessCanceled,
   TemporaryError,
@@ -28,25 +28,23 @@ import {
   setDownloadModInfo,
   setDownloadPausable,
 } from "./actions/state";
-import { IChunk } from "./types/IChunk";
-import { IDownload, IDownloadOptions } from "./types/IDownload";
-import { IDownloadResult } from "./types/IDownloadResult";
-import { ProgressCallback } from "./types/ProgressCallback";
-import { IStartDownloadOptions } from "./types/IStartDownloadOptions";
-import { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
+import type { IChunk } from "./types/IChunk";
+import type { IDownload, IDownloadOptions } from "./types/IDownload";
+import type { IDownloadResult } from "./types/IDownloadResult";
+import type { ProgressCallback } from "./types/ProgressCallback";
+import type { IStartDownloadOptions } from "./types/IStartDownloadOptions";
+import type { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
 
-import DownloadManager, {
-  AlreadyDownloaded,
-  DownloadIsHTML,
-  RedownloadMode,
-} from "./DownloadManager";
+import type { RedownloadMode } from "./DownloadManager";
+import type DownloadManager from "./DownloadManager";
+import { AlreadyDownloaded, DownloadIsHTML } from "./DownloadManager";
 
 import Promise from "bluebird";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import { getGames } from "../gamemode_management/util/getGame";
 import { util } from "../..";

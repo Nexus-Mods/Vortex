@@ -1,6 +1,6 @@
 import { setdefault } from "../util/util";
 
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 export class StateError extends Error {
   private mAction: Redux.Action;

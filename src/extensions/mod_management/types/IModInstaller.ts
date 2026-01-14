@@ -1,5 +1,5 @@
-import { InstallFunc } from "./InstallFunc";
-import { TestSupported } from "./TestSupported";
+import type { InstallFunc } from "./InstallFunc";
+import type { TestSupported } from "./TestSupported";
 
 export interface IModInstaller {
   id: string;

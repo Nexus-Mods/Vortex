@@ -1,6 +1,6 @@
 import { setMultiUser } from "../../actions/user";
 import More from "../../renderer/controls/More";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import { relaunch } from "../../util/commandLine";
 import {
   ComponentEx,
@@ -18,8 +18,8 @@ import {
   FormGroup,
   HelpBlock,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 interface IConnectedProps {
   multiUser: boolean;

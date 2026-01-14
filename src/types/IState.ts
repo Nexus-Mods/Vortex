@@ -1,28 +1,28 @@
-import { IAttributeState } from "./IAttributeState";
-import { IDialog } from "./IDialog";
-import { INotification } from "./INotification";
+import type { IAttributeState } from "./IAttributeState";
+import type { IDialog } from "./IDialog";
+import type { INotification } from "./INotification";
 
-import { ICollectionInstallState } from "../extensions/collections_integration/types";
+import type { ICollectionInstallState } from "../extensions/collections_integration/types";
 
-import { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
-import { IDownload } from "../extensions/download_management/types/IDownload";
-import {
+import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
+import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type {
   IAvailableExtension,
   IExtension,
 } from "../extensions/extension_manager/types";
-import { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
-import { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
-import {
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type {
   IHistoryPersistent,
   IHistoryState,
 } from "../extensions/history_management/reducers";
-import { IMod } from "../extensions/mod_management/types/IMod";
-import { IProfile } from "../extensions/profile_management/types/IProfile";
-import { IParameters } from "../util/commandLine";
-import VortexInstallType from "./VortexInstallType";
+import type { IMod } from "../extensions/mod_management/types/IMod";
+import type { IProfile } from "../extensions/profile_management/types/IProfile";
+import type { IParameters } from "../util/commandLine";
+import type { VortexInstallType } from "./VortexInstallType";
 
 // re-export these to keep the imports from extensions local
-export { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
+export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
 
 /**
  * interface to represent a position on the screen

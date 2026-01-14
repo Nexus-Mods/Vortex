@@ -1,5 +1,5 @@
-import { IBannerOptions } from "../../types/IBannerOptions";
-import { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { IBannerOptions } from "../../types/IBannerOptions";
+import type { IExtensibleProps } from "../../types/IExtensionProvider";
 import { connect } from "./ComponentEx";
 import { extend } from "../../util/ExtensionProvider";
 import { truthy } from "../../util/util";

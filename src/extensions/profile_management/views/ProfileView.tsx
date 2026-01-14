@@ -1,10 +1,10 @@
-import {
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
-  showDialog,
 } from "../../../actions/notifications";
-import { IMod, IState } from "../../../types/IState";
+import { showDialog } from "../../../actions/notifications";
+import type { IMod, IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -17,14 +17,14 @@ import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
-import { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { getGame } from "../../gamemode_management/util/getGame";
 
 import { setFeature, setProfile } from "../actions/profiles";
 import { setNextProfile } from "../actions/settings";
-import { IProfile } from "../types/IProfile";
-import { IProfileFeature } from "../types/IProfileFeature";
+import type { IProfile } from "../types/IProfile";
+import type { IProfileFeature } from "../types/IProfileFeature";
 import { profilePath, removeProfile } from "../util/manage";
 
 import ProfileEdit from "./ProfileEdit";
@@ -35,7 +35,7 @@ import update from "immutability-helper";
 import * as path from "path";
 import * as React from "react";
 import { Button, Collapse } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
 import { generate as shortid } from "shortid";
 
 export interface IBaseProps {

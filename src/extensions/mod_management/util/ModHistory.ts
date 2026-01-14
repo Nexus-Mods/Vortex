@@ -1,16 +1,16 @@
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IState } from "../../../types/IState";
-import { TFunction } from "../../../util/i18n";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import type { TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import { profileById } from "../../../util/selectors";
 import { midClip } from "../../../util/util";
-import {
+import type {
   IHistoryEvent,
   IHistoryStack,
   Revertability,
 } from "../../history_management/types";
 import { setModEnabled } from "../../profile_management/actions/profiles";
-import { IProfile } from "../../profile_management/types/IProfile";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { setDeploymentNecessary } from "../actions/deployment";
 import { setModAttribute } from "../actions/mods";
 import modName from "./modName";

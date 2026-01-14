@@ -6,22 +6,19 @@ import {
 } from "../actions/app";
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { STATE_BACKUP_PATH } from "../reducers/index";
-import { ThunkStore } from "../types/IExtensionContext";
+import type { ThunkStore } from "../types/IExtensionContext";
 import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
-import { IState } from "../types/IState";
+import type { IState } from "../types/IState";
 import { getApplication } from "../util/application";
-import commandLine, {
-  IParameters,
-  ISetItem,
-  relaunch,
-} from "../util/commandLine";
+import type { IParameters, ISetItem } from "../util/commandLine";
+import commandLine, { relaunch } from "../util/commandLine";
 import {
   DataInvalid,
   DocumentsPathMissing,
   ProcessCanceled,
   UserCanceled,
 } from "../util/CustomErrors";
-import * as develT from "../util/devel";
+import type * as develT from "../util/devel";
 import {
   didIgnoreError,
   disableErrorReport,
@@ -31,7 +28,7 @@ import {
   terminate,
   toError,
 } from "../util/errorHandling";
-import ExtensionManagerT from "../util/ExtensionManager";
+import type ExtensionManagerT from "../util/ExtensionManager";
 import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
@@ -41,7 +38,7 @@ import { log, setLogPath, setupLogging } from "../util/log";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
-import { StateError } from "../store/reduxSanity";
+import type { StateError } from "../store/reduxSanity";
 import startupSettings from "../util/startupSettings";
 import {
   allHives,
@@ -67,23 +64,17 @@ import {
 
 import { addNotification, setCommandLine, showDialog } from "../actions";
 
-import MainWindowT from "./MainWindow";
-import SplashScreenT from "./SplashScreen";
-import TrayIconT from "./TrayIcon";
+import type MainWindowT from "./MainWindow";
+import type SplashScreenT from "./SplashScreen";
+import type TrayIconT from "./TrayIcon";
 
-import * as msgpackT from "@msgpack/msgpack";
+import type * as msgpackT from "@msgpack/msgpack";
 import Promise from "bluebird";
-import crashDumpT from "crash-dump";
-import {
-  app,
-  crashReporter as crashReporterT,
-  dialog,
-  ipcMain,
-  protocol,
-  shell,
-} from "electron";
+import type crashDumpT from "crash-dump";
+import type { crashReporter as crashReporterT } from "electron";
+import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
-import isAdmin = require("is-admin");
+import isAdmin from "is-admin";
 import * as _ from "lodash";
 import * as os from "os";
 import * as path from "path";
