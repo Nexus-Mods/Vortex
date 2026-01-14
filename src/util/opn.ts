@@ -98,7 +98,7 @@ function open(target: string, wait?: boolean): Promise<void> {
       : openLocalPath(target);
 
     openPromise.catch((err) => {
-      const error = (err as any)?.message ?? err;
+      const error = getErrorMessage(err);
       log("warn", "failed to open", { target, error });
     });
 
