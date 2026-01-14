@@ -9,21 +9,19 @@
         justify-content: center;
 
         white-space: nowrap;
-        font-size: var(--tw-text-base);
-        letter-spacing: var(--tw-tracking-normal);
-        line-height: calc(var(--tw-spacing) * 4);
+        font-size: var(--text-base);
+        letter-spacing: var(--tracking-normal);
+        line-height: calc(var(--spacing) * 4);
 
-        min-width: calc(var(--tw-spacing) * 24);
-        min-height: calc(var(--tw-spacing) * 9);
-        padding-inline: calc(var(--tw-spacing) * 3);
+        min-width: calc(var(--spacing) * 24);
+        min-height: calc(var(--spacing) * 9);
+        padding-inline: calc(var(--spacing) * 3);
 
         transition-property:
             color, background-color, border-color, outline-color, fill, stroke,
             opacity, pointer-events;
-        transition-timing-function: var(
-            --tw-default-transition-timing-function
-        );
-        transition-duration: var(--tw-default-transition-duration);
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
 
         &:disabled,
         &.nxm-button-disabled {
@@ -46,7 +44,7 @@
                 transition-timing-function: var(
                     --default-transition-timing-function
                 );
-                transition-duration: var(--tw-default-transition-duration);
+                transition-duration: var(--default-transition-duration);
             }
 
             &:hover,
@@ -60,25 +58,25 @@
 
         & .nxm-button-icon {
             flex-shrink: 0;
-            width: calc(var(--tw-spacing) * 5);
-            height: calc(var(--tw-spacing) * 5);
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
 
             &:first-child {
-                margin-right: calc(var(--tw-spacing) * 1.5);
+                margin-right: calc(var(--spacing) * 1.5);
             }
 
             &:last-child {
-                margin-left: calc(var(--tw-spacing) * 1.5);
+                margin-left: calc(var(--spacing) * 1.5);
             }
         }
     }
 
     .nxm-button-primary {
-        color: var(--tw-color-neutral-inverted);
-        background-color: var(--tw-color-primary-moderate);
+        color: var(--color-neutral-inverted);
+        background-color: var(--color-primary-moderate);
 
         &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--tw-color-translucent-200);
+            background-color: var(--color-translucent-200);
         }
     }
 
@@ -86,134 +84,134 @@
     .nxm-button-secondary-filled-strong,
     .nxm-button-secondary-filled-weak {
         border-width: 1px;
-        border-style: var(--tw-border-style);
+        border-style: var(--border-style);
     }
 
     .nxm-button-secondary {
-        color: var(--tw-color-neutral-moderate);
-        border-color: var(--tw-color-stroke-moderate);
+        color: var(--color-neutral-moderate);
+        border-color: var(--color-stroke-moderate);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
-                background-color: var(--tw-color-translucent-200);
+                background-color: var(--color-translucent-200);
             }
 
             &:hover {
-                color: var(--tw-color-neutral-strong);
-                border-color: var(--tw-color-stroke-strong);
+                color: var(--color-neutral-strong);
+                border-color: var(--color-stroke-strong);
             }
         }
     }
 
     .nxm-button-secondary-filled-strong {
-        color: var(--tw-color-neutral-inverted);
-        border-color: var(--tw-color-stroke-moderate);
-        background-color: var(--tw-color-neutral-strong);
+        color: var(--color-neutral-inverted);
+        border-color: var(--color-stroke-moderate);
+        background-color: var(--color-neutral-strong);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
-                background-color: var(--tw-color-translucent-dark-200);
+                background-color: var(--color-translucent-dark-200);
             }
 
             &:hover {
-                border-color: var(--tw-color-stroke-strong);
+                border-color: var(--color-stroke-strong);
             }
         }
     }
 
     .nxm-button-secondary-filled-weak {
-        color: var(--tw-color-neutral-moderate);
-        border-color: var(--tw-color-stroke-moderate);
-        background-color: var(--tw-color-neutral-800);
+        color: var(--color-neutral-moderate);
+        border-color: var(--color-stroke-moderate);
+        background-color: var(--color-neutral-800);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
-                background-color: var(--tw-color-translucent-200);
+                background-color: var(--color-translucent-200);
             }
 
             &:hover {
-                color: var(--tw-color-neutral-strong);
-                border-color: var(--tw-color-stroke-strong);
+                color: var(--color-neutral-strong);
+                border-color: var(--color-stroke-strong);
             }
         }
     }
 
     .nxm-button-tertiary {
-        color: var(--tw-color-neutral-moderate);
+        color: var(--color-neutral-moderate);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
-                background-color: var(--tw-color-translucent-200);
+                background-color: var(--color-translucent-200);
             }
 
             &:hover {
-                color: var(--tw-color-neutral-strong);
+                color: var(--color-neutral-strong);
             }
         }
     }
 
     .nxm-button-tertiary-filled-strong {
-        color: var(--tw-color-neutral-inverted);
-        background-color: var(--tw-color-neutral-strong);
+        color: var(--color-neutral-inverted);
+        background-color: var(--color-neutral-strong);
 
         &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--tw-color-translucent-dark-200);
+            background-color: var(--color-translucent-dark-200);
         }
     }
 
     .nxm-button-tertiary-filled-weak {
-        color: var(--tw-color-neutral-moderate);
-        background-color: var(--tw-color-neutral-800);
+        color: var(--color-neutral-moderate);
+        background-color: var(--color-neutral-800);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
-                background-color: var(--tw-color-translucent-200);
+                background-color: var(--color-translucent-200);
             }
 
             &:hover {
-                color: var(--tw-color-neutral-strong);
+                color: var(--color-neutral-strong);
             }
         }
     }
 
     .nxm-button-success {
-        color: var(--tw-color-neutral-inverted);
-        background-color: var(--tw-color-success-moderate);
+        color: var(--color-neutral-inverted);
+        background-color: var(--color-success-moderate);
 
         &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--tw-color-translucent-200);
+            background-color: var(--color-translucent-200);
         }
     }
 
     .nxm-button-premium {
-        color: var(--tw-color-neutral-strong);
-        background-color: var(--tw-color-premium-moderate);
+        color: var(--color-neutral-strong);
+        background-color: var(--color-premium-moderate);
 
         &:is(a, :enabled):not(.nxm-button-disabled):before {
-            background-color: var(--tw-color-translucent-200);
+            background-color: var(--color-translucent-200);
         }
     }
 }
 
 @utility nxm-button-sm {
     min-width: 0;
-    min-height: calc(var(--tw-spacing) * 7);
-    padding-inline: calc(var(--tw-spacing) * 2.5);
+    min-height: calc(var(--spacing) * 7);
+    padding-inline: calc(var(--spacing) * 2.5);
 
-    font-size: var(--tw-text-sm);
-    line-height: calc(var(--tw-spacing) * 4);
-    letter-spacing: var(--tw-tracking-normal);
+    font-size: var(--text-sm);
+    line-height: calc(var(--spacing) * 4);
+    letter-spacing: var(--tracking-normal);
 
     & .nxm-button-icon {
-        width: calc(var(--tw-spacing) * 4);
-        height: calc(var(--tw-spacing) * 4);
+        width: calc(var(--spacing) * 4);
+        height: calc(var(--spacing) * 4);
 
         &:first-child {
-            margin-right: calc(var(--tw-spacing) * 1);
+            margin-right: calc(var(--spacing) * 1);
         }
 
         &:last-child {
-            margin-left: calc(var(--tw-spacing) * 1);
+            margin-left: calc(var(--spacing) * 1);
         }
     }
 }

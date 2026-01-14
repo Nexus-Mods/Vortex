@@ -16,14 +16,14 @@ export const InputDemo = () => {
   const [passwordValue, setPasswordValue] = useState("");
 
   return (
-    <div className="tw:p-8 tw:bg-surface-base tw:min-h-screen">
-      <Typography as="h1" typographyType="heading-xl" className="tw:mb-8">
+    <div className="p-8 bg-surface-base min-h-screen">
+      <Typography as="h1" typographyType="heading-xl" className="mb-8">
         Input Component Demo
       </Typography>
 
       {/* Basic Input Types */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Input Types
         </Typography>
         <FormFieldWrap>
@@ -76,8 +76,8 @@ export const InputDemo = () => {
       </div>
 
       {/* States */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Input States
         </Typography>
         <FormFieldWrap>
@@ -122,8 +122,8 @@ export const InputDemo = () => {
       </div>
 
       {/* Validation & Errors */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Validation & Error States
         </Typography>
         <FormFieldWrap>
@@ -146,8 +146,8 @@ export const InputDemo = () => {
       </div>
 
       {/* Hints & Helper Text */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Hints & Helper Text
         </Typography>
         <FormFieldWrap>
@@ -183,8 +183,8 @@ export const InputDemo = () => {
       </div>
 
       {/* Character Counter */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Character Counter
         </Typography>
         <FormFieldWrap>
@@ -218,8 +218,8 @@ export const InputDemo = () => {
       </div>
 
       {/* Hidden Labels (Accessibility) */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Hidden Labels (Screen Reader Only)
         </Typography>
         <FormFieldWrap>
@@ -234,8 +234,8 @@ export const InputDemo = () => {
       </div>
 
       {/* Combined Features */}
-      <div className="tw:mb-12">
-        <Typography as="h2" typographyType="heading-md" className="tw:mb-4">
+      <div className="mb-12">
+        <Typography as="h2" typographyType="heading-md" className="mb-4">
           Combined Features
         </Typography>
         <FormFieldWrap>

@@ -82,7 +82,7 @@ const getTypographyStyles = ({
 
   if (!typographyType || typeof typographyType === "string") {
     styles.push(
-      `tw:typography-${
+      `typography-${
         typeof typographyType === "string"
           ? typographyType
           : (typeFallbacks[as as keyof typeof typeFallbacks] as TypographyTypes)
@@ -95,7 +95,7 @@ const getTypographyStyles = ({
 
       if (style) {
         styles.push(
-          `${screenSize === "default" ? "tw:" : `${screenSize}:tw:`}typography-${style}`,
+          `${screenSize === "default" ? "" : `${screenSize}:`}typography-${style}`,
         );
       }
     });
@@ -120,20 +120,18 @@ export const Typography: React.ComponentType<TypographyProps> = ({
   > = {
     none: "",
     inverted: isTranslucent
-      ? "tw:text-translucent-dark-950"
-      : "tw:text-neutral-inverted",
+      ? "text-translucent-dark-950"
+      : "text-neutral-inverted",
     moderate: isTranslucent
-      ? "tw:text-neutral-translucent-moderate"
-      : "tw:text-neutral-moderate",
+      ? "text-neutral-translucent-moderate"
+      : "text-neutral-moderate",
     strong: isTranslucent
-      ? "tw:text-neutral-translucent-strong"
-      : "tw:text-neutral-strong",
+      ? "text-neutral-translucent-strong"
+      : "text-neutral-strong",
     subdued: isTranslucent
-      ? "tw:text-neutral-translucent-subdued"
-      : "tw:text-neutral-subdued",
-    weak: isTranslucent
-      ? "tw:text-neutral-translucent-weak"
-      : "tw:text-neutral-weak",
+      ? "text-neutral-translucent-subdued"
+      : "text-neutral-subdued",
+    weak: isTranslucent ? "text-neutral-translucent-weak" : "text-neutral-weak",
   };
   /* eslint-enable sort-keys */
 

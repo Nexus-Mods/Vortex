@@ -6,7 +6,7 @@
 @supports selector(::-webkit-scrollbar) {
     .scrollbar::-webkit-scrollbar-thumb {
         border-radius: calc(infinity * 1px);
-        background-color: var(--tw-color-neutral-weak);
+        background-color: var(--color-neutral-weak);
     }
 
     .scrollbar::-webkit-scrollbar-track {
@@ -14,7 +14,7 @@
     }
 
     .scrollbar::-webkit-scrollbar {
-        max-width: calc(var(--tw-spacing) * 1.5);
-        max-height: calc(var(--tw-spacing) * 1.5);
+        max-width: calc(var(--spacing) * 1.5);
+        max-height: calc(var(--spacing) * 1.5);
     }
 }

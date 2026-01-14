@@ -1,7 +1,4 @@
 @theme {
-    --color-white: #fff;
-    --color-black: #000;
-
     --color-blue-50: #eff6ff;
     --color-blue-100: #dbeafe;
     --color-blue-200: #bfdbfe;
@@ -103,7 +100,7 @@
     --color-zinc-950: #0f0f10;
 }
 
-@theme {
+@theme inline {
     --color-translucent-50: --alpha(var(--color-white) / 5%);
     --color-translucent-100: --alpha(var(--color-white) / 10%);
     --color-translucent-200: --alpha(var(--color-white) / 20%);

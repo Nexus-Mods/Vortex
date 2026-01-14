@@ -25,11 +25,11 @@ export const TabContent = ({
   count?: number;
   label: string;
 }) => (
-  <span className="tw:flex tw:items-center tw:gap-x-1 tw:pb-2">
+  <span className="flex items-center gap-x-1 pb-2">
     <Typography
       appearance="none"
       as="span"
-      className="tw:whitespace-nowrap tw:transition-colors"
+      className="whitespace-nowrap transition-colors"
       typographyType="body-xl"
     >
       {label}
@@ -39,7 +39,7 @@ export const TabContent = ({
       <Typography
         appearance="none"
         as="span"
-        className="tw:bg-surface-mid tw:text-neutral-subdued tw:flex tw:items-center tw:justify-center tw:rounded-full tw:px-2 tw:py-0.5 tw:transition-colors"
+        className="bg-surface-mid text-neutral-subdued flex items-center justify-center rounded-full px-2 py-0.5 transition-colors"
         typographyType="body-sm"
       >
         {numeral(count).format("0,0")}
@@ -78,13 +78,13 @@ export const TabButton = ({
       aria-controls={`tabcontent-${tabId}`}
       aria-selected={selected}
       className={joinClasses([
-        "tw:relative tw:border-b focus-visible:tw:-outline-offset-2 tw:transition-colors",
+        "relative border-b focus-visible:-outline-offset-2 transition-colors",
         selected
-          ? "tw:border-primary-moderate tw:text-neutral-strong"
-          : "tw:border-transparent tw:text-neutral-subdued",
+          ? "border-primary-moderate text-neutral-strong"
+          : "border-transparent text-neutral-subdued",
         disabled
-          ? "tw:cursor-not-allowed tw:opacity-40"
-          : "tw:cursor-pointer tw:hover:text-neutral-moderate",
+          ? "cursor-not-allowed opacity-40"
+          : "cursor-pointer hover:text-neutral-moderate",
         className,
       ])}
       disabled={disabled}
@@ -121,7 +121,7 @@ export const TabLink = ({ className, count, name, ...props }: TabLinkProps) => {
     <a
       ref={ref}
       className={joinClasses([
-        "tw:border-b tw:border-transparent tw:text-neutral-subdued focus-visible:tw:-outline-offset-2 tw:hover:text-neutral-moderate tw:transition-colors",
+        "border-b border-transparent text-neutral-subdued focus-visible:-outline-offset-2 hover:text-neutral-moderate transition-colors",
         className,
       ])}
       id={`tablist-${tabListId}-${tabId}`}

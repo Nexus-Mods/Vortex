@@ -48,8 +48,8 @@ export const Select = ({
       showRequiredLabel={showRequiredLabel ?? required}
     >
       <div
-        className={joinClasses(["tw:relative tw:flex tw:flex-col", className], {
-          "tw:opacity-40": disabled,
+        className={joinClasses(["relative flex flex-col", className], {
+          "opacity-40": disabled,
         })}
       >
         <select
@@ -64,12 +64,12 @@ export const Select = ({
           }
           aria-invalid={!!errorMessage || undefined}
           className={joinClasses([
-            "tw:bg-surface-low tw:typography-body-lg tw:text-neutral-strong tw:relative tw:w-full tw:appearance-none tw:rounded tw:border tw:py-2 tw:pl-4 tw:pr-12",
+            "bg-surface-low typography-body-lg text-neutral-strong relative w-full appearance-none rounded border py-2 pl-4 pr-12",
             !!errorMessage
-              ? "tw:border-danger-strong tw:hover:border-stroke-subdued"
-              : "tw:border-stroke-subdued",
-            "tw:hover:border-stroke-strong",
-            "tw:focus:bg-surface-low tw:focus:border-stroke-strong tw:focus-visible:outline-offset-1",
+              ? "border-danger-strong hover:border-stroke-subdued"
+              : "border-stroke-subdued",
+            "hover:border-stroke-strong",
+            "focus:bg-surface-low focus:border-stroke-strong focus-visible:outline-offset-1",
           ])}
           disabled={disabled}
           id={id}
@@ -80,8 +80,8 @@ export const Select = ({
 
         <Icon
           className={joinClasses([
-            "tw:text-neutral-subdued tw:pointer-events-none tw:absolute tw:right-4 tw:top-1/2 tw:-translate-y-1/2 tw:transform",
-            "tw:hover:text-white tw:focus:text-white",
+            "text-neutral-subdued pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 transform",
+            "hover:text-white focus:text-white",
           ])}
           path={mdiMenuDown}
           size="lg"

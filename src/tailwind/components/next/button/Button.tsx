@@ -78,10 +78,10 @@ const getSizes = ({
 }: Pick<Required<BaseButtonProps>, "size"> &
   Pick<BaseButtonProps, "isResponsive">) => {
   const md = {
-    buttonClass: "tw:min-h-9 tw:px-3 tw:min-w-8",
-    iconClassName: "tw:size-5",
-    iconWrapperClassName: "[&>svg]:tw:max-w-5! [&>svg]:tw:max-h-5!",
-    spacing: "tw:gap-x-1.5",
+    buttonClass: "min-h-9 px-3 min-w-8",
+    iconClassName: "size-5",
+    iconWrapperClassName: "[&>svg]:max-w-5! [&>svg]:max-h-5!",
+    spacing: "gap-x-1.5",
     typographyType: "body-lg",
   } satisfies Size;
 
@@ -91,23 +91,23 @@ const getSizes = ({
         return {
           buttonClass: joinClasses([
             md.buttonClass,
-            "sm:tw:min-h-7 sm:tw:min-w-0 sm:tw:px-2.5",
+            "sm:min-h-7 sm:min-w-0 sm:px-2.5",
           ]),
-          iconClassName: joinClasses([md.iconClassName, "sm:tw:size-4"]),
+          iconClassName: joinClasses([md.iconClassName, "sm:size-4"]),
           iconWrapperClassName: joinClasses([
             md.iconWrapperClassName,
-            "sm:[&>svg]:tw:max-h-4! sm:[&>svg]:tw:max-w-4!",
+            "sm:[&>svg]:max-h-4! sm:[&>svg]:max-w-4!",
           ]),
-          spacing: joinClasses([md.spacing, "sm:tw:gap-x-1"]),
+          spacing: joinClasses([md.spacing, "sm:gap-x-1"]),
           typographyType: { default: md.typographyType, sm: "body-md" },
         } satisfies Size;
       }
 
       return {
-        buttonClass: "tw:min-h-7 tw:px-2.5",
-        iconClassName: "tw:size-4",
-        iconWrapperClassName: "[&>svg]:tw:max-w-4! [&>svg]:tw:max-h-4!",
-        spacing: "tw:gap-x-1",
+        buttonClass: "min-h-7 px-2.5",
+        iconClassName: "size-4",
+        iconWrapperClassName: "[&>svg]:max-w-4! [&>svg]:max-h-4!",
+        spacing: "gap-x-1",
         typographyType: "body-md",
       } satisfies Size;
     case "md":
@@ -135,44 +135,44 @@ const getButtonClasses = ({
 
   const classes = [
     buttonClass,
-    "tw:relative tw:whitespace-nowrap tw:transition [&>*:first-child]:tw:relative",
-    "tw:flex tw:items-center tw:justify-center tw:rounded before:tw:rounded",
+    "relative whitespace-nowrap transition [&>*:first-child]:relative",
+    "flex items-center justify-center rounded before:rounded",
     ...(isDisabled
-      ? ["tw:cursor-not-allowed tw:opacity-40"]
-      : ["tw:cursor-pointer", !isLoading && !filled ? "tw:hover-overlay" : ""]),
+      ? ["cursor-not-allowed opacity-40"]
+      : ["cursor-pointer", !isLoading && !filled ? "hover-overlay" : ""]),
   ];
 
   switch (buttonType) {
     case "primary":
       classes.push(
-        "tw:bg-primary-moderate tw:text-neutral-inverted",
-        canHover ? "tw:hover:bg-primary-subdued" : "",
+        "bg-primary-moderate text-neutral-inverted",
+        canHover ? "hover:bg-primary-subdued" : "",
       );
       break;
     case "secondary":
       classes.push(
-        "tw:border tw:border-stroke-moderate",
-        canHover ? "tw:hover:border-stroke-strong" : "",
+        "border border-stroke-moderate",
+        canHover ? "hover:border-stroke-strong" : "",
       );
 
       if (filled) {
         classes.push(
           ...(filled === "strong"
             ? [
-                "tw:bg-neutral-strong tw:text-neutral-inverted",
-                canHover ? "tw:hover-dark-overlay" : "",
+                "bg-neutral-strong text-neutral-inverted",
+                canHover ? "hover-dark-overlay" : "",
               ]
             : [
-                "tw:bg-surface-mid tw:text-neutral-moderate",
+                "bg-surface-mid text-neutral-moderate",
                 canHover
-                  ? "tw:hover:text-neutral-strong tw:hover:bg-surface-high"
+                  ? "hover:text-neutral-strong hover:bg-surface-high"
                   : "",
               ]),
         );
       } else {
         classes.push(
-          "tw:text-neutral-moderate",
-          canHover ? "tw:hover:text-neutral-strong" : "",
+          "text-neutral-moderate",
+          canHover ? "hover:text-neutral-strong" : "",
         );
       }
 
@@ -182,33 +182,33 @@ const getButtonClasses = ({
         classes.push(
           ...(filled === "strong"
             ? [
-                "tw:bg-neutral-strong tw:text-neutral-inverted",
-                canHover ? "tw:hover-dark-overlay" : "",
+                "bg-neutral-strong text-neutral-inverted",
+                canHover ? "hover-dark-overlay" : "",
               ]
             : [
-                "tw:bg-surface-mid tw:text-neutral-moderate",
+                "bg-surface-mid text-neutral-moderate",
                 canHover
-                  ? "tw:hover:text-neutral-strong tw:hover:bg-surface-high"
+                  ? "hover:text-neutral-strong hover:bg-surface-high"
                   : "",
               ]),
         );
       } else {
         classes.push(
-          "tw:text-neutral-moderate",
-          canHover ? "tw:hover:text-neutral-strong" : "",
+          "text-neutral-moderate",
+          canHover ? "hover:text-neutral-strong" : "",
         );
       }
       break;
     case "success":
       classes.push(
-        "tw:bg-success-moderate tw:text-neutral-inverted",
-        canHover ? "tw:hover:bg-success-subdued" : "",
+        "bg-success-moderate text-neutral-inverted",
+        canHover ? "hover:bg-success-subdued" : "",
       );
       break;
     case "premium":
       classes.push(
-        "tw:bg-premium-moderate tw:text-neutral-strong",
-        canHover ? "tw:hover:bg-premium-subdued" : "",
+        "bg-premium-moderate text-neutral-strong",
+        canHover ? "hover:bg-premium-subdued" : "",
       );
       break;
   }
@@ -232,8 +232,8 @@ const ButtonIcon = ({
   if (isLoading) {
     // Note: Loading icon won't render until Icon component is implemented
     return (
-      <span className={joinClasses(["tw:shrink-0 tw:animate-spin", className])}>
-        <Icon className="tw:opacity-40" path="mdiCircleOutline" size="none" />
+      <span className={joinClasses(["shrink-0 animate-spin", className])}>
+        <Icon className="opacity-40" path="mdiCircleOutline" size="none" />
         <Icon path="mdiLoading" size="none" />
       </span>
     );
@@ -243,7 +243,7 @@ const ButtonIcon = ({
     return (
       <span
         className={joinClasses([
-          "tw:flex tw:items-center tw:justify-center tw:shrink-0",
+          "flex items-center justify-center shrink-0",
           wrapperClassName,
           className,
         ])}
@@ -256,7 +256,7 @@ const ButtonIcon = ({
   if (!!path) {
     return (
       <Icon
-        className={joinClasses(["tw:shrink-0", className])}
+        className={joinClasses(["shrink-0", className])}
         path={path}
         size="none"
       />
@@ -289,9 +289,9 @@ const Content = ({
     getSizes({ isResponsive, size });
 
   return (
-    <span className={joinClasses(["tw:flex tw:items-center", spacing])}>
+    <span className={joinClasses(["flex items-center", spacing])}>
       <ButtonIcon
-        className={joinClasses(["tw:-ml-0.5", iconClassName])}
+        className={joinClasses(["-ml-0.5", iconClassName])}
         icon={leftIcon}
         isLoading={isLoading}
         path={leftIconPath}
@@ -302,7 +302,7 @@ const Content = ({
         <Typography
           appearance="none"
           as="span"
-          className="tw:grow tw:text-left tw:leading-5"
+          className="grow text-left leading-5"
           typographyType={typographyType}
         >
           {label}
@@ -310,7 +310,7 @@ const Content = ({
       )}
 
       <ButtonIcon
-        className={joinClasses(["tw:-mr-0.5", iconClassName])}
+        className={joinClasses(["-mr-0.5", iconClassName])}
         icon={rightIcon}
         path={rightIconPath}
         wrapperClassName={iconWrapperClassName}
