@@ -10,13 +10,13 @@ import {
   Icon,
   Usage,
 } from "../../../renderer/controls/api";
-import * as types from "../../../types/api";
+import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 
-import { IGameSpecificInterfaceProps } from "../types/collections";
-import { ILoadOrder, ILoadOrderEntry } from "../types/types";
+import type { IGameSpecificInterfaceProps } from "../types/collections";
+import type { ILoadOrder, ILoadOrderEntry } from "../types/types";
 import { genCollectionLoadOrder } from "../util";
 
 const NAMESPACE: string = "generic-load-order-extension";

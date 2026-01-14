@@ -1,5 +1,6 @@
 import More from "../../renderer/controls/More";
-import { UPDATE_CHANNELS, UpdateChannel, IState } from "../../types/IState";
+import type { UpdateChannel, IState } from "../../types/IState";
+import { UPDATE_CHANNELS } from "../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -18,9 +19,9 @@ import {
   FormGroup,
   InputGroup,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
-import VortexInstallType from "../../types/VortexInstallType";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+import type VortexInstallType from "../../types/VortexInstallType";
 import { MainContext, util } from "vortex-api";
 
 interface IConnectedProps {

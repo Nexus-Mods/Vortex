@@ -2,8 +2,9 @@
 import { test } from '@playwright/test';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
 import { loginToNexusModsWithRealChrome, logoutFromNexusMods } from '../src/nexusmods-auth-helpers';
-import { closeRealChrome, ChromeBrowserInstance } from '../src/chrome-browser-helpers';
-import { BrowserContext } from '@playwright/test';
+import type { ChromeBrowserInstance } from '../src/chrome-browser-helpers';
+import { closeRealChrome } from '../src/chrome-browser-helpers';
+import type { BrowserContext } from '@playwright/test';
 
 const TEST_NAME = 'nexusmods-login';
 

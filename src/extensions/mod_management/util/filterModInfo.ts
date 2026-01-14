@@ -1,4 +1,4 @@
-import { AttributeExtractor } from "../../../types/IExtensionContext";
+import type { AttributeExtractor } from "../../../types/IExtensionContext";
 
 import { log } from "../../../util/log";
 

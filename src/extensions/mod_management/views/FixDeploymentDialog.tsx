@@ -1,5 +1,5 @@
 import Modal from "../../../renderer/controls/Modal";
-import { IDeploymentMethod } from "../../../types/api";
+import type { IDeploymentMethod } from "../../../types/api";
 import {
   ComponentEx,
   connect,
@@ -12,7 +12,8 @@ import {
 } from "../../../util/selectors";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { IDeploymentProblem, setDeploymentProblem } from "../actions/session";
+import type { IDeploymentProblem } from "../actions/session";
+import { setDeploymentProblem } from "../actions/session";
 import { IUnavailableReason } from "../types/IDeploymentMethod";
 import allTypesSupported from "../util/allTypesSupported";
 import { getAllActivators } from "../util/deploymentMethods";
@@ -20,8 +21,8 @@ import { getAllActivators } from "../util/deploymentMethods";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { Trans } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { log } from "../../../util/log";
 
 export interface IFixDeploymentDialogProps {}

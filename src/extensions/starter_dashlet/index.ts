@@ -2,12 +2,12 @@ import Promise from "bluebird";
 import path from "path";
 import { fs } from "../..";
 
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { ITestResult } from "../../types/ITestResult";
-import { IStarterInfo } from "../../util/StarterInfo";
+import type { ITestResult } from "../../types/ITestResult";
+import type { IStarterInfo } from "../../util/StarterInfo";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
@@ -17,7 +17,7 @@ import memoize from "memoize-one";
 import { setPrimaryTool } from "./actions";
 import settingsReducer from "./reducers";
 import Tools from "./Tools";
-import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
 function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();

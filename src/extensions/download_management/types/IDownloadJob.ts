@@ -1,7 +1,7 @@
-import { IChunk } from "./IChunk";
-import { IDownloadOptions } from "./IDownload";
+import type { IChunk } from "./IChunk";
+import type { IDownloadOptions } from "./IDownload";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 
 /**
  * Represents a download job with precise semantics for chunk positioning and progress tracking.

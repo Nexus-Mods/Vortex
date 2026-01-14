@@ -1,8 +1,8 @@
 import IconBar from "../controls/IconBar";
-import { IActionDefinition } from "../../types/IActionDefinition";
+import type { IActionDefinition } from "../../types/IActionDefinition";
 import { ComponentEx } from "../controls/ComponentEx";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 export interface IBaseProps {

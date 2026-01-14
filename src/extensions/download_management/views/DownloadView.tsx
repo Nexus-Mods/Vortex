@@ -1,22 +1,25 @@
 import { showDialog } from "../../../actions/notifications";
 import Banner from "../../../renderer/controls/Banner";
 import CollapseIcon from "../../../renderer/controls/CollapseIcon";
-import Dropzone, { DropType } from "../../../renderer/controls/Dropzone";
+import type { DropType } from "../../../renderer/controls/Dropzone";
+import Dropzone from "../../../renderer/controls/Dropzone";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import IconBar from "../../../renderer/controls/IconBar";
-import SuperTable, { ITableRowAction } from "../../../renderer/controls/Table";
-import { IActionDefinition } from "../../../types/IActionDefinition";
-import { IComponentContext } from "../../../types/IComponentContext";
-import {
+import type { ITableRowAction } from "../../../renderer/controls/Table";
+import SuperTable from "../../../renderer/controls/Table";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IComponentContext } from "../../../types/IComponentContext";
+import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
 } from "../../../types/IDialog";
-import { IAttachment, IExtensionApi } from "../../../types/IExtensionContext";
+import type { IAttachment } from "../../../types/IExtensionContext";
+import { IExtensionApi } from "../../../types/IExtensionContext";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
-import { IState } from "../../../types/IState";
-import { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IState } from "../../../types/IState";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -37,27 +40,27 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
-import { IGameStored } from "../../gamemode_management/types/IGameStored";
-import { IInstallOptions } from "../../mod_management/types/IInstallOptions";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IInstallOptions } from "../../mod_management/types/IInstallOptions";
 
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
-import { IDownload } from "../types/IDownload";
+import type { IDownload } from "../types/IDownload";
 import getDownloadGames from "../util/getDownloadGames";
 
 import { DownloadIsHTML } from "../DownloadManager";
 
 import DownloadGraph from "./DownloadGraph";
 
-import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type Promise from "bluebird";
+import type { TFunction } from "i18next";
 import _ from "lodash";
 import * as path from "path";
 import * as React from "react";
 import { Button, Panel } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;

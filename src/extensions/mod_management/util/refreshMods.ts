@@ -1,5 +1,5 @@
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
@@ -7,7 +7,7 @@ import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
 import { getSafe } from "../../../util/storeHelper";
 
 import { setModArchiveId } from "../actions/mods";
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 
 import Promise from "bluebird";
 import * as path from "path";

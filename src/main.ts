@@ -136,7 +136,7 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
 
 // Produce english error messages (windows only atm), otherwise they don't get
 // grouped correctly when reported through our feedback system
-import * as winapiT from "winapi-bindings";
+import type * as winapiT from "winapi-bindings";
 
 try {
   // tslint:disable-next-line:no-var-requires
@@ -165,7 +165,7 @@ import "./util/exeIcon";
 import "./util/monkeyPatching";
 import "./util/webview";
 
-import * as child_processT from "child_process";
+import type * as child_processT from "child_process";
 import * as fs from "./util/fs";
 import presetManager from "./util/PresetManager";
 import { getErrorMessage } from "./shared/errors";

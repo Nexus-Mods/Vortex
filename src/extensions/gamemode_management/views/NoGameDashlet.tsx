@@ -1,4 +1,5 @@
-import { IDiscoveryState, IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
+import { IDiscoveryState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -6,8 +7,8 @@ import {
 } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IGameStored } from "../types/IGameStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
 import GameThumbnail from "./GameThumbnail";
 

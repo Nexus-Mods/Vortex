@@ -4,9 +4,9 @@ import FormInput from "../../../renderer/controls/FormInput";
 import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
 import { ToggleButton } from "../../../renderer/controls/TooltipControls";
-import { IActionDefinition } from "../../../types/IActionDefinition";
-import { IComponentContext } from "../../../types/IComponentContext";
-import { IState } from "../../../types/IState";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IComponentContext } from "../../../types/IComponentContext";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -18,24 +18,27 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
-import { IAvailableExtension, IExtension } from "../../extension_manager/types";
+import type {
+  IAvailableExtension,
+  IExtension,
+} from "../../extension_manager/types";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
-import { IProfile } from "../../profile_management/types/IProfile";
+import type { IProfile } from "../../profile_management/types/IProfile";
 
 import {
   setPickerLayout,
   setSortManaged,
   setSortUnmanaged,
 } from "../actions/settings";
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IGameStored } from "../types/IGameStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
 import GameRow from "./GameRow";
 import GameThumbnail from "./GameThumbnail";
 import ShowHiddenButton from "./ShowHiddenButton";
 
-import { IGameListEntry } from "@nexusmods/nexus-api";
-import Promise from "bluebird";
+import type { IGameListEntry } from "@nexusmods/nexus-api";
+import type Promise from "bluebird";
 import { ratio } from "fuzzball";
 import update from "immutability-helper";
 import memoizeOne from "memoize-one";

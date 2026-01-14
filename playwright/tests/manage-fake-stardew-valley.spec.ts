@@ -1,5 +1,6 @@
 /* eslint-disable max-lines-per-function */
-import { test, Browser, expect } from '@playwright/test';
+import type { Browser} from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { launchVortex, closeVortex } from '../src/vortex-helpers';
 import {
   loginToNexusModsWithRealChrome,

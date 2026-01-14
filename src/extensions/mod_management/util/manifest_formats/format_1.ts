@@ -1,4 +1,4 @@
-import { IDeploymentManifest } from "../../types/IDeploymentManifest";
+import type { IDeploymentManifest } from "../../types/IDeploymentManifest";
 
 function deserialize(input: any): IDeploymentManifest {
   return {

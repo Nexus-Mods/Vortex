@@ -1,6 +1,6 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
-import { IState } from "../../types/IState";
-import { TFunction } from "../../util/i18n";
+import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
@@ -8,15 +8,15 @@ import { getSafe } from "../../util/storeHelper";
 
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { setModAttribute } from "../mod_management/actions/mods";
-import { IModWithState } from "../mod_management/types/IModProps";
+import type { IModWithState } from "../mod_management/types/IModProps";
 
 import { loadCategories, updateCategories } from "./actions/category";
 import { showCategoriesDialog } from "./actions/session";
 import { categoryReducer } from "./reducers/category";
 import { sessionReducer } from "./reducers/session";
 import { allCategories } from "./selectors";
-import { ICategoryDictionary } from "./types/ICategoryDictionary";
-import { ICategoriesTree } from "./types/ITrees";
+import type { ICategoryDictionary } from "./types/ICategoryDictionary";
+import type { ICategoriesTree } from "./types/ITrees";
 import CategoryFilter from "./util/CategoryFilter";
 import {
   resolveCategoryName,
@@ -25,7 +25,7 @@ import {
 import CategoryDialog from "./views/CategoryDialog";
 
 import i18next from "i18next";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { isLoggedIn } from "../nexus_integration/selectors";
 
 // export for api

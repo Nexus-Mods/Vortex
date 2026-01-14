@@ -19,7 +19,7 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
-import { TFunction } from "./i18n";
+import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";

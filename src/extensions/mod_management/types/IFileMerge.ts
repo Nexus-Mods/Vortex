@@ -1,4 +1,4 @@
-import { MergeFunc, MergeTest } from "../../../types/IExtensionContext";
+import type { MergeFunc, MergeTest } from "../../../types/IExtensionContext";
 
 export interface IFileMerge {
   test: MergeTest;

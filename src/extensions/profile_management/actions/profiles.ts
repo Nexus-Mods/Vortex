@@ -2,9 +2,9 @@ import safeCreateAction from "../../../actions/safeCreateAction";
 
 import Bluebird from "bluebird";
 import * as reduxAct from "redux-act";
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { batchDispatch } from "../../../util/util";
-import { IProfile } from "../types/IProfile";
+import type { IProfile } from "../types/IProfile";
 
 /**
  * add or edit a profile

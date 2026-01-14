@@ -1,16 +1,16 @@
 import TableTextFilter from "../../renderer/controls/table/TextFilter";
-import { IExtensionLoadFailure } from "../../types/IState";
-import { ITableAttribute } from "../../types/ITableAttribute";
+import type { IExtensionLoadFailure } from "../../types/IState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
 import { getSafe } from "../../util/storeHelper";
 
 import { SITE_ID } from "../gamemode_management/constants";
-import { EndorseMod } from "../nexus_integration/attributes";
+import type { EndorseMod } from "../nexus_integration/attributes";
 import EndorseModButton from "../nexus_integration/views/EndorseModButton";
 
-import { IExtensionWithState } from "./types";
+import type { IExtensionWithState } from "./types";
 
-import { EndorsedStatus } from "@nexusmods/nexus-api";
-import { TFunction } from "i18next";
+import type { EndorsedStatus } from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 interface IAttributesContext {

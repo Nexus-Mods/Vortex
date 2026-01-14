@@ -1,10 +1,10 @@
 import { log } from "../../../util/log";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IModType } from "../../gamemode_management/types/IModType";
+import type { IModType } from "../../gamemode_management/types/IModType";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
 
-import {
+import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../types/IDeploymentMethod";

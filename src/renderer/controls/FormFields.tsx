@@ -1,7 +1,7 @@
 import FormFeedback from "./FormFeedback";
 import { IconButton } from "./TooltipControls";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import {
   Checkbox,

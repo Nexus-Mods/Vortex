@@ -2,7 +2,7 @@ import getVortexPath from "../../util/getVortexPath";
 
 import * as path from "path";
 import format from "string-template";
-import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { makeOverlayableDictionary } from "../../util/util";
 
 interface IGameSupport {

@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import Select, { ReactSelectProps } from "react-select";
+import type { ReactSelectProps } from "react-select";
+import Select from "react-select";
 
 export interface ISelectUpDownProps {
   container?: Element;

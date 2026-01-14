@@ -1,6 +1,6 @@
 import { setUpdateChannel, showDialog } from "../../actions";
-import { IExtensionApi } from "../../types/IExtensionContext";
-import { IState, UpdateChannel } from "../../types/IState";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState, UpdateChannel } from "../../types/IState";
 import { getVisibleWindow, UserCanceled } from "../../util/api";
 import { log } from "../../util/log";
 import opn from "../../util/opn";
@@ -9,7 +9,7 @@ import { truthy } from "../../util/util";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 
 import { app as appIn, dialog as dialogIn, ipcMain } from "electron";
-import {
+import type {
   autoUpdater as AUType,
   CancellationToken,
   UpdateInfo,

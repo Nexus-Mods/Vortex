@@ -1,4 +1,4 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 
 import AboutPage from "./views/AboutPage";
 

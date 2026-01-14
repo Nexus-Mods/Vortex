@@ -3,9 +3,9 @@ import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import {
   ControlLabel,
@@ -13,7 +13,8 @@ import {
   OverlayTrigger,
   Popover,
 } from "react-bootstrap";
-import Interweave, { ElementAttributes, Filter } from "interweave";
+import type { ElementAttributes } from "interweave";
+import Interweave, { Filter } from "interweave";
 
 class LinkFilter extends Filter {
   public attribute<K extends keyof ElementAttributes>(

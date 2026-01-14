@@ -1,4 +1,4 @@
-import { IDeployOptions } from "./IDeployOptions";
+import type { IDeployOptions } from "./IDeployOptions";
 
 export interface IModsAPIExtension {
   // Await the deployment of mods for the next phase in an active collection installation

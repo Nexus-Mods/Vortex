@@ -1,5 +1,5 @@
 import Toggle from "../../../renderer/controls/Toggle";
-import { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -8,13 +8,13 @@ import {
 import { getSafe } from "../../../util/storeHelper";
 
 import { setDashletEnabled } from "../actions";
-import { IDashletProps } from "../types/IDashletProps";
+import type { IDashletProps } from "../types/IDashletProps";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 interface IDashletToggleProps {
   t: TFunction;

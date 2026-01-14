@@ -1,11 +1,9 @@
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
 
-import {
-  DialogQueue,
-  IDialogManager,
-} from "../../installer_fomod_shared/utils/DialogQueue";
+import type { IDialogManager } from "../../installer_fomod_shared/utils/DialogQueue";
+import { DialogQueue } from "../../installer_fomod_shared/utils/DialogQueue";
 
 import {
   clearDialog,
@@ -13,7 +11,7 @@ import {
   setDialogState,
   startDialog,
 } from "../../installer_fomod_shared/actions/installerUI";
-import {
+import type {
   IHeaderImage,
   IInstallerState,
   IInstallStep,

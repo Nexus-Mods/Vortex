@@ -2,9 +2,9 @@ import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as fs from "../../../util/fs";
 import { userFriendlyTime } from "../../../util/relativeTime";
 
-import { IDownload } from "../types/IDownload";
+import type { IDownload } from "../types/IDownload";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 

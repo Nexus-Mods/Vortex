@@ -1,5 +1,5 @@
 import Bluebird from "bluebird";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
   IPreviewFile,

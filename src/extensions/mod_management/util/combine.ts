@@ -1,6 +1,6 @@
 import * as path from "path";
 import { generate as shortid } from "shortid";
-import {
+import type {
   IDeploymentMethod,
   IExtensionApi,
 } from "../../../types/IExtensionContext";

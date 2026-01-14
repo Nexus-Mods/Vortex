@@ -1,4 +1,4 @@
-import { IDiscoveryResult, IMod, IState } from "../../types/IState";
+import type { IDiscoveryResult, IMod, IState } from "../../types/IState";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 

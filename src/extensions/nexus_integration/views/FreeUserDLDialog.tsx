@@ -1,23 +1,21 @@
-import Nexus, {
-  IModFile,
-  IModFileQuery,
-  IOAuthCredentials,
-} from "@nexusmods/nexus-api";
-import { TFunction } from "i18next";
+import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
+import type Nexus from "@nexusmods/nexus-api";
+import { IOAuthCredentials } from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button, Panel } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { util } from "../../..";
 import Modal from "../../../renderer/controls/Modal";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
 import { makeFileUID } from "../util/UIDs";
-import { IValidateKeyDataV2 } from "../types/IValidateKeyData";
+import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
 import { MainContext } from "../../../renderer/views/MainWindow";
-import { IComponentContext } from "../../../types/IComponentContext";
+import type { IComponentContext } from "../../../types/IComponentContext";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 

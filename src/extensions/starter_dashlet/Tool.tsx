@@ -1,6 +1,6 @@
 import { BoxWithHandle } from "./BoxWithHandle";
 import ToolButton from "./ToolButton";
-import { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../util/StarterInfo";
 import { makeExeId } from "../../reducers/session";
 
 import { getSafe } from "../../util/storeHelper";
@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { activeGameId } from "../../util/selectors";
 
-import { IRunningTool } from "../../types/IState";
+import type { IRunningTool } from "../../types/IState";
 
 import { useDebouncedCallback } from "./useDebouncedCallback";
 

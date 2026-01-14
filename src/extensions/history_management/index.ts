@@ -1,7 +1,7 @@
-import { Action } from "redux";
+import type { Action } from "redux";
 import { generate as shortid } from "shortid";
 import { showDialog } from "../../actions";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
@@ -18,7 +18,7 @@ import {
 } from "./actions";
 import HistoryDialog from "./HistoryDialog";
 import { persistentReducer, sessionReducer } from "./reducers";
-import { IHistoryEvent, IHistoryStack } from "./types";
+import type { IHistoryEvent, IHistoryStack } from "./types";
 
 interface IHistoryStacks {
   [id: string]: IHistoryStack;

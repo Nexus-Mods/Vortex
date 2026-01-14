@@ -1,7 +1,7 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
 
 import * as reduxAct from "redux-act";
-import { InstallPathMode } from "../../../types/api";
+import type { InstallPathMode } from "../../../types/api";
 
 /**
  * change the mod install path. Supports placeholders

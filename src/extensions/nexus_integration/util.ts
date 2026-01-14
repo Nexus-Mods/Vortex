@@ -1,5 +1,5 @@
 import type * as RemoteT from "@electron/remote";
-import Nexus, {
+import type {
   EndorsedStatus,
   ICollectionQuery,
   IEndorsement,
@@ -10,9 +10,6 @@ import Nexus, {
   IRevision,
   IRevisionQuery,
   IUpdateEntry,
-  NexusError,
-  RateLimitError,
-  TimeoutError,
   ICollectionSearchOptions,
   ICollectionSearchResult,
   IPreference,
@@ -20,13 +17,15 @@ import Nexus, {
   IGraphUser,
   IModInfo,
 } from "@nexusmods/nexus-api";
+import type Nexus from "@nexusmods/nexus-api";
+import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import { makeFileUID } from "./util/UIDs";
 import BluebirdPromise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
 import * as path from "path";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import * as util from "util";
 import {
   addNotification,
@@ -36,8 +35,8 @@ import {
   setModAttribute,
   setOAuthCredentials,
 } from "../../actions";
-import { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import { IMod, IState } from "../../types/IState";
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IMod, IState } from "../../types/IState";
 import {
   DataInvalid,
   HTTPError,
@@ -57,10 +56,10 @@ import opn from "../../util/opn";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise, truthy } from "../../util/util";
+import type { RedownloadMode } from "../download_management/DownloadManager";
 import {
   AlreadyDownloaded,
   DownloadIsHTML,
-  RedownloadMode,
 } from "../download_management/DownloadManager";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
@@ -75,7 +74,7 @@ import {
 } from "./constants";
 import NXMUrl from "./NXMUrl";
 import { isLoggedIn } from "./selectors";
-import { IJWTAccessToken } from "./types/IJWTAccessToken";
+import type { IJWTAccessToken } from "./types/IJWTAccessToken";
 import {
   checkModVersion,
   fetchRecentUpdates,
@@ -89,8 +88,10 @@ import {
 } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
-import OAuth, { ITokenReply } from "./util/oauth";
-import { IAccountStatus, IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import type { ITokenReply } from "./util/oauth";
+import OAuth from "./util/oauth";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import { IAccountStatus } from "./types/IValidateKeyData";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -638,7 +639,9 @@ function transformGraphQLFileToIFileInfo(file: Partial<IModFile>): IFileInfo {
     is_primary: file.primary === file.fileId || false,
     size: sizeInBytes,
     size_kb: Math.round(sizeInBytes / 1024),
-    uploaded_timestamp: file.mod?.updatedAt ? new Date(file.mod.updatedAt).getTime() : file.date,
+    uploaded_timestamp: file.mod?.updatedAt
+      ? new Date(file.mod.updatedAt).getTime()
+      : file.date,
     uploaded_time: file.mod?.updatedAt || new Date(file.date).toString(),
     changelog_html: null, // Changelog HTML is not included in the GraphQL response
     file_name: file.uri,

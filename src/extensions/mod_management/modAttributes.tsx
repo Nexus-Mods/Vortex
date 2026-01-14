@@ -1,14 +1,14 @@
 import DateTimeFilter from "../../renderer/controls/table/DateTimeFilter";
 import ZoomableImage from "../../renderer/controls/ZoomableImage";
-import { ITableAttribute } from "../../types/ITableAttribute";
+import type { ITableAttribute } from "../../types/ITableAttribute";
 import { getCurrentLanguage } from "../../util/i18n";
 import { userFriendlyTime } from "../../util/relativeTime";
 import { getSafe } from "../../util/storeHelper";
 
-import { IModWithState } from "./types/IModProps";
+import type { IModWithState } from "./types/IModProps";
 
 import * as React from "react";
-import { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../types/api";
 
 export const ENABLED_TIME = (
   locale: () => string,

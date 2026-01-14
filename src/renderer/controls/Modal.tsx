@@ -1,13 +1,13 @@
 import memoizeOne from "memoize-one";
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import {
-  Modal,
+import type {
   ModalBody,
   ModalFooter,
   ModalHeader,
   ModalTitle,
 } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import { MutexWrapper } from "../../util/MutexContext";
 
 class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {

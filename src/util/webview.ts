@@ -1,7 +1,8 @@
 import makeRemoteCall from "./electronRemote";
 import { setdefault } from "./util";
 
-import { BrowserView, BrowserWindow } from "electron";
+import type { BrowserView } from "electron";
+import { BrowserWindow } from "electron";
 import { generate as shortid } from "shortid";
 import { valueReplacer } from "./log";
 

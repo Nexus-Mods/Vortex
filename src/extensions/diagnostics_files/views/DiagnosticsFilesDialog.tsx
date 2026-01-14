@@ -1,6 +1,6 @@
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Spinner from "../../../renderer/controls/Spinner";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -12,7 +12,7 @@ import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { showError } from "../../../util/message";
 
-import { ILog, ISession } from "../types/ISession";
+import type { ILog, ISession } from "../types/ISession";
 import { loadVortexLogs } from "../util/loadVortexLogs";
 
 import type * as RemoteT from "@electron/remote";
@@ -29,8 +29,8 @@ import {
   ListGroupItem,
   Modal,
 } from "react-bootstrap";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import lazyRequire from "../../../util/lazyRequire";
 import { util } from "../../..";
 

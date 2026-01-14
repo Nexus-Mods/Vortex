@@ -21,24 +21,24 @@ import { setUserAPIKey } from "../actions/account";
 import { setLoginId, setOauthPending } from "../actions/session";
 import { NEXUS_BASE_URL } from "../constants";
 import { OAUTH_URL } from "../constants";
-import { IValidateKeyData } from "../types/IValidateKeyData";
+import type { IValidateKeyData } from "../types/IValidateKeyData";
 import { getPageURL } from "../util/sso";
 
 import { clipboard } from "electron";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
+import type { ModalBody } from "react-bootstrap";
 import {
   Alert,
   ControlLabel,
   FormControl,
   FormGroup,
   InputGroup,
-  ModalBody,
 } from "react-bootstrap";
 import { findDOMNode } from "react-dom";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 

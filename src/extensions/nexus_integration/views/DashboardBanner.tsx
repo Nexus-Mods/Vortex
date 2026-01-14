@@ -12,16 +12,16 @@ import getVortexPath from "../../../util/getVortexPath";
 import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
-import { IValidateKeyData } from "../types/IValidateKeyData";
+import type { IValidateKeyData } from "../types/IValidateKeyData";
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL } from "../constants";
 
 import * as path from "path";
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type { WithTranslation } from "react-i18next";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { pathToFileURL } from "url";
 
 interface IConnectedProps {

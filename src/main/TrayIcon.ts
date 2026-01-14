@@ -1,9 +1,10 @@
-import { IExtensionApi } from "../types/api";
+import type { IExtensionApi } from "../types/api";
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
 import { truthy } from "../util/util";
 
-import { app, BrowserWindow, Menu, Tray } from "electron";
+import type { BrowserWindow } from "electron";
+import { app, Menu, Tray } from "electron";
 import * as path from "path";
 
 class TrayIcon {

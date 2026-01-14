@@ -1,15 +1,16 @@
-import Nexus, {
+import type Nexus from "@nexusmods/nexus-api";
+import {
   NexusError,
   ProtocolError,
   RateLimitError,
   TimeoutError,
 } from "@nexusmods/nexus-api";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import React from "react";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IGameStored, IMod } from "../../../types/IState";
-import { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGameStored, IMod } from "../../../types/IState";
+import type { ITableAttribute } from "../../../types/ITableAttribute";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import { laterT } from "../../../util/i18n";
 import { log } from "../../../util/log";

@@ -1,6 +1,6 @@
 import FormInput from "../../../renderer/controls/FormInput";
 import More from "../../../renderer/controls/More";
-import { ValidationState } from "../../../types/ITableAttribute";
+import type { ValidationState } from "../../../types/ITableAttribute";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { truthy } from "../../../util/util";
 
@@ -9,10 +9,10 @@ import { setModAttribute } from "../../mod_management/actions/mods";
 
 import { guessFromFileName } from "../util/guessModID";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { useDispatch } from "react-redux";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import {
   Button,
   Icon,

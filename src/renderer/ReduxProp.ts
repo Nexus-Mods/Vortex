@@ -1,6 +1,6 @@
-import { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../types/IExtensionContext";
 import { getSafe } from "../util/storeHelper";
-import * as React from "react";
+import type * as React from "react";
 
 class ReduxProp<T> {
   private mInputs: string[][];

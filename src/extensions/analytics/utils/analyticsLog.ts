@@ -3,7 +3,8 @@
  * Provides consistent logging prefixes for all analytics-related components
  */
 
-import { log, LogLevel } from "../../../util/log";
+import type { LogLevel } from "../../../util/log";
+import { log } from "../../../util/log";
 
 /**
  * Log function specifically for analytics extension components

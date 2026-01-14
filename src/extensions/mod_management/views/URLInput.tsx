@@ -3,10 +3,10 @@ import { useDispatch } from "react-redux";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import FormInput from "../../../renderer/controls/FormInput";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
 import opn from "../../../util/opn";
 import { setModAttribute } from "../actions/mods";
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 
 function isURLValid(url: string) {
   try {

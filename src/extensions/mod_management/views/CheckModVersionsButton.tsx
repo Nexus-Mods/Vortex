@@ -1,4 +1,4 @@
-import { ButtonType } from "../../../renderer/controls/IconBar";
+import type { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
 import {
   ComponentEx,
@@ -8,9 +8,10 @@ import {
 import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 
-import { IProfile, IProfileMod } from "../../profile_management/types/IProfile";
+import type { IProfileMod } from "../../profile_management/types/IProfile";
+import { IProfile } from "../../profile_management/types/IProfile";
 
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 
 import _ from "lodash";
 

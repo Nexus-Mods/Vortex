@@ -1,15 +1,8 @@
 "use client";
 
 import * as React from "react";
-import {
-  createContext,
-  useContext,
-  KeyboardEvent,
-  MutableRefObject,
-  ReactNode,
-  useCallback,
-  useState,
-} from "react";
+import type { KeyboardEvent, MutableRefObject, ReactNode } from "react";
+import { createContext, useContext, useCallback, useState } from "react";
 
 import { getTabId } from "../utils";
 

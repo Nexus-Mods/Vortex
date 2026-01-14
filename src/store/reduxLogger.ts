@@ -1,6 +1,6 @@
 import { objDiff } from "../util/util";
 
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 interface IActionLog {
   before: any;

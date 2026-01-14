@@ -1,19 +1,19 @@
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
+import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { activeGameId, gameName } from "../../util/selectors";
 import walk from "../../util/walk";
 
-import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";
-import {
+import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";

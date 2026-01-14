@@ -1,17 +1,13 @@
 /* disable-eslint */
-import {
-  addNotification,
-  IDialogAction,
-  IDialogContent,
-  showDialog,
-} from "../actions/notifications";
+import type { IDialogAction, IDialogContent } from "../actions/notifications";
+import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
-import { IAttachment, IErrorOptions } from "../types/IExtensionContext";
-import { IState } from "../types/IState";
+import type { IAttachment, IErrorOptions } from "../types/IExtensionContext";
+import type { IState } from "../types/IState";
 import { jsonRequest } from "../util/network";
 
+import type { HTTPError } from "./CustomErrors";
 import {
-  HTTPError,
   StalledError,
   TemporaryError,
   ThirdPartyError,
@@ -29,13 +25,13 @@ import * as fs from "./fs";
 import { log } from "./log";
 import { flatten, nexusModsURL, setdefault, truthy } from "./util";
 
-import { IFeedbackResponse } from "@nexusmods/nexus-api";
+import type { IFeedbackResponse } from "@nexusmods/nexus-api";
 import Promise from "bluebird";
 import ZipT = require("node-7z");
 import * as os from "os";
 import * as path from "path";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 import { file as tmpFile, tmpName } from "tmp";
 
 import * as _ from "lodash";

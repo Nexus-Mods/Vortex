@@ -1,5 +1,5 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
-import { ISettingsDownloads } from "../../../types/IState";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { ISettingsDownloads } from "../../../types/IState";
 import { setSafe } from "../../../util/storeHelper";
 
 import * as actions from "../actions/settings";

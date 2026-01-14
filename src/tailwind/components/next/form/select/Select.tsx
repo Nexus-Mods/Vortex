@@ -7,11 +7,12 @@
 
 import * as React from "react";
 import { mdiMenuDown } from "@mdi/js";
-import { Ref, SelectHTMLAttributes } from "react";
+import type { Ref, SelectHTMLAttributes } from "react";
 
 import { Icon } from "../../icon";
 import { joinClasses } from "../../utils";
-import { BaseFormFieldProps, FormField } from "../formfield";
+import type { BaseFormFieldProps } from "../formfield";
+import { FormField } from "../formfield";
 
 export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
   BaseFormFieldProps & {

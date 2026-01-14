@@ -1,9 +1,9 @@
 import Promise from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
-import { IDialogResult } from "../../../types/IDialog";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IDownload, IState } from "../../../types/IState";
+import type { IDialogResult } from "../../../types/IDialog";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IDownload, IState } from "../../../types/IState";
 import { getApplication } from "../../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";

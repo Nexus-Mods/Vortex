@@ -1,5 +1,5 @@
 import { log } from "../../../util/log";
-import { IDownload } from "../types/IDownload";
+import type { IDownload } from "../types/IDownload";
 
 function getDownloadGames(download: IDownload): string[] {
   if (Array.isArray(download.game)) {

@@ -1,7 +1,7 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 
-import { ILoadOrderEntry } from "../types/types";
+import type { ILoadOrderEntry } from "../types/types";
 
 import * as actions from "../actions/loadOrder";
 

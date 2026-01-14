@@ -1,7 +1,7 @@
 import { setDeploymentNecessary } from "../../actions";
 import Spinner from "../../renderer/controls/Spinner";
 import Toggle from "../../renderer/controls/Toggle";
-import { IState } from "../../types/IState";
+import type { IState } from "../../types/IState";
 import {
   ComponentEx,
   connect,
@@ -15,7 +15,7 @@ import { truthy } from "../../util/util";
 import { setINITweakEnabled } from "../mod_management/actions/mods";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";
 import { installPath } from "../mod_management/selectors";
-import { IMod } from "../mod_management/types/IMod";
+import type { IMod } from "../mod_management/types/IMod";
 import { activeGameId } from "../profile_management/selectors";
 
 import Bluebird from "bluebird";
@@ -23,8 +23,8 @@ import * as path from "path";
 import * as React from "react";
 import { ListGroup, ListGroupItem } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import * as Redux from "redux";
-import { ThunkDispatch } from "redux-thunk";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 interface IBaseProps {
   modId: string;

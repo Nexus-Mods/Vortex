@@ -1,4 +1,4 @@
-import { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
 
 import { Tag } from "bbcode-to-react";
 import * as React from "react";

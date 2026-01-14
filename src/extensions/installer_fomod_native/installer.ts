@@ -2,7 +2,7 @@ import { generate as shortid } from "shortid";
 
 import { VortexModInstaller } from "./utils/VortexModInstaller";
 
-import { IChoices } from "../installer_fomod_shared/types/interface";
+import type { IChoices } from "../installer_fomod_shared/types/interface";
 import {
   getPluginPath,
   getStopPatterns,
@@ -10,9 +10,9 @@ import {
 } from "../installer_fomod_shared/utils/gameSupport";
 import { getChoicesFromState } from "../installer_fomod_shared/utils/helpers";
 
-import { IInstallationDetails } from "../mod_management/types/InstallFunc";
+import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
 
-import {
+import type {
   IExtensionApi,
   IInstallResult,
   IInstruction,

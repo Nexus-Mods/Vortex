@@ -1,6 +1,6 @@
 import { log } from "../../util/log";
 
-import { IGameLoadOrderEntry } from "./types/types";
+import type { IGameLoadOrderEntry } from "./types/types";
 
 const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
 export function addGameEntry(gameEntry: IGameLoadOrderEntry) {

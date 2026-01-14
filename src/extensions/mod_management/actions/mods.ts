@@ -1,6 +1,6 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
 
-import { IMod, IModReference, IModRule, ModState } from "../types/IMod";
+import type { IMod, IModReference, IModRule, ModState } from "../types/IMod";
 
 import * as reduxAct from "redux-act";
 

@@ -1,14 +1,15 @@
-import { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import { IExtensionApi } from "../../../types/IExtensionContext";
-import { IGame } from "../../../types/IGame";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
 import { GameEntryNotFound } from "../../../types/IGameStore";
-import { IGameStoreEntry } from "../../../types/IGameStoreEntry";
-import { ITool } from "../../../types/ITool";
+import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
+import type { ITool } from "../../../types/ITool";
 import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
 import extractExeIcon from "../../../util/exeIcon";
 import * as fs from "../../../util/fs";
 import GameStoreHelper from "../../../util/GameStoreHelper";
-import getNormalizeFunc, { Normalize } from "../../../util/getNormalizeFunc";
+import type { Normalize } from "../../../util/getNormalizeFunc";
+import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
@@ -17,8 +18,8 @@ import { truthy } from "../../../util/util";
 
 import { modPathsForGame } from "../../mod_management/selectors";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IToolStored } from "../types/IToolStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IToolStored } from "../types/IToolStored";
 
 import Progress from "./Progress";
 

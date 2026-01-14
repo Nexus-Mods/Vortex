@@ -90,7 +90,8 @@ import getNormalizeFunc, {
 } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import github from "./github";
-import { getCurrentLanguage, TFunction } from "./i18n";
+import type { TFunction } from "./i18n";
+import { getCurrentLanguage } from "./i18n";
 import LazyComponent from "../renderer/controls/LazyComponent";
 import lazyRequire from "./lazyRequire";
 import local from "./local";

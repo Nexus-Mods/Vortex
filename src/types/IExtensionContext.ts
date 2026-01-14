@@ -1,18 +1,18 @@
-import {
+import type {
   IAvailableExtension,
   IExtensionDownloadInfo,
 } from "../extensions/extension_manager/types";
-import { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
-import {
+import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
+import type {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IGameVersionProviderOptions,
 } from "../extensions/gameversion_management/types/IGameVersionProvider";
-import {
+import type {
   IHistoryEvent,
   IHistoryStack,
 } from "../extensions/history_management/types";
-import { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
+import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 
 import {
   IDeployedFile,
@@ -32,15 +32,15 @@ import {
   ISupportedResult,
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
-import { Archive } from "../util/archives";
-import { IRegisteredExtension } from "../util/ExtensionManager";
-import { i18n, TFunction } from "../util/i18n";
-import ReduxProp from "../renderer/ReduxProp";
-import { SanityCheck } from "../store/reduxSanity";
+import type { Archive } from "../util/archives";
+import type { IRegisteredExtension } from "../util/ExtensionManager";
+import type { i18n, TFunction } from "../util/i18n";
+import type ReduxProp from "../renderer/ReduxProp";
+import type { SanityCheck } from "../store/reduxSanity";
 
-import { ICollectionsGameSupportEntry } from "./collections/api";
+import type { ICollectionsGameSupportEntry } from "./collections/api";
 
-import {
+import type {
   DialogActions,
   IDialogContent,
   IModReference,
@@ -48,33 +48,27 @@ import {
   IOverlayOptions,
   IPosition,
 } from "./api";
-import { IActionOptions } from "./IActionDefinition";
-import { IBannerOptions } from "./IBannerOptions";
-import { DialogType, IDialogResult } from "./IDialog";
-import { IGame } from "./IGame";
-import { IGameStore } from "./IGameStore";
-import { ILookupOptions, IModLookupResult } from "./IModLookupResult";
-import { INotification, INotificationAction } from "./INotification";
-import { IDiscoveryResult, IMod, IState } from "./IState";
-import { ITableAttribute } from "./ITableAttribute";
-import { ITestResult } from "./ITestResult";
+import type { IActionOptions } from "./IActionDefinition";
+import type { IBannerOptions } from "./IBannerOptions";
+import type { DialogType, IDialogResult } from "./IDialog";
+import type { IGame } from "./IGame";
+import type { IGameStore } from "./IGameStore";
+import type { ILookupOptions, IModLookupResult } from "./IModLookupResult";
+import type { INotification, INotificationAction } from "./INotification";
+import type { IDiscoveryResult, IMod, IState } from "./IState";
+import type { ITableAttribute } from "./ITableAttribute";
+import type { ITestResult } from "./ITestResult";
 
-import Promise from "bluebird";
-import {
-  IHashResult,
-  ILookupResult,
-  IModInfo,
-  IQuery,
-  IReference,
-  IServer,
-} from "modmeta-db";
-import * as React from "react";
-import * as Redux from "redux";
-import { ComplexActionCreator } from "redux-act";
-import { ThunkDispatch } from "redux-thunk";
-import { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
-import { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
-import { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
+import type Promise from "bluebird";
+import type { IHashResult, IServer } from "modmeta-db";
+import { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
+import type * as React from "react";
+import type * as Redux from "redux";
+import type { ComplexActionCreator } from "redux-act";
+import type { ThunkDispatch } from "redux-thunk";
+import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
+import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
+import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 
 export {
   TestSupported,

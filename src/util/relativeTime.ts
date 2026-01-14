@@ -1,4 +1,4 @@
-import { TFunction } from "./i18n";
+import type { TFunction } from "./i18n";
 
 const SEC_PER_MIN = 60;
 const SEC_PER_HOUR = SEC_PER_MIN * 60;

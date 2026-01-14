@@ -6,10 +6,10 @@ import { useDispatch } from "react-redux";
 import { setOpenMainPage } from "../../actions";
 import Dashlet from "../../renderer/controls/Dashlet";
 import Icon from "../../renderer/controls/Icon";
-import { IState } from "../../types/api";
+import type { IState } from "../../types/api";
 import { setDashletEnabled } from "../dashboard/actions";
 import { resetSteps } from "./actions";
-import { IStep } from "./steps";
+import type { IStep } from "./steps";
 
 export type OnCardClick = (payload: IOnCardClickPayload) => void;
 

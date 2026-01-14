@@ -1,4 +1,4 @@
-import { ITool } from "./ITool";
+import type { ITool } from "./ITool";
 
 export interface IDiscoveredTool extends ITool {
   // path to the tool (including the executable name!)

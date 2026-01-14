@@ -20,7 +20,7 @@
 import * as React from "react";
 import * as mdi from "@mdi/js";
 import * as nxm from "../../../lib/icon-paths";
-import { XOr } from "../utils";
+import type { XOr } from "../utils";
 
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 

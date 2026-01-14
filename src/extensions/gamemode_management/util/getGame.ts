@@ -1,9 +1,10 @@
-import { IGame } from "../../../types/IGame";
-import { IGameStore } from "../../../types/IGameStore";
+import type { IGame } from "../../../types/IGame";
+import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
-import GameVersionManager from "../../gameversion_management/GameVersionManager";
-import GameModeManager, { IGameStub } from "../GameModeManager";
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type GameVersionManager from "../../gameversion_management/GameVersionManager";
+import type { IGameStub } from "../GameModeManager";
+import type GameModeManager from "../GameModeManager";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 import { getModTypeExtensions } from "./modTypeExtensions";
 

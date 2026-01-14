@@ -1,6 +1,6 @@
-import ReduxProp from "../renderer/ReduxProp";
+import type ReduxProp from "../renderer/ReduxProp";
 
-import * as React from "react";
+import type * as React from "react";
 
 /**
  * interface of a "main page", that is: a content page

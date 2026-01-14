@@ -1,4 +1,4 @@
-import * as remoteT from "@electron/remote";
+import type * as remoteT from "@electron/remote";
 import * as electron from "electron";
 
 const myExport: typeof electron & { remote?: typeof remoteT } = {

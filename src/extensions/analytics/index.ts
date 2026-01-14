@@ -1,13 +1,13 @@
 import * as os from "os";
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import { analyticsLog } from "./utils/analyticsLog";
 import { getCPUArch } from "./../../util/nativeArch";
 import { setAnalytics } from "./actions/analytics.action";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
+import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
 import {
   AppCrashedEvent,
   AppLaunchedEvent,
-  MixpanelEvent,
   ModsInstallationCompletedEvent,
 } from "./mixpanel/MixpanelEvents";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";

@@ -1,15 +1,15 @@
 import { SITE_GAME_NAME } from "../../../renderer/controls/constants";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IGameStored } from "../../../types/IState";
+import type { IGameStored } from "../../../types/IState";
 import { PureComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 
 import { SITE_ID } from "../../gamemode_management/constants";
 
-import Promise from "bluebird";
+import type Promise from "bluebird";
 import * as fuzz from "fuzzball";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import {
   DropdownButton,

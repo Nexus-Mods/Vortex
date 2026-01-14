@@ -1,4 +1,4 @@
-import { IModRule } from "../mod_management/types/IMod";
+import type { IModRule } from "../mod_management/types/IMod";
 import { IDownload, IState } from "../../types/IState";
 
 export function generateCollectionSessionId(

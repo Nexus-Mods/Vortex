@@ -1,9 +1,9 @@
 import { inspect } from "util";
-import { IGame } from "../../../types/IGame";
+import type { IGame } from "../../../types/IGame";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
-import {
+import type {
   IGameStored,
   IGameStoredExt,
 } from "../../gamemode_management/types/IGameStored";

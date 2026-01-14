@@ -1,24 +1,26 @@
 import React = require("react");
-import * as types from "../../../types/api";
+import type * as types from "../../../types/api";
 import * as selectors from "../../../util/selectors";
 
 import { setFBLoadOrder } from "../actions/loadOrder";
 
-import {
-  CollectionGenerateError,
-  CollectionParseError,
+import type {
   ICollection,
   ICollectionLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
+import {
+  CollectionGenerateError,
+  CollectionParseError,
+} from "../types/collections";
 
-import { ILoadOrderGameInfoExt } from "../types/types";
+import type { ILoadOrderGameInfoExt } from "../types/types";
 
 import { findGameEntry } from "../gameSupport";
 import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from "../util";
 
 import LoadOrderCollections from "../views/LoadOrderCollections";
-import UpdateSet from "../UpdateSet";
+import type UpdateSet from "../UpdateSet";
 
 export async function generate(
   api: types.IExtensionApi,

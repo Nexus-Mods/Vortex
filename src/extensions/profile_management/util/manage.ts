@@ -1,7 +1,7 @@
 import Bluebird from "bluebird";
 import * as path from "path";
 
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
@@ -12,7 +12,7 @@ import {
   lastActiveProfileForGame,
   profileById,
 } from "../selectors";
-import { IProfile } from "../types/IProfile";
+import type { IProfile } from "../types/IProfile";
 
 export function profilePath(profile: IProfile): string {
   return path.join(

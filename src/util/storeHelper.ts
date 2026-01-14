@@ -2,10 +2,10 @@
  * Helper functions when working with immutable state (or immutable objects in general)
  */
 
-import { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 
 import Promise from "bluebird";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 
 function clone<T>(input: T): T {
   return Array.isArray(input) ? ([...input] as T) : { ...(input as any) };

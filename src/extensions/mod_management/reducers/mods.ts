@@ -1,4 +1,4 @@
-import { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import { removeValue } from "../../../util/storeHelper";
 import {
@@ -11,11 +11,11 @@ import {
 } from "../../../util/storeHelper";
 
 import * as actions from "../actions/mods";
-import { IMod } from "../types/IMod";
+import type { IMod } from "../types/IMod";
 import { referenceEqual } from "../util/testModReference";
 
 import * as _ from "lodash";
-import { IRule } from "modmeta-db";
+import type { IRule } from "modmeta-db";
 
 function reduceRule(input: IRule): IRule {
   if (input === undefined) {

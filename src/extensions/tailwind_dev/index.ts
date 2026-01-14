@@ -3,7 +3,7 @@
  * Only registers when running in development mode
  */
 
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import TailwindPage from "./views/TailwindPage";
 
 function init(context: IExtensionContext): boolean {

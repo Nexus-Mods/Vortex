@@ -1,6 +1,6 @@
-import Promise from "bluebird";
-import { ILookupResult, IModInfo } from "modmeta-db";
-import { IFileListItem, IMod, IModReference } from "./IMod";
+import type Promise from "bluebird";
+import type { ILookupResult, IModInfo } from "modmeta-db";
+import type { IFileListItem, IMod, IModReference } from "./IMod";
 
 export interface IModInfoEx extends IModInfo {
   referer?: string | (() => Promise<string>);

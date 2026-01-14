@@ -1,4 +1,4 @@
-import { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../types/api";
 import { ComponentEx, translate } from "./ComponentEx";
 
 import Icon from "./Icon";
@@ -7,7 +7,7 @@ import { IconButton } from "./TooltipControls";
 
 import * as React from "react";
 import { Popover } from "react-bootstrap";
-import { WithTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 
 const haveKnowledgeBase = (() => {

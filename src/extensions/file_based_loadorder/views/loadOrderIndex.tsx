@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { ILoadOrderEntry } from "../../../types/api";
-import { IExtensionApi, LoadOrder } from "../../../types/api";
+import type { ILoadOrderEntry } from "../../../types/api";
+import type { IExtensionApi, LoadOrder } from "../../../types/api";
 
 interface IProps {
   className?: string;

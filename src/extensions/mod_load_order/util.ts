@@ -1,6 +1,6 @@
-import * as types from "../../types/api";
+import type * as types from "../../types/api";
 import * as util from "../../util/api";
-import { ILoadOrder, ILoadOrderEntry } from "./types/types";
+import type { ILoadOrder, ILoadOrderEntry } from "./types/types";
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
   if (collection.rules === undefined) {

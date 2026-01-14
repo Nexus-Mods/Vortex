@@ -3,7 +3,7 @@ import Modal from "../../../renderer/controls/Modal";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import ZoomableImage from "../../../renderer/controls/ZoomableImage";
-import { IState } from "../../../types/api";
+import type { IState } from "../../../types/api";
 import {
   connect,
   PureComponentEx,
@@ -12,7 +12,7 @@ import {
 import { pushSafe, removeValue } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 
-import {
+import type {
   GroupType,
   IGroup,
   IInstallerInfo,
@@ -22,7 +22,7 @@ import {
   OrderType,
 } from "../types/interface";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import update from "immutability-helper";
 import * as _ from "lodash";
 import * as React from "react";

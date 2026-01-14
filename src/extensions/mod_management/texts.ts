@@ -1,4 +1,4 @@
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 
 function getText(id: string, t: TFunction) {
   switch (id) {

@@ -1,11 +1,12 @@
 import * as React from "react";
 
-import { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../../types/IComponentContext";
 
 import { deleteOrNop, setSafe } from "../../util/storeHelper";
 
 import * as PropTypes from "prop-types";
-import { WithTranslation, withTranslation } from "react-i18next";
+import type { WithTranslation } from "react-i18next";
+import { withTranslation } from "react-i18next";
 import { clearImmediate, setImmediate } from "timers";
 import { truthy } from "../../util/util";
 export { connect } from "react-redux";

@@ -1,4 +1,4 @@
-import { types } from 'vortex-api';
+import type { types } from 'vortex-api';
 
 function main(context: types.IExtensionContext) {
   context.registerAction('global-icons', 100, 'menu', {}, 'Sample', () => {

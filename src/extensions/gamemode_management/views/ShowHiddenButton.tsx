@@ -5,7 +5,7 @@ import {
   translate,
 } from "../../../renderer/controls/ComponentEx";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 
 export interface IBaseProps {

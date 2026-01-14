@@ -1,6 +1,6 @@
-import { IExtensionApi } from "../types/IExtensionContext";
-import { INotification } from "../types/INotification";
-import { IState } from "../types/IState";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { INotification } from "../types/INotification";
+import type { IState } from "../types/IState";
 
 import { log } from "../util/log";
 import getVortexPath from "./getVortexPath";

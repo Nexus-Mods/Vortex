@@ -7,7 +7,8 @@
  */
 
 import * as React from "react";
-import { AnchorHTMLAttributes, forwardRef } from "react";
+import type { AnchorHTMLAttributes } from "react";
+import { forwardRef } from "react";
 
 export interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string;

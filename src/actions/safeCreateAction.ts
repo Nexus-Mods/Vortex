@@ -1,5 +1,5 @@
 import { createAction, types } from "redux-act";
-import * as ra from "redux-act";
+import type * as ra from "redux-act";
 
 // tslint:disable:max-line-length
 export function safeCreateAction(description: string): ra.EmptyActionCreator;

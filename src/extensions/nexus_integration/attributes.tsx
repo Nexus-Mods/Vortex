@@ -1,5 +1,10 @@
 import { setModAttribute } from "../../actions";
-import { IExtensionApi, IMod, IState, ITableAttribute } from "../../types/api";
+import type {
+  IExtensionApi,
+  IMod,
+  IState,
+  ITableAttribute,
+} from "../../types/api";
 import { laterT } from "../../util/i18n";
 import {
   activeGameId,
@@ -10,7 +15,7 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-import { IModWithState } from "../mod_management/types/IModProps";
+import type { IModWithState } from "../mod_management/types/IModProps";
 import NXMUrl from "./NXMUrl";
 import { nexusGames } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
@@ -19,11 +24,11 @@ import EndorsementFilter from "./views/EndorsementFilter";
 import EndorseModButton from "./views/EndorseModButton";
 import NexusModIdDetail from "./views/NexusModIdDetail";
 
-import Nexus from "@nexusmods/nexus-api";
-import { TFunction } from "i18next";
+import type Nexus from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { useSelector } from "react-redux";
-import * as Redux from "redux";
+import type * as Redux from "redux";
 import { fillNexusIdByMD5, queryResetSource } from "./util/guessModID";
 
 interface INexusIdProps {

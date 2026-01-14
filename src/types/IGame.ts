@@ -1,10 +1,10 @@
 import { IModType } from "../extensions/gamemode_management/types/IModType";
 
-import { IDiscoveryResult, IMod } from "./IState";
-import { ITool } from "./ITool";
+import type { IDiscoveryResult, IMod } from "./IState";
+import type { ITool } from "./ITool";
 
-import Promise from "bluebird";
-import { IStoreQuery } from "../util/GameStoreHelper";
+import type Promise from "bluebird";
+import type { IStoreQuery } from "../util/GameStoreHelper";
 
 export { IModType };
 

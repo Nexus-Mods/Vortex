@@ -1,9 +1,10 @@
 import path from "path";
 import minimatch from "minimatch";
-import turbowalk, { IEntry } from "turbowalk";
+import type { IEntry } from "turbowalk";
+import turbowalk from "turbowalk";
 import IniParser, { WinapiFormat } from "vortex-parse-ini";
 import { getIniFilePath } from "../../installer_fomod_shared/utils/gameSupport";
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { statAsync, readFileAsync } from "../../../util/fs";
 import {
   currentGame,

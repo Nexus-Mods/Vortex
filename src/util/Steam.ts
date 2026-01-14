@@ -8,7 +8,7 @@ import * as fsOG from "fs/promises";
 import * as path from "path";
 import { parse } from "simple-vdf";
 import * as winapi from "winapi-bindings";
-import {
+import type {
   ICustomExecutionInfo,
   IExecInfo,
   IGameStore,
@@ -17,7 +17,7 @@ import {
 
 import opn from "./opn";
 
-import { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
 import { getErrorMessage } from "../shared/errors";

@@ -1,5 +1,5 @@
-import { ProgressDelegate } from "../types/InstallFunc";
-import { ISupportedResult } from "../types/TestSupported";
+import type { ProgressDelegate } from "../types/InstallFunc";
+import type { ISupportedResult } from "../types/TestSupported";
 
 import Promise from "bluebird";
 import * as path from "path";

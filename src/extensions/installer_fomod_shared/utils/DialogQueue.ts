@@ -1,6 +1,6 @@
 import { log } from "../../../util/log";
 
-import { IExtensionApi } from "../../../types/api";
+import type { IExtensionApi } from "../../../types/api";
 
 import { hasActiveFomodDialog } from "./helpers";
 import { hasSessionFOMOD } from "./guards";

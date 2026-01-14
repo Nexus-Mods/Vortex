@@ -1,19 +1,19 @@
 import IconBar from "../../../renderer/controls/IconBar";
 import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import opn from "../../../util/opn";
 
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 
-import { IDiscoveryResult } from "../types/IDiscoveryResult";
-import { IGameStored } from "../types/IGameStored";
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IGameStored } from "../types/IGameStored";
 
 import GameInfoPopover from "./GameInfoPopover";
 
-import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type Promise from "bluebird";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { ListGroupItem, Media, Popover } from "react-bootstrap";

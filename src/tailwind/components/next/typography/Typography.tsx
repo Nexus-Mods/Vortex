@@ -5,9 +5,11 @@
  * Provides a consistent typography system with predefined sizes and appearances.
  */
 
-import * as React from "react";
-import { AllHTMLAttributes, createElement, Ref } from "react";
-import { joinClasses, ResponsiveScreenSizes } from "../utils";
+import type * as React from "react";
+import type { AllHTMLAttributes, Ref } from "react";
+import { createElement } from "react";
+import type { ResponsiveScreenSizes } from "../utils";
+import { joinClasses } from "../utils";
 
 export type TypographyTypes =
   | "heading-2xl"

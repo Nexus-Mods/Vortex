@@ -5,7 +5,11 @@ import Bluebird from "bluebird";
 import { NET_CORE_DOWNLOAD } from "./constants";
 import { SITE_ID } from "../gamemode_management/constants";
 import { downloadPathForGame } from "../download_management/selectors";
-import { ITestResult, IExtensionApi, IExtensionContext } from "../../types/api";
+import type {
+  ITestResult,
+  IExtensionApi,
+  IExtensionContext,
+} from "../../types/api";
 import { getVortexPath, UserCanceled } from "../../util/api";
 import { delayed, toPromise } from "../../util/util";
 import { log } from "../../util/log";

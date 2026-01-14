@@ -1,5 +1,5 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
-import { IChunk } from "../types/IChunk";
+import type { IChunk } from "../types/IChunk";
 
 import * as reduxAct from "redux-act";
 import { log } from "../../../util/log";

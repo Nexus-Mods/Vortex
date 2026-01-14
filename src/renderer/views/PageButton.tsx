@@ -1,7 +1,7 @@
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";
-import { IMainPage } from "../../types/IMainPage";
-import { TFunction } from "../../util/i18n";
+import type { IMainPage } from "../../types/IMainPage";
+import type { TFunction } from "../../util/i18n";
 
 import * as React from "react";
 import { Badge } from "react-bootstrap";

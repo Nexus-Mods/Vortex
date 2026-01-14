@@ -1,4 +1,4 @@
-import { IReducerSpec } from "../../types/IExtensionContext";
+import type { IReducerSpec } from "../../types/IExtensionContext";
 
 import { setUpdateChannel } from "./actions";
 

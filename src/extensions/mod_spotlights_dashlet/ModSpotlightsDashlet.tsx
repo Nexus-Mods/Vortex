@@ -1,7 +1,7 @@
 import * as React from "react";
 import Dashlet from "../../renderer/controls/Dashlet";
 import EmptyPlaceholder from "../../renderer/controls/EmptyPlaceholder";
-import { ModSpotlightEntryExt } from "./types";
+import type { ModSpotlightEntryExt } from "./types";
 import { Button } from "../../renderer/controls/TooltipControls";
 import { useTranslation } from "react-i18next";
 

@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import type Promise from "bluebird";
 declare function runThreaded(
   func: (...args: any[]) => any,
   moduleBase: string,

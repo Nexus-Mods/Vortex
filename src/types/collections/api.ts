@@ -1,5 +1,5 @@
-import { IGameSpecificInterfaceProps } from "./IGameSpecificInterfaceProps";
-import * as types from "../api";
+import type { IGameSpecificInterfaceProps } from "./IGameSpecificInterfaceProps";
+import type * as types from "../api";
 
 export interface ICollectionsGameSupportEntry {
   gameId: string;

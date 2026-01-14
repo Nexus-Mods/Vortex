@@ -1,8 +1,8 @@
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-import { IDownload } from "../../download_management/types/IDownload";
-import { IMod } from "../types/IMod";
-import { IModSource } from "../types/IModSource";
+import type { IDownload } from "../../download_management/types/IDownload";
+import type { IMod } from "../types/IMod";
+import type { IModSource } from "../types/IModSource";
 import { getModSource } from "../util/modSource";
 
 import versionClean from "./versionClean";

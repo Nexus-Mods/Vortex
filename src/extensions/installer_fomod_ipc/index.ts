@@ -2,9 +2,9 @@ import { method as toBluebird } from "bluebird";
 import { SupportsAppContainer } from "winapi-bindings";
 import { testSupported } from "./tester";
 import { install } from "./installer";
-import { ITestSupportedDetails } from "../mod_management/types/TestSupported";
-import { IInstallationDetails } from "../mod_management/types/InstallFunc";
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { ITestSupportedDetails } from "../mod_management/types/TestSupported";
+import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import { settingsReducer } from "./reducers/sandbox";
 import Sandbox from "./views/Sandbox";
 

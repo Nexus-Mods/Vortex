@@ -1,9 +1,9 @@
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import { dismissOverlay, showOverlay } from "./actions";
 import Container from "./Container";
 import Reducer from "./reducer";
 
-import { IOverlayOptions, IPosition } from "../../types/IState";
+import type { IOverlayOptions, IPosition } from "../../types/IState";
 
 const componentRegistry = new Map<string, React.ComponentType<any>>();
 

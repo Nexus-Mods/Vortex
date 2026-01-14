@@ -1,14 +1,14 @@
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import { IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 
-import { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "../../mod_management/types/IMod";
 
 import { setModEnabled } from "../actions/profiles";
 import { closeDialog } from "../actions/transferSetup";
-import { IProfile } from "../types/IProfile";
+import type { IProfile } from "../types/IProfile";
 
 import * as React from "react";
 import { Button, Checkbox, FormControl, Modal } from "react-bootstrap";

@@ -1,4 +1,4 @@
-import { IParameters } from "../util/commandLine";
+import type { IParameters } from "../util/commandLine";
 
 import safeCreateAction from "./safeCreateAction";
 

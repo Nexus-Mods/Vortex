@@ -1,8 +1,8 @@
 import { Button, IconButton } from "../../../renderer/controls/TooltipControls";
-import { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../util/i18n";
 import { truthy } from "../../../util/util";
 import { setModAttributes } from "../actions/mods";
-import { IModWithState } from "../types/IModProps";
+import type { IModWithState } from "../types/IModProps";
 
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
