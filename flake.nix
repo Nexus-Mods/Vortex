@@ -53,10 +53,6 @@
 
             # Point to Nix-provided Electron
             ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
-
-            # Work around a strange bug in file-roller.
-            # https://gist.github.com/Sewer56/5d9efa032cc658e5342ad0dec4b05012
-            # NIXOS_XDG_OPEN_USE_PORTAL = "1";
           };
 
           # Set up GTK environment (mimics wrapGAppsHook3)
