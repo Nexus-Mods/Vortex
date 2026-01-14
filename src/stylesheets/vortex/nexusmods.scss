@@ -398,7 +398,7 @@ $typography: (
         width: 100%;
         border: none;
 
-        .hover-overlay {
+        .custom-hover-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -433,7 +433,7 @@ $typography: (
             }
         }
 
-        &:hover .hover-overlay {
+        &:hover .custom-hover-overlay {
             opacity: 1;
         }
     }

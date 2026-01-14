@@ -11,8 +11,16 @@
 
 @import "tailwindcss";
 
-/* Disable Tailwind's container utility to preserve Bootstrap's .container */
+/*
+ * Disable Tailwind utilities that conflict with Bootstrap class names.
+ * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
+ * - collapse: Tailwind's `visibility: collapse` overrides Bootstrap's collapse component
+ */
 @utility container {
+    all: unset;
+}
+
+@utility collapse {
     all: unset;
 }
 
