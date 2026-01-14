@@ -11,7 +11,7 @@ import type {
 import local from "../util/local";
 import { log } from "../util/log";
 import { truthy } from "../util/util";
-import { getErrorMessage } from "../shared/errors";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 import safeCreateAction from "./safeCreateAction";
 
@@ -283,16 +283,15 @@ export function showDialog(
                 log("error", "rejection from dialog callback", {
                   title,
                   action: action.label,
-                  message: err.message,
+                  message: getErrorMessageOrDefault(err),
                 });
               });
             }
           } catch (err) {
-            const message = getErrorMessage(err) ?? "unknown error";
             log("error", "exception from dialog callback", {
               title,
               action: action.label,
-              message: message,
+              message: getErrorMessageOrDefault(err),
             });
           }
         }

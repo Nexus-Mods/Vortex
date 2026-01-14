@@ -24,7 +24,7 @@ import type * as Redux from "redux";
 import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import getVortexPath from "../util/getVortexPath";
-import { getErrorCode } from "../shared/errors";
+import { getErrorCode, unknownToError } from "../shared/errors";
 
 let basePersistor: ReduxPersistor<IState>;
 
@@ -94,21 +94,14 @@ export function createVortexStore(
         });
       }
       store.dispatch(action);
-    } catch (err) {
+    } catch (unknownError) {
       log("error", "failed to forward redux action", payload);
-      let message = "unknown error";
-      let stack = undefined;
-
-      if (err instanceof Error) {
-        message = err.message;
-        stack = err.stack;
-      }
-
+      const err = unknownToError(unknownError);
       terminate(
         {
           message: "Failed to store state change",
-          details: message,
-          stack: stack,
+          details: err.message,
+          stack: err.stack,
           allowReport: true,
           attachLog: true,
         },

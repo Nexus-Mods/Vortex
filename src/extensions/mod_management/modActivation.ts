@@ -17,6 +17,7 @@ import { MERGED_PATH } from "./modMerging";
 import Promise from "bluebird";
 import * as path from "path";
 import { UserCanceled } from "../../util/CustomErrors";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
   return fs.ensureDirWritableAsync(modPath, () =>
@@ -110,7 +111,7 @@ function deployMods(
           );
         } catch (err) {
           log("error", "failed to deploy mod", {
-            err: err.message,
+            err: getErrorMessageOrDefault(err),
             id: mod.id,
           });
         }

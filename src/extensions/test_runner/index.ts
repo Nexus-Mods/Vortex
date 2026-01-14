@@ -30,6 +30,7 @@
 
 import type { DialogActions } from "../../actions/notifications";
 import { showDialog } from "../../actions/notifications";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 import type {
   CheckFunction,
   IExtensionApi,
@@ -89,7 +90,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
   } catch (err) {
     log("warn", "check failed to run", {
       id: check.id,
-      err: err.message,
+      err: getErrorMessageOrDefault(err),
       stack: check.stack(),
     });
   }

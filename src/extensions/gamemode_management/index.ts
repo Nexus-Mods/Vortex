@@ -86,6 +86,7 @@ import * as semver from "semver";
 import React from "react";
 
 import { clipboard } from "electron";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -875,7 +876,11 @@ function init(context: IExtensionContext): boolean {
         }
         opn(targetPath).catch(() => undefined);
       } catch (err) {
-        log("warn", "failed to open mod directory", err.message);
+        log(
+          "warn",
+          "failed to open mod directory",
+          getErrorMessageOrDefault(err),
+        );
       }
     }
   };

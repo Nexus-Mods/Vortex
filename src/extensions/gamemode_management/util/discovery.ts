@@ -1,6 +1,7 @@
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
+import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
 import { GameEntryNotFound } from "../../../types/IGameStore";
 import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
 import type { ITool } from "../../../types/ITool";
@@ -188,7 +189,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   } catch (err) {
     log("warn", "failed to query game location", {
       game: game.id,
-      error: err.message,
+      error: getErrorMessageOrDefault(err),
     });
     return Bluebird.reject(err);
   }
@@ -204,7 +205,11 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       if (typeof resolvedInfo === "string") {
         return GameStoreHelper.identifyStore(resolvedInfo)
           .catch((err) => {
-            log("error", "failed to identify store for game", err.message);
+            log(
+              "error",
+              "failed to identify store for game",
+              getErrorMessageOrDefault(err),
+            );
             return undefined;
           })
           .then((storeDetected: string) => {
@@ -808,7 +813,8 @@ export async function suggestStagingPath(
     try {
       statModPath = await fs.statAsync(testPath);
     } catch (err) {
-      if (err.code === "ENOENT") {
+      const code = getErrorCode(err);
+      if (code === "ENOENT") {
         await idModPath(path.dirname(testPath));
       } else {
         throw err;

@@ -98,6 +98,7 @@ import * as semver from "semver";
 import type { ITokenReply } from "./util/oauth";
 import { isLoggedIn } from "./selectors";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import { getErrorCode } from "../../shared/errors";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -729,9 +730,10 @@ export function onGetMyCollections(
 
       return revisions;
     } catch (err) {
-      if (!["NOT_FOUND", "UNAUTHORIZED"].includes(err.code)) {
+      const code = getErrorCode(err);
+      if (!["NOT_FOUND", "UNAUTHORIZED"].includes(code)) {
         api.showErrorNotification("Failed to get list of collections", err, {
-          allowReport: !["MODEL_NOT_FOUND"].includes(err.code),
+          allowReport: !["MODEL_NOT_FOUND"].includes(code),
         });
       }
       return [];

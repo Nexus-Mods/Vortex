@@ -23,6 +23,7 @@ import turbowalk from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
 import { setSettingsPage } from "../../actions/session";
+import { getErrorCode } from "../../shared/errors";
 
 export class FileFound extends Error {
   constructor(name) {
@@ -187,7 +188,8 @@ class DeploymentMethod extends LinkingDeployment {
       fs.linkSync(canary, canary + ".link");
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
-      if (err.code !== "EMFILE") {
+      const code = getErrorCode(err);
+      if (code !== "EMFILE") {
         // the error code we're actually getting is EISDIR, which makes no sense at all
         res = {
           description: (t) => t("Filesystem doesn't support hard links."),

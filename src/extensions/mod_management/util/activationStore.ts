@@ -2,6 +2,7 @@ import { showDialog } from "../../../actions/notifications";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
+import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { writeFileAtomic } from "../../../util/fsAtomic";
@@ -95,7 +96,9 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
     parsed =
       typeof data === "string" ? JSON.parse(deBOM(data)) : msgpack.decode(data);
   } catch (err) {
-    const newErr = new Error(`Failed to parse manifest: "${err.message}"`);
+    const newErr = new Error(
+      `Failed to parse manifest: "${getErrorMessageOrDefault(err)}"`,
+    );
     // invalid input data, not a bug
     newErr["allowReport"] = false;
     throw newErr;
@@ -540,7 +543,7 @@ export function saveActivation(
     const failedPath = path.join(getVortexPath("temp"), "failed_manifest.json");
     fs.writeFileSync(failedPath, dataJSON, { encoding: "utf8" });
     const repErr = new Error(
-      `failed to serialize deployment information: "${err.message}"`,
+      `failed to serialize deployment information: "${getErrorMessageOrDefault(err)}"`,
     );
     repErr["attachFilesOnReport"] = [failedPath];
     return Bluebird.reject(repErr);
@@ -558,14 +561,23 @@ export function saveActivation(
       const msgpack: typeof msgpackT = require("@msgpack/msgpack");
       writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
     } catch (err) {
-      log("error", "Failed to write manifest backup", err.message);
+      log(
+        "error",
+        "Failed to write manifest backup",
+        getErrorMessageOrDefault(err),
+      );
     }
   } else {
     try {
       fs.removeSync(tagBackupPath);
     } catch (err) {
-      if (err.code !== "ENOENT") {
-        log("error", "failed to remove manifest backup", err.message);
+      const code = getErrorCode(err);
+      if (code !== "ENOENT") {
+        log(
+          "error",
+          "failed to remove manifest backup",
+          getErrorMessageOrDefault(err),
+        );
       }
     }
   }

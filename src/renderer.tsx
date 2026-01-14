@@ -122,6 +122,7 @@ import {
   getAllPropertyNames,
   replaceRecursive,
 } from "./util/util";
+import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
 
 log("debug", "renderer process started", { pid: process["pid"] });
 
@@ -769,11 +770,12 @@ function renderer(extensions: ExtensionManager) {
             i18n.addResources("en", ext.name, JSON.parse(fileData));
           })
           .catch((err) => {
-            if (err.code !== "ENOENT") {
+            const code = getErrorCode(err);
+            if (code !== "ENOENT") {
               // an extension not providing a locale file is ok
               log("error", "Failed to load translation", {
                 filePath,
-                error: err.message,
+                error: getErrorMessageOrDefault(err),
               });
             }
           });

@@ -23,6 +23,7 @@ import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
 import { FULL_BACKUP_PATH } from "../../store/store";
 import { spawnSelf } from "../../util/util";
+import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 export interface IBaseProps {
   onCreateManualBackup: () => void;
@@ -204,13 +205,15 @@ class Settings extends ComponentEx<IProps, {}> {
         }
       }
     } catch (err) {
+      const code = getErrorCode(err);
       log("error", "failed to list state backups");
       await onShowDialog(
         "error",
         "There are no backups to restore",
         {
           text: "Found no backup to restore",
-          message: err.code === "ENOENT" ? undefined : err.message,
+          message:
+            code === "ENOENT" ? undefined : getErrorMessageOrDefault(err),
         },
         [{ label: "Close" }],
       );

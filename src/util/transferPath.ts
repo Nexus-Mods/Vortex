@@ -1,5 +1,10 @@
 import { DOWNLOADS_DIR_TAG } from "../extensions/download_management/util/downloadDirectory";
 import { STAGING_DIR_TAG } from "../extensions/mod_management/stagingDirectory";
+import {
+  getErrorCode,
+  isErrorWithSystemCode,
+  unknownToError,
+} from "../shared/errors";
 
 import {
   CleanupFailedException,
@@ -46,18 +51,9 @@ export function testPathTransfer(
   try {
     destinationRoot = winapi.GetVolumePathName(destination);
   } catch (err) {
-    if (err instanceof Error) {
-      if (
-        "systemCode" in err &&
-        (typeof err.systemCode === "number" ||
-          typeof err.systemCode === "bigint")
-      ) {
-        // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
-        //  the only way for this error to be reported at this point is when
-        //  the destination path is pointing towards a non-existing partition.
-        if (err.systemCode === 2) {
-          return Promise.reject(new NotFound(destination));
-        }
+    if (isErrorWithSystemCode(err)) {
+      if (err.systemCode === 2) {
+        return Promise.reject(new NotFound(destination));
       }
     }
 
@@ -233,7 +229,7 @@ export function transferPath(
                       : fs
                           .ensureDirWritableAsync(destPath)
                           .catch((err) =>
-                            err.code === "EEXIST"
+                            getErrorCode(err) === "EEXIST"
                               ? Promise.resolve()
                               : Promise.reject(err),
                           );
@@ -260,15 +256,15 @@ export function transferPath(
                         //  which does not support it - copy instead.
                         // EISDIR is reported in node 12 if hardlinks aren't supported on the drive
                         //  come on...
+                        const code = getErrorCode(err);
                         if (
-                          ["EXDEV", "ENOTSUP", "EISDIR"].indexOf(err.code) !==
-                          -1
+                          ["EXDEV", "ENOTSUP", "EISDIR"].indexOf(code) !== -1
                         ) {
                           func = fs.copyAsync;
                           return func(sourcePath, destPath, {
                             showDialogCallback,
                           });
-                        } else if (err.code === "ENOENT") {
+                        } else if (code === "ENOENT") {
                           return Promise.resolve();
                         } else {
                           return Promise.reject(err);
@@ -289,7 +285,7 @@ export function transferPath(
                   })
                     .then(() => null)
                     .catch((err) => {
-                      exception = err;
+                      exception = unknownToError(err);
                       return null;
                     }),
                 );
@@ -311,7 +307,8 @@ export function transferPath(
           : fs.removeAsync(source);
       };
 
-      return cleanUp().catch((err) => {
+      return cleanUp().catch((unknownError) => {
+        const err = unknownToError(unknownError);
         // We're in the cleanup process. Regardless of whatever happens
         //  at this point, the transfer has completed successfully!
         //  We log the error and report an exception but expect the caller
@@ -345,11 +342,12 @@ export function cleanFailedTransfer(dirPath: string): Promise<void> {
     },
     { skipHidden: false, skipLinks: false, recurse: true },
   )
-    .catch((err) =>
-      ["ENOENT", "ENOTFOUND"].includes(err.code)
+    .catch((err) => {
+      const code = getErrorCode(err);
+      return ["ENOENT", "ENOTFOUND"].includes(code)
         ? Promise.resolve()
-        : Promise.reject(err),
-    )
+        : Promise.reject(err);
+    })
     .then(() => {
       files = files.sort(
         (lhs, rhs) => rhs.filePath.length - lhs.filePath.length,
@@ -374,7 +372,8 @@ function removeFolderTags(sourceDir: string) {
       exists
         ? fs.removeAsync(filePath).catch((err) => {
             log("error", "Unable to remove directory tag", err);
-            return ["ENOENT"].indexOf(err.code) !== -1
+            const code = getErrorCode(err);
+            return ["ENOENT"].indexOf(code) !== -1
               ? // Tag file is gone ? no problem.
                 Promise.resolve()
               : Promise.reject(err);
@@ -391,12 +390,13 @@ function removeFolderTags(sourceDir: string) {
 function removeOldDirectories(directories: string[]): Promise<void> {
   const longestFirst = (lhs, rhs) => rhs.length - lhs.length;
   return Promise.each(directories.sort(longestFirst), (dir) =>
-    fs.removeAsync(dir).catch((err) =>
-      ["ENOENT"].indexOf(err.code) !== -1
+    fs.removeAsync(dir).catch((err) => {
+      const code = getErrorCode(err);
+      return ["ENOENT"].indexOf(code) !== -1
         ? // Directory missing ? odd but lets keep going.
           Promise.resolve()
-        : Promise.reject(err),
-    ),
+        : Promise.reject(err);
+    }),
   ).then(() => Promise.resolve());
 }
 
@@ -409,7 +409,9 @@ function linkFile(
     return fs
       .linkAsync(source, dest, options)
       .catch((err) =>
-        err.code !== "EEXIST" ? Promise.reject(err) : Promise.resolve(),
+        getErrorCode(err) !== "EEXIST"
+          ? Promise.reject(err)
+          : Promise.resolve(),
       );
   });
 }

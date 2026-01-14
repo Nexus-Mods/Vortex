@@ -38,7 +38,7 @@ import * as ReactDOM from "react-dom";
 import type * as Redux from "redux";
 import type { OutputSelector } from "reselect";
 import { createSelector } from "reselect";
-import { getErrorMessage } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 export type ChangeDataHandler = (
   rowId: string,
@@ -586,7 +586,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         log("warn", "failed to scroll to item", {
           id,
           tableId: this.props.tableId,
-          error: getErrorMessage(err) ?? "unknown error",
+          error: getErrorMessageOrDefault(err),
         });
       }
     }
@@ -1426,7 +1426,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             log("error", "failed to calculate attribute value", {
               attribute: attribute.id,
               row: rowId,
-              error: err.message,
+              error: getErrorMessageOrDefault(err),
             });
           });
       }).then(() => {

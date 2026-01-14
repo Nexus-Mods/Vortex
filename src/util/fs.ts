@@ -39,7 +39,11 @@ import { generate as shortid } from "shortid";
 import * as tmp from "tmp";
 import type * as vortexRunT from "vortex-run";
 import type * as whoLocksT from "wholocks";
-import { getErrorMessage } from "../shared/errors";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  isErrorWithSystemCode,
+} from "../shared/errors";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
@@ -183,7 +187,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
   } catch (err) {
     log("warn", "failed to determine list of processes locking file", {
       filePath,
-      error: getErrorMessage(err) ?? "unknown error",
+      error: getErrorMessageOrDefault(err),
     });
   }
 
@@ -314,7 +318,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
   } catch (err) {
     log("warn", "failed to determine list of processes locking file", {
       filePath,
-      error: getErrorMessage(err) ?? "unkown error",
+      error: getErrorMessageOrDefault(err),
     });
   }
 
@@ -375,7 +379,8 @@ function errorRepeat(
     let unlockPath = filePath;
     return PromiseBB.resolve(fs.stat(unlockPath))
       .catch((statErr) => {
-        if (statErr.code === "ENOENT") {
+        const code = getErrorCode(statErr);
+        if (code === "ENOENT") {
           unlockPath = path.dirname(filePath);
           return PromiseBB.resolve();
         } else {
@@ -394,11 +399,10 @@ function errorRepeat(
           )
             .then(() => true)
             .catch((elevatedErr) => {
+              const message = getErrorMessageOrDefault(elevatedErr);
               if (
                 elevatedErr instanceof UserCanceled ||
-                elevatedErr.message.indexOf(
-                  "The operation was canceled by the user",
-                ) !== -1
+                message.indexOf("The operation was canceled by the user") !== -1
               ) {
                 return Promise.reject(new UserCanceled());
               }
@@ -406,7 +410,7 @@ function errorRepeat(
               // elevate - while interesting as well - would make error handling too complicated
               log("error", "failed to acquire permission", {
                 filePath,
-                error: elevatedErr.message,
+                error: message,
               });
               return Promise.reject(error);
             });
@@ -639,21 +643,23 @@ function ensureDir(
         return onDirCreatedCB(dir);
       })
       .catch((err) => {
-        if (err.code === "EEXIST") {
+        const code = getErrorCode(err);
+        if (code === "EEXIST") {
           return PromiseBB.resolve();
         } else {
-          return ["ENOENT"].indexOf(err.code) !== -1
+          return ["ENOENT"].indexOf(code) !== -1
             ? mkdirRecursive(path.dirname(dir))
                 .then(() => PromiseBB.resolve(fs.mkdir(dir)))
                 .then(() => {
                   created.push(dir);
                   return onDirCreatedCB(dir);
                 })
-                .catch((err2) =>
-                  err2.code === "EEXIST"
+                .catch((err2) => {
+                  const code2 = getErrorCode(err2);
+                  return code2 === "EEXIST"
                     ? PromiseBB.resolve()
-                    : PromiseBB.reject(err2),
-                )
+                    : PromiseBB.reject(err2);
+                })
             : PromiseBB.reject(err);
         }
       });
@@ -668,9 +674,11 @@ function ensureDir(
 function selfCopyCheck(src: string, dest: string) {
   return PromiseBB.all([
     (fs.stat as any)(src, { bigint: true }),
-    (fs.stat as any)(dest, { bigint: true }).catch((err) => {
-      return err.code === "ENOENT" ? Promise.resolve({}) : Promise.reject(err);
-    }),
+    (fs.stat as any)(dest, { bigint: true }).catch((err) =>
+      getErrorCode(err) === "ENOENT"
+        ? Promise.resolve({})
+        : Promise.reject(err),
+    ),
   ]).then((stats: fs.BigIntStats[]) =>
     stats[0].ino === stats[1].ino
       ? PromiseBB.reject(new SelfCopyCheckError(src, dest, stats[0].ino))
@@ -1256,7 +1264,10 @@ export function forcePerm<T>(
 ): PromiseBB<T> {
   return op().catch((err) => {
     const fileToAccess = filePath !== undefined ? filePath : err.path;
-    if (["EPERM", "EACCES"].indexOf(err.code) !== -1 || err.systemCode === 5) {
+    if (
+      ["EPERM", "EACCES"].indexOf(err.code) !== -1 ||
+      (isErrorWithSystemCode(err) && err.systemCode === 5)
+    ) {
       const wantedAttributes =
         process.platform === "win32"
           ? parseInt("0666", 8)

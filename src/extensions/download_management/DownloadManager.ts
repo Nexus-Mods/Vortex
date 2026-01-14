@@ -36,6 +36,7 @@ import * as zlib from "zlib";
 import type { IExtensionApi } from "../../types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 const getCookies = makeRemoteCall(
   "get-cookies",
@@ -105,7 +106,10 @@ function contentTypeStr(
   try {
     return contentType.parse(input).type;
   } catch (err) {
-    log("error", "failed to parse content type", { input, error: err.message });
+    log("error", "failed to parse content type", {
+      input,
+      error: getErrorMessageOrDefault(err),
+    });
     return "application/octet-stream";
   }
 }
@@ -425,7 +429,8 @@ class DownloadWorker {
       parsed = new URL(urlIn);
       referer = refererIn;
       jobUrlString = urlIn;
-    } catch (err) {
+    } catch (unknownErr) {
+      const err = unknownToError(unknownErr);
       const errorMsg = `Invalid URL format: ${err.message} (URL: ${jobUrlString}, original type: ${typeof jobUrl})`;
       log("error", "URL parsing failed in startDownload", {
         workerId: job.workerId || "unknown",
@@ -501,7 +506,7 @@ class DownloadWorker {
         } catch (err) {
           log("warn", "URL encoding failed, using original", {
             url: jobUrlString,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
           recodedURI = jobUrlString;
         }
@@ -528,7 +533,11 @@ class DownloadWorker {
             str = str.pipe(inflate);
           }
         } catch (err) {
-          log("error", "stream pipeline setup failed", err.message);
+          log(
+            "error",
+            "stream pipeline setup failed",
+            getErrorMessageOrDefault(err),
+          );
           this.handleError(err);
           return;
         }
@@ -972,7 +981,7 @@ class DownloadWorker {
         } catch (err) {
           log("warn", "failed to parse content disposition", {
             "content-disposition": cd,
-            message: err.message,
+            message: getErrorMessageOrDefault(err),
           });
         }
       }
@@ -2715,7 +2724,7 @@ class DownloadManager {
     } catch (err) {
       log("warn", "failed to read file for magic header detection", {
         filePath,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       return null;
     }

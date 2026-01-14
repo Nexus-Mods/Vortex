@@ -32,6 +32,7 @@ import testModReference, {
   isFuzzyVersion,
   testRefByIdentifiers,
 } from "./testModReference";
+import { unknownToError } from "../../../shared/errors";
 
 interface IBrowserResult {
   url: string | (() => Bluebird<string>);
@@ -545,13 +546,14 @@ async function gatherDependenciesGraph(
     }
 
     return node;
-  } catch (err) {
-    if (!(err instanceof ProcessCanceled)) {
-      api.showErrorNotification("Failed to look up dependency", err, {
+  } catch (unknownErr) {
+    if (!(unknownErr instanceof ProcessCanceled)) {
+      api.showErrorNotification("Failed to look up dependency", unknownErr, {
         allowReport: false,
         message:
           rule.downloadHint?.url ?? rule.comment ?? rule.reference.description,
       });
+      const err = unknownToError(unknownErr);
       log("error", "failed to look up", {
         rule: JSON.stringify(rule),
         ex: err.name,

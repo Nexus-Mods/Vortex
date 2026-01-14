@@ -13,6 +13,7 @@ import {
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import settingsReducer from "./reducers/settings.reducer";
 import SettingsAnalytics from "./views/SettingsAnalytics";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 let ignoreNextAnalyticsStateChange = false;
 
@@ -159,7 +160,7 @@ function init(context: IExtensionContext): boolean {
         // the results aren't even adviced, so any unhandled exception here would
         // crash the application.
         analyticsLog("warn", "Failed to start analytics", {
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     }

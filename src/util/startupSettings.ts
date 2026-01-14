@@ -7,7 +7,7 @@ import * as fs from "./fs";
 import { writeFileAtomic } from "./fsAtomic";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
-import { getErrorCode } from "../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
 
 const startupPath = () =>
   path.join(getVortexPath("appData"), getApplication().name, "startup.json");
@@ -28,7 +28,9 @@ function read(): IParameters {
 const updateDebouncer = new Debouncer(() => {
   return writeFileAtomic(startupPath(), JSON.stringify(settings)).catch(
     (err) => {
-      log("error", "failed to write startup.json", { error: err.message });
+      log("error", "failed to write startup.json", {
+        error: getErrorMessageOrDefault(err),
+      });
     },
   );
 }, 100);
