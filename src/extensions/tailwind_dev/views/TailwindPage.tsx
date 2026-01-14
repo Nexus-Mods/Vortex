@@ -57,6 +57,33 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
             {/* Button Demo from web team */}
             <ButtonDemo />
 
+            {/* Hover overlays */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-primary-moderate p-4 rounded hover-overlay">
+                div overlay light
+              </div>
+
+              <a className="block bg-primary-moderate p-4 rounded hover-overlay">
+                link overlay light
+              </a>
+
+              <button className="block bg-primary-moderate p-4 rounded hover-overlay">
+                button overlay light
+              </button>
+
+              <div className="bg-primary-moderate p-4 rounded hover-dark-overlay">
+                div overlay dark
+              </div>
+
+              <a className="block bg-primary-moderate p-4 rounded hover-dark-overlay">
+                link overlay dark
+              </a>
+
+              <button className="block bg-primary-moderate p-4 rounded hover-dark-overlay">
+                button overlay dark
+              </button>
+            </div>
+
             {/* Input Demo from web team */}
             <InputDemo />
 
