@@ -1,21 +1,19 @@
-/* eslint-disable */
 import { truthy } from "../../../util/util";
 
 import { log } from "../../../util/log";
 
-import {
+import type {
   IMod,
   IModReference,
   IFileListItem,
   IModAttributes,
 } from "../types/IMod";
-import { IDownload } from "../../download_management/types/IDownload";
+import type { IDownload } from "../../download_management/types/IDownload";
 
 import * as _ from "lodash";
 import minimatch from "minimatch";
 import * as path from "path";
 import * as semver from "semver";
-import { IFileUpdate } from "@nexusmods/nexus-api";
 
 export interface IModLookupInfo {
   id?: string;

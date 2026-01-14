@@ -59,7 +59,7 @@ import type observe from "./DownloadObserver";
 import type * as RemoteT from "@electron/remote";
 import Promise from "bluebird";
 import * as _ from "lodash";
-import Zip = require("node-7z");
+import Zip from "node-7z";
 import * as path from "path";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";

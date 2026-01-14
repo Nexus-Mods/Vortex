@@ -14,7 +14,6 @@ import { truthy } from "../../../util/util";
 
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
-import { IValidateKeyData } from "../types/IValidateKeyData";
 
 import { FALLBACK_AVATAR, NEXUS_BASE_URL, OAUTH_URL } from "../constants";
 

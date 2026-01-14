@@ -2,7 +2,6 @@ import Icon from "../../../renderer/controls/Icon";
 import ProgressBar from "../../../renderer/controls/ProgressBar";
 import RadialProgress from "../../../renderer/controls/RadialProgress";
 import type { IDiscoveryState } from "../../../types/IState";
-import { IDiscoveryPhase } from "../../../types/IState";
 import {
   connect,
   PureComponentEx,

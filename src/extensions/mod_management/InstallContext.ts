@@ -7,7 +7,6 @@ import { startActivity, stopActivity } from "../../actions/session";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { INotification } from "../../types/INotification";
 import type { IState } from "../../types/IState";
-import { IDownload } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";

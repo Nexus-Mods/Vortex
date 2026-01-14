@@ -1,10 +1,9 @@
-/* eslint-disable */
 import { setDownloadModInfo } from "../../actions";
-import {
+import type {
   IExtensionApi,
   StateChangeCallback,
 } from "../../types/IExtensionContext";
-import { IDownload, IMod, IModTable, IState } from "../../types/IState";
+import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -32,9 +31,9 @@ import {
   DownloadIsHTML,
 } from "../download_management/DownloadManager";
 import { SITE_ID } from "../gamemode_management/constants";
-import { IGameStoredExt } from "../gamemode_management/types/IGameStored";
+import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
 import { setUpdatingMods } from "../mod_management/actions/session";
-import { IModListItem } from "../news_dashlet/types";
+import type { IModListItem } from "../news_dashlet/types";
 
 import { setUserInfo } from "./actions/persistent";
 import { findLatestUpdate, retrieveModInfo } from "./util/checkModsVersion";
@@ -70,7 +69,7 @@ import {
   updateToken,
 } from "./util";
 
-import Nexus, {
+import type {
   EndorsedStatus,
   ICollection,
   ICollectionManifest,
@@ -86,20 +85,19 @@ import Nexus, {
   IModRequirements,
   IRating,
   IRevision,
-  NexusError,
   IModFileContentPageQuery,
   IModFileContentSearchFilter,
-  RateLimitError,
-  TimeoutError,
   IPreferenceQuery,
   IPreference,
 } from "@nexusmods/nexus-api";
+import type Nexus from "@nexusmods/nexus-api";
+import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
 import * as path from "path";
 import * as semver from "semver";
-import { ITokenReply } from "./util/oauth";
+import type { ITokenReply } from "./util/oauth";
 import { isLoggedIn } from "./selectors";
-import { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();

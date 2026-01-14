@@ -6,17 +6,17 @@ import * as path from "path";
 
 import { setValidationResult } from "./actions/session";
 
-import { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import {
-  ILoadOrderGameInfo,
-  ILoadOrderGameInfoExt,
-  IValidationResult,
-  LoadOrder,
+  type ILoadOrderGameInfo,
+  type ILoadOrderGameInfoExt,
+  type IValidationResult,
+  type LoadOrder,
   LoadOrderValidationError,
-  ILoadOrderEntryExt,
+  type ILoadOrderEntryExt,
 } from "./types/types";
 
-import { ICollection } from "./types/collections";
+import type { ICollection } from "./types/collections";
 
 import { generate, Interface, parser } from "./collections/loadOrder";
 

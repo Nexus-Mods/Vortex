@@ -16,7 +16,6 @@ import type {
   IDialogResult,
 } from "../../../types/IDialog";
 import type { IAttachment } from "../../../types/IExtensionContext";
-import { IExtensionApi } from "../../../types/IExtensionContext";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 import type { IState } from "../../../types/IState";
 import type { ITableAttribute } from "../../../types/ITableAttribute";

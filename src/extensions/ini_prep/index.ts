@@ -1,10 +1,10 @@
 /* eslint-disable */
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import { IProfile, IState } from "../../types/IState";
-import { ITestResult } from "../../types/ITestResult";
+import type { IProfile, IState } from "../../types/IState";
+import type { ITestResult } from "../../types/ITestResult";
 import { UserCanceled } from "../../util/CustomErrors";
 import deepMerge from "../../util/deepMerge";
 import { disableErrorReport } from "../../util/errorHandling";
@@ -15,10 +15,10 @@ import { installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { objDiff, setdefault } from "../../util/util";
 
-import { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";
-import { IMod } from "../mod_management/types/IMod";
-import { IModWithState } from "../mod_management/types/IModProps";
+import type { IMod } from "../mod_management/types/IMod";
+import type { IModWithState } from "../mod_management/types/IModProps";
 import { NEXUS_DOMAIN } from "../nexus_integration/constants";
 import { activeGameId } from "../profile_management/selectors";
 
@@ -26,7 +26,7 @@ import { iniFiles, iniFormat } from "./gameSupport";
 import renderINITweaks from "./TweakList";
 
 import Promise from "bluebird";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 

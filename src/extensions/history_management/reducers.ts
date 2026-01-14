@@ -9,7 +9,6 @@ import {
 
 import * as actions from "./actions";
 import type { IHistoryEvent } from "./types";
-import { IHistoryStack } from "./types";
 
 export interface IHistoryPersistent {
   historyStacks: { [key: string]: IHistoryEvent[] };

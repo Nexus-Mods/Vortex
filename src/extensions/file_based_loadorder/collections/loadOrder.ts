@@ -1,4 +1,4 @@
-import React = require("react");
+import * as React from "react";
 import type * as types from "../../../types/api";
 import * as selectors from "../../../util/selectors";
 

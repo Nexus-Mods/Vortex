@@ -14,7 +14,6 @@ import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import type { IDeploymentProblem } from "../actions/session";
 import { setDeploymentProblem } from "../actions/session";
-import { IUnavailableReason } from "../types/IDeploymentMethod";
 import allTypesSupported from "../util/allTypesSupported";
 import { getAllActivators } from "../util/deploymentMethods";
 

@@ -5,7 +5,6 @@ import type {
   IExtensionApi,
 } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
-import { INotification } from "../../../types/INotification";
 import type { IProfile } from "../../../types/IState";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";

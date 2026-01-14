@@ -7,12 +7,12 @@ import {
 } from "../profile_management/selectors";
 import { findGameEntry } from "./gameSupport";
 import {
-  ILoadOrderGameInfoExt,
-  IValidationResult,
-  LoadOrder,
+  type ILoadOrderGameInfoExt,
+  type IValidationResult,
+  type LoadOrder,
   LoadOrderSerializationError,
   LoadOrderValidationError,
-  ILoadOrderEntryExt,
+  type ILoadOrderEntryExt,
 } from "./types/types";
 
 import { setValidationResult } from "./actions/session";

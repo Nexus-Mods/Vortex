@@ -74,7 +74,7 @@ import type crashDumpT from "crash-dump";
 import type { crashReporter as crashReporterT } from "electron";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
-import isAdmin = require("is-admin");
+import isAdmin from "is-admin";
 import * as _ from "lodash";
 import * as os from "os";
 import * as path from "path";

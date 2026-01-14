@@ -1,6 +1,5 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { IOAuthCredentials } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button, Panel } from "react-bootstrap";

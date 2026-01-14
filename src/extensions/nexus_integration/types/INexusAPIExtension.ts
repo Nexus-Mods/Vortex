@@ -16,7 +16,6 @@ import type {
   IRevision,
   IModRequirements,
 } from "@nexusmods/nexus-api";
-import { IModRequirementsQuery } from "@nexusmods/nexus-api";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IValidateKeyDataV2 } from "./IValidateKeyData";
 

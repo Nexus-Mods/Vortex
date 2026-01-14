@@ -6,7 +6,6 @@ import type {
 } from "@nexusmods/nexus-api";
 import type * as types from "../../../types/api";
 import type { ILoadOrderEntry, LoadOrder } from "../types/types";
-import { ILoadOrderGameInfoExt } from "../types/types";
 
 export interface ILoadOrderEntryExt extends ILoadOrderEntry {
   exportable: boolean;

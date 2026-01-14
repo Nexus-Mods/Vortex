@@ -1,4 +1,3 @@
-import { IsValidNewOptionHandler } from "react-select";
 import { showDialog } from "../../../actions/notifications";
 import ContextMenu from "../../../renderer/controls/ContextMenu";
 import FormFeedback from "../../../renderer/controls/FormFeedback";

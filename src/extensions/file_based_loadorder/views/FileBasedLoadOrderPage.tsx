@@ -22,9 +22,9 @@ import { DNDContainer, MainPage } from "../../../renderer/views/api";
 import FilterBox from "./FilterBox";
 
 import {
-  IItemRendererProps,
-  ILoadOrderGameInfo,
-  LoadOrder,
+  type IItemRendererProps,
+  type ILoadOrderGameInfo,
+  type LoadOrder,
   LoadOrderValidationError,
 } from "../types/types";
 import InfoPanel from "./InfoPanel";

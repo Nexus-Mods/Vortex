@@ -1,7 +1,6 @@
 import safeCreateAction from "../../actions/safeCreateAction";
 
 import type { Action } from "redux";
-import { ThunkAction } from "redux-thunk";
 
 type ShowUrlFunc = (
   url: string,

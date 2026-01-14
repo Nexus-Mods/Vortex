@@ -9,7 +9,6 @@ import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 
 import type { IProfileMod } from "../../profile_management/types/IProfile";
-import { IProfile } from "../../profile_management/types/IProfile";
 
 import type { IMod } from "../types/IMod";
 

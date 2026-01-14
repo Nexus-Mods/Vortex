@@ -1,7 +1,7 @@
 /* eslint-disable */
 import {
   dismissNotification,
-  ICheckbox,
+  type ICheckbox,
   updateNotification,
 } from "../../actions/notifications";
 import {
@@ -9,19 +9,19 @@ import {
   startActivity,
   stopActivity,
 } from "../../actions/session";
-import {
+import type {
   IExtensionApi,
   IExtensionContext,
   IInstallResult,
   MergeFunc,
   MergeTest,
 } from "../../types/IExtensionContext";
-import { IGame } from "../../types/IGame";
-import { INotification } from "../../types/INotification";
-import { IDiscoveryResult, IState } from "../../types/IState";
-import { ITableAttribute } from "../../types/ITableAttribute";
-import { ITestResult } from "../../types/ITestResult";
-import { IDeployOptions } from "./types/IDeployOptions";
+import type { IGame } from "../../types/IGame";
+import type { INotification } from "../../types/INotification";
+import type { IDiscoveryResult, IState } from "../../types/IState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import type { ITestResult } from "../../types/ITestResult";
+import type { IDeployOptions } from "./types/IDeployOptions";
 import {
   ProcessCanceled,
   TemporaryError,
@@ -30,9 +30,9 @@ import {
 import Debouncer from "../../util/Debouncer";
 import { waitForCondition } from "../../util/waitForCondition";
 import * as fs from "../../util/fs";
-import getNormalizeFunc, { Normalize } from "../../util/getNormalizeFunc";
+import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
 import getVortexPath from "../../util/getVortexPath";
-import { laterT, TFunction } from "../../util/i18n";
+import { laterT, type TFunction } from "../../util/i18n";
 import LazyComponent from "../../renderer/controls/LazyComponent";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
@@ -63,11 +63,14 @@ import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import {
-  IEnableOptions,
+  type IEnableOptions,
   setModEnabled,
   forgetMod,
 } from "../profile_management/actions/profiles";
-import { IProfile, IProfileMod } from "../profile_management/types/IProfile";
+import type {
+  IProfile,
+  IProfileMod,
+} from "../profile_management/types/IProfile";
 
 import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
@@ -78,19 +81,18 @@ import { modsReducer } from "./reducers/mods";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import { transactionsReducer } from "./reducers/transactions";
-import {
+import type {
   IDeployedFile,
   IDeploymentMethod,
   IUnavailableReason,
 } from "./types/IDeploymentMethod";
-import { IFileMerge } from "./types/IFileMerge";
-import { IInstallOptions } from "./types/IInstallOptions";
-import { IMod, IModReference } from "./types/IMod";
-import { InstallFunc } from "./types/InstallFunc";
-import { IRemoveModOptions } from "./types/IRemoveModOptions";
-import { IResolvedMerger } from "./types/IResolvedMerger";
-import { ISchedulePhaseDeploymentForMod } from "./types/ISchedulePhaseDeploymentForMod";
-import { TestSupported } from "./types/TestSupported";
+import type { IFileMerge } from "./types/IFileMerge";
+import type { IInstallOptions } from "./types/IInstallOptions";
+import type { IMod, IModReference } from "./types/IMod";
+import type { InstallFunc } from "./types/InstallFunc";
+import type { IRemoveModOptions } from "./types/IRemoveModOptions";
+import type { IResolvedMerger } from "./types/IResolvedMerger";
+import type { TestSupported } from "./types/TestSupported";
 import {
   fallbackPurge,
   loadActivation,
@@ -119,7 +121,10 @@ import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";
 import {} from "./views/ExternalChangeDialog";
-import { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
+import type {
+  IDuplicatesMap,
+  IRemoveDuplicateMap,
+} from "./views/DuplicatesDialog";
 import {} from "./views/FixDeploymentDialog";
 import {} from "./views/ModList";
 import {} from "./views/Settings";
@@ -151,7 +156,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import React from "react";
 import * as Redux from "redux";
-import shortid = require("shortid");
+import shortid from "shortid";
 import { types } from "../..";
 
 interface IAppContext {

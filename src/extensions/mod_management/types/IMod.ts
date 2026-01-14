@@ -1,6 +1,6 @@
-import { IReference, IRule } from "modmeta-db";
+import type { IReference, IRule } from "modmeta-db";
 
-export { IReference, IRule };
+export type { IReference, IRule };
 
 export type ModState =
   | "downloading"

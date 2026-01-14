@@ -6,7 +6,7 @@ import getDownloadPath from "./util/getDownloadPath";
 
 import type { OutputParametricSelector } from "re-reselect";
 import createCachedSelector from "re-reselect";
-import { createSelector, OutputSelector } from "reselect";
+import { createSelector } from "reselect";
 import type { DownloadState } from "./types/IDownload";
 
 const downloadPathPattern = (state: IState) => state.settings.downloads.path;

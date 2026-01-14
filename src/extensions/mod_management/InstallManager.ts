@@ -48,15 +48,15 @@ import {
   stopActivity,
 } from "../../actions";
 import {
-  IConditionResult,
-  IDialogContent,
+  type IConditionResult,
+  type IDialogContent,
   showDialog,
   dismissNotification,
 } from "../../actions/notifications";
-import { ICheckbox, IDialogResult } from "../../types/IDialog";
-import { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import { IProfile, IState } from "../../types/IState";
-import { getBatchContext, IBatchContext } from "../../util/BatchContext";
+import type { ICheckbox, IDialogResult } from "../../types/IDialog";
+import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
+import type { IProfile, IState } from "../../types/IState";
+import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import { NotificationAggregator } from "./NotificationAggregator";
 import {
@@ -76,7 +76,7 @@ import {
   withContext,
 } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
-import { TFunction } from "../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { prettifyNodeErrorMessage } from "../../util/message";
 import {
@@ -116,11 +116,11 @@ import {
   AlreadyDownloaded,
   DownloadIsHTML,
 } from "../download_management/DownloadManager";
-import { IDownload } from "../download_management/types/IDownload";
+import type { IDownload } from "../download_management/types/IDownload";
 import { DOWNLOADS_DIR_TAG } from "../download_management/util/downloadDirectory";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 
-import { IModType } from "../gamemode_management/types/IModType";
+import type { IModType } from "../gamemode_management/types/IModType";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
 import modName, { renderModReference } from "../mod_management/util/modName";
@@ -139,22 +139,27 @@ import {
   setModAttributes,
   setModType,
 } from "./actions/mods";
-import {
+import type {
   Dependency,
   IDependency,
   IDependencyError,
   IModInfoEx,
 } from "./types/IDependency";
-import { IInstallContext } from "./types/IInstallContext";
-import {
+import type { IInstallContext } from "./types/IInstallContext";
+import type {
   IInstallResult,
   IInstruction,
   InstructionType,
 } from "./types/IInstallResult";
-import { IFileListItem, IMod, IModReference, IModRule } from "./types/IMod";
-import { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
-import { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
-import {
+import type {
+  IFileListItem,
+  IMod,
+  IModReference,
+  IModRule,
+} from "./types/IMod";
+import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
+import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
+import type {
   ISupportedResult,
   ITestSupportedDetails,
   TestSupported,
@@ -189,14 +194,14 @@ import { STAGING_DIR_TAG } from "./stagingDirectory";
 import { HTTPError } from "@nexusmods/nexus-api";
 import Bluebird, { method as toBluebird } from "bluebird";
 import * as _ from "lodash";
-import { IHashResult, ILookupResult, IRule } from "modmeta-db";
-import Zip = require("node-7z");
+import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
+import Zip from "node-7z";
 import * as os from "os";
 import * as path from "path";
 import * as Redux from "redux";
 
 import { generate as shortid } from "shortid";
-import { IInstallOptions } from "./types/IInstallOptions";
+import type { IInstallOptions } from "./types/IInstallOptions";
 import { generateCollectionSessionId } from "../collections_integration/util";
 
 // Interface for tracking active installation information
