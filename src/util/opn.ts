@@ -41,17 +41,13 @@ function openExternal(target: string): Promise<void> {
 }
 
 function openLocalPath(target: string): Promise<void> {
-  if (!isAbsolutePath(target)) {
-    return Promise.reject(
-      new Error(`Relative paths are not supported: ${target}`),
-    );
-  }
+  const resolvedTarget = isAbsolutePath(target) ? target : path.resolve(target);
 
   if (process.platform === "win32") {
-    return openExternal(target);
+    return openExternal(resolvedTarget);
   }
 
-  return Promise.resolve(shell.openPath(target)).then((error) => {
+  return Promise.resolve(shell.openPath(resolvedTarget)).then((error) => {
     if (error) {
       throw new Error(error);
     }
