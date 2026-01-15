@@ -146,7 +146,7 @@ function runElevated(
           try {
             fs.closeSync(fd);
           } catch (err) {
-            if ("code" in err && err.code !== "EBADF") {
+            if (err instanceof Error && "code" in err && err.code !== "EBADF") {
               return reject(err);
             }
             // not sure what causes EBADF, don't want to return now if there is a chance this
