@@ -3,6 +3,7 @@ import * as path from "path";
 import { pathToFileURL } from "url";
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
+import { BrowserWindow } from "../electron-shim";
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
@@ -41,9 +42,6 @@ class SplashScreen {
   }
 
   public create(disableGPU: boolean): Promise<void> {
-    const BrowserWindow: typeof Electron.BrowserWindow =
-      require("electron").BrowserWindow;
-
     return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         log("warn", "splash screen taking awfully long");
@@ -89,7 +87,7 @@ class SplashScreen {
 
       this.mWindow.loadURL(
         pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
-          `?disableGPU=${disableGPU ? 1 : 0}`,
+        `?disableGPU=${disableGPU ? 1 : 0}`,
       );
       // this.mWindow.webContents.openDevTools();
     });

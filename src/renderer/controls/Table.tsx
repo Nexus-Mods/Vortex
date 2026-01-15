@@ -278,7 +278,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           (id) =>
             this.props.attributeState[id] === undefined ||
             this.props.attributeState[id].enabled !==
-              newProps.attributeState[id].enabled,
+            newProps.attributeState[id].enabled,
         )
       ) {
         const columnToggles = this.columnToggles(newProps);
@@ -458,7 +458,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         <Usage infoId="table-multiselect">
           {t(
             "Did you know? You can select multiple items using ctrl+click or shift+click or " +
-              "select everything using ctrl+a and then do things with all selected items at once.",
+            "select everything using ctrl+a and then do things with all selected items at once.",
           )}
         </Usage>
       );
@@ -643,15 +643,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         } else {
           compare = desc
             ? (l, r) =>
-                r
-                  .toString()
-                  .toLowerCase()
-                  .localeCompare(l.toString().toLowerCase())
+              r
+                .toString()
+                .toLowerCase()
+                .localeCompare(l.toString().toLowerCase())
             : (l, r) =>
-                l
-                  .toString()
-                  .toLowerCase()
-                  .localeCompare(r.toString().toLowerCase());
+              l
+                .toString()
+                .toLowerCase()
+                .localeCompare(r.toString().toLowerCase());
         }
       }
 
@@ -1125,13 +1125,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mVisibleAttributes === undefined
       ? props.attributeState
       : this.mVisibleAttributes.reduce((prev, attribute) => {
-          if (attribute.isDefaultSort === true) {
-            prev[attribute.id] = { sortDirection: "asc" };
-          } else if (attribute.isDefaultSort === "desc") {
-            prev[attribute.id] = { sortDirection: "desc" };
-          }
-          return prev;
-        }, {});
+        if (attribute.isDefaultSort === true) {
+          prev[attribute.id] = { sortDirection: "asc" };
+        } else if (attribute.isDefaultSort === "desc") {
+          prev[attribute.id] = { sortDirection: "desc" };
+        }
+        return prev;
+      }, {});
   }
 
   private singleRowActions(props: IProps) {
@@ -1642,8 +1642,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return dataIds.sort((lhsId: string, rhsId: string): number => {
       const res =
         sortAttribute.sortFuncRaw !== undefined ||
-        (calculatedValues[lhsId][sortAttribute.id] !== undefined &&
-          calculatedValues[rhsId][sortAttribute.id] !== undefined)
+          (calculatedValues[lhsId][sortAttribute.id] !== undefined &&
+            calculatedValues[rhsId][sortAttribute.id] !== undefined)
           ? sortFunction(lhsId, rhsId)
           : undefCompare(lhsId, rhsId);
 
@@ -2152,7 +2152,7 @@ function getTableState(state: IState, tableId: string) {
 type GetSelection = OutputSelector<
   any,
   string[],
-  (res: ITableState) => string[]
+  (foo) => () => string[]
 >;
 
 export function makeGetSelection(tableId: string): GetSelection {

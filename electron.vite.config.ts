@@ -4,15 +4,17 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   main: {
     build: {
+      target: "node22",
       lib: {
         entry: "./src/main.ts",
-        formats: ["es"]
+        formats: ["cjs"]
       },
       rollupOptions: {
         external: ["original-fs"],
         output: {
-          format: "esm",
-          exports: "auto"
+          format: "cjs",
+          exports: "auto",
+          interop: "default"
         }
       },
       sourcemap: true,

@@ -3,7 +3,7 @@
     "compilerOptions": {
         "target": "esnext",
         "module": "esnext",
-        "moduleResolution": "bundler",
+        "moduleResolution": "node",
 
         "allowJs": true,
         "allowSyntheticDefaultImports": true,

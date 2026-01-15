@@ -1,13 +1,11 @@
-import { activeGameId } from "../../extensions/profile_management/selectors";
-import type { IDownload, IState } from "../../types/IState";
-import { log } from "../../util/log";
-
+import { createCachedSelector } from "re-reselect";
 import getDownloadPath from "./util/getDownloadPath";
-
-import type { OutputParametricSelector } from "re-reselect";
-import createCachedSelector from "re-reselect";
-import { createSelector } from "reselect";
 import type { DownloadState } from "./types/IDownload";
+import type { IDownload, IState } from "../../types/IState";
+import type { OutputParametricSelector } from "re-reselect";
+import { activeGameId } from "../../extensions/profile_management/selectors";
+import { createSelector } from "reselect";
+import { log } from "../../util/log";
 
 const downloadPathPattern = (state: IState) => state.settings.downloads.path;
 

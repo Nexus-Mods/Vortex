@@ -1,6 +1,8 @@
 import * as sourceMapSupport from "source-map-support";
 sourceMapSupport.install();
 
+import { initialize } from "@electron/remote/main/index.js";
+
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: any) => {
@@ -39,22 +41,22 @@ const earlyErrHandler = (error) => {
     dialog.showErrorBox(
       "Vortex failed to start up",
       `An unexpected error occurred while Vortex was initialising:\n\n${error.message}\n\n` +
-        "This is often caused by a bad installation of the app, " +
-        "a security app interfering with Vortex " +
-        "or a problem with the Microsoft Visual C++ Redistributable installed on your PC. " +
-        "To solve this issue please try the following:\n\n" +
-        "- Wait a moment and try starting Vortex again\n" +
-        "- Reinstall Vortex from the Nexus Mods website\n" +
-        "- Install the latest Microsoft Visual C++ Redistributable (find it using a search engine)\n" +
-        "- Disable anti-virus or other security apps that might interfere and install Vortex again\n\n" +
-        "If the issue persists, please create a thread in our support forum for further assistance.",
+      "This is often caused by a bad installation of the app, " +
+      "a security app interfering with Vortex " +
+      "or a problem with the Microsoft Visual C++ Redistributable installed on your PC. " +
+      "To solve this issue please try the following:\n\n" +
+      "- Wait a moment and try starting Vortex again\n" +
+      "- Reinstall Vortex from the Nexus Mods website\n" +
+      "- Install the latest Microsoft Visual C++ Redistributable (find it using a search engine)\n" +
+      "- Disable anti-virus or other security apps that might interfere and install Vortex again\n\n" +
+      "If the issue persists, please create a thread in our support forum for further assistance.",
     );
   } else {
     dialog.showErrorBox(
       "Unhandled error",
       "Vortex failed to start up. This is usually caused by foreign software (e.g. Anti Virus) " +
-        "interfering.\n\n" +
-        error.stack,
+      "interfering.\n\n" +
+      error.stack,
     );
   }
   app.exit(1);
@@ -96,12 +98,12 @@ function setEnv(key: string, value: string, force?: boolean) {
   }
 }
 
+import requireRebuild from "./util/requireRebuild";
+
 if (process.env.NODE_ENV !== "development") {
   setEnv("NODE_ENV", "production", true);
 } else {
-  // tslint:disable-next-line:no-var-requires
-  const rebuildRequire = require("./util/requireRebuild").default;
-  rebuildRequire();
+  requireRebuild();
 }
 
 if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
@@ -146,7 +148,7 @@ try {
   // nop
 }
 
-import {} from "./util/requireRebuild";
+import { } from "./util/requireRebuild";
 
 import Application from "./main/Application";
 
@@ -158,7 +160,7 @@ import { sendReportFile, terminate, toError } from "./util/errorHandling";
 // Activate vortex-api polyfill for all extension requires as early as possible
 import extensionRequire from "./util/extensionRequire";
 extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
-import {} from "./util/extensionRequire";
+import { } from "./util/extensionRequire";
 
 // required for the side-effect!
 import "./util/exeIcon";
@@ -315,9 +317,8 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch("remote-debugging-port", DEBUG_PORT);
   }
 
-  // tslint:disable-next-line:no-submodule-imports
   try {
-    require("@electron/remote/main").initialize();
+    initialize();
   } catch (err) {
     const message = getErrorMessage(err);
     if (message && !message.includes("already been initialized")) {
