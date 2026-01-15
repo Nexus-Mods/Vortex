@@ -3549,31 +3549,10 @@
   dependencies:
     "@types/ref" "*"
 
-"@types/ref-struct@^0.0.29":
-  version "0.0.29"
-  resolved "https://registry.yarnpkg.com/@types/ref-struct/-/ref-struct-0.0.29.tgz#a2d7c113a43d1182be99a22dfca8bf94bae97afa"
-  integrity sha512-ZOiybExNDG++Rjw7qNAlP8Z9TGe4W1S7UvqHbCYzFMc2cVBhTuA29tzAkOrk3bqY0CdzbOvmU7A5X2VOjTpCkw==
-  dependencies:
-    "@types/ref" "*"
-
-"@types/ref-union@^0.0.28":
-  version "0.0.28"
-  resolved "https://registry.yarnpkg.com/@types/ref-union/-/ref-union-0.0.28.tgz#74147dffc07a19766a32d1f08306d5ec3abda3c7"
-  integrity sha512-QuUEDXquHsQuWo98D8fJdazUlrNL/wks9y89zgUulgnSqO4J6FWEDVRtzG+v+Cvuu62CqxWkNnsMAm9XsSe9gA==
-  dependencies:
-    "@types/ref" "*"
-
 "@types/ref@*":
   version "0.0.32"
   resolved "https://registry.yarnpkg.com/@types/ref/-/ref-0.0.32.tgz#d2d3d073d3f767d6992c2b4d94e483281a740910"
   integrity sha512-5q2nxslQF7GnoVzCYPsHD1B8pU020l6zy2rNw5Dzd01plmnRDj0b6thsXUOtbMjVEMAQ5uCgoajJP71f3FWiyw==
-  dependencies:
-    "@types/node" "*"
-
-"@types/ref@^0.0.28":
-  version "0.0.28"
-  resolved "https://registry.yarnpkg.com/@types/ref/-/ref-0.0.28.tgz#15a61253ed1259038b47499de1c9b0cbca57f55c"
-  integrity sha512-v6hdbWJyFIzAtkdc7hIJuNz0DCI0kjIQtka3pq5GTfMLqsxPqA8S7xjdJ0RkWC23aLEmwifWQDLx4VJnBKCn5Q==
   dependencies:
     "@types/node" "*"
 

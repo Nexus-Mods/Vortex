@@ -26,7 +26,6 @@ import * as path from "path";
 import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
-import { reinterpretUntilZeros } from "ref";
 
 interface IMigration {
   id: string;
