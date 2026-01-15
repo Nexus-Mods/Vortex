@@ -2,24 +2,27 @@
     "compileOnSave": true,
     "compilerOptions": {
         "target": "esnext",
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
+        "module": "commonjs",
+        "moduleResolution": "node",
+
         "allowJs": true,
-        "noImplicitAny": false,
-        "removeComments": true,
-        "preserveConstEnums": true,
-        "rootDir": "./src",
-        "outDir": "./out",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "verbatimModuleSyntax": false,
+
         "inlineSourceMap": true,
         "inlineSources": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "jsx":"react",
+        "preserveConstEnums": true,
+        "removeComments": true,
 
-        "isolatedModules": true,
-        "verbatimModuleSyntax": true,
-        "allowSyntheticDefaultImports": true,
+        "outDir": "./out",
+        "rootDir": "./src",
 
+        "jsx": "react",
+
+        "noImplicitAny": false,
         "useUnknownInCatchVariables": false
     },
     "files": [

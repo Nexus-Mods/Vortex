@@ -1,9 +1,9 @@
 {
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "name": "vortex_devel",
   "version": "0.0.1",
-  "main": "out/main.js",
+  "main": "out/main/main.js",
   "author": "Black Tree Gaming Ltd.",
   "repository": {
     "type": "git",

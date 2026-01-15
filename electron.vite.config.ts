@@ -5,11 +5,13 @@ export default defineConfig({
   main: {
     build: {
       lib: {
-        entry: "./src/main.ts",
-        formats: ["es"]
+        entry: "./src/main.ts"
       },
       rollupOptions: {
-        external: ["original-fs"]
+        external: ["original-fs"],
+        output: {
+          format: "cjs"
+        }
       }
     }
   },
