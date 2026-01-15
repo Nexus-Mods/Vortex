@@ -9,7 +9,7 @@ import type { IMod } from "../types/IMod";
 import testModReference, { isFuzzyVersion } from "./testModReference";
 
 import Promise from "bluebird";
-import { alg, Graph } from "graphlib";
+import * as graphlib from "graphlib";
 import * as _ from "lodash";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";
 import * as path from "path";
@@ -70,7 +70,7 @@ function sortMods(
   // one we can use
   const stackErr = new Error();
 
-  const dependencies = new Graph();
+  const dependencies = new graphlib.Graph();
   // counting only effective rules, for mods that are actually installed
   let numRules: number = 0;
 
@@ -141,7 +141,7 @@ function sortMods(
     })
     .then(() => {
       try {
-        const res = alg.topsort(dependencies);
+        const res = graphlib.alg.topsort(dependencies);
         api.dismissNotification("mod-cycle-warning");
         const lookup = mods.reduce((prev, mod) => {
           prev[mod.id] = mod;
@@ -152,8 +152,8 @@ function sortMods(
         return Promise.resolve(res.map((id) => lookup[id]));
       } catch (err) {
         // exception type not included in typings
-        if (err instanceof (alg.topsort as any).CycleException) {
-          const res = new CycleError(alg.findCycles(dependencies));
+        if (err instanceof (graphlib.alg.topsort as any).CycleException) {
+          const res = new CycleError(graphlib.alg.findCycles(dependencies));
           res.stack = stackErr.stack;
           return Promise.reject(res);
         } else {

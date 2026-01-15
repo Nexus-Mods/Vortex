@@ -56,20 +56,18 @@ import update from "immutability-helper";
 import * as _ from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { Button as ReactButton, Nav } from "react-bootstrap";
-// tslint:disable-next-line:no-submodule-imports
-import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
+import { Button as ReactButton, Nav, utils } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 import { Toaster } from "react-hot-toast"; // at top
 import { getErrorMessage } from "../../shared/errors";
 
-addStyle(ReactButton, "secondary");
-addStyle(ReactButton, "ad");
-addStyle(ReactButton, "ghost");
-addStyle(ReactButton, "link");
-addStyle(ReactButton, "inverted");
+utils.bootstrapUtils.addStyle(ReactButton, "secondary");
+utils.bootstrapUtils.addStyle(ReactButton, "ad");
+utils.bootstrapUtils.addStyle(ReactButton, "ghost");
+utils.bootstrapUtils.addStyle(ReactButton, "link");
+utils.bootstrapUtils.addStyle(ReactButton, "inverted");
 
 export interface IBaseProps {
   t: TFunction;
