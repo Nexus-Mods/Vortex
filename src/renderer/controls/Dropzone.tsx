@@ -15,7 +15,7 @@ import { truthy } from "../../util/util";
 import Icon from "./Icon";
 
 import type Promise from "bluebird";
-import { webUtils } from "electron";
+import { webUtils } from "../../electron-shim";
 
 import * as React from "react";
 import type { WithTranslation } from "react-i18next";
