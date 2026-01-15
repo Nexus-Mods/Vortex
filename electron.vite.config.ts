@@ -16,7 +16,7 @@ export default defineConfig({
   preload: {
     build: {
       lib: {
-        entry: ""
+        entry: "./src/preload.ts"
       }
     }
   },
