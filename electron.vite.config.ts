@@ -5,19 +5,21 @@ export default defineConfig({
   main: {
     build: {
       lib: {
-        entry: "./src/main.ts"
+        entry: "./src/main.ts",
+        formats: ["es"]
       },
       rollupOptions: {
         external: ["original-fs"],
         output: {
-          format: "cjs",
+          format: "esm",
           exports: "auto"
         }
       },
+      sourcemap: true,
       // electron-vite plugins
       externalizeDeps: true,
       bytecode: false
-    }
+    },
   },
   preload: {
     build: {

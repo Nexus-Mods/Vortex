@@ -2,8 +2,8 @@
     "compileOnSave": true,
     "compilerOptions": {
         "target": "esnext",
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "esnext",
+        "moduleResolution": "bundler",
 
         "allowJs": true,
         "allowSyntheticDefaultImports": true,

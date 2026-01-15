@@ -1,6 +1,6 @@
 {
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "name": "vortex_devel",
   "version": "0.0.1",
   "main": "out/main/main.js",
