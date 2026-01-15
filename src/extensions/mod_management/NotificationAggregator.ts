@@ -181,7 +181,7 @@ export class NotificationAggregator {
       .catch((err) => {
         log("error", "error processing notifications", {
           aggregationId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         // Schedule next auto-flush even on error
         if (this.mActiveAggregations.has(aggregationId)) {
@@ -222,7 +222,7 @@ export class NotificationAggregator {
       .catch((err) => {
         log("error", "error processing notifications", {
           aggregationId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         this.cleanupAggregation(aggregationId);
       });

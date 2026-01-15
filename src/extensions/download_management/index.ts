@@ -75,6 +75,7 @@ import {
   convertGameIdReverse,
 } from "../nexus_integration/util/convertGameId";
 import extendAPI from "./util/extendApi";
+import { unknownToError } from "../../shared/errors";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -1309,7 +1310,7 @@ function init(context: IExtensionContextExt): boolean {
       (dlIds: string[], cb?: (err?: Error) => void) => {
         queryInfo(context.api, dlIds, false)
           .then(() => cb?.())
-          .catch((err) => cb?.(err));
+          .catch((err) => cb?.(unknownToError(err)));
       },
     );
 

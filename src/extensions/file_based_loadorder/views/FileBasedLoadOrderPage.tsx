@@ -33,6 +33,7 @@ import { setFBForceUpdate } from "../actions/session";
 import ToolbarDropdown from "../../../renderer/controls/ToolbarDropdown";
 
 import { currentLoadOrderForProfile } from "../selectors";
+import { unknownToError } from "../../../shared/errors";
 
 const PanelX: any = Panel;
 
@@ -407,7 +408,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         if (err instanceof LoadOrderValidationError) {
           this.nextState.validationError = err;
         } else {
-          onShowError(profile.gameId, err);
+          onShowError(profile.gameId, unknownToError(err));
         }
       })
       // Regardless of whether the lo is valid or not, we still want it
