@@ -1,7 +1,11 @@
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
-import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../../shared/errors";
 import { GameEntryNotFound } from "../../../types/IGameStore";
 import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
 import type { ITool } from "../../../types/ITool";
@@ -70,7 +74,11 @@ export function quickDiscoveryTools(
             });
           });
         } else {
-          log("debug", "tool not found", tool.id);
+          log("debug", "tool not found", {
+            gameId,
+            toolId: tool.id,
+            toolName: tool.name,
+          });
           return Bluebird.resolve();
         }
       } else {
@@ -90,11 +98,21 @@ export function quickDiscoveryTools(
             return Bluebird.resolve();
           })
           .catch((err) => {
-            log("debug", "tool not found", { id: tool.id, err: err.message });
+            log("debug", "tool not found", {
+              gameId,
+              toolId: tool.id,
+              toolName: tool.name,
+              error: getErrorMessageOrDefault(err),
+            });
           });
       }
     } catch (err) {
-      log("error", "failed to determine tool setup", err);
+      log("error", "failed to determine tool setup", {
+        error: unknownToError(err),
+        gameId,
+        toolId: tool.id,
+        toolName: tool.name,
+      });
       return Bluebird.resolve();
     }
   }).then(() => null);
@@ -124,7 +142,11 @@ function updateManuallyConfigured(
         }
       })
       .catch((err) => {
-        log("error", "failed to identify store for game", err.message);
+        log(
+          "error",
+          "failed to identify store for game",
+          getErrorMessageOrDefault(err),
+        );
       });
   } else {
     log("debug", "leaving alone previously discovered game", {
