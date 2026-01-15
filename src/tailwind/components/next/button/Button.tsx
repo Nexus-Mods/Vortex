@@ -3,6 +3,7 @@
  * Adapted from web team's "next" project for Vortex
  *
  * Provides a consistent button system with multiple types, sizes, and states.
+ * Uses shared CSS classes from button.css (nxm-button-*) for styling.
  */
 
 import * as React from "react";
@@ -17,10 +18,7 @@ import type {
 
 import { Icon } from "../icon";
 import { Link } from "../link";
-import { Typography } from "../typography/Typography";
-import type { TypographyProps } from "../typography/Typography";
-import type { XOr } from "../utils";
-import { joinClasses } from "../utils";
+import { XOr, joinClasses } from "../utils";
 
 export type ButtonType =
   | "primary"
@@ -65,152 +63,59 @@ type ButtonLinkAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 type ButtonProps = ButtonButtonProps | ButtonLinkProps | ButtonLinkAnchorProps;
 
-type Size = {
-  buttonClass: string;
-  iconClassName: string;
-  iconWrapperClassName: string;
-  spacing: string;
-  typographyType: TypographyProps["typographyType"];
-};
-
-const getSizes = ({
-  isResponsive,
-  size,
-}: Pick<Required<BaseButtonProps>, "size"> &
-  Pick<BaseButtonProps, "isResponsive">) => {
-  const md = {
-    buttonClass: "tw:min-h-9 tw:px-3 tw:min-w-8",
-    iconClassName: "tw:size-5",
-    iconWrapperClassName: "[&>svg]:tw:max-w-5! [&>svg]:tw:max-h-5!",
-    spacing: "tw:gap-x-1.5",
-    typographyType: "body-lg",
-  } satisfies Size;
-
-  switch (size) {
-    case "sm":
-      if (isResponsive) {
-        return {
-          buttonClass: joinClasses([
-            md.buttonClass,
-            "sm:tw:min-h-7 sm:tw:min-w-0 sm:tw:px-2.5",
-          ]),
-          iconClassName: joinClasses([md.iconClassName, "sm:tw:size-4"]),
-          iconWrapperClassName: joinClasses([
-            md.iconWrapperClassName,
-            "sm:[&>svg]:tw:max-h-4! sm:[&>svg]:tw:max-w-4!",
-          ]),
-          spacing: joinClasses([md.spacing, "sm:tw:gap-x-1"]),
-          typographyType: { default: md.typographyType, sm: "body-md" },
-        } satisfies Size;
-      }
-
-      return {
-        buttonClass: "tw:min-h-7 tw:px-2.5",
-        iconClassName: "tw:size-4",
-        iconWrapperClassName: "[&>svg]:tw:max-w-4! [&>svg]:tw:max-h-4!",
-        spacing: "tw:gap-x-1",
-        typographyType: "body-md",
-      } satisfies Size;
-    case "md":
-      return md;
-  }
-};
-
 const getButtonClasses = ({
   buttonType,
+  disabled,
   filled,
-  isDisabled,
-  isLoading,
   isResponsive,
   size,
 }: {
   buttonType: ButtonType;
+  disabled: boolean;
   filled?: ButtonProps["filled"];
-  isDisabled: boolean;
-  isLoading: boolean;
   isResponsive: boolean;
   size: Required<ButtonProps>["size"];
 }) => {
-  const { buttonClass } = getSizes({ isResponsive, size });
-  const canHover = !isDisabled && !isLoading;
-
   const classes = [
-    buttonClass,
-    "tw:relative tw:whitespace-nowrap tw:transition [&>*:first-child]:tw:relative",
-    "tw:flex tw:items-center tw:justify-center tw:rounded before:tw:rounded",
-    ...(isDisabled
-      ? ["tw:cursor-not-allowed tw:opacity-40"]
-      : ["tw:cursor-pointer", !isLoading && !filled ? "tw:hover-overlay" : ""]),
+    "nxm-button",
+    {
+      "nxm-button-disabled": disabled,
+      "nxm-button-sm": size === "sm",
+      "sm:nxm-button-sm": isResponsive,
+    },
   ];
 
   switch (buttonType) {
     case "primary":
-      classes.push(
-        "tw:bg-primary-moderate tw:text-neutral-inverted",
-        canHover ? "tw:hover:bg-primary-subdued" : "",
-      );
+      classes.push("nxm-button-primary");
       break;
     case "secondary":
-      classes.push(
-        "tw:border tw:border-stroke-neutral-translucent-moderate",
-        canHover ? "tw:hover:border-stroke-neutral-translucent-strong" : "",
-      );
-
       if (filled) {
         classes.push(
-          ...(filled === "strong"
-            ? [
-                "tw:bg-neutral-strong tw:text-neutral-inverted",
-                canHover ? "tw:hover-dark-overlay" : "",
-              ]
-            : [
-                "tw:bg-surface-mid tw:text-neutral-moderate",
-                canHover
-                  ? "tw:hover:text-neutral-strong tw:hover:bg-surface-high"
-                  : "",
-              ]),
+          filled === "strong"
+            ? "nxm-button-secondary-filled-strong"
+            : "nxm-button-secondary-filled-weak",
         );
       } else {
-        classes.push(
-          "tw:text-neutral-moderate",
-          canHover ? "tw:hover:text-neutral-strong" : "",
-        );
+        classes.push("nxm-button-secondary");
       }
-
       break;
     case "tertiary":
       if (filled) {
         classes.push(
-          ...(filled === "strong"
-            ? [
-                "tw:bg-neutral-strong tw:text-neutral-inverted",
-                canHover ? "tw:hover-dark-overlay" : "",
-              ]
-            : [
-                "tw:bg-surface-mid tw:text-neutral-moderate",
-                canHover
-                  ? "tw:hover:text-neutral-strong tw:hover:bg-surface-high"
-                  : "",
-              ]),
+          filled === "strong"
+            ? "nxm-button-tertiary-filled-strong"
+            : "nxm-button-tertiary-filled-weak",
         );
       } else {
-        classes.push(
-          "tw:text-neutral-moderate",
-          canHover ? "tw:hover:text-neutral-strong" : "",
-        );
+        classes.push("nxm-button-tertiary");
       }
       break;
     case "success":
-      classes.push(
-        "tw:bg-success-moderate tw:text-neutral-inverted",
-        canHover ? "tw:hover:bg-success-subdued" : "",
-      );
+      classes.push("nxm-button-success");
       break;
     case "premium":
-      classes.push(
-        "tw:bg-premium-moderate tw:text-neutral-strong",
-        canHover ? "tw:hover:bg-premium-subdued" : "",
-      );
+      classes.push("nxm-button-premium");
       break;
   }
 
@@ -218,106 +123,36 @@ const getButtonClasses = ({
 };
 
 const ButtonIcon = ({
-  className,
   icon,
   isLoading = false,
   path,
-  wrapperClassName,
 }: {
-  className: string;
   icon?: ReactNode;
   isLoading?: boolean;
   path?: string;
-  wrapperClassName: string;
 }) => {
   if (isLoading) {
-    // Note: Loading icon won't render until Icon component is implemented
     return (
-      <span className={joinClasses(["tw:shrink-0 tw:animate-spin", className])}>
-        <Icon className="tw:opacity-40" path="mdiCircleOutline" size="none" />
-        <Icon path="mdiLoading" size="none" />
+      <span className="nxm-button-icon animate-spin relative">
+        <Icon className="opacity-40" path="mdiCircleOutline" size="none" />
+        <Icon className="absolute inset-0" path="mdiLoading" size="none" />
       </span>
     );
   }
 
   if (!!icon) {
     return (
-      <span
-        className={joinClasses([
-          "tw:flex tw:items-center tw:justify-center tw:shrink-0",
-          wrapperClassName,
-          className,
-        ])}
-      >
+      <span className="nxm-button-icon flex items-center justify-center">
         {icon}
       </span>
     );
   }
 
   if (!!path) {
-    return (
-      <Icon
-        className={joinClasses(["tw:shrink-0", className])}
-        path={path}
-        size="none"
-      />
-    );
+    return <Icon className="nxm-button-icon" path={path} size="none" />;
   }
 
   return null;
-};
-
-const Content = ({
-  isLoading,
-  isResponsive,
-  label,
-  leftIcon,
-  leftIconPath,
-  rightIcon,
-  rightIconPath,
-  size,
-}: Pick<
-  ButtonProps,
-  | "isLoading"
-  | "isResponsive"
-  | "leftIcon"
-  | "leftIconPath"
-  | "rightIcon"
-  | "rightIconPath"
-> &
-  Required<Pick<ButtonProps, "size">> & { label?: string }) => {
-  const { iconClassName, iconWrapperClassName, spacing, typographyType } =
-    getSizes({ isResponsive, size });
-
-  return (
-    <span className={joinClasses(["tw:flex tw:items-center", spacing])}>
-      <ButtonIcon
-        className={joinClasses(["tw:-ml-0.5", iconClassName])}
-        icon={leftIcon}
-        isLoading={isLoading}
-        path={leftIconPath}
-        wrapperClassName={iconWrapperClassName}
-      />
-
-      {!!label && (
-        <Typography
-          appearance="none"
-          as="span"
-          className="tw:grow tw:text-left tw:leading-5"
-          typographyType={typographyType}
-        >
-          {label}
-        </Typography>
-      )}
-
-      <ButtonIcon
-        className={joinClasses(["tw:-mr-0.5", iconClassName])}
-        icon={rightIcon}
-        path={rightIconPath}
-        wrapperClassName={iconWrapperClassName}
-      />
-    </span>
-  );
 };
 
 export const Button = (all: ButtonProps) => {
@@ -341,17 +176,16 @@ export const Button = (all: ButtonProps) => {
     ...rest
   } = all;
 
+  const isDisabled = !!disabled || !!ariaDisabled || isLoading;
+
   const content = customContent ?? (
-    <Content
-      isLoading={isLoading}
-      isResponsive={isResponsive}
-      label={children}
-      leftIcon={leftIcon}
-      leftIconPath={leftIconPath}
-      rightIcon={rightIcon}
-      rightIconPath={rightIconPath}
-      size={size}
-    />
+    <>
+      <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
+
+      {!!children && <span>{children}</span>}
+
+      <ButtonIcon icon={rightIcon} path={rightIconPath} />
+    </>
   );
 
   if (rest.as === "link") {
@@ -366,9 +200,8 @@ export const Button = (all: ButtonProps) => {
         className={joinClasses([
           ...getButtonClasses({
             buttonType,
+            disabled: isDisabled,
             filled,
-            isDisabled: !!ariaDisabled || isLoading,
-            isLoading,
             isResponsive,
             size,
           }),
@@ -391,9 +224,8 @@ export const Button = (all: ButtonProps) => {
         className={joinClasses([
           ...getButtonClasses({
             buttonType,
+            disabled: isDisabled,
             filled,
-            isDisabled: !!ariaDisabled || isLoading,
-            isLoading,
             isResponsive,
             size,
           }),
@@ -416,9 +248,8 @@ export const Button = (all: ButtonProps) => {
       className={joinClasses([
         ...getButtonClasses({
           buttonType,
+          disabled: isDisabled,
           filled,
-          isDisabled: !!ariaDisabled || !!disabled || isLoading,
-          isLoading,
           isResponsive,
           size,
         }),

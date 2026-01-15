@@ -85,12 +85,12 @@ export const CollectionTileDemo: React.ComponentType<
   ];
 
   return (
-    <div className="tw:p-6 tw:space-y-8">
+    <div className="p-6 space-y-8">
       <Typography
         as="h1"
         typographyType="heading-2xl"
         appearance="strong"
-        className="tw:mb-6"
+        className="mb-6"
       >
         Collection Tile Component
       </Typography>
@@ -99,7 +99,7 @@ export const CollectionTileDemo: React.ComponentType<
         as="p"
         typographyType="body-md"
         appearance="subdued"
-        className="tw:mb-8"
+        className="mb-8"
       >
         Collection tiles for browsing and managing mod collections. Based on
         Figma design specifications. Maximum 2 tags shown, no icons
@@ -107,17 +107,17 @@ export const CollectionTileDemo: React.ComponentType<
       </Typography>
 
       {/* Collections grid */}
-      <div className="tw:space-y-6">
+      <div className="space-y-6">
         <Typography
           as="h2"
           typographyType="heading-xl"
           appearance="strong"
-          className="tw:mb-4"
+          className="mb-4"
         >
           Sample Collections
         </Typography>
 
-        <div className="tw:flex tw:flex-col tw:gap-6">
+        <div className="flex flex-col gap-6">
           {mockCollections.map((collection) => (
             <CollectionTile
               key={collection.id}
@@ -131,7 +131,7 @@ export const CollectionTileDemo: React.ComponentType<
       </div>
 
       {/* Feature notes */}
-      <div className="tw:p-4 tw:bg-yellow-50 tw:rounded tw:border tw:border-yellow-200 tw:mt-8">
+      <div className="p-4 bg-yellow-50 rounded border border-yellow-200 mt-8">
         <Typography as="p" typographyType="body-sm" appearance="moderate">
           <strong>Design Notes:</strong> Fixed dimensions (465x288px), max 2
           tags displayed, "Adult" tag uses danger-400 color (#F87171), no hover

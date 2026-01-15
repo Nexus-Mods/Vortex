@@ -183,14 +183,10 @@ Semantic colors defined in `@theme` in `src/stylesheets/tailwind-v4.css`:
 
 **Stroke/Border Colors:**
 
-- `--color-stroke-moderate` - #d4d4d8 (Neutral-300) - **Use for borders and dividers**
-- `--color-stroke-strong` - #a1a1aa (Neutral-400)
-- `--color-stroke-neutral-translucent-weak` - rgba(255, 255, 255, 0.1)
-- `--color-stroke-neutral-translucent-subdued` - rgba(255, 255, 255, 0.2)
-- `--color-stroke-neutral-translucent-moderate` - rgba(255, 255, 255, 0.3)
-- `--color-stroke-neutral-translucent-strong` - rgba(255, 255, 255, 0.6)
-
-**⚠️ Note**: There is **NO** `--color-stroke-subdued` - use `stroke-moderate` or `stroke-neutral-translucent-subdued` instead.
+- `--color-stroke-weak` - rgba(255, 255, 255, 0.1)
+- `--color-stroke-subdued` - rgba(255, 255, 255, 0.2)
+- `--color-stroke-moderate` - rgba(255, 255, 255, 0.3)
+- `--color-stroke-strong` - rgba(255, 255, 255, 0.6)
 
 **Surface Colors:**
 

@@ -1,12 +1,12 @@
 $font-size-large: 1.25em;
 $font-size-small: 0.9em;
 
-$font-size-h1: 2.5rem;
-$font-size-h2: 2rem;
-$font-size-h3: 1.75rem;
-$font-size-h4: 1.4rem;
-$font-size-h5: 1.1rem;
-$font-size-h6: 1rem;
+$font-size-h1: 30px; // was 2.5rem * 12px
+$font-size-h2: 24px; // was 2rem * 12px
+$font-size-h3: 21px; // was 1.75rem * 12px
+$font-size-h4: 17px; // was 1.4rem * 12px
+$font-size-h5: 13px; // was 1.1rem * 12px
+$font-size-h6: 12px; // was 1rem * 12px
 
 $line-height-computed: 1.5;
 $line-height-base: $line-height-computed;
@@ -14,7 +14,7 @@ $line-height-base: $line-height-computed;
 $headings-font-family: $font-family-headings;
 
 //== Tables
-$table-cell-padding: 0.75rem;
+$table-cell-padding: 9px; // was 0.75rem * 12px
 $table-condensed-cell-padding: 2px;
 $table-bg: $brand-menu;
 $table-bg-accent: #e9e9e9;

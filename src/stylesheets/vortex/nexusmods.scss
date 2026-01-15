@@ -387,7 +387,7 @@ $typography: (
     background: url("assets/images/premium-pattern-background.webp") no-repeat
         center center;
     border: 1px solid rgba(196, 181, 253, 0.4);
-    width: 365px;
+    width: 368px;
     height: 104px;
 
     button {
@@ -398,7 +398,7 @@ $typography: (
         width: 100%;
         border: none;
 
-        .hover-overlay {
+        .custom-hover-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -433,7 +433,7 @@ $typography: (
             }
         }
 
-        &:hover .hover-overlay {
+        &:hover .custom-hover-overlay {
             opacity: 1;
         }
     }

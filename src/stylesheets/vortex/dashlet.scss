@@ -371,7 +371,7 @@
 }
 
 .dashlet-title {
-    font-size: 2rem;
+    font-size: 24px; // was 2rem * 12px
     font-weight: 500;
     // text-transform: uppercase;
     font-family: $font-family-headings;

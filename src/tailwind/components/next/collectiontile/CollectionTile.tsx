@@ -155,34 +155,34 @@ export const CollectionTile: React.ComponentType<
 
   return (
     <div
-      className={`tw:w-full tw:max-w-[465px] tw:h-[283px] tw:bg-surface-mid tw:flex tw:flex-col tw:justify-start tw:items-start ${className || ""}`}
+      className={`w-full max-w-[465px] h-[283px] bg-surface-mid flex flex-col justify-start items-start ${className || ""}`}
       onMouseEnter={mouseEnter}
       onMouseLeave={mouseLeave}
     >
       {/* Main content area */}
-      <div className="tw:self-stretch tw:flex-1 tw:px-3 tw:pt-3 tw:rounded-tl tw:rounded-tr tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2 tw:overflow-hidden">
-        <div className="tw:self-stretch tw:flex tw:flex-1 tw:justify-between tw:items-start">
+      <div className="self-stretch flex-1 px-3 pt-3 rounded-tl rounded-tr flex flex-col justify-start items-start gap-2 overflow-hidden">
+        <div className="self-stretch flex flex-1 justify-between items-start">
           {/* Left: Image */}
-          <div className="tw:w-[175px] tw:h-[219px] tw:relative tw:shrink-0">
-            <div className="tw:absolute tw:top-0 tw:left-0">
+          <div className="w-[175px] h-[219px] relative shrink-0">
+            <div className="absolute top-0 left-0">
               <img
-                className="tw:w-[166px] tw:h-52 tw:rounded-sm tw:object-cover"
+                className="w-[166px] h-52 rounded-sm object-cover"
                 src={coverImage}
                 alt={title}
               />
 
               {/* Easy Install Badge - conditionally shown */}
               {easyInstallBadge && (
-                <div className="tw:absolute tw:rounded-b-sm tw:inset-x-0 tw:bottom-0 tw:z-10">
+                <div className="absolute rounded-b-sm inset-x-0 bottom-0 z-10">
                   <Typography
                     as="p"
                     typographyType="title-xs"
                     appearance="none"
-                    className="tw:flex tw:items-center tw:gap-x-0.5 tw:px-1.5 tw:py-0.5 tw:bg-info-weak tw:text-info-50"
+                    className="flex items-center gap-x-0.5 px-1.5 py-0.5 bg-info-weak text-info-50"
                   >
                     <Icon path="mdiStar" size="xs" />
                     <span
-                      className="tw:px-0.5 tw:leading-5"
+                      className="px-0.5 leading-5"
                       title={easyInstallBadge.description}
                     >
                       {easyInstallBadge.name}
@@ -194,34 +194,34 @@ export const CollectionTile: React.ComponentType<
           </div>
 
           {/* Right: Details */}
-          <div className="tw:flex-1 tw:self-stretch tw:flex tw:flex-col tw:justify-start tw:items-start">
+          <div className="flex-1 self-stretch flex flex-col justify-start items-start">
             {/* Header: Title + Author */}
-            <div className="tw:self-stretch tw:pl-3 tw:pb-2 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-0">
+            <div className="self-stretch pl-3 pb-2 flex flex-col justify-start items-start gap-0">
               <Typography
                 as="div"
-                className="tw:line-clamp-1 tw:font-semibold tw:wrap-break-word"
+                className="line-clamp-1 font-semibold wrap-break-word"
                 appearance="strong"
                 typographyType="body-xl"
               >
                 {title}
               </Typography>
 
-              <div className="tw:flex tw:items-center tw:gap-1">
+              <div className="flex items-center gap-1">
                 {author.avatar && (
                   <img
                     src={author.avatar}
                     alt={author.name}
-                    className="tw:w-4 tw:h-4 tw:rounded-full tw:bg-zinc-300"
+                    className="w-4 h-4 rounded-full bg-zinc-300"
                   />
                 )}
                 {!author.avatar && (
-                  <div className="tw:w-4 tw:h-4 tw:bg-zinc-300 tw:rounded-full" />
+                  <div className="w-4 h-4 bg-zinc-300 rounded-full" />
                 )}
                 <Typography
                   as="div"
-                  typographyType="body-xs"
+                  typographyType="body-sm"
                   appearance="moderate"
-                  className="tw:justify-center tw:tracking-tight"
+                  className="justify-center tracking-tight"
                 >
                   {author.name}
                 </Typography>
@@ -230,26 +230,26 @@ export const CollectionTile: React.ComponentType<
 
             {/* Tags section */}
             {displayTags.length > 0 && (
-              <div className="tw:self-stretch tw:pl-3 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
-                <div className="tw:self-stretch tw:py-1.5 tw:border-t tw:border-b tw:border-stroke-neutral-translucent-weak tw:inline-flex tw:justify-start tw:items-center tw:gap-1.5 tw:flex-wrap tw:content-center">
+              <div className="self-stretch pl-3 flex flex-col justify-start items-start gap-2">
+                <div className="self-stretch py-1.5 border-t border-b border-stroke-weak inline-flex justify-start items-center gap-1.5 flex-wrap content-center">
                   {displayTags.map((tag, index) => {
                     const tagText = getTagText(tag);
                     return (
                       <React.Fragment key={index}>
                         <Typography
                           as="div"
-                          typographyType="body-xs"
+                          typographyType="body-sm"
                           appearance="none"
-                          className={`tw:justify-center tw:tracking-tight ${
+                          className={`justify-center tracking-tight ${
                             tagText.toLowerCase() === "adult"
-                              ? "tw:text-danger-strong"
-                              : "tw:text-neutral-moderate"
+                              ? "text-danger-strong"
+                              : "text-neutral-moderate"
                           }`}
                         >
                           {tagText}
                         </Typography>
                         {index < displayTags.length - 1 && (
-                          <div className="tw:w-1 tw:h-1 tw:rotate-45 tw:bg-neutral-subdued" />
+                          <div className="w-1 h-1 rotate-45 bg-neutral-subdued" />
                         )}
                       </React.Fragment>
                     );
@@ -259,42 +259,42 @@ export const CollectionTile: React.ComponentType<
             )}
 
             {/* Stats section */}
-            <div className="tw:self-stretch tw:pl-3 tw:inline-flex tw:justify-start tw:items-center tw:gap-5">
-              <div className="tw:flex-1 tw:py-1.5 tw:border-b tw:border-stroke-neutral-translucent-weak tw:flex tw:justify-start tw:items-center tw:gap-5">
+            <div className="self-stretch pl-3 inline-flex justify-start items-center gap-5">
+              <div className="flex-1 py-1.5 border-b border-stroke-weak flex justify-start items-center gap-5">
                 {/* Endorsements */}
-                <div className="tw:flex tw:justify-start tw:items-center tw:gap-1 tw:overflow-hidden">
+                <div className="flex justify-start items-center gap-1 overflow-hidden">
                   <Icon path="mdiThumbUp" size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
-                    className="tw:justify-start tw:tracking-tight"
+                    className="justify-start tracking-tight"
                   >
                     {numeral(stats.endorsements).format("0 a")}
                   </Typography>
                 </div>
 
                 {/* Size */}
-                <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
+                <div className="flex justify-center items-center gap-1 overflow-hidden">
                   <Icon path={nxmFileSize} size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
-                    className="tw:justify-start tw:tracking-tight"
+                    className="justify-start tracking-tight"
                   >
                     {numeral(stats.size).format("0.0 b")}
                   </Typography>
                 </div>
 
                 {/* Mod count */}
-                <div className="tw:flex tw:justify-center tw:items-center tw:gap-1 tw:overflow-hidden">
+                <div className="flex justify-center items-center gap-1 overflow-hidden">
                   <Icon path={nxmMod} size="sm" />
                   <Typography
                     as="div"
-                    typographyType="body-xs"
+                    typographyType="body-sm"
                     appearance="moderate"
-                    className="tw:justify-start tw:tracking-tight"
+                    className="justify-start tracking-tight"
                   >
                     {numeral(stats.modCount).format("0,0")}
                   </Typography>
@@ -303,12 +303,12 @@ export const CollectionTile: React.ComponentType<
             </div>
 
             {/* Description */}
-            <div className="tw:self-stretch tw:flex-1 tw:pl-3 tw:py-1 tw:flex tw:flex-col tw:justify-start tw:items-start tw:gap-2">
+            <div className="self-stretch flex-1 pl-3 py-1 flex flex-col justify-start items-start gap-2">
               <Typography
                 as="div"
                 typographyType="body-md"
                 appearance="subdued"
-                className="tw:line-clamp-4 tw:wrap-break-word tw:leading-tight"
+                className="line-clamp-4 wrap-break-word"
               >
                 {description}
               </Typography>
@@ -318,7 +318,7 @@ export const CollectionTile: React.ComponentType<
       </div>
 
       {/* Action bar */}
-      <div className="tw:self-stretch tw:p-3 tw:bg-surface-high tw:rounded-bl tw:rounded-br tw:inline-flex tw:justify-start tw:items-center tw:gap-2">
+      <div className="self-stretch p-3 bg-surface-high rounded-bl rounded-br inline-flex justify-start items-center gap-2">
         <Button
           title={tooltip}
           disabled={!canBeAdded || pending}

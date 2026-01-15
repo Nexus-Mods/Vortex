@@ -1489,7 +1489,7 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
             </FlexLayout.Fixed>
           </FlexLayout>
 
-          <FlexLayout type="row" className="hover-overlay">
+          <FlexLayout type="row" className="custom-hover-overlay">
             <FlexLayout.Fixed>
               <FlexLayout type="row" className="hover-overlay-content">
                 {t("Go Premium")}
@@ -2228,7 +2228,7 @@ function init(context: IExtensionContextExt): boolean {
   // DNU: was used for testing... no longer public
   context.registerAction('global-icons', 100, 'nexus', {}, 'Force Token Refresh', () => {
     log('info', 'Force Token Refresh');
-    nexus.handleJwtRefresh();  
+    nexus.handleJwtRefresh();
   });*/
 
   context.registerAction(
