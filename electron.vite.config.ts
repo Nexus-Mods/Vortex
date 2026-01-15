@@ -10,9 +10,13 @@ export default defineConfig({
       rollupOptions: {
         external: ["original-fs"],
         output: {
-          format: "cjs"
+          format: "cjs",
+          exports: "auto"
         }
-      }
+      },
+      // electron-vite plugins
+      externalizeDeps: true,
+      bytecode: false
     }
   },
   preload: {
@@ -32,4 +36,5 @@ export default defineConfig({
     plugins: [react()]
   }
 });
+
 
