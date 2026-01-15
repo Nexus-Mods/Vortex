@@ -16,7 +16,7 @@ import { getErrorMessage } from "../shared/errors";
 import safeCreateAction from "./safeCreateAction";
 
 import Promise from "bluebird";
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain, ipcRenderer } from "../electron-shim";
 
 import * as reduxAct from "redux-act";
 import { generate as shortid } from "shortid";

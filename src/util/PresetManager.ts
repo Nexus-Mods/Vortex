@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain, ipcRenderer } from "../electron-shim";
 import * as path from "path";
 import type { IExtensionApi } from "../types/IExtensionContext";
 

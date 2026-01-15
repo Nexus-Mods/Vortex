@@ -8,7 +8,7 @@ import { log } from "./log";
 import { sanitizeCSSId } from "./util";
 
 import Promise from "bluebird";
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain, ipcRenderer } from "../electron-shim";
 import * as _ from "lodash";
 import * as path from "path";
 import type * as sassT from "sass";

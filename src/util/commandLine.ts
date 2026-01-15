@@ -1,5 +1,5 @@
 import program from "commander";
-import { app, ipcMain, ipcRenderer } from "electron";
+import { app, ipcMain, ipcRenderer } from "../electron-shim";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as process from "process";
@@ -118,7 +118,7 @@ function electronIsShitArgumentSort(argv: string[]): string[] {
  * I think we are hitting walls atm with having only a single hyphen but with a word and a =
  */
 function transformEpicArguments(argv: string[]): string[] {
-  var epicParameterSwaps = {
+  const epicParameterSwaps = {
     "-AUTH_LOGIN": "--epic-auth-login",
     "-AUTH_PASSWORD": "--epic-auth-password",
     "-AUTH_TYPE": "--epic-auth-type",
@@ -131,7 +131,7 @@ function transformEpicArguments(argv: string[]): string[] {
     "-epicsandboxid": "--epic-sandboxid",
   };
 
-  var resultArr = argv.map((element) => {
+  const resultArr = argv.map((element) => {
     for (const key in epicParameterSwaps) {
       if (element.indexOf(key) !== -1) {
         return element.replace(key, epicParameterSwaps[key]);

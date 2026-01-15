@@ -24,7 +24,7 @@ import type {
 import type NexusT from "@nexusmods/nexus-api";
 import Promise from "bluebird";
 import type { BrowserWindow } from "electron";
-import { dialog as dialogIn, ipcRenderer } from "electron";
+import { dialog as dialogIn, ipcRenderer } from "../electron-shim";
 import * as fs from "fs-extra";
 import I18next from "i18next";
 import * as os from "os";

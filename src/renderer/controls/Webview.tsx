@@ -21,7 +21,7 @@ import {
   updateViewURL,
 } from "../../util/webview";
 
-import { ipcRenderer } from "electron";
+import { ipcRenderer } from "../../electron-shim";
 import { omit } from "lodash";
 import * as React from "react";
 import ReactDOM from "react-dom";

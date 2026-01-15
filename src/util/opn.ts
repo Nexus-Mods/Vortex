@@ -1,11 +1,9 @@
-import { log } from "./log";
-
-import Promise from "bluebird";
 import * as path from "path";
+import Promise from "bluebird";
 import type * as winapiT from "winapi-bindings";
-
-import { ipcMain, ipcRenderer, shell } from "electron";
 import { getErrorMessage } from "../shared/errors";
+import { ipcMain, ipcRenderer, shell } from "../electron-shim";
+import { log } from "./log";
 
 let winapi: typeof winapiT;
 try {

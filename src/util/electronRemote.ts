@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain, ipcRenderer } from "../electron-shim";
 import * as electron from "electron";
 import { generate as shortid } from "shortid";
 import { log } from "./log";
