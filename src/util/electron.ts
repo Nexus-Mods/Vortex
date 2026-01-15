@@ -1,13 +1,15 @@
+import { createRequire } from "module";
 import type * as remoteT from "@electron/remote";
 import * as electron from "electron";
+
+const require = createRequire(import.meta.url);
 
 const myExport: typeof electron & { remote?: typeof remoteT } = {
   ...electron,
 };
 
-module.exports = myExport;
+export default myExport;
 
 if (process.type === "renderer") {
-  // tslint:disable-next-line:no-var-requires
-  module.exports["remote"] = require("@electron/remote");
+  myExport.remote = require("@electron/remote");
 }
