@@ -1,3 +1,6 @@
+import * as sourceMapSupport from "source-map-support";
+sourceMapSupport.install();
+
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: any) => {
@@ -83,9 +86,6 @@ if (!process.argv.includes('--relaunched')
 */
 
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./constants";
-
-import * as sourceMapSupport from "source-map-support";
-sourceMapSupport.install();
 
 import requireRemap from "./util/requireRemap";
 requireRemap();
