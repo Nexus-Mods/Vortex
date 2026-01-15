@@ -3,6 +3,7 @@ import * as fs from "./fs";
 import Promise from "bluebird";
 import * as fsOrig from "fs-extra";
 import * as path from "path";
+import { getErrorCode } from "../shared/errors";
 
 export interface IWalkOptions {
   ignoreErrors?: string[] | true;
@@ -29,7 +30,9 @@ function walk(
   return fs
     .readdirAsync(target)
     .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve([]) : Promise.reject(err),
+      getErrorCode(err) === "ENOENT"
+        ? Promise.resolve([])
+        : Promise.reject(err),
     )
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
@@ -61,9 +64,10 @@ function walk(
       );
     })
     .catch((err) => {
+      const code = getErrorCode(err);
       if (
         opt.ignoreErrors !== undefined &&
-        (opt.ignoreErrors === true || opt.ignoreErrors.indexOf(err.code) !== -1)
+        (opt.ignoreErrors === true || opt.ignoreErrors.indexOf(code) !== -1)
       ) {
         return Promise.resolve();
       } else {

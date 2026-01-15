@@ -1,3 +1,4 @@
+import { getErrorCode, unknownToError } from "../shared/errors";
 import { checksum } from "./checksum";
 import * as fs from "./fs";
 import { log } from "./log";
@@ -73,7 +74,8 @@ function writeFileAtomicImpl(
         );
       }
     })
-    .catch((err) => {
+    .catch((unknownErr) => {
+      const err = unknownToError(unknownErr);
       err.stack = err.stack + "\n" + stackErr.stack;
       return Promise.reject(err);
     })
@@ -117,12 +119,13 @@ export function copyFileAtomic(
     .then(() => fs.copyAsync(srcPath, tmpPath))
     .then(() =>
       fs.unlinkAsync(destPath).catch((err) => {
-        if (err.code === "EPERM") {
+        const code = getErrorCode(err);
+        if (code === "EPERM") {
           // if the file is currently in use, try a second time
           // 100ms later
           log("debug", "file locked, retrying delete", destPath);
           return Promise.delay(100).then(() => fs.unlinkAsync(destPath));
-        } else if (err.code === "ENOENT") {
+        } else if (code === "ENOENT") {
           // file doesn't exist anyway? no problem
           return Promise.resolve();
         } else {
@@ -131,14 +134,15 @@ export function copyFileAtomic(
       }),
     )
     .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+      getErrorCode(err) === "ENOENT" ? Promise.resolve() : Promise.reject(err),
     )
     .then(() =>
       tmpPath !== undefined
         ? fs.renameAsync(tmpPath, destPath)
         : Promise.resolve(),
     )
-    .catch((err) => {
+    .catch((unknownErr) => {
+      const err = unknownToError(unknownErr);
       log("info", "failed to copy", { srcPath, destPath, err: err.stack });
       if (cleanup !== undefined) {
         try {

@@ -7,6 +7,7 @@ import type {
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
 import opn from "../../util/opn";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 interface IPreviewHandler {
   priority: number;
@@ -93,7 +94,11 @@ function init(context: IExtensionContext) {
               }
               return;
             } else {
-              log("error", "file preview handler failed", err.message);
+              log(
+                "error",
+                "file preview handler failed",
+                getErrorMessageOrDefault(err),
+              );
             }
           }
         }

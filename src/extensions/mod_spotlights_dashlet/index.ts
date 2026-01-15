@@ -15,6 +15,7 @@ import type {
   VideoEntryType,
 } from "./types";
 import ModSpotlightsDashlet from "./ModSpotlightsDashlet";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 // Can be used for debugging.
 const DEBUG_MODE: boolean = false;
@@ -74,7 +75,12 @@ function getHTTPData<T>(link: string): Promise<T[]> {
               resolve(parsed);
             } catch (err) {
               reject(
-                new ParserError(err.statusCode, err.message, link, output),
+                new ParserError(
+                  err["statusCode"] ?? -1,
+                  getErrorMessageOrDefault(err),
+                  link,
+                  output,
+                ),
               );
             }
           });

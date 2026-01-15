@@ -157,6 +157,7 @@ import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
 import type { types } from "../..";
+import { getErrorCode } from "../../shared/errors";
 
 interface IAppContext {
   isProfileChanging: boolean;
@@ -1275,14 +1276,16 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
           try {
             fs.removeSync(fullPath);
           } catch (err) {
-            if (err.code !== "ENOENT") {
+            const code = getErrorCode(err);
+            if (code !== "ENOENT") {
               log("error", "failed to clean up", err);
             }
           }
           try {
             fs.removeSync(fullPath + ".installing");
           } catch (err) {
-            if (err.code !== "ENOENT") {
+            const code = getErrorCode(err);
+            if (code !== "ENOENT") {
               log("error", "failed to clean up", err);
             }
           }
@@ -1362,9 +1365,9 @@ function onDeploySingleMod(api: IExtensionApi) {
     try {
       modPath = path.join(stagingPath, mod.installationPath);
     } catch (err) {
-      err.StagingPath = stagingPath || "<undefined>";
-      err.InstallPath = mod.installationPath || "<undefined>";
-      err.GameId = gameId || "<undefined>";
+      err["StagingPath"] = stagingPath || "<undefined>";
+      err["InstallPath"] = mod.installationPath || "<undefined>";
+      err["GameId"] = gameId || "<undefined>";
       api.showErrorNotification("Failed to deploy mod", err, {
         message: modId,
       });

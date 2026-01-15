@@ -4,7 +4,7 @@ import * as crypto from "crypto";
 import fs from "fs-extra";
 import * as path from "path";
 import * as process from "process";
-import { getErrorMessage } from "../shared/errors";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 async function readHashList(
   basePath: string,
@@ -62,7 +62,7 @@ export async function validateFiles(
       } catch (err) {
         log("info", "file missing", {
           fileName,
-          error: getErrorMessage(err) ?? "unknown error",
+          error: getErrorMessageOrDefault(err),
         });
         result.missing.push(fileName);
       }

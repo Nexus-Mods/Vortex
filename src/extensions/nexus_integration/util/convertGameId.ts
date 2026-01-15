@@ -7,6 +7,7 @@ import type {
   IGameStored,
   IGameStoredExt,
 } from "../../gamemode_management/types/IGameStored";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 /**
  * get the nexus page id for a game
@@ -42,7 +43,7 @@ export function nexusGameId(
     );
   } catch (err) {
     log("error", "failed to convert game id to domain", {
-      message: err.message,
+      message: getErrorMessageOrDefault(err),
       game: inspect(game),
       fallbackGameId,
     });

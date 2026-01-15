@@ -4,6 +4,7 @@ import { getApplication } from "../../../util/application";
 import type { IValidateKeyDataV2 } from "../../nexus_integration/types/IValidateKeyData";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 class MixpanelAnalytics {
   private user: number;
@@ -126,9 +127,9 @@ class MixpanelAnalytics {
     if (this.isInitialized) {
       try {
         mixpanel.reset(); // Clears user identity and super properties
-      } catch (error) {
+      } catch (err) {
         analyticsServiceLog("mixpanel", "warn", "Failed to reset mixpanel", {
-          error: error.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     }

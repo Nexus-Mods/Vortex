@@ -38,6 +38,7 @@ import { generate as shortid } from "shortid";
 import { runElevated } from "vortex-run";
 import * as winapi from "winapi-bindings";
 import { enableUserSymlinks } from "./actions";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const TASK_NAME = "Vortex Symlink Deployment";
 const SCRIPT_NAME = "vortexSymlinkService.js";
@@ -576,6 +577,7 @@ class DeploymentMethod extends LinkingDeployment {
         try {
           winapi.RunTask(TASK_NAME);
         } catch (err) {
+          const message = getErrorMessageOrDefault(err);
           this.api.showErrorNotification(
             "Failed to deploy using symlinks",
             "You have enabled the workaround for symlink deployment without elevation " +
@@ -590,10 +592,10 @@ class DeploymentMethod extends LinkingDeployment {
               "The error message was: {{error}}",
             {
               allowReport: false,
-              replace: { error: err.message },
+              replace: { error: message },
             },
           );
-          return reject(new ProcessCanceled(err.message));
+          return reject(new ProcessCanceled(message));
         }
       }
 
@@ -618,7 +620,10 @@ class DeploymentMethod extends LinkingDeployment {
       this.mIPCServer?.close();
       this.mIPCServer = undefined;
     } catch (err) {
-      log("warn", "Failed to close ipc server", { error: err.message, reason });
+      log("warn", "Failed to close ipc server", {
+        error: getErrorMessageOrDefault(err),
+        reason,
+      });
     }
   }
 
@@ -882,8 +887,9 @@ function tasksSupported() {
     winapi.GetTasks();
     return null;
   } catch (err) {
-    log("info", "windows tasks api failed", err.message);
-    return err.message;
+    const message = getErrorMessageOrDefault(err);
+    log("info", "windows tasks api failed", message);
+    return message;
   }
 }
 
@@ -894,7 +900,7 @@ function findTask() {
   try {
     return winapi.GetTasks().find((task) => task.Name === TASK_NAME);
   } catch (err) {
-    log("warn", "failed to list windows tasks", err.message);
+    log("warn", "failed to list windows tasks", getErrorMessageOrDefault(err));
     return undefined;
   }
 }

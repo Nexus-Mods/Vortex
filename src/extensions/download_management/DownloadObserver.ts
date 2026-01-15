@@ -58,6 +58,7 @@ import {
 } from "../analytics/mixpanel/MixpanelEvents";
 import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
 import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
+import { unknownToError } from "../../shared/errors";
 
 function progressUpdate(
   store: Redux.Store<any>,
@@ -956,7 +957,7 @@ export class DownloadObserver {
       }
     } catch (err) {
       if (callback !== undefined) {
-        callback(err, downloadId);
+        callback(unknownToError(err), downloadId);
       }
     }
   }

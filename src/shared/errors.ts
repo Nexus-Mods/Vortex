@@ -11,6 +11,18 @@ export function getErrorMessage(err: unknown): string | null {
   return null;
 }
 
+export function getErrorMessageOrDefault(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  if (typeof err === "string") {
+    return err;
+  }
+
+  return "unknown error";
+}
+
 /** Casts or converts the unknown into an Error */
 export function unknownToError(err: unknown): Error {
   if (err instanceof Error) {
@@ -39,4 +51,23 @@ export function getErrorCode(err: unknown): string | null {
   }
 
   return err.code;
+}
+
+type ErrorWithSystemCode = Error & { systemCode: number | bigint };
+
+/** Extracts the system code property from a potential error object */
+export function isErrorWithSystemCode(
+  err: unknown,
+): err is ErrorWithSystemCode {
+  if (!(err instanceof Error)) {
+    return false;
+  }
+
+  if (
+    "systemCode" in err &&
+    (typeof err.systemCode === "number" || typeof err.systemCode === "bigint")
+  )
+    return true;
+
+  return false;
 }

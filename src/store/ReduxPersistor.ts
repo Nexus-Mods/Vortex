@@ -1,4 +1,5 @@
 import type { IPersistor, PersistorKey } from "../types/IExtensionContext";
+import { unknownToError } from "../shared/errors";
 import { terminate } from "../util/errorHandling";
 import { log } from "../util/log";
 
@@ -93,7 +94,8 @@ class ReduxPersistor<T> {
                 persistor
                   .getItem(key)
                   .then((value) => ({ key, value: this.deserialize(value) }))
-                  .catch((err) => {
+                  .catch((unknownError) => {
+                    const err = unknownToError(unknownError);
                     if (err.name === "NotFoundError") {
                       // Not sure how this happens, it's ultra-rare. Since we're expecting
                       // getAllKeys to return only exising keys, one not existing during this get
@@ -166,7 +168,8 @@ class ReduxPersistor<T> {
   }
 
   private ensureStoreDiffHive(oldState: T, newState: T): Promise<void> {
-    return this.storeDiffHive(oldState, newState).catch((err) => {
+    return this.storeDiffHive(oldState, newState).catch((unknownError) => {
+      const err = unknownToError(unknownError);
       // Only way this has ever gone wrong during alpha is when the disk
       // is full, which is nothing we can fix.
       if (

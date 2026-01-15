@@ -125,7 +125,11 @@ import * as fsVortex from "../util/fs";
 
 import { toast } from "react-hot-toast";
 import type { ToastOptions } from "react-hot-toast";
-import { getErrorMessage, getErrorCode } from "../shared/errors";
+import {
+  getErrorCode,
+  unknownToError,
+  getErrorMessageOrDefault,
+} from "../shared/errors";
 
 export function isExtSame(
   installed: IExtension,
@@ -1438,17 +1442,16 @@ class ExtensionManager {
         } else {
           func(...call.arguments);
         }
-      } catch (err) {
-        const message = getErrorMessage(err) ?? "unknown error";
-        const stack = err instanceof Error ? err.stack : undefined;
+      } catch (unknownError) {
+        const err = unknownToError(unknownError);
 
         this.mApi.showErrorNotification(
           "Extension failed to initialize. If this isn't an official extension, " +
             "please report the error to the respective author.",
           {
             extension: call.extension,
-            err: message,
-            stack: stack,
+            err: err.message,
+            stack: err.stack,
           },
         );
       }
@@ -1686,7 +1689,7 @@ class ExtensionManager {
           "Failed to connect meta database",
           {
             text: "Please check that there is no other instance of Vortex still running.",
-            message: err.message,
+            message: getErrorMessageOrDefault(err),
           },
           [{ label: "Quit" }, { label: "Retry" }],
         )
@@ -1735,13 +1738,12 @@ class ExtensionManager {
       this.mWatches[key].forEach((cb) => {
         try {
           cb(prevValue, currentValue);
-        } catch (err) {
-          const message = getErrorMessage(err);
-          const stack = err instanceof Error ? err.stack : undefined;
+        } catch (unknownError) {
+          const err = unknownToError(unknownError);
 
           log("error", "state change handler failed", {
-            message: message,
-            stack1: stack,
+            message: err.message,
+            stack1: err.stack,
             stack2: stackErr.stack,
             key,
           });
@@ -1785,26 +1787,25 @@ class ExtensionManager {
         const extProxy = new Proxy(contextProxy, apiProxy);
         ext.initFunc()(extProxy as IExtensionContext);
         apiProxy.enableAPI();
-      } catch (err) {
+      } catch (unknownError) {
         if (!ext.dynamic) {
           // if one of the static extension fails to initialize we should be
           // crashing, otherwise we risk data loss if the user restores a backup
           // and the important reducers aren't loaded
-          throw err;
+          throw unknownError;
         }
-        const message = getErrorMessage(err);
-        const stack = err instanceof Error ? err.stack : undefined;
+        const err = unknownToError(unknownError);
 
         // make sure we're not calling any of the register calls if the extension
         // isn't fully initialized
         this.mContextProxyHandler.dropCalls(ext.name);
         this.mLoadFailures[ext.name] = [
-          { id: "exception", args: { message: message } },
+          { id: "exception", args: { message: err.message } },
         ];
         log("warn", "couldn't initialize extension", {
           name: ext.name,
-          err: message,
-          stack: stack,
+          err: err.message,
+          stack: err.stack,
         });
       }
     });
@@ -2148,7 +2149,7 @@ class ExtensionManager {
         .catch((err) => {
           log("info", "failed to calculate hash", {
             path: detail.filePath,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
           return Promise.resolve();
         });
@@ -2313,14 +2314,14 @@ class ExtensionManager {
           return Promise.reject(err);
         })
         .catch(ProcessCanceled, (err) => {
-          log("debug", "hook canceled start", err.message);
+          log("debug", "hook canceled start", getErrorMessageOrDefault(err));
           return Promise.reject(err);
         })
         .catch((err) => {
           if (err instanceof UserCanceled) {
             log("debug", "start canceled by user");
           } else if (err instanceof ProcessCanceled) {
-            log("debug", "hook canceled start", err.message);
+            log("debug", "hook canceled start", getErrorMessageOrDefault(err));
           } else {
             log("error", "hook failed", err);
           }
@@ -2486,8 +2487,8 @@ class ExtensionManager {
                         const exitCodeHex = code.toString(16);
 
                         const errorMessage = `Failed to run "${sanitizedExecutable}": "${sanitizedLastLine} (${exitCodeHex})"`;
-                        const err: any = new Error(errorMessage);
-                        err.exitCode = code;
+                        const err = new Error(errorMessage);
+                        err["exitCode"] = code;
                         reject(err);
                         return;
                       }
@@ -2549,7 +2550,8 @@ class ExtensionManager {
         .catch({ systemCode: 1223 }, () => Promise.reject(new UserCanceled()))
         // Is errno still used ? looks like shellEx call returns systemCode instead
         .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
-        .catch((err) => {
+        .catch((unknownErr) => {
+          const err = unknownToError(unknownErr);
           if (
             err.message
               .toLowerCase()
@@ -2852,8 +2854,8 @@ class ExtensionManager {
             encoding: "utf8",
           }),
         );
-      } catch (error) {
-        const errorCode = getErrorCode(error);
+      } catch (err) {
+        const errorCode = getErrorCode(err);
         const errMessage =
           errorCode === "ENOENT"
             ? "extension has no info.json file"
@@ -2861,7 +2863,7 @@ class ExtensionManager {
 
         log("warn", errMessage, {
           extensionPath,
-          error: getErrorMessage(error),
+          error: getErrorMessageOrDefault(err),
         });
       }
 
@@ -2919,7 +2921,7 @@ class ExtensionManager {
       } catch (err) {
         log("warn", "extension path missing and can't be created", {
           path: extension.path,
-          error: getErrorMessage(err) ?? "unknown error",
+          error: getErrorMessageOrDefault(err),
         });
       }
       return [];
@@ -2984,16 +2986,15 @@ class ExtensionManager {
               prev[ext.name] = ext;
             }
           }
-        } catch (err) {
-          const message = getErrorMessage(err);
-          const stack = err instanceof Error ? err.stack : undefined;
+        } catch (unknownError) {
+          const err = unknownToError(unknownError);
           log("warn", "failed to load dynamic extension", {
             name,
-            error: message,
-            stack: stack,
+            error: err.message,
+            stack: err.stack,
           });
           this.mLoadFailures[name] = [
-            { id: "exception", args: { message: message } },
+            { id: "exception", args: { message: err.message } },
           ];
         }
         return prev;

@@ -83,7 +83,11 @@ import * as semver from "semver";
 import type * as uuidT from "uuid";
 
 import type * as winapiT from "winapi-bindings";
-import { getErrorCode } from "../shared/errors";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../shared/errors";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
@@ -396,7 +400,7 @@ class Application {
           return this.createStore(args.restore, args.merge).catch(
             DataInvalid,
             (err) => {
-              log("error", "store data invalid", err.message);
+              log("error", "store data invalid", getErrorMessageOrDefault(err));
               dialog
                 .showMessageBox(getVisibleWindow(), {
                   type: "error",
@@ -456,7 +460,13 @@ class Application {
           this.connectTrayAndWindow();
           return splash !== undefined ? splash.fadeOut() : Promise.resolve();
         })
-        .tapCatch((err) => log("debug", "quitting with exception", err.message))
+        .tapCatch((err) =>
+          log(
+            "debug",
+            "quitting with exception",
+            getErrorMessageOrDefault(err),
+          ),
+        )
         .catch(UserCanceled, () => app.exit())
         .catch(ProcessCanceled, () => {
           app.quit();
@@ -501,10 +511,10 @@ class Application {
           );
           app.quit();
         })
-        .catch((err) => {
+        .catch((unknownError) => {
           try {
-            if (err instanceof Error) {
-              const pretty = prettifyNodeErrorMessage(err);
+            if (unknownError instanceof Error) {
+              const pretty = prettifyNodeErrorMessage(unknownError);
               const details = pretty.message.replace(
                 /{{ *([a-zA-Z]+) *}}/g,
                 (m, key) => pretty.replace?.[key] || key,
@@ -514,12 +524,13 @@ class Application {
                   message: "Startup failed",
                   details,
                   code: pretty.code,
-                  stack: err.stack,
+                  stack: unknownError.stack,
                 },
                 this.mStore !== undefined ? this.mStore.getState() : {},
                 pretty.allowReport,
               );
             } else {
+              const err = unknownToError(unknownError);
               terminate(
                 {
                   message: "Startup failed",
@@ -750,13 +761,13 @@ class Application {
                 process.stdout.write(output.join("\n") + "\n");
               })
               .catch((err) => {
-                process.stderr.write(err.message + "\n");
+                process.stderr.write(getErrorMessageOrDefault(err) + "\n");
               });
           }),
         ).then(() => null);
       })
       .catch((err) => {
-        process.stderr.write(err.message + "\n");
+        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
       })
       .finally(() => {
         persist.close();
@@ -790,13 +801,13 @@ class Application {
                 process.stdout.write("changed\n");
               })
               .catch((err) => {
-                process.stderr.write(err.message + "\n");
+                process.stderr.write(getErrorMessageOrDefault(err) + "\n");
               });
           }),
         ).then(() => null);
       })
       .catch((err) => {
-        process.stderr.write(err.message + "\n");
+        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
       })
       .finally(() => {
         persist.close();
@@ -826,7 +837,7 @@ class Application {
                     process.stdout.write(`removed ${match.join(".")}\n`),
                   )
                   .catch((err) => {
-                    process.stderr.write(err.message + "\n");
+                    process.stderr.write(getErrorMessageOrDefault(err) + "\n");
                   }),
               ),
             );
@@ -834,7 +845,7 @@ class Application {
         ).then(() => null);
       })
       .catch((err) => {
-        process.stderr.write(err.message + "\n");
+        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
       })
       .finally(() => {
         persist.close();
@@ -897,7 +908,7 @@ class Application {
           backups = backupsIn;
         })
         .catch((err) => {
-          log("error", "failed to read backups", err.message);
+          log("error", "failed to read backups", getErrorMessageOrDefault(err));
           backups = [];
         });
 
@@ -1061,8 +1072,8 @@ class Application {
                 {
                   message: "Failed to restore backup",
                   details:
-                    err.code !== "ENOENT"
-                      ? err.message
+                    getErrorCode(err) !== "ENOENT"
+                      ? getErrorMessageOrDefault(err)
                       : "Specified backup file doesn't exist",
                   path: restoreBackup,
                 },
@@ -1088,8 +1099,8 @@ class Application {
                 {
                   message: "Failed to merge backup",
                   details:
-                    err.code !== "ENOENT"
-                      ? err.message
+                    getErrorCode(err) !== "ENOENT"
+                      ? getErrorMessageOrDefault(err)
                       : "Specified backup file doesn't exist",
                   path: mergeBackup,
                 },
@@ -1219,7 +1230,7 @@ class Application {
               log(
                 "error",
                 "Failed to create startup state backup",
-                err.message,
+                getErrorMessageOrDefault(err),
               ),
             );
         }

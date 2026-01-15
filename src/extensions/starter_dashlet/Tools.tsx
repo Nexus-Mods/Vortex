@@ -50,6 +50,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import Tool from "./Tool";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 interface IBaseProps {
   onGetValidTools: (
@@ -413,7 +414,8 @@ function generateGameStarter(props: IConnectedProps): StarterInfo {
   try {
     const starter = new StarterInfo(game, discoveredGame);
     return starter;
-  } catch (err) {
+  } catch (unknownError) {
+    const err = unknownToError(unknownError);
     log("error", "failed to create dashlet game entry", {
       error: err.message,
       stack: err.stack,
@@ -475,7 +477,7 @@ function generateToolStarters(
         log("error", "tool configuration invalid", {
           gameId,
           toolId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     });

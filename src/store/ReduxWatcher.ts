@@ -1,5 +1,6 @@
 import { isEqual } from "lodash";
 import type * as Redux from "redux";
+import { unknownToError } from "../shared/errors";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);
@@ -56,12 +57,9 @@ class ReduxWatcher<T> {
             };
             listeners.forEach((listener) => listener(parameters));
           }
-        } catch (err) {
-          if (err instanceof Error) {
-            onError(err, selector);
-          } else {
-            onError(new Error("unknown error"), selector);
-          }
+        } catch (unknownError) {
+          const err = unknownToError(unknownError);
+          onError(err, selector);
         }
       });
 

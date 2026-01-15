@@ -1,6 +1,5 @@
-import { getErrorMessage } from "../shared/errors";
+import { getErrorMessageOrDefault } from "../shared/errors";
 import type { IExtensionApi } from "../types/IExtensionContext";
-import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
@@ -229,7 +228,9 @@ class StyleManager {
         .removeAsync(cachePath())
         .catch({ code: "ENOENT" }, () => null)
         .catch((err) =>
-          log("error", "failed to remove css cache", { error: err.message }),
+          log("error", "failed to remove css cache", {
+            error: getErrorMessageOrDefault(err),
+          }),
         ),
     );
   }
@@ -284,13 +285,17 @@ class StyleManager {
           }
         })
         .catch((err) => {
-          log("warn", "stylesheet can't be read", err.message);
+          log(
+            "warn",
+            "stylesheet can't be read",
+            getErrorMessageOrDefault(err),
+          );
         });
     } catch (err) {
       log("warn", "stylesheet can't be read", {
         key,
         path: filePath,
-        err: getErrorMessage(err) ?? "unknown error",
+        err: getErrorMessageOrDefault(err),
       });
     }
   }

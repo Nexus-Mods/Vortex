@@ -11,6 +11,7 @@ import {
 } from "../constants";
 import NEXUSMODS_LOGO from "./nexusmodslogo";
 import { ArgumentInvalid } from "../../../util/CustomErrors";
+import { unknownToError } from "../../../shared/errors";
 
 type TokenType = "Bearer";
 
@@ -147,7 +148,8 @@ class OAuth {
       try {
         const tokenReply = await this.sentAuthorizeToken(code);
         this.mStates[state]?.(null, tokenReply);
-      } catch (err) {
+      } catch (unknownError) {
+        const err = unknownToError(unknownError);
         this.mStates[state]?.(err, undefined);
       }
       delete this.mStates[state];

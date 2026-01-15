@@ -21,6 +21,7 @@ import type {
 import Promise from "bluebird";
 import * as path from "path";
 import getVortexPath from "../../util/getVortexPath";
+import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 class DeploymendMethod extends LinkingDeployment {
   public compatible: string[] = ["symlink_activator_elevated"];
@@ -103,7 +104,7 @@ class DeploymendMethod extends LinkingDeployment {
         return { description: (t) => t("Requires admin rights on windows.") };
       }
     } catch (err) {
-      return { description: (t) => err.message };
+      return { description: (t) => getErrorMessageOrDefault(err) };
     }
 
     const canary = path.join(modPaths[typeId], "__vortex_canary.tmp");
@@ -121,9 +122,10 @@ class DeploymendMethod extends LinkingDeployment {
       );
       fs.symlinkSync(canary, canary + ".link");
     } catch (err) {
-      if (err.code === "EMFILE") {
+      const code = getErrorCode(err);
+      if (code === "EMFILE") {
         // EMFILE shouldn't keep us from using links
-      } else if (err.code === "EISDIR") {
+      } else if (code === "EISDIR") {
         // the error code we're actually getting when symlinks aren't supported is EISDIR,
         // which makes no sense at all
         res = {
@@ -135,7 +137,7 @@ class DeploymendMethod extends LinkingDeployment {
           description: (t) =>
             t(
               'Filesystem doesn\'t support symbolic links. Error: "{{error}}"',
-              { replace: { error: err.message } },
+              { replace: { error: getErrorMessageOrDefault(err) } },
             ),
         };
       }
@@ -271,7 +273,7 @@ class DeploymendMethod extends LinkingDeployment {
     } catch (err) {
       if (!this.mDidLogElevation) {
         log("debug", "assuming user needs elevation to create symlinks", {
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         this.mDidLogElevation = true;
       }

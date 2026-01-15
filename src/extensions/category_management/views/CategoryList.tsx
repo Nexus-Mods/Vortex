@@ -53,6 +53,7 @@ import type {
   FullTree,
 } from "react-sortable-tree";
 import SortableTree from "react-sortable-tree";
+import { unknownToError } from "../../../shared/errors";
 
 const nop = () => undefined;
 
@@ -337,7 +338,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     } catch (err) {
       onShowError(
         "An error occurred hiding/showing the empty categories",
-        err,
+        unknownToError(err),
         { allowReport: false },
       );
     }
@@ -363,7 +364,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
       onSetCategoryOrder(gameMode, newOrder(newTree));
     } catch (err) {
-      onShowError("Failed to sort categories", err, { allowReport: false });
+      onShowError("Failed to sort categories", unknownToError(err), {
+        allowReport: false,
+      });
     }
   };
 

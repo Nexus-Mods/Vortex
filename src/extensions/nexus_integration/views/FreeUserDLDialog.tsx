@@ -17,6 +17,7 @@ import { MainContext } from "../../../renderer/views/MainWindow";
 import type { IComponentContext } from "../../../types/IComponentContext";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -171,7 +172,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
       } catch (err) {
         log("error", "failed to fetch file information", {
           url,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         setFileInfo(makeUnknown(t, url));
       }

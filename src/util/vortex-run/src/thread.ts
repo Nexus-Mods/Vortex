@@ -96,7 +96,7 @@ function runThreaded(
               // tslint:disable-next-line:no-console
               console.error(
                 "failed to clean up temporary script",
-                cleanupErr.message,
+                getErrorMessageOrDefault(cleanupErr),
               );
             }
             return reject(writeErr);

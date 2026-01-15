@@ -35,6 +35,7 @@ import {} from "uuid";
 import { getApplication } from "./application";
 import lazyRequire from "./lazyRequire";
 import { getCPUArch } from "./nativeArch";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -214,7 +215,11 @@ function nexusReport(
       ),
     )
     .catch((err) => {
-      log("error", "failed to report error to nexus", err.message);
+      log(
+        "error",
+        "failed to report error to nexus",
+        getErrorMessageOrDefault(err),
+      );
       return undefined;
     });
 }

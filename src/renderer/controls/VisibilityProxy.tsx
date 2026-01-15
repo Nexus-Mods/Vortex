@@ -3,7 +3,7 @@ import { log } from "../../util/log";
 import * as _ from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { getErrorMessage } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 export interface IProps {
   container: HTMLElement;
@@ -70,7 +70,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
     } catch (err) {
       // not really critical, just not great for performance
       log("warn", "Failed to unobserve", {
-        err: getErrorMessage(err) ?? "unknown error",
+        err: getErrorMessageOrDefault(err),
         id: target.id,
       });
     }

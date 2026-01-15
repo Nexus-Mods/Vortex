@@ -18,6 +18,7 @@ import type {
 } from "../../installer_fomod_shared/types/interface";
 
 import type * as fomodT from "fomod-installer-native";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 /**
  * UI Delegate for native FOMOD installer
@@ -95,7 +96,7 @@ export class DialogManager implements IDialogManager {
         instanceId: this.mInstanceId,
         moduleName,
         image,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(this.mApi.store.dispatch, "queue installer dialog failed", err);
       throw err;
@@ -132,7 +133,7 @@ export class DialogManager implements IDialogManager {
         instanceId: this.mInstanceId,
         currentStep,
         installSteps,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(
         this.mApi.store.dispatch,
@@ -174,7 +175,7 @@ export class DialogManager implements IDialogManager {
     } catch (err) {
       log("error", "Failed to end FOMOD dialog", {
         instanceId: this.mInstanceId,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(this.mApi.store.dispatch, "end installer dialog failed", err);
       throw err;
@@ -212,7 +213,7 @@ export class DialogManager implements IDialogManager {
     } catch (err) {
       log("error", "Failed to start FOMOD dialog immediately", {
         instanceId: this.mInstanceId,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(this.mApi.store.dispatch, "start installer dialog failed", err);
       throw err;
@@ -252,7 +253,7 @@ export class DialogManager implements IDialogManager {
         stepId,
         groupId,
         pluginIds,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(
         this.mApi.store.dispatch,
@@ -282,7 +283,7 @@ export class DialogManager implements IDialogManager {
         instanceId: this.mInstanceId,
         direction,
         currentStepId,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(
         this.mApi.store.dispatch,
@@ -311,7 +312,7 @@ export class DialogManager implements IDialogManager {
     } catch (err) {
       log("error", "Failed to process FOMOD dialog cancellation", {
         instanceId: this.mInstanceId,
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
       showError(
         this.mApi.store.dispatch,

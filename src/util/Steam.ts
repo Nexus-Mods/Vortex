@@ -20,7 +20,7 @@ import opn from "./opn";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
-import { getErrorMessage } from "../shared/errors";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 const STORE_ID = "steam";
 const STORE_NAME = "Steam";
@@ -275,7 +275,8 @@ class Steam implements IGameStore {
           //  it only holds the path to the alternate steam libraries (the ones that aren't
           //  part of the base Steam installation folder)
           log("warn", "failed to read steam library folders file", err);
-          return ["EPERM", "ENOENT"].includes(err.code)
+          const code = getErrorMessageOrDefault(err);
+          return ["EPERM", "ENOENT"].includes(code)
             ? Promise.resolve(steamPaths)
             : Promise.reject(err);
         });
@@ -313,7 +314,7 @@ class Steam implements IGameStore {
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
-                    error: getErrorMessage(err) ?? "unknown error",
+                    error: getErrorMessageOrDefault(err),
                   });
                   return undefined;
                 }
@@ -350,7 +351,7 @@ class Steam implements IGameStore {
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
-                    error: getErrorMessage(err) ?? "unknown error",
+                    error: getErrorMessageOrDefault(err),
                   });
                   return undefined;
                 }
@@ -360,13 +361,15 @@ class Steam implements IGameStore {
           .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
             // which is currently removed
-            log("info", "Steam library not found", { error: err.message });
+            log("info", "Steam library not found", {
+              error: getErrorMessageOrDefault(err),
+            });
             return undefined;
           })
           .catch((err) => {
             log("warn", "Failed to read steam library", {
               path: steamPath,
-              error: err.message,
+              error: getErrorMessageOrDefault(err),
             });
           });
       })

@@ -90,6 +90,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import getVortexPath from "../../../util/getVortexPath";
 import Image from "../../../renderer/controls/Image";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 const MB = 1024 * 1024;
 
@@ -771,7 +772,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               } catch (err) {
                 log("warn", "failed to parse download tag file", {
                   downloadTagPath,
-                  error: err.message,
+                  error: getErrorMessageOrDefault(err),
                 });
               }
             });
