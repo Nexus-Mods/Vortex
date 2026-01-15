@@ -24,6 +24,7 @@ import makeThrottle from "./util/throttle";
 
 import FileAssembler from "./FileAssembler";
 import SpeedCalculator from "./SpeedCalculator";
+import { setDownloadFilePath } from "./actions/state";
 
 import Bluebird from "bluebird";
 import * as contentDisposition from "content-disposition";
@@ -2178,23 +2179,68 @@ class DownloadManager {
       download.finalName = newName;
       newName
         .then((resolvedName) => {
+          const oldTempName = download.tempName;
+          download.tempName = resolvedName;
+
           if (!download.assembler.isClosed()) {
-            const oldTempName = download.tempName;
-            download.tempName = resolvedName;
             return download.assembler
               .rename(resolvedName)
               .then(() => {
                 download.finalName = newName;
               })
               .catch((err) => {
-                // if we failed to rename we will try to continue writing to the original file
-                // so reset to the original name and remove the temporary one that got reserved
-                // for the rename
+                // If file is closed, fall back to fs.renameAsync
+                if (
+                  err instanceof ProcessCanceled &&
+                  err.message === "File is closed"
+                ) {
+                  return fs
+                    .renameAsync(oldTempName, resolvedName)
+                    .then(() => {
+                      download.finalName = newName;
+                      // Update Redux state with the new file path
+                      const newFileName = path.basename(resolvedName);
+                      this.mApi.store.dispatch(
+                        setDownloadFilePath(download.id, newFileName),
+                      );
+                    })
+                    .catch((fsErr) => {
+                      // Reset to original name
+                      download.tempName = oldTempName;
+                      return fs
+                        .removeAsync(resolvedName)
+                        .catch(() => null)
+                        .then(() => Bluebird.reject(fsErr));
+                    });
+                }
+                // For other errors, reset to original name and reject
                 download.tempName = oldTempName;
                 return fs
                   .removeAsync(resolvedName)
                   .catch(() => null)
                   .then(() => Bluebird.reject(err));
+              });
+          } else {
+            // File is already closed (download finished), rename directly using fs
+            return fs
+              .renameAsync(oldTempName, resolvedName)
+              .then(() => {
+                download.finalName = newName;
+                // Update Redux state with the new file path
+                const newFileName = path.basename(resolvedName);
+                this.mApi.store.dispatch(
+                  setDownloadFilePath(download.id, newFileName),
+                );
+              })
+              .catch((err) => {
+                // Don't reject - just log the error
+                log("warn", "failed to rename closed download file", {
+                  error: err.message,
+                  from: oldTempName,
+                  to: resolvedName,
+                });
+                // Reset to original name
+                download.tempName = oldTempName;
               });
           }
         })
