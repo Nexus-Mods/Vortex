@@ -31,8 +31,7 @@ type BaseButtonProps = {
   buttonType?: ButtonType;
   filled?: "strong" | "weak";
   isLoading?: boolean;
-  isResponsive?: boolean;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
   children?: string;
   customContent?: ReactNode;
 } & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
@@ -67,21 +66,22 @@ const getButtonClasses = ({
   buttonType,
   disabled,
   filled,
-  isResponsive,
+  iconOnly,
   size,
 }: {
   buttonType: ButtonType;
   disabled: boolean;
   filled?: ButtonProps["filled"];
-  isResponsive: boolean;
+  iconOnly: boolean;
   size: Required<ButtonProps>["size"];
 }) => {
   const classes = [
     "nxm-button",
     {
       "nxm-button-disabled": disabled,
+      "nxm-button-icon-only": iconOnly,
+      "nxm-button-xs": size === "xs",
       "nxm-button-sm": size === "sm",
-      "sm:nxm-button-sm": isResponsive,
     },
   ];
 
@@ -166,7 +166,6 @@ export const Button = (all: ButtonProps) => {
     filled,
     isExternal,
     isLoading = false,
-    isResponsive = false,
     leftIcon,
     leftIconPath,
     ref,
@@ -177,6 +176,7 @@ export const Button = (all: ButtonProps) => {
   } = all;
 
   const isDisabled = !!disabled || !!ariaDisabled || isLoading;
+  const iconOnly = !customContent && !children;
 
   const content = customContent ?? (
     <>
@@ -202,7 +202,7 @@ export const Button = (all: ButtonProps) => {
             buttonType,
             disabled: isDisabled,
             filled,
-            isResponsive,
+            iconOnly,
             size,
           }),
           className || "",
@@ -226,7 +226,7 @@ export const Button = (all: ButtonProps) => {
             buttonType,
             disabled: isDisabled,
             filled,
-            isResponsive,
+            iconOnly,
             size,
           }),
           className || "",
@@ -250,7 +250,7 @@ export const Button = (all: ButtonProps) => {
           buttonType,
           disabled: isDisabled,
           filled,
-          isResponsive,
+          iconOnly,
           size,
         }),
         className || "",

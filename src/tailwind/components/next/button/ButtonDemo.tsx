@@ -200,7 +200,7 @@ export const ButtonDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="flex gap-4 flex-wrap items-center">
-          <Button buttonType="primary" size="sm" isResponsive>
+          <Button buttonType="primary" size="sm">
             Responsive (sm on mobile, md on desktop)
           </Button>
         </div>
