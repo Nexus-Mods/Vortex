@@ -6,7 +6,7 @@ export default defineConfig({
     build: {
       lib: {
         entry: "./src/main.ts",
-        formats: ["cjs"]
+        formats: ["es"]
       },
       rollupOptions: {
         external: ["original-fs"]
