@@ -2,7 +2,6 @@ import program from "commander";
 import { app, ipcMain, ipcRenderer } from "../electron-shim";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as process from "process";
 import { getApplication } from "./application";
 import { log } from "./log";
 import startupSettings from "./startupSettings";

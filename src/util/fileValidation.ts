@@ -3,7 +3,6 @@ import { log } from "./log";
 import * as crypto from "crypto";
 import fs from "fs-extra";
 import * as path from "path";
-import * as process from "process";
 import { getErrorMessage } from "../shared/errors";
 
 async function readHashList(
