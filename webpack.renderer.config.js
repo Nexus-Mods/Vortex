@@ -1,43 +1,51 @@
-var webpack = require('webpack');
-var nodeExternals = require('webpack-node-externals');
-const TerserPlugin = require('terser-webpack-plugin')
+var webpack = require("webpack");
+var nodeExternals = require("webpack-node-externals");
+const TerserPlugin = require("terser-webpack-plugin");
 
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-const mode = 'production';
+const mode = "production";
 
 // transpileOnly leads to type declarations not being removed from the js output
 // which for some reason currently leads to starup errors
-const transpileOnly = ((ForkTsCheckerWebpackPlugin !== undefined)
-                    || (process.env['BUILD_QUICK_AND_DIRTY'] !== undefined))
-                    && false;
+const transpileOnly =
+  (ForkTsCheckerWebpackPlugin !== undefined ||
+    process.env["BUILD_QUICK_AND_DIRTY"] !== undefined) &&
+  false;
 
 const plugins = [
-  new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify('production') }),
+  new webpack.DefinePlugin({
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  }),
 ];
 
-if ((ForkTsCheckerWebpackPlugin !== undefined) && (process.env['BUILD_QUICK_AND_DIRTY'] === undefined)) {
+if (
+  ForkTsCheckerWebpackPlugin !== undefined &&
+  process.env["BUILD_QUICK_AND_DIRTY"] === undefined
+) {
   plugins.push(new ForkTsCheckerWebpackPlugin());
 }
 
-
+/**
+ * @type {import("webpack").Configuration}
+ */
 module.exports = {
   entry: {
-    renderer: './src/renderer.tsx',
-    splash: './src/splash.ts'
+    renderer: "./src/renderer.tsx",
+    splash: "./src/splash.ts",
   },
-  target: 'electron-renderer',
+  target: "electron-renderer",
   node: { __filename: false, __dirname: false },
   mode,
   output: {
-    libraryTarget: 'commonjs2',
-    filename: '../app/[name].js'
+    libraryTarget: "commonjs2",
+    filename: "../app/[name].js",
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        loader: 'ts-loader',
+        loader: "ts-loader",
         exclude: /node_modules/,
         options: {
           transpileOnly,
@@ -45,12 +53,12 @@ module.exports = {
             sourceMap: true,
             inlineSourceMap: false,
             inlineSources: false,
-          }
-        }
+          },
+        },
       },
-    ]
+    ],
   },
-  resolve: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'] },
+  resolve: { extensions: [".js", ".jsx", ".ts", ".tsx", ".json"] },
   plugins,
   optimization: {
     minimizer: [
@@ -64,15 +72,15 @@ module.exports = {
           mangle: false,
           sourceMap: true,
           keep_fnames: true, // required atm, name mangling breaks extensions
-        }
-      })
-    ]
+        },
+      }),
+    ],
   },
-  devtool: 'source-map',
+  devtool: "source-map",
   externals: [
     nodeExternals(),
     // Explicitly exclude local file: dependencies that must remain external
-    'fomod-installer-ipc',
-    'fomod-installer-native',
+    "fomod-installer-ipc",
+    "fomod-installer-native",
   ],
 };
