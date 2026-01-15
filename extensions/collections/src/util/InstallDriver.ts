@@ -209,12 +209,14 @@ class InstallDriver {
         const state = api.getState();
         const download = state.persistent.downloads.files[downloadId];
         if (download) {
-          const rule = this.mDependentMods.find(r =>
-            r.reference.tag === download.modInfo?.referenceTag ||
-            r.reference.logicalFileName === download.modInfo?.logicalFileName ||
-            r.reference.md5Hint === download.fileMD5);
-          if (rule) {
-            this.updateModTracking(rule, 'downloaded');
+          const lookup = util.lookupFromDownload(download);
+          const matchingRule = this.mDependentMods.find((rule) => {
+          const { patches, fileList, installerChoices, ...refWithoutExtras } =
+            rule.reference;
+            return util.testModReference(lookup, refWithoutExtras);
+          });
+          if (matchingRule) {
+            this.updateModTracking(matchingRule, 'downloaded');
           }
         }
       }
@@ -258,8 +260,56 @@ class InstallDriver {
 
     api.events.on('did-start-download', (info: { id: string, tag: string, urls: string[], fileName: string }) => {
       const rule = this.mDependentMods.find(r => r.reference.tag === info.tag || r.reference.logicalFileName === info.fileName);
-      if (rule) {
+      const isBundled = rule?.extra?.localPath != null;
+      if (rule && !isBundled) {
         this.updateModTracking(rule, 'downloading');
+      }
+    });
+
+    api.events.on('did-import-downloads', (dlIds: string[]) => {
+      // Update tracking for bundled mods that were just imported
+      const state = api.getState();
+      const downloads = state.persistent.downloads.files;
+
+      dlIds.forEach(dlId => {
+        const download = downloads[dlId];
+        if (download) {
+          const lookup = util.lookupFromDownload(download);
+          const matchingRule = this.mDependentMods.find((rule) => {
+            const { patches, fileList, installerChoices, ...refWithoutExtras } =
+              rule.reference;
+            return util.testModReference(lookup, refWithoutExtras);
+          });
+          if (matchingRule) {
+            this.updateModTracking(matchingRule, 'downloaded');
+          }
+        }
+      });
+    });
+
+    api.events.on('collection-mod-skipped', (reference: types.IModReference) => {
+      // Update tracking when a mod download is skipped (for both free and premium users)
+      const matchingRule = this.mDependentMods.find((rule) => {
+        // Match by tag (most reliable) or other identifiers
+        if (reference.tag && rule.reference.tag === reference.tag) {
+          return true;
+        }
+        if (reference.fileMD5 && rule.reference.fileMD5 === reference.fileMD5) {
+          return true;
+        }
+        if (reference.logicalFileName && rule.reference.logicalFileName === reference.logicalFileName) {
+          return true;
+        }
+        return false;
+      });
+      if (matchingRule) {
+        this.updateModTracking(matchingRule, 'skipped');
+
+        // Also set the ignored flag on the rule so it's persisted
+        // api.store.dispatch(actions.addModRule(this.mGameId, this.mCollection.id, {
+        //   ...matchingRule,
+        //   ignored: true,
+        // } as any));
       }
     });
 
@@ -466,8 +516,9 @@ class InstallDriver {
   }
 
   public installRecommended() {
+    const recommendedRules = this.mCollection.rules.filter(r => r.type === 'recommends');
     this.mApi.emitAndAwait('install-from-dependencies',
-      this.mCollection.id, this.mCollection.rules, true);
+      this.mCollection.id, recommendedRules, true);
     this.mStep = 'recommendations';
     this.triggerUpdate();
   }
@@ -956,14 +1007,23 @@ class InstallDriver {
 
     const downloadProgress = Object.values(mods).reduce((prev, mod) => {
       let size = 0;
+      const isBundled = mod.collectionRule?.extra?.localPath != null;
+
       if (mod.state === 'downloaded') {
+        // Download complete - use full file size
         this.updateModTracking(mod.collectionRule, 'downloaded');
-      }
-      if ((mod.state === 'downloading') || (mod.state === null)) {
-        this.updateModTracking(mod.collectionRule, 'downloading');
+        size += mod.attributes?.fileSize || 0;
+      } else if ((mod.state === 'downloading') || (mod.state == null)) {
+        // Download in progress - use received bytes or total size
+        if (isBundled) {
+          this.updateModTracking(mod.collectionRule, 'downloaded');
+        } else {
+          this.updateModTracking(mod.collectionRule, 'downloading');
+        }
         const download = downloads[mod.archiveId];
-        size += download?.received || 0;
+        size += download?.received || download?.size || 0;
       } else {
+        // Not started or installed
         size += mod.attributes?.fileSize || 0;
       }
       return prev + size;
