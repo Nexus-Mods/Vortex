@@ -22,7 +22,7 @@ import {
 } from "../../util/webview";
 
 import { ipcRenderer } from "../../electron-shim";
-import { omit } from "lodash";
+import * as _ from "lodash";
 import * as React from "react";
 import ReactDOM from "react-dom";
 import { clearInterval } from "timers";
@@ -289,7 +289,7 @@ export class WebviewEmbed extends React.Component<
 
   public render(): JSX.Element {
     return React.createElement("webview", {
-      ...omit(this.props, [
+      ..._.omit(this.props, [
         "onLoading",
         "onNewWindow",
         "onFullscreen",

@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import * as _ from "lodash";
 import type * as Redux from "redux";
 
 const select = (state: any, selector: string[]) =>
@@ -45,7 +45,7 @@ class ReduxWatcher<T> {
           const prevValue = select(lastState, selector);
           const currentValue = select(currentState, selector);
           // TODO: shouldn't be a comparison by identity be good enough?
-          if (!isEqual(prevValue, currentValue)) {
+          if (!_.isEqual(prevValue, currentValue)) {
             const parameters = {
               store,
               selector,

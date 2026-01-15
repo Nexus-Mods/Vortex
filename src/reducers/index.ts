@@ -25,7 +25,7 @@ import { windowReducer } from "./window";
 
 import { app } from "electron";
 import update from "immutability-helper";
-import { pick } from "lodash";
+import * as _ from "lodash";
 import * as path from "path";
 import type { Reducer, ReducersMapObject } from "redux";
 import { combineReducers } from "redux";
@@ -46,7 +46,7 @@ function safeCombineReducers(
   const redKeys = Object.keys(reducer);
   const combined = combineReducers<Partial<IState>>(reducer);
   return (state: IState, action): IState => {
-    const red = state !== undefined ? pick(state, redKeys) : undefined;
+    const red = state !== undefined ? _.pick(state, redKeys) : undefined;
     try {
       return {
         ...state,
