@@ -3057,6 +3057,7 @@ class ExtensionManager {
       "installer_fomod_shared",
       "installer_fomod_ipc",
       "installer_fomod_native",
+      "health_check",
     ];
 
     require("./extensionRequire").default(() => this.extensions);
