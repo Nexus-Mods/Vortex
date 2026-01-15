@@ -19,6 +19,7 @@ import metaLookupMatch from "../../mod_management/util/metaLookupMatch";
 import NXMUrl from "../../nexus_integration/NXMUrl";
 
 import * as React from "react";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 export interface IBaseProps {
   buttonType: ButtonType;
@@ -104,7 +105,7 @@ class InstallButton extends ComponentEx<IProps, {}> {
               })
               .catch((err) => {
                 log("warn", "failed to look up mod meta info", {
-                  message: err.message,
+                  message: getErrorMessageOrDefault(err),
                 });
               });
           });

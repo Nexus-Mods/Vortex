@@ -92,7 +92,7 @@ import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { IAccountStatus } from "./types/IValidateKeyData";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -349,7 +349,8 @@ export function requestLogin(
         api.store.dispatch(setOauthPending(url));
       },
     )
-    .catch((err) => {
+    .catch((unknownError) => {
+      const err = unknownToError(unknownError);
       err.stack = stackErr.stack;
       callback(err);
     });
@@ -1519,7 +1520,7 @@ export function checkForCollectionUpdates(
         .catch((err) => {
           const name = modName(mod, { version: true });
           const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
-          return `${nameLink}:<br/>${err.message}`;
+          return `${nameLink}:<br/>${getErrorMessageOrDefault(err)}`;
         });
     }),
   ).then((messages) => ({

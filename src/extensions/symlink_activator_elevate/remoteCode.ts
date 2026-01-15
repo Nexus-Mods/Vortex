@@ -1,3 +1,5 @@
+import { getErrorCode } from "../../shared/errors";
+
 export function remoteCode(ipcClient, req) {
   const RETRY_ERRORS = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
   process.noAsar = true;
@@ -9,7 +11,8 @@ export function remoteCode(ipcClient, req) {
 
   const doFS = (op: () => Promise<any>, tries: number = 5) => {
     return op().catch((err) => {
-      if (RETRY_ERRORS.has(err.code) && tries > 0) {
+      const code = getErrorCode(err);
+      if (RETRY_ERRORS.has(code) && tries > 0) {
         return delayed(100).then(() => doFS(op, tries - 1));
       } else {
         return Promise.reject(err);

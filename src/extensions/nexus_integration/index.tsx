@@ -152,6 +152,7 @@ import { getGame } from "../gamemode_management/util/getGame";
 import { selectors } from "vortex-api";
 import { app } from "electron";
 import Icon from "../../renderer/controls/Icon";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
@@ -1039,7 +1040,8 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
               }
             });
           })
-          .catch((err) => {
+          .catch((unknownError) => {
+            const err = unknownToError(unknownError);
             processingQueries.forEach((item) => {
               item.reject(err);
             });
@@ -1434,7 +1436,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     .catch((err) => {
       // typically just missing the api key or a downtime
       log("info", "failed to determine newest Vortex version", {
-        error: err.message,
+        error: getErrorMessageOrDefault(err),
       });
     });
 

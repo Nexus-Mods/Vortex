@@ -2145,7 +2145,7 @@ class InstallManager {
         });
       })
       .catch((err) => {
-        trackedCallback?.(err, null);
+        trackedCallback?.(unknownToError(err), null);
       });
   }
 
@@ -2652,12 +2652,13 @@ class InstallManager {
           // Note: Don't call maybeAdvancePhase here - it should only be called when phases are actually complete
         }
       })
-      .catch((err) => {
+      .catch((unknownError) => {
+        const err = unknownToError(unknownError);
         this.showDependencyError(
           api,
           sourceModId,
           "Critical error in dependency installation",
-          err,
+          unknownToError(err),
           renderModReference(dep.reference),
         );
         log("error", "Critical error in dependency installation", {
