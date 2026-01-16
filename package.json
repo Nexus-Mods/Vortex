@@ -70,6 +70,7 @@
     "docs": "yarn api-extractor run --local",
     "lint": "yarn eslint .",
     "lint:quiet": "yarn eslint . --quiet",
+    "detect-games": "node scripts/detect-games.js",
     "format": "yarn prettier src --write",
     "format:check": "yarn prettier src --check"
   },
@@ -243,6 +244,8 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
+    "fast-xml-parser": "^4.5.0",
+    "neverthrow": "^8.1.1",
     "@mdi/js": "6.6.96",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",

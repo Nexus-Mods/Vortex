@@ -11,6 +11,33 @@ export type { IModType };
 export type DirectoryCleaningMode = "tag" | "all";
 
 /**
+ * Store IDs for GameFinder integration.
+ * Game extensions can specify these to opt-in to automatic game detection
+ * via the GameFinder system.
+ */
+export interface IGameFinderIds {
+  /**
+   * Steam App ID (e.g., '1086940' for Baldur's Gate 3)
+   */
+  steam?: string;
+
+  /**
+   * GOG Game ID (e.g., '1456460669' for Baldur's Gate 3)
+   */
+  gog?: string;
+
+  /**
+   * Epic Games Store Catalog Item ID
+   */
+  epic?: string;
+
+  /**
+   * Xbox Game Pass Product ID (Identity Name from appxmanifest.xml)
+   */
+  xbox?: string;
+}
+
+/**
  * interface for game extensions
  *
  * @interface IGame
@@ -34,6 +61,14 @@ export interface IGame extends ITool {
    * use instead of queryPath for simpler specification of search arguments
    */
   queryArgs?: { [storeId: string]: IStoreQuery[] };
+
+  /**
+   * Store IDs for GameFinder integration.
+   * If provided, GameFinder will attempt to detect the game installation
+   * by looking up these IDs in the respective store's game library.
+   * This can be used instead of or in addition to queryPath/queryArgs.
+   */
+  gameFinder?: IGameFinderIds;
 
   /**
    * returns all directories where mods for this game

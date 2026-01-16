@@ -1219,18 +1219,18 @@ function getApplication(): IApplication;
 const getCollectionActiveSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionActiveSessionMod: (state: any, ruleId: string) => ICollectionModInstallInfo | undefined;
+const getCollectionActiveSessionMod: (state: IState, ruleId: string) => ICollectionModInstallInfo | undefined;
 
 // @public
-const getCollectionActiveSessionMods: (state: any) => {
+const getCollectionActiveSessionMods: (state: IState) => {
     [ruleId: string]: ICollectionModInstallInfo;
 };
 
 // @public
-const getCollectionCompletedMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionCompletedMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionCurrentPhase: (state: any) => number;
+const getCollectionCurrentPhase: (state: IState) => number;
 
 // @public
 const getCollectionInstallProgress: ((state: IState) => {
@@ -1260,13 +1260,13 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionLastActiveSessionId: (state: any) => string | undefined;
+const getCollectionLastActiveSessionId: (state: IState) => string | undefined;
 
 // @public
-const getCollectionLastCompletedSession: (state: any) => ICollectionInstallSession | undefined;
+const getCollectionLastCompletedSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionModByReference: (state: any, searchParams: {
+const getCollectionModByReference: (state: IState, searchParams: {
     tag?: string;
     modId?: string;
     fileMD5?: string;
@@ -1275,25 +1275,25 @@ const getCollectionModByReference: (state: any, searchParams: {
 }) => ICollectionModInstallInfo | undefined;
 
 // @public
-const getCollectionModsByPhase: (state: any) => Map<number, ICollectionModInstallInfo[]>;
+const getCollectionModsByPhase: (state: IState) => Map<number, ICollectionModInstallInfo[]>;
 
 // @public
-const getCollectionModsByStatus: (state: any, status: CollectionModStatus) => ICollectionModInstallInfo[];
+const getCollectionModsByStatus: (state: IState, status: CollectionModStatus) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionModsForPhase: (state: any, phase: number) => ICollectionModInstallInfo[];
+const getCollectionModsForPhase: (state: IState, phase: number) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionModsInProgress: (state: any) => ICollectionModInstallInfo[];
+const getCollectionModsInProgress: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionOptionalMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionOptionalMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionPendingMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionPendingMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionPhaseProgress: ((state: any) => {
+const getCollectionPhaseProgress: ((state: IState) => {
     phase: number;
     total: number;
     required: number;
@@ -1324,23 +1324,44 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionRequiredMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionRequiredMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionSessionById: (state: any, sessionId: string) => ICollectionInstallSession | undefined;
+const getCollectionSessionById: (state: IState, sessionId: string) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionSessionHistory: (state: any) => {
+const getCollectionSessionHistory: (state: IState) => {
     [sessionId: string]: ICollectionInstallSession;
 };
 
+// @public (undocumented)
+const getCollectionSessionMods: (state: IState, sessionId: string) => {
+    [ruleId: string]: ICollectionModInstallInfo;
+} | undefined;
+
 // @public
-const getCollectionStatusBreakdown: ((state: any) => {
-    [status: string]: number;
+const getCollectionStatusBreakdown: ((state: IState, sessionId: string) => {
+    required: {
+        [status: string]: number;
+    };
+    optional: {
+        [status: string]: number;
+    };
+    total: {
+        [status: string]: number;
+    };
 }) & OutputSelectorFields<(args_0: {
 [ruleId: string]: ICollectionModInstallInfo;
 }) => {
+required: {
 [status: string]: number;
+};
+optional: {
+[status: string]: number;
+};
+total: {
+[status: string]: number;
+};
 }, {
 clearCache: () => void;
 }> & {
@@ -1348,7 +1369,7 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionTotalPhases: (state: any) => number;
+const getCollectionTotalPhases: (state: IState) => number;
 
 // @public (undocumented)
 function getCurrentActivator(state: IState, gameId: string, allowDefault: boolean): IDeploymentMethod;
@@ -1440,7 +1461,7 @@ function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null;
 function getVortexPath(id: AppPath): string;
 
 // @public
-const hasCollectionActiveSession: (state: any) => boolean;
+const hasCollectionActiveSession: (state: IState) => boolean;
 
 // @public
 interface IActionDefinition {
@@ -2317,6 +2338,7 @@ interface IGame extends ITool {
     directoryCleaning?: DirectoryCleaningMode;
     extensionPath?: string;
     final?: boolean;
+    gameFinder?: IGameFinderIds;
     getGameVersion?: (gamePath: string, exePath: string) => PromiseLike<string>;
     getInstalledVersion?: (discovery: IDiscoveryResult) => Promise_2<string>;
     getModPaths?: (gamePath: string) => {
@@ -2348,6 +2370,14 @@ interface IGameDetail {
     type?: string;
     // (undocumented)
     value: any;
+}
+
+// @public
+interface IGameFinderIds {
+    epic?: string;
+    gog?: string;
+    steam?: string;
+    xbox?: string;
 }
 
 // @public (undocumented)
@@ -3259,7 +3289,7 @@ interface ISaveOptions {
 function isChildPath(child: string, parent: string, normalize?: Normalize): boolean;
 
 // @public
-const isCollectionInstalling: (state: any, collectionId: string) => boolean;
+const isCollectionInstalling: (state: IState, collectionId: string) => boolean;
 
 // @public (undocumented)
 const isCollectionModPresent: ((state: IState, collectionSlug: string) => boolean) & OutputSelectorFields<(args_0: {
@@ -3271,7 +3301,7 @@ clearCache: () => void;
 };
 
 // @public
-const isCollectionPhaseComplete: (state: any, phase: number) => boolean;
+const isCollectionPhaseComplete: (state: IState, phase: number) => boolean;
 
 // @public (undocumented)
 function isDirectoryAsync(dirPath: string): PromiseBB<boolean>;
@@ -4693,6 +4723,7 @@ declare namespace selectors {
         getCollectionLastCompletedSession,
         hasCollectionActiveSession,
         isCollectionInstalling,
+        getCollectionSessionMods,
         getCollectionActiveSessionMods,
         getCollectionActiveSessionMod,
         getCollectionModByReference,
@@ -5880,6 +5911,7 @@ declare namespace types {
         IExtensionContext,
         IModType,
         DirectoryCleaningMode,
+        IGameFinderIds,
         IGame,
         IModifiers,
         NotificationDismiss,

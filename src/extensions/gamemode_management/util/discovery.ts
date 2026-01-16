@@ -1,6 +1,7 @@
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
+import type { IGame, IGameFinderIds } from "../../../types/IGame";
+import { getGameFinderCache } from "../../gamefinder";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
@@ -311,6 +312,28 @@ function handleDiscoveredGame(
 }
 
 /**
+ * Try to find a game using GameFinder by its store IDs
+ */
+function queryByGameFinder(
+  gameFinderIds: IGameFinderIds,
+): Bluebird<{ gamePath: string; gameStoreId: string } | undefined> {
+  const cache = getGameFinderCache();
+  if (cache === null || !cache.isInitialized()) {
+    return Bluebird.resolve(undefined);
+  }
+
+  const result = cache.findByIds(gameFinderIds);
+  if (result === undefined) {
+    return Bluebird.resolve(undefined);
+  }
+
+  return Bluebird.resolve({
+    gamePath: result.path,
+    gameStoreId: result.store,
+  });
+}
+
+/**
  * run the "quick" discovery using functions provided by the game extension
  *
  * @export
@@ -339,7 +362,52 @@ export function quickDiscovery(
           log("debug", "discovering game", game.id);
           let prom: Bluebird<string>;
 
-          if (game.queryArgs !== undefined) {
+          // Try GameFinder first if the game has store IDs configured
+          if (game.gameFinder !== undefined) {
+            prom = queryByGameFinder(game.gameFinder).then((result) => {
+              if (result !== undefined) {
+                return handleDiscoveredGame(
+                  game,
+                  result.gamePath,
+                  result.gameStoreId,
+                  discoveredGames,
+                  onDiscoveredGame,
+                  onDiscoveredTool,
+                );
+              }
+              // GameFinder didn't find it, fall back to queryArgs or queryPath
+              if (game.queryArgs !== undefined) {
+                return queryByArgs(discoveredGames, game).then((argsResult) => {
+                  if (argsResult !== undefined) {
+                    return handleDiscoveredGame(
+                      game,
+                      argsResult.gamePath,
+                      argsResult.gameStoreId,
+                      discoveredGames,
+                      onDiscoveredGame,
+                      onDiscoveredTool,
+                    );
+                  }
+                  return Bluebird.resolve(undefined);
+                });
+              } else if (game.queryPath !== undefined) {
+                return queryByCB(game).then((cbResult) => {
+                  if (cbResult === undefined) {
+                    return Bluebird.resolve(undefined);
+                  }
+                  return handleDiscoveredGame(
+                    game,
+                    cbResult.gamePath,
+                    cbResult.gameStoreId,
+                    discoveredGames,
+                    onDiscoveredGame,
+                    onDiscoveredTool,
+                  );
+                });
+              }
+              return Bluebird.resolve(undefined);
+            });
+          } else if (game.queryArgs !== undefined) {
             prom = queryByArgs(discoveredGames, game).then((result) => {
               if (result !== undefined) {
                 return handleDiscoveredGame(
