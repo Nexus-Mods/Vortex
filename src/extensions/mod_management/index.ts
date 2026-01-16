@@ -1267,7 +1267,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
           const fullPath = path.join(instPath, mod.installationPath);
           log(
             "warn",
-            "mod was not installed completelely and will be removed",
+            "mod was not installed completely and will be removed",
             { mod, fullPath },
           );
           // this needs to be synchronous because once is synchronous and we have to complete this

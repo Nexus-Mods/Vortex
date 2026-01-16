@@ -284,7 +284,7 @@ function queryMigration(
       .showMessageBox(window, {
         type: "info",
         buttons,
-        title: "Migration neccessary",
+        title: "Migration necessary",
         message: migration.description,
         noLink: true,
       })

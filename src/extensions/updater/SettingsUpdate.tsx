@@ -204,7 +204,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           "question",
           "Switching to Beta update channel",
           {
-            text: `Development versions of Vortex can be unstable and cause irrepairable damage to your modding environment. 
+            text: `Development versions of Vortex can be unstable and cause irreparable damage to your modding environment. 
 
 We recommend using the Beta channel only if you are comfortable with the risks and are willing to report any issues you encounter. We don't recommend downgrading back from beta to stable.
 
