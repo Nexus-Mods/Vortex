@@ -32,7 +32,7 @@ export const INSTALLING_NOTIFICATION_ID = "installing-collection-";
 
 // limits
 export const MIN_COLLECTION_NAME_LENGTH = 3;
-export const MAX_COLLECTION_NAME_LENGTH = 36;
+export const MAX_COLLECTION_NAME_LENGTH = 64;
 
 export const INI_TWEAKS_PATH = "Ini Tweaks";
 
