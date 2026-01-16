@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=../game-definition.schema.json
+
+# Skyrim Special Edition - YAML Game Definition
+# This is a sample/proof-of-concept showing how game definitions can be
+# expressed in YAML format. Note: Uses different ID to avoid conflict with
+# the existing JavaScript game extension.
+
+id: skyrimse-yaml
+name: "Skyrim Special Edition (YAML Demo)"
+shortName: "SSE YAML"
+logo: gameart.jpg
+executable: SkyrimSE.exe
+
+# Store IDs - defined once, auto-populated to queryArgs, details, environment
+stores:
+  steam: "489830"
+  gog: "1711230643"
+  epic: "ac82db5035584c7f8a2c548d98c86b2c"
+  xbox: "BethesdaSoftworks.SkyrimSE-PC"
+
+# Mod installation path relative to game root
+modPath: Data
+
+# Merge mods into single directory (default true for most games)
+mergeMods: true
+
+# Files required to identify this game
+requiredFiles:
+  - SkyrimSE.exe
+
+# Registry path for Windows game discovery
+registryPath: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\Skyrim Special Edition:Installed Path"
+
+# Nexus Mods integration
+nexusPageId: skyrimspecialedition
+
+# Files used for hash-based version detection
+hashFiles:
+  - appxmanifest.xml
+  - Data/Skyrim.esm
+  - Data/Update.esm
+
+# Supported modding tools
+supportedTools:
+  - id: SSEEdit
+    name: SSEEdit
+    logo: tes5edit.png
+    executable: SSEEdit.exe
+    requiredFiles:
+      - SSEEdit.exe
+
+  - id: WryeBash
+    name: Wrye Bash
+    logo: wrye.png
+    executable: Wrye Bash.exe
+    requiredFiles:
+      - Wrye Bash.exe
+
+  - id: FNIS
+    name: Fores New Idles in Skyrim
+    shortName: FNIS
+    logo: fnis.png
+    executable: GenerateFNISForUsers.exe
+    requiredFiles:
+      - GenerateFNISForUsers.exe
+    relative: true
+
+  - id: skse64
+    name: Skyrim Script Extender 64
+    shortName: SKSE64
+    logo: SKSE.png
+    executable: skse64_loader.exe
+    requiredFiles:
+      - skse64_loader.exe
+    relative: true
+    exclusive: true
+    defaultPrimary: true
+
+  - id: bodyslide
+    name: BodySlide
+    executable: Data/CalienteTools/BodySlide/BodySlide x64.exe
+    requiredFiles:
+      - Data/CalienteTools/BodySlide/BodySlide x64.exe
+    relative: true
+    logo: auto
+
+  - id: creation-kit-64
+    name: Creation Kit
+    logo: CK.png
+    executable: CreationKit.exe
+    requiredFiles:
+      - CreationKit.exe
+    relative: true

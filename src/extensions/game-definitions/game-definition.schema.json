@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vortex.nexusmods.com/schemas/game-definition.json",
+  "title": "Vortex Game Definition",
+  "description": "Schema for defining games in YAML format for Vortex mod manager",
+  "type": "object",
+  "required": ["id", "name", "logo", "executable", "modPath"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique game identifier (lowercase, no spaces)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the game",
+      "minLength": 1
+    },
+    "shortName": {
+      "type": "string",
+      "description": "Abbreviated name for compact UI (max ~8 characters recommended)"
+    },
+    "logo": {
+      "type": "string",
+      "description": "Logo filename (relative to extension assets)"
+    },
+    "executable": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      ],
+      "description": "Main executable filename(s) relative to game root"
+    },
+    "stores": {
+      "type": "object",
+      "description": "Store identifiers for automatic game discovery",
+      "properties": {
+        "steam": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "Steam App ID"
+        },
+        "gog": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "GOG Game ID"
+        },
+        "epic": {
+          "type": "string",
+          "description": "Epic Games Store Catalog Item ID"
+        },
+        "xbox": {
+          "type": "string",
+          "description": "Xbox Game Pass Product ID"
+        }
+      },
+      "additionalProperties": false
+    },
+    "modPath": {
+      "type": "string",
+      "description": "Path to mods directory relative to game root, '.' for game root, or 'queryModPath' for custom logic"
+    },
+    "mergeMods": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to merge mods in the destination directory"
+    },
+    "requiredFiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Files that must exist to identify this game"
+    },
+    "environment": {
+      "type": "array",
+      "description": "Environment variables to set when launching the game",
+      "items": {
+        "type": "object",
+        "required": ["var", "value"],
+        "properties": {
+          "var": {
+            "type": "string",
+            "description": "Environment variable name"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value (supports $steam, $gog, $epic, $xbox interpolation)"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "customLogic": {
+      "type": "string",
+      "description": "Name of companion TypeScript/JavaScript file for custom functions"
+    },
+    "supportedTools": {
+      "type": "array",
+      "description": "Additional tools that support this game",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "executable"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique tool identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the tool"
+          },
+          "shortName": {
+            "type": "string",
+            "description": "Abbreviated name for compact UI"
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo filename (relative to extension assets)"
+          },
+          "executable": {
+            "type": "string",
+            "description": "Tool executable path relative to game root"
+          },
+          "requiredFiles": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files required to detect the tool"
+          },
+          "relative": {
+            "type": "boolean",
+            "description": "Whether tool is installed relative to game directory"
+          },
+          "exclusive": {
+            "type": "boolean",
+            "description": "Whether running this tool blocks other applications"
+          },
+          "defaultPrimary": {
+            "type": "boolean",
+            "description": "Use as primary tool if installed"
+          },
+          "detach": {
+            "type": "boolean",
+            "description": "Launch tool detached from Vortex process"
+          },
+          "shell": {
+            "type": "boolean",
+            "description": "Run tool inside a shell"
+          },
+          "parameters": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Command line parameters"
+          },
+          "onStart": {
+            "type": "string",
+            "enum": ["hide", "hide_recover", "close"],
+            "description": "What to do with Vortex when starting the tool"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "nexusPageId": {
+      "type": "string",
+      "description": "Nexus Mods page ID for this game"
+    },
+    "hashFiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Files used for hash-based version detection"
+    },
+    "registryPath": {
+      "type": "string",
+      "description": "Registry path for game discovery (Windows only)"
+    }
+  },
+  "additionalProperties": false
+}

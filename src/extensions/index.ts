@@ -14,6 +14,7 @@ import {} from "./extension_manager";
 import {} from "./file_based_loadorder";
 import {} from "./file_preview";
 import {} from "./firststeps_dashlet";
+import {} from "./game-definitions";
 import {} from "./gamefinder";
 import {} from "./gamemode_management";
 import {} from "./gameversion_management";
