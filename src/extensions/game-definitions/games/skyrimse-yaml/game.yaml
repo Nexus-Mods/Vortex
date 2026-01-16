@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../game-definition.schema.json
+# yaml-language-server: $schema=../../game-definition.schema.json
 
 # Skyrim Special Edition - YAML Game Definition
 # This is a sample/proof-of-concept showing how game definitions can be
@@ -24,10 +24,6 @@ modPath: Data
 # Merge mods into single directory (default true for most games)
 mergeMods: true
 
-# Files required to identify this game
-requiredFiles:
-  - SkyrimSE.exe
-
 # Registry path for Windows game discovery
 registryPath: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\Skyrim Special Edition:Installed Path"
 
@@ -41,28 +37,23 @@ hashFiles:
   - Data/Update.esm
 
 # Supported modding tools
+# Note: requiredFiles defaults to [executable] if not specified
 supportedTools:
   - id: SSEEdit
     name: SSEEdit
     logo: tes5edit.png
     executable: SSEEdit.exe
-    requiredFiles:
-      - SSEEdit.exe
 
   - id: WryeBash
     name: Wrye Bash
     logo: wrye.png
     executable: Wrye Bash.exe
-    requiredFiles:
-      - Wrye Bash.exe
 
   - id: FNIS
     name: Fores New Idles in Skyrim
     shortName: FNIS
     logo: fnis.png
     executable: GenerateFNISForUsers.exe
-    requiredFiles:
-      - GenerateFNISForUsers.exe
     relative: true
 
   - id: skse64
@@ -70,8 +61,6 @@ supportedTools:
     shortName: SKSE64
     logo: SKSE.png
     executable: skse64_loader.exe
-    requiredFiles:
-      - skse64_loader.exe
     relative: true
     exclusive: true
     defaultPrimary: true
@@ -79,8 +68,6 @@ supportedTools:
   - id: bodyslide
     name: BodySlide
     executable: Data/CalienteTools/BodySlide/BodySlide x64.exe
-    requiredFiles:
-      - Data/CalienteTools/BodySlide/BodySlide x64.exe
     relative: true
     logo: auto
 
@@ -88,6 +75,4 @@ supportedTools:
     name: Creation Kit
     logo: CK.png
     executable: CreationKit.exe
-    requiredFiles:
-      - CreationKit.exe
     relative: true

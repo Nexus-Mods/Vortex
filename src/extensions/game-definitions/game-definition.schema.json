@@ -72,7 +72,7 @@
     "requiredFiles": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Files that must exist to identify this game"
+      "description": "Files that must exist to identify this game. Defaults to [executable] if not specified"
     },
     "environment": {
       "type": "array",
@@ -127,7 +127,7 @@
           "requiredFiles": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Files required to detect the tool"
+            "description": "Files required to detect the tool. Defaults to [executable] if not specified"
           },
           "relative": {
             "type": "boolean",
