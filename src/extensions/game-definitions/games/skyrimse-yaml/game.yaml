@@ -59,7 +59,7 @@ supportedTools:
   - id: skse64
     name: Skyrim Script Extender 64
     shortName: SKSE64
-    logo: SKSE.png
+    logo: skse.png
     executable: skse64_loader.exe
     relative: true
     exclusive: true
@@ -73,6 +73,6 @@ supportedTools:
 
   - id: creation-kit-64
     name: Creation Kit
-    logo: CK.png
+    logo: ck.png
     executable: CreationKit.exe
     relative: true
