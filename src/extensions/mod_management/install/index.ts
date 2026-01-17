@@ -56,3 +56,12 @@ export type {
   PasswordQueryCallback,
 } from "./types/IArchiveExtractor";
 export { DEFAULT_EXTRACTOR_CONFIG } from "./types/IArchiveExtractor";
+
+// Re-export InstructionProcessor
+export {
+  InstructionProcessor,
+  validateInstructions,
+  transformInstructions,
+} from "./InstructionProcessor";
+export type { IIniEditConfig } from "./InstructionProcessor";
+export { DEFAULT_INI_CONFIG } from "./InstructionProcessor";

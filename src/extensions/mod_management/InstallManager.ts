@@ -197,6 +197,7 @@ import {
   InstallationTracker,
   PhaseManager,
   ArchiveExtractor,
+  InstructionProcessor,
   FILETYPES_AVOID,
 } from "./install";
 import type { IActiveInstallation, IDeploymentDetails } from "./install";
@@ -3759,6 +3760,7 @@ class InstallManager {
     });
   }
 
+  // Also available as InstructionProcessor.validateInstructions() for standalone use
   private validateInstructions(
     instructions: IInstruction[],
   ): IInvalidInstruction[] {
@@ -3796,6 +3798,7 @@ class InstallManager {
     return [].concat(invalidDestinationErrors);
   }
 
+  // Also available as InstructionProcessor.transformInstructions() for standalone use
   private transformInstructions(input: IInstruction[]): InstructionGroups {
     return input.reduce((prev, value) => {
       if (truthy(value) && prev[value.type] !== undefined) {
