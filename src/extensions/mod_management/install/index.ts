@@ -65,3 +65,27 @@ export {
 } from "./InstructionProcessor";
 export type { IIniEditConfig } from "./InstructionProcessor";
 export { DEFAULT_INI_CONFIG } from "./InstructionProcessor";
+
+// Re-export DependencyResolver utilities
+export {
+  isDependencyError,
+  isDependency,
+  splitDependencies,
+  filterProcessingDependencies,
+  groupDependenciesByPhase,
+  getPhases,
+  countDependencies,
+  isPhaseComplete,
+  getReadyToInstall,
+  getNeedingDownload,
+  createProgressTracker,
+  summarizeErrors,
+  logDependencyResults,
+} from "./DependencyResolver";
+export type {
+  IDependencyError,
+  DependencyResult,
+  IDependencySplit,
+  DependencyProgressCallback,
+  IDependencyResolveOptions,
+} from "./DependencyResolver";

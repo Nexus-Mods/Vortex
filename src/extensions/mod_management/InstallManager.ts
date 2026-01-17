@@ -199,7 +199,11 @@ import {
   ArchiveExtractor,
   InstructionProcessor,
   FILETYPES_AVOID,
+  splitDependencies,
+  isDependencyError,
+  logDependencyResults,
 } from "./install";
+import type { IDependencySplit } from "./install";
 import type { IActiveInstallation, IDeploymentDetails } from "./install";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
@@ -6431,12 +6435,6 @@ class InstallManager {
       return Bluebird.resolve();
     }
 
-    interface IDependencySplit {
-      success: IDependency[];
-      existing: IDependency[];
-      error: IDependencyError[];
-    }
-
     // get updated mod state
     const modState =
       profile !== undefined
@@ -6445,36 +6443,26 @@ class InstallManager {
 
     const mods = api.getState().persistent.mods?.[gameId] ?? {};
 
-    const { success, existing, error } = dependencies.reduce(
-      (prev: IDependencySplit, dep: Dependency) => {
-        if (dep["error"] !== undefined) {
-          prev.error.push(dep as IDependencyError);
-        } else {
-          const { mod, reference } = dep as IDependency;
-          const modReference: IModReference = {
-            ...(dep as IDependency),
-            ...reference,
-          };
-          if (
-            mod === undefined ||
-            !(modState[mod.id]?.enabled ?? false) ||
-            (!!mods[mod.id] &&
-              testModReference(mods[mod.id], modReference) !== true)
-          ) {
-            prev.success.push(dep as IDependency);
-          } else {
-            prev.existing.push(dep as IDependency);
-          }
-        }
-        return prev;
-      },
-      { success: [], existing: [], error: [] },
+    // Split dependencies using extracted utility
+    const isModEnabled = (modId: string) => modState[modId]?.enabled ?? false;
+    const testModMatch = (mod: IMod, ref: IModReference) => {
+      // If mod doesn't exist in state, consider it a match (won't trigger re-install)
+      if (!mods[mod.id]) {
+        return true;
+      }
+      return testModReference(mods[mod.id], ref);
+    };
+
+    const { success, existing, error } = splitDependencies(
+      dependencies,
+      isModEnabled,
+      testModMatch,
     );
 
-    log("debug", "determined unfulfilled dependencies", {
-      count: success.length,
-      errors: error.length,
-    });
+    logDependencyResults(
+      { success, existing, error },
+      "installDependenciesImpl",
+    );
 
     if (silent && error.length === 0) {
       return this.doInstallDependencies(
@@ -6915,29 +6903,20 @@ class InstallManager {
           return Bluebird.resolve();
         }
 
-        interface IDependencySplit {
-          success: IDependency[];
-          existing: IDependency[];
-          error: IDependencyError[];
-        }
-        const { success, existing, error } = dependencies.reduce(
-          (prev: IDependencySplit, dep: Dependency) => {
-            if (dep["error"] !== undefined) {
-              prev.error.push(dep as IDependencyError);
-            } else {
-              const { mod } = dep as IDependency;
-              if (
-                mod === undefined ||
-                !getSafe(profile?.modState, [mod.id, "enabled"], false)
-              ) {
-                prev.success.push(dep as IDependency);
-              } else {
-                prev.existing.push(dep as IDependency);
-              }
-            }
-            return prev;
-          },
-          { success: [], existing: [], error: [] },
+        // Split dependencies using extracted utility (no version matching for recommendations)
+        const isModEnabled = (modId: string) =>
+          getSafe(profile?.modState, [modId, "enabled"], false);
+        const alwaysMatch = () => true; // Skip version matching for recommendations
+
+        const { success, existing, error } = splitDependencies(
+          dependencies,
+          isModEnabled,
+          alwaysMatch,
+        );
+
+        logDependencyResults(
+          { success, existing, error },
+          "installRecommendationsImpl",
         );
 
         // all recommendations already installed

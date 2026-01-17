@@ -25,6 +25,8 @@ export interface IDependency {
 
 export interface IDependencyError {
   error: string;
+  reference?: any;
+  rule?: import("./IMod").IModRule;
 }
 
 export type Dependency = IDependency | IDependencyError;
