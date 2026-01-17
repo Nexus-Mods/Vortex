@@ -12,6 +12,8 @@ export interface IInstallConfig {
     maxSimultaneousInstalls: number;
     /** Maximum number of concurrent dependency installations. Default: 10 */
     maxDependencyInstalls: number;
+    /** Maximum number of concurrent dependency downloads. Default: 10 */
+    maxDependencyDownloads: number;
     /** Maximum retry attempts for failed dependency installs. Default: 3 */
     maxRetries: number;
   };
@@ -27,6 +29,10 @@ export interface IInstallConfig {
     /** Delay for concurrency limiter when no slots available. Default: 500 */
     concurrencyWaitMs: number;
   };
+  cleanup: {
+    /** Maximum age in minutes for stuck installation cleanup. Default: 10 */
+    stuckInstallMaxAgeMinutes: number;
+  };
 }
 
 /**
@@ -36,6 +42,7 @@ export const DEFAULT_INSTALL_CONFIG: IInstallConfig = {
   concurrency: {
     maxSimultaneousInstalls: 5,
     maxDependencyInstalls: 10,
+    maxDependencyDownloads: 10,
     maxRetries: 3,
   },
   timing: {
@@ -44,6 +51,9 @@ export const DEFAULT_INSTALL_CONFIG: IInstallConfig = {
     pollIntervalMs: 500,
     concurrencyRecheckMs: 100,
     concurrencyWaitMs: 500,
+  },
+  cleanup: {
+    stuckInstallMaxAgeMinutes: 10,
   },
 };
 

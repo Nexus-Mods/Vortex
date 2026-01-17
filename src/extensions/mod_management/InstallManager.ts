@@ -199,8 +199,9 @@ import {
   isDependencyError,
   logDependencyResults,
   InstallOrchestrator,
+  DEFAULT_INSTALL_CONFIG,
 } from "./install";
-import type { IDependencySplit } from "./install";
+import type { IDependencySplit, IInstallConfig } from "./install";
 import type { IActiveInstallation, IDeploymentDetails } from "./install";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
@@ -474,7 +475,9 @@ function validateVariantName(
  * @class InstallManager
  */
 class InstallManager {
-  private static readonly MAX_SIMULTANEOUS_INSTALLS = 5;
+  // Centralized configuration - eliminates magic numbers
+  private mConfig: IInstallConfig = DEFAULT_INSTALL_CONFIG;
+
   private mApi: IExtensionApi;
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
@@ -482,12 +485,9 @@ class InstallManager {
   private mDependencyDownloadsLimit: DynamicDownloadConcurrencyLimiter;
 
   private mNotificationAggregator: NotificationAggregator;
-  private mNotificationAggregationTimeoutMS: number = 5000;
 
   // This limiter drives the DownloadManager to queue up new downloads.
-  private mDependencyInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
-    10,
-  );
+  private mDependencyInstallsLimit: ConcurrencyLimiter;
 
   // Installation orchestrator - coordinates all extracted components
   // Owns: InstallationTracker, PhaseManager, ArchiveExtractor, InstructionProcessor
@@ -500,18 +500,23 @@ class InstallManager {
 
   // Tracks retry counts for failed dependency installations
   private mDependencyRetryCount: Map<string, number> = new Map();
-  private static readonly MAX_DEPENDENCY_RETRIES = 3;
 
   // Main installation concurrency limiter - replaces sequential mQueue
-  private mMainInstallsLimit: ConcurrencyLimiter = new ConcurrencyLimiter(
-    InstallManager.MAX_SIMULTANEOUS_INSTALLS,
-  );
+  private mMainInstallsLimit: ConcurrencyLimiter;
 
   constructor(api: IExtensionApi, installPath: (gameId: string) => string) {
     this.mApi = api;
     this.mGetInstallPath = installPath;
     this.mDependencyDownloadsLimit = new DynamicDownloadConcurrencyLimiter(api);
     this.mNotificationAggregator = new NotificationAggregator(api);
+
+    // Initialize concurrency limiters with config values
+    this.mDependencyInstallsLimit = new ConcurrencyLimiter(
+      this.mConfig.concurrency.maxDependencyInstalls,
+    );
+    this.mMainInstallsLimit = new ConcurrencyLimiter(
+      this.mConfig.concurrency.maxSimultaneousInstalls,
+    );
 
     api.onAsync(
       "install-from-dependencies",
@@ -882,7 +887,8 @@ class InstallManager {
    */
   public forceCleanupStuckInstalls(
     api: IExtensionApi,
-    maxAgeMinutes: number = 10,
+    maxAgeMinutes: number = DEFAULT_INSTALL_CONFIG.cleanup
+      .stuckInstallMaxAgeMinutes,
   ): number {
     return this.mTracker.forceCleanupStuckInstalls(api, maxAgeMinutes);
   }
@@ -2042,7 +2048,7 @@ class InstallManager {
     const aggregationId = `install-dependencies-${modId}`;
     this.mNotificationAggregator.startAggregation(
       aggregationId,
-      this.mNotificationAggregationTimeoutMS,
+      this.mConfig.timing.notificationAggregationMs,
     );
 
     return withActivityTracking(
@@ -2480,7 +2486,7 @@ class InstallManager {
             unknownError instanceof UserCanceled ||
             unknownError instanceof ProcessCanceled;
           const hasRetriesLeft =
-            currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
+            currentRetryCount < this.mConfig.concurrency.maxRetries;
           if (!isCanceled && hasRetriesLeft) {
             this.mTracker.setPending(installKey, dep); // Re-queue for potential retry
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
@@ -2552,7 +2558,7 @@ class InstallManager {
     api: IExtensionApi,
     sourceModId: string,
   ): Bluebird<void> {
-    const POLL_MS = 500;
+    const pollMs = this.mConfig.timing.pollIntervalMs;
 
     return new Bluebird<void>((resolve) => {
       const poll = () => {
@@ -2654,7 +2660,7 @@ class InstallManager {
               this.startPendingForPhase(sourceModId, allowedPhase);
             }
           }
-          setTimeout(poll, POLL_MS);
+          setTimeout(poll, pollMs);
         }
       };
 
@@ -2669,7 +2675,7 @@ class InstallManager {
       phase?: number; // Specific phase to poll (for deploy)
     },
   ): Bluebird<void> {
-    const POLL_MS = 500;
+    const pollMs = this.mConfig.timing.pollIntervalMs;
 
     let hasDeployed = false;
     return new Bluebird<void>((resolve) => {
@@ -2716,7 +2722,7 @@ class InstallManager {
               this.mPhaseManager.markPhaseDeployed(sourceModId, checkPhase);
               // Start any installations that were queued during deployment
               hasDeployed = true;
-              setTimeout(poll, POLL_MS);
+              setTimeout(poll, pollMs);
               resolve();
             })
             .catch((err) => {
@@ -2752,7 +2758,7 @@ class InstallManager {
               checkPhase,
             );
             // Continue polling after re-queue
-            setTimeout(poll, POLL_MS);
+            setTimeout(poll, pollMs);
           } else {
             if (
               this.mTracker.getActiveCount() === 0 &&
@@ -2761,7 +2767,7 @@ class InstallManager {
               // Start any pending installations if none are active
               this.startPendingForPhase(sourceModId, checkPhase);
             }
-            setTimeout(poll, POLL_MS);
+            setTimeout(poll, pollMs);
           }
         }
       };
@@ -3362,8 +3368,8 @@ class InstallManager {
     tempPath: string,
     progress: (files: string[], percent: number) => void,
     queryPassword: () => Bluebird<string>,
-    maxRetries: number = 3,
-    retryDelayMs: number = 1000,
+    maxRetries: number = DEFAULT_INSTALL_CONFIG.concurrency.maxRetries,
+    retryDelayMs: number = DEFAULT_INSTALL_CONFIG.timing.retryDelayMs,
   ): Bluebird<{ code: number; errors: string[] }> {
     const attemptExtract = (
       retriesLeft: number,
