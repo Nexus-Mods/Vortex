@@ -28,8 +28,10 @@
  * 5. `startPendingForPhase(sourceModId, phase)` - Starts queued installations for a phase
  *    - Called when phase becomes allowed or after deployment completes
  *
- * ## Phase State Structure (mInstallPhaseState)
+ * ## Phase State (PhaseManager)
  *
+ * Phase state is now managed by the PhaseManager class (./install/PhaseManager.ts).
+ * Key state includes:
  * - `allowedPhase` - Current phase that can install
  * - `downloadsFinished` - Phases with completed downloads
  * - `pendingByPhase` - Queued installs per phase
@@ -183,6 +185,21 @@ import {
   VORTEX_OVERRIDE_INSTRUCTIONS_FILENAME,
 } from "./constants";
 import InstallContext from "./InstallContext";
+import {
+  InstructionGroups,
+  findDownloadByReferenceTag,
+  getReadyDownloadId,
+  getModsByPhase,
+  filterDependencyRules,
+  isBrowserAssistantError,
+  isFileInUse,
+  isCritical,
+  InstallationTracker,
+  PhaseManager,
+  ArchiveExtractor,
+  FILETYPES_AVOID,
+} from "./install";
+import type { IActiveInstallation, IDeploymentDetails } from "./install";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
 import { STAGING_DIR_TAG } from "./stagingDirectory";
@@ -206,22 +223,8 @@ import {
   unknownToError,
 } from "../../shared/errors";
 
-// Interface for tracking active installation information
-interface IActiveInstallation {
-  installId: string;
-  archiveId: string;
-  archivePath: string;
-  modId: string;
-  gameId: string;
-  callback: (error: Error, id: string) => void;
-  startTime: number;
-  baseName: string;
-}
-
-interface IDeploymentDetails {
-  deploymentPromise: Promise<void>;
-  deployOnSettle: boolean;
-}
+// IActiveInstallation interface moved to ./install/types/IInstallationEntry.ts
+// IDeploymentDetails interface moved to ./install/types/IPhaseState.ts
 
 // Function to get current download manager free slots
 function getDownloadFreeSlots(api: IExtensionApi): Promise<number> {
@@ -306,19 +309,7 @@ interface IInvalidInstruction {
   error: string;
 }
 
-class InstructionGroups {
-  public copy: IInstruction[] = [];
-  public mkdir: IInstruction[] = [];
-  public submodule: IInstruction[] = [];
-  public generatefile: IInstruction[] = [];
-  public iniedit: IInstruction[] = [];
-  public unsupported: IInstruction[] = [];
-  public attribute: IInstruction[] = [];
-  public setmodtype: IInstruction[] = [];
-  public error: IInstruction[] = [];
-  public rule: IInstruction[] = [];
-  public enableallplugins: IInstruction[] = [];
-}
+// InstructionGroups class extracted to ./install/InstructionGroups.ts
 
 export const INI_TWEAKS_PATH = "Ini Tweaks";
 
@@ -326,75 +317,18 @@ export const INSTALL_ACTION = "Update current profile";
 export const REPLACE_ACTION = "Update all profiles";
 export const VARIANT_ACTION = "Add Variant";
 
-const archiveExtLookup = new Set<string>([
-  ".zip",
-  ".z01",
-  ".7z",
-  ".rar",
-  ".r00",
-  ".001",
-  ".bz2",
-  ".bzip2",
-  ".gz",
-  ".gzip",
-  ".xz",
-  ".z",
-  ".lzh",
-]);
-
-// file types supported by 7z but we don't want to extract
-// I was tempted to put .exe in here but there may actually be cases where the
-// exe is a self-extracting archive and we would be able to handle it
-const FILETYPES_AVOID = [".dll"];
+// archiveExtLookup moved to ./install/types/IInstallConfig.ts as ARCHIVE_EXTENSIONS
+// FILETYPES_AVOID moved to ./install/types/IInstallConfig.ts
 
 function nop() {
   // nop
 }
 
-function findDownloadByReferenceTag(
-  downloads: { [downloadId: string]: any },
-  reference: any,
-): string | null {
-  const dlId = findDownloadByRef(reference, downloads);
-  if (dlId) {
-    return dlId;
-  }
+// findDownloadByReferenceTag extracted to ./install/helpers.ts
 
-  if (!reference?.tag) {
-    return null;
-  }
+// getReadyDownloadId extracted to ./install/helpers.ts
 
-  return (
-    Object.keys(downloads).find(
-      (id) =>
-        downloads[id].modInfo?.referenceTag === reference.tag ||
-        (reference.md5Hint && downloads[id].fileMD5 === reference.md5Hint),
-    ) || null
-  );
-}
-
-function getReadyDownloadId(
-  downloads: { [downloadId: string]: any },
-  reference: { tag?: string; md5Hint?: string },
-  hasActiveOrPendingCheck: (downloadId: string) => boolean,
-): string | null {
-  const downloadId = findDownloadByReferenceTag(downloads, reference);
-
-  if (!downloadId) {
-    return null;
-  }
-
-  const download = downloads[downloadId];
-  if (download.state === "finished" && !hasActiveOrPendingCheck(downloadId)) {
-    return downloadId;
-  }
-
-  return null;
-}
-
-function getModsByPhase(allMods: any[], phase: number): any[] {
-  return allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
-}
+// getModsByPhase extracted to ./install/helpers.ts
 
 function withActivityTracking<T>(
   api: IExtensionApi,
@@ -479,15 +413,7 @@ function findCollectionByDownload(
   return { collectionMod, matchingRule: matchingRule.rule, gameId };
 }
 
-/**
- * Helper: Filter rules to only include non-ignored requires/recommends rules
- */
-function filterDependencyRules(rules: IModRule[]): IModRule[] {
-  return (rules ?? []).filter(
-    (rule: IModRule) =>
-      ["recommends", "requires"].includes(rule.type) && !rule.ignored,
-  );
-}
+// filterDependencyRules extracted to ./install/helpers.ts
 
 /**
  * Helper: Check if dependency installation was canceled via event and handle early return
@@ -561,13 +487,9 @@ class InstallManager {
     10,
   );
 
-  // Queues installations for processing - primarily used to keep track of pending installations
-  //  for the current dependency phase if/when concurrent download and installation is disabled.
-  private mPendingInstalls: Map<string, IDependency> = new Map();
-
-  // Tracks the currently active installations - can be used with debug functions
-  //  to inspect the state of ongoing installations
-  private mActiveInstalls: Map<string, IActiveInstallation> = new Map();
+  // Installation tracker - manages active and pending installations
+  // Extracted to InstallationTracker class for better modularity
+  private mTracker: InstallationTracker = new InstallationTracker();
 
   // Tracks retry counts for failed dependency installations
   private mDependencyRetryCount: Map<string, number> = new Map();
@@ -742,7 +664,7 @@ class InstallManager {
     }
 
     const isInstallingDependencies = !!this.mDependencyInstalls[collectionId];
-    const hasPhaseState = this.mInstallPhaseState.has(collectionId);
+    const hasPhaseState = this.mPhaseManager.hasState(collectionId);
 
     if (!isInstallingDependencies && !hasPhaseState) {
       log(
@@ -754,21 +676,20 @@ class InstallManager {
     }
 
     if (hasPhaseState) {
-      const phaseState = this.mInstallPhaseState.get(collectionId);
-      if (phaseState) {
-        // Add this download to the cache
-        if (download.modInfo?.referenceTag) {
-          phaseState.downloadLookupCache.byTag.set(
-            download.modInfo.referenceTag,
-            downloadId,
-          );
-        }
-        if (download.fileMD5) {
-          phaseState.downloadLookupCache.byMd5.set(
-            download.fileMD5,
-            downloadId,
-          );
-        }
+      // Add this download to the cache
+      if (download.modInfo?.referenceTag) {
+        this.mPhaseManager.cacheDownloadByTag(
+          collectionId,
+          download.modInfo.referenceTag,
+          downloadId,
+        );
+      }
+      if (download.fileMD5) {
+        this.mPhaseManager.cacheDownloadByMd5(
+          collectionId,
+          download.fileMD5,
+          downloadId,
+        );
       }
     }
 
@@ -834,7 +755,7 @@ class InstallManager {
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
       !!this.mDependencyInstalls[collectionId] ||
-      this.mInstallPhaseState.has(collectionId);
+      this.mPhaseManager.hasState(collectionId);
 
     if (!isInstallingCollection) {
       log(
@@ -884,7 +805,7 @@ class InstallManager {
     // Check if we're currently in collection installation for this collection
     const isInstallingCollection =
       !!this.mDependencyInstalls[sourceModId] ||
-      this.mInstallPhaseState.has(sourceModId);
+      this.mPhaseManager.hasState(sourceModId);
     if (!isInstallingCollection) {
       log(
         "debug",
@@ -900,8 +821,8 @@ class InstallManager {
     if (dlId != null) {
       // Remove any active or pending installation for this dependency
       const installKey = this.generateDependencyInstallKey(sourceModId, dlId);
-      this.mPendingInstalls.delete(installKey);
-      this.mActiveInstalls.delete(installKey);
+      this.mTracker.deletePending(installKey);
+      this.mTracker.deleteActive(installKey);
     }
 
     // Notify InstallDriver to update tracking status
@@ -915,7 +836,7 @@ class InstallManager {
    * Get information about all currently active installations
    */
   public getActiveInstallations(): IActiveInstallation[] {
-    return Array.from(this.mActiveInstalls.values());
+    return this.mTracker.getActiveInstallations();
   }
 
   /**
@@ -924,37 +845,28 @@ class InstallManager {
   public getActiveInstallation(
     installId: string,
   ): IActiveInstallation | undefined {
-    return this.mActiveInstalls.get(installId);
+    return this.mTracker.getActive(installId);
   }
 
   /**
    * Check if an installation is currently active
    */
   public isInstallationActive(installId: string): boolean {
-    return this.mActiveInstalls.has(installId);
+    return this.mTracker.hasActive(installId);
   }
 
   /**
    * Get count of active installations
    */
   public getActiveInstallationCount(): number {
-    return this.mActiveInstalls.size;
+    return this.mTracker.getActiveCount();
   }
 
   /**
    * Debug method: Get details about active installations
    */
   public debugActiveInstalls(): any[] {
-    const now = Date.now();
-    return Array.from(this.mActiveInstalls.entries()).map(([key, install]) => ({
-      installId: key,
-      modId: install.modId,
-      gameId: install.gameId,
-      baseName: install.baseName,
-      durationMs: now - install.startTime,
-      durationMinutes:
-        Math.round(((now - install.startTime) / 60000) * 100) / 100,
-    }));
+    return this.mTracker.debugActiveInstalls();
   }
 
   /**
@@ -965,58 +877,7 @@ class InstallManager {
     api: IExtensionApi,
     maxAgeMinutes: number = 10,
   ): number {
-    const now = Date.now();
-    const maxAgeMs = maxAgeMinutes * 60 * 1000;
-    const stuckInstalls: IActiveInstallation[] = [];
-
-    this.mActiveInstalls.forEach((install, installId) => {
-      const age = now - install.startTime;
-      if (age > maxAgeMs) {
-        stuckInstalls.push(install);
-      }
-    });
-
-    // Force cleanup of stuck installations
-    stuckInstalls.forEach((install) => {
-      const { installId, modId, callback } = install;
-      this.mActiveInstalls.delete(installId);
-      try {
-        const timeoutError = new Error(
-          `Installation timed out after ${maxAgeMinutes} minutes`,
-        );
-        timeoutError.name = "InstallationTimeoutError";
-        callback(timeoutError, modId);
-        log("info", "InstallManager: Called callback for stuck installation", {
-          installId,
-          modId,
-        });
-      } catch (callbackError) {
-        log(
-          "error",
-          "InstallManager: Error calling callback for stuck installation",
-          {
-            installId,
-            modId,
-            error: getErrorMessageOrDefault(callbackError),
-          },
-        );
-      }
-
-      // Try to dismiss any lingering notifications
-      try {
-        api.store.dispatch(dismissNotification(`install_${installId}`));
-        api.store.dispatch(
-          dismissNotification(`ready-to-install-${installId}`),
-        );
-      } catch (err) {
-        log("warn", "Error dismissing notification during force cleanup", {
-          installId,
-          error: getErrorMessageOrDefault(err),
-        });
-      }
-    });
-
-    return stuckInstalls.length;
+    return this.mTracker.forceCleanupStuckInstalls(api, maxAgeMinutes);
   }
 
   /**
@@ -1073,7 +934,7 @@ class InstallManager {
           () => this.queryPassword(api.store) as any,
         )
         .catch((err: Error) =>
-          this.isCritical(err.message)
+          isCritical(err.message)
             ? Bluebird.reject(
                 new ArchiveBrokenError(path.basename(archivePath), err.message),
               )
@@ -1091,7 +952,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find((err) => this.isCritical(err));
+          const critical = errors.find((err) => isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
               new ArchiveBrokenError(path.basename(archivePath), critical),
@@ -1214,11 +1075,11 @@ class InstallManager {
       startTime: Date.now(),
       baseName,
     };
-    this.mActiveInstalls.set(installId, installInfo);
+    this.mTracker.setActive(installId, installInfo);
 
     // Wrap callback to ensure proper cleanup and tracking
     const trackedCallback = (err: Error, id: string) => {
-      const activeInstall = this.mActiveInstalls.get(installId);
+      const activeInstall = this.mTracker.getActive(installId);
       if (activeInstall) {
         activeInstall.modId = id || activeInstall.modId;
         if (!err) {
@@ -1234,7 +1095,7 @@ class InstallManager {
       callback?.(err, id);
 
       // Clean up tracking
-      this.mActiveInstalls.delete(installId);
+      this.mTracker.deleteActive(installId);
     };
 
     if (archiveId != null) {
@@ -1275,7 +1136,7 @@ class InstallManager {
           let destinationPath: string;
           let tempPath: string;
           // Use the already-created installation tracking
-          const activeInstall = this.mActiveInstalls.get(installId);
+          const activeInstall = this.mTracker.getActive(installId);
           if (!activeInstall) {
             const error = new Error("Installation tracking lost");
             trackedCallback(error, undefined);
@@ -1296,7 +1157,7 @@ class InstallManager {
           // Update the callback to also handle promise resolution
           const promiseCallback = (err: Error, id: string) => {
             // Update the installation info with final details before calling tracked callback
-            const activeInstall = this.mActiveInstalls.get(installId);
+            const activeInstall = this.mTracker.getActive(installId);
             if (activeInstall) {
               activeInstall.modId = id || modId;
               activeInstall.gameId = installGameId || "";
@@ -2038,7 +1899,7 @@ class InstallManager {
                         ) {
                           allowReport = false;
                         }
-                        !this.isBrowserAssistantError(errorMessage)
+                        !isBrowserAssistantError(errorMessage)
                           ? installContext.reportError(
                               "Installation failed",
                               err,
@@ -2088,7 +1949,7 @@ class InstallManager {
             .then(() => {
               // Installation completed successfully - the callback should have been called
               // If we reach here without the callback being called, something went wrong
-              if (this.mActiveInstalls.has(installId)) {
+              if (this.mTracker.hasActive(installId)) {
                 log(
                   "warn",
                   "Installation completed but callback was not called",
@@ -2128,17 +1989,17 @@ class InstallManager {
                     );
                   }
                 }
-                this.mActiveInstalls.delete(installId);
+                this.mTracker.deleteActive(installId);
                 resolve(modId);
               }
             })
             .catch((installError) => {
-              if (this.mActiveInstalls.has(installId)) {
+              if (this.mTracker.hasActive(installId)) {
                 log("warn", "Installation failed", {
                   installId,
                   error: installError.message,
                 });
-                this.mActiveInstalls.delete(installId);
+                this.mTracker.deleteActive(installId);
                 reject(installError);
               }
             });
@@ -2331,17 +2192,8 @@ class InstallManager {
     sourceModId: string,
     hard: boolean = false,
   ): void {
-    // Clean up pending installs
-    const pendingKeysToRemove = Array.from(this.mPendingInstalls.keys()).filter(
-      (key) => key.includes(sourceModId),
-    );
-    pendingKeysToRemove.forEach((key) => this.mPendingInstalls.delete(key));
-
-    // Clean up active installs (for dependencies that might be installing for this source mod)
-    const activeKeysToRemove = Array.from(this.mActiveInstalls.keys()).filter(
-      (key) => key.includes(sourceModId),
-    );
-    activeKeysToRemove.forEach((key) => this.mActiveInstalls.delete(key));
+    // Clean up pending and active installs via tracker
+    this.mTracker.cleanupForSourceMod(sourceModId);
 
     // Clean up retry counters for this source mod
     const retryKeysToRemove = Array.from(
@@ -2352,7 +2204,7 @@ class InstallManager {
     if (hard) {
       this.mMainInstallsLimit.clearQueue();
       this.mDependencyInstallsLimit.clearQueue();
-      this.mInstallPhaseState.delete(sourceModId);
+      this.mPhaseManager.deleteState(sourceModId);
     }
   }
 
@@ -2370,7 +2222,6 @@ class InstallManager {
     phase: number = 0,
   ): void {
     this.ensurePhaseState(sourceModId);
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
     const phaseNum = phase ?? 0;
 
     // Check if this installation is already active or pending
@@ -2378,8 +2229,8 @@ class InstallManager {
       sourceModId,
       downloadId,
     );
-    const alreadyActive = this.mActiveInstalls.has(installKey);
-    const alreadyPending = this.mPendingInstalls.has(installKey);
+    const alreadyActive = this.mTracker.hasActive(installKey);
+    const alreadyPending = this.mTracker.hasPending(installKey);
 
     if (alreadyActive || alreadyPending) {
       return;
@@ -2399,23 +2250,24 @@ class InstallManager {
     const canStartTasks = this.canStartInstallationTasks(sourceModId);
 
     // Only initialize allowedPhase early if we are allowed to run installers alongside downloads
-    if (canStartTasks && phaseState.allowedPhase === undefined) {
-      phaseState.allowedPhase = phaseNum;
+    const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
+    if (canStartTasks && allowedPhase === undefined) {
+      this.mPhaseManager.setAllowedPhase(sourceModId, phaseNum);
       // When setting initial allowed phase, mark all previous phases as downloads finished
       for (let p = 0; p < phaseNum; p++) {
-        phaseState.downloadsFinished.add(p);
+        this.mPhaseManager.markDownloadsFinished(sourceModId, p);
       }
     }
 
     const downloads = api.getState().persistent.downloads.files;
     const download = downloads[downloadId];
-    const canStartNow = canStartTasks
-      ? phaseNum <= phaseState.allowedPhase
-      : false;
+    const currentAllowedPhase =
+      this.mPhaseManager.getAllowedPhase(sourceModId) ?? -1;
+    const canStartNow = canStartTasks ? phaseNum <= currentAllowedPhase : false;
 
     // Don't start installations if deployment is in progress
     const canStartWithoutDeploymentBlock =
-      canStartNow && !phaseState.isDeploying;
+      canStartNow && !this.mPhaseManager.isDeploying(sourceModId);
 
     if (
       canStartWithoutDeploymentBlock &&
@@ -2424,13 +2276,11 @@ class InstallManager {
     ) {
       startTask();
     } else {
-      if (this.mPendingInstalls.has(installKey)) {
+      if (this.mTracker.hasPending(installKey)) {
         return;
       }
-      this.mPendingInstalls.set(installKey, dep);
-      const pending = phaseState.pendingByPhase.get(phaseNum) ?? [];
-      pending.push(startTask);
-      phaseState.pendingByPhase.set(phaseNum, pending);
+      this.mTracker.setPending(installKey, dep);
+      this.mPhaseManager.queuePending(sourceModId, phaseNum, startTask);
     }
   }
 
@@ -2438,7 +2288,8 @@ class InstallManager {
     sourceModId: string,
     downloadId: string,
   ): string {
-    return `${sourceModId}:${downloadId}`;
+    // Delegate to tracker for consistent key generation
+    return this.mTracker.generateInstallKey(sourceModId, downloadId);
   }
 
   // Starts a queued installation task and wires up phase accounting
@@ -2451,18 +2302,14 @@ class InstallManager {
     recommended: boolean,
     phase: number,
   ): void {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
     const installKey = this.generateDependencyInstallKey(
       sourceModId,
       downloadId,
     );
-    this.mPendingInstalls.set(installKey, dep);
+    this.mTracker.setPending(installKey, dep);
 
     // Track active count for the phase
-    phaseState.activeByPhase.set(
-      phase,
-      (phaseState.activeByPhase.get(phase) ?? 0) + 1,
-    );
+    this.mPhaseManager.incrementActive(sourceModId, phase);
 
     // Process installation immediately in parallel using concurrency limiter
     this.mDependencyInstallsLimit
@@ -2480,16 +2327,16 @@ class InstallManager {
           startTime,
           baseName: renderModReference(dep.reference),
         };
-        this.mActiveInstalls.set(installKey, depInstallInfo);
+        this.mTracker.setActive(installKey, depInstallInfo);
         try {
           // Check if installation is still needed
-          if (!this.mPendingInstalls.has(installKey)) {
-            this.mActiveInstalls.delete(installKey);
+          if (!this.mTracker.hasPending(installKey)) {
+            this.mTracker.deleteActive(installKey);
             return;
           }
 
-          const currentDep = this.mPendingInstalls.get(installKey);
-          this.mPendingInstalls.delete(installKey);
+          const currentDep = this.mTracker.getPending(installKey);
+          this.mTracker.deletePending(installKey);
 
           // Verify download is still finished before installing
           const downloads = api.getState().persistent.downloads.files;
@@ -2500,7 +2347,7 @@ class InstallManager {
             log("info", "Download no longer finished, skipping installation", {
               downloadId,
             });
-            this.mActiveInstalls.delete(installKey);
+            this.mTracker.deleteActive(installKey);
             return;
           }
 
@@ -2541,7 +2388,7 @@ class InstallManager {
                 );
 
           if (modId) {
-            this.mActiveInstalls.delete(installKey);
+            this.mTracker.deleteActive(installKey);
 
             // Apply any extra attributes
             this.applyExtraFromRule(api, gameId, modId, {
@@ -2617,9 +2464,9 @@ class InstallManager {
             this.mDependencyRetryCount.delete(installKey);
           }
 
-          this.mActiveInstalls.delete(installKey);
+          this.mTracker.deleteActive(installKey);
         } catch (unknownError) {
-          this.mActiveInstalls.delete(installKey);
+          this.mTracker.deleteActive(installKey);
           const currentRetryCount =
             this.mDependencyRetryCount.get(installKey) || 0;
           const isCanceled =
@@ -2628,7 +2475,7 @@ class InstallManager {
           const hasRetriesLeft =
             currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
           if (!isCanceled && hasRetriesLeft) {
-            this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
+            this.mTracker.setPending(installKey, dep); // Re-queue for potential retry
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
           } else {
             const err = unknownToError(unknownError);
@@ -2645,10 +2492,7 @@ class InstallManager {
           // Don't rethrow to avoid crashing the concurrency limiter
         } finally {
           // Always decrement phase active counter
-          phaseState.activeByPhase.set(
-            phase,
-            Math.max(0, (phaseState.activeByPhase.get(phase) ?? 1) - 1),
-          );
+          this.mPhaseManager.decrementActive(sourceModId, phase);
           // Note: Don't call maybeAdvancePhase here - it should only be called when phases are actually complete
         }
       })
@@ -2687,41 +2531,12 @@ class InstallManager {
    * 4. POST-DEPLOYMENT: Always call `startPendingForPhase()` after deployment
    *    completes to resume any installations that were queued during deployment.
    */
-  // Map tracking phase gating per sourceMod/collection
-  private mInstallPhaseState: Map<
-    string,
-    {
-      allowedPhase?: number;
-      downloadsFinished: Set<number>;
-      pendingByPhase: Map<number, Array<() => void>>;
-      activeByPhase: Map<number, number>;
-      deployedPhases: Set<number>;
-      reQueueAttempted?: Map<number, number>;
-      deploymentPromises?: Map<number, IDeploymentDetails>;
-      isDeploying?: boolean; // Flag to track if deployment is in progress
-      downloadLookupCache?: {
-        // Performance optimization: cache download lookups to avoid O(n*m)
-        byTag: Map<string, string>;
-        byMd5: Map<string, string>;
-      };
-    }
-  > = new Map();
+  // Phase manager handles phase gating per sourceMod/collection
+  // See ./install/PhaseManager.ts for implementation details
+  private mPhaseManager: PhaseManager = new PhaseManager();
 
   private ensurePhaseState(sourceModId: string) {
-    if (!this.mInstallPhaseState.has(sourceModId)) {
-      this.mInstallPhaseState.set(sourceModId, {
-        allowedPhase: undefined,
-        downloadsFinished: new Set<number>(),
-        pendingByPhase: new Map<number, Array<() => void>>(),
-        activeByPhase: new Map<number, number>(),
-        deployedPhases: new Set<number>(),
-        deploymentPromises: new Map<number, IDeploymentDetails>(),
-        downloadLookupCache: {
-          byTag: new Map<string, string>(),
-          byMd5: new Map<string, string>(),
-        },
-      });
-    }
+    this.mPhaseManager.ensureState(sourceModId);
   }
 
   private pollAllPhasesComplete(
@@ -2732,8 +2547,7 @@ class InstallManager {
 
     return new Bluebird<void>((resolve) => {
       const poll = () => {
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
-        if (!phaseState) {
+        if (!this.mPhaseManager.hasState(sourceModId)) {
           log("debug", "Phase state cleared, all phases considered complete", {
             sourceModId,
           });
@@ -2764,9 +2578,13 @@ class InstallManager {
         }
 
         // Check for queued deployments
+        const phaseState = this.mPhaseManager.getState(sourceModId);
         const deploymentPromises =
-          phaseState.deploymentPromises || new Map<number, Promise<void>>();
+          phaseState?.deploymentPromises || new Map<number, Promise<void>>();
         const hasQueuedDeployments = deploymentPromises.size > 0;
+
+        const allowedPhase =
+          this.mPhaseManager.getAllowedPhase(sourceModId) ?? 0;
 
         if (collectionInstallProgress?.isComplete) {
           log("debug", "All phases complete", { sourceModId });
@@ -2775,7 +2593,7 @@ class InstallManager {
           const collectionStatus = this.checkCollectionPhaseStatus(
             api,
             sourceModId,
-            phaseState.allowedPhase ?? 0,
+            allowedPhase,
           );
 
           const currentPhaseComplete = collectionStatus.phaseComplete;
@@ -2790,32 +2608,28 @@ class InstallManager {
               api,
               sourceModId,
               collectionStatus.allMods,
-              phaseState.allowedPhase ?? 0,
+              allowedPhase,
             );
           }
           if (
             !hasQueuedDeployments &&
             !this.hasActiveOrPendingInstallation(sourceModId)
           ) {
-            if (phaseState.deployedPhases.has(phaseState.allowedPhase ?? 0)) {
+            if (this.mPhaseManager.isPhaseDeployed(sourceModId, allowedPhase)) {
               // Phase already deployed, maybe advance
               this.maybeAdvancePhase(sourceModId, api);
             } else {
-              this.scheduleDeployOnPhaseSettled(
-                api,
-                sourceModId,
-                phaseState.allowedPhase ?? 0,
-              );
+              this.scheduleDeployOnPhaseSettled(api, sourceModId, allowedPhase);
             }
           }
           const canStartTasks = this.canStartInstallationTasks(sourceModId);
-          const active = this.mActiveInstalls.size;
-          const pendingInstalls = this.mPendingInstalls.size;
+          const active = this.mTracker.getActiveCount();
+          const pendingInstalls = this.mTracker.getPendingCount();
           if (canStartTasks) {
-            const pendingTasks = phaseState.pendingByPhase.get(
-              phaseState.allowedPhase ?? 0,
+            const pending = this.mPhaseManager.getPendingCount(
+              sourceModId,
+              allowedPhase,
             );
-            const pending = pendingTasks ? pendingTasks.length : 0;
             if (active === 0 && pending === 0) {
               if (pendingInstalls > 0) {
                 this.maybeAdvancePhase(sourceModId, api);
@@ -2824,14 +2638,11 @@ class InstallManager {
                   api,
                   sourceModId,
                   collectionStatus.allMods,
-                  phaseState.allowedPhase ?? 0,
+                  allowedPhase,
                 );
               }
             } else if (active === 0 && pendingInstalls > 0) {
-              this.startPendingForPhase(
-                sourceModId,
-                phaseState.allowedPhase ?? 0,
-              );
+              this.startPendingForPhase(sourceModId, allowedPhase);
             }
           }
           setTimeout(poll, POLL_MS);
@@ -2854,8 +2665,7 @@ class InstallManager {
     let hasDeployed = false;
     return new Bluebird<void>((resolve) => {
       const poll = () => {
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
-        if (!phaseState) {
+        if (!this.mPhaseManager.hasState(sourceModId)) {
           return resolve();
         }
 
@@ -2871,17 +2681,9 @@ class InstallManager {
         }
 
         // Determine which phase we're checking
-        const checkPhase = options.phase ?? phaseState.allowedPhase ?? 0;
-
-        // log('debug', 'Polling phase settlement', {
-        //   sourceModId,
-        //   phase: checkPhase,
-        //   optionsPhase: options.phase,
-        //   allowedPhase: phaseState.allowedPhase,
-        //   activeInstallations: active,
-        //   pendingInstallations: pending,
-        //   deployOnSettle: options.deployOnSettle
-        // });
+        const allowedPhase =
+          this.mPhaseManager.getAllowedPhase(sourceModId) ?? 0;
+        const checkPhase = options.phase ?? allowedPhase;
 
         // Check collection completion status
         const collectionStatus = this.checkCollectionPhaseStatus(
@@ -2889,24 +2691,23 @@ class InstallManager {
           sourceModId,
           checkPhase,
         );
-        const existing = phaseState?.deploymentPromises.get(checkPhase);
+        const existing = this.mPhaseManager.getDeploymentPromise(
+          sourceModId,
+          checkPhase,
+        );
         if (existing?.deployOnSettle && !hasDeployed) {
           // CRITICAL: Block new installations during deployment to prevent file conflicts.
           // Removing this check causes race conditions. See AGENTS-COLLECTIONS.md.
-          if (phaseState) {
-            phaseState.isDeploying = true;
-          }
+          this.mPhaseManager.setDeploying(sourceModId, true);
 
           // Deploy mods for this phase
           toPromise((cb) => api.events.emit("deploy-mods", cb))
             .then(() => {
-              if (phaseState) {
-                phaseState.isDeploying = false;
-                phaseState.deployedPhases.add(checkPhase);
-                // Start any installations that were queued during deployment
-                hasDeployed = true;
-                setTimeout(poll, POLL_MS);
-              }
+              this.mPhaseManager.setDeploying(sourceModId, false);
+              this.mPhaseManager.markPhaseDeployed(sourceModId, checkPhase);
+              // Start any installations that were queued during deployment
+              hasDeployed = true;
+              setTimeout(poll, POLL_MS);
               resolve();
             })
             .catch((err) => {
@@ -2915,22 +2716,18 @@ class InstallManager {
                 phase: checkPhase,
                 error: err?.message,
               });
-              if (phaseState) {
-                phaseState.isDeploying = false;
-                // Start any installations that were queued during deployment, even if deployment failed
-                this.startPendingForPhase(sourceModId, checkPhase);
-              }
+              this.mPhaseManager.setDeploying(sourceModId, false);
+              // Start any installations that were queued during deployment, even if deployment failed
+              this.startPendingForPhase(sourceModId, checkPhase);
               resolve(); // Resolve anyway to avoid hanging
             });
         } else {
           if (collectionStatus.phaseComplete) {
-            if (phaseState) {
-              phaseState.isDeploying = false;
-              // Start any installations that were queued during deployment
-              phaseState.deployedPhases.add(checkPhase);
-              this.startPendingForPhase(sourceModId, checkPhase);
-              this.maybeAdvancePhase(sourceModId, api);
-            }
+            this.mPhaseManager.setDeploying(sourceModId, false);
+            // Start any installations that were queued during deployment
+            this.mPhaseManager.markPhaseDeployed(sourceModId, checkPhase);
+            this.startPendingForPhase(sourceModId, checkPhase);
+            this.maybeAdvancePhase(sourceModId, api);
             resolve();
           } else if (
             !collectionStatus.phaseComplete &&
@@ -2949,8 +2746,8 @@ class InstallManager {
             setTimeout(poll, POLL_MS);
           } else {
             if (
-              this.mActiveInstalls.size === 0 &&
-              this.mPendingInstalls.size > 0
+              this.mTracker.getActiveCount() === 0 &&
+              this.mTracker.getPendingCount() > 0
             ) {
               // Start any pending installations if none are active
               this.startPendingForPhase(sourceModId, checkPhase);
@@ -3021,8 +2818,7 @@ class InstallManager {
     const downloads = api.getState().persistent.downloads.files;
     let modsNeedingRequeue = 0;
 
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    const cache = phaseState?.downloadLookupCache;
+    const hasCache = this.mPhaseManager.hasState(sourceModId);
 
     allDownloadedMods.forEach((mod: any) => {
       const reference = mod.rule?.reference;
@@ -3033,13 +2829,21 @@ class InstallManager {
       let downloadId = null;
 
       const md5Value = reference.md5Hint ?? reference.fileMD5;
-      if (cache) {
+      if (hasCache) {
         // Use cache for fast lookup
-        if (reference.tag && cache.byTag.has(reference.tag)) {
-          downloadId = cache.byTag.get(reference.tag);
-        } else if (md5Value && cache.byMd5.has(md5Value)) {
-          downloadId = cache.byMd5.get(md5Value);
-        } else {
+        if (reference.tag) {
+          downloadId = this.mPhaseManager.getCachedDownloadByTag(
+            sourceModId,
+            reference.tag,
+          );
+        }
+        if (!downloadId && md5Value) {
+          downloadId = this.mPhaseManager.getCachedDownloadByMd5(
+            sourceModId,
+            md5Value,
+          );
+        }
+        if (!downloadId) {
           // This is probably a bundled mod - use full lookup
           downloadId = getReadyDownloadId(downloads, reference, (id) =>
             this.hasActiveOrPendingInstallation(sourceModId, id),
@@ -3071,7 +2875,8 @@ class InstallManager {
         if (
           (download?.state === "finished" &&
             !this.hasActiveOrPendingInstallation(sourceModId, downloadId)) ||
-          (this.mActiveInstalls.size === 0 && this.mPendingInstalls.size > 0)
+          (this.mTracker.getActiveCount() === 0 &&
+            this.mTracker.getPendingCount() > 0)
         ) {
           modsNeedingRequeue++;
         }
@@ -3093,25 +2898,7 @@ class InstallManager {
     sourceModId: string,
     archiveId?: string,
   ): boolean {
-    let hasPending = false;
-    if (!archiveId) {
-      return this.mPendingInstalls.size > 0 || this.mActiveInstalls.size > 0;
-    }
-    const installKey = this.generateDependencyInstallKey(
-      sourceModId,
-      archiveId,
-    );
-    if (this.mPendingInstalls.get(installKey)) {
-      hasPending = true;
-    }
-    let hasActive = false;
-    for (const [, activeInstall] of this.mActiveInstalls.entries()) {
-      if (activeInstall.archiveId === archiveId) {
-        hasActive = true;
-        break;
-      }
-    }
-    return hasPending || hasActive;
+    return this.mTracker.hasActiveOrPending(sourceModId, archiveId);
   }
 
   // Helper to re-queue downloaded mods
@@ -3121,8 +2908,7 @@ class InstallManager {
     allMods: any[],
     currentPhase: number,
   ): void {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    if (!phaseState) {
+    if (!this.mPhaseManager.hasState(sourceModId)) {
       return;
     }
 
@@ -3219,8 +3005,8 @@ class InstallManager {
             sourceModId,
             downloadId,
           );
-          this.mPendingInstalls.delete(installKey);
-          this.mActiveInstalls.delete(installKey);
+          this.mTracker.deletePending(installKey);
+          this.mTracker.deleteActive(installKey);
           api.events.emit(
             "did-install-mod",
             gameId,
@@ -3242,9 +3028,10 @@ class InstallManager {
     });
 
     // If we marked optional mods as skipped, check if their phases are now complete
+    const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId) ?? 0;
     if (anyMarkedSkipped) {
       const phasesToCheck = Array.from(downloadedPhases).filter(
-        (p) => p <= (phaseState.allowedPhase ?? 0),
+        (p) => p <= allowedPhase,
       );
       phasesToCheck.forEach((checkPhase) => {
         const completion = isCollectionPhaseComplete(
@@ -3253,7 +3040,10 @@ class InstallManager {
         );
 
         // If all required mods are complete and phase not already deployed, schedule deployment
-        if (completion && !phaseState.deployedPhases.has(checkPhase)) {
+        if (
+          completion &&
+          !this.mPhaseManager.isPhaseDeployed(sourceModId, checkPhase)
+        ) {
           // Schedule deployment which will mark the phase as deployed when it completes
           this.scheduleDeployOnPhaseSettled(api, sourceModId, checkPhase);
         }
@@ -3262,35 +3052,37 @@ class InstallManager {
 
     // Initialize or advance phase system if needed
     if (anyQueued) {
-      if (phaseState.allowedPhase === undefined) {
+      const currentAllowedPhase =
+        this.mPhaseManager.getAllowedPhase(sourceModId);
+      if (currentAllowedPhase === undefined) {
         const lowestPhase = Math.min(...Array.from(downloadedPhases));
-        phaseState.allowedPhase = lowestPhase;
-        downloadedPhases.forEach((p) => phaseState.downloadsFinished.add(p));
+        this.mPhaseManager.setAllowedPhase(sourceModId, lowestPhase);
+        downloadedPhases.forEach((p) =>
+          this.mPhaseManager.markDownloadsFinished(sourceModId, p),
+        );
         this.startPendingForPhase(sourceModId, lowestPhase);
         this.maybeAdvancePhase(sourceModId, api);
       } else {
         // Phase already initialized, just ensure downloads are marked and try to advance
         downloadedPhases.forEach((p) => {
-          if (!phaseState.downloadsFinished.has(p)) {
-            phaseState.downloadsFinished.add(p);
+          if (!this.mPhaseManager.hasDownloadsFinished(sourceModId, p)) {
+            this.mPhaseManager.markDownloadsFinished(sourceModId, p);
           }
         });
         // Try to start any pending installations and advance phases
-        this.startPendingForPhase(sourceModId, phaseState.allowedPhase);
+        this.startPendingForPhase(sourceModId, currentAllowedPhase);
         this.maybeAdvancePhase(sourceModId, api);
       }
     }
   }
 
   public isPhaseDeployed(sourceModId: string, phase: number): boolean {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    return phaseState?.deployedPhases.has(phase) ?? false;
+    return this.mPhaseManager.isPhaseDeployed(sourceModId, phase);
   }
 
   public markPhaseDeployed(sourceModId: string, phase: number): void {
     this.ensurePhaseState(sourceModId);
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    phaseState.deployedPhases.add(phase);
+    this.mPhaseManager.markPhaseDeployed(sourceModId, phase);
   }
 
   // Schedule a deploy once all installers for a specific phase have finished
@@ -3301,27 +3093,31 @@ class InstallManager {
     deployOnSettle?: boolean,
   ): Promise<void> | undefined {
     this.ensurePhaseState(sourceModId);
-    const state = this.mInstallPhaseState.get(sourceModId);
-    if (state.deployedPhases.has(phase)) {
+
+    if (this.mPhaseManager.isPhaseDeployed(sourceModId, phase)) {
       // Phase already deployed, nothing to do
       return;
     }
 
     // Only schedule deployment for phases that are allowed to be processed
-    if (state.allowedPhase !== undefined && phase > state.allowedPhase) {
+    const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
+    if (allowedPhase !== undefined && phase > allowedPhase) {
       return;
     }
 
-    if (state.deploymentPromises?.has(phase)) {
-      const existing = state.deploymentPromises.get(phase);
-      if (deployOnSettle && !existing?.deployOnSettle) {
-        state.deploymentPromises.set(phase, {
+    const existing = this.mPhaseManager.getDeploymentPromise(
+      sourceModId,
+      phase,
+    );
+    if (existing) {
+      if (deployOnSettle && !existing.deployOnSettle) {
+        this.mPhaseManager.setDeploymentPromise(sourceModId, phase, {
           deploymentPromise: existing.deploymentPromise,
           deployOnSettle: true,
         });
       }
       // Return the existing promise so callers can await it
-      return existing?.deploymentPromise;
+      return existing.deploymentPromise;
     }
 
     // Track deployment promise so we can wait for it before cleanup
@@ -3337,18 +3133,12 @@ class InstallManager {
         })
         .finally(() => {
           // Remove this promise from the array when it completes
-          const phaseState = this.mInstallPhaseState.get(sourceModId);
-          if (phaseState?.deploymentPromises) {
-            phaseState.deploymentPromises.delete(phase);
-          }
+          this.mPhaseManager.deleteDeploymentPromise(sourceModId, phase);
         }),
     );
 
     // Add to tracked deployment promises
-    if (!state.deploymentPromises) {
-      state.deploymentPromises = new Map<number, IDeploymentDetails>();
-    }
-    state.deploymentPromises.set(phase, {
+    this.mPhaseManager.setDeploymentPromise(sourceModId, phase, {
       deploymentPromise,
       deployOnSettle: deployOnSettle ?? false,
     });
@@ -3362,17 +3152,13 @@ class InstallManager {
     api: IExtensionApi,
   ) {
     this.ensurePhaseState(sourceModId);
-    const state = this.mInstallPhaseState.get(sourceModId);
-    state.downloadsFinished.add(phase);
+    // PhaseManager.markDownloadsFinished handles setting allowedPhase if undefined
+    // and marking previous phases as finished
+    const wasFirstPhase =
+      this.mPhaseManager.getAllowedPhase(sourceModId) === undefined;
+    this.mPhaseManager.markDownloadsFinished(sourceModId, phase);
 
-    // Initialize allowed phase to the first finished phase if not set
-    if (state.allowedPhase === undefined) {
-      state.allowedPhase = phase;
-      // When setting initial allowed phase, mark all previous phases as downloads finished
-      // since we can't be in phase N without having completed phases 0 through N-1
-      for (let p = 0; p < phase; p++) {
-        state.downloadsFinished.add(p);
-      }
+    if (wasFirstPhase) {
       this.startPendingForPhase(sourceModId, phase);
     }
 
@@ -3380,18 +3166,17 @@ class InstallManager {
   }
 
   private startPendingForPhase(sourceModId: string, phase: number) {
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    if (!phaseState) {
+    if (!this.mPhaseManager.hasState(sourceModId)) {
       // Phase state was cleaned up, nothing to start
       return;
     }
 
-    const tasks = phaseState.pendingByPhase.get(phase) ?? [];
-    if (tasks.length === 0 || !this.canStartInstallationTasks(sourceModId)) {
+    if (!this.canStartInstallationTasks(sourceModId)) {
       return;
     }
-    // Drain queue for this phase
-    phaseState.pendingByPhase.set(phase, []);
+
+    // Drain queue for this phase and run all tasks
+    const tasks = this.mPhaseManager.drainPending(sourceModId, phase);
     tasks.forEach((run) => run());
   }
 
@@ -3434,13 +3219,13 @@ class InstallManager {
 
   private maybeAdvancePhase(sourceModId: string, api: IExtensionApi) {
     const state = this.mApi.getState();
-    const phaseState = this.mInstallPhaseState.get(sourceModId);
-    if (!phaseState) {
+    if (!this.mPhaseManager.hasState(sourceModId)) {
       // Phase state was cleaned up, nothing to advance
       return;
     }
 
-    if (phaseState.allowedPhase === undefined) {
+    const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
+    if (allowedPhase === undefined) {
       log("debug", "phase gating: awaiting first finished phase", {
         sourceModId,
       });
@@ -3448,24 +3233,14 @@ class InstallManager {
     }
 
     // Clean up inappropriate phase state - clear re-queue attempts for phases beyond allowed
-    if (phaseState.reQueueAttempted) {
-      Array.from(phaseState.reQueueAttempted.keys()).forEach((phase) => {
-        if (phase > phaseState.allowedPhase) {
-          phaseState.reQueueAttempted.delete(phase);
-          log("debug", "Cleared re-queue attempt for future phase", {
-            sourceModId,
-            phase,
-            allowedPhase: phaseState.allowedPhase,
-          });
-        }
-      });
-    }
+    this.mPhaseManager.clearFutureReQueueAttempts(sourceModId);
+
     // Try to advance through finished phases where there are no active installs
-    let curr = phaseState.allowedPhase;
+    let curr = allowedPhase;
     while (
-      phaseState.downloadsFinished.has(curr) &&
-      (phaseState.activeByPhase.get(curr) ?? 0) === 0 &&
-      (phaseState.pendingByPhase.get(curr) ?? []).length === 0
+      this.mPhaseManager.hasDownloadsFinished(sourceModId, curr) &&
+      this.mPhaseManager.getActiveCount(sourceModId, curr) === 0 &&
+      this.mPhaseManager.getPendingCount(sourceModId, curr) === 0
     ) {
       // Check if the phase is actually complete according to collection session
       const collectionStatus = this.checkCollectionPhaseStatus(
@@ -3479,12 +3254,10 @@ class InstallManager {
       }
 
       // Determine previous finished phase (by order in downloadsFinished)
-      const finished = Array.from(phaseState.downloadsFinished).sort(
-        (a, b) => a - b,
-      );
+      const finished = this.mPhaseManager.getFinishedPhases(sourceModId);
       const currIdx = finished.findIndex((p) => p === curr);
       // Only advance past curr if the current phase has been deployed
-      if (!phaseState.deployedPhases.has(curr)) {
+      if (!this.mPhaseManager.isPhaseDeployed(sourceModId, curr)) {
         log(
           "debug",
           "phase gating: phase complete but not deployed, scheduling deployment",
@@ -3502,7 +3275,7 @@ class InstallManager {
       const nextIdx = currIdx + 1;
       if (nextIdx < finished.length) {
         curr = finished[nextIdx];
-        phaseState.allowedPhase = curr;
+        this.mPhaseManager.setAllowedPhase(sourceModId, curr);
         this.startPendingForPhase(sourceModId, curr);
 
         // When advancing to a new phase, scan for any finished downloads that should be queued
@@ -3571,33 +3344,8 @@ class InstallManager {
     });
   }
 
-  private isBrowserAssistantError(error: string): boolean {
-    return (
-      process.platform === "win32" &&
-      error.indexOf("Roaming\\Browser Assistant") !== -1
-    );
-  }
-
-  private isCritical(error: string): boolean {
-    // Don't treat file-in-use errors as critical - they can be retried
-    if (this.isFileInUse(error)) {
-      return false;
-    }
-    return (
-      error.indexOf("Unexpected end of archive") !== -1 ||
-      error.indexOf("ERROR: Data Error") !== -1 ||
-      // used to be "Can not", current 7z prints "Cannot"
-      error.indexOf("Cannot open the file as archive") !== -1 ||
-      error.indexOf("Can not open the file as archive") !== -1
-    );
-  }
-
-  private isFileInUse(error: string): boolean {
-    return (
-      error.indexOf("being used by another process") !== -1 ||
-      error.indexOf("locked by another process") !== -1
-    );
-  }
+  // Error classification methods extracted to ./install/errors/errorClassification.ts
+  // Now using imported functions: isBrowserAssistantError, isCritical, isFileInUse
 
   private extractWithRetry(
     zip: Zip,
@@ -3620,7 +3368,7 @@ class InstallManager {
           queryPassword as any,
         )
         .catch((err: Error) => {
-          if (this.isFileInUse(err.message) && retriesLeft > 0) {
+          if (isFileInUse(err.message) && retriesLeft > 0) {
             log("info", "archive file in use, retrying extraction", {
               archivePath: path.basename(archivePath),
               retriesLeft,
@@ -3630,7 +3378,7 @@ class InstallManager {
               attemptExtract(retriesLeft - 1),
             );
           }
-          if (this.isCritical(err.message)) {
+          if (isCritical(err.message)) {
             return Bluebird.reject(
               new ArchiveBrokenError(path.basename(archivePath), err.message),
             );
@@ -3702,7 +3450,7 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
-          const critical = errors.find((err) => this.isCritical(err));
+          const critical = errors.find((err) => isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
           }
@@ -5896,9 +5644,12 @@ class InstallManager {
     )
       .finally(() => {
         // Process any pending installations that were queued during dependency installation
-        const phaseState = this.mInstallPhaseState.get(sourceModId);
-        if (phaseState && phaseState.allowedPhase !== undefined) {
-          this.startPendingForPhase(sourceModId, phaseState.allowedPhase);
+        const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
+        if (
+          this.mPhaseManager.hasState(sourceModId) &&
+          allowedPhase !== undefined
+        ) {
+          this.startPendingForPhase(sourceModId, allowedPhase);
 
           // Scan for any finished downloads that haven't been queued yet
           // This handles downloads that were imported/finished before the collection started installing
@@ -5918,7 +5669,7 @@ class InstallManager {
             if (downloadId) {
               const rulePhase = dep.extra?.phase ?? 0;
               // Only process downloads for the current allowed phase or earlier
-              if (rulePhase <= phaseState.allowedPhase) {
+              if (rulePhase <= allowedPhase) {
                 this.handleDownloadFinished(api, downloadId, sourceModId);
                 foundCount++;
               }
@@ -6470,7 +6221,6 @@ class InstallManager {
     // Initialize phase state immediately after determining what phases we have
     if (dependencies.length > 0) {
       this.ensurePhaseState(sourceModId);
-      const phaseState = this.mInstallPhaseState.get(sourceModId);
 
       const phaseNumbers = Object.keys(phases)
         .map((p) => parseInt(p, 10))
@@ -6517,22 +6267,26 @@ class InstallManager {
           nextPhaseAfterCompleted,
         );
 
+        const currentAllowedPhase =
+          this.mPhaseManager.getAllowedPhase(sourceModId);
         if (
-          phaseState.allowedPhase === undefined ||
-          phaseState.allowedPhase < effectiveStartPhase
+          currentAllowedPhase === undefined ||
+          currentAllowedPhase < effectiveStartPhase
         ) {
-          phaseState.allowedPhase = effectiveStartPhase;
+          this.mPhaseManager.setAllowedPhase(sourceModId, effectiveStartPhase);
           // When setting allowed phase, mark all previous phases as downloads finished
           for (let p = 0; p < effectiveStartPhase; p++) {
-            phaseState.downloadsFinished.add(p);
+            this.mPhaseManager.markDownloadsFinished(sourceModId, p);
           }
         }
-      } else if (phaseState.allowedPhase === undefined) {
+      } else if (
+        this.mPhaseManager.getAllowedPhase(sourceModId) === undefined
+      ) {
         // No active session, use the lowest phase from dependencies
-        phaseState.allowedPhase = lowestPhase;
+        this.mPhaseManager.setAllowedPhase(sourceModId, lowestPhase);
         // When setting initial allowed phase, mark all previous phases as downloads finished
         for (let p = 0; p < lowestPhase; p++) {
-          phaseState.downloadsFinished.add(p);
+          this.mPhaseManager.markDownloadsFinished(sourceModId, p);
         }
         log("info", "Set initial allowed phase", {
           sourceModId,
@@ -6542,7 +6296,7 @@ class InstallManager {
 
       // Mark all phases as having downloads (they will be processed)
       phaseNumbers.forEach((phase) => {
-        phaseState.downloadsFinished.add(phase);
+        this.mPhaseManager.markDownloadsFinished(sourceModId, phase);
       });
     }
 
@@ -6577,10 +6331,10 @@ class InstallManager {
           })
           .then((updated: IDependency[]) => {
             // Schedule a deploy for this phase once its installers settle; don't block download progression
-            const phaseNum = depList[0]?.phase ?? 0;
-            const phaseState = this.mInstallPhaseState.get(sourceModId);
+            // const phaseNum = depList[0]?.phase ?? 0;
             // // Only schedule deploy polling for the current allowed phase to maintain sequential processing
-            // if (phaseState && (phaseState.allowedPhase !== undefined) && (phaseNum === phaseState.allowedPhase)) {
+            // const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
+            // if (this.mPhaseManager.hasState(sourceModId) && (allowedPhase !== undefined) && (phaseNum === allowedPhase)) {
             //   this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum);
             // }
             return updated;
@@ -6599,7 +6353,7 @@ class InstallManager {
         return this.pollAllPhasesComplete(api, sourceModId).then(() => deps);
       })
       .finally(() => {
-        this.mInstallPhaseState.delete(sourceModId);
+        this.mPhaseManager.deleteState(sourceModId);
       });
   }
 
@@ -6899,22 +6653,24 @@ class InstallManager {
       if (activeCollectionSession == null) {
         return;
       }
-      this.ensurePhaseState(activeCollectionSession.collectionId);
-      const phaseState = this.mInstallPhaseState.get(
-        activeCollectionSession.collectionId,
-      );
-      if (phaseState === undefined) {
-        return;
-      }
-      const cache = phaseState?.downloadLookupCache;
-      if (cache === undefined) {
+      const collectionId = activeCollectionSession.collectionId;
+      this.ensurePhaseState(collectionId);
+      if (!this.mPhaseManager.hasState(collectionId)) {
         return;
       }
       if (download.modInfo?.referenceTag !== undefined) {
-        cache.byTag.set(download.modInfo.referenceTag, download.id);
+        this.mPhaseManager.cacheDownloadByTag(
+          collectionId,
+          download.modInfo.referenceTag,
+          download.id,
+        );
       }
       if (download.fileMD5 !== undefined) {
-        cache.byMd5.set(download.fileMD5, download.id);
+        this.mPhaseManager.cacheDownloadByMd5(
+          collectionId,
+          download.fileMD5,
+          download.id,
+        );
       }
     };
   };

@@ -78,7 +78,7 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      const state = installManager.mPhaseManager.getState(sourceModId);
 
       expect(state).toBeDefined();
       expect(state.allowedPhase).toBeUndefined();
@@ -93,14 +93,12 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state1 = installManager.mInstallPhaseState.get(sourceModId);
-      state1.allowedPhase = 2;
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 2);
 
       installManager.ensurePhaseState(sourceModId);
-      const state2 = installManager.mInstallPhaseState.get(sourceModId);
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
 
-      expect(state2.allowedPhase).toBe(2);
-      expect(state1).toBe(state2);
+      expect(allowedPhase).toBe(2);
     });
   });
 
@@ -109,55 +107,53 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      // Setup phase 0 as complete
-      state.allowedPhase = 0;
-      state.downloadsFinished.add(0);
-      state.downloadsFinished.add(1);
-      state.deployedPhases.add(0);
-      state.activeByPhase.set(0, 0);
-      state.activeByPhase.set(1, 0);
+      // Setup phase 0 as complete using PhaseManager methods
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 1);
+      installManager.mPhaseManager.markPhaseDeployed(sourceModId, 0);
+      // Active count is 0 by default
 
       installManager.maybeAdvancePhase(sourceModId, mockApi);
 
-      expect(state.allowedPhase).toBe(1);
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
+      expect(allowedPhase).toBe(1);
     });
 
     it('should not advance phase if previous phase not deployed', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
       // Setup phases but phase 0 not deployed
-      state.allowedPhase = 0;
-      state.downloadsFinished.add(0);
-      state.downloadsFinished.add(1);
-      state.activeByPhase.set(0, 0);
-      state.activeByPhase.set(1, 0);
-      // Note: phase 0 is NOT in deployedPhases
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 1);
+      // Note: phase 0 is NOT marked as deployed
 
       installManager.maybeAdvancePhase(sourceModId, mockApi);
 
-      expect(state.allowedPhase).toBe(0); // Should not advance
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
+      expect(allowedPhase).toBe(0); // Should not advance
     });
 
     it('should not advance if active installations in current phase', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      state.allowedPhase = 0;
-      state.downloadsFinished.add(0);
-      state.downloadsFinished.add(1);
-      state.activeByPhase.set(0, 2); // 2 active installations
-      state.deployedPhases.add(0);
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 0);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 1);
+      installManager.mPhaseManager.incrementActive(sourceModId, 0);
+      installManager.mPhaseManager.incrementActive(sourceModId, 0); // 2 active installations
+      installManager.mPhaseManager.markPhaseDeployed(sourceModId, 0);
 
       installManager.maybeAdvancePhase(sourceModId, mockApi);
 
-      expect(state.allowedPhase).toBe(0); // Should not advance
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
+      expect(allowedPhase).toBe(0); // Should not advance
     });
   });
 
@@ -197,7 +193,6 @@ describe('Phased Installer', () => {
       // This would be called during doInstallDependencyList
       // We'll test the phase detection logic directly
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
       // Simulate what would happen in the actual code
       const allMods = Object.values((mockState.session as any).collections.activeSession.mods);
@@ -268,39 +263,33 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      // Initialize reQueueAttempted if not present
-      if (!state.reQueueAttempted) {
-        state.reQueueAttempted = new Map<number, number>();
-      }
+      expect(installManager.mPhaseManager.hasReQueueAttempted(sourceModId, 1)).toBe(false);
 
-      expect(state.reQueueAttempted.has(1)).toBe(false);
+      installManager.mPhaseManager.markReQueueAttempted(sourceModId, 1);
 
-      state.reQueueAttempted.set(1, Date.now());
-
-      expect(state.reQueueAttempted.has(1)).toBe(true);
+      expect(installManager.mPhaseManager.hasReQueueAttempted(sourceModId, 1)).toBe(true);
     });
 
-    it('should not re-queue same phase twice', () => {
+    it('should track multiple re-queue attempts per phase', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      if (!state.reQueueAttempted) {
-        state.reQueueAttempted = new Map<number, number>();
-      }
-
-      // First attempt should be allowed
+      // First attempt
       const phase = 2;
-      expect(state.reQueueAttempted.has(phase)).toBe(false);
+      expect(installManager.mPhaseManager.hasReQueueAttempted(sourceModId, phase)).toBe(false);
 
-      // Mark as attempted (with recent timestamp)
-      state.reQueueAttempted.set(phase, Date.now());
+      // Mark as attempted
+      installManager.mPhaseManager.markReQueueAttempted(sourceModId, phase);
 
-      // Second attempt should be blocked (too recent)
-      expect(state.reQueueAttempted.has(phase)).toBe(true);
+      // Should now be tracked
+      expect(installManager.mPhaseManager.hasReQueueAttempted(sourceModId, phase)).toBe(true);
+      expect(installManager.mPhaseManager.getReQueueAttemptCount(sourceModId, phase)).toBe(1);
+
+      // Mark again
+      installManager.mPhaseManager.markReQueueAttempted(sourceModId, phase);
+      expect(installManager.mPhaseManager.getReQueueAttemptCount(sourceModId, phase)).toBe(2);
     });
   });
 
@@ -311,34 +300,31 @@ describe('Phased Installer', () => {
       installManager.ensurePhaseState(sourceModId);
       installManager.markPhaseDownloadsFinished(sourceModId, 1, mockApi);
 
-      const state = installManager.mInstallPhaseState.get(sourceModId);
-      expect(state.downloadsFinished.has(1)).toBe(true);
+      expect(installManager.mPhaseManager.hasDownloadsFinished(sourceModId, 1)).toBe(true);
     });
 
     it('should initialize allowed phase on first download finish', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      expect(state.allowedPhase).toBeUndefined();
+      expect(installManager.mPhaseManager.getAllowedPhase(sourceModId)).toBeUndefined();
 
       installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
 
-      expect(state.allowedPhase).toBe(2);
+      expect(installManager.mPhaseManager.getAllowedPhase(sourceModId)).toBe(2);
     });
 
     it('should not change allowed phase if already set', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
-      state.allowedPhase = 1;
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 1);
 
       installManager.markPhaseDownloadsFinished(sourceModId, 3, mockApi);
 
-      expect(state.allowedPhase).toBe(1); // Should remain unchanged
-      expect(state.downloadsFinished.has(3)).toBe(true);
+      expect(installManager.mPhaseManager.getAllowedPhase(sourceModId)).toBe(1); // Should remain unchanged
+      expect(installManager.mPhaseManager.hasDownloadsFinished(sourceModId, 3)).toBe(true);
     });
   });
 
@@ -387,12 +373,12 @@ describe('Phased Installer', () => {
       // This should auto-populate previous phases
       installManager.markPhaseDownloadsFinished(sourceModId, 2, mockApi);
 
-      const state = installManager.mInstallPhaseState.get(sourceModId);
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
 
       const canStart = (phase: number) => {
-        return (state.allowedPhase !== undefined) &&
-               (phase <= state.allowedPhase) &&
-               state.downloadsFinished.has(phase);
+        return (allowedPhase !== undefined) &&
+               (phase <= allowedPhase) &&
+               installManager.mPhaseManager.hasDownloadsFinished(sourceModId, phase);
       };
 
       expect(canStart(2)).toBe(true);
@@ -405,14 +391,15 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
-      state.allowedPhase = 1;
-      state.downloadsFinished.add(1);
+      installManager.mPhaseManager.setAllowedPhase(sourceModId, 1);
+      installManager.mPhaseManager.markDownloadsFinished(sourceModId, 1);
+
+      const allowedPhase = installManager.mPhaseManager.getAllowedPhase(sourceModId);
 
       const canStart = (phase: number) => {
-        return (state.allowedPhase !== undefined) &&
-               (phase <= state.allowedPhase) &&
-               state.downloadsFinished.has(phase);
+        return (allowedPhase !== undefined) &&
+               (phase <= allowedPhase) &&
+               installManager.mPhaseManager.hasDownloadsFinished(sourceModId, phase);
       };
 
       expect(canStart(2)).toBe(false);
@@ -425,32 +412,33 @@ describe('Phased Installer', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      // Simulate starting installations
-      state.activeByPhase.set(1, 3);
-      state.activeByPhase.set(2, 0);
+      // Simulate starting installations using PhaseManager
+      installManager.mPhaseManager.incrementActive(sourceModId, 1);
+      installManager.mPhaseManager.incrementActive(sourceModId, 1);
+      installManager.mPhaseManager.incrementActive(sourceModId, 1);
 
-      expect(state.activeByPhase.get(1)).toBe(3);
-      expect(state.activeByPhase.get(2)).toBe(0);
-      expect(state.activeByPhase.get(3) ?? 0).toBe(0);
+      expect(installManager.mPhaseManager.getActiveCount(sourceModId, 1)).toBe(3);
+      expect(installManager.mPhaseManager.getActiveCount(sourceModId, 2)).toBe(0);
+      expect(installManager.mPhaseManager.getActiveCount(sourceModId, 3)).toBe(0);
     });
 
     it('should track pending installations per phase', () => {
       const sourceModId = 'test-collection-1';
 
       installManager.ensurePhaseState(sourceModId);
-      const state = installManager.mInstallPhaseState.get(sourceModId);
 
-      const tasks1 = [jest.fn(), jest.fn()];
-      const tasks2 = [jest.fn()];
+      const task1 = jest.fn();
+      const task2 = jest.fn();
+      const task3 = jest.fn();
 
-      state.pendingByPhase.set(1, tasks1);
-      state.pendingByPhase.set(2, tasks2);
+      installManager.mPhaseManager.queuePending(sourceModId, 1, task1);
+      installManager.mPhaseManager.queuePending(sourceModId, 1, task2);
+      installManager.mPhaseManager.queuePending(sourceModId, 2, task3);
 
-      expect(state.pendingByPhase.get(1)?.length).toBe(2);
-      expect(state.pendingByPhase.get(2)?.length).toBe(1);
-      expect(state.pendingByPhase.get(3) ?? []).toEqual([]);
+      expect(installManager.mPhaseManager.getPendingCount(sourceModId, 1)).toBe(2);
+      expect(installManager.mPhaseManager.getPendingCount(sourceModId, 2)).toBe(1);
+      expect(installManager.mPhaseManager.getPendingCount(sourceModId, 3)).toBe(0);
     });
   });
 });
