@@ -8,7 +8,7 @@
 id: skyrimse-yaml
 name: Skyrim Special Edition (YAML Demo)
 shortName: SSE YAML
-logo: gameart.jpg
+logo: gameart.webp
 executable: SkyrimSE.exe
 
 # Store IDs - defined once, auto-populated to queryArgs, details, environment
@@ -41,25 +41,25 @@ hashFiles:
 supportedTools:
   - id: SSEEdit
     name: SSEEdit
-    logo: tes5edit.png
+    logo: tes5edit.webp
     executable: SSEEdit.exe
 
   - id: WryeBash
     name: Wrye Bash
-    logo: wrye.png
+    logo: wrye.webp
     executable: Wrye Bash.exe
 
   - id: FNIS
     name: Fores New Idles in Skyrim
     shortName: FNIS
-    logo: fnis.png
+    logo: fnis.webp
     executable: GenerateFNISForUsers.exe
     relative: true
 
   - id: skse64
     name: Skyrim Script Extender 64
     shortName: SKSE64
-    logo: skse.png
+    logo: skse.webp
     executable: skse64_loader.exe
     relative: true
     exclusive: true
@@ -73,6 +73,6 @@ supportedTools:
 
   - id: creation-kit-64
     name: Creation Kit
-    logo: ck.png
+    logo: ck.webp
     executable: CreationKit.exe
     relative: true
