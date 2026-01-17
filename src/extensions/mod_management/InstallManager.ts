@@ -220,6 +220,7 @@ import {
   checkCollectionPhaseStatus as checkCollectionPhaseStatusUtil,
   canStartInstallationTasks as canStartInstallationTasksUtil,
   PhaseCoordinator,
+  InstallationQueueManager,
   processAttribute as processAttributeUtil,
   processEnableAllPlugins as processEnableAllPluginsUtil,
   processSetModType as processSetModTypeUtil,
@@ -432,13 +433,13 @@ class InstallManager {
   // Phase coordinator - handles phase-gated collection installation coordination
   private mPhaseCoordinator: PhaseCoordinator;
 
+  // Installation queue manager - handles queuing and executing installations
+  private mInstallationQueueManager: InstallationQueueManager;
+
   // Installation tracker - delegates to orchestrator for backward compatibility
   private get mTracker() {
     return this.mOrchestrator.getTracker();
   }
-
-  // Tracks retry counts for failed dependency installations
-  private mDependencyRetryCount: Map<string, number> = new Map();
 
   // Main installation concurrency limiter - replaces sequential mQueue
   private mMainInstallsLimit: ConcurrencyLimiter;
@@ -451,6 +452,30 @@ class InstallManager {
     this.mUserDialogManager = new UserDialogManager(api);
     this.mInstallerSelector = new InstallerSelector(this.mInstallers);
 
+    // Initialize concurrency limiters with config values (must be before queue manager)
+    this.mDependencyInstallsLimit = new ConcurrencyLimiter(
+      this.mConfig.concurrency.maxDependencyInstalls,
+    );
+    this.mMainInstallsLimit = new ConcurrencyLimiter(
+      this.mConfig.concurrency.maxSimultaneousInstalls,
+    );
+
+    // Initialize installation queue manager with callbacks to InstallManager methods
+    this.mInstallationQueueManager = new InstallationQueueManager(
+      api,
+      this.mPhaseManager,
+      this.mTracker,
+      this.mDependencyInstallsLimit,
+      this.mMainInstallsLimit,
+      {
+        withInstructions: this.withInstructions.bind(this),
+        installModAsync: this.installModAsync.bind(this),
+        showDependencyError: this.showDependencyError.bind(this),
+        getModName: modName,
+      },
+      { maxRetries: this.mConfig.concurrency.maxRetries },
+    );
+
     // Initialize download event handler with callbacks to InstallManager methods
     this.mDownloadEventHandler = new DownloadEventHandler(
       this.mPhaseManager,
@@ -459,7 +484,10 @@ class InstallManager {
       {
         isDependencyInstalling: (collectionId: string) =>
           !!this.mDependencyInstalls[collectionId],
-        queueInstallation: this.queueInstallation.bind(this),
+        queueInstallation:
+          this.mInstallationQueueManager.queueInstallation.bind(
+            this.mInstallationQueueManager,
+          ),
         markPhaseDownloadsFinished: (
           sourceModId: string,
           phase: number,
@@ -489,17 +517,12 @@ class InstallManager {
           !!this.mDependencyInstalls[sourceModId],
         scheduleDeployOnPhaseSettled:
           this.scheduleDeployOnPhaseSettled.bind(this),
-        cleanupPendingInstalls: this.cleanupPendingInstalls.bind(this),
+        cleanupPendingInstalls:
+          this.mInstallationQueueManager.cleanupPendingInstalls.bind(
+            this.mInstallationQueueManager,
+          ),
       },
       { pollIntervalMs: this.mConfig.timing.pollIntervalMs },
-    );
-
-    // Initialize concurrency limiters with config values
-    this.mDependencyInstallsLimit = new ConcurrencyLimiter(
-      this.mConfig.concurrency.maxDependencyInstalls,
-    );
-    this.mMainInstallsLimit = new ConcurrencyLimiter(
-      this.mConfig.concurrency.maxSimultaneousInstalls,
     );
 
     api.onAsync(
@@ -604,8 +627,7 @@ class InstallManager {
       );
       this.mDependencyInstallsLimit = new ConcurrencyLimiter(10);
 
-      // Clear all retry counters
-      this.mDependencyRetryCount.clear();
+      // Retry counters are now managed by InstallationQueueManager
 
       return Bluebird.resolve();
     });
@@ -1962,325 +1984,8 @@ class InstallManager {
       });
   }
 
-  /**
-   * Clean up pending and active installations for a specific source mod
-   */
-  private cleanupPendingInstalls(
-    sourceModId: string,
-    hard: boolean = false,
-  ): void {
-    // Clean up pending and active installs via tracker
-    this.mTracker.cleanupForSourceMod(sourceModId);
-
-    // Clean up retry counters for this source mod
-    const retryKeysToRemove = Array.from(
-      this.mDependencyRetryCount.keys(),
-    ).filter((key) => key.startsWith(`${sourceModId}:`));
-    retryKeysToRemove.forEach((key) => this.mDependencyRetryCount.delete(key));
-
-    if (hard) {
-      this.mMainInstallsLimit.clearQueue();
-      this.mDependencyInstallsLimit.clearQueue();
-      this.mPhaseManager.deleteState(sourceModId);
-    }
-  }
-
-  /**
-   * Queue an installation to run asynchronously without blocking downloads.
-   * Installers are gated by phase so higher phases won't start until lower phases finish.
-   */
-  private queueInstallation(
-    api: IExtensionApi,
-    dep: IDependency,
-    downloadId: string,
-    gameId: string,
-    sourceModId: string,
-    recommended: boolean,
-    phase: number = 0,
-  ): void {
-    this.mPhaseManager.ensureState(sourceModId);
-    const phaseNum = phase ?? 0;
-
-    // Check if this installation is already active or pending
-    const installKey = this.mTracker.generateInstallKey(
-      sourceModId,
-      downloadId,
-    );
-    const alreadyActive = this.mTracker.hasActive(installKey);
-    const alreadyPending = this.mTracker.hasPending(installKey);
-
-    if (alreadyActive || alreadyPending) {
-      return;
-    }
-
-    const startTask = () =>
-      this.startQueuedInstallation(
-        api,
-        dep,
-        downloadId,
-        gameId,
-        sourceModId,
-        recommended,
-        phaseNum,
-      );
-
-    const canStartTasks = canStartInstallationTasksUtil(this.mApi, sourceModId);
-
-    // Only initialize allowedPhase early if we are allowed to run installers alongside downloads
-    const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
-    if (canStartTasks && allowedPhase === undefined) {
-      this.mPhaseManager.setAllowedPhase(sourceModId, phaseNum);
-      // When setting initial allowed phase, mark all previous phases as downloads finished
-      for (let p = 0; p < phaseNum; p++) {
-        this.mPhaseManager.markDownloadsFinished(sourceModId, p);
-      }
-    }
-
-    const downloads = api.getState().persistent.downloads.files;
-    const download = downloads[downloadId];
-    const currentAllowedPhase =
-      this.mPhaseManager.getAllowedPhase(sourceModId) ?? -1;
-    const canStartNow = canStartTasks ? phaseNum <= currentAllowedPhase : false;
-
-    // Don't start installations if deployment is in progress
-    const canStartWithoutDeploymentBlock =
-      canStartNow && !this.mPhaseManager.isDeploying(sourceModId);
-
-    if (
-      canStartWithoutDeploymentBlock &&
-      download?.state === "finished" &&
-      download?.size > 0
-    ) {
-      startTask();
-    } else {
-      if (this.mTracker.hasPending(installKey)) {
-        return;
-      }
-      this.mTracker.setPending(installKey, dep);
-      this.mPhaseManager.queuePending(sourceModId, phaseNum, startTask);
-    }
-  }
-
-  // Starts a queued installation task and wires up phase accounting
-  private startQueuedInstallation(
-    api: IExtensionApi,
-    dep: IDependency,
-    downloadId: string,
-    gameId: string,
-    sourceModId: string,
-    recommended: boolean,
-    phase: number,
-  ): void {
-    const installKey = this.mTracker.generateInstallKey(
-      sourceModId,
-      downloadId,
-    );
-    this.mTracker.setPending(installKey, dep);
-
-    // Track active count for the phase
-    this.mPhaseManager.incrementActive(sourceModId, phase);
-
-    // Process installation immediately in parallel using concurrency limiter
-    this.mDependencyInstallsLimit
-      .do(async () => {
-        const startTime = Date.now();
-
-        // Track this dependency installation
-        const depInstallInfo: IActiveInstallation = {
-          installId: installKey,
-          archiveId: downloadId,
-          archivePath: "", // Will be updated when known
-          modId: renderModReference(dep.reference),
-          gameId,
-          callback: () => {}, // Dependencies use different completion mechanism
-          startTime,
-          baseName: renderModReference(dep.reference),
-        };
-        this.mTracker.setActive(installKey, depInstallInfo);
-        try {
-          // Check if installation is still needed
-          if (!this.mTracker.hasPending(installKey)) {
-            this.mTracker.deleteActive(installKey);
-            return;
-          }
-
-          const currentDep = this.mTracker.getPending(installKey);
-          this.mTracker.deletePending(installKey);
-
-          // Verify download is still finished before installing
-          const downloads = api.getState().persistent.downloads.files;
-          if (
-            downloads[downloadId]?.state !== "finished" ||
-            downloads[downloadId]?.size === 0
-          ) {
-            log("info", "Download no longer finished, skipping installation", {
-              downloadId,
-            });
-            this.mTracker.deleteActive(installKey);
-            return;
-          }
-
-          const sourceMod = api.getState().persistent.mods[gameId][sourceModId];
-          // Check if mod is already installed with matching installer choices and patches
-          const mods = api.getState().persistent.mods[gameId];
-          const fullReference: IModReference = {
-            ...currentDep.reference,
-            installerChoices: currentDep.installerChoices,
-            patches: currentDep.patches,
-            fileList: currentDep.fileList,
-          };
-          const existingMod = findModByRef(fullReference, mods);
-          const modId =
-            existingMod != null
-              ? existingMod.id
-              : await this.withInstructions(
-                  api,
-                  modName(sourceMod),
-                  renderModReference(currentDep.reference),
-                  currentDep.reference?.tag ?? downloadId,
-                  currentDep.extra?.["instructions"],
-                  recommended,
-                  () =>
-                    this.installModAsync(
-                      currentDep.reference,
-                      api,
-                      downloadId,
-                      {
-                        choices: currentDep.installerChoices,
-                        patches: currentDep.patches,
-                      },
-                      currentDep.fileList,
-                      gameId,
-                      true,
-                      sourceModId,
-                    ),
-                );
-
-          if (modId) {
-            this.mTracker.deleteActive(installKey);
-
-            // Apply any extra attributes
-            applyExtraFromRuleUtil(api, gameId, modId, {
-              ...currentDep.extra,
-              fileList: currentDep.fileList ?? currentDep.extra?.fileList,
-              installerChoices: currentDep.installerChoices,
-              patches: currentDep.patches ?? currentDep.extra?.patches,
-            });
-
-            const state = api.getState();
-
-            const batchedActions = [];
-            // Enable the mod only for the target profile to avoid affecting other profiles
-            const batchContext = getBatchContext(
-              [
-                "install-dependencies",
-                "install-collections",
-                "install-recommendations",
-              ],
-              "",
-            );
-            const targetProfileId =
-              batchContext?.get<string>("profileId") ??
-              activeProfile(state)?.id;
-            const targetProfile = targetProfileId
-              ? profileById(state, targetProfileId)
-              : undefined;
-
-            if (targetProfile) {
-              // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = checkModVariantsExist(
-                api,
-                gameId,
-                downloadId,
-              );
-              for (const otherModId of otherModIds) {
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, otherModId, false),
-                );
-              }
-              batchedActions.push(setModEnabled(targetProfile.id, modId, true));
-            } else {
-              // Fallback: enable in profiles where source mod is enabled (original behavior)
-              const profiles = Object.values(
-                api.getState().persistent.profiles,
-              ).filter(
-                (prof) =>
-                  prof.gameId === gameId &&
-                  prof.modState?.[sourceModId]?.enabled,
-              );
-              profiles.forEach((prof) => {
-                const otherModIds = checkModVariantsExist(
-                  api,
-                  gameId,
-                  downloadId,
-                );
-                for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(prof.id, otherModId, false),
-                  );
-                }
-                batchedActions.push(setModEnabled(prof.id, modId, true));
-              });
-            }
-
-            // Mark as installed as dependency
-            batchedActions.push(
-              setModAttribute(gameId, modId, "installedAsDependency", true),
-            );
-            batchDispatch(api.store, batchedActions);
-
-            // Clear retry counter on successful installation
-            this.mDependencyRetryCount.delete(installKey);
-          }
-
-          this.mTracker.deleteActive(installKey);
-        } catch (unknownError) {
-          this.mTracker.deleteActive(installKey);
-          const currentRetryCount =
-            this.mDependencyRetryCount.get(installKey) || 0;
-          const isCanceled =
-            unknownError instanceof UserCanceled ||
-            unknownError instanceof ProcessCanceled;
-          const hasRetriesLeft =
-            currentRetryCount < this.mConfig.concurrency.maxRetries;
-          if (!isCanceled && hasRetriesLeft) {
-            this.mTracker.setPending(installKey, dep); // Re-queue for potential retry
-            this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
-          } else {
-            const err = unknownToError(unknownError);
-            // Max retries exceeded, clean up and show error
-            this.mDependencyRetryCount.delete(installKey);
-            this.showDependencyError(
-              api,
-              sourceModId,
-              "Failed to install dependency",
-              err,
-              renderModReference(dep.reference),
-            );
-          }
-          // Don't rethrow to avoid crashing the concurrency limiter
-        } finally {
-          // Always decrement phase active counter
-          this.mPhaseManager.decrementActive(sourceModId, phase);
-          // Note: Don't call maybeAdvancePhase here - it should only be called when phases are actually complete
-        }
-      })
-      .catch((unknownError) => {
-        const err = unknownToError(unknownError);
-        this.showDependencyError(
-          api,
-          sourceModId,
-          "Critical error in dependency installation",
-          unknownToError(err),
-          renderModReference(dep.reference),
-        );
-        log("error", "Critical error in dependency installation", {
-          downloadId,
-          error: err.message,
-          dependency: renderModReference(dep.reference),
-        });
-      });
-  }
+  // Installation queue methods extracted to InstallationQueueManager
+  // See ./install/InstallationQueueManager.ts for implementation
 
   /**
    * CRITICAL INVARIANTS for phase-gated installation:
@@ -3460,7 +3165,10 @@ class InstallManager {
 
         // Clean up phase state and dependency tracking when process is canceled
         delete this.mDependencyInstalls[sourceModId];
-        this.cleanupPendingInstalls(sourceModId, true);
+        this.mInstallationQueueManager.cleanupPendingInstalls(
+          sourceModId,
+          true,
+        );
 
         api.showErrorNotification(
           "Failed to install dependencies",
@@ -3476,7 +3184,10 @@ class InstallManager {
 
         // Clean up phase state and dependency tracking when canceled
         delete this.mDependencyInstalls[sourceModId];
-        this.cleanupPendingInstalls(sourceModId, true);
+        this.mInstallationQueueManager.cleanupPendingInstalls(
+          sourceModId,
+          true,
+        );
 
         api.sendNotification({
           id: "dependency-installation-canceled",
@@ -3535,7 +3246,7 @@ class InstallManager {
       queuedDownloads = [];
 
       delete this.mDependencyInstalls[sourceModId];
-      this.cleanupPendingInstalls(sourceModId, true);
+      this.mInstallationQueueManager.cleanupPendingInstalls(sourceModId, true);
     };
 
     const queueDownload = (dep: IDependency): Bluebird<string> => {

@@ -184,3 +184,13 @@ export type {
   IPhaseCoordinatorCallbacks,
   IPhaseCoordinatorConfig,
 } from "./PhaseCoordinator";
+
+// Re-export InstallationQueueManager
+export {
+  InstallationQueueManager,
+  DEFAULT_QUEUE_CONFIG,
+} from "./InstallationQueueManager";
+export type {
+  IInstallationQueueCallbacks,
+  IInstallationQueueConfig,
+} from "./InstallationQueueManager";
