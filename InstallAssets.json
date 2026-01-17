@@ -149,6 +149,24 @@
         "out",
         "app"
       ]
+    },
+    {
+      "srcPath": "src/extensions/game-definitions/games/**/*",
+      "outPath": "extensions/game-definitions/games",
+      "skipPaths": 4,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "src/extensions/game-definitions/*.json",
+      "outPath": "extensions/game-definitions",
+      "skipPaths": 3,
+      "target": [
+        "out",
+        "app"
+      ]
     }
   ]
 }
