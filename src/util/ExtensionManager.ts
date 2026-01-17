@@ -3027,6 +3027,7 @@ class ExtensionManager {
       "nexus_integration",
       "download_management",
       "gameversion_management",
+      "game-definitions",
       "gamemode_management",
       "announcement_dashlet",
       "symlink_activator",

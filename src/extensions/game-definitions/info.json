@@ -1,0 +1,6 @@
+{
+  "name": "YAML Game Definitions",
+  "author": "Nexus Mods",
+  "version": "1.0.0",
+  "description": "Allows game definitions to be expressed in YAML format, reducing boilerplate code"
+}

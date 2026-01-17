@@ -187,8 +187,8 @@ function buildRequiresLauncher(
   // Only generate requiresLauncher if there are non-steam stores that need steam
   // or if there are xbox/epic stores that need their own launchers
   const hasMultipleStores =
-    Object.keys(stores).filter((k) => stores[k as keyof NormalizedStores]).length >
-    1;
+    Object.keys(stores).filter((k) => stores[k as keyof NormalizedStores])
+      .length > 1;
 
   if (!hasMultipleStores && !stores.xbox && !stores.epic) {
     return undefined;
@@ -256,17 +256,36 @@ function transformTool(tool: GameDefTool): ITool {
 }
 
 /**
+ * Prepends the relative game directory path to a logo filename.
+ * Handles special cases like "auto" which shouldn't be prefixed.
+ *
+ * @param logo - The logo filename from YAML
+ * @param relativeGameDir - Relative path from extension root to game directory
+ * @returns The prefixed logo path
+ */
+function prefixLogoPath(
+  logo: string | undefined,
+  relativeGameDir: string,
+): string | undefined {
+  if (!logo || logo === "auto") {
+    return logo;
+  }
+  // Use forward slashes for consistency (works on both Windows and Unix)
+  return `${relativeGameDir.replace(/\\/g, "/")}/${logo}`;
+}
+
+/**
  * Transforms a GameDef from YAML into a full IGame object.
  *
  * @param def - The game definition from parsed YAML
  * @param customLogic - Optional custom logic from companion file
- * @param extensionPath - Path to the extension directory for assets
+ * @param relativeGameDir - Relative path from extension root to game directory (e.g., "games/skyrimse-yaml")
  * @returns A complete IGame object ready for registration
  */
 export function transformGameDefToGame(
   def: GameDef,
   customLogic?: IGameCustomLogic,
-  extensionPath?: string,
+  relativeGameDir?: string,
 ): IGame {
   // Normalize store IDs to strings (YAML may parse numbers as integers)
   const stores = normalizeStores(def.stores);
@@ -281,12 +300,17 @@ export function transformGameDefToGame(
     def.requiredFiles ??
     (Array.isArray(def.executable) ? def.executable : [def.executable]);
 
+  // Prefix logo path with relative game directory
+  const prefixedLogo = relativeGameDir
+    ? prefixLogoPath(def.logo, relativeGameDir)
+    : def.logo;
+
   // Build the game object
   const game: IGame = {
     id: def.id,
     name: def.name,
     shortName: def.shortName,
-    logo: def.logo,
+    logo: prefixedLogo,
     executable: executableFn,
     requiredFiles,
     mergeMods: def.mergeMods ?? true,
@@ -294,7 +318,7 @@ export function transformGameDefToGame(
     // queryModPath - use custom logic if modPath is 'queryModPath', otherwise return static path
     queryModPath:
       def.modPath === "queryModPath"
-        ? customLogic?.queryModPath ?? ((_gamePath: string) => ".")
+        ? (customLogic?.queryModPath ?? ((_gamePath: string) => "."))
         : (_gamePath: string) => def.modPath,
   };
 
@@ -328,14 +352,16 @@ export function transformGameDefToGame(
     game.requiresLauncher = requiresLauncher;
   }
 
-  // Transform supported tools
+  // Transform supported tools with prefixed logo paths
   if (def.supportedTools && def.supportedTools.length > 0) {
-    game.supportedTools = def.supportedTools.map(transformTool);
-  }
-
-  // Set extension path if provided
-  if (extensionPath) {
-    game.extensionPath = extensionPath;
+    game.supportedTools = def.supportedTools.map((tool) => {
+      const transformed = transformTool(tool);
+      // Prefix tool logo path with relative game directory
+      if (relativeGameDir && transformed.logo) {
+        transformed.logo = prefixLogoPath(transformed.logo, relativeGameDir);
+      }
+      return transformed;
+    });
   }
 
   // Merge any additional custom logic
