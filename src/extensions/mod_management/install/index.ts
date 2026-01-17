@@ -97,3 +97,80 @@ export type {
   IDependencySplitResult,
 } from "./InstallOrchestrator";
 export { DEFAULT_ORCHESTRATOR_CONFIG } from "./InstallOrchestrator";
+
+// Re-export UserDialogManager
+export {
+  UserDialogManager,
+  validateVariantName,
+  INSTALL_ACTION,
+  REPLACE_ACTION,
+} from "./UserDialogManager";
+export type { IInstallDialogOptions } from "./UserDialogManager";
+
+// Re-export ModLookupService
+export {
+  ModLookupService,
+  hasFuzzyReference,
+  checkModVariantsExist,
+  checkModNameExists,
+  findPreviousVersionMod,
+  findDownloadForMod,
+} from "./ModLookupService";
+
+// Re-export InstallerSelector
+export {
+  InstallerSelector,
+  getInstaller,
+  determineModType,
+  deriveInstallName,
+  reportUnsupported,
+} from "./InstallerSelector";
+
+// Re-export DependencyInstaller
+export {
+  DependencyInstaller,
+  showMemoDialog,
+  installRecommendationsQueryMain,
+  installRecommendationsQuerySelect,
+  updateModRule,
+  updateRules,
+} from "./DependencyInstaller";
+
+// Re-export DownloadEventHandler
+export {
+  DownloadEventHandler,
+  findCollectionByDownload,
+} from "./DownloadEventHandler";
+export type {
+  ICollectionDownloadInfo,
+  IDownloadEventCallbacks,
+} from "./DownloadEventHandler";
+
+// Re-export DependencyDownloader
+export {
+  DependencyDownloader,
+  downloadURL,
+  downloadMatching,
+  downloadDependencyAsync,
+} from "./DependencyDownloader";
+
+// Re-export DependencyPhaseHelpers
+export { applyExtraFromRule, dropUnfulfilled } from "./DependencyPhaseHelpers";
+
+// Re-export PhasedInstallCoordinator
+export {
+  PhasedInstallCoordinator,
+  checkCollectionPhaseStatus,
+  canStartInstallationTasks,
+} from "./PhasedInstallCoordinator";
+export type { IPhaseStatusResult } from "./PhasedInstallCoordinator";
+
+// Re-export InstructionDispatcher
+export {
+  InstructionDispatcher,
+  processAttribute,
+  processEnableAllPlugins,
+  processSetModType,
+  processRule,
+} from "./InstructionDispatcher";
+export type { IModTypeContext } from "./InstructionDispatcher";
