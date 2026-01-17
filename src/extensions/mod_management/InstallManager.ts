@@ -194,14 +194,11 @@ import {
   isBrowserAssistantError,
   isFileInUse,
   isCritical,
-  InstallationTracker,
-  PhaseManager,
-  ArchiveExtractor,
-  InstructionProcessor,
   FILETYPES_AVOID,
   splitDependencies,
   isDependencyError,
   logDependencyResults,
+  InstallOrchestrator,
 } from "./install";
 import type { IDependencySplit } from "./install";
 import type { IActiveInstallation, IDeploymentDetails } from "./install";
@@ -492,9 +489,14 @@ class InstallManager {
     10,
   );
 
-  // Installation tracker - manages active and pending installations
-  // Extracted to InstallationTracker class for better modularity
-  private mTracker: InstallationTracker = new InstallationTracker();
+  // Installation orchestrator - coordinates all extracted components
+  // Owns: InstallationTracker, PhaseManager, ArchiveExtractor, InstructionProcessor
+  private mOrchestrator: InstallOrchestrator = new InstallOrchestrator();
+
+  // Installation tracker - delegates to orchestrator for backward compatibility
+  private get mTracker() {
+    return this.mOrchestrator.getTracker();
+  }
 
   // Tracks retry counts for failed dependency installations
   private mDependencyRetryCount: Map<string, number> = new Map();
@@ -2536,9 +2538,11 @@ class InstallManager {
    * 4. POST-DEPLOYMENT: Always call `startPendingForPhase()` after deployment
    *    completes to resume any installations that were queued during deployment.
    */
-  // Phase manager handles phase gating per sourceMod/collection
+  // Phase manager - delegates to orchestrator for backward compatibility
   // See ./install/PhaseManager.ts for implementation details
-  private mPhaseManager: PhaseManager = new PhaseManager();
+  private get mPhaseManager() {
+    return this.mOrchestrator.getPhaseManager();
+  }
 
   private ensurePhaseState(sourceModId: string) {
     this.mPhaseManager.ensureState(sourceModId);

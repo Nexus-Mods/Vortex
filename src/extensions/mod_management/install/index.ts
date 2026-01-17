@@ -89,3 +89,11 @@ export type {
   DependencyProgressCallback,
   IDependencyResolveOptions,
 } from "./DependencyResolver";
+
+// Re-export InstallOrchestrator
+export { InstallOrchestrator } from "./InstallOrchestrator";
+export type {
+  IInstallOrchestratorConfig,
+  IDependencySplitResult,
+} from "./InstallOrchestrator";
+export { DEFAULT_ORCHESTRATOR_CONFIG } from "./InstallOrchestrator";
