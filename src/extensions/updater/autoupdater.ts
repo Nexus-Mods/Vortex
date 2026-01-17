@@ -257,7 +257,7 @@ function setupAutoUpdate(api: IExtensionApi) {
                   "info",
                   `Downgrade warning`,
                   {
-                    text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could of been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
+                    text: `Your installed version of Vortex (${autoUpdater.currentVersion.version}) is newer than the one available online (${updateInfo.version}). This could have been caused by installing a pre release version and then swapping back to stable updates. This is not recommended and we suggest going back to the beta update channel.
 
 Patch version downgrades (i.e. 1.9.13 downgrading to 1.9.12) are mostly harmless as Vortex's state information would have not changed extensively but Minor version changes (i.e. 1.10.x downgrading to 1.9.x) are usually significant and may alter your state beyond the previous versions capabilities. In some cases this can ruin your modding environment and require a new mods setup.
                     
