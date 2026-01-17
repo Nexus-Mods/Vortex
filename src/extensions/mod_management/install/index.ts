@@ -63,7 +63,12 @@ export {
   validateInstructions,
   transformInstructions,
 } from "./InstructionProcessor";
-export type { IIniEditConfig } from "./InstructionProcessor";
+export type {
+  IIniEditConfig,
+  IProcessContext,
+  SubmoduleProcessor,
+  IInstructionCallbacks,
+} from "./InstructionProcessor";
 export { DEFAULT_INI_CONFIG } from "./InstructionProcessor";
 
 // Re-export DependencyResolver utilities
@@ -216,3 +221,28 @@ export type {
   IDependencyOrchestratorConfig,
   IConcurrencyLimiter,
 } from "./DependencyInstallOrchestrator";
+
+// Re-export ModNamingStateMachine
+export {
+  ModNamingStateMachine,
+  createNamingContext,
+  applyNamingResult,
+} from "./ModNamingStateMachine";
+export type {
+  ReplaceChoice,
+  INamingContext,
+  INamingDialogOptions,
+  INamingResult,
+} from "./ModNamingStateMachine";
+
+// Re-export InstallErrorHandler
+export {
+  InstallErrorHandler,
+  createErrorContext,
+  isCanceledError,
+} from "./InstallErrorHandler";
+export type {
+  IErrorContext,
+  IErrorHandler,
+  IErrorHandlerResult,
+} from "./InstallErrorHandler";

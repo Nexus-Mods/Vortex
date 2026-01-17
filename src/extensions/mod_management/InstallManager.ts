@@ -227,9 +227,20 @@ import {
   processEnableAllPlugins as processEnableAllPluginsUtil,
   processSetModType as processSetModTypeUtil,
   processRule as processRuleUtil,
+  InstructionProcessor,
+  ModNamingStateMachine,
+  applyNamingResult,
+  InstallErrorHandler,
+  createErrorContext,
 } from "./install";
 import type { IDependencySplit, IInstallConfig } from "./install";
 import type { IActiveInstallation, IDeploymentDetails } from "./install";
+import type {
+  IProcessContext,
+  IInstructionCallbacks,
+  INamingContext,
+  IErrorContext,
+} from "./install";
 import makeListInstaller from "./listInstaller";
 import { STAGING_DIR_TAG } from "./stagingDirectory";
 
@@ -1005,8 +1016,6 @@ class InstallManager {
     this.mMainInstallsLimit
       .do(() => {
         return new Promise<string>((resolve, reject) => {
-          const installationZip = new Zip();
-
           const fullInfo = { ...info };
           let rules: IRule[] = [];
           let overrides: string[] = [];
@@ -1208,90 +1217,39 @@ class InstallManager {
                   baseName,
                   fullInfo,
                 );
-                let testModId = modId;
-                // if the name is already taken, consult the user,
-                // repeat until user canceled, decided to replace the existing
-                // mod or provided a new, unused name
 
-                let variantCounter: number = 0;
-                let replacementChoice: ReplaceChoice = undefined;
-                const checkNameLoop = () => {
-                  if (replacementChoice === "replace") {
-                    log("debug", '(nameloop) replacement choice "replace"', {
-                      testModId: testModId ?? "<undefined>",
-                    });
-                    return Promise.resolve(testModId);
-                  }
-                  const modNameMatches = checkModNameExists(
-                    testModId,
-                    api,
-                    installGameId,
-                  );
-                  const variantMatches = checkModVariantsExist(
-                    api,
-                    installGameId,
-                    archiveId,
-                  );
-                  const existingIds = (
-                    replacementChoice === "variant"
-                      ? modNameMatches
-                      : Array.from(
-                          new Set([].concat(modNameMatches, variantMatches)),
-                        )
-                  ).filter((id) => id !== undefined);
-                  if (existingIds.length === 0) {
-                    log("debug", "(nameloop) no existing ids", {
-                      testModId: testModId ?? "<undefined>",
-                    });
-                    return Promise.resolve(testModId);
-                  } else {
-                    const installOptions: IInstallOptions = {
-                      ...info,
-                      unattended,
-                      variantNumber: ++variantCounter,
-                      fileList,
-                    };
-                    return this.mUserDialogManager
-                      .queryUserReplace(existingIds, installGameId, {
-                        unattended: installOptions?.unattended,
-                        fileList: installOptions?.fileList,
-                        choices: installOptions?.choices,
-                        patches: installOptions?.patches,
-                        variantNumber: installOptions?.variantNumber,
-                      })
-                      .then((choice: IReplaceChoice) => {
-                        if (choice.id === undefined) {
-                          log("error", "(nameloop) no valid id selection", {
-                            testModId,
-                            modNameMatches,
-                            variantMatches,
-                          });
-                        }
-                        testModId = choice.id;
-                        replacementChoice = choice.replaceChoice;
-                        if (choice.enable) {
-                          enable = true;
-                        }
-
-                        const activeSession = getCollectionActiveSession(
-                          api.getState(),
-                        );
-                        if (!activeSession) {
-                          // When user chooses to replace or create a variant, clear any pre-set
-                          // installer options so they get a fresh installation experience
-                          delete fullInfo.choices;
-                          delete fullInfo.patches;
-                          fileList = undefined;
-                        }
-                        setdefault(fullInfo, "custom", {} as any).variant =
-                          choice.variant;
-                        rules = choice.rules || [];
-                        fullInfo.previous = choice.attributes;
-                        return checkNameLoop();
-                      });
-                  }
+                // Use state machine to resolve naming conflicts
+                // (replaces recursive checkNameLoop function)
+                const namingContext: INamingContext = {
+                  api,
+                  gameId: installGameId,
+                  archiveId,
+                  modId,
+                  variantCounter: 0,
+                  replacementChoice: undefined,
+                  unattended,
+                  fileList,
+                  choices: fullInfo.choices,
+                  patches: fullInfo.patches,
                 };
-                return checkNameLoop();
+
+                const namingStateMachine = new ModNamingStateMachine(
+                  this.mUserDialogManager,
+                );
+                return namingStateMachine.resolve(namingContext);
+              })
+              .then((namingResult) => {
+                // Apply side effects from naming resolution
+                const fileListRef = { current: fileList };
+                const applied = applyNamingResult(
+                  namingResult,
+                  fullInfo,
+                  fileListRef,
+                );
+                fileList = fileListRef.current;
+                enable = applied.enable || enable;
+                rules = applied.rules;
+                return applied.modId;
               })
               // TODO: this is only necessary to get at the fileId and the fileId isn't
               //   even a particularly good way to discover conflicts
@@ -1455,7 +1413,6 @@ class InstallManager {
                   destinationPath,
                   installGameId,
                   installContext,
-                  installationZip,
                   forceInstaller,
                   fullInfo.choices,
                   fileList,
@@ -1605,198 +1562,19 @@ class InstallManager {
                 return null;
               })
               .catch((err) => {
-                // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
-                //   exceptions from extensions, hence we have to do the string check (last one)
-                const canceled =
-                  err instanceof UserCanceled ||
-                  err instanceof TemporaryError ||
-                  err instanceof ProcessCanceled ||
-                  !truthy(err) ||
-                  err.message === "Canceled" ||
-                  (truthy(err.stack) &&
-                    err.stack.startsWith("UserCanceled: canceled by user"));
-                let prom =
-                  destinationPath !== undefined
-                    ? fs
-                        .removeAsync(destinationPath)
-                        .catch(UserCanceled, () => null)
-                        .catch((innerErr) => {
-                          installContext.reportError(
-                            'Failed to clean up installation directory "{{destinationPath}}", ' +
-                              "please close Vortex and remove it manually.",
-                            innerErr,
-                            innerErr.code !== "ENOTEMPTY",
-                            { destinationPath },
-                          );
-                        })
-                    : Bluebird.resolve();
-
-                if (installContext !== undefined) {
-                  const pretty = prettifyNodeErrorMessage(err);
-                  // context doesn't have to be set if we canceled early
-                  prom = prom.then(() =>
-                    installContext.finishInstallCB(
-                      canceled ? "canceled" : "failed",
-                      undefined,
-                      api.translate(pretty.message, {
-                        replace: pretty.replace,
-                      }),
-                    ),
-                  );
-                }
-
-                if (err === undefined) {
-                  return prom.then(() => {
-                    promiseCallback?.(new Error("unknown error"), null);
-                  });
-                } else if (canceled) {
-                  return prom.then(() => {
-                    promiseCallback?.(err, null);
-                  });
-                } else if (err instanceof ArchiveBrokenError) {
-                  return prom.then(() => {
-                    if (unattended) {
-                      promiseCallback?.(err, null);
-                      return Promise.resolve();
-                    }
-                    if (installContext !== undefined) {
-                      api.sendNotification({
-                        type: "info",
-                        title: "Installation failed, archive is damaged",
-                        message: path.basename(archivePath),
-                        actions: [
-                          {
-                            title: "Delete",
-                            action: (dismiss) => {
-                              api.events.emit(
-                                "remove-download",
-                                archiveId,
-                                dismiss,
-                              );
-                            },
-                          },
-                          {
-                            title: "Delete & Redownload",
-                            action: (dismiss) => {
-                              const state: IState = api.store.getState();
-                              const download =
-                                state.persistent.downloads.files[archiveId];
-                              api.events.emit(
-                                "remove-download",
-                                archiveId,
-                                () => {
-                                  dismiss();
-                                  api.events.emit(
-                                    "start-download",
-                                    download.urls,
-                                    info.download,
-                                    path.basename(archivePath),
-                                  );
-                                },
-                              );
-                              dismiss();
-                            },
-                          },
-                        ],
-                      });
-                    }
-                  });
-                } else if (err instanceof SetupError) {
-                  return prom.then(() => {
-                    if (installContext !== undefined) {
-                      installContext.reportError(
-                        "Installation failed",
-                        err,
-                        false,
-                        {
-                          installerPath: path.basename(archivePath),
-                          message: err.message,
-                        },
-                      );
-                    }
-                    promiseCallback?.(err, null);
-                  });
-                } else if (err instanceof DataInvalid) {
-                  return prom.then(() => {
-                    if (installContext !== undefined) {
-                      installContext.reportError(
-                        "Installation failed",
-                        "The installer {{ installerPath }} is invalid and couldn't be " +
-                          "installed:\n{{ message }}\nPlease inform the mod author.\n",
-                        false,
-                        {
-                          installerPath: path.basename(archivePath),
-                          message: err.message,
-                        },
-                      );
-                    }
-                    promiseCallback?.(err, null);
-                  });
-                } else if (err["code"] === "MODULE_NOT_FOUND") {
-                  const location =
-                    err["requireStack"] !== undefined
-                      ? ` (at ${err["requireStack"][0]})`
-                      : "";
-                  installContext.reportError(
-                    "Installation failed",
-                    "Module failed to load:\n{{message}}{{location}}\n\n" +
-                      "This usually indicates that the Vortex installation has been " +
-                      "corrupted or an external application (like an Anti-Virus) has interfered with " +
-                      "the loading of the module. " +
-                      "Please check whether your AV reported something and try reinstalling Vortex.",
-                    false,
-                    {
-                      location,
-                      message: err.message.split("\n")[0],
-                    },
-                  );
-                  promiseCallback?.(err, null);
-                } else {
-                  return prom
-                    .then(() => api.genMd5Hash(archivePath).catch(() => ({})))
-                    .then((hashResult: IHashResult) => {
-                      const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-                      let replace = {};
-                      if (typeof err === "string") {
-                        err = 'The installer "{{ id }}" failed: {{ message }}';
-                        replace = {
-                          id,
-                          message: err,
-                        };
-                      }
-                      if (installContext !== undefined) {
-                        const browserAssistantMsg =
-                          "The installer has failed due to an external 3rd " +
-                          "party application you have installed on your system named " +
-                          '"Browser Assistant". This application inserts itself globally ' +
-                          "and breaks any other application that uses the same libraries as it does.\n\n" +
-                          'To use Vortex, please uninstall "Browser Assistant".';
-                        const errorMessage =
-                          typeof err === "string" ? err : err.message;
-                        let allowReport: boolean;
-                        if (
-                          err.message.includes(
-                            "No compatible .NET installation",
-                          )
-                        ) {
-                          allowReport = false;
-                        }
-                        !isBrowserAssistantError(errorMessage)
-                          ? installContext.reportError(
-                              "Installation failed",
-                              err,
-                              allowReport,
-                              replace,
-                            )
-                          : installContext.reportError(
-                              "Installation failed",
-                              browserAssistantMsg,
-                              false,
-                            );
-                      }
-                      promiseCallback?.(err, modId);
-                    });
-                }
+                // Use strategy-based error handler for cleaner error handling
+                const errorContext: IErrorContext = createErrorContext(
+                  api,
+                  archivePath,
+                  archiveId,
+                  destinationPath,
+                  installContext,
+                  unattended,
+                  info,
+                  promiseCallback,
+                );
+                const errorHandler = new InstallErrorHandler();
+                return errorHandler.handle(err, errorContext);
               })
               .finally(() => {
                 if (installContext !== undefined) {
@@ -2152,48 +1930,7 @@ class InstallManager {
 
   // Error classification methods extracted to ./install/errors/errorClassification.ts
   // Now using imported functions: isBrowserAssistantError, isCritical, isFileInUse
-
-  private extractWithRetry(
-    zip: Zip,
-    archivePath: string,
-    tempPath: string,
-    progress: (files: string[], percent: number) => void,
-    queryPassword: () => Bluebird<string>,
-    maxRetries: number = DEFAULT_INSTALL_CONFIG.concurrency.maxRetries,
-    retryDelayMs: number = DEFAULT_INSTALL_CONFIG.timing.retryDelayMs,
-  ): Bluebird<{ code: number; errors: string[] }> {
-    const attemptExtract = (
-      retriesLeft: number,
-    ): Bluebird<{ code: number; errors: string[] }> => {
-      return zip
-        .extractFull(
-          archivePath,
-          tempPath,
-          { ssc: false },
-          progress,
-          queryPassword as any,
-        )
-        .catch((err: Error) => {
-          if (isFileInUse(err.message) && retriesLeft > 0) {
-            log("info", "archive file in use, retrying extraction", {
-              archivePath: path.basename(archivePath),
-              retriesLeft,
-              retryDelayMs,
-            });
-            return delay(retryDelayMs).then(() =>
-              attemptExtract(retriesLeft - 1),
-            );
-          }
-          if (isCritical(err.message)) {
-            return Bluebird.reject(
-              new ArchiveBrokenError(path.basename(archivePath), err.message),
-            );
-          }
-          return Bluebird.reject(err);
-        });
-    };
-    return attemptExtract(maxRetries);
-  }
+  // Archive extraction with retry logic now handled by ArchiveExtractor
 
   /**
    * find the right installer for the specified archive, then install
@@ -2205,7 +1942,6 @@ class InstallManager {
     destinationPath: string,
     gameId: string,
     installContext: IInstallContext,
-    installationZip: Zip,
     forceInstaller?: string,
     installChoices?: any,
     extractList?: IFileListItem[],
@@ -2221,48 +1957,51 @@ class InstallManager {
       }
     };
     log("debug", "extracting mod archive", { archivePath, tempPath });
-    let extractProm: Bluebird<any>;
-    const extractionStart = Date.now();
-    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
-      extractProm = Bluebird.reject(
-        new ArchiveBrokenError(
-          path.basename(archivePath),
-          "file type on avoidlist",
-        ),
-      );
-    } else {
-      extractProm = this.extractWithRetry(
-        installationZip,
-        archivePath,
-        tempPath,
-        progress,
-        () => this.mUserDialogManager.queryPassword(api.store),
-      );
-      (extractProm as any).startTime = extractionStart;
-    }
+
+    // Use the orchestrator's ArchiveExtractor for extraction with retry logic
+    const extractProm = this.mOrchestrator
+      .getExtractor()
+      .extract(archivePath, tempPath, {
+        onProgress: progress,
+        queryPassword: async () =>
+          this.mUserDialogManager.queryPassword(api.store),
+      });
 
     return extractProm
-      .then(async ({ code, errors }: { code: number; errors: string[] }) => {
-        log("debug", "extraction completed", {
-          archivePath: path.basename(archivePath),
-          extractionTimeMs: Date.now() - (extractProm as any).startTime,
-        });
-        phase = "Installing";
-        if (installContext !== undefined) {
-          installContext.setProgress("Installing");
-        }
-        if (code !== 0) {
-          log("warn", "extraction reported error", {
-            code,
-            errors: errors.join("; "),
+      .then(
+        async ({
+          code,
+          errors,
+          durationMs,
+        }: {
+          code: number;
+          errors: string[];
+          durationMs: number;
+        }) => {
+          log("debug", "extraction completed", {
+            archivePath: path.basename(archivePath),
+            extractionTimeMs: durationMs,
           });
-          const critical = errors.find((err) => isCritical(err));
-          if (critical !== undefined) {
-            throw new ArchiveBrokenError(path.basename(archivePath), critical);
+          phase = "Installing";
+          if (installContext !== undefined) {
+            installContext.setProgress("Installing");
           }
-          await this.mUserDialogManager.queryContinue(errors, archivePath);
-        }
-      })
+          if (code !== 0) {
+            log("warn", "extraction reported error", {
+              code,
+              errors: errors.join("; "),
+            });
+            const critical = errors.find((err) => isCritical(err));
+            if (critical !== undefined) {
+              throw new ArchiveBrokenError(
+                path.basename(archivePath),
+                critical,
+              );
+            }
+            await this.mUserDialogManager.queryContinue(errors, archivePath);
+          }
+        },
+      )
       .then(async () => {
         await walk(
           tempPath,
@@ -2483,30 +2222,6 @@ class InstallManager {
     }, new InstructionGroups());
   }
 
-  private processMKDir(
-    instructions: IInstruction[],
-    destinationPath: string,
-  ): Bluebird<void> {
-    return Bluebird.each(instructions, (instruction) =>
-      fs.ensureDirAsync(path.join(destinationPath, instruction.destination)),
-    ).then(() => undefined);
-  }
-
-  private processGenerateFiles(
-    generatefile: IInstruction[],
-    destinationPath: string,
-  ): Bluebird<void> {
-    return Bluebird.each(generatefile, (gen) => {
-      const outputPath = path.join(destinationPath, gen.destination);
-      return (
-        fs
-          .ensureDirAsync(path.dirname(outputPath))
-          // data buffers are sent to us base64 encoded
-          .then(() => fs.writeFileAsync(outputPath, gen.data))
-      );
-    }).then(() => undefined);
-  }
-
   private processSubmodule(
     api: IExtensionApi,
     installContext: InstallContext,
@@ -2531,7 +2246,6 @@ class InstallManager {
           replace: { modName: path.basename(mod.path) },
         }),
       );
-      const submoduleZip = new Zip();
       return this.installInner(
         api,
         mod.path,
@@ -2539,7 +2253,6 @@ class InstallManager {
         destinationPath,
         gameId,
         subContext,
-        submoduleZip,
         undefined,
         choices,
         undefined,
@@ -2573,64 +2286,6 @@ class InstallManager {
           fs.removeAsync(tempPath);
         });
     }).then(() => undefined);
-  }
-
-  private processIniEdits(
-    api: IExtensionApi,
-    iniEdits: IInstruction[],
-    destinationPath: string,
-    gameId: string,
-    modId: string,
-  ): Bluebird<void> {
-    if (iniEdits.length === 0) {
-      return Bluebird.resolve();
-    }
-
-    const byDest: { [dest: string]: IInstruction[] } = iniEdits.reduce(
-      (prev: { [dest: string]: IInstruction[] }, value) => {
-        setdefault(prev, value.destination, []).push(value);
-        return prev;
-      },
-      {},
-    );
-
-    return fs
-      .ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH))
-      .then(() =>
-        Bluebird.map(Object.keys(byDest), (destination) => {
-          const bySection: { [section: string]: IInstruction[] } = byDest[
-            destination
-          ].reduce((prev: { [section: string]: IInstruction[] }, value) => {
-            setdefault(prev, value.section, []).push(value);
-            return prev;
-          }, {});
-
-          const renderKV = (instruction: IInstruction): string =>
-            `${instruction.key} = ${instruction.value}`;
-
-          const renderSection = (section: string) =>
-            [`[${section}]`]
-              .concat(bySection[section].map(renderKV))
-              .join(os.EOL);
-
-          const content = Object.keys(bySection)
-            .map(renderSection)
-            .join(os.EOL);
-
-          const basename = path.basename(
-            destination,
-            path.extname(destination),
-          );
-          const tweakId = `From Installer [${basename}].ini`;
-          api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true));
-
-          return fs.writeFileAsync(
-            path.join(destinationPath, INI_TWEAKS_PATH, tweakId),
-            content,
-          );
-        }),
-      )
-      .then(() => undefined);
   }
 
   private modTypeExists = (gameId: string, modType: string): boolean => {
@@ -2818,73 +2473,55 @@ class InstallManager {
       }
     }
 
-    // log('debug', 'installer instructions',
-    //     JSON.stringify(result.instructions.map(instr => _.omit(instr, ['data']))));
-    reportUnsupported(api, instructionGroups.unsupported, archivePath);
+    // Use the InstructionProcessor to handle all instruction types
+    const processor = this.mOrchestrator.getInstructionProcessor();
+    const ctx: IProcessContext = {
+      api,
+      archivePath,
+      tempPath,
+      destinationPath,
+      gameId,
+      modId,
+      choices,
+      unattended,
+    };
 
-    return this.processMKDir(instructionGroups.mkdir, destinationPath)
-      .then(() =>
-        this.extractArchive(
-          api,
-          archivePath,
-          tempPath,
-          destinationPath,
-          instructionGroups.copy,
-          gameId,
+    const callbacks: IInstructionCallbacks = {
+      processAttribute: (api, instructions, gameId, modId) =>
+        Bluebird.resolve(
+          processAttributeUtil(api, instructions, gameId, modId),
         ),
-      )
-      .then(() =>
-        this.processGenerateFiles(
-          instructionGroups.generatefile,
-          destinationPath,
+      processEnableAllPlugins: (api, instructions, gameId, modId) =>
+        Bluebird.resolve(
+          processEnableAllPluginsUtil(api, instructions, gameId, modId),
         ),
-      )
-      .then(() =>
-        this.processIniEdits(
-          api,
-          instructionGroups.iniedit,
-          destinationPath,
-          gameId,
-          modId,
+      processSetModType: (api, instCtx, instructions, gameId, modId) =>
+        Bluebird.resolve(
+          processSetModTypeUtil(api, instCtx, instructions, gameId, modId),
         ),
-      )
-      .then(() =>
+      processRule: (api, instructions, gameId, modId) =>
+        processRuleUtil(api, instructions, gameId, modId),
+      enableIniTweak: (api, gameId, modId, tweakId) =>
+        api.store.dispatch(setINITweakEnabled(gameId, modId, tweakId, true)),
+      processSubmodule: (instruction, subCtx) =>
         this.processSubmodule(
-          api,
+          subCtx.api,
           installContext,
-          instructionGroups.submodule,
-          destinationPath,
-          gameId,
-          modId,
-          choices,
-          unattended,
+          [instruction],
+          subCtx.destinationPath,
+          subCtx.gameId,
+          subCtx.modId,
+          subCtx.choices,
+          subCtx.unattended,
           details,
         ),
-      )
-      .then(() =>
-        processAttributeUtil(api, instructionGroups.attribute, gameId, modId),
-      )
-      .then(() =>
-        processEnableAllPluginsUtil(
-          api,
-          instructionGroups.enableallplugins,
-          gameId,
-          modId,
-        ),
-      )
-      .then(() =>
-        processSetModTypeUtil(
-          api,
-          installContext,
-          instructionGroups.setmodtype,
-          gameId,
-          modId,
-        ),
-      )
-      .then(() => {
-        processRuleUtil(api, instructionGroups.rule, gameId, modId);
-        return Bluebird.resolve();
-      });
+      reportUnsupported: (api, instructions, archivePath) =>
+        reportUnsupported(api, instructions, archivePath),
+    };
+
+    return Bluebird.resolve(
+      processor.processAll(instructionGroups, ctx, installContext, callbacks),
+    );
   }
 
   // Delegates to DependencyInstaller
@@ -3393,119 +3030,6 @@ class InstallManager {
         requirement,
       );
     });
-  }
-
-  /**
-   * extract an archive
-   *
-   * @export
-   * @param {string} archivePath path to the archive file
-   * @param {string} destinationPath path to install to
-   */
-  private async extractArchive(
-    api: IExtensionApi,
-    archivePath: string,
-    tempPath: string,
-    destinationPath: string,
-    copies: IInstruction[],
-    gameId: string,
-  ): Promise<void> {
-    const now = Date.now();
-    // Strategy:
-    //  - dedupe and pre-create parent directories once
-    //  - link files in parallel with a bounded concurrency
-    //  - if link fails (different fs, permission) fallback to copying
-    //  - unlink sources in parallel after successful transfers
-    const sorted = copies
-      .slice()
-      .sort((a, b) => a.destination.length - b.destination.length);
-    const dirs = new Set<string>();
-    const jobs: Array<{ src: string; dst: string; rel: string }> = [];
-    const missingFiles = new Set<string>();
-
-    const copyAsyncWrap = async (src: string, dst: string) => {
-      try {
-        await fs.copyAsync(src, dst);
-      } catch (err) {
-        if (
-          err instanceof SelfCopyCheckError ||
-          getErrorMessage(err)?.includes("and destination must")
-        ) {
-          // File is already there - don't care
-          return;
-        }
-      }
-    };
-
-    for (const copy of sorted) {
-      const src = path.join(tempPath, copy.source);
-      const dst = path.join(destinationPath, copy.destination);
-      dirs.add(path.dirname(dst));
-      jobs.push({ src, dst, rel: copy.destination });
-    }
-
-    const cpuCount = os && os.cpus ? Math.max(1, os.cpus().length) : 1;
-    const dirConcurrency = Math.min(64, Math.max(4, cpuCount * 2));
-    const ioConcurrency = Math.min(256, Math.max(8, cpuCount * 8));
-
-    try {
-      // create parent directories
-      await Bluebird.map(Array.from(dirs), (d) => fs.ensureDirAsync(d), {
-        concurrency: dirConcurrency,
-      });
-
-      // perform hard links in parallel; fallback to copy on failure
-      await Bluebird.map(
-        jobs,
-        async (job) => {
-          try {
-            await fs.linkAsync(job.src, job.dst);
-          } catch (err) {
-            const code = getErrorCode(err);
-            if (code === "ENOENT") {
-              // source file does not exist; skip
-              missingFiles.add(job.src);
-              return;
-            }
-            if (
-              code &&
-              ["EXDEV", "EPERM", "EACCES", "ENOTSUP", "EEXIST"].includes(code)
-            ) {
-              await copyAsyncWrap(job.src, job.dst);
-            } else {
-              throw err;
-            }
-          }
-        },
-        { concurrency: ioConcurrency },
-      );
-
-      if (missingFiles.size > 0) {
-        api.showErrorNotification(
-          api.translate("Invalid installer"),
-          api.translate(
-            'The installer in "{{name}}" tried to install files that were ' +
-              "not part of the archive.\n This can be due to an invalid mod or an invalid game extension installer.\n" +
-              "Please report this to the mod author and/or the game extension developer.",
-            { replace: { name: path.basename(archivePath) } },
-          ) +
-            "\n\n" +
-            Array.from(missingFiles)
-              .map((name) => "- " + name)
-              .join("\n"),
-          { allowReport: false },
-        );
-      }
-      return Promise.resolve();
-    } catch (err) {
-      return Promise.reject(err);
-    } finally {
-      log("debug", "extraction completed", {
-        duration: Date.now() - now,
-        archivePath,
-        instructions: copies.length,
-      });
-    }
   }
 
   /**
