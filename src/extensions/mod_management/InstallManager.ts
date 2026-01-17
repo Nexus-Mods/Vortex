@@ -210,6 +210,7 @@ import {
   installRecommendationsQuerySelect,
   updateModRule as updateModRuleUtil,
   updateRules as updateRulesUtil,
+  repairRules as repairRulesUtil,
   DownloadEventHandler,
   findCollectionByDownload,
   downloadURL as downloadURLUtil,
@@ -578,7 +579,7 @@ class InstallManager {
       {
         withInstructions: this.withInstructions.bind(this),
         installModAsync: this.installModAsync.bind(this),
-        updateModRule: this.updateModRuleMethod.bind(this),
+        updateModRule: updateModRuleUtil,
         getDependencyAbort: (sourceModId: string) =>
           this.mDependencyInstalls[sourceModId],
         setDependencyAbort: (sourceModId: string, abort: () => void) => {
@@ -1687,7 +1688,7 @@ class InstallManager {
       );
     }
 
-    this.repairRules(api, mod, gameId);
+    repairRulesUtil(api, mod, gameId);
 
     const installPath = this.mGetInstallPath(gameId);
     log("info", "start installing dependencies", { modId });
@@ -1741,7 +1742,7 @@ class InstallManager {
       );
     }
 
-    this.repairRules(api, mod, gameId);
+    repairRulesUtil(api, mod, gameId);
 
     const installPath = this.mGetInstallPath(gameId);
     log("info", "start installing recommendations", { modId });
@@ -1904,31 +1905,8 @@ class InstallManager {
     return deploymentPromise;
   }
 
-  /**
-   * when installing a mod from a dependency rule we store the id of the installed mod
-   * in the rule for quicker and consistent matching but if - at a later time - we
-   * install those same dependencies again we have to unset those ids, otherwise the
-   * dependency installs would fail.
-   */
-  private repairRules(api: IExtensionApi, mod: IMod, gameId: string) {
-    const state: IState = api.store.getState();
-    const mods = state.persistent.mods[gameId];
-
-    (mod.rules || []).forEach((rule) => {
-      if (
-        rule.reference.id !== undefined &&
-        mods[rule.reference.id] === undefined &&
-        hasFuzzyReference(rule.reference)
-      ) {
-        const newRule: IModRule = JSON.parse(JSON.stringify(rule));
-        api.store.dispatch(removeModRule(gameId, mod.id, rule));
-        delete newRule.reference.id;
-        api.store.dispatch(addModRule(gameId, mod.id, newRule));
-      }
-    });
-  }
-
   // Error classification methods extracted to ./install/errors/errorClassification.ts
+  // repairRules moved to install/DependencyInstaller.ts
   // Now using imported functions: isBrowserAssistantError, isCritical, isFileInUse
   // Archive extraction with retry logic now handled by ArchiveExtractor
 
@@ -2174,53 +2152,8 @@ class InstallManager {
       });
   }
 
-  // Also available as InstructionProcessor.validateInstructions() for standalone use
-  private validateInstructions(
-    instructions: IInstruction[],
-  ): IInvalidInstruction[] {
-    const sanitizeSep = new RegExp("/", "g");
-    // Validate the ungrouped instructions and return errors (if any)
-    const invalidDestinationErrors: IInvalidInstruction[] = instructions
-      .filter((instr) => {
-        if (instr.destination) {
-          // This is a temporary hack to avoid invalidating fomod instructions
-          //  which will include a path separator at the beginning of a relative path
-          //  when matching nested stop patterns.
-          const destination =
-            instr.destination.charAt(0) === path.sep
-              ? instr.destination.substr(1)
-              : instr.destination;
-
-          // Ensure we use windows path separators as scripted installers
-          //  will sometime return *nix separators.
-          const sanitized =
-            process.platform === "win32"
-              ? destination.replace(sanitizeSep, path.sep)
-              : destination;
-          return !isPathValid(sanitized, true);
-        }
-
-        return false;
-      })
-      .map((instr) => {
-        return {
-          type: instr.type,
-          error: `invalid destination path: "${instr.destination}"`,
-        };
-      });
-
-    return [].concat(invalidDestinationErrors);
-  }
-
-  // Also available as InstructionProcessor.transformInstructions() for standalone use
-  private transformInstructions(input: IInstruction[]): InstructionGroups {
-    return input.reduce((prev, value) => {
-      if (truthy(value) && prev[value.type] !== undefined) {
-        prev[value.type].push(value);
-      }
-      return prev;
-    }, new InstructionGroups());
-  }
+  // validateInstructions and transformInstructions moved to InstructionProcessor
+  // Now using: this.mOrchestrator.getInstructionProcessor().validateInstructions/transformInstructions
 
   private processSubmodule(
     api: IExtensionApi,
@@ -2406,7 +2339,9 @@ class InstallManager {
       }
     }
 
-    const invalidInstructions = this.validateInstructions(finalInstructions);
+    const processor = this.mOrchestrator.getInstructionProcessor();
+    const invalidInstructions =
+      processor.validateInstructions(finalInstructions);
     if (invalidInstructions.length > 0) {
       const game = getGame(gameId);
       // we can also get here with invalid instructions from scripted installers
@@ -2440,7 +2375,8 @@ class InstallManager {
       );
     }
 
-    const instructionGroups = this.transformInstructions(finalInstructions);
+    const instructionGroups =
+      processor.transformInstructions(finalInstructions);
 
     if (instructionGroups.error.length > 0) {
       const fatal = instructionGroups.error.find(
@@ -2474,7 +2410,7 @@ class InstallManager {
     }
 
     // Use the InstructionProcessor to handle all instruction types
-    const processor = this.mOrchestrator.getInstructionProcessor();
+    // processor already declared above for validation
     const ctx: IProcessContext = {
       api,
       archivePath,
@@ -2524,35 +2460,7 @@ class InstallManager {
     );
   }
 
-  // Delegates to DependencyInstaller
-  private updateModRuleMethod(
-    api: IExtensionApi,
-    gameId: string,
-    sourceModId: string,
-    dep: IDependency,
-    reference: IModReference,
-    recommended: boolean,
-  ) {
-    return updateModRuleUtil(
-      api,
-      gameId,
-      sourceModId,
-      dep,
-      reference,
-      recommended,
-    );
-  }
-
-  // Delegates to DependencyInstaller
-  private updateRules(
-    api: IExtensionApi,
-    gameId: string,
-    sourceModId: string,
-    dependencies: IDependency[],
-    recommended: boolean,
-  ): Bluebird<void> {
-    return updateRulesUtil(api, gameId, sourceModId, dependencies, recommended);
-  }
+  // updateModRule and updateRules now use imported functions directly from DependencyInstaller
 
   private doInstallDependencyList(
     api: IExtensionApi,
@@ -2600,7 +2508,7 @@ class InstallManager {
       return this.mDependencyInstallOrchestrator
         .orchestrate(api, gameId, modId, success, false, silent)
         .then((updated) =>
-          this.updateRules(
+          updateRulesUtil(
             api,
             gameId,
             modId,
@@ -2621,7 +2529,7 @@ class InstallManager {
         return this.mDependencyInstallOrchestrator
           .orchestrate(api, gameId, modId, success, false, silent)
           .then((updated) =>
-            this.updateRules(
+            updateRulesUtil(
               api,
               gameId,
               modId,
@@ -2860,7 +2768,7 @@ class InstallManager {
           return this.mDependencyInstallOrchestrator
             .orchestrate(api, gameId, modId, result, true, silent)
             .then((updated) =>
-              this.updateRules(
+              updateRulesUtil(
                 api,
                 gameId,
                 modId,

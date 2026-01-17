@@ -27,6 +27,7 @@ import { addModRule, removeModRule } from "../actions/mods";
 import modName, { renderModReference } from "../util/modName";
 import { referenceEqual } from "../util/testModReference";
 import type { IRule } from "modmeta-db";
+import { hasFuzzyReference } from "./ModLookupService";
 import type { IState } from "../../../types/IState";
 
 /**
@@ -367,6 +368,40 @@ export function updateRules(
     updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
   });
   return Bluebird.resolve();
+}
+
+/**
+ * Repair mod rules that have stale reference IDs.
+ *
+ * When dependencies get uninstalled and reinstalled, the mod IDs change.
+ * If the old rule still references the old mod ID, installing dependencies
+ * would fail. This function clears stale IDs from rules that have fuzzy
+ * references, allowing them to be resolved again.
+ *
+ * @param api - Extension API
+ * @param mod - The mod whose rules need repair
+ * @param gameId - Game ID
+ */
+export function repairRules(
+  api: IExtensionApi,
+  mod: IMod,
+  gameId: string,
+): void {
+  const state: IState = api.store.getState();
+  const mods = state.persistent.mods[gameId];
+
+  (mod.rules || []).forEach((rule) => {
+    if (
+      rule.reference.id !== undefined &&
+      mods[rule.reference.id] === undefined &&
+      hasFuzzyReference(rule.reference)
+    ) {
+      const newRule: IModRule = JSON.parse(JSON.stringify(rule));
+      api.store.dispatch(removeModRule(gameId, mod.id, rule));
+      delete newRule.reference.id;
+      api.store.dispatch(addModRule(gameId, mod.id, newRule));
+    }
+  });
 }
 
 /**

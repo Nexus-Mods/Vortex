@@ -139,6 +139,7 @@ export {
   installRecommendationsQuerySelect,
   updateModRule,
   updateRules,
+  repairRules,
 } from "./DependencyInstaller";
 
 // Re-export DownloadEventHandler
