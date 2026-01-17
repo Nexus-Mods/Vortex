@@ -40,13 +40,17 @@
       "description": "Store identifiers for automatic game discovery",
       "properties": {
         "steam": {
-          "type": "string",
-          "pattern": "^[0-9]+$",
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9]+$" },
+            { "type": "integer" }
+          ],
           "description": "Steam App ID"
         },
         "gog": {
-          "type": "string",
-          "pattern": "^[0-9]+$",
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9]+$" },
+            { "type": "integer" }
+          ],
           "description": "GOG Game ID"
         },
         "epic": {

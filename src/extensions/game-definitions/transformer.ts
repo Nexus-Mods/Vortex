@@ -8,7 +8,34 @@ import type {
   GameDefStores,
   GameDefTool,
   IGameCustomLogic,
+  NormalizedStores,
 } from "./types";
+
+/**
+ * Normalizes store IDs to strings (YAML may parse numbers without quotes as integers).
+ */
+function normalizeStores(stores?: GameDefStores): NormalizedStores | undefined {
+  if (!stores) {
+    return undefined;
+  }
+
+  const normalized: NormalizedStores = {};
+
+  if (stores.steam !== undefined) {
+    normalized.steam = String(stores.steam);
+  }
+  if (stores.gog !== undefined) {
+    normalized.gog = String(stores.gog);
+  }
+  if (stores.epic !== undefined) {
+    normalized.epic = String(stores.epic);
+  }
+  if (stores.xbox !== undefined) {
+    normalized.xbox = String(stores.xbox);
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
 
 /**
  * Builds queryArgs from store IDs for game discovery.
@@ -18,7 +45,7 @@ import type {
  * @returns Query arguments object for game discovery
  */
 function buildQueryArgs(
-  stores?: GameDefStores,
+  stores?: NormalizedStores,
   registryPath?: string,
 ): { [storeId: string]: Array<{ id?: string; name?: string }> } | undefined {
   if (!stores && !registryPath) {
@@ -55,7 +82,7 @@ function buildQueryArgs(
  * @returns Details object for the game
  */
 function buildDetails(
-  stores?: GameDefStores,
+  stores?: NormalizedStores,
   nexusPageId?: string,
   hashFiles?: string[],
 ): { [key: string]: any } | undefined {
@@ -92,7 +119,7 @@ function buildDetails(
  */
 function buildEnvironment(
   env?: Array<{ var: string; value: string }>,
-  stores?: GameDefStores,
+  stores?: NormalizedStores,
 ): { [key: string]: string } | undefined {
   if (!env || env.length === 0) {
     // Auto-generate environment from stores if no explicit environment
@@ -146,7 +173,7 @@ function buildEnvironment(
  * @returns A requiresLauncher function or undefined
  */
 function buildRequiresLauncher(
-  stores?: GameDefStores,
+  stores?: NormalizedStores,
 ):
   | ((
       gamePath: string,
@@ -160,7 +187,7 @@ function buildRequiresLauncher(
   // Only generate requiresLauncher if there are non-steam stores that need steam
   // or if there are xbox/epic stores that need their own launchers
   const hasMultipleStores =
-    Object.keys(stores).filter((k) => stores[k as keyof GameDefStores]).length >
+    Object.keys(stores).filter((k) => stores[k as keyof NormalizedStores]).length >
     1;
 
   if (!hasMultipleStores && !stores.xbox && !stores.epic) {
@@ -241,6 +268,9 @@ export function transformGameDefToGame(
   customLogic?: IGameCustomLogic,
   extensionPath?: string,
 ): IGame {
+  // Normalize store IDs to strings (YAML may parse numbers as integers)
+  const stores = normalizeStores(def.stores);
+
   // Determine the executable function
   const executableFn = Array.isArray(def.executable)
     ? (_discoveredPath?: string) => def.executable[0]
@@ -269,31 +299,31 @@ export function transformGameDefToGame(
   };
 
   // Auto-populate queryArgs from stores
-  const queryArgs = buildQueryArgs(def.stores, def.registryPath);
+  const queryArgs = buildQueryArgs(stores, def.registryPath);
   if (queryArgs) {
     game.queryArgs = queryArgs;
   }
 
   // Auto-populate gameFinder from stores
-  if (def.stores) {
-    game.gameFinder = { ...def.stores };
+  if (stores) {
+    game.gameFinder = { ...stores };
   }
 
   // Auto-populate details
-  const details = buildDetails(def.stores, def.nexusPageId, def.hashFiles);
+  const details = buildDetails(stores, def.nexusPageId, def.hashFiles);
   if (details) {
     game.details = details;
   }
 
   // Auto-populate environment
-  const environment = buildEnvironment(def.environment, def.stores);
+  const environment = buildEnvironment(def.environment, stores);
   if (environment) {
     game.environment = environment;
   }
 
   // Auto-generate requiresLauncher
   const requiresLauncher =
-    customLogic?.requiresLauncher ?? buildRequiresLauncher(def.stores);
+    customLogic?.requiresLauncher ?? buildRequiresLauncher(stores);
   if (requiresLauncher) {
     game.requiresLauncher = requiresLauncher;
   }

@@ -5,17 +5,18 @@ import type { ITool } from "../../types/ITool";
 
 /**
  * Store identifiers for game discovery across different game stores.
+ * Numeric IDs can be specified as numbers (no quotes needed in YAML).
  */
 export interface GameDefStores {
   /**
-   * Steam App ID (e.g., '489830' for Skyrim SE)
+   * Steam App ID (e.g., 489830 for Skyrim SE)
    */
-  steam?: string;
+  steam?: string | number;
 
   /**
-   * GOG Game ID (e.g., '1711230643' for Skyrim SE)
+   * GOG Game ID (e.g., 1711230643 for Skyrim SE)
    */
-  gog?: string;
+  gog?: string | number;
 
   /**
    * Epic Games Store Catalog Item ID
@@ -25,6 +26,16 @@ export interface GameDefStores {
   /**
    * Xbox Game Pass Product ID (Identity Name from appxmanifest.xml)
    */
+  xbox?: string;
+}
+
+/**
+ * Normalized store identifiers with all values as strings.
+ */
+export interface NormalizedStores {
+  steam?: string;
+  gog?: string;
+  epic?: string;
   xbox?: string;
 }
 

@@ -6,17 +6,17 @@
 # the existing JavaScript game extension.
 
 id: skyrimse-yaml
-name: "Skyrim Special Edition (YAML Demo)"
-shortName: "SSE YAML"
+name: Skyrim Special Edition (YAML Demo)
+shortName: SSE YAML
 logo: gameart.jpg
 executable: SkyrimSE.exe
 
 # Store IDs - defined once, auto-populated to queryArgs, details, environment
 stores:
-  steam: "489830"
-  gog: "1711230643"
-  epic: "ac82db5035584c7f8a2c548d98c86b2c"
-  xbox: "BethesdaSoftworks.SkyrimSE-PC"
+  steam: 489830
+  gog: 1711230643
+  epic: ac82db5035584c7f8a2c548d98c86b2c
+  xbox: BethesdaSoftworks.SkyrimSE-PC
 
 # Mod installation path relative to game root
 modPath: Data
@@ -25,7 +25,7 @@ modPath: Data
 mergeMods: true
 
 # Registry path for Windows game discovery
-registryPath: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\Skyrim Special Edition:Installed Path"
+registryPath: HKEY_LOCAL_MACHINE:Software\Wow6432Node\Bethesda Softworks\Skyrim Special Edition:Installed Path
 
 # Nexus Mods integration
 nexusPageId: skyrimspecialedition
