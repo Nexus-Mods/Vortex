@@ -458,7 +458,9 @@ class InstallManager {
         queueInstallation: this.queueInstallation.bind(this),
         markPhaseDownloadsFinished: this.markPhaseDownloadsFinished.bind(this),
         maybeAdvancePhase: this.maybeAdvancePhase.bind(this),
-        generateInstallKey: this.generateDependencyInstallKey.bind(this),
+        generateInstallKey: this.mTracker.generateInstallKey.bind(
+          this.mTracker,
+        ),
       },
     );
 
@@ -584,39 +586,16 @@ class InstallManager {
         if (state === "finished") {
           const context = getBatchContext("install-recommendations", "");
           const sourceModId = context?.get?.("sourceModId", null);
-          this.handleDownloadFinished(api, downloadId, sourceModId);
+          this.mDownloadEventHandler.handleDownloadFinished(
+            api,
+            downloadId,
+            sourceModId,
+          );
         } else if (state === "failed") {
-          this.handleDownloadFailed(api, downloadId);
+          this.mDownloadEventHandler.handleDownloadFailed(api, downloadId);
         }
       },
     );
-  }
-
-  // Download event handlers - delegate to DownloadEventHandler
-  // See ./install/DownloadEventHandler.ts for implementation details
-
-  private handleDownloadFinished(
-    api: IExtensionApi,
-    downloadId: string,
-    sourceModId?: string,
-  ): boolean {
-    return this.mDownloadEventHandler.handleDownloadFinished(
-      api,
-      downloadId,
-      sourceModId,
-    );
-  }
-
-  private handleDownloadFailed(api: IExtensionApi, downloadId: string): void {
-    this.mDownloadEventHandler.handleDownloadFailed(api, downloadId);
-  }
-
-  private handleDownloadSkipped(
-    api: IExtensionApi,
-    sourceModId: string,
-    dep: IDependency,
-  ): void {
-    this.mDownloadEventHandler.handleDownloadSkipped(api, sourceModId, dep);
   }
 
   /**
@@ -719,7 +698,7 @@ class InstallManager {
           tempPath,
           { ssc: false },
           progress,
-          () => this.queryPassword(api.store) as any,
+          () => this.mUserDialogManager.queryPassword(api.store) as any,
         )
         .catch((err: Error) =>
           isCritical(err.message)
@@ -746,7 +725,7 @@ class InstallManager {
               new ArchiveBrokenError(path.basename(archivePath), critical),
             );
           }
-          return this.queryContinue(api, errors, archivePath);
+          return this.mUserDialogManager.queryContinue(errors, archivePath);
         } else {
           return Bluebird.resolve();
         }
@@ -769,7 +748,11 @@ class InstallManager {
           return makeListInstaller(extractList, tempPath);
         } else {
           // TODO: add installer details to the simulate installer function
-          return this.getInstaller(fileList, gameId, archivePath);
+          return this.mInstallerSelector.getInstaller(
+            fileList,
+            gameId,
+            archivePath,
+          );
         }
       })
       .then((supportedInstaller) => {
@@ -851,7 +834,7 @@ class InstallManager {
     const baseName =
       path.basename(archivePath, path.extname(archivePath)).trim() ||
       "EMPTY_NAME";
-    const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
+    const installId = this.mTracker.generateInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || "direct-install-" + shortid();
     const installInfo: IActiveInstallation = {
       installId,
@@ -1115,7 +1098,10 @@ class InstallManager {
                   fullInfo.meta = match.value;
                 }
 
-                modId = this.deriveInstallName(baseName, fullInfo);
+                modId = this.mInstallerSelector.deriveInstallName(
+                  baseName,
+                  fullInfo,
+                );
                 let testModId = modId;
                 // if the name is already taken, consult the user,
                 // repeat until user canceled, decided to replace the existing
@@ -1130,12 +1116,12 @@ class InstallManager {
                     });
                     return Promise.resolve(testModId);
                   }
-                  const modNameMatches = this.checkModNameExists(
+                  const modNameMatches = checkModNameExists(
                     testModId,
                     api,
                     installGameId,
                   );
-                  const variantMatches = this.checkModVariantsExist(
+                  const variantMatches = checkModVariantsExist(
                     api,
                     installGameId,
                     archiveId,
@@ -1159,41 +1145,44 @@ class InstallManager {
                       variantNumber: ++variantCounter,
                       fileList,
                     };
-                    return this.queryUserReplace(
-                      api,
-                      existingIds,
-                      installGameId,
-                      installOptions,
-                    ).then((choice: IReplaceChoice) => {
-                      if (choice.id === undefined) {
-                        log("error", "(nameloop) no valid id selection", {
-                          testModId,
-                          modNameMatches,
-                          variantMatches,
-                        });
-                      }
-                      testModId = choice.id;
-                      replacementChoice = choice.replaceChoice;
-                      if (choice.enable) {
-                        enable = true;
-                      }
+                    return this.mUserDialogManager
+                      .queryUserReplace(existingIds, installGameId, {
+                        unattended: installOptions?.unattended,
+                        fileList: installOptions?.fileList,
+                        choices: installOptions?.choices,
+                        patches: installOptions?.patches,
+                        variantNumber: installOptions?.variantNumber,
+                      })
+                      .then((choice: IReplaceChoice) => {
+                        if (choice.id === undefined) {
+                          log("error", "(nameloop) no valid id selection", {
+                            testModId,
+                            modNameMatches,
+                            variantMatches,
+                          });
+                        }
+                        testModId = choice.id;
+                        replacementChoice = choice.replaceChoice;
+                        if (choice.enable) {
+                          enable = true;
+                        }
 
-                      const activeSession = getCollectionActiveSession(
-                        api.getState(),
-                      );
-                      if (!activeSession) {
-                        // When user chooses to replace or create a variant, clear any pre-set
-                        // installer options so they get a fresh installation experience
-                        delete fullInfo.choices;
-                        delete fullInfo.patches;
-                        fileList = undefined;
-                      }
-                      setdefault(fullInfo, "custom", {} as any).variant =
-                        choice.variant;
-                      rules = choice.rules || [];
-                      fullInfo.previous = choice.attributes;
-                      return checkNameLoop();
-                    });
+                        const activeSession = getCollectionActiveSession(
+                          api.getState(),
+                        );
+                        if (!activeSession) {
+                          // When user chooses to replace or create a variant, clear any pre-set
+                          // installer options so they get a fresh installation experience
+                          delete fullInfo.choices;
+                          delete fullInfo.patches;
+                          fileList = undefined;
+                        }
+                        setdefault(fullInfo, "custom", {} as any).variant =
+                          choice.variant;
+                        rules = choice.rules || [];
+                        fullInfo.previous = choice.attributes;
+                        return checkNameLoop();
+                      });
                   }
                 };
                 return checkNameLoop();
@@ -1221,7 +1210,7 @@ class InstallManager {
 
                 existingMod =
                   fileId !== undefined
-                    ? this.findPreviousVersionMod(
+                    ? findPreviousVersionMod(
                         fileId,
                         api.store,
                         installGameId,
@@ -1270,7 +1259,7 @@ class InstallManager {
                   }
                 }
                 if (broken.length > 0) {
-                  return this.queryIgnoreDependent(
+                  return this.mUserDialogManager.queryIgnoreDependent(
                     api.store,
                     installGameId,
                     broken.map((id) => dependentRule[id]),
@@ -1290,8 +1279,9 @@ class InstallManager {
                     [existingMod.id, "enabled"],
                     false,
                   );
-                  return this.userVersionChoice(existingMod, api.store).then(
-                    (action: string) => {
+                  return this.mUserDialogManager
+                    .userVersionChoice(existingMod, api.store)
+                    .then((action: string) => {
                       if (action === INSTALL_ACTION) {
                         enable = enable || wasEnabled;
                         if (wasEnabled) {
@@ -1337,8 +1327,7 @@ class InstallManager {
                           );
                         });
                       }
-                    },
-                  );
+                    });
                 } else {
                   return Bluebird.resolve();
                 }
@@ -1378,13 +1367,12 @@ class InstallManager {
                     "",
                   ) === ""
                 ) {
-                  return this.determineModType(
-                    installGameId,
-                    result.instructions,
-                  ).then((type) => {
-                    installContext.setModType(modId, type);
-                    return result;
-                  });
+                  return this.mInstallerSelector
+                    .determineModType(installGameId, result.instructions)
+                    .then((type) => {
+                      installContext.setModType(modId, type);
+                      return result;
+                    });
                 } else {
                   return Bluebird.resolve(result);
                 }
@@ -1831,7 +1819,7 @@ class InstallManager {
       "installing_dependencies",
       mod.id,
       this.withDependenciesContext("install-dependencies", profile.id, () =>
-        this.augmentRules(api, gameId, mod).then((rules) =>
+        Bluebird.resolve(mod.rules ?? []).then((rules) =>
           this.installDependenciesImpl(
             api,
             profile,
@@ -1879,7 +1867,7 @@ class InstallManager {
       "installing_dependencies",
       mod.id,
       this.withDependenciesContext("install-recommendations", profile.id, () =>
-        this.augmentRules(api, gameId, mod)
+        Bluebird.resolve(mod.rules ?? [])
           .then((rules) =>
             this.installRecommendationsImpl(
               api,
@@ -1899,27 +1887,6 @@ class InstallManager {
     );
   }
 
-  private augmentRules(
-    api: IExtensionApi,
-    gameId: string,
-    mod: IMod,
-  ): Bluebird<IRule[]> {
-    // const rules = (mod.rules ?? []).slice();
-    //if (mod.attributes === undefined) {
-    return Bluebird.resolve(mod.rules ?? []);
-    //}
-
-    // return api.lookupModMeta({
-    //   fileMD5: mod.attributes['fileMD5'],
-    //   fileSize: mod.attributes['fileSize'],
-    //   gameId,
-    // })
-    // .then(results => {
-    //   rules.push(...(results[0]?.value?.rules ?? []));
-    //   return Bluebird.resolve(rules);
-    // });
-  }
-
   private withDependenciesContext<T>(
     contextName: string,
     profileId: string,
@@ -1937,11 +1904,6 @@ class InstallManager {
         context.set("remember", null);
       }
     });
-  }
-
-  // Delegates to ModLookupService
-  private hasFuzzyReference(ref: IModReference): boolean {
-    return hasFuzzyReference(ref);
   }
 
   private setModSize(
@@ -2006,11 +1968,11 @@ class InstallManager {
     recommended: boolean,
     phase: number = 0,
   ): void {
-    this.ensurePhaseState(sourceModId);
+    this.mPhaseManager.ensureState(sourceModId);
     const phaseNum = phase ?? 0;
 
     // Check if this installation is already active or pending
-    const installKey = this.generateDependencyInstallKey(
+    const installKey = this.mTracker.generateInstallKey(
       sourceModId,
       downloadId,
     );
@@ -2069,14 +2031,6 @@ class InstallManager {
     }
   }
 
-  private generateDependencyInstallKey(
-    sourceModId: string,
-    downloadId: string,
-  ): string {
-    // Delegate to tracker for consistent key generation
-    return this.mTracker.generateInstallKey(sourceModId, downloadId);
-  }
-
   // Starts a queued installation task and wires up phase accounting
   private startQueuedInstallation(
     api: IExtensionApi,
@@ -2087,7 +2041,7 @@ class InstallManager {
     recommended: boolean,
     phase: number,
   ): void {
-    const installKey = this.generateDependencyInstallKey(
+    const installKey = this.mTracker.generateInstallKey(
       sourceModId,
       downloadId,
     );
@@ -2176,7 +2130,7 @@ class InstallManager {
             this.mTracker.deleteActive(installKey);
 
             // Apply any extra attributes
-            this.applyExtraFromRule(api, gameId, modId, {
+            applyExtraFromRuleUtil(api, gameId, modId, {
               ...currentDep.extra,
               fileList: currentDep.fileList ?? currentDep.extra?.fileList,
               installerChoices: currentDep.installerChoices,
@@ -2204,7 +2158,7 @@ class InstallManager {
 
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
-              const otherModIds = this.checkModVariantsExist(
+              const otherModIds = checkModVariantsExist(
                 api,
                 gameId,
                 downloadId,
@@ -2225,7 +2179,7 @@ class InstallManager {
                   prof.modState?.[sourceModId]?.enabled,
               );
               profiles.forEach((prof) => {
-                const otherModIds = this.checkModVariantsExist(
+                const otherModIds = checkModVariantsExist(
                   api,
                   gameId,
                   downloadId,
@@ -2322,10 +2276,6 @@ class InstallManager {
     return this.mOrchestrator.getPhaseManager();
   }
 
-  private ensurePhaseState(sourceModId: string) {
-    this.mPhaseManager.ensureState(sourceModId);
-  }
-
   private pollAllPhasesComplete(
     api: IExtensionApi,
     sourceModId: string,
@@ -2377,17 +2327,21 @@ class InstallManager {
           log("debug", "All phases complete", { sourceModId });
           return resolve();
         } else {
-          const collectionStatus = this.checkCollectionPhaseStatus(
+          const collectionStatus = checkCollectionPhaseStatusUtil(
             api,
             sourceModId,
             allowedPhase,
+            this.mPhaseManager,
+            (srcModId, downloadId) =>
+              this.mTracker.hasActiveOrPending(srcModId, downloadId),
+            this.mTracker,
           );
 
           const currentPhaseComplete = collectionStatus.phaseComplete;
           if (
             !currentPhaseComplete &&
             collectionStatus.needsRequeue &&
-            !this.hasActiveOrPendingInstallation(sourceModId)
+            !this.mTracker.hasActiveOrPending(sourceModId)
           ) {
             // Requeue downloaded mods if phase is not complete and there are no active installations
             // This handles cases where downloads finish after installations start, or MD5 lookups complete late
@@ -2400,7 +2354,7 @@ class InstallManager {
           }
           if (
             !hasQueuedDeployments &&
-            !this.hasActiveOrPendingInstallation(sourceModId)
+            !this.mTracker.hasActiveOrPending(sourceModId)
           ) {
             if (this.mPhaseManager.isPhaseDeployed(sourceModId, allowedPhase)) {
               // Phase already deployed, maybe advance
@@ -2473,10 +2427,14 @@ class InstallManager {
         const checkPhase = options.phase ?? allowedPhase;
 
         // Check collection completion status
-        const collectionStatus = this.checkCollectionPhaseStatus(
+        const collectionStatus = checkCollectionPhaseStatusUtil(
           api,
           sourceModId,
           checkPhase,
+          this.mPhaseManager,
+          (srcModId, downloadId) =>
+            this.mTracker.hasActiveOrPending(srcModId, downloadId),
+          this.mTracker,
         );
         const existing = this.mPhaseManager.getDeploymentPromise(
           sourceModId,
@@ -2519,7 +2477,7 @@ class InstallManager {
           } else if (
             !collectionStatus.phaseComplete &&
             collectionStatus.needsRequeue &&
-            !this.hasActiveOrPendingInstallation(sourceModId)
+            !this.mTracker.hasActiveOrPending(sourceModId)
           ) {
             // Requeue downloaded mods if phase is not complete and there are no active installations
             // This handles cases where downloads finish after installations start, or MD5 lookups complete late
@@ -2549,37 +2507,6 @@ class InstallManager {
     });
   }
 
-  // Delegates to PhasedInstallCoordinator
-  private checkCollectionPhaseStatus(
-    api: IExtensionApi,
-    sourceModId: string,
-    phase: number,
-  ): {
-    phaseComplete: boolean;
-    needsRequeue: boolean;
-    allMods: any[];
-    downloadedCount: number;
-    modsNeedingRequeue: number;
-  } {
-    return checkCollectionPhaseStatusUtil(
-      api,
-      sourceModId,
-      phase,
-      this.mPhaseManager,
-      (srcModId, downloadId) =>
-        this.hasActiveOrPendingInstallation(srcModId, downloadId),
-      this.mTracker,
-    );
-  }
-
-  // Helper to check if an archiveId has pending or active installations
-  private hasActiveOrPendingInstallation(
-    sourceModId: string,
-    archiveId?: string,
-  ): boolean {
-    return this.mTracker.hasActiveOrPending(sourceModId, archiveId);
-  }
-
   // Helper to re-queue downloaded mods
   private reQueueDownloadedMods(
     api: IExtensionApi,
@@ -2598,7 +2525,7 @@ class InstallManager {
     const allModsWithDetails = allMods.map((mod: any) => ({
       ...mod,
       downloadId: mod.rule?.reference
-        ? this.findDownloadForMod(mod.rule.reference, downloads)
+        ? findDownloadForMod(mod.rule.reference, downloads)
         : null,
     }));
 
@@ -2639,7 +2566,7 @@ class InstallManager {
       const downloadState = downloads[downloadId]?.state;
       log("debug", "Download state check", { downloadId, downloadState });
       if (downloads[downloadId].state === "finished") {
-        const hasPendingOrActive = this.hasActiveOrPendingInstallation(
+        const hasPendingOrActive = this.mTracker.hasActiveOrPending(
           sourceModId,
           downloadId,
         );
@@ -2665,7 +2592,7 @@ class InstallManager {
         });
         if (!hasPendingOrActive && !existingMod) {
           log("info", "Requeuing download for installation", { downloadId });
-          const success = this.handleDownloadFinished(
+          const success = this.mDownloadEventHandler.handleDownloadFinished(
             api,
             downloadId,
             sourceModId,
@@ -2680,7 +2607,7 @@ class InstallManager {
             );
           }
         } else if (!hasPendingOrActive && existingMod) {
-          const installKey = this.generateDependencyInstallKey(
+          const installKey = this.mTracker.generateInstallKey(
             sourceModId,
             downloadId,
           );
@@ -2760,7 +2687,7 @@ class InstallManager {
   }
 
   public markPhaseDeployed(sourceModId: string, phase: number): void {
-    this.ensurePhaseState(sourceModId);
+    this.mPhaseManager.ensureState(sourceModId);
     this.mPhaseManager.markPhaseDeployed(sourceModId, phase);
   }
 
@@ -2771,7 +2698,7 @@ class InstallManager {
     phase: number,
     deployOnSettle?: boolean,
   ): Promise<void> | undefined {
-    this.ensurePhaseState(sourceModId);
+    this.mPhaseManager.ensureState(sourceModId);
 
     if (this.mPhaseManager.isPhaseDeployed(sourceModId, phase)) {
       // Phase already deployed, nothing to do
@@ -2830,7 +2757,7 @@ class InstallManager {
     phase: number,
     api: IExtensionApi,
   ) {
-    this.ensurePhaseState(sourceModId);
+    this.mPhaseManager.ensureState(sourceModId);
     // PhaseManager.markDownloadsFinished handles setting allowedPhase if undefined
     // and marking previous phases as finished
     const wasFirstPhase =
@@ -2893,10 +2820,14 @@ class InstallManager {
       this.mPhaseManager.getPendingCount(sourceModId, curr) === 0
     ) {
       // Check if the phase is actually complete according to collection session
-      const collectionStatus = this.checkCollectionPhaseStatus(
+      const collectionStatus = checkCollectionPhaseStatusUtil(
         api,
         sourceModId,
         curr,
+        this.mPhaseManager,
+        (srcModId, downloadId) =>
+          this.mTracker.hasActiveOrPending(srcModId, downloadId),
+        this.mTracker,
       );
       if (!collectionStatus.phaseComplete) {
         this.startPendingForPhase(sourceModId, curr);
@@ -2954,11 +2885,15 @@ class InstallManager {
               const downloadId = getReadyDownloadId(
                 downloads,
                 rule.reference,
-                (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+                (id) => this.mTracker.hasActiveOrPending(sourceModId, id),
               );
 
               if (downloadId) {
-                this.handleDownloadFinished(api, downloadId, sourceModId);
+                this.mDownloadEventHandler.handleDownloadFinished(
+                  api,
+                  downloadId,
+                  sourceModId,
+                );
               }
             }
           });
@@ -2984,7 +2919,7 @@ class InstallManager {
       if (
         rule.reference.id !== undefined &&
         mods[rule.reference.id] === undefined &&
-        this.hasFuzzyReference(rule.reference)
+        hasFuzzyReference(rule.reference)
       ) {
         const newRule: IModRule = JSON.parse(JSON.stringify(rule));
         api.store.dispatch(removeModRule(gameId, mod.id, rule));
@@ -3080,7 +3015,7 @@ class InstallManager {
         archivePath,
         tempPath,
         progress,
-        () => this.queryPassword(api.store),
+        () => this.mUserDialogManager.queryPassword(api.store),
       );
       (extractProm as any).startTime = extractionStart;
     }
@@ -3104,7 +3039,7 @@ class InstallManager {
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
           }
-          await this.queryContinue(api, errors, archivePath);
+          await this.mUserDialogManager.queryContinue(errors, archivePath);
         }
       })
       .then(async () => {
@@ -3192,7 +3127,7 @@ class InstallManager {
           );
           return { ...supportedInstaller, ...testDetails };
         } else if (forceInstaller === undefined) {
-          const supportedInstaller = await this.getInstaller(
+          const supportedInstaller = await this.mInstallerSelector.getInstaller(
             fileList,
             gameId,
             archivePath,
@@ -3279,31 +3214,6 @@ class InstallManager {
       });
   }
 
-  // Delegates to InstallerSelector
-  private determineModType(
-    gameId: string,
-    installInstructions: IInstruction[],
-  ): Bluebird<string> {
-    return this.mInstallerSelector.determineModType(
-      gameId,
-      installInstructions,
-    );
-  }
-
-  // Delegates to UserDialogManager
-  private queryContinue(
-    api: IExtensionApi,
-    errors: string[],
-    archivePath: string,
-  ): Bluebird<void> {
-    return this.mUserDialogManager.queryContinue(errors, archivePath);
-  }
-
-  // Delegates to UserDialogManager
-  private queryPassword(store: ThunkStore<any>): Bluebird<string> {
-    return this.mUserDialogManager.queryPassword(store);
-  }
-
   // Also available as InstructionProcessor.validateInstructions() for standalone use
   private validateInstructions(
     instructions: IInstruction[],
@@ -3350,15 +3260,6 @@ class InstallManager {
       }
       return prev;
     }, new InstructionGroups());
-  }
-
-  // Delegates to InstallerSelector (via imported reportUnsupported function)
-  private reportUnsupportedMethod(
-    api: IExtensionApi,
-    unsupported: IInstruction[],
-    archivePath: string,
-  ): void {
-    return reportUnsupported(api, unsupported, archivePath);
   }
 
   private processMKDir(
@@ -3451,43 +3352,6 @@ class InstallManager {
           fs.removeAsync(tempPath);
         });
     }).then(() => undefined);
-  }
-
-  private processAttribute(
-    api: IExtensionApi,
-    attribute: IInstruction[],
-    gameId: string,
-    modId: string,
-  ): Bluebird<void> {
-    return processAttributeUtil(api, attribute, gameId, modId);
-  }
-
-  private processEnableAllPlugins(
-    api: IExtensionApi,
-    enableAll: IInstruction[],
-    gameId: string,
-    modId: string,
-  ): Bluebird<void> {
-    return processEnableAllPluginsUtil(api, enableAll, gameId, modId);
-  }
-
-  private processSetModType(
-    api: IExtensionApi,
-    installContext: InstallContext,
-    types: IInstruction[],
-    gameId: string,
-    modId: string,
-  ): Bluebird<void> {
-    return processSetModTypeUtil(api, installContext, types, gameId, modId);
-  }
-
-  private processRule(
-    api: IExtensionApi,
-    rules: IInstruction[],
-    gameId: string,
-    modId: string,
-  ): void {
-    return processRuleUtil(api, rules, gameId, modId);
   }
 
   private processIniEdits(
@@ -3735,11 +3599,7 @@ class InstallManager {
 
     // log('debug', 'installer instructions',
     //     JSON.stringify(result.instructions.map(instr => _.omit(instr, ['data']))));
-    this.reportUnsupportedMethod(
-      api,
-      instructionGroups.unsupported,
-      archivePath,
-    );
+    reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
       .then(() =>
@@ -3781,10 +3641,10 @@ class InstallManager {
         ),
       )
       .then(() =>
-        this.processAttribute(api, instructionGroups.attribute, gameId, modId),
+        processAttributeUtil(api, instructionGroups.attribute, gameId, modId),
       )
       .then(() =>
-        this.processEnableAllPlugins(
+        processEnableAllPluginsUtil(
           api,
           instructionGroups.enableallplugins,
           gameId,
@@ -3792,7 +3652,7 @@ class InstallManager {
         ),
       )
       .then(() =>
-        this.processSetModType(
+        processSetModTypeUtil(
           api,
           installContext,
           instructionGroups.setmodtype,
@@ -3801,174 +3661,9 @@ class InstallManager {
         ),
       )
       .then(() => {
-        this.processRule(api, instructionGroups.rule, gameId, modId);
+        processRuleUtil(api, instructionGroups.rule, gameId, modId);
         return Bluebird.resolve();
       });
-  }
-
-  // Delegates to ModLookupService
-  private checkModVariantsExist(
-    api: IExtensionApi,
-    gameMode: string,
-    archiveId: string,
-  ): string[] {
-    return checkModVariantsExist(api, gameMode, archiveId);
-  }
-
-  // Delegates to ModLookupService
-  private checkModNameExists(
-    installName: string,
-    api: IExtensionApi,
-    gameMode: string,
-  ): string[] {
-    return checkModNameExists(installName, api, gameMode);
-  }
-
-  // Delegates to ModLookupService
-  private findPreviousVersionMod(
-    fileId: number,
-    store: Redux.Store<any>,
-    gameMode: string,
-    isCollection: boolean,
-  ): IMod {
-    return findPreviousVersionMod(fileId, store, gameMode, isCollection);
-  }
-
-  // Delegates to UserDialogManager
-  private queryIgnoreDependent(
-    store: ThunkStore<any>,
-    gameId: string,
-    dependents: Array<{ owner: string; rule: IModRule }>,
-  ): Bluebird<void> {
-    return this.mUserDialogManager.queryIgnoreDependent(
-      store,
-      gameId,
-      dependents,
-    );
-  }
-
-  // Delegates to UserDialogManager
-  private userVersionChoice(
-    oldMod: IMod,
-    store: ThunkStore<any>,
-  ): Bluebird<string> {
-    return this.mUserDialogManager.userVersionChoice(oldMod, store);
-  }
-
-  // Delegates to UserDialogManager
-  private queryUserReplace(
-    api: IExtensionApi,
-    modIds: string[],
-    gameId: string,
-    installOptions: IInstallOptions,
-  ) {
-    return this.mUserDialogManager.queryUserReplace(modIds, gameId, {
-      unattended: installOptions?.unattended,
-      fileList: installOptions?.fileList,
-      choices: installOptions?.choices,
-      patches: installOptions?.patches,
-      variantNumber: installOptions?.variantNumber,
-    });
-  }
-
-  // Delegates to InstallerSelector
-  private getInstaller(
-    fileList: string[],
-    gameId: string,
-    archivePath: string,
-    offsetIn?: number,
-    details?: ITestSupportedDetails,
-  ): Bluebird<ISupportedInstaller> {
-    return this.mInstallerSelector.getInstaller(
-      fileList,
-      gameId,
-      archivePath,
-      offsetIn,
-      details,
-    );
-  }
-
-  // Delegates to InstallerSelector
-  private deriveInstallName(archiveName: string, info: any) {
-    return this.mInstallerSelector.deriveInstallName(archiveName, info);
-  }
-
-  // Download methods - delegate to DependencyDownloader
-  // See ./install/DependencyDownloader.ts for implementation details
-
-  private downloadURL(
-    api: IExtensionApi,
-    lookupResult: IModInfoEx,
-    wasCanceled: () => boolean,
-    referenceTag?: string,
-    campaign?: string,
-    fileName?: string,
-  ): Bluebird<string> {
-    return downloadURLUtil(
-      api,
-      lookupResult,
-      wasCanceled,
-      referenceTag,
-      campaign,
-      fileName,
-    );
-  }
-
-  private downloadMatching(
-    api: IExtensionApi,
-    lookupResult: IModInfoEx,
-    pattern: string,
-    referenceTag: string,
-    wasCanceled: () => boolean,
-    campaign: string,
-    fileName?: string,
-  ): Bluebird<string> {
-    return downloadMatchingUtil(
-      api,
-      lookupResult,
-      pattern,
-      referenceTag,
-      wasCanceled,
-      campaign,
-      fileName,
-    );
-  }
-
-  private downloadDependencyAsync(
-    requirement: IModReference,
-    api: IExtensionApi,
-    lookupResult: IModInfoEx,
-    wasCanceled: () => boolean,
-    fileName: string,
-  ): Bluebird<string> {
-    return downloadDependencyAsyncUtil(
-      api,
-      requirement,
-      lookupResult,
-      wasCanceled,
-      fileName,
-    );
-  }
-
-  // Delegates to DependencyPhaseHelpers
-  private applyExtraFromRule(
-    api: IExtensionApi,
-    gameId: string,
-    modId: string,
-    extra?: { [key: string]: any },
-  ) {
-    return applyExtraFromRuleUtil(api, gameId, modId, extra);
-  }
-
-  // Delegates to DependencyPhaseHelpers
-  private dropUnfulfilled(
-    api: IExtensionApi,
-    dep: IDependency,
-    gameId: string,
-    sourceModId: string,
-    recommended: boolean,
-  ) {
-    return dropUnfulfilledUtil(api, dep, gameId, sourceModId, recommended);
   }
 
   private doInstallDependenciesPhase(
@@ -4032,7 +3727,7 @@ class InstallManager {
 
               if (targetProfile) {
                 // Only modify the target profile - disable other variants and enable this one
-                const otherModIds = this.checkModVariantsExist(
+                const otherModIds = checkModVariantsExist(
                   api,
                   gameId,
                   downloadId,
@@ -4055,7 +3750,7 @@ class InstallManager {
                     prof.modState?.[sourceModId]?.enabled,
                 );
                 profiles.forEach((prof) => {
-                  const otherModIds = this.checkModVariantsExist(
+                  const otherModIds = checkModVariantsExist(
                     api,
                     gameId,
                     downloadId,
@@ -4071,7 +3766,7 @@ class InstallManager {
 
               batchDispatch(api.store, batchedActions);
 
-              this.applyExtraFromRule(api, gameId, modId, {
+              applyExtraFromRuleUtil(api, gameId, modId, {
                 ...dep.extra,
                 fileList: dep.fileList ?? dep.extra?.fileList,
                 installerChoices: dep.installerChoices,
@@ -4083,13 +3778,7 @@ class InstallManager {
             })
             .catch((err) => {
               if (dep.extra?.onlyIfFulfillable) {
-                this.dropUnfulfilled(
-                  api,
-                  dep,
-                  gameId,
-                  sourceModId,
-                  recommended,
-                );
+                dropUnfulfilledUtil(api, dep, gameId, sourceModId, recommended);
                 return Bluebird.resolve(undefined);
               } else {
                 return Bluebird.reject(err);
@@ -4274,14 +3963,18 @@ class InstallManager {
             const downloadId = getReadyDownloadId(
               downloads,
               dep.reference,
-              (id) => this.hasActiveOrPendingInstallation(sourceModId, id),
+              (id) => this.mTracker.hasActiveOrPending(sourceModId, id),
             );
 
             if (downloadId) {
               const rulePhase = dep.extra?.phase ?? 0;
               // Only process downloads for the current allowed phase or earlier
               if (rulePhase <= allowedPhase) {
-                this.handleDownloadFinished(api, downloadId, sourceModId);
+                this.mDownloadEventHandler.handleDownloadFinished(
+                  api,
+                  downloadId,
+                  sourceModId,
+                );
                 foundCount++;
               }
             }
@@ -4387,9 +4080,9 @@ class InstallManager {
         }
         return abort.signal.aborted
           ? Bluebird.reject(new UserCanceled(false))
-          : this.downloadDependencyAsync(
-              dep.reference,
+          : downloadDependencyAsyncUtil(
               api,
+              dep.reference,
               dep.lookupResults[0].value,
               () => abort.signal.aborted,
               dep.extra?.fileName,
@@ -4705,7 +4398,11 @@ class InstallManager {
       return dlPromise
         .catch(UserCanceled, (err) => {
           if (err.skipped) {
-            this.handleDownloadSkipped(api, sourceModId, dep);
+            this.mDownloadEventHandler.handleDownloadSkipped(
+              api,
+              sourceModId,
+              dep,
+            );
           }
           return Bluebird.reject(err);
         })
@@ -4831,7 +4528,7 @@ class InstallManager {
 
     // Initialize phase state immediately after determining what phases we have
     if (dependencies.length > 0) {
-      this.ensurePhaseState(sourceModId);
+      this.mPhaseManager.ensureState(sourceModId);
 
       const phaseNumbers = Object.keys(phases)
         .map((p) => parseInt(p, 10))
@@ -5065,41 +4762,28 @@ class InstallManager {
 
     const context = getBatchContext("install-dependencies", "", true);
 
-    return this.showMemoDialogMethod(api, context, name, success, error).then(
-      (result) => {
-        if (result.action === "Install") {
-          return this.doInstallDependencies(
+    return showMemoDialog(api, context, name, success, error).then((result) => {
+      if (result.action === "Install") {
+        return this.doInstallDependencies(
+          api,
+          gameId,
+          modId,
+          success,
+          false,
+          silent,
+        ).then((updated) =>
+          this.updateRules(
             api,
             gameId,
             modId,
-            success,
+            [].concat(existing, updated),
             false,
-            silent,
-          ).then((updated) =>
-            this.updateRules(
-              api,
-              gameId,
-              modId,
-              [].concat(existing, updated),
-              false,
-            ),
-          );
-        } else {
-          return Bluebird.resolve();
-        }
-      },
-    );
-  }
-
-  // Delegates to DependencyInstaller
-  private showMemoDialogMethod(
-    api: IExtensionApi,
-    context: IBatchContext,
-    name: string,
-    success: IDependency[],
-    error: IDependencyError[],
-  ): Bluebird<IDialogResult> {
-    return showMemoDialog(api, context, name, success, error);
+          ),
+        );
+      } else {
+        return Bluebird.resolve();
+      }
+    });
   }
 
   private addToPhaseStateCache = (api: IExtensionApi) => {
@@ -5111,7 +4795,7 @@ class InstallManager {
         return;
       }
       const collectionId = activeCollectionSession.collectionId;
-      this.ensurePhaseState(collectionId);
+      this.mPhaseManager.ensureState(collectionId);
       if (!this.mPhaseManager.hasState(collectionId)) {
         return;
       }
@@ -5218,32 +4902,6 @@ class InstallManager {
       });
   }
 
-  // Delegates to DependencyInstaller
-  private installRecommendationsQueryMainMethod(
-    api: IExtensionApi,
-    modNameStr: string,
-    success: IDependency[],
-    error: IDependencyError[],
-    remember: boolean | null,
-  ): Bluebird<IDialogResult> {
-    return installRecommendationsQueryMain(
-      api,
-      modNameStr,
-      success,
-      error,
-      remember,
-    );
-  }
-
-  // Delegates to DependencyInstaller
-  private installRecommendationsQuerySelectMethod(
-    api: IExtensionApi,
-    modNameStr: string,
-    success: IDependency[],
-  ): Bluebird<IDialogResult> {
-    return installRecommendationsQuerySelect(api, modNameStr, success);
-  }
-
   private installRecommendationsImpl(
     api: IExtensionApi,
     profile: IProfile,
@@ -5316,7 +4974,7 @@ class InstallManager {
         context.set("sourceModId", modId);
 
         if (!silent || error.length > 0) {
-          queryProm = this.installRecommendationsQueryMainMethod(
+          queryProm = installRecommendationsQueryMain(
             api,
             name,
             success,
@@ -5334,19 +4992,17 @@ class InstallManager {
               }
               return success;
             } else {
-              return this.installRecommendationsQuerySelectMethod(
-                api,
-                name,
-                success,
-              ).then((selectResult) => {
-                if (selectResult.action === "Continue") {
-                  return Object.keys(selectResult.input)
-                    .filter((key) => selectResult.input[key])
-                    .map((key) => success[parseInt(key, 10)]);
-                } else {
-                  return [];
-                }
-              });
+              return installRecommendationsQuerySelect(api, name, success).then(
+                (selectResult) => {
+                  if (selectResult.action === "Continue") {
+                    return Object.keys(selectResult.input)
+                      .filter((key) => selectResult.input[key])
+                      .map((key) => success[parseInt(key, 10)]);
+                  } else {
+                    return [];
+                  }
+                },
+              );
             }
           });
         }
@@ -5643,14 +5299,6 @@ class InstallManager {
         instructions: copies.length,
       });
     }
-  }
-
-  // Delegates to ModLookupService
-  private findDownloadForMod(
-    reference: IModReference,
-    downloads: { [id: string]: IDownload },
-  ): string | null {
-    return findDownloadForMod(reference, downloads);
   }
 
   /**
