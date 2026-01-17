@@ -194,3 +194,25 @@ export type {
   IInstallationQueueCallbacks,
   IInstallationQueueConfig,
 } from "./InstallationQueueManager";
+
+// Re-export DependencyPhaseExecutor
+export {
+  DependencyPhaseExecutor,
+  DEFAULT_PHASE_CONFIG,
+} from "./DependencyPhaseExecutor";
+export type {
+  IDependencyPhaseCallbacks,
+  IDependencyPhaseConfig,
+  DoDownloadCallback,
+} from "./DependencyPhaseExecutor";
+
+// Re-export DependencyInstallOrchestrator
+export {
+  DependencyInstallOrchestrator,
+  DEFAULT_ORCHESTRATOR_CONFIG as DEFAULT_DEPENDENCY_ORCHESTRATOR_CONFIG,
+} from "./DependencyInstallOrchestrator";
+export type {
+  IDependencyOrchestratorCallbacks,
+  IDependencyOrchestratorConfig,
+  IConcurrencyLimiter,
+} from "./DependencyInstallOrchestrator";

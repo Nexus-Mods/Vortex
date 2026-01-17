@@ -221,6 +221,8 @@ import {
   canStartInstallationTasks as canStartInstallationTasksUtil,
   PhaseCoordinator,
   InstallationQueueManager,
+  DependencyPhaseExecutor,
+  DependencyInstallOrchestrator,
   processAttribute as processAttributeUtil,
   processEnableAllPlugins as processEnableAllPluginsUtil,
   processSetModType as processSetModTypeUtil,
@@ -436,6 +438,12 @@ class InstallManager {
   // Installation queue manager - handles queuing and executing installations
   private mInstallationQueueManager: InstallationQueueManager;
 
+  // Dependency phase executor - handles executing single phases of dependency installation
+  private mDependencyPhaseExecutor: DependencyPhaseExecutor;
+
+  // Dependency install orchestrator - coordinates dependency installation across phases
+  private mDependencyInstallOrchestrator: DependencyInstallOrchestrator;
+
   // Installation tracker - delegates to orchestrator for backward compatibility
   private get mTracker() {
     return this.mOrchestrator.getTracker();
@@ -523,6 +531,52 @@ class InstallManager {
           ),
       },
       { pollIntervalMs: this.mConfig.timing.pollIntervalMs },
+    );
+
+    // Initialize dependency phase executor with callbacks to InstallManager methods
+    this.mDependencyPhaseExecutor = new DependencyPhaseExecutor(
+      api,
+      this.mPhaseManager,
+      this.mPhaseCoordinator,
+      this.mTracker,
+      this.mDownloadEventHandler,
+      this.mInstallationQueueManager,
+      {
+        showDependencyError: this.showDependencyError.bind(this),
+        getDependencyAbort: (sourceModId: string) =>
+          this.mDependencyInstalls[sourceModId],
+        setDependencyAbort: (sourceModId: string, abort: () => void) => {
+          this.mDependencyInstalls[sourceModId] = abort;
+        },
+        deleteDependencyAbort: (sourceModId: string) => {
+          delete this.mDependencyInstalls[sourceModId];
+        },
+      },
+    );
+
+    // Initialize dependency install orchestrator
+    this.mDependencyInstallOrchestrator = new DependencyInstallOrchestrator(
+      api,
+      this.mPhaseManager,
+      this.mPhaseCoordinator,
+      this.mDependencyPhaseExecutor,
+      this.mDownloadEventHandler,
+      this.mInstallationQueueManager,
+      this.mDependencyDownloadsLimit,
+      this.mDependencyInstallsLimit,
+      {
+        withInstructions: this.withInstructions.bind(this),
+        installModAsync: this.installModAsync.bind(this),
+        updateModRule: this.updateModRuleMethod.bind(this),
+        getDependencyAbort: (sourceModId: string) =>
+          this.mDependencyInstalls[sourceModId],
+        setDependencyAbort: (sourceModId: string, abort: () => void) => {
+          this.mDependencyInstalls[sourceModId] = abort;
+        },
+        deleteDependencyAbort: (sourceModId: string) => {
+          delete this.mDependencyInstalls[sourceModId];
+        },
+      },
     );
 
     api.onAsync(
@@ -2833,1020 +2887,6 @@ class InstallManager {
       });
   }
 
-  private doInstallDependenciesPhase(
-    api: IExtensionApi,
-    dependencies: IDependency[],
-    gameId: string,
-    sourceModId: string,
-    recommended: boolean,
-    doDownload: (
-      dep: IDependency,
-    ) => Bluebird<{ updatedDep: IDependency; downloadId: string }>,
-    abort: AbortController,
-    silent: boolean,
-  ): Bluebird<IDependency[]> {
-    const res: Bluebird<IDependency[]> = Bluebird.map(
-      dependencies,
-      async (dep: IDependency) => {
-        if (abort.signal.aborted) {
-          return Bluebird.reject(new UserCanceled());
-        }
-        log("debug", "installing as dependency", {
-          ref: dep.reference.logicalFileName,
-          downloadRequired: dep.download === undefined,
-        });
-
-        const alreadyInstalled = dep.mod !== undefined;
-
-        return (
-          doDownload(dep)
-            .then(({ updatedDep, downloadId }) => {
-              const modId = updatedDep.mod?.id;
-              if (modId == null) {
-                // installation has been queued within doDownload, return
-                //  the updated dependency so that the downloads can keep going.
-                return Bluebird.resolve(updatedDep);
-              }
-              log("info", "installed as dependency", { modId });
-              if (!alreadyInstalled) {
-                api.store.dispatch(
-                  setModAttribute(gameId, modId, "installedAsDependency", true),
-                );
-              }
-
-              const state = api.getState();
-              const batchedActions = [];
-              // Enable the mod only for the target profile to avoid affecting other profiles
-              const batchContext = getBatchContext(
-                [
-                  "install-dependencies",
-                  "install-collections",
-                  "install-recommendations",
-                ],
-                "",
-              );
-              const targetProfileId =
-                batchContext?.get<string>("profileId") ??
-                activeProfile(state)?.id;
-              const targetProfile = targetProfileId
-                ? profileById(state, targetProfileId)
-                : undefined;
-
-              if (targetProfile) {
-                // Only modify the target profile - disable other variants and enable this one
-                const otherModIds = checkModVariantsExist(
-                  api,
-                  gameId,
-                  downloadId,
-                );
-                for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(targetProfile.id, otherModId, false),
-                  );
-                }
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, modId, true),
-                );
-              } else {
-                // Fallback: enable in profiles where source mod is enabled (original behavior)
-                const profiles = Object.values(
-                  api.getState().persistent.profiles,
-                ).filter(
-                  (prof) =>
-                    prof.gameId === gameId &&
-                    prof.modState?.[sourceModId]?.enabled,
-                );
-                profiles.forEach((prof) => {
-                  const otherModIds = checkModVariantsExist(
-                    api,
-                    gameId,
-                    downloadId,
-                  );
-                  for (const otherModId of otherModIds) {
-                    batchedActions.push(
-                      setModEnabled(prof.id, otherModId, false),
-                    );
-                  }
-                  batchedActions.push(setModEnabled(prof.id, modId, true));
-                });
-              }
-
-              batchDispatch(api.store, batchedActions);
-
-              applyExtraFromRuleUtil(api, gameId, modId, {
-                ...dep.extra,
-                fileList: dep.fileList ?? dep.extra?.fileList,
-                installerChoices: dep.installerChoices,
-                patches: dep.patches ?? dep.extra?.patches,
-              });
-
-              const mods = api.store.getState().persistent.mods[gameId];
-              return { ...dep, mod: mods[modId] };
-            })
-            .catch((err) => {
-              if (dep.extra?.onlyIfFulfillable) {
-                dropUnfulfilledUtil(api, dep, gameId, sourceModId, recommended);
-                return Bluebird.resolve(undefined);
-              } else {
-                return Bluebird.reject(err);
-              }
-            })
-            // don't cancel the whole process if one dependency fails to install
-            .catch(ProcessCanceled, (err) => {
-              if (
-                err.extraInfo !== undefined &&
-                err.extraInfo.alreadyReported
-              ) {
-                return Bluebird.resolve(undefined);
-              }
-              const refName = renderModReference(dep.reference, undefined);
-              const message =
-                err.message +
-                "\nA common cause for issues here is that the file may no longer " +
-                "be available. You may want to install a current version of the specified mod " +
-                "and update or remove the dependency for the old one.";
-              this.showDependencyError(
-                api,
-                sourceModId,
-                "Failed to install dependency",
-                message,
-                refName,
-                {
-                  allowReport: false,
-                  silent,
-                },
-              );
-              return Bluebird.resolve(undefined);
-            })
-            .catch(DownloadIsHTML, () => {
-              const refName = renderModReference(dep.reference, undefined);
-              const message =
-                "The direct download URL for this file is not valid or didn't lead to a file. " +
-                "This may be a setup error in the dependency or the file has been moved.";
-              this.showDependencyError(
-                api,
-                sourceModId,
-                "Failed to install dependency",
-                message,
-                refName,
-                {
-                  allowReport: false,
-                  silent,
-                },
-              );
-              return Bluebird.resolve(undefined);
-            })
-            .catch(NotFound, (err) => {
-              const refName = renderModReference(dep.reference, undefined);
-              this.showDependencyError(
-                api,
-                sourceModId,
-                "Failed to install dependency",
-                err,
-                refName,
-                {
-                  allowReport: false,
-                  silent,
-                },
-              );
-              return Bluebird.resolve(undefined);
-            })
-            .catch((err) => {
-              const refName =
-                dep.reference !== undefined
-                  ? renderModReference(dep.reference, undefined)
-                  : "undefined";
-              if (err instanceof UserCanceled) {
-                if (err.skipped) {
-                  return Bluebird.resolve(undefined);
-                } else {
-                  abort.abort();
-                  return Bluebird.reject(err);
-                }
-              } else if (err.code === "Z_BUF_ERROR") {
-                this.showDependencyError(
-                  api,
-                  sourceModId,
-                  "Download failed",
-                  "The download ended prematurely or was corrupted. You'll have to restart it.",
-                  refName,
-                  {
-                    allowReport: false,
-                    silent,
-                  },
-                );
-              } else if ([403, 404, 410].includes(err["statusCode"])) {
-                const message = `${err["message"]}\n\nThis error is usually caused by an invalid request, maybe you followed a link that has expired or you lack permission to access it.`;
-                this.showDependencyError(
-                  api,
-                  sourceModId,
-                  "Failed to install dependency",
-                  message,
-                  refName,
-                  {
-                    allowReport: false,
-                    silent,
-                  },
-                );
-
-                return Bluebird.resolve();
-              } else if (err.code === "ERR_INVALID_PROTOCOL") {
-                const msg = err.message.replace(/ Expected .*/, "");
-                const message =
-                  "The URL protocol used in the dependency is not supported, " +
-                  "you may be missing an extension required to handle it:\n" +
-                  msg;
-                this.showDependencyError(
-                  api,
-                  sourceModId,
-                  "Failed to install dependency",
-                  message,
-                  refName,
-                  {
-                    allowReport: false,
-                    silent,
-                  },
-                );
-              } else if (err.name === "HTTPError") {
-                err["attachLogOnReport"] = true;
-                this.showDependencyError(
-                  api,
-                  sourceModId,
-                  "Failed to install dependency",
-                  err,
-                  refName,
-                  {
-                    allowReport: true,
-                    silent,
-                  },
-                );
-              } else {
-                const pretty = prettifyNodeErrorMessage(err);
-                this.showDependencyError(
-                  api,
-                  sourceModId,
-                  "Failed to install dependency",
-                  pretty as Error,
-                  refName,
-                  {
-                    allowReport: pretty.allowReport,
-                    silent,
-                  },
-                );
-              }
-              return Bluebird.resolve(undefined);
-            })
-            .then((updatedDependency: IDependency) => {
-              if (updatedDependency === undefined) {
-                return Bluebird.resolve(undefined);
-              }
-              log("debug", "done installing dependency", {
-                ref: dep.reference.logicalFileName,
-              });
-              return Bluebird.resolve(updatedDependency);
-            })
-        );
-      },
-      { concurrency: 10 },
-    )
-      .finally(() => {
-        // Process any pending installations that were queued during dependency installation
-        const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
-        if (
-          this.mPhaseManager.hasState(sourceModId) &&
-          allowedPhase !== undefined
-        ) {
-          this.mPhaseCoordinator.startPendingForPhase(
-            sourceModId,
-            allowedPhase,
-          );
-
-          // Scan for any finished downloads that haven't been queued yet
-          // This handles downloads that were imported/finished before the collection started installing
-          log("debug", "Scanning for unqueued finished downloads", {
-            sourceModId,
-          });
-          const state = api.getState();
-          const downloads = state.persistent.downloads.files;
-          let foundCount = 0;
-          dependencies.forEach((dep: IDependency) => {
-            const downloadId = getReadyDownloadId(
-              downloads,
-              dep.reference,
-              (id) => this.mTracker.hasActiveOrPending(sourceModId, id),
-            );
-
-            if (downloadId) {
-              const rulePhase = dep.extra?.phase ?? 0;
-              // Only process downloads for the current allowed phase or earlier
-              if (rulePhase <= allowedPhase) {
-                this.mDownloadEventHandler.handleDownloadFinished(
-                  api,
-                  downloadId,
-                  sourceModId,
-                );
-                foundCount++;
-              }
-            }
-          });
-          log("debug", "Finished scanning for unqueued downloads", {
-            sourceModId,
-            foundCount,
-          });
-
-          this.mPhaseCoordinator.maybeAdvancePhase(sourceModId, api);
-        }
-
-        log("info", "done installing dependencies");
-      })
-      .catch(ProcessCanceled, (err) => {
-        // This indicates an error in the dependency rules so it's
-        // adequate to show an error but not as a bug in Vortex
-
-        // Clean up phase state and dependency tracking when process is canceled
-        delete this.mDependencyInstalls[sourceModId];
-        this.mInstallationQueueManager.cleanupPendingInstalls(
-          sourceModId,
-          true,
-        );
-
-        api.showErrorNotification(
-          "Failed to install dependencies",
-          err.message,
-          { allowReport: false },
-        );
-        return Bluebird.resolve([]);
-      })
-      .catch(UserCanceled, () => {
-        log("info", "canceled out of dependency install");
-        // Cancel all remaining operations when user cancels
-        abort.abort();
-
-        // Clean up phase state and dependency tracking when canceled
-        delete this.mDependencyInstalls[sourceModId];
-        this.mInstallationQueueManager.cleanupPendingInstalls(
-          sourceModId,
-          true,
-        );
-
-        api.sendNotification({
-          id: "dependency-installation-canceled",
-          type: "info",
-          message: "Installation of dependencies canceled",
-        });
-        return Bluebird.resolve([]);
-      })
-      .catch((err) => {
-        api.showErrorNotification("Failed to install dependencies", err);
-        return Bluebird.resolve([]);
-      })
-      .filter((dep) => dep !== undefined);
-
-    return Bluebird.resolve(res);
-  }
-
-  private doInstallDependencies(
-    api: IExtensionApi,
-    gameId: string,
-    sourceModId: string,
-    dependencies: IDependency[],
-    recommended: boolean,
-    silent: boolean,
-  ): Bluebird<IDependency[]> {
-    const state: IState = api.getState();
-    let downloads: { [id: string]: IDownload } =
-      state.persistent.downloads.files;
-
-    const sourceMod = state.persistent.mods[gameId][sourceModId];
-    const stagingPath = installPathForGame(state, gameId);
-
-    if (sourceMod?.installationPath === undefined) {
-      return Bluebird.resolve([]);
-    }
-
-    let queuedDownloads: IModReference[] = [];
-
-    const clearQueued = () => {
-      const downloadsNow = api.getState().persistent.downloads.files;
-      // cancel in reverse order so that canceling a running download doesn't
-      // trigger a previously pending download to start just to then be canceled too.
-      // Obviously this is probably not a robust way of achieving that but what is?
-      queuedDownloads.reverse().forEach((ref) => {
-        const dlId = findDownloadByRef(ref, downloadsNow);
-        log("info", "cancel dependency dl", {
-          name: renderModReference(ref),
-          dlId,
-        });
-        if (dlId !== undefined) {
-          api.events.emit("pause-download", dlId);
-        } else {
-          api.events.emit("intercept-download", ref.tag);
-        }
-      });
-      queuedDownloads = [];
-
-      delete this.mDependencyInstalls[sourceModId];
-      this.mInstallationQueueManager.cleanupPendingInstalls(sourceModId, true);
-    };
-
-    const queueDownload = (dep: IDependency): Bluebird<string> => {
-      return this.mDependencyDownloadsLimit.do<string>(() => {
-        if (dep.reference.tag !== undefined) {
-          queuedDownloads.push(dep.reference);
-        }
-        return abort.signal.aborted
-          ? Bluebird.reject(new UserCanceled(false))
-          : downloadDependencyAsyncUtil(
-              api,
-              dep.reference,
-              dep.lookupResults[0].value,
-              () => abort.signal.aborted,
-              dep.extra?.fileName,
-            )
-              .then((dlId) => {
-                const idx = queuedDownloads.indexOf(dep.reference);
-                queuedDownloads.splice(idx, 1);
-                return dlId;
-              })
-              .catch((err) => {
-                const idx = queuedDownloads.indexOf(dep.reference);
-                queuedDownloads.splice(idx, 1);
-
-                // Check if this is a network error that might have caused the download to be paused
-                const isNetworkError =
-                  err.message?.includes("socket hang up") ||
-                  err.message?.includes("ECONNRESET") ||
-                  err.message?.includes("ETIMEDOUT") ||
-                  err.code === "ECONNRESET" ||
-                  err.code === "ETIMEDOUT";
-
-                // Check if this is a "File already downloaded" error (for cases where we get a generic error message)
-                const isAlreadyDownloaded =
-                  err instanceof AlreadyDownloaded ||
-                  err.message?.includes("File already downloaded") ||
-                  err.message?.includes("already downloaded");
-
-                if (isAlreadyDownloaded) {
-                  if (err.downloadId !== undefined) {
-                    log(
-                      "info",
-                      "File already downloaded, using existing download ID",
-                      { downloadId: err.downloadId },
-                    );
-                    return Bluebird.resolve(err.downloadId);
-                  }
-                  // If file is already downloaded, check if we can find the download
-                  // Try to find the download by filename
-                  const currentDownloads =
-                    api.getState().persistent.downloads.files;
-                  const downloadId = Object.keys(currentDownloads).find(
-                    (dlId) =>
-                      currentDownloads[dlId].localPath === err.fileName ||
-                      currentDownloads[dlId].modInfo?.referenceTag ===
-                        dep.reference?.tag,
-                  );
-
-                  if (downloadId) {
-                    log(
-                      "info",
-                      "Download already completed, using existing download",
-                      { downloadId },
-                    );
-                    return Bluebird.resolve(downloadId);
-                  } else {
-                    // The download file exists but we can't find its record - refresh downloads and try again
-                    return new Bluebird((resolve) => {
-                      api.events.emit("refresh-downloads", gameId, () => {
-                        const currentDownloads =
-                          api.getState().persistent.downloads.files;
-                        const downloadId = Object.keys(currentDownloads).find(
-                          (dlId) =>
-                            currentDownloads[dlId].localPath === err.fileName,
-                        );
-                        return downloadId ? resolve(downloadId) : resolve(null);
-                      });
-                    });
-                  }
-                }
-
-                if (isNetworkError) {
-                  // For network errors, check if the download ended up in paused state
-                  // and if so, try to resume it through the concurrent queue
-                  setTimeout(() => {
-                    const currentDownloads =
-                      api.getState().persistent.downloads.files;
-                    const downloadId = Object.keys(currentDownloads).find(
-                      (dlId) =>
-                        currentDownloads[dlId].modInfo?.referenceTag ===
-                        dep.reference?.tag,
-                    );
-
-                    if (
-                      downloadId &&
-                      currentDownloads[downloadId].state === "paused"
-                    ) {
-                      log(
-                        "info",
-                        "Network error resulted in paused download, will attempt resume",
-                        {
-                          downloadId,
-                          error: err.message,
-                        },
-                      );
-                      // The download will be caught by the paused download check in doDownload
-                      return;
-                    }
-                  }, 1000);
-                }
-
-                return Bluebird.reject(err);
-              });
-      });
-    };
-
-    const resumeDownload = (dep: IDependency): Bluebird<string> => {
-      // This function handles resuming downloads that were paused due to network issues or user action
-      return this.mDependencyDownloadsLimit.do<string>(() =>
-        abort.signal.aborted
-          ? Bluebird.reject(new UserCanceled(false))
-          : new Bluebird((resolve, reject) => {
-              // First check current download state to avoid unnecessary resume attempts
-              const currentDownloads =
-                api.getState().persistent.downloads.files;
-              let resolvedId: string = dep.download;
-              let currentDownload = currentDownloads[resolvedId];
-
-              if (!currentDownload) {
-                // Try to resolve the download by referenceTag if possible
-                const tag = dep.reference?.tag;
-                if (truthy(tag)) {
-                  const foundId = Object.keys(currentDownloads).find(
-                    (dlId) =>
-                      currentDownloads[dlId]?.modInfo?.referenceTag === tag,
-                  );
-                  if (foundId) {
-                    log(
-                      "info",
-                      "Resolved missing download id from referenceTag",
-                      { from: dep.download, to: foundId, tag },
-                    );
-                    resolvedId = foundId;
-                    currentDownload = currentDownloads[resolvedId];
-                  }
-                }
-              }
-
-              if (!currentDownload) {
-                const readableRef = renderModReference(dep.reference);
-                log("warn", "Download not found when trying to resume", {
-                  intendedId: dep.download,
-                  ref: readableRef,
-                });
-                return reject(new NotFound(`download for ${readableRef}`));
-              }
-
-              if (currentDownload.state === "finished") {
-                log("info", "Download already finished, no need to resume", {
-                  downloadId: resolvedId,
-                });
-                return resolve(resolvedId);
-              }
-
-              if (currentDownload.state !== "paused") {
-                log("info", "Download not in paused state", {
-                  downloadId: resolvedId,
-                  state: currentDownload.state,
-                });
-                return resolve(resolvedId);
-              }
-
-              log("info", "Resuming paused download", {
-                downloadId: resolvedId,
-                tag: dep.reference?.tag,
-              });
-
-              api.events.emit(
-                "resume-download",
-                resolvedId,
-                (err) => {
-                  if (err !== null) {
-                    // Handle "File already downloaded" error gracefully
-                    if (
-                      err.message?.includes("File already downloaded") ||
-                      err.message?.includes("already downloaded")
-                    ) {
-                      log(
-                        "info",
-                        "Download already completed during resume attempt",
-                        { downloadId: resolvedId },
-                      );
-                      return resolve(resolvedId);
-                    }
-                    reject(err);
-                  } else {
-                    resolve(resolvedId);
-                  }
-                },
-                { allowInstall: false },
-              );
-            }),
-      );
-    };
-
-    const installDownload = (
-      dep: IDependency,
-      downloadId: string,
-    ): Bluebird<string> => {
-      return new Bluebird<string>((resolve, reject) => {
-        return this.mDependencyInstallsLimit.do(async () => {
-          return abort.signal.aborted
-            ? reject(new UserCanceled(false))
-            : this.withInstructions(
-                api,
-                modName(sourceMod),
-                renderModReference(dep.reference),
-                dep.reference?.tag ?? downloadId,
-                dep.extra?.["instructions"],
-                recommended,
-                () =>
-                  this.installModAsync(
-                    dep.reference,
-                    api,
-                    downloadId,
-                    { choices: dep.installerChoices, patches: dep.patches },
-                    dep.fileList,
-                    gameId,
-                    silent,
-                    sourceModId,
-                  ),
-              )
-                .then((res) => resolve(res))
-                .catch((err) => {
-                  if (err instanceof UserCanceled) {
-                    err.skipped = true;
-                  }
-                  return reject(err);
-                });
-        });
-      });
-    };
-
-    const doDownload = (
-      dep: IDependency,
-    ): Bluebird<{ updatedDep: IDependency; downloadId: string }> => {
-      let dlPromise = Bluebird.resolve(dep.download);
-      // Alternate between ProcessCanceled and NotFound for failed download URL
-      // if (Math.random() < 0.5) {
-      //   return Bluebird.reject(new ProcessCanceled('Failed to determine download url'));
-      // } else {
-      //   return Bluebird.reject(new NotFound('Failed to determine download url'));
-      // }
-      if (dep.download === undefined || downloads[dep.download] === undefined) {
-        if (dep.extra?.localPath !== undefined) {
-          // the archive is shipped with the mod that has the dependency
-          const downloadPath = downloadPathForGame(state, gameId);
-          const fileName = path.basename(dep.extra.localPath);
-          let targetPath = path.join(downloadPath, fileName);
-          // backwards compatibility: during alpha testing the bundles were 7zipped inside
-          // the collection
-          if (path.extname(fileName) !== ".7z") {
-            targetPath += ".7z";
-          }
-          dlPromise = fs
-            .statAsync(targetPath)
-            .then(() =>
-              Object.keys(downloads).find(
-                (dlId) => downloads[dlId].localPath === fileName,
-              ),
-            )
-            .catch(
-              (err) =>
-                new Bluebird((resolve, reject) => {
-                  api.events.emit(
-                    "import-downloads",
-                    [
-                      path.join(
-                        stagingPath,
-                        sourceMod.installationPath,
-                        dep.extra.localPath,
-                      ),
-                    ],
-                    (dlIds: string[]) => {
-                      if (dlIds.length > 0) {
-                        api.store.dispatch(
-                          setDownloadModInfo(
-                            dlIds[0],
-                            "referenceTag",
-                            dep.reference.tag,
-                          ),
-                        );
-                        resolve(dlIds[0]);
-                      } else {
-                        resolve();
-                      }
-                    },
-                    true,
-                  );
-                }),
-            );
-        } else {
-          // Always allow downloads to be queued - installations will be deferred if needed
-          dlPromise =
-            (dep.lookupResults[0]?.value?.sourceURI ?? "") === ""
-              ? Bluebird.reject(
-                  new ProcessCanceled("Failed to determine download url"),
-                )
-              : queueDownload(dep);
-        }
-      } else if (dep.download === null) {
-        dlPromise = Bluebird.reject(
-          new ProcessCanceled("Failed to determine download url"),
-        );
-      } else if (downloads[dep.download]?.state === "paused") {
-        // Get fresh state to ensure accurate paused detection
-        const freshDownloads = api.getState().persistent.downloads.files;
-        if (freshDownloads[dep.download]?.state === "paused") {
-          dlPromise = resumeDownload(dep);
-        } else {
-          dlPromise = Bluebird.resolve(dep.download);
-        }
-      }
-      return dlPromise
-        .catch(UserCanceled, (err) => {
-          if (err.skipped) {
-            this.mDownloadEventHandler.handleDownloadSkipped(
-              api,
-              sourceModId,
-              dep,
-            );
-          }
-          return Bluebird.reject(err);
-        })
-        .catch(AlreadyDownloaded, (err) => {
-          if (err.downloadId !== undefined) {
-            return Bluebird.resolve(err.downloadId);
-          } else {
-            const downloadId = Object.keys(downloads).find(
-              (dlId) => downloads[dlId].localPath === err.fileName,
-            );
-            if (downloadId !== undefined) {
-              return Bluebird.resolve(downloadId);
-            }
-          }
-          return Bluebird.reject(
-            new NotFound(`download for ${renderModReference(dep.reference)}`),
-          );
-        })
-        .then((downloadId: string) => {
-          // Get fresh state before checking if download is paused
-          const freshDownloads = api.getState().persistent.downloads.files;
-          if (
-            downloadId !== undefined &&
-            freshDownloads[downloadId]?.state === "paused"
-          ) {
-            return resumeDownload(dep);
-          } else {
-            return Bluebird.resolve(downloadId);
-          }
-        })
-        .then((downloadId: string) => {
-          downloads = api.getState().persistent.downloads.files;
-
-          if (downloadId === undefined || downloads[downloadId] === undefined) {
-            return Bluebird.reject(
-              new NotFound(`download for ${renderModReference(dep.reference)}`),
-            );
-          }
-          if (downloads[downloadId].state !== "finished") {
-            // download not actually finished, may be paused
-            return Bluebird.reject(new UserCanceled(true));
-          }
-
-          if (
-            dep.reference.tag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== undefined &&
-            downloads[downloadId].modInfo?.referenceTag !== dep.reference.tag
-          ) {
-            // we can't change the tag on the download because that might break
-            // dependencies on the other mod
-            // instead we update the rule in the collection. This has to happen immediately,
-            // otherwise the installation might have weird issues around the mod
-            // being installed having a different tag than the rule
-            dep.reference = this.updateModRuleMethod(
-              api,
-              gameId,
-              sourceModId,
-              dep,
-              {
-                ...dep.reference,
-                fileList: dep.fileList,
-                patches: dep.patches,
-                installerChoices: dep.installerChoices,
-                tag: downloads[downloadId].modInfo.referenceTag,
-              },
-              recommended,
-            )?.reference;
-
-            dep.mod = findModByRef(
-              dep.reference,
-              api.getState().persistent.mods[gameId],
-            );
-          } else {
-            log("info", "downloaded as dependency", {
-              dependency: dep.reference.logicalFileName,
-              downloadId,
-            });
-          }
-
-          return dep.mod == null
-            ? Bluebird.resolve()
-                .then(() => {
-                  return Bluebird.resolve({ updatedDep: dep, downloadId });
-                })
-                .catch((err) => {
-                  if (dep["reresolveDownloadHint"] === undefined) {
-                    return Bluebird.reject(err);
-                  }
-                  const newState = api.getState();
-                  const download =
-                    newState.persistent.downloads.files[downloadId];
-
-                  let removeProm = Bluebird.resolve();
-                  if (download !== undefined) {
-                    // Convert download game ID from Nexus domain ID to internal ID for path resolution
-                    const games = knownGames(newState);
-                    const convertedGameId = convertGameIdReverse(
-                      games,
-                      download.game[0],
-                    );
-                    const pathGameId = convertedGameId || download.game[0];
-
-                    const fullPath: string = path.join(
-                      downloadPathForGame(newState, pathGameId),
-                      download.localPath,
-                    );
-                    removeProm = fs.removeAsync(fullPath);
-                  }
-
-                  return removeProm
-                    .then(() => dep["reresolveDownloadHint"]())
-                    .then(() => doDownload(dep));
-                })
-            : Bluebird.resolve({ updatedDep: dep, downloadId });
-        });
-    };
-
-    const phases: { [phase: number]: IDependency[] } = {};
-
-    dependencies.forEach((dep) =>
-      setdefault(phases, dep.phase ?? 0, []).push(dep),
-    );
-
-    // Initialize phase state immediately after determining what phases we have
-    if (dependencies.length > 0) {
-      this.mPhaseManager.ensureState(sourceModId);
-
-      const phaseNumbers = Object.keys(phases)
-        .map((p) => parseInt(p, 10))
-        .sort((a, b) => a - b);
-      const lowestPhase = phaseNumbers[0];
-
-      // Check collection session to determine actual current phase
-      const activeCollectionSession = getCollectionSessionById(
-        api.getState(),
-        sourceModId,
-      );
-
-      if (activeCollectionSession) {
-        // Determine the highest completed phase from the collection session
-        const mods = activeCollectionSession.mods || {};
-        const allMods = Object.values(mods);
-
-        // Find all phases that exist in the collection
-        const allPhases = new Set<number>();
-        allMods.forEach((mod: any) => {
-          allPhases.add(mod.phase ?? 0);
-        });
-
-        // Find the highest phase where all required mods are complete
-        let highestCompletedPhase = -1;
-        Array.from(allPhases)
-          .sort((a, b) => a - b)
-          .forEach((phase) => {
-            const isPhaseComplete = isCollectionPhaseComplete(
-              api.getState(),
-              phase,
-            );
-
-            if (isPhaseComplete) {
-              highestCompletedPhase = phase;
-            }
-          });
-
-        // Set allowed phase to the next phase after the highest completed one
-        // or to the lowest phase in our current dependencies if higher
-        const nextPhaseAfterCompleted = highestCompletedPhase + 1;
-        const effectiveStartPhase = Math.max(
-          lowestPhase,
-          nextPhaseAfterCompleted,
-        );
-
-        const currentAllowedPhase =
-          this.mPhaseManager.getAllowedPhase(sourceModId);
-        if (
-          currentAllowedPhase === undefined ||
-          currentAllowedPhase < effectiveStartPhase
-        ) {
-          this.mPhaseManager.setAllowedPhase(sourceModId, effectiveStartPhase);
-          // When setting allowed phase, mark all previous phases as downloads finished
-          for (let p = 0; p < effectiveStartPhase; p++) {
-            this.mPhaseManager.markDownloadsFinished(sourceModId, p);
-          }
-        }
-      } else if (
-        this.mPhaseManager.getAllowedPhase(sourceModId) === undefined
-      ) {
-        // No active session, use the lowest phase from dependencies
-        this.mPhaseManager.setAllowedPhase(sourceModId, lowestPhase);
-        // When setting initial allowed phase, mark all previous phases as downloads finished
-        for (let p = 0; p < lowestPhase; p++) {
-          this.mPhaseManager.markDownloadsFinished(sourceModId, p);
-        }
-        log("info", "Set initial allowed phase", {
-          sourceModId,
-          allowedPhase: lowestPhase,
-        });
-      }
-
-      // Mark all phases as having downloads (they will be processed)
-      phaseNumbers.forEach((phase) => {
-        this.mPhaseManager.markDownloadsFinished(sourceModId, phase);
-      });
-    }
-
-    const abort = new AbortController();
-
-    abort.signal.onabort = () => clearQueued();
-
-    const phaseList = Object.values(phases);
-
-    const res: Bluebird<IDependency[]> = Bluebird.reduce(
-      phaseList,
-      (prev: IDependency[], depList: IDependency[], idx: number) => {
-        if (depList.length === 0) {
-          return prev;
-        }
-        return this.doInstallDependenciesPhase(
-          api,
-          depList,
-          gameId,
-          sourceModId,
-          recommended,
-          doDownload,
-          abort,
-          silent,
-        )
-          .then((updated: IDependency[]) => {
-            // Mark this phase's downloads as finished to allow its installers to run,
-            // but do not wait for installations to complete before proceeding to next phase.
-            const phaseNum = depList[0]?.phase ?? 0;
-            this.mPhaseCoordinator.markPhaseDownloadsFinished(
-              sourceModId,
-              phaseNum,
-              api,
-            );
-            return updated;
-          })
-          .then((updated: IDependency[]) => {
-            // Schedule a deploy for this phase once its installers settle; don't block download progression
-            // const phaseNum = depList[0]?.phase ?? 0;
-            // // Only schedule deploy polling for the current allowed phase to maintain sequential processing
-            // const allowedPhase = this.mPhaseManager.getAllowedPhase(sourceModId);
-            // if (this.mPhaseManager.hasState(sourceModId) && (allowedPhase !== undefined) && (phaseNum === allowedPhase)) {
-            //   this.scheduleDeployOnPhaseSettled(api, sourceModId, phaseNum);
-            // }
-            return updated;
-          })
-          .then((updated: IDependency[]) => [].concat(prev, updated));
-      },
-      [],
-    );
-
-    this.mDependencyInstalls[sourceModId] = () => {
-      abort.abort();
-    };
-
-    return Bluebird.resolve(res)
-      .then((deps: IDependency[]) => {
-        return this.mPhaseCoordinator
-          .pollAllPhasesComplete(api, sourceModId)
-          .then(() => deps);
-      })
-      .finally(() => {
-        this.mPhaseManager.deleteState(sourceModId);
-      });
-  }
-
   // Delegates to DependencyInstaller
   private updateModRuleMethod(
     api: IExtensionApi,
@@ -3920,22 +2960,17 @@ class InstallManager {
     );
 
     if (silent && error.length === 0) {
-      return this.doInstallDependencies(
-        api,
-        gameId,
-        modId,
-        success,
-        false,
-        silent,
-      ).then((updated) =>
-        this.updateRules(
-          api,
-          gameId,
-          modId,
-          [].concat(existing, updated),
-          false,
-        ),
-      );
+      return this.mDependencyInstallOrchestrator
+        .orchestrate(api, gameId, modId, success, false, silent)
+        .then((updated) =>
+          this.updateRules(
+            api,
+            gameId,
+            modId,
+            [].concat(existing, updated),
+            false,
+          ),
+        );
     }
 
     if (success.length === 0) {
@@ -3946,22 +2981,17 @@ class InstallManager {
 
     return showMemoDialog(api, context, name, success, error).then((result) => {
       if (result.action === "Install") {
-        return this.doInstallDependencies(
-          api,
-          gameId,
-          modId,
-          success,
-          false,
-          silent,
-        ).then((updated) =>
-          this.updateRules(
-            api,
-            gameId,
-            modId,
-            [].concat(existing, updated),
-            false,
-          ),
-        );
+        return this.mDependencyInstallOrchestrator
+          .orchestrate(api, gameId, modId, success, false, silent)
+          .then((updated) =>
+            this.updateRules(
+              api,
+              gameId,
+              modId,
+              [].concat(existing, updated),
+              false,
+            ),
+          );
       } else {
         return Bluebird.resolve();
       }
@@ -4190,22 +3220,17 @@ class InstallManager {
         }
 
         return queryProm.then((result) => {
-          return this.doInstallDependencies(
-            api,
-            gameId,
-            modId,
-            result,
-            true,
-            silent,
-          ).then((updated) =>
-            this.updateRules(
-              api,
-              gameId,
-              modId,
-              [].concat(existing, updated),
-              true,
-            ),
-          );
+          return this.mDependencyInstallOrchestrator
+            .orchestrate(api, gameId, modId, result, true, silent)
+            .then((updated) =>
+              this.updateRules(
+                api,
+                gameId,
+                modId,
+                [].concat(existing, updated),
+                true,
+              ),
+            );
         });
       })
       .catch((err) => {
