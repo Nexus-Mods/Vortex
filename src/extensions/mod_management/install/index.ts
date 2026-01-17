@@ -174,3 +174,13 @@ export {
   processRule,
 } from "./InstructionDispatcher";
 export type { IModTypeContext } from "./InstructionDispatcher";
+
+// Re-export PhaseCoordinator
+export {
+  PhaseCoordinator,
+  DEFAULT_PHASE_COORDINATOR_CONFIG,
+} from "./PhaseCoordinator";
+export type {
+  IPhaseCoordinatorCallbacks,
+  IPhaseCoordinatorConfig,
+} from "./PhaseCoordinator";
