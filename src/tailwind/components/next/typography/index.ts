@@ -3,7 +3,7 @@
  * Adapted from web team's "next" project
  */
 
-export { Typography } from "./Typography";
+export { Typography, TypographyLink } from "./Typography";
 export type {
   TypographyProps,
   TypographyTypes,

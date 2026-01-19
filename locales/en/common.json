@@ -28,6 +28,12 @@
   },
   "view_all": "View all",
   "refresh": "Refresh",
+  "settings": "Settings",
   "beta": "Beta",
-  "ignore": "Ignore"
+  "hide": "Hide",
+  "hide_all": "Hide all",
+  "active": "Active",
+  "hidden": "Hidden",
+  "helpful": "Helpful",
+  "not_helpful": "Not helpful"
 }
