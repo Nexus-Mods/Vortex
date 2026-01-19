@@ -1,4 +1,8 @@
 import type { AttributeExtractor } from "../../../types/IExtensionContext";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../../shared/errors";
 
 import { log } from "../../../util/log";
 
@@ -48,7 +52,7 @@ export function debugListExtractors(): Array<{
       details = `type: ${typeof extractor}, hasName: ${!!extractorObj.name}, constructor: ${extractorObj.constructor?.name || "unknown"}`;
     } catch (err) {
       name = "[identification failed]";
-      details = `error: ${err.message}`;
+      details = `error: ${getErrorMessageOrDefault(err)}`;
     }
     return { priority, name, details };
   });
@@ -96,7 +100,7 @@ function extractorOrSkip(
     extractorDetails = ` (type: ${typeof extractor}, hasName: ${!!extractorObj.name}, constructor: ${extractorObj.constructor?.name || "unknown"})`;
   } catch (err) {
     extractorName = "[extractor identification failed]";
-    extractorDetails = ` (error: ${err.message})`;
+    extractorDetails = ` (error: ${getErrorMessageOrDefault(err)})`;
   }
 
   // Create timeout promise that rejects after 5 seconds
@@ -110,8 +114,10 @@ function extractorOrSkip(
   const startTime = Date.now();
 
   // Race the extractor against the timeout
-  return Promise.resolve(extractor(input, modPath)).catch((err) => {
+  return Promise.resolve(extractor(input, modPath)).catch((unknownError) => {
     const duration = Date.now() - startTime;
+
+    const err = unknownToError(unknownError);
     log(
       "error",
       `Extractor skipped: "${extractorName}" (modPath: "${modPath}") - ${err.message}`,

@@ -5,7 +5,7 @@ import * as path from "path";
 import type * as winapiT from "winapi-bindings";
 
 import { ipcMain, ipcRenderer, shell } from "electron";
-import { getErrorMessage } from "../shared/errors";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 let winapi: typeof winapiT;
 try {
@@ -67,7 +67,7 @@ if (ipcMain !== undefined && winapi?.ShellExecuteEx !== undefined) {
     } catch (err) {
       log("warn", "failed to run", {
         target,
-        error: getErrorMessage(err) ?? "unknown error",
+        error: getErrorMessageOrDefault(err),
       });
     }
   });
@@ -98,7 +98,7 @@ function open(target: string, wait?: boolean): Promise<void> {
       : openLocalPath(target);
 
     openPromise.catch((err) => {
-      const error = getErrorMessage(err);
+      const error = getErrorMessageOrDefault(err);
       log("warn", "failed to open", { target, error });
     });
 

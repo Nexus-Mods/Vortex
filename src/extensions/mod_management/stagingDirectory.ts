@@ -20,6 +20,7 @@ import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
 
 import type * as winapiT from "winapi-bindings";
+import { isErrorWithSystemCode, unknownToError } from "../../shared/errors";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 
@@ -170,7 +171,7 @@ async function ensureStagingDirectoryImpl(
     //  the destination path is pointing towards a non-existing partition.
     // If it's a non-existing partition, we want the reinitialization dialog
     //  to appear so that the user can re-configure his game's staging folder.
-    if (err.systemCode === 2) {
+    if (isErrorWithSystemCode(err) && err.systemCode === 2) {
       partitionExists = false;
     }
   }
@@ -181,7 +182,7 @@ async function ensureStagingDirectoryImpl(
     dirExists = true;
     // staging dir exists, does the tag exist?
     await fs.statAsync(path.join(instPath, STAGING_DIR_TAG));
-  } catch (err) {
+  } catch (unknownError) {
     const mods = getSafe(state, ["persistent", "mods", gameId], undefined);
     if (partitionExists === true && dirExists === false && mods === undefined) {
       // If the mods state branch for this game is undefined - this must be the
@@ -193,6 +194,7 @@ async function ensureStagingDirectoryImpl(
       // no meta information about any mods anyway
       await fs.ensureDirWritableAsync(instPath, () => Bluebird.resolve());
     } else {
+      const err = unknownToError(unknownError);
       const dialogResult = await queryStagingFolderInvalid(
         api,
         err,

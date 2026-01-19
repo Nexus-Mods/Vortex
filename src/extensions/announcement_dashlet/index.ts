@@ -34,6 +34,7 @@ import type { IAnnouncement, ISurveyInstance } from "./types";
 import { ParserError } from "./types";
 
 import { matchesGameMode, matchesVersion } from "./util";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const ANNOUNCEMENT_LINK =
   "https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/announcements.json";
@@ -77,7 +78,12 @@ function getHTTPData<T>(link: string): Bluebird<T[]> {
               resolve(parsed);
             } catch (err) {
               reject(
-                new ParserError(res.statusCode, err.message, link, output),
+                new ParserError(
+                  res.statusCode,
+                  getErrorMessageOrDefault(err),
+                  link,
+                  output,
+                ),
               );
             }
           });

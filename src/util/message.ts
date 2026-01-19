@@ -38,6 +38,7 @@ import * as _ from "lodash";
 import getVortexPath from "./getVortexPath";
 import { decodeSystemError } from "./nativeErrors";
 import opn from "./opn";
+import { getErrorMessageOrDefault } from "../shared/errors";
 
 const GITHUB_PROJ = "Nexus-Mods/Vortex";
 
@@ -221,7 +222,7 @@ function dataToFile(id, input: any) {
           })
           .catch((innerErr) => {
             log("error", "failed to write attachment data to file", {
-              error: innerErr.message,
+              error: getErrorMessageOrDefault(innerErr),
             });
             return reject(innerErr);
           });

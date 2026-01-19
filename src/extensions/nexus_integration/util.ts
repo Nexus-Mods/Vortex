@@ -92,6 +92,7 @@ import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { IAccountStatus } from "./types/IValidateKeyData";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -141,7 +142,7 @@ export function onCancelLoginImpl(api: IExtensionApi) {
     } catch (err) {
       // the only time we ever see this happen is a case where the websocket connection
       // wasn't established yet so the cancelation failed because it wasn't necessary.
-      log("info", "login not canceled", err.message);
+      log("info", "login not canceled", getErrorMessageOrDefault(err));
     }
   }
   api.store.dispatch(setLoginId(undefined));
@@ -176,7 +177,7 @@ function genId() {
     return uuid.v4();
   } catch (err) {
     // odd, still unidentified bugs where bundled modules fail to load.
-    log("warn", "failed to import uuid module", err.message);
+    log("warn", "failed to import uuid module", getErrorMessageOrDefault(err));
     const chars =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     return Array.apply(null, Array(10))
@@ -348,7 +349,8 @@ export function requestLogin(
         api.store.dispatch(setOauthPending(url));
       },
     )
-    .catch((err) => {
+    .catch((unknownError) => {
+      const err = unknownToError(unknownError);
       err.stack = stackErr.stack;
       callback(err);
     });
@@ -1518,7 +1520,7 @@ export function checkForCollectionUpdates(
         .catch((err) => {
           const name = modName(mod, { version: true });
           const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
-          return `${nameLink}:<br/>${err.message}`;
+          return `${nameLink}:<br/>${getErrorMessageOrDefault(err)}`;
         });
     }),
   ).then((messages) => ({

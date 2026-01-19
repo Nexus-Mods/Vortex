@@ -16,9 +16,9 @@ import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import {
-  getErrorMessage,
   getErrorCode,
   unknownToError,
+  getErrorMessageOrDefault,
 } from "../shared/errors";
 
 const getAppName = makeRemoteCallSync("get-application-name", (electron) =>
@@ -72,11 +72,14 @@ class PresetManager {
         .filter((fileName) => path.extname(fileName) === ".json")
         .sort();
     } catch (err) {
-      const code = getErrorCode(err);
-      log(code === "ENOENT" ? "debug" : "error", "no preset files", {
-        basePath,
-        error: getErrorMessage(err) ?? "unknown error",
-      });
+      log(
+        getErrorCode(err) === "ENOENT" ? "debug" : "error",
+        "no preset files",
+        {
+          basePath,
+          error: getErrorMessageOrDefault(err),
+        },
+      );
     }
 
     log("debug", "reading preset files", {
@@ -95,16 +98,16 @@ class PresetManager {
           JSON.parse(fs.readFileSync(presetPath, { encoding: "utf-8" })),
         );
         this.mPresets[presetId] = presetData;
-      } catch (err) {
-        const code = getErrorCode(err);
-        const error = unknownToError(err);
+      } catch (unknownError) {
+        const code = getErrorCode(unknownError);
+        const err = unknownToError(unknownError);
         // ENOENT, meaning there is no preset, is fine
         if (code !== "ENOENT") {
           log("error", "failed to read preset", {
             presetFile,
-            error: error.message,
+            error: err.message,
           });
-          this.mError = error;
+          this.mError = err;
           return;
         }
       }
@@ -211,7 +214,7 @@ class PresetManager {
     } catch (err) {
       log("error", "preset step failed", {
         step: JSON.stringify(step),
-        error: getErrorMessage(err) ?? "unknown error",
+        error: getErrorMessageOrDefault(err),
         process: process.type,
       });
       this.mApi?.sendNotification?.({
@@ -252,7 +255,7 @@ class PresetManager {
       this.writeState();
     } catch (err) {
       log("error", "failed to update preset state", {
-        erorr: getErrorMessage(err) ?? "unknown error",
+        error: getErrorMessageOrDefault(err),
       });
       return true;
     }
@@ -348,12 +351,12 @@ class PresetManager {
       this.mState = validateState(
         JSON.parse(fs.readFileSync(this.mStatePath, { encoding: "utf-8" })),
       );
-    } catch (err) {
-      const code = getErrorCode(err);
-      const error = unknownToError(err);
+    } catch (unknownError) {
+      const code = getErrorCode(unknownError);
+      const err = unknownToError(unknownError);
       if (code !== "ENOENT") {
-        log("error", "failed to read preset state", { error: error.message });
-        this.mError = error;
+        log("error", "failed to read preset state", { error: err.message });
+        this.mError = err;
         return;
       }
       // ENOENT, meaning there is no state yet, that is fine

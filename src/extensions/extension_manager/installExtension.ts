@@ -1,4 +1,5 @@
 import { removeExtension } from "../../actions";
+import { unknownToError } from "../../shared/errors";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
@@ -86,7 +87,8 @@ function installExtensionDependencies(
         return Promise.resolve();
       }
     }).then(() => null);
-  } catch (err) {
+  } catch (unknownErr) {
+    const err = unknownToError(unknownErr);
     // TODO: can't check for dependencies if the extension is already loaded
     //   and registers actions
     if (

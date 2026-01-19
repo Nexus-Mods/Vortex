@@ -16,6 +16,7 @@ import { getAllActivators } from "./deploymentMethods";
 import modName from "./modName";
 import { removeMod, removeMods } from "./removeMods";
 import sortMods, { CycleError } from "./sort";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 async function combineMods(
   api: IExtensionApi,
@@ -184,7 +185,7 @@ async function combineMods(
       } catch (err) {
         log("error", "failed to remove temporary directory", {
           tempName,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     }

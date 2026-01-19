@@ -1019,13 +1019,13 @@ export function wrapExtCBAsync<ArgT extends any[], ResT>(
 ): (...args: ArgT) => Bluebird<ResT> {
   return (...args: ArgT): Bluebird<ResT> => {
     try {
-      return Bluebird.resolve(cb(...args)).catch?.((err) => {
+      return Bluebird.resolve(cb(...args)).catch?.((err: string | Error) => {
         if (typeof err === "string") {
           err = new Error(err);
         }
         if (extInfo !== undefined && !extInfo.official) {
-          err.allowReport = false;
-          err.extensionName = extInfo.name;
+          err["allowReport"] = false;
+          err["extensionName"] = extInfo.name;
         }
         return Promise.reject(err);
       });

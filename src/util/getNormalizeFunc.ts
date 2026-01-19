@@ -4,6 +4,7 @@ import Promise from "bluebird";
 import * as fsOrig from "fs-extra";
 import * as path from "path";
 import { restackErr } from "./util";
+import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
 
 export type Normalize = (input: string) => string;
 
@@ -93,7 +94,7 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
       }
     })
     .catch((err) => {
-      return isCaseSensitiveFailed(testPath, err.message);
+      return isCaseSensitiveFailed(testPath, getErrorMessageOrDefault(err));
     });
 }
 
@@ -136,7 +137,8 @@ function getNormalizeFunc(
       return funcOut;
     })
     .catch((err) => {
-      if (err.code === "ENOENT") {
+      const code = getErrorCode(err);
+      if (code === "ENOENT") {
         const parent = path.dirname(testPath);
         return parent === testPath
           ? Promise.reject(restackErr(err, stackErr))

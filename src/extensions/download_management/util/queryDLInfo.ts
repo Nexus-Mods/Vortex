@@ -14,6 +14,7 @@ import { convertNXMIdReverse } from "../../nexus_integration/util/convertGameId"
 import { activeGameId } from "../../profile_management/selectors";
 import { setDownloadModInfo } from "../actions/state";
 import { downloadPathForGame } from "../selectors";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 // Queue management for metadata lookups
 interface IMetadataRequest {
@@ -101,7 +102,7 @@ class MetadataLookupQueue {
         .catch((err) => {
           log("warn", "metadata lookup failed", {
             dlId: request.dlId,
-            error: err.message,
+            error: getErrorMessageOrDefault(err),
           });
           request.reject(err);
         })

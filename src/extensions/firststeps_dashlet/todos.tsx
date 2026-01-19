@@ -98,7 +98,7 @@ function todos(api: IExtensionApi): IToDo[] {
         try {
           return winapi.GetVolumePathName(props.dlPath);
         } catch (err) {
-          err.dlPath = props.dlPath;
+          err["dlPath"] = props.dlPath;
           throw err;
         }
       },

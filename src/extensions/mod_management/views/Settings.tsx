@@ -93,6 +93,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import * as winapi from "winapi-bindings";
 import { ProvidePlugin } from "webpack";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -742,7 +743,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               } catch (err) {
                 log("warn", "failed to parse staging tag file", {
                   stagingTagPath,
-                  error: err.message,
+                  error: getErrorMessageOrDefault(err),
                 });
               }
             });

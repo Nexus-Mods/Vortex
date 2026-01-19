@@ -6,6 +6,7 @@ import Promise from "bluebird";
 import encode from "encoding-down";
 import type leveldownT from "leveldown";
 import * as levelup from "levelup";
+import { unknownToError } from "../shared/errors";
 
 const SEPARATOR: string = "###";
 
@@ -195,7 +196,8 @@ class LevelPersist implements IPersistor {
   ): (...args: Parameters<T>) => ReturnType<T> {
     return (...args: Parameters<T>): ReturnType<T> => {
       const stackErr = new Error();
-      return cb(...args).catch((err) => {
+      return cb(...args).catch((unknownErr) => {
+        const err = unknownToError(unknownErr);
         err.stack = stackErr.stack;
         return Promise.reject(err);
       });

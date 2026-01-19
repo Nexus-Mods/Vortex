@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { log } from "../../util/log";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 // Jest doesn't support setImmediate, so we provide a polyfill
 // This ensures compatibility across environments
@@ -180,7 +181,7 @@ export class NotificationAggregator {
       .catch((err) => {
         log("error", "error processing notifications", {
           aggregationId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         // Schedule next auto-flush even on error
         if (this.mActiveAggregations.has(aggregationId)) {
@@ -221,7 +222,7 @@ export class NotificationAggregator {
       .catch((err) => {
         log("error", "error processing notifications", {
           aggregationId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         this.cleanupAggregation(aggregationId);
       });
@@ -288,10 +289,10 @@ export class NotificationAggregator {
           await new Promise<void>((resolve) => setTimeout(resolve, 1));
         }
       }
-    } catch (error) {
+    } catch (err) {
       log("error", "Failed to process aggregated notifications", {
         aggregationId,
-        error: error.message,
+        error: getErrorMessageOrDefault(err),
       });
     }
   }

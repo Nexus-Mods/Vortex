@@ -135,7 +135,9 @@ function runElevated(
               // tslint:disable-next-line:no-console
               console.error(
                 "failed to clean up temporary script",
-                cleanupErr.message,
+                cleanupErr instanceof Error
+                  ? cleanupErr.message
+                  : String(cleanupErr),
               );
             }
             return reject(writeErr);
@@ -144,7 +146,7 @@ function runElevated(
           try {
             fs.closeSync(fd);
           } catch (err) {
-            if (err.code !== "EBADF") {
+            if (err instanceof Error && "code" in err && err.code !== "EBADF") {
               return reject(err);
             }
             // not sure what causes EBADF, don't want to return now if there is a chance this

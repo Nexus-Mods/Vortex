@@ -60,7 +60,9 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 5);
             height: calc(var(--spacing) * 5);
+        }
 
+        &:not(.nxm-button-icon-only) .nxm-button-icon {
             &:first-child {
                 margin-right: calc(var(--spacing) * 1.5);
             }
@@ -84,7 +86,7 @@
     .nxm-button-secondary-filled-strong,
     .nxm-button-secondary-filled-weak {
         border-width: 1px;
-        border-style: var(--border-style);
+        border-style: solid;
     }
 
     .nxm-button-secondary {
@@ -193,10 +195,9 @@
     }
 }
 
-@utility nxm-button-sm {
+.nxm-button-xs,
+.nxm-button-sm {
     min-width: 0;
-    min-height: calc(var(--spacing) * 7);
-    padding-inline: calc(var(--spacing) * 2.5);
 
     font-size: var(--text-sm);
     line-height: calc(var(--spacing) * 4);
@@ -205,13 +206,25 @@
     & .nxm-button-icon {
         width: calc(var(--spacing) * 4);
         height: calc(var(--spacing) * 4);
+    }
 
+    &:not(.nxm-button-icon-only) .nxm-button-icon {
         &:first-child {
-            margin-right: calc(var(--spacing) * 1);
+            margin-right: calc(var(--spacing) * 1.5);
         }
 
         &:last-child {
-            margin-left: calc(var(--spacing) * 1);
+            margin-left: calc(var(--spacing) * 1.5);
         }
     }
+}
+
+.nxm-button-sm {
+    min-height: calc(var(--spacing) * 7);
+    padding-inline: calc(var(--spacing) * 2.5);
+}
+
+.nxm-button-xs {
+    min-height: calc(var(--spacing) * 6);
+    padding-inline: calc(var(--spacing) * 1.5);
 }

@@ -25,5 +25,9 @@
   "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?_plural": "The mods you {{enabled}} depend on other mods, do you want to {{enable}} those as well?",
   "actions": {
     "search": "Search"
-  }
+  },
+  "view_all": "View all",
+  "refresh": "Refresh",
+  "beta": "Beta",
+  "ignore": "Ignore"
 }

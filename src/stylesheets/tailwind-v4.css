@@ -3,11 +3,12 @@
  * 1. theme              - Tailwind theme variables
  * 2. base               - Tailwind preflight
  * 3. bootstrap-reset    - Bootstrap's normalize/scaffolding (overrides preflight)
- * 4. bootstrap-components - Bootstrap components
- * 5. components         - Tailwind components
- * 6. utilities          - Tailwind utilities (highest priority)
+ * 4. bootstrap-override - Bootstrap overrides (above reset)
+ * 5. bootstrap-components - Bootstrap components
+ * 6. components         - Tailwind components
+ * 7. utilities          - Tailwind utilities (highest priority)
  */
-@layer theme, base, bootstrap-reset, bootstrap-components, components, utilities;
+@layer theme, base, bootstrap-reset, bootstrap-override, bootstrap-components, components, utilities;
 
 @import "tailwindcss";
 

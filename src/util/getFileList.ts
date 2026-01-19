@@ -2,6 +2,7 @@ import walk from "./walk";
 
 import Promise from "bluebird";
 import type * as fs from "fs";
+import { getErrorCode } from "../shared/errors";
 
 export interface IFileEntry {
   filePath: string;
@@ -25,7 +26,8 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
   })
     .then(() => result)
     .catch((err) => {
-      if (err.code === "ENOENT") {
+      const code = getErrorCode(err);
+      if (code === "ENOENT") {
         // if the directory doesn't exist it obviously doesn't contain files, right?
         return Promise.resolve([]);
       } else {

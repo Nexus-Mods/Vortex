@@ -6,6 +6,7 @@ import SettingsUpdate from "./SettingsUpdate";
 import setupAutoUpdater from "./autoupdater";
 
 import { ipcRenderer } from "electron";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "update"], settingsReducer);
@@ -20,7 +21,7 @@ function init(context: IExtensionContext): boolean {
         setupAutoUpdater(context.api);
       }
     } catch (err) {
-      log("error", "failed to check for update", err.message);
+      log("error", "failed to check for update", getErrorMessageOrDefault(err));
     }
 
     log("info", "updater config", {

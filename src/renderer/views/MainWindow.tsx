@@ -63,7 +63,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 import { Toaster } from "react-hot-toast"; // at top
-import { getErrorMessage } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 addStyle(ReactButton, "secondary");
 addStyle(ReactButton, "ad");
@@ -567,7 +567,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         return page.group === key && page.visible();
       } catch (err) {
         log("error", "Failed to determine page visibility", {
-          error: getErrorMessage(err) ?? "unknown error",
+          error: getErrorMessageOrDefault(err),
           page: page.id,
         });
         return false;

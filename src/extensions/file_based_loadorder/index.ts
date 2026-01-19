@@ -42,6 +42,7 @@ import * as fs from "../../util/fs";
 import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 
 import UpdateSet from "./UpdateSet";
+import { unknownToError } from "../../shared/errors";
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -167,7 +168,7 @@ async function genLoadOrderChange(
     try {
       await validateLoadOrder(api, profile, loadOrder);
     } catch (err) {
-      return errorHandler(api, gameEntry.gameId, err);
+      return errorHandler(api, gameEntry.gameId, unknownToError(err));
     }
   }
 }
@@ -306,7 +307,7 @@ async function applyNewLoadOrder(
     await gameEntry.serializeLoadOrder(newLO, prev);
     await validateLoadOrder(api, profile, newLO);
   } catch (err) {
-    return errorHandler(api, gameEntry.gameId, err);
+    return errorHandler(api, gameEntry.gameId, unknownToError(err));
   }
 
   return;
@@ -658,7 +659,7 @@ async function onStartUp(
     }
     return Promise.resolve(loadOrder);
   } catch (err) {
-    return errorHandler(api, gameId, err).then(() =>
+    return errorHandler(api, gameId, unknownToError(err)).then(() =>
       err instanceof LoadOrderValidationError
         ? Promise.reject(err)
         : Promise.resolve(undefined),

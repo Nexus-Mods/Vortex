@@ -27,6 +27,7 @@ import Promise from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
+import { getErrorCode, unknownToError } from "../shared/errors";
 
 function getCurrentWindow() {
   if (process.type === "renderer") {
@@ -251,8 +252,10 @@ class StarterInfo implements IStarterInfo {
           false,
         );
       })
-      .catch((err) => {
-        if (err.code === "ENOENT") {
+      .catch((unknownError) => {
+        const code = getErrorCode(unknownError);
+        const err = unknownToError(unknownError);
+        if (code === "ENOENT") {
           onShowError(
             "Failed to run tool",
             {
@@ -264,7 +267,7 @@ class StarterInfo implements IStarterInfo {
             },
             false,
           );
-        } else if (err.code === "EBUSY") {
+        } else if (code === "EBUSY") {
           // Application is still running in the background. Let the user know and suppress
           //  the report button.
           onShowError(
@@ -279,7 +282,7 @@ class StarterInfo implements IStarterInfo {
             },
             false,
           );
-        } else if (err.code === "UNKNOWN") {
+        } else if (code === "UNKNOWN") {
           // info sucks but node.js doesn't give us too much information about what went wrong
           // and we can't have users misconfigure their tools and then report the error they
           // get as feedback

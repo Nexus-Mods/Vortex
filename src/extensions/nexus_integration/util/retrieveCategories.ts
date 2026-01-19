@@ -4,6 +4,7 @@ import type { ICategoryDictionary } from "../../category_management/types/ICateg
 
 import type { IModCategory } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 interface IGameInfo {
   categories: IModCategory[];
@@ -73,7 +74,7 @@ function retrieveCategoryList(
       })
       .catch((err) => {
         log("error", "Failed to retrieve game information", {
-          err: err.message,
+          err: getErrorMessageOrDefault(err),
         });
         reject(err);
       });

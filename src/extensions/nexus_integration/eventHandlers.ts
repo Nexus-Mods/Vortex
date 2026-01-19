@@ -98,6 +98,11 @@ import * as semver from "semver";
 import type { ITokenReply } from "./util/oauth";
 import { isLoggedIn } from "./selectors";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../shared/errors";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -193,7 +198,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
                   modId,
                   gameDomain,
                   downloadId: dlId,
-                  message: err.message,
+                  message: getErrorMessageOrDefault(err),
                 });
                 return null;
               });
@@ -213,7 +218,7 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
                     fileId,
                     gameDomain,
                     downloadId: dlId,
-                    message: err.message,
+                    message: getErrorMessageOrDefault(err),
                   });
                   return null;
                 });
@@ -400,7 +405,7 @@ export function onRequestOwnIssues(nexus: Nexus) {
       .then((issues) => {
         cb(null, issues);
       })
-      .catch((err) => cb(err));
+      .catch((err) => cb(unknownToError(err)));
   };
 }
 
@@ -729,9 +734,10 @@ export function onGetMyCollections(
 
       return revisions;
     } catch (err) {
-      if (!["NOT_FOUND", "UNAUTHORIZED"].includes(err.code)) {
+      const code = getErrorCode(err);
+      if (!["NOT_FOUND", "UNAUTHORIZED"].includes(code)) {
         api.showErrorNotification("Failed to get list of collections", err, {
-          allowReport: !["MODEL_NOT_FOUND"].includes(err.code),
+          allowReport: !["MODEL_NOT_FOUND"].includes(code),
         });
       }
       return [];
@@ -1289,7 +1295,7 @@ export function onSubmitCollection(nexus: Nexus) {
         sendCollection(nexus, collectionInfo, collectionId, uuid),
       )
       .then((response) => callback(null, response))
-      .catch((err) => callback(err));
+      .catch((err) => callback(unknownToError(err)));
   };
 }
 

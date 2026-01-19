@@ -1,4 +1,18 @@
 {
-  "title": "Health Check",
-  "description": "Review your Loadout for any issues and learn how to resolve them if needed."
+  "listing": {
+    "title": "Health Check",
+    "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
+    "item": {
+      "title": "{{modName}} requires an additional dependency.",
+      "description": "You must install the required mod for it to function properly."
+    }
+  },
+  "detail": {
+    "title": "Health Check: <highlight>Suggestion</highlight>",
+    "subtitle": "Suggestions may offer improvements to your experience.",
+    "item": {
+      "title": "{{modName}} may require an additional dependency",
+      "description": "The following mod/s may be required in some setups, check the mod description to confirm."
+    }
+  }
 }

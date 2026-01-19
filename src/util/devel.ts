@@ -1,3 +1,4 @@
+import { getErrorMessageOrDefault } from "../shared/errors";
 import { log } from "./log";
 
 import Promise from "bluebird";
@@ -26,13 +27,17 @@ export function installDevelExtensions(): Promise<void> {
         installExtension(REACT_DEVELOPER_TOOLS.id, options)
           .then((name) => log("info", "Added Extension", name))
           .catch((err) =>
-            log("error", "An error occurred: ", { error: err.message }),
+            log("error", "An error occurred: ", {
+              error: getErrorMessageOrDefault(err),
+            }),
           );
 
         installExtension(REDUX_DEVTOOLS.id, options)
           .then((name) => log("info", "Added Extension", name))
           .catch((err) =>
-            log("error", "An error occurred: ", { error: err.message }),
+            log("error", "An error occurred: ", {
+              error: getErrorMessageOrDefault(err),
+            }),
           );
       } catch (e) {
         // tslint:disable-next-line:no-console

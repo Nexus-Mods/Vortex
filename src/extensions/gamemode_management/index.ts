@@ -86,6 +86,7 @@ import * as semver from "semver";
 import React from "react";
 
 import { clipboard } from "electron";
+import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -528,7 +529,8 @@ function removeDisappearedGames(
         .stat(discovered[gameId].path)
         .then(() => assertRequiredFiles(stored?.requiredFiles, gameId))
         .catch((err) => {
-          if (err.code === "ENOENT") {
+          const code = getErrorCode(err);
+          if (code === "ENOENT") {
             return Promise.reject(err);
           }
           // if we can't stat the game directory for any other reason than it being missing
@@ -542,7 +544,7 @@ function removeDisappearedGames(
           if (discoveredGames.has(gameId)) {
             log("info", "game no longer found", {
               gameName: gameName ?? "Unknown",
-              reason: err.message,
+              reason: getErrorMessageOrDefault(err),
             });
             if (gameName !== undefined) {
               api.sendNotification({
@@ -875,7 +877,11 @@ function init(context: IExtensionContext): boolean {
         }
         opn(targetPath).catch(() => undefined);
       } catch (err) {
-        log("warn", "failed to open mod directory", err.message);
+        log(
+          "warn",
+          "failed to open mod directory",
+          getErrorMessageOrDefault(err),
+        );
       }
     }
   };

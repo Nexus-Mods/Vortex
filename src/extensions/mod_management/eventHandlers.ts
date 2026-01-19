@@ -68,6 +68,7 @@ import Promise from "bluebird";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 function checkStagingGame(
   api: IExtensionApi,
@@ -968,7 +969,7 @@ export function onRemoveMods(
             log("error", "Failed to remove mod", {
               game: gameId,
               mod: mod.id,
-              error: error.message,
+              error: getErrorMessageOrDefault(error),
             });
           }
         },
@@ -986,7 +987,7 @@ export function onRemoveMods(
       } else {
         api.showErrorNotification(
           "Failed to undeploy mod, please try again",
-          err.message,
+          getErrorMessageOrDefault(err),
           { allowReport: false },
         );
       }
@@ -1140,7 +1141,7 @@ export async function onStartInstallDownload(
       fileSize: stats.size,
     });
   } catch (accessError) {
-    const message = `Download file not accessible for installation: ${accessError.message}`;
+    const message = `Download file not accessible for installation: ${getErrorMessageOrDefault(accessError)}`;
     log("warn", message, { downloadId, filePath: path.basename(fullPath) });
     if (callback !== undefined) {
       callback(new DataInvalid(message), undefined);

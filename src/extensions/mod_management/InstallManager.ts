@@ -199,6 +199,12 @@ import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import type { IInstallOptions } from "./types/IInstallOptions";
 import { generateCollectionSessionId } from "../collections_integration/util";
+import {
+  getErrorCode,
+  getErrorMessage,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../shared/errors";
 
 // Interface for tracking active installation information
 interface IActiveInstallation {
@@ -991,7 +997,7 @@ class InstallManager {
           {
             installId,
             modId,
-            error: callbackError.message,
+            error: getErrorMessageOrDefault(callbackError),
           },
         );
       }
@@ -1005,7 +1011,7 @@ class InstallManager {
       } catch (err) {
         log("warn", "Error dismissing notification during force cleanup", {
           installId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       }
     });
@@ -2061,14 +2067,15 @@ class InstallManager {
                   try {
                     installContext.stopIndicator(mod);
                   } catch (stopError) {
+                    const err = unknownToError(stopError);
                     log(
                       "error",
                       "InstallManager: Error in stopIndicator during cleanup",
                       {
                         installId,
                         modId: modId || "unknown",
-                        error: stopError.message,
-                        stack: stopError.stack,
+                        error: err.message,
+                        stack: err.stack,
                       },
                     );
                   }
@@ -2110,12 +2117,13 @@ class InstallManager {
                       { installId, notificationId },
                     );
                   } catch (cleanupError) {
+                    const message = getErrorMessageOrDefault(cleanupError);
                     log(
                       "error",
                       "InstallManager: Error during manual cleanup",
                       {
                         installId,
-                        error: cleanupError.message,
+                        error: message,
                       },
                     );
                   }
@@ -2137,7 +2145,7 @@ class InstallManager {
         });
       })
       .catch((err) => {
-        trackedCallback?.(err, null);
+        trackedCallback?.(unknownToError(err), null);
       });
   }
 
@@ -2610,18 +2618,20 @@ class InstallManager {
           }
 
           this.mActiveInstalls.delete(installKey);
-        } catch (err) {
+        } catch (unknownError) {
           this.mActiveInstalls.delete(installKey);
           const currentRetryCount =
             this.mDependencyRetryCount.get(installKey) || 0;
           const isCanceled =
-            err instanceof UserCanceled || err instanceof ProcessCanceled;
+            unknownError instanceof UserCanceled ||
+            unknownError instanceof ProcessCanceled;
           const hasRetriesLeft =
             currentRetryCount < InstallManager.MAX_DEPENDENCY_RETRIES;
           if (!isCanceled && hasRetriesLeft) {
             this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
           } else {
+            const err = unknownToError(unknownError);
             // Max retries exceeded, clean up and show error
             this.mDependencyRetryCount.delete(installKey);
             this.showDependencyError(
@@ -2642,12 +2652,13 @@ class InstallManager {
           // Note: Don't call maybeAdvancePhase here - it should only be called when phases are actually complete
         }
       })
-      .catch((err) => {
+      .catch((unknownError) => {
+        const err = unknownToError(unknownError);
         this.showDependencyError(
           api,
           sourceModId,
           "Critical error in dependency installation",
-          err,
+          unknownToError(err),
           renderModReference(dep.reference),
         );
         log("error", "Critical error in dependency installation", {
@@ -3900,7 +3911,7 @@ class InstallManager {
       } catch (err) {
         log("error", "invalid mod type", {
           typeId: type.typeId,
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
         return Bluebird.resolve(null);
       }
@@ -7435,7 +7446,7 @@ class InstallManager {
       } catch (err) {
         if (
           err instanceof SelfCopyCheckError ||
-          err.message?.includes("and destination must")
+          getErrorMessage(err)?.includes("and destination must")
         ) {
           // File is already there - don't care
           return;
@@ -7467,16 +7478,15 @@ class InstallManager {
           try {
             await fs.linkAsync(job.src, job.dst);
           } catch (err) {
-            if (err.code === "ENOENT") {
+            const code = getErrorCode(err);
+            if (code === "ENOENT") {
               // source file does not exist; skip
               missingFiles.add(job.src);
               return;
             }
             if (
-              err?.code &&
-              ["EXDEV", "EPERM", "EACCES", "ENOTSUP", "EEXIST"].includes(
-                err.code,
-              )
+              code &&
+              ["EXDEV", "EPERM", "EACCES", "ENOTSUP", "EEXIST"].includes(code)
             ) {
               await copyAsyncWrap(job.src, job.dst);
             } else {
