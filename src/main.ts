@@ -159,7 +159,7 @@ import { sendReportFile, terminate, toError } from "./util/errorHandling";
 // ensures tsc includes this dependency
 // Activate vortex-api polyfill for all extension requires as early as possible
 import extensionRequire from "./util/extensionRequire";
-extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
+extensionRequire(() => [], []); // Use an empty array or replace with a global accessor if needed
 import { } from "./util/extensionRequire";
 
 // required for the side-effect!

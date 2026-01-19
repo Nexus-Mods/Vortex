@@ -15,6 +15,12 @@ export default defineConfig({
           format: "cjs",
           exports: "auto",
           interop: "default"
+        },
+        onwarn(warning, warn) {
+          if (warning.code === 'CIRCULAR_DEPENDENCY') {
+            console.warn(warning.message);
+          }
+          warn(warning);
         }
       },
       sourcemap: true,

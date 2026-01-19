@@ -28,7 +28,7 @@ import {
   terminate,
   toError,
 } from "../util/errorHandling";
-import type ExtensionManagerT from "../util/ExtensionManager";
+import ExtensionManager from "../util/ExtensionManager";
 import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
@@ -167,7 +167,7 @@ class Application {
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
-  private mExtensions: ExtensionManagerT;
+  private mExtensions: ExtensionManager;
   private mTray: TrayIconT;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
@@ -997,7 +997,6 @@ class Application {
             instanceId: newStore.getState().app.instanceId,
           });
         }
-        const ExtensionManager = require("../util/ExtensionManager").default;
         this.mExtensions = new ExtensionManager(newStore);
         if (this.mExtensions.hasOutdatedExtensions) {
           log("debug", "relaunching to remove outdated extensions");

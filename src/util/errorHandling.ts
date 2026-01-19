@@ -501,6 +501,7 @@ export function terminate(
     allowReport = error.extension === COMPANY_ID;
   }
 
+  console.log(error);
   log("error", "unrecoverable error", { error, process: process.type });
 
   try {

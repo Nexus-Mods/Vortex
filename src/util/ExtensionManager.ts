@@ -122,6 +122,7 @@ import makeRemoteCall, { makeRemoteCallSync } from "./electronRemote";
 import { VCREDIST_URL } from "../constants";
 import * as vortexmt from "vortexmt";
 import * as fsVortex from "../util/fs";
+import extensionRequire from "./extensionRequire";
 
 import { toast } from "react-hot-toast";
 import type { ToastOptions } from "react-hot-toast";
@@ -720,26 +721,26 @@ class ContextProxyHandler implements ProxyHandler<any> {
     return key in this.mContext
       ? this.mContext[key]
       : (...args) => {
-          if (!this.mMayRegister) {
-            log(
-              "warn",
-              "extension tries to use register call outside init function",
-              {
-                extension: this.mCurrentExtension,
-                call: key,
-              },
-            );
-            return;
-          }
+        if (!this.mMayRegister) {
+          log(
+            "warn",
+            "extension tries to use register call outside init function",
+            {
+              extension: this.mCurrentExtension,
+              call: key,
+            },
+          );
+          return;
+        }
 
-          this.mInitCalls.push({
-            extension: this.mCurrentExtension,
-            extensionPath: this.mCurrentPath,
-            key: key.toString(),
-            arguments: args,
-            optional: false,
-          });
-        };
+        this.mInitCalls.push({
+          extension: this.mCurrentExtension,
+          extensionPath: this.mCurrentPath,
+          key: key.toString(),
+          arguments: args,
+          optional: false,
+        });
+      };
   }
 
   public set(target, key: PropertyKey, value: any, receiver: any) {
@@ -1170,7 +1171,7 @@ class ExtensionManager {
     };
 
     // tslint:disable-next-line:only-arrow-functions
-    this.mApi.showErrorNotification = function (
+    this.mApi.showErrorNotification = function(
       message: string,
       details: string | Error | any,
       options?: IErrorOptions,
@@ -1444,7 +1445,7 @@ class ExtensionManager {
 
         this.mApi.showErrorNotification(
           "Extension failed to initialize. If this isn't an official extension, " +
-            "please report the error to the respective author.",
+          "please report the error to the respective author.",
           {
             extension: call.extension,
             err: message,
@@ -1481,7 +1482,7 @@ class ExtensionManager {
       err["extension"] = call.extension;
       this.mApi.showErrorNotification(
         "Extension failed to initialize. If this isn't an official extension, " +
-          "please report the error to the respective author.",
+        "please report the error to the respective author.",
         err,
         { allowReport },
       );
@@ -1625,11 +1626,11 @@ class ExtensionManager {
         this.mModDB !== undefined
           ? Promise.resolve()
           : this.connectMetaDB(gameMode, currentKey).then((modDB) => {
-              this.mModDB = modDB;
-              this.mModDBGame = gameMode;
-              this.mModDBAPIKey = currentKey;
-              log("debug", "initialised");
-            }),
+            this.mModDB = modDB;
+            this.mModDBGame = gameMode;
+            this.mModDBAPIKey = currentKey;
+            log("debug", "initialised");
+          }),
       )
       .then(() => this.mModDB)
       .finally(() => {
@@ -2261,9 +2262,9 @@ class ExtensionManager {
         const sizePromise = Buffer.isBuffer(data)
           ? Promise.resolve(data.length)
           : fsVortex
-              .statAsync(data as string)
-              .then((stats) => stats.size)
-              .catch(() => 0);
+            .statAsync(data as string)
+            .then((stats) => stats.size)
+            .catch(() => 0);
 
         return sizePromise.then((numBytes) => ({
           md5sum: result,
@@ -3058,7 +3059,7 @@ class ExtensionManager {
       "installer_fomod_native",
     ];
 
-    require("./extensionRequire").default(() => this.extensions);
+    extensionRequire(() => this.extensions, ExtensionManager.getExtensionPaths());
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();

@@ -1,15 +1,8 @@
 import * as reactSelect from "../renderer/controls/ReactSelectWrap";
-
 import type { IRegisteredExtension } from "./ExtensionManager";
-import ExtensionManager from "./ExtensionManager";
-
-import {} from "module";
+import { Module } from "module";
 import * as reduxAct from "redux-act";
 import { dynreq } from "vortex-run";
-
-// tslint:disable-next-line:no-var-requires
-const Module = require("module");
-
 import * as api from "../index";
 import type { LogLevel } from "./log";
 
@@ -105,12 +98,9 @@ const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
 /**
  * require wrapper to allow extensions to load modules from
  * the context of the main application
- * @param {any} orig
- * @returns
  */
-function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
-  const extensionPaths = ExtensionManager.getExtensionPaths();
-  return function (id) {
+function extensionRequire(orig: typeof Module.prototype.require, getExtensions: () => IRegisteredExtension[], extensionPaths: Array<{ path: string; bundled: boolean }>): typeof Module.prototype.require {
+  return function(this: Module, id) {
     if (id === "vortex-api") {
       const ext = getExtensions().find((iter) =>
         this.filename.startsWith(iter.path),
@@ -148,7 +138,7 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
       let res;
       try {
         res = dynreq(id);
-      } catch (err) {
+      } catch {
         // nop, leave res undefined so orig gets tried
       }
       if (res === undefined) {
@@ -161,7 +151,7 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   };
 }
 
-export default function (getExtensions: () => IRegisteredExtension[]) {
-  const orig = (Module as any).prototype.require;
-  (Module as any).prototype.require = extensionRequire(orig, getExtensions);
+export default function(getExtensions: () => IRegisteredExtension[], extensionPaths: Array<{ path: string; bundled: boolean }>) {
+  const orig = Module.prototype.require;
+  Module.prototype.require = extensionRequire(orig, getExtensions, extensionPaths);
 }
