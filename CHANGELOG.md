@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0-beta.4] - 2026-01-19
+
+- Fixed several issues causing collection installations to stall ([#19319](https://github.com/Nexus-Mods/Vortex/pull/19319))
+- Fixed UI slowdown when installing recommended/optional mods ([#19318](https://github.com/Nexus-Mods/Vortex/issues/19318))
+- Fixed skipped external downloads not registering correctly as "skipped" ([#19317](https://github.com/Nexus-Mods/Vortex/issues/19317))
+- Fixed bundled mod status getting reverted to "downloading" incorrectly ([#19316](https://github.com/Nexus-Mods/Vortex/issues/19316))
+- Fixed failed download installation lookup for bundled mods ([#19315](https://github.com/Nexus-Mods/Vortex/issues/19315))
+- Fixed collectionsInstallWhileDownloading toggle not functioning ([#19314](https://github.com/Nexus-Mods/Vortex/issues/19314))
+- Fixed downloads getting erased incorrectly on rename failure during collection installation ([#19313](https://github.com/Nexus-Mods/Vortex/issues/19313))
+- Fixed skipped/ignored mods being downloaded/installed ([#19248](https://github.com/Nexus-Mods/Vortex/issues/19248))
+- Fixed bundled mods causing collection installation to hang ([#19217](https://github.com/Nexus-Mods/Vortex/issues/19217))
+- Fixed optional mods failing to install due to incorrect dependency reference check ([#19183](https://github.com/Nexus-Mods/Vortex/issues/19183))
+- Fixed mod variants not being created for binary patched mods when mod already exists ([#19184](https://github.com/Nexus-Mods/Vortex/issues/19184))
+- Fixed bundled mods not applying collection mod rules ([#18977](https://github.com/Nexus-Mods/Vortex/issues/18977))
+- Fixed critical TypeError crash when resuming collection installation from previous version ([#19125](https://github.com/Nexus-Mods/Vortex/issues/19125))
+- Fixed installation error when invalid override instructions present ([#19143](https://github.com/Nexus-Mods/Vortex/issues/19143))
+- Fixed download failure with "Cannot convert undefined to a BigInt" error ([#19144](https://github.com/Nexus-Mods/Vortex/issues/19144))
+- Fixed crash when no groups are available for FOMOD installation ([#19209](https://github.com/Nexus-Mods/Vortex/issues/19209))
+- Fixed crash when reading undefined 'data' property ([#18910](https://github.com/Nexus-Mods/Vortex/issues/18910))
+- Suppress user-cancelled error reporting during dependency installation ([#19174](https://github.com/Nexus-Mods/Vortex/issues/19174))
+- Allow "Check for Updates" functionality for disabled mods ([#19250](https://github.com/Nexus-Mods/Vortex/issues/19250))
+- Fixed downgrade dialog text grammar ([#18727](https://github.com/Nexus-Mods/Vortex/issues/18727))
+- Improved INI Tweaks help message clarity ([#18729](https://github.com/Nexus-Mods/Vortex/issues/18729))
+- **stardewvalley**: Fixed mod configuration sync restoring config file to wrong location ([#19197](https://github.com/Nexus-Mods/Vortex/issues/19197))
+
 ## [1.16.0-beta.3] - 2025-12-16
 
 - Fixed master groups showing reversed arrows in plugins view ([#19072](https://github.com/Nexus-Mods/Vortex/issues/19072))
