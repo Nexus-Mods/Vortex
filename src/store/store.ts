@@ -21,10 +21,17 @@ import levelup from "levelup";
 import * as _ from "lodash";
 import * as path from "path";
 import type * as Redux from "redux";
-import { applyMiddleware, compose, createStore } from "redux";
-import thunkMiddleware from "redux-thunk";
+import {
+  applyMiddleware,
+  compose,
+  legacy_createStore as createStore,
+} from "redux";
+import { createRequire } from "module";
 import getVortexPath from "../util/getVortexPath";
 import { getErrorCode } from "../shared/errors";
+
+const require = createRequire(import.meta.url);
+const { default: thunkMiddleware } = require("redux-thunk");
 
 let basePersistor: ReduxPersistor<IState>;
 
