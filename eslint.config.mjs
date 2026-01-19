@@ -50,6 +50,14 @@ export default defineConfig([
     name: "Migrating Webpack to Vite",
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          name: "process",
+          message:
+            "process is a Node.js global variable and shouldn't be imported like a module",
+        },
+      ],
     },
   },
   {
