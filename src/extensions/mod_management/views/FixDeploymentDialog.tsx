@@ -101,7 +101,7 @@ class FixDeploymentDialog extends ComponentEx<
     return (
       // tslint:disable:max-line-length
       <Trans i18nKey="fix-deployment-instructions">
-        Vortex supports different Deployment Method to support a wide variety of
+        Vortex supports different Deployment Methods to support a wide variety of
         systems and games, but some may only be available with the right
         settings.
         <br />
@@ -179,7 +179,7 @@ class FixDeploymentDialog extends ComponentEx<
         this.context.api.sendNotification({
           type: "warning",
           message:
-            "The reason this deployment method is unavaible has changed since the " +
+            "The reason this deployment method is unavailable has changed since the " +
             "notification was produced. This indicates a random or temporary factor " +
             "affecting it.",
         });

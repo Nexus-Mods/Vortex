@@ -80,7 +80,7 @@ export function decodeSystemError(err: Error, filePath: string): IDecoded {
       title: `Network drive unavailable (${code})`,
       message:
         'The file "{{filePath}}" is currently not accessible, very possibly the ' +
-        "network share as a whole is inaccesible due to a network problem " +
+        "network share as a whole is inaccessible due to a network problem " +
         "or the server being offline.",
       rethrowAs: "ENOENT",
     };

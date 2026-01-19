@@ -461,7 +461,7 @@ function showTerminateError(
       buttons: ["Quit", "I understand"],
       title: "Are you sure?",
       message:
-        "The error was unhandled which may lead to unforseen consequences including data loss. " +
+        "The error was unhandled which may lead to unforeseen consequences including data loss. " +
         "Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ",
       noLink: true,
     });

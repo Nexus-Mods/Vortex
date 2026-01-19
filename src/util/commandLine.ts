@@ -171,12 +171,12 @@ function parseCommandline(
     .version(version)
     .option(
       "-d, --download <url>",
-      "Start downloadling the specified url " +
+      "Start downloading the specified url " +
         "(any supported protocol like nxm:, https:, ...).",
     )
     .option(
       "-i, --install <url>",
-      "Start downloadling & installing the specified url " +
+      "Start downloading & installing the specified url " +
         "(any supported protocol like nxm:, https:, ...).",
     )
     .option(
@@ -185,7 +185,7 @@ function parseCommandline(
     )
     .option(
       "--install-extension <id>",
-      "Start downloadling & installing the specified " +
+      "Start downloading & installing the specified " +
         'vortex extension. id can be "modId:<number>".',
     )
     .option(

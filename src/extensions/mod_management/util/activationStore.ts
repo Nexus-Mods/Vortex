@@ -165,7 +165,7 @@ function queryPurgeTextUnsafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
       "Vortex can only proceed by purging the mods from that other instance.\n\n" +
-      "This will irreversably **destroy** the mod installations from that other " +
+      "This will irreversibly **destroy** the mod installations from that other " +
       "instance!\n\n" +
       "You should instead cancel now, open that other vortex instance and purge " +
       "from there. This can also be caused by switching between shared and " +
