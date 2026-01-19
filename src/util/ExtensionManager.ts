@@ -2353,6 +2353,18 @@ class ExtensionManager {
     }
 
     const cwd = options.cwd || path.dirname(executable);
+
+    // Detect if executable is a script file that requires shell: true
+    // Common script extensions that need shell interpretation
+    const scriptExtensions = [".ps1", ".bat", ".cmd", ".sh", ".bash"];
+    const ext = path.extname(executable).toLowerCase();
+    const isScript = scriptExtensions.includes(ext);
+
+    // If it's a script and shell isn't explicitly set, enable shell mode
+    if (isScript && options.shell === undefined) {
+      options.shell = true;
+    }
+
     // process.env is case insensitive (on windows at least?), but the spawn parameter isn't.
     // I think the key is called "Path" on windows but I'm not willing to bet this is consistent
     // across all language variants and versions
