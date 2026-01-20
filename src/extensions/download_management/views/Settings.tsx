@@ -71,7 +71,7 @@ import getDownloadPath, {
 
 import getText from "../texts";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import * as process from "process";
 import * as React from "react";
@@ -115,7 +115,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onShowError: (
     message: string,
     details: string | Error,
@@ -578,7 +578,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 writeDownloadsTag(this.context.api, newPath),
               );
             } else {
-              return Promise.resolve();
+              return PromiseBB.resolve();
             }
           })
           .then(() => {
@@ -604,7 +604,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   { replace: { thePath: oldPath } },
                 ),
               },
-              [{ label: "Close", action: () => Promise.resolve() }],
+              [{ label: "Close", action: () => PromiseBB.resolve() }],
             );
 
             if (!(err.errorObject instanceof UserCanceled)) {
@@ -727,7 +727,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private confirmElevate = (): Promise<void> => {
+  private confirmElevate = (): PromiseBB<void> => {
     const { t, onShowDialog } = this.props;
     return onShowDialog(
       "question",
@@ -741,13 +741,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       [{ label: "Cancel" }, { label: "Create as Administrator" }],
     ).then((result) =>
       result.action === "Cancel"
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve(),
+        ? PromiseBB.reject(new UserCanceled())
+        : PromiseBB.resolve(),
     );
   };
 
   private checkTargetEmpty(oldDownloadPath: string, newDownloadPath: string) {
-    let queue = Promise.resolve();
+    let queue = PromiseBB.resolve();
     let fileCount = 0;
     let hasDownloadTag: boolean = false;
     let tagInstance: string;
@@ -782,7 +782,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     // ensure the destination directories are empty
     return queue.then(
       () =>
-        new Promise((resolve, reject) => {
+        new PromiseBB((resolve, reject) => {
           if (fileCount > 0 && tagInstance !== this.props.instanceId) {
             if (tagInstance !== undefined) {
               return this.props.onShowDialog(
@@ -852,13 +852,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         sourceIsMissing = ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1;
         log("warn", "Transfer failed - missing source directory", err);
         return sourceIsMissing
-          ? Promise.resolve(undefined)
-          : Promise.reject(err);
+          ? PromiseBB.resolve(undefined)
+          : PromiseBB.reject(err);
       })
       .then((stats) => {
         const queryReset =
           stats !== undefined
-            ? Promise.resolve()
+            ? PromiseBB.resolve()
             : onShowDialog(
                 "question",
                 "Missing downloads folder",
@@ -879,8 +879,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 [{ label: "Cancel" }, { label: "Reinitialize" }],
               ).then((result) =>
                 result.action === "Cancel"
-                  ? Promise.reject(new UserCanceled())
-                  : Promise.resolve(),
+                  ? PromiseBB.reject(new UserCanceled())
+                  : PromiseBB.resolve(),
               );
 
         return queryReset.then(() => {
@@ -902,8 +902,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             },
           ).catch((err) =>
             sourceIsMissing && err.path === oldPath
-              ? Promise.resolve()
-              : Promise.reject(err),
+              ? PromiseBB.resolve()
+              : PromiseBB.reject(err),
           );
         });
       });

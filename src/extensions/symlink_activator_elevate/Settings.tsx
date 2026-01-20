@@ -11,7 +11,7 @@ import { ComponentEx } from "../../renderer/controls/ComponentEx";
 
 import { enableUserSymlinks } from "./actions";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import * as React from "react";
 import { Alert, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
@@ -36,7 +36,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;

@@ -32,7 +32,7 @@ import { setPrimaryTool, setToolOrder } from "./actions";
 
 import ToolEditDialog from "./ToolEditDialog";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import * as React from "react";
 import { Media } from "react-bootstrap";
 import type * as Redux from "redux";
@@ -56,7 +56,7 @@ interface IBaseProps {
   onGetValidTools: (
     starters: IStarterInfo[],
     gameMode: string,
-  ) => Promise<string[]>;
+  ) => PromiseBB<string[]>;
 }
 
 interface IConnectedProps {
@@ -113,7 +113,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onSetPrimary: (gameId: string, toolId: string) => void;
   onSetToolOrder: (gameId: string, tools: string[]) => void;
 }

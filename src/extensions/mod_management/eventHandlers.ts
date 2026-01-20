@@ -64,7 +64,7 @@ import type InstallManager from "./InstallManager";
 import { currentActivator, installPath, installPathForGame } from "./selectors";
 import { ensureStagingDirectory } from "./stagingDirectory";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
 import * as path from "path";
@@ -74,7 +74,7 @@ function checkStagingGame(
   api: IExtensionApi,
   gameId: string,
   manifestGameId: string,
-): Promise<boolean> {
+): PromiseBB<boolean> {
   if (manifestGameId !== undefined && gameId !== manifestGameId) {
     return api
       .showDialog(
@@ -92,13 +92,13 @@ function checkStagingGame(
       )
       .then((result) => {
         if (result.action === "Cancel") {
-          return Promise.reject(new UserCanceled());
+          return PromiseBB.reject(new UserCanceled());
         } else {
           return purgeMods(api, manifestGameId).then(() => true);
         }
       });
   } else {
-    return Promise.resolve(false);
+    return PromiseBB.resolve(false);
   }
 }
 
@@ -108,14 +108,14 @@ function checkStagingFolder(
   gameId: string,
   manifestPath: string,
   configuredPath: string,
-): Promise<boolean> {
+): PromiseBB<boolean> {
   const t = api.translate;
 
   // manifestPath can be undefined if the manifest is older
   return (
     manifestPath !== undefined
       ? getNormalizeFunc(manifestPath)
-      : Promise.resolve(undefined)
+      : PromiseBB.resolve(undefined)
   ).then((normalize) => {
     if (
       manifestPath !== undefined &&
@@ -166,7 +166,7 @@ function checkStagingFolder(
           if (result.action === "Quit Vortex") {
             getApplication().quit();
             // resolve never
-            return new Promise(() => null);
+            return new PromiseBB(() => null);
           } else if (
             result.action === "Use selected" &&
             result.input.manifest
@@ -177,7 +177,7 @@ function checkStagingFolder(
           }
         });
     } else {
-      return Promise.resolve(false);
+      return PromiseBB.resolve(false);
     }
   });
 }
@@ -196,7 +196,7 @@ function purgeOldMethod(
   const deployments: { [typeId: string]: IDeployedFile[] } = {};
 
   return (
-    Promise.all(
+    PromiseBB.all(
       Object.keys(modPaths).map((modType) =>
         getManifest(api, modType, gameId).then((manifest) => {
           manifests[modType] = manifest;
@@ -207,7 +207,7 @@ function purgeOldMethod(
       .then(() => api.emitAndAwait("will-purge", profile.id, deployments))
       .then(() => oldActivator.prePurge(instPath))
       .then(() =>
-        Promise.mapSeries(Object.keys(modPaths), (typeId) => {
+        PromiseBB.mapSeries(Object.keys(modPaths), (typeId) => {
           return getNormalizeFunc(modPaths[typeId]).then((normalize) => {
             // test for the special case where the game has been moved since the deployment
             // happened. Based on the assumption that this is the reason the deployment method
@@ -239,7 +239,7 @@ function purgeOldMethod(
       )
       // save (empty) activation
       .then(() =>
-        Promise.map(Object.keys(modPaths), (typeId) =>
+        PromiseBB.map(Object.keys(modPaths), (typeId) =>
           saveActivation(
             gameId,
             typeId,
@@ -253,7 +253,7 @@ function purgeOldMethod(
       )
       .then(() => undefined)
       .finally(() => oldActivator.postPurge())
-      .catch(ProcessCanceled, () => Promise.resolve())
+      .catch(ProcessCanceled, () => PromiseBB.resolve())
       .catch(TemporaryError, (err) =>
         api.showErrorNotification(
           "Purge failed, please try again",
@@ -280,7 +280,7 @@ export async function updateDeploymentMethod(
   const selected: IDeploymentMethod = getSelectedActivator(state, gameId);
   if (selected !== undefined) {
     // do nothing if there already is a selected activator
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const valid = getCurrentActivator(state, gameId, true);
@@ -344,20 +344,20 @@ export function onGameModeActivated(
 
   let existingManifest: IDeploymentManifest;
 
-  let initProm: () => Promise<void> = () =>
+  let initProm: () => PromiseBB<void> = () =>
     getManifest(api, "", gameId)
       .then((manifest: IDeploymentManifest) => {
         if (manifest.instance !== state.app.instanceId) {
           // if the manifest is from a different instance we do nothing with it, there
           // is other code to deal with that during deployment
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
         existingManifest = manifest;
 
         return checkStagingGame(api, gameId, manifest.gameId)
           .then((purged: boolean) =>
             purged
-              ? Promise.resolve(false)
+              ? PromiseBB.resolve(false)
               : checkStagingFolder(api, gameId, manifest.stagingPath, instPath),
           )
           .then((useManifest) => {
@@ -484,9 +484,9 @@ export function onGameModeActivated(
                     instPath,
                     modPaths,
                   )
-                : Promise.resolve(),
+                : PromiseBB.resolve(),
             )
-            .catch(ProcessCanceled, () => Promise.resolve());
+            .catch(ProcessCanceled, () => PromiseBB.resolve());
       }
 
       {
@@ -673,7 +673,7 @@ function undeploy(
   activators: IDeploymentMethod[],
   gameMode: string,
   mods: IMod[],
-): Promise<void> {
+): PromiseBB<void> {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -681,14 +681,14 @@ function undeploy(
 
   if (discovery === undefined || discovery.path === undefined) {
     // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const game = getGame(gameMode);
 
   if (game === undefined) {
     log("info", "tried to undeploy for unknown game", gameMode);
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const modPaths = game.getModPaths(discovery.path);
@@ -715,7 +715,7 @@ function undeploy(
         );
 
   if (activator === undefined) {
-    return Promise.reject(new ProcessCanceled("No deployment method active"));
+    return PromiseBB.reject(new ProcessCanceled("No deployment method active"));
   }
 
   const stagingPath = installPathForGame(state, gameMode);
@@ -731,12 +731,12 @@ function undeploy(
     {},
   );
 
-  return Promise.all(
+  return PromiseBB.all(
     Object.keys(byModTypes).map((typeId) => {
       const subdir = genSubDirFunc(game, getModType(typeId));
       const deployPath = modPaths[typeId || ""];
       if (deployPath === undefined) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
       let normalize: Normalize;
       return getNormalizeFunc(deployPath)
@@ -755,7 +755,7 @@ function undeploy(
           activator.prepare(deployPath, false, lastActivation, normalize),
         )
         .then(() =>
-          Promise.all(
+          PromiseBB.all(
             byModTypes[typeId].map((mod) =>
               activator.deactivate(
                 path.join(stagingPath, mod.installationPath),
@@ -790,7 +790,7 @@ function undeploy(
         modIds: mods.map((mod) => mod.id).join(", "),
       });
     })
-    .then(() => Promise.resolve());
+    .then(() => PromiseBB.resolve());
 }
 
 function undeployMods(
@@ -805,7 +805,7 @@ function undeployMods(
 
   return undeploy(api, activators, gameId, mods).catch((err) => {
     if (!["ENOENT", "ENOTFOUND"].includes(err.code)) {
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
     return api
       .showDialog(
@@ -824,7 +824,7 @@ function undeployMods(
       )
       .then((result) => {
         if (result.action === "Deploy") {
-          return new Promise<void>((resolve, reject) => {
+          return new PromiseBB<void>((resolve, reject) => {
             api.events.emit("deploy-mods", (deployErr) => {
               if (deployErr !== null) {
                 return reject(deployErr);
@@ -833,7 +833,7 @@ function undeployMods(
             });
           });
         } else {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       });
   });
@@ -921,7 +921,7 @@ export function onRemoveMods(
       let completedCount = 0;
       const totalCount = removeMods.length;
       let batched = [];
-      return Promise.map(
+      return PromiseBB.map(
         removeMods,
         async (mod: IMod) => {
           const forwardOptions = { ...(options || {}), modData: { ...mod } };
@@ -945,8 +945,8 @@ export function onRemoveMods(
                 .removeAsync(fullModPath)
                 .catch((err) =>
                   err.code === "ENOENT"
-                    ? Promise.resolve()
-                    : Promise.reject(err),
+                    ? PromiseBB.resolve()
+                    : PromiseBB.reject(err),
                 );
             }
             await api.emitAndAwait(
@@ -1080,7 +1080,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     }
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   if (download.state !== "finished") {
@@ -1096,7 +1096,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     }
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const downloadGames = getDownloadGames(download);
@@ -1117,7 +1117,7 @@ export async function onStartInstallDownload(
         { allowReport: false },
       );
     });
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const downloadPath = downloadPathForGame(state, convertedGameId);
@@ -1125,7 +1125,7 @@ export async function onStartInstallDownload(
 
   try {
     // Small delay to ensure file handles are released and filesystem buffers are flushed
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new PromiseBB((resolve) => setTimeout(resolve, 100));
 
     // Verify file exists and is accessible by checking its stats
     const stats = await fs.statAsync(fullPath);

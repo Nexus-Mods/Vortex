@@ -36,7 +36,7 @@ import getTableAttributes from "./tableAttributes";
 import type { IExtension, IExtensionWithState } from "./types";
 
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
 import * as React from "react";
@@ -255,9 +255,9 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     const { downloads } = this.props;
     let success = false;
     log("info", "installing extension(s) via drag and drop", { extPaths });
-    const prop: Promise<void[]> =
+    const prop: PromiseBB<void[]> =
       type === "files"
-        ? Promise.map(extPaths, (extPath) =>
+        ? PromiseBB.map(extPaths, (extPath) =>
             installExtension(this.context.api, extPath)
               .then(() => {
                 success = true;
@@ -270,10 +270,10 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                 );
               }),
           )
-        : Promise.map(
+        : PromiseBB.map(
             extPaths,
             (url) =>
-              new Promise<void>((resolve, reject) => {
+              new PromiseBB<void>((resolve, reject) => {
                 this.context.api.events.emit(
                   "start-download",
                   [url],

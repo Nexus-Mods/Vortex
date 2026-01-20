@@ -51,7 +51,7 @@ import { DownloadIsHTML } from "../DownloadManager";
 
 import DownloadGraph from "./DownloadGraph";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
 import * as path from "path";
@@ -89,7 +89,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onShowError: (
     message: string,
     details?: string | Error,

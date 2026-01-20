@@ -12,7 +12,7 @@ import BrowserView from "./views/BrowserView";
 import { closeBrowser, showURL } from "./actions";
 import { sessionReducer } from "./reducers";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { ipcRenderer } from "electron";
 import { generate as shortid } from "shortid";
 import * as url from "url";
@@ -65,7 +65,7 @@ function doBrowse(
   subscriptionId: string,
   skippable: boolean,
 ) {
-  return new Promise<string>((resolve, reject) => {
+  return new PromiseBB<string>((resolve, reject) => {
     lastURL = navUrl;
     subscribe(subscriptionId, "close", (skip: boolean) => {
       reject(new UserCanceled(skip));

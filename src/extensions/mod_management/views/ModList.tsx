@@ -74,7 +74,7 @@ import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import path from "path";
@@ -163,7 +163,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onRemoveMods: (gameMode: string, modIds: string[]) => void;
   onShowDropzone: (show: boolean) => void;
 }
@@ -1002,7 +1002,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const stagingFolder = this.props.installPath;
     const mod = this.props.mods[modId];
     if (mod === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
     const modPath = path.join(stagingFolder, mod.installationPath);
     return calculateFolderSize(modPath)
@@ -1010,14 +1010,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         api.store.dispatch(
           setModAttribute(this.props.gameMode, mod.id, "modSize", totalSize),
         );
-        return Promise.resolve();
+        return PromiseBB.resolve();
       })
       .catch((err) => {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       });
   };
 
-  private updateModsWithState(newProps: IProps): Promise<void> {
+  private updateModsWithState(newProps: IProps): PromiseBB<void> {
     const { gameMode } = newProps;
     let changed = false;
     const newModsWithState: { [modId: string]: IModWithState } = {};
@@ -1047,7 +1047,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // insert downloads. Since this requires deriving mod attributes from
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
-    return Promise.map(Object.keys(newProps.downloads), (archiveId) => {
+    return PromiseBB.map(Object.keys(newProps.downloads), (archiveId) => {
       if (
         getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !==
           -1 &&
@@ -1069,7 +1069,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           undefined,
         ).then((info) => ({ archiveId, info }));
       } else {
-        return Promise.resolve(undefined);
+        return PromiseBB.resolve(undefined);
       }
     }).then((modAttributes: Array<{ archiveId: string; info: any }>) => {
       modAttributes
@@ -1135,7 +1135,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     modId: string,
     value: string,
     onSetModEnabled: (modId: string, value: boolean) => void,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     const { gameMode } = this.props;
     const { modsWithState } = this.state;
     if (modsWithState[modId] === undefined) {
@@ -1173,7 +1173,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else if (modsWithState[modId].state === "downloaded") {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
-      return new Promise((resolve) => {
+      return new PromiseBB((resolve) => {
         this.context.api.events.emit(
           "start-install-download",
           modId,
@@ -1191,7 +1191,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.setModsEnabled([modId], value === "enabled");
     }
 
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   private changeModEnabled = (mod: IModWithState, value: any) => {
@@ -1347,7 +1347,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return setModsEnabled(this.context.api, profileId, modIds, enabled);
   }
 
-  private installIfNecessary(modId: string): Promise<string> {
+  private installIfNecessary(modId: string): PromiseBB<string> {
     const { modsWithState } = this.state;
 
     if (modsWithState[modId]?.state === "downloaded") {
@@ -1360,7 +1360,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ),
       );
     } else {
-      return Promise.resolve(modId);
+      return PromiseBB.resolve(modId);
     }
   }
 
@@ -1371,7 +1371,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       (modId) => mods[modId] === undefined || modState[modId]?.enabled !== true,
     );
 
-    Promise.all(
+    PromiseBB.all(
       filtered.map((modId) =>
         this.installIfNecessary(modId).catch((err) => {
           if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
@@ -1525,14 +1525,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ? removeMods(this.context.api, gameMode, wereInstalled).then(() =>
             onRemoveMods(gameMode, wereInstalled),
           )
-        : Promise.resolve()
+        : PromiseBB.resolve()
     ).then(() => {
       if (removeArchives) {
         archiveIds.forEach((archiveId) => {
           this.context.api.events.emit("remove-download", archiveId);
         });
       }
-      return Promise.resolve();
+      return PromiseBB.resolve();
     });
   }
 
@@ -1624,7 +1624,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private install = (archiveIds: string | string[]) => {
     if (Array.isArray(archiveIds)) {
       withBatchContext("install-mod", archiveIds, () => {
-        return Promise.all(
+        return PromiseBB.all(
           archiveIds.map(async (archiveId) => {
             return toPromise<string>((cb) =>
               this.context.api.events.emit(
@@ -1637,7 +1637,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               ),
             ).catch((err) => {
               if (err instanceof UserCanceled) {
-                return Promise.resolve(null);
+                return PromiseBB.resolve(null);
               }
             });
           }),
@@ -1646,7 +1646,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           if (this.props.autoInstall && filtered.length > 0) {
             this.props.onSetModsEnabled(this.props.profileId, filtered, true);
           }
-          return Promise.resolve();
+          return PromiseBB.resolve();
         });
       });
     } else {
@@ -1689,7 +1689,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         "install-mod",
         validIds.map((modId) => mods[modId].archiveId),
         () => {
-          return Promise.all(
+          return PromiseBB.all(
             validIds.map((modId) => {
               const choices = getSafe(
                 mods[modId],

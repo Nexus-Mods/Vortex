@@ -1,12 +1,12 @@
 import type { ProgressDelegate } from "../types/InstallFunc";
 import type { ISupportedResult } from "../types/TestSupported";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 
-export function testSupported(files: string[]): Promise<ISupportedResult> {
+export function testSupported(files: string[]): PromiseBB<ISupportedResult> {
   const result: ISupportedResult = { supported: true, requiredFiles: [] };
-  return Promise.resolve(result);
+  return PromiseBB.resolve(result);
 }
 
 export function install(
@@ -14,8 +14,8 @@ export function install(
   destinationPath: string,
   gameId: string,
   progress: ProgressDelegate,
-): Promise<any> {
-  return Promise.resolve({
+): PromiseBB<any> {
+  return PromiseBB.resolve({
     message: "Success",
     instructions: files
       .filter((name: string) => !name.endsWith(path.sep))

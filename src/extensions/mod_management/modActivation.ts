@@ -14,12 +14,12 @@ import renderModName from "./util/modName";
 
 import { MERGED_PATH } from "./modMerging";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import { UserCanceled } from "../../util/CustomErrors";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
-function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
+function ensureWritable(api: IExtensionApi, modPath: string): PromiseBB<void> {
   return fs.ensureDirWritableAsync(modPath, () =>
     api
       .showDialog(
@@ -35,8 +35,8 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
       )
       .then((result) =>
         result.action === "Cancel"
-          ? Promise.reject(new UserCanceled())
-          : Promise.resolve(),
+          ? PromiseBB.reject(new UserCanceled())
+          : PromiseBB.resolve(),
       ),
   );
 }
@@ -50,7 +50,7 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
  * @param {IMod[]} mods list of mods to activate (sorted from lowest to highest
  * priority)
  * @param {IDeploymentMethod} method the activator to use
- * @returns {Promise<void>}
+ * @returns {PromiseBB<void>}
  */
 function deployMods(
   api: IExtensionApi,
@@ -64,9 +64,9 @@ function deployMods(
   skipFiles: BlacklistSet,
   subDir: (mod: IMod) => string,
   progressCB?: (name: string, progress: number) => void,
-): Promise<IDeployedFile[]> {
+): PromiseBB<IDeployedFile[]> {
   if (!truthy(destinationPath)) {
-    return Promise.resolve([]);
+    return PromiseBB.resolve([]);
   }
 
   log("info", "deploying", {
@@ -84,7 +84,7 @@ function deployMods(
       return method.prepare(destinationPath, true, lastActivation, norm);
     })
     .then(() =>
-      Promise.each(mods, (mod, idx, length) => {
+      PromiseBB.each(mods, (mod, idx, length) => {
         try {
           if (progressCB !== undefined) {
             progressCB(renderModName(mod), Math.round((idx * 50) / length));

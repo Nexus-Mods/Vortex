@@ -93,7 +93,7 @@ import {
 } from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
@@ -116,7 +116,7 @@ function profilePath(profile: IProfile): string {
 function checkProfile(
   store: Redux.Store<any>,
   currentProfile: IProfile,
-): Promise<void> {
+): PromiseBB<void> {
   return fs.ensureDirAsync(profilePath(currentProfile));
 }
 
@@ -145,13 +145,13 @@ function refreshProfile(
   store: Redux.Store<any>,
   profile: IProfile,
   direction: "import" | "export",
-): Promise<void> {
+): PromiseBB<void> {
   log("debug", "refresh profile", { profile, direction });
   if (profile === undefined || profile?.pendingRemove === true) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
   if (profile.gameId === undefined || profile.id === undefined) {
-    return Promise.reject(new CorruptActiveProfile(profile));
+    return PromiseBB.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
     .then(() => profilePath(profile))
@@ -163,11 +163,11 @@ function refreshProfile(
       // loaded then it has no copies of the files but that if fine.
       const gameId = profile.gameId;
       if (profileFiles[gameId] === undefined) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
-      return Promise.all(
+      return PromiseBB.all(
         profileFiles[gameId].map((iter) => {
-          return typeof iter === "string" ? Promise.resolve([iter]) : iter();
+          return typeof iter === "string" ? PromiseBB.resolve([iter]) : iter();
         }),
       )
         .then((fileLists) => [].concat(...fileLists))
@@ -193,7 +193,7 @@ function refreshProfile(
       // why are we catching here at all? shouldn't a failure here cancel the
       // entire operation?
       if (err instanceof UserCanceled) {
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       }
       showError(store.dispatch, "Failed to set profile", err);
     });
@@ -208,7 +208,7 @@ function refreshProfile(
 function activateGame(
   store: ThunkStore<IState>,
   gameId: string,
-): Promise<void> {
+): PromiseBB<void> {
   const state: IState = store.getState();
   const gamePath = getSafe(
     state,
@@ -230,7 +230,7 @@ function activateGame(
       gameId,
     });
     store.dispatch(setNextProfile(undefined));
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   log("info", "activating game", { gameId, gamePath });
@@ -286,17 +286,17 @@ function activateGame(
     } else {
       store.dispatch(setNextProfile(undefined));
     }
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 }
 
-function deploy(api: IExtensionApi, profileId: string): Promise<void> {
+function deploy(api: IExtensionApi, profileId: string): PromiseBB<void> {
   const state: IState = api.store.getState();
   if (
     profileId === undefined ||
     state.persistent.profiles[profileId] === undefined
   ) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const profile = profileById(state, profileId);
@@ -304,7 +304,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     profileId === lastActiveProfileForGame(state, profile.gameId) &&
     !needToDeployForGame(state, profile.gameId)
   ) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const gameDiscovery = getSafe(
@@ -314,7 +314,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   );
   if (gameDiscovery?.path === undefined) {
     // can't deploy a game that hasn't been discovered
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   let lastProgress: number = Date.now();
@@ -332,7 +332,7 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
     }
   }, 1000);
 
-  return new Promise((resolve, reject) => {
+  return new PromiseBB((resolve, reject) => {
     api.events.emit(
       "deploy-mods",
       onceCB((err: Error) => {
@@ -362,7 +362,7 @@ function genOnProfileChange(
   api: IExtensionApi,
   onFinishProfileSwitch: (callback: () => void) => void,
 ) {
-  let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
+  let finishProfileSwitchPromise: PromiseBB<void> = PromiseBB.resolve();
   const { store } = api;
 
   let cancelPromise: () => void;
@@ -412,7 +412,7 @@ function genOnProfileChange(
 
         const profile = state.persistent.profiles[current];
         if (profile === undefined && current !== undefined) {
-          return Promise.reject(new Error("Tried to set invalid profile"));
+          return PromiseBB.reject(new Error("Tried to set invalid profile"));
         }
 
         if (profile !== undefined) {
@@ -425,7 +425,7 @@ function genOnProfileChange(
               undefined,
               { message: profile.gameId, allowReport: false },
             );
-            return Promise.reject(
+            return PromiseBB.reject(
               new ProcessCanceled("Game no longer supported"),
             );
           }
@@ -439,13 +439,13 @@ function genOnProfileChange(
               profile.gameId,
               { allowReport: false },
             );
-            return Promise.reject(
+            return PromiseBB.reject(
               new ProcessCanceled("Game no longer discovered"),
             );
           }
         }
 
-        finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+        finishProfileSwitchPromise = new PromiseBB<void>((resolve, reject) => {
           cancelPromise = resolve;
           onFinishProfileSwitch(() => {
             cancelPromise = undefined;
@@ -453,7 +453,7 @@ function genOnProfileChange(
           });
         }).catch((err) => {
           showError(store.dispatch, "Profile switch failed", err);
-          return Promise.resolve();
+          return PromiseBB.resolve();
         });
 
         // IMPORTANT: After this point we expect an external signal to tell
@@ -461,17 +461,17 @@ function genOnProfileChange(
         //   allow the next profile switch
         //   any error handler *has* to cancel this confirmation!
 
-        let queue: Promise<void> = Promise.resolve();
+        let queue: PromiseBB<void> = PromiseBB.resolve();
         // emit an event notifying about the impending profile change.
         // every listener can return a cb returning a promise which will be
         // awaited before continuing.
         // It would be fun if we could cancel the profile change if one of
         // these promises is rejected but that would only work if we could roll back
         // changes that happened.
-        const enqueue = (cb: () => Promise<void>) => {
+        const enqueue = (cb: () => PromiseBB<void>) => {
           queue = queue.then(cb).catch((err) => {
             log("error", "error in profile-will-change handler", err.message);
-            Promise.resolve();
+            PromiseBB.resolve();
           });
         };
 
@@ -504,7 +504,7 @@ function genOnProfileChange(
             .then(() => {
               const prof = profileById(api.store.getState(), current);
               if (prof === undefined) {
-                return Promise.reject(
+                return PromiseBB.reject(
                   new ProcessCanceled(
                     "Profile was deleted during deployment. " +
                       "Why would you do something like that???",
@@ -589,7 +589,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
 function manageGameUndiscovered(
   api: IExtensionApi,
   gameId: string,
-): Promise<void> {
+): PromiseBB<void> {
   let state: IState = api.store.getState();
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find((game) => game.id === gameId);
@@ -638,7 +638,7 @@ function manageGameUndiscovered(
                 })
                 .catch((err) => {
                   if (err instanceof UserCanceled) {
-                    return Promise.resolve();
+                    return PromiseBB.resolve();
                   }
 
                   const allowReport =
@@ -653,7 +653,7 @@ function manageGameUndiscovered(
           },
         ],
       )
-      .then(() => Promise.resolve());
+      .then(() => PromiseBB.resolve());
   }
 
   return api
@@ -672,7 +672,7 @@ function manageGameUndiscovered(
     )
     .then(
       () =>
-        new Promise((resolve, reject) => {
+        new PromiseBB((resolve, reject) => {
           api.events.emit(
             "manually-set-game-location",
             gameId,
@@ -691,7 +691,7 @@ function manageGameUndiscovered(
       const discovered = state.settings.gameMode.discovered[gameId];
       if (discovered?.path === undefined) {
         // this probably means the "manually set location" was canceled
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
 
       return manageGameDiscovered(api, gameId);
@@ -704,7 +704,7 @@ function manageGameUndiscovered(
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): Promise<void> {
+function manageGame(api: IExtensionApi, gameId: string): PromiseBB<void> {
   const state: IState = api.store.getState();
   const discoveredGames = state.settings.gameMode?.discovered || {};
   const profiles = state.persistent.profiles || {};
@@ -731,7 +731,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
 
   if (profiles[profileId] === undefined) {
     // nothing to do
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const currentProfile = activeProfile(state);
@@ -744,7 +744,7 @@ function removeProfileImpl(api: IExtensionApi, profileId: string) {
   return fs
     .removeAsync(profilePath(profiles[profileId]))
     .catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+      err.code === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err),
     )
     .then(() => {
       const gameMode = profiles[profileId].gameId;
@@ -765,8 +765,8 @@ function removeMod(
   api: IExtensionApi,
   gameId: string,
   modId: string,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
+): PromiseBB<void> {
+  return new PromiseBB((resolve, reject) => {
     api.events.emit("remove-mod", gameId, modId, (err) => {
       if (err) {
         reject(err);
@@ -781,7 +781,7 @@ function unmanageGame(
   api: IExtensionApi,
   gameId: string,
   gameName?: string,
-): Promise<void> {
+): PromiseBB<void> {
   const state = api.getState();
   const game = getGame(gameId);
   const { mods, profiles } = state.persistent;
@@ -821,17 +821,17 @@ function unmanageGame(
       if (result.action === "Delete profiles") {
         return purgeMods(api, gameId, true)
           .then(() =>
-            Promise.map(Object.keys(mods[gameId] ?? {}), (modId) =>
+            PromiseBB.map(Object.keys(mods[gameId] ?? {}), (modId) =>
               removeMod(api, gameId, modId),
             ),
           )
           .then(() =>
-            Promise.map(profileIds, (profileId) =>
+            PromiseBB.map(profileIds, (profileId) =>
               removeProfileImpl(api, profileId),
             ),
           )
-          .then(() => Promise.resolve())
-          .catch(UserCanceled, () => Promise.resolve())
+          .then(() => PromiseBB.resolve())
+          .catch(UserCanceled, () => PromiseBB.resolve())
           .catch((err) => {
             const isSetupError =
               err instanceof NoDeployment || err instanceof TemporaryError;
@@ -855,7 +855,7 @@ function unmanageGame(
             }
           });
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     });
 }
@@ -872,12 +872,12 @@ function addDescriptionFeature() {
   });
 }
 
-function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
+function checkOverridden(api: IExtensionApi, gameId: string): PromiseBB<void> {
   const state = api.getState();
   const { disabled } = state.session.gameMode;
 
   if (disabled[gameId] === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   return api
@@ -890,7 +890,7 @@ function checkOverridden(api: IExtensionApi, gameId: string): Promise<void> {
       },
       [{ label: "Cancel" }],
     )
-    .then(() => Promise.reject(new UserCanceled()));
+    .then(() => PromiseBB.reject(new UserCanceled()));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -1286,7 +1286,7 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    presetManager.on("setgame", (step: IPresetStep): Promise<void> => {
+    presetManager.on("setgame", (step: IPresetStep): PromiseBB<void> => {
       return manageGame(context.api, (step as IPresetStepSetGame).game)
         .then(() => context.api.ext.awaitProfileSwitch?.())
         .then(() => null);

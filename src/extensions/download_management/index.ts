@@ -57,7 +57,7 @@ import type { DownloadObserver } from "./DownloadObserver";
 import type observe from "./DownloadObserver";
 
 import type * as RemoteT from "@electron/remote";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
 import * as path from "path";
@@ -109,7 +109,7 @@ function withAddInProgress(
   cb: () => PromiseLike<void>,
 ): PromiseLike<void> {
   addLocalInProgress.add(fileName);
-  return Promise.resolve(cb()).finally(() => {
+  return PromiseBB.resolve(cb()).finally(() => {
     addLocalInProgress.delete(fileName);
   });
 }
@@ -125,9 +125,9 @@ function refreshDownloads(
   downloadPath: string,
   knownDLs: string[],
   normalize: (input: string) => string,
-  onAddDownload: (name: string) => Promise<void>,
-  onRemoveDownload: (name: string) => Promise<void>,
-  confirmElevation: () => Promise<void>,
+  onAddDownload: (name: string) => PromiseBB<void>,
+  onRemoveDownload: (name: string) => PromiseBB<void>,
+  confirmElevation: () => PromiseBB<void>,
 ) {
   return fs
     .ensureDirWritableAsync(downloadPath, confirmElevation)
@@ -149,8 +149,8 @@ function refreshDownloads(
         (name: string) => dlsNormalized.indexOf(name) === -1,
       );
 
-      return Promise.map(addedDLs, onAddDownload).then(() =>
-        Promise.map(removedDLs, onRemoveDownload),
+      return PromiseBB.map(addedDLs, onAddDownload).then(() =>
+        PromiseBB.map(removedDLs, onRemoveDownload),
       );
     });
 }
@@ -158,7 +158,7 @@ function refreshDownloads(
 export type ProtocolHandler = (
   inputUrl: string,
   name: string,
-) => Promise<IResolvedURL>;
+) => PromiseBB<IResolvedURL>;
 
 export interface IExtensionContextExt extends IExtensionContext {
   // register a download protocol handler
@@ -179,7 +179,7 @@ function attributeExtractor(input: any) {
   }
   const logicalFileName =
     input?.meta?.logicalFileName || input?.download?.modInfo?.name;
-  return Promise.resolve({
+  return PromiseBB.resolve({
     fileName: getSafe(input, ["download", "localPath"], undefined),
     fileMD5: getSafe(input, ["download", "fileMD5"], undefined),
     fileSize: getSafe(input, ["download", "size"], undefined),
@@ -195,7 +195,7 @@ function attributeExtractor(input: any) {
 }
 
 function attributeExtractorCustom(input: any) {
-  return Promise.resolve(input.download?.modInfo?.custom || {});
+  return PromiseBB.resolve(input.download?.modInfo?.custom || {});
 }
 
 function genDownloadChangeHandler(
@@ -245,7 +245,7 @@ function genDownloadChangeHandler(
       // this delay is intended to prevent this from picking up files that Vortex added itself.
       // It is not enough however to prevent this from getting the wrong file size if the file
       // copy/write takes more than this one second.
-      Promise.delay(1000)
+      PromiseBB.delay(1000)
         .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
         .then((stats) => {
           let dlId = findDownload(fileName);
@@ -335,7 +335,7 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
   const array = Array.from(removeSet);
-  await Promise.all(
+  await PromiseBB.all(
     array.map(async (dlId) => {
       if (downloads[dlId].localPath !== undefined) {
         await fs
@@ -354,13 +354,13 @@ function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
   const state: IState = api.store.getState();
   gameId = gameId || selectors.activeGameId(state);
   if (!gameId) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
   const downloadPath = selectors.downloadPathForGame(state, gameId);
   return fs
     .readdirAsync(downloadPath)
     .then((files: string[]) => {
-      return Promise.all(
+      return PromiseBB.all(
         files.map((fileName) => {
           if (!knownArchiveExt(fileName)) {
             return fs
@@ -382,7 +382,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
     if (gameId === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
   }
   const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
@@ -437,10 +437,10 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         (fileName: string) => {
           // the fileName here is already normalized
           api.store.dispatch(removeDownload(nameIdMap[fileName]));
-          return Promise.resolve();
+          return PromiseBB.resolve();
         },
         () =>
-          new Promise((resolve, reject) => {
+          new PromiseBB((resolve, reject) => {
             api.showDialog(
               "question",
               "Access Denied",
@@ -481,17 +481,17 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
     });
 }
 
-function testDownloadPath(api: IExtensionApi): Promise<void> {
+function testDownloadPath(api: IExtensionApi): PromiseBB<void> {
   return ensureDownloadsDirectory(api)
-    .catch(ProcessCanceled, () => Promise.resolve())
-    .catch(UserCanceled, () => Promise.resolve())
+    .catch(ProcessCanceled, () => PromiseBB.resolve())
+    .catch(UserCanceled, () => PromiseBB.resolve())
     .catch((err) => {
       const errTitle =
         err.code === "EPERM"
           ? "Insufficient permissions"
           : "Downloads folder error";
 
-      return new Promise<void>((resolve) => {
+      return new PromiseBB<void>((resolve) => {
         api.showDialog(
           "error",
           errTitle,
@@ -538,7 +538,7 @@ function queryReplace(api: IExtensionApi, destination: string) {
     )
     .then((result) =>
       result.action === "Cancel"
-        ? Promise.reject(new UserCanceled())
+        ? PromiseBB.reject(new UserCanceled())
         : removeArchive(api.store, destination),
     );
 }
@@ -574,11 +574,11 @@ function postImport(
   destination: string,
   fileSize: number,
   silent: boolean,
-): Promise<string> {
+): PromiseBB<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
   if (gameMode === undefined) {
-    return Promise.reject(new Error("no active game"));
+    return PromiseBB.reject(new Error("no active game"));
   }
 
   const dlId = shortid();
@@ -641,7 +641,7 @@ function move(
   source: string,
   destination: string,
   silent: boolean,
-): Promise<string> {
+): PromiseBB<string> {
   const notiId = silent
     ? undefined
     : api.sendNotification({
@@ -738,7 +738,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
 
     log("debug", "importing download(s)", downloadPaths);
     const downloadPath = selectors.downloadPathForGame(state, gameMode);
-    Promise.map(downloadPaths, (dlPath) => {
+    PromiseBB.map(downloadPaths, (dlPath) => {
       const fileName = path.basename(dlPath);
       let destination = path.join(downloadPath, fileName);
       return fs
@@ -768,13 +768,13 @@ function genImportDownloadsHandler(api: IExtensionApi) {
   };
 }
 
-function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
+function checkPendingTransfer(api: IExtensionApi): PromiseBB<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
 
   const gameMode = selectors.activeGameId(state);
   if (gameMode === undefined) {
-    return Promise.resolve(result);
+    return PromiseBB.resolve(result);
   }
 
   const pendingTransfer: string[] = [
@@ -785,7 +785,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   ];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
-    return Promise.resolve(result);
+    return PromiseBB.resolve(result);
   }
 
   result = {
@@ -797,7 +797,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
         "Vortex clean up now, otherwise you may be left with unnecessary copies of files.",
     },
     automaticFix: () =>
-      new Promise<void>((fixResolve, fixReject) => {
+      new PromiseBB<void>((fixResolve, fixReject) => {
         api.sendNotification({
           id: "transfer-cleanup",
           message: "Cleaning up interrupted transfer",
@@ -828,7 +828,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
       }),
   };
 
-  return Promise.resolve(result);
+  return PromiseBB.resolve(result);
 }
 
 let shutdownPending: boolean = false;
@@ -932,7 +932,7 @@ function checkForUnfinalized(
 
             progress("...");
 
-            Promise.map(
+            PromiseBB.map(
               unfinalized,
               (id) => {
                 const gameId = Array.isArray(downloads[id].game)
@@ -1216,7 +1216,7 @@ function init(context: IExtensionContextExt): boolean {
         message: "Download(s) deleted",
         displayMS: 3000,
       });
-      return Promise.resolve();
+      return PromiseBB.resolve();
     },
     500,
     true,
@@ -1339,7 +1339,7 @@ function init(context: IExtensionContextExt): boolean {
 
         updateShutdown(selectors.activeDownloads(state));
 
-        Promise.map(filtered, (dlId) => {
+        PromiseBB.map(filtered, (dlId) => {
           const rawGameId = getDownloadGames(cur[dlId])[0];
           const gameId = rawGameId
             ? convertGameIdReverse(knownGames(state), rawGameId) || rawGameId
@@ -1352,7 +1352,7 @@ function init(context: IExtensionContextExt): boolean {
               id: dlId,
               reason: "Filename is unknown",
             });
-            return Promise.resolve();
+            return PromiseBB.resolve();
           }
           context.api
             .lookupModMeta({
@@ -1612,7 +1612,7 @@ function init(context: IExtensionContextExt): boolean {
                 urlParsed.collectionSlug,
             );
             if (existing !== undefined) {
-              return new Promise((resolve) => {
+              return new PromiseBB((resolve) => {
                 onDidInstallCollection(mods[existing].archiveId, resolve);
                 context.api.events.emit("resume-collection", gameId, existing);
               });
@@ -1646,7 +1646,7 @@ function init(context: IExtensionContextExt): boolean {
           })
           .then((dlId: string) => {
             log("info", "download finished", { dlId });
-            return new Promise((resolve) => {
+            return new PromiseBB((resolve) => {
               if (isCollection) {
                 onDidInstallCollection(dlId, resolve);
               } else {

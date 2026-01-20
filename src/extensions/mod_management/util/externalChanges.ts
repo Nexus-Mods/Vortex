@@ -21,7 +21,7 @@ import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 import { MERGED_PATH } from "../modMerging";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 
 /**
@@ -32,7 +32,7 @@ import * as path from "path";
  * @param {string} outputPath the destination directory where the game expects mods
  * @param {IDeployedFile[]} lastDeployment previous deployment to use as reference
  * @param {IFileEntry[]} fileActions actions the user selected for external changes
- * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
+ * @returns {PromiseBB<IDeployedFile[]>} an updated deployment manifest to use as a reference
  *                                     for the new one
  */
 function applyFileActions(
@@ -42,9 +42,9 @@ function applyFileActions(
   outputPath: string,
   lastDeployment: IDeployedFile[],
   fileActions: IFileEntry[],
-): Promise<IDeployedFile[]> {
+): PromiseBB<IDeployedFile[]> {
   if (fileActions === undefined || fileActions.length === 0) {
-    return Promise.resolve(lastDeployment);
+    return PromiseBB.resolve(lastDeployment);
   }
 
   const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce(
@@ -66,23 +66,23 @@ function applyFileActions(
   // thing in this case.
 
   // process the actions that the user selected in the dialog
-  return Promise.map(
+  return PromiseBB.map(
     actionGroups["drop"] || [],
     // delete the links the user wants to drop.
     (entry) =>
       truthy(entry.filePath)
         ? fs.removeAsync(path.join(outputPath, entry.filePath))
-        : Promise.reject(new Error("invalid file path")),
+        : PromiseBB.reject(new Error("invalid file path")),
   )
     .then(() =>
-      Promise.map(actionGroups["delete"] || [], (entry) =>
+      PromiseBB.map(actionGroups["delete"] || [], (entry) =>
         truthy(entry.filePath)
           ? fs.removeAsync(path.join(sourcePath, entry.source, entry.filePath))
-          : Promise.reject(new Error("invalid file path")),
+          : PromiseBB.reject(new Error("invalid file path")),
       ),
     )
     .then(() =>
-      Promise.map(
+      PromiseBB.map(
         actionGroups["import"] || [],
         // copy the files the user wants to import
         (entry) => {
@@ -121,7 +121,7 @@ function applyFileActions(
         (entry) => !dropSet.has(entry.relPath),
       );
       lastDeployment = newDeployment;
-      return Promise.resolve();
+      return PromiseBB.resolve();
     })
     .then(() => {
       const affectedMods = new Set<string>();
@@ -254,9 +254,9 @@ function checkForExternalChanges(
       ? getSafe(state, ["persistent", "profiles", profileId], undefined)
       : activeProfile(state);
   if (profile === undefined) {
-    return Promise.reject(new ProcessCanceled("Profile no longer exists."));
+    return PromiseBB.reject(new ProcessCanceled("Profile no longer exists."));
   }
-  return Promise.each(Object.keys(modPaths), (typeId) => {
+  return PromiseBB.each(Object.keys(modPaths), (typeId) => {
     log("debug", "checking external changes", {
       modType: typeId,
       count: lastDeployment[typeId]?.length ?? 0,
@@ -349,11 +349,11 @@ export function dealWithExternalChanges(
           .dispatch(showExternalChanges(userChanges))
           .then((userActions) => [].concat(automaticActions, userActions));
       } else {
-        return Promise.resolve(automaticActions);
+        return PromiseBB.resolve(automaticActions);
       }
     })
     .then((fileActions: IFileEntry[]) =>
-      Promise.mapSeries(Object.keys(lastDeployment), (typeId) =>
+      PromiseBB.mapSeries(Object.keys(lastDeployment), (typeId) =>
         applyFileActions(
           api,
           profileId,

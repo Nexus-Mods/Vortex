@@ -1,4 +1,4 @@
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 
 export interface ISupportedResult {
   supported: boolean;
@@ -15,4 +15,4 @@ export type TestSupported = (
   gameId: string,
   archivePath?: string,
   details?: ITestSupportedDetails,
-) => Promise<ISupportedResult>;
+) => PromiseBB<ISupportedResult>;

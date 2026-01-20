@@ -17,7 +17,7 @@ import type { IResolvedMerger } from "./types/IResolvedMerger";
 
 import { BACKUP_TAG } from "./LinkingDeployment";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as crypto from "crypto";
 import * as path from "path";
 
@@ -29,8 +29,8 @@ type FileLists = Array<{
   files: IFileEntry[];
 }>;
 
-function calcHashImpl(filePath: string): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
+function calcHashImpl(filePath: string): PromiseBB<string> {
+  return new PromiseBB<string>((resolve, reject) => {
     const hash = crypto.createHash("md5");
     const stream = fs.createReadStream(filePath);
     stream.on("readable", () => {
@@ -44,12 +44,12 @@ function calcHashImpl(filePath: string): Promise<string> {
   });
 }
 
-function calcHash(filePath: string, tries: number = 3): Promise<string> {
+function calcHash(filePath: string, tries: number = 3): PromiseBB<string> {
   return calcHashImpl(filePath).catch((err) => {
     if (["EMFILE", "EBADF"].includes(err["code"]) && tries > 0) {
       return calcHash(filePath, tries - 1);
     } else {
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
   });
 }
@@ -90,7 +90,7 @@ function mergeArchive(
       .then(() =>
         walk(resultPath, (iterPath, stats) =>
           stats.isDirectory()
-            ? Promise.resolve()
+            ? PromiseBB.resolve()
             : calcHash(iterPath).then((hash) => {
                 baseContent[path.relative(resultPath, iterPath)] = {
                   size: stats.size,
@@ -101,14 +101,14 @@ function mergeArchive(
       )
       // not really an error if the source archive doesn't exist
       .catch((err) =>
-        err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+        err.code === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err),
       )
       // now iterate over each mod containing the archive, extract their version
       // of the archive, then copy every file from the archive that differs from the
       // base into the output directory, overwriting the file from previous mods if
       // necessary
       .then(() =>
-        Promise.each(sources, (modPath) => {
+        PromiseBB.each(sources, (modPath) => {
           const outputPath = path.join(mergePath, path.basename(modPath));
           return fs
             .ensureDirAsync(outputPath)
@@ -120,13 +120,13 @@ function mergeArchive(
                   return;
                 }
                 const relPath = path.relative(outputPath, iterPath);
-                let isDifferentProm: Promise<boolean>;
+                let isDifferentProm: PromiseBB<boolean>;
                 if (
                   baseContent[relPath] === undefined ||
                   stats.size !== baseContent[relPath].size
                 ) {
                   // easy case: size is different so we know the content is different
-                  isDifferentProm = Promise.resolve(true);
+                  isDifferentProm = PromiseBB.resolve(true);
                 } else {
                   // if the size is the same we need to compare hashes to know if the
                   // content is the same
@@ -139,7 +139,7 @@ function mergeArchive(
                     ? fs.moveAsync(iterPath, path.join(resultPath, relPath), {
                         overwrite: true,
                       })
-                    : Promise.resolve(),
+                    : PromiseBB.resolve(),
                 );
               }).then(() => fs.removeAsync(outputPath)),
             );
@@ -176,14 +176,14 @@ function mergeMods(
   mods: IMod[],
   deployedFiles: IDeployedFile[],
   mergers: IResolvedMerger[],
-): Promise<IMergeResult> {
+): PromiseBB<IMergeResult> {
   const res: IMergeResult = {
     usedInMerge: [],
     mergeInfluences: {},
   };
 
   if (mergers.length === 0 && game.mergeArchive === undefined) {
-    return Promise.resolve(res);
+    return PromiseBB.resolve(res);
   }
 
   const mergeDest = path.join(modBasePath, MERGED_PATH);
@@ -194,8 +194,8 @@ function mergeMods(
   const fileExists = (file: string) =>
     fs
       .statAsync(file)
-      .then(() => Promise.resolve(true))
-      .catch(() => Promise.resolve(false));
+      .then(() => PromiseBB.resolve(true))
+      .catch(() => PromiseBB.resolve(false));
 
   const isDeployed = (filePath: string) =>
     deployedFiles.find(
@@ -207,14 +207,14 @@ function mergeMods(
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
   return (
-    Promise.mapSeries(
+    PromiseBB.mapSeries(
       mods.filter((mod) => mod.installationPath !== undefined),
       (mod) => {
         const modPath = path.join(modBasePath, mod.installationPath);
         return getFileList(modPath)
           .filter((entry: IFileEntry) => entry.stats.isFile())
           .then((fileList) =>
-            Promise.mapSeries(fileList, (fileEntry) => {
+            PromiseBB.mapSeries(fileList, (fileEntry) => {
               if (
                 game.mergeArchive !== undefined &&
                 game.mergeArchive(fileEntry.filePath)
@@ -245,7 +245,7 @@ function mergeMods(
                     })
                     .then(() => fs.ensureDirAsync(realDest))
                     .then(() =>
-                      Promise.mapSeries(
+                      PromiseBB.mapSeries(
                         merger.match.baseFiles(deployedFiles),
                         (file) => {
                           const norm = normalize(file.out);
@@ -256,7 +256,7 @@ function mergeMods(
 
                           if (res.mergeInfluences[norm].sources.length !== 1) {
                             // This isn't the first merge for this file, don't re-initialize the merge
-                            return Promise.resolve();
+                            return PromiseBB.resolve();
                           }
 
                           // the "in" path may also be the path to where the file gets deployed to eventually,
@@ -264,7 +264,7 @@ function mergeMods(
                           // deployment.
                           // In this case we need to use the backup as the input instead of the actual "in"
                           // path
-                          return Promise.all([
+                          return PromiseBB.all([
                             fileExists(file.in),
                             fileExists(file.in + BACKUP_TAG),
                           ]).then((statRes) => {
@@ -319,7 +319,7 @@ function mergeMods(
                                             destination: outPath,
                                           },
                                         );
-                                        return Promise.reject(err);
+                                        return PromiseBB.reject(err);
                                       }),
                                   );
                               }
@@ -331,14 +331,14 @@ function mergeMods(
                     .then(() => merger.merge(fileEntry.filePath, realDest));
                 }
               }
-              return Promise.resolve();
+              return PromiseBB.resolve();
             }),
           );
       },
     )
       // merge archives
       .then(() =>
-        Promise.mapSeries(Object.keys(archiveMerges), (relPath) =>
+        PromiseBB.mapSeries(Object.keys(archiveMerges), (relPath) =>
           mergeArchive(
             api,
             game,

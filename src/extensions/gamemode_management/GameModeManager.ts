@@ -51,7 +51,7 @@ import {
 } from "./util/discovery";
 import { getGame } from "./util/getGame";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
 import type * as Redux from "redux";
@@ -72,7 +72,7 @@ class GameModeManager {
   private mKnownGames: IGame[];
   private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
-  private mActiveSearch: Promise<void>;
+  private mActiveSearch: PromiseBB<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(
@@ -122,14 +122,14 @@ class GameModeManager {
     oldMode: string,
     newMode: string,
     profileId: string,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     log("debug", "set game mode", { oldMode, newMode });
     const game = this.mKnownGames.find((knownGame) => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const gameDiscovery = discoveredGames[newMode];
     if (game === undefined || gameDiscovery?.path === undefined) {
       // new game mode is not valid
-      return Promise.reject(new ProcessCanceled("game mode not found"));
+      return PromiseBB.reject(new ProcessCanceled("game mode not found"));
     }
 
     let modPath;
@@ -139,7 +139,7 @@ class GameModeManager {
         modPath = path.resolve(gameDiscovery.path, modPath);
       }
     } catch (err) {
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
     // the game is listed and available to be activated if it was found in any store
     // but in that case we haven't verified yet whether the directory actually contains the game
@@ -187,10 +187,10 @@ class GameModeManager {
       })
       .catch((err) => {
         return ["ENOENT", "ENOTFOUND"].includes(err.code)
-          ? Promise.reject(
+          ? PromiseBB.reject(
               new SetupError("Missing: " + (err.filename || modPath)),
             )
-          : Promise.reject(err);
+          : PromiseBB.reject(err);
       });
   }
 
@@ -198,11 +198,11 @@ class GameModeManager {
    * prepare change to a different game mode
    *
    * @param {string} gameMode
-   * @returns {Promise<void>}
+   * @returns {PromiseBB<void>}
    *
    * @memberOf GameModeManager
    */
-  public setupGameMode(gameMode: string): Promise<void> {
+  public setupGameMode(gameMode: string): PromiseBB<void> {
     const game = getGame(gameMode);
     const gameDiscovery =
       this.mStore.getState().settings.gameMode.discovered[gameMode];
@@ -217,11 +217,11 @@ class GameModeManager {
       // has run but that would be a major change that would require a proper round of
       // testing which is not going to happen now so we have to accept this as a valid
       // situation.
-      return Promise.reject(new ProcessCanceled("game not discovered"));
+      return PromiseBB.reject(new ProcessCanceled("game not discovered"));
     } else if (game?.setup === undefined) {
       return game
         .getInstalledVersion(gameDiscovery)
-        .then(() => Promise.resolve());
+        .then(() => PromiseBB.resolve());
     } else {
       try {
         return (
@@ -231,26 +231,26 @@ class GameModeManager {
             //  locking game files if the gameversion hash extension is used.
             .then(() => game.getInstalledVersion(gameDiscovery))
             .then(() =>
-              Promise.resolve(game.setup(gameDiscovery)).catch((err) => {
+              PromiseBB.resolve(game.setup(gameDiscovery)).catch((err) => {
                 // don't allow reporting if the game extension setup function fails
                 if (game.contributed) {
                   err["allowReport"] = false;
                 }
-                return Promise.reject(err);
+                return PromiseBB.reject(err);
               }),
             )
             .catch((err) =>
               err.code === "ENOENT" && err.path === gameDiscovery.path
-                ? Promise.reject(
+                ? PromiseBB.reject(
                     new ProcessCanceled(
                       `Game folder "${gameDiscovery.path}" doesn't exist (any more).`,
                     ),
                   )
-                : Promise.reject(err),
+                : PromiseBB.reject(err),
             )
         );
       } catch (err) {
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       }
     }
   }
@@ -309,7 +309,7 @@ class GameModeManager {
           ),
         );
     } else {
-      return Promise.reject(new Error("unknown game id: " + gameId));
+      return PromiseBB.reject(new Error("unknown game id: " + gameId));
     }
   }
 
@@ -399,9 +399,9 @@ class GameModeManager {
   private postDiscovery() {
     const { discovered } = this.mStore.getState().settings.gameMode;
     this.mStore.dispatch(clearGameDisabled());
-    Promise.map(Object.keys(discovered), (gameId) => {
+    PromiseBB.map(Object.keys(discovered), (gameId) => {
       if (discovered[gameId].path === undefined) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
 
       return getNormalizeFunc(discovered[gameId].path)
@@ -428,16 +428,16 @@ class GameModeManager {
             gameId,
             error: err.message,
           });
-          return Promise.resolve();
+          return PromiseBB.resolve();
         });
     });
   }
 
-  private ensureWritable(modPath: string): Promise<void> {
+  private ensureWritable(modPath: string): PromiseBB<void> {
     return fs.ensureDirWritableAsync(
       modPath,
       () =>
-        new Promise<void>((resolve, reject) => {
+        new PromiseBB<void>((resolve, reject) => {
           this.mStore.dispatch(
             showDialog(
               "question",
