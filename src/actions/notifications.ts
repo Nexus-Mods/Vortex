@@ -194,7 +194,7 @@ export function addNotification(notification: INotification) {
     if (noti.id !== undefined && noti.displayMS !== undefined) {
       const currentId = noti.id;
       const currentDisplayMS = noti.displayMS;
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         timers[currentId] = setTimeout(() => resolve(), currentDisplayMS);
       }).then(() => {
         dispatch(dismissNotification(currentId));
