@@ -113,10 +113,13 @@ class MainWindow {
       this.getWindowSettings(store.getState().settings.window),
     );
 
+    const isDev = process.env.NODE_ENV === "development";
+
     this.mWindow.loadURL(
-      pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
+      isDev
+        ? "http://localhost:3000"
+        : pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
     );
-    // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
     let cancelTimer: NodeJS.Timeout;
 

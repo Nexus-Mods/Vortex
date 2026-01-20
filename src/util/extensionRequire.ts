@@ -1,17 +1,11 @@
 import * as reactSelect from "../renderer/controls/ReactSelectWrap";
-
 import type { IRegisteredExtension } from "./ExtensionManager";
 import ExtensionManager from "./ExtensionManager";
-
-import {} from "module";
+import { Module } from "module";
 import * as reduxAct from "redux-act";
 import { dynreq } from "vortex-run";
-
-// tslint:disable-next-line:no-var-requires
-const Module = require("module");
-
 import * as api from "../index";
-import type { LogLevel } from "./log";
+import { log, type LogLevel } from "./log";
 
 const identity = (input) => input;
 
@@ -105,16 +99,19 @@ const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
 /**
  * require wrapper to allow extensions to load modules from
  * the context of the main application
- * @param {any} orig
  * @returns
  */
-function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
+function extensionRequire(
+  orig: typeof Module.prototype.require,
+  getExtensions: () => IRegisteredExtension[],
+): typeof Module.prototype.require {
   const extensionPaths = ExtensionManager.getExtensionPaths();
-  return function (id) {
+  return function(this: Module, id) {
+    log("info", "fucking hell", { id: this.id, filename: this.filename });
     if (id === "vortex-api") {
-      const ext = getExtensions().find((iter) =>
+      const ext = this.filename ? getExtensions().find((iter) =>
         this.filename.startsWith(iter.path),
-      );
+      ) : undefined;
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {
           handlerMapAPI[ext.name] = new Proxy(api, new ExtProxyHandler(ext));
@@ -128,9 +125,9 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
     } else if (id === "react-select") {
       return reactSelect;
     } else if (id === "redux-act") {
-      const ext = getExtensions().find((iter) =>
+      const ext = this.filename ? getExtensions().find((iter) =>
         this.filename.startsWith(iter.path),
-      );
+      ) : undefined;
       if (ext !== undefined) {
         if (handlerMapReactAct[ext.name] === undefined) {
           handlerMapReactAct[ext.name] = new Proxy(
@@ -141,14 +138,11 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
         return handlerMapReactAct[ext.name];
       }
     }
-    if (
-      extensionPaths.find((iter) => this.filename.startsWith(iter.path)) !==
-      undefined
-    ) {
+    if (this.filename && extensionPaths.find((iter) => this.filename.startsWith(iter.path)) !== undefined) {
       let res;
       try {
         res = dynreq(id);
-      } catch (err) {
+      } catch {
         // nop, leave res undefined so orig gets tried
       }
       if (res === undefined) {
@@ -161,7 +155,7 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   };
 }
 
-export default function (getExtensions: () => IRegisteredExtension[]) {
-  const orig = (Module as any).prototype.require;
-  (Module as any).prototype.require = extensionRequire(orig, getExtensions);
+export default function(getExtensions: () => IRegisteredExtension[]) {
+  const orig = Module.prototype.require;
+  Module.prototype.require = extensionRequire(orig, getExtensions);
 }

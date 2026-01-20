@@ -1,5 +1,4 @@
-// tslint:disable-next-line:no-var-requires
-const Module = require("module");
+import { Module } from "module";
 
 import * as path from "path";
 import * as electron from "./electron";
@@ -38,12 +37,13 @@ Module.prototype.require = function (modulePath) {
 };
 
 function patchedLoad(orig) {
-  // tslint:disable-next-line:only-arrow-functions
   return function (request: string, parent, ...rest) {
     if (
       request === "fs" &&
-      (parent.filename.indexOf("graceful-fs") !== -1 ||
-        parent.filename.indexOf("rimraf") !== -1)
+      parent.filename &&
+      typeof parent.filename === "string" &&
+      (parent.filename.includes("graceful-fs") ||
+        parent.filename.includes("rimraf"))
     ) {
       request = "original-fs";
     } else if (request === "electron") {

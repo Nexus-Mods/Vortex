@@ -1,12 +1,11 @@
 <!doctype html>
 <html>
     <head>
-        <script src="http://localhost:8097"></script>
         <meta charset="UTF-8" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="script-src 'self' 'sha256-MCx+U3fU6hJNKvWqT8cJrZb2MfZlyUfg8oXORz+vn6M='"
-        />
+        <!-- <meta -->
+        <!--     http-equiv="Content-Security-Policy" -->
+        <!--     content="script-src 'self' 'sha256-MCx+U3fU6hJNKvWqT8cJrZb2MfZlyUfg8oXORz+vn6M='" -->
+        <!-- /> -->
         <title>Vortex</title>
         <link rel="stylesheet" href="assets/css/loadingScreen.css" />
         <link rel="stylesheet" href="assets/css/tailwind-v4.css" />
@@ -33,7 +32,5 @@
         <div id="overlays"></div>
     </body>
 
-    <script>
-        require("./renderer.js");
-    </script>
+    <script type="module" src="renderer.js"></script>
 </html>

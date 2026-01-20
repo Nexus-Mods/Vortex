@@ -1,7 +1,10 @@
 /* eslint-disable */
 
+if ("hot" in module && module.hot) {
+  (module as any).hot.accept();
+}
+
 if (process.env.DEBUG_REACT_RENDERS === "true") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
   whyDidYouRender?.(require("react"), {
     trackAllPureComponents: true,
