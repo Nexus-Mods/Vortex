@@ -804,6 +804,7 @@ function processAttributes(
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
       rating: nexusCollectionInfo?.rating,
+      requirements: nexusModInfo?.requirements,
     };
   });
 }

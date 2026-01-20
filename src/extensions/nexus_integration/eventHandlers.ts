@@ -82,6 +82,7 @@ import type {
   IIssue,
   IModFileContentPage,
   IModInfo,
+  IModQuery,
   IModRequirements,
   IRating,
   IRevision,
@@ -103,6 +104,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../../shared/errors";
+import { makeModUID } from "./util/UIDs";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -1003,47 +1005,124 @@ export function onModFileContents(
 
 /**
  * Fetches mod requirements (dependencies) from the Nexus Mods API.
+ * Uses modsByUid to fetch mod data with nested modRequirements field.
+ * Supports fetching multiple mods in a single API call for efficiency.
  *
  * @param api - The extension API
  * @param nexus - The Nexus API client
- * @returns A function that accepts gameId and modId and returns mod requirements
+ * @returns A function that accepts gameId and modIds and returns a map of modId to requirements
  *
  */
 export function onGetModRequirements(
   api: IExtensionApi,
   nexus: Nexus,
-): (gameId: string, modId: number) => Bluebird<Partial<IModRequirements>> {
-  return (gameId: string, modId: number) => {
+): (
+  gameId: string,
+  modIds: number[],
+) => Bluebird<{ [modId: number]: Partial<IModRequirements> }> {
+  return (gameId: string, modIds: number[]) => {
     const state = api.getState();
     const game = gameById(state, gameId);
     const nexusGameDomain = nexusGameId(game, gameId) || gameId;
 
-    return Bluebird.resolve(
-      nexus.modRequirements(MOD_REQUIREMENTS_INFO, modId, nexusGameDomain),
-    ).catch((err) => {
-      if (err instanceof RateLimitError) {
-        log("warn", "Rate limited when fetching mod requirements", {
-          gameId: nexusGameDomain,
-          modId,
-        });
-      } else if (err instanceof TimeoutError) {
-        log("warn", "Timeout when fetching mod requirements", {
-          gameId: nexusGameDomain,
-          modId,
-        });
+    if (modIds.length === 0) {
+      return Bluebird.resolve({});
+    }
+
+    // Build UIDs for all mods (64-bit: game ID in upper 32 bits, mod ID in lower 32 bits)
+    // Pass Vortex gameId so makeModUID can convert to numeric Nexus game ID
+    const uidToModId: { [uid: string]: number } = {};
+    const validUids: string[] = [];
+
+    for (const modId of modIds) {
+      const modUid = makeModUID({
+        gameId,
+        modId: modId.toString(),
+        fileId: "0", // Not needed for mod UID but required by interface
+      });
+
+      if (modUid) {
+        uidToModId[modUid] = modId;
+        validUids.push(modUid);
       } else {
-        const detail = processErrorMessage(err);
-        api.showErrorNotification("Failed to get mod requirements", detail, {
-          allowReport: detail.noReport ? false : true,
+        log("warn", "Failed to create mod UID for requirements lookup", {
+          gameId: nexusGameDomain,
+          modId,
         });
       }
+    }
 
-      return Bluebird.resolve({
-        dlcRequirements: [],
-        nexusRequirements: { nodes: [], nodesCount: 0, totalCount: 0 },
-        modsRequiringThisMod: { nodes: [], nodesCount: 0, totalCount: 0 },
+    if (validUids.length === 0) {
+      return Bluebird.resolve({});
+    }
+
+    // Query must include modId to map results back to mods
+    return Bluebird.resolve(
+      nexus.modsByUid(
+        { modId: true, modRequirements: MOD_REQUIREMENTS_INFO },
+        validUids,
+      ),
+    )
+      .then((mods) => {
+        const result: { [modId: number]: Partial<IModRequirements> } = {};
+
+        log("debug", "modsByUid returned mods", {
+          count: mods.length,
+          firstModKeys: mods[0] ? Object.keys(mods[0]) : [],
+          firstMod: mods[0]
+            ? {
+                modId: mods[0].modId,
+                hasModRequirements: "modRequirements" in mods[0],
+                modRequirementsType: typeof mods[0].modRequirements,
+                modRequirementsKeys: mods[0].modRequirements
+                  ? Object.keys(mods[0].modRequirements)
+                  : [],
+                rawModRequirements: JSON.stringify(mods[0].modRequirements),
+              }
+            : null,
+        });
+
+        for (const mod of mods) {
+          if (mod.modId !== undefined) {
+            result[mod.modId] = mod.modRequirements || {
+              dlcRequirements: [],
+              nexusRequirements: { nodes: [], nodesCount: 0, totalCount: 0 },
+              modsRequiringThisMod: { nodes: [], nodesCount: 0, totalCount: 0 },
+            };
+          }
+        }
+
+        const resultKeys = Object.keys(result);
+        log("debug", "onGetModRequirements result", {
+          resultKeys,
+          firstResultValue:
+            resultKeys.length > 0
+              ? JSON.stringify(result[parseInt(resultKeys[0], 10)])
+              : null,
+        });
+
+        return result;
+      })
+      .catch((err) => {
+        if (err instanceof RateLimitError) {
+          log("warn", "Rate limited when fetching mod requirements", {
+            gameId: nexusGameDomain,
+            modIds,
+          });
+        } else if (err instanceof TimeoutError) {
+          log("warn", "Timeout when fetching mod requirements", {
+            gameId: nexusGameDomain,
+            modIds,
+          });
+        } else {
+          const detail = processErrorMessage(err);
+          api.showErrorNotification("Failed to get mod requirements", detail, {
+            allowReport: detail.noReport ? false : true,
+          });
+        }
+
+        return Bluebird.resolve({});
       });
-    });
   };
 }
 

@@ -248,6 +248,10 @@ class Application {
     return this.mMainWindow.create(this.mStore).then((webContents) => {
       log("debug", "window created");
       this.mExtensions.setupApiMain(this.mStore, webContents);
+
+      // Set web contents for main process extensions (sends SharedArrayBuffer to renderer)
+      this.mExtensions.setWebContents(webContents);
+
       setOutdated(this.mExtensions.getApi());
       // in the past we would process some command line arguments the same as we do when
       // they get passed in from a second instance but that was inconsistent
@@ -446,6 +450,11 @@ class Application {
         .then(() => {
           this.setupContextMenu();
           return PromiseBB.resolve();
+        })
+        .then(() => {
+          // Initialize main process extensions before window creation
+          this.mExtensions.initMainProcessExtensions();
+          return Promise.resolve();
         })
         .then(() => this.startUi())
         .tap(() => log("debug", "setting up tray icon"))

@@ -20,6 +20,7 @@ import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { IParameters } from "../util/commandLine";
 import type { VortexInstallType } from "./VortexInstallType";
+import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -365,6 +366,7 @@ export interface IState {
     browser: IBrowserState;
     history: IHistoryState;
     overlays: IOverlaysState;
+    healthCheck: IHealthCheckSessionState;
     extensions: {
       available: IAvailableExtension[];
       optional: { [extId: string]: IExtensionOptional[] };

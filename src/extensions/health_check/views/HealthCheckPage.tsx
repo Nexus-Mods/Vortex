@@ -13,6 +13,9 @@ import {
   TabPanel,
   TabProvider,
 } from "../../../tailwind/components/next/tabs";
+import { useSelector } from "react-redux";
+import { modRequirementsCheckResult } from "../selectors";
+import type { IState } from "../../../types/api";
 
 const Mod = ({
   isHidden,
@@ -57,10 +60,20 @@ const Mod = ({
   );
 };
 
-function HealthCheckPage() {
+interface IHealthCheckPageProps {
+  onRefresh?: () => void;
+  onDownloadRequirements?: (modIds: number[]) => void;
+}
+
+function HealthCheckPage({
+  onRefresh,
+  onDownloadRequirements,
+}: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const [showDetail, setShowDetail] = React.useState(false);
   const [selectedTab, setSelectedTab] = React.useState("active");
+
+  const modRequirements = useSelector(modRequirementsCheckResult);
 
   if (showDetail) {
     return <HealthCheckDetailPage onBack={() => setShowDetail(false)} />;
@@ -114,7 +127,10 @@ function HealthCheckPage() {
                 leftIconPath="mdiCog"
                 size="sm"
                 title={t("common:::settings")}
-              />
+                onClick={() => onRefresh?.()}
+              >
+                {t("common:::refresh")}
+              </Button>
             </div>
           </div>
 
