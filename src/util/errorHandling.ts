@@ -14,7 +14,7 @@ import { log } from "./log";
 import { bundleAttachment } from "./message";
 import opn from "./opn";
 import { getSafe } from "./storeHelper";
-import { flatten, getAllPropertyNames, spawnSelf, truthy } from "./util";
+import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
 import type * as RemoteT from "@electron/remote";
 import type {
@@ -170,7 +170,7 @@ function nexusReport(
 
   const referenceId = require("uuid").v4();
 
-  const oauthCredentials: IOAuthCredentials =
+  const oauthCredentials: IOAuthCredentials | undefined =
     oauthToken !== undefined
       ? {
           fingerprint: oauthToken.fingerprint,
@@ -241,7 +241,7 @@ export function setOutdated(api: IExtensionApi) {
   if (process.env.NODE_ENV === "development") {
     return;
   }
-  const state = api.store.getState();
+  const state = api.store?.getState();
   const version = getApplication().version;
   if (state.persistent.nexus?.newestVersion !== undefined) {
     try {
@@ -251,9 +251,12 @@ export function setOutdated(api: IExtensionApi) {
       log("warn", "failed to update outdated status", err);
     }
   }
-  api.onStateChange(["persistent", "nexus", "newestVersion"], (prev, next) => {
-    outdated = semver.lt(version, next);
-  });
+  api.onStateChange?.(
+    ["persistent", "nexus", "newestVersion"],
+    (prev, next) => {
+      outdated = semver.lt(version, next);
+    },
+  );
 }
 
 export function isOutdated(): boolean {
@@ -276,52 +279,43 @@ if (ipcRenderer !== undefined) {
   });
 }
 
-export function sendReportFile(fileName: string): PromiseBB<IFeedbackResponse> {
+export async function sendReportFile(
+  fileName: string,
+): Promise<IFeedbackResponse | undefined> {
   let reportInfo: any;
-  return PromiseBB.resolve(fs.readFile(fileName, { encoding: "utf8" }))
-    .then((reportData) => {
-      reportInfo = JSON.parse(reportData.toString());
-      const userData = reportInfo["userData"] ?? getVortexPath("userData");
-      // currently attaching a log for any crash-type report
-      // if (reportInfo.error.attachLog) {
-      return bundleAttachment({
-        attachments: [
-          {
-            id: "logfile",
-            type: "file",
-            data: path.join(userData, "vortex.log"),
-            description: "Vortex Log",
-          },
-          {
-            id: "logfile2",
-            type: "file",
-            data: path.join(userData, "vortex1.log"),
-            description: "Vortex Log (old)",
-          },
-        ],
-      });
-    })
-    .then((attachment) => {
-      const {
-        type,
-        error,
-        labels,
-        token,
-        reportProcess,
-        sourceProcess,
-        context,
-      } = reportInfo;
-      return sendReport(
-        type,
-        error,
-        context,
-        labels,
-        token,
-        reportProcess,
-        sourceProcess,
-        attachment,
-      );
-    });
+  const reportData = await Promise.resolve(
+    fs.readFile(fileName, { encoding: "utf8" }),
+  );
+  reportInfo = JSON.parse(reportData.toString());
+  const userData = reportInfo["userData"] ?? getVortexPath("userData");
+  const attachment = await bundleAttachment({
+    attachments: [
+      {
+        id: "logfile",
+        type: "file",
+        data: path.join(userData, "vortex.log"),
+        description: "Vortex Log",
+      },
+      {
+        id: "logfile2",
+        type: "file",
+        data: path.join(userData, "vortex1.log"),
+        description: "Vortex Log (old)",
+      },
+    ],
+  });
+  const { type, error, labels, token, reportProcess, sourceProcess, context } =
+    reportInfo;
+  return await sendReport(
+    type,
+    error,
+    context,
+    labels,
+    token,
+    reportProcess,
+    sourceProcess,
+    attachment,
+  );
 }
 
 export function sendReport(
@@ -333,7 +327,7 @@ export function sendReport(
   reporterProcess: string,
   sourceProcess: string,
   attachment: string,
-): PromiseBB<IFeedbackResponse> {
+): PromiseBB<IFeedbackResponse | undefined> {
   const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === "development") {
@@ -373,17 +367,17 @@ export function sendReport(
   }
 }
 
-let defaultWindow: BrowserWindow = null;
+let defaultWindow: BrowserWindow | null = null;
 
-export function setWindow(window: BrowserWindow): void {
+export function setWindow(window: BrowserWindow | null): void {
   defaultWindow = window;
 }
 
-export function getWindow(): BrowserWindow {
+export function getWindow(): BrowserWindow | null {
   return defaultWindow;
 }
 
-let currentWindow: BrowserWindow;
+let currentWindow: BrowserWindow | null = null;
 
 function getCurrentWindow() {
   if (currentWindow === undefined) {
@@ -394,8 +388,10 @@ function getCurrentWindow() {
   return currentWindow;
 }
 
-export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
-  if (!truthy(win)) {
+export function getVisibleWindow(
+  win?: BrowserWindow | null,
+): BrowserWindow | null {
+  if (!win) {
     win = getCurrentWindow() ?? getWindow();
   }
 
@@ -405,8 +401,8 @@ export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
 function showTerminateError(
   error: IError,
   state: any,
-  source: string,
-  allowReport: boolean,
+  source: string | undefined,
+  allowReport: boolean | undefined,
   withDetails: boolean,
 ): boolean {
   const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
@@ -420,7 +416,7 @@ function showTerminateError(
 
   const contextNow = { ...globalContext };
 
-  let detail: string = error.details;
+  let detail: string | undefined = error.details;
   if (withDetails) {
     detail = error.stack || "";
     if (error.path) {
@@ -494,7 +490,7 @@ export function terminate(
   const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
   let win =
     process.type === "renderer" ? remote.getCurrentWindow() : defaultWindow;
-  if (truthy(win) && (win.isDestroyed() || !win.isVisible())) {
+  if (win && (win.isDestroyed() || !win.isVisible())) {
     win = null;
   }
 
@@ -605,8 +601,8 @@ export function toError(
     case "object": {
       // object, but not an Error
       let message: string;
-      let stack: string;
-      if (!truthy(input) || getAllPropertyNames(input).length === 0) {
+      let stack: string | undefined;
+      if (!input || getAllPropertyNames(input).length === 0) {
         // this is bad...
         message = `An empty error message was thrown: "${inspect(input)}"`;
       } else if (input.error !== undefined && input.error instanceof Error) {
