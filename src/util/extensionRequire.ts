@@ -5,7 +5,7 @@ import { Module } from "module";
 import * as reduxAct from "redux-act";
 import { dynreq } from "vortex-run";
 import * as api from "../index";
-import { log, type LogLevel } from "./log";
+import { type LogLevel } from "./log";
 
 const identity = (input) => input;
 
@@ -107,7 +107,6 @@ function extensionRequire(
 ): typeof Module.prototype.require {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function(this: Module, id) {
-    log("info", "fucking hell", { id: this.id, filename: this.filename });
     if (id === "vortex-api") {
       const ext = this.filename ? getExtensions().find((iter) =>
         this.filename.startsWith(iter.path),

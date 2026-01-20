@@ -2,6 +2,8 @@ var webpack = require("webpack");
 var nodeExternals = require("webpack-node-externals");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
+const ReactRefreshTypeScript = require("react-refresh-typescript");
 
 module.exports = (env, argv) => {
   const mode = argv.mode;
@@ -28,6 +30,10 @@ module.exports = (env, argv) => {
           loader: "ts-loader",
           exclude: /node_modules/,
           options: {
+            transpileOnly: isDev, // needed for React Refresh
+            getCustomTransformers: () => ({
+              before: [...(isDev ? [ReactRefreshTypeScript()] : [])],
+            }),
             compilerOptions: {
               sourceMap: true,
               inlineSourceMap: false,
@@ -37,7 +43,7 @@ module.exports = (env, argv) => {
         },
       ],
     },
-    plugins: [...(isDev ? [new webpack.HotModuleReplacementPlugin()] : [])],
+    plugins: [...(isDev ? [new ReactRefreshWebpackPlugin()] : [])],
     resolve: { extensions: [".js", ".jsx", ".ts", ".tsx", ".json"] },
     optimization: isDev
       ? { emitOnErrors: false }
@@ -72,6 +78,7 @@ module.exports = (env, argv) => {
           headers: {
             "Access-Control-Allow-Origin": "*",
           },
+          watchFiles: ["src/**/*.{ts,tsx}"],
           static: {
             directory: path.join(__dirname, "out"),
             publicPath: "/",

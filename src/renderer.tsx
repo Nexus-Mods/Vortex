@@ -115,7 +115,7 @@ import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
-import {} from "./util/extensionRequire";
+import { } from "./util/extensionRequire";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import presetManager from "./util/PresetManager";
 import { reduxLogger } from "./store/reduxLogger";
@@ -167,8 +167,8 @@ function initialState(): any {
       log(
         "error",
         "Failed to transfer application state. This indicates an issue with a " +
-          "foreign library we need help debugging with. Please pack up and send in the file" +
-          `"${dumpPath}"`,
+        "foreign library we need help debugging with. Please pack up and send in the file" +
+        `"${dumpPath}"`,
       );
 
       // we don't understand the error yet but most likely large state gets corrupted during IPC
@@ -408,7 +408,7 @@ function errorHandler(evt: any) {
   if (
     error.message === "Cannot read property 'parentNode' of undefined" ||
     error.message ===
-      "Cannot read properties of undefined (reading 'parentNode')"
+    "Cannot read properties of undefined (reading 'parentNode')"
   ) {
     // thrown by packery - seemingly at random
     return;
@@ -848,3 +848,9 @@ function renderer(extensions: ExtensionManager) {
 }
 
 init().then((extensions: ExtensionManager) => renderer(extensions));
+
+if ("hot" in module && module.hot) {
+  (module as any).hot.accept("./renderer.tsx", () => {
+    log("warn", "i fucking hate webpack!!");
+  });
+}
