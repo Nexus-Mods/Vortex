@@ -140,7 +140,7 @@ const ButtonIcon = ({
     );
   }
 
-  if (!!icon) {
+  if (icon) {
     return (
       <span className="nxm-button-icon flex items-center justify-center">
         {icon}
@@ -148,7 +148,7 @@ const ButtonIcon = ({
     );
   }
 
-  if (!!path) {
+  if (path) {
     return <Icon className="nxm-button-icon" path={path} size="none" />;
   }
 
