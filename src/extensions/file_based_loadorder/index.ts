@@ -263,8 +263,8 @@ async function genDeploymentEvent(
   }
 
   try {
-    let deserializedLO: LoadOrder = ([] =
-      await gameEntry.deserializeLoadOrder());
+    let deserializedLO: LoadOrder =
+      (await gameEntry.deserializeLoadOrder()) ?? [];
     if (eventType === "did-deploy") {
       // This is a deploy event - we need to restore the load order
       deserializedLO = updateSet.restore(deserializedLO);
