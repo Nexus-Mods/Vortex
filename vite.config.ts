@@ -1,8 +1,8 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import renderer from 'vite-plugin-electron-renderer';
+import { defineConfig } from "vite";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import renderer from 'vite-plugin-electron-renderer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -15,14 +15,12 @@ export default defineConfig({
     conditions: ["node"],
     mainFields: ["module", "jsnext:main", "jsnext"],
     alias: {
-      "original-fs": "./src/shims/original-fs.ts",
+      "original-fs": resolve(__dirname, "src/shims/original-fs.ts"),
     }
   },
   optimizeDeps: {
-    exclude: [
-      "original-fs",
-      "electron",
-    ]
+    noDiscovery: true,
+    include: undefined
   },
   esbuild: {
     platform: "node",
@@ -33,7 +31,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "src", "index.vite.html")
       },
-      external: ["original-fs", "electron"],
+      external: ["original-fs", "electron", "winapi"],
     },
   },
   plugins: [react(), renderer()],

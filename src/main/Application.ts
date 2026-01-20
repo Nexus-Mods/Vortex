@@ -52,7 +52,7 @@ import {
   markImported,
   querySanitize,
 } from "../store/store";
-import {} from "../util/storeHelper";
+import { } from "../util/storeHelper";
 import SubPersistor from "../store/SubPersistor";
 import {
   isMajorDowngrade,
@@ -311,8 +311,8 @@ class Application {
         (args.shared && process.platform === "win32"
           ? path.join(process.env.ProgramData, "vortex")
           : // this allows the development build to access data from the
-            // production version and vice versa
-            path.resolve(app.getPath("userData"), "..", vortexPath));
+          // production version and vice versa
+          path.resolve(app.getPath("userData"), "..", vortexPath));
       userData = path.join(userData, currentStatePath);
 
       // handle nxm:// internally
@@ -497,7 +497,7 @@ class Application {
           dialog.showErrorBox(
             "Startup failed",
             "Vortex seems to be running already. " +
-              "If you can't see it, please check the task manager.",
+            "If you can't see it, please check the task manager.",
           );
           app.quit();
         })
@@ -505,9 +505,9 @@ class Application {
           dialog.showErrorBox(
             "Startup failed",
             "Your system drive is full. " +
-              "You should always ensure your system drive has some space free (ideally " +
-              "at least 10% of the total capacity, especially on SSDs). " +
-              "Vortex can't start until you have freed up some space.",
+            "You should always ensure your system drive has some space free (ideally " +
+            "at least 10% of the total capacity, especially on SSDs). " +
+            "Vortex can't start until you have freed up some space.",
           );
           app.quit();
         })
@@ -711,7 +711,7 @@ class Application {
             dialog.showErrorBox(
               "Migration failed",
               "The migration from the previous Vortex release failed. " +
-                "Please resolve the errors you got, then try again.",
+              "Please resolve the errors you got, then try again.",
             );
             app.exit(1);
             return Promise.reject(new ProcessCanceled("Migration failed"));
@@ -1040,11 +1040,11 @@ class Application {
         // can be repaired
         return oldState !== undefined
           ? markImported(this.mBasePath).then(() => {
-              newStore.dispatch({
-                type: "__hydrate",
-                payload: oldState,
-              });
-            })
+            newStore.dispatch({
+              type: "__hydrate",
+              payload: oldState,
+            });
+          })
           : Promise.resolve();
       })
       .then(() => {
@@ -1268,7 +1268,7 @@ class Application {
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
     try {
-      this.mMainWindow.show(maximized, startMinimized);
+      this.mMainWindow.show(maximized, false);
     } catch (err) {
       if (this.mMainWindow === null) {
         // It's possible for the user to forcefully close Vortex just
@@ -1342,7 +1342,7 @@ class Application {
       const prom: Promise<void> =
         this.mMainWindow === undefined
           ? // give the main instance a moment to fully start up
-            Promise.delay(2000)
+          Promise.delay(2000)
           : Promise.resolve(undefined);
 
       prom.then(() => {

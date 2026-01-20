@@ -114,7 +114,8 @@ class MainWindow {
     );
 
     this.mWindow.loadURL(
-      pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
+      "http://localhost:5173/index.vite.html"
+      // pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
     );
     // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
@@ -316,7 +317,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-            "Moving to a sensible location.",
+          "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
@@ -396,6 +397,8 @@ class MainWindow {
         enableWebSQL: false,
         contextIsolation: false, // Required for @electron/remote compatibility
         backgroundThrottling: false,
+        webSecurity: false,
+        allowRunningInsecureContent: true,
       },
     };
   }
