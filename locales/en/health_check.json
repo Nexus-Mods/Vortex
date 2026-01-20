@@ -4,7 +4,7 @@
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "item": {
       "title": "{{modName}} may require an additional mod",
-      "description": "The following mod(s) may be required in some setups, check the mod description to confirm."
+      "description": "The following mod may be required in some setups, check the mod description to confirm."
     }
   },
   "detail": {
@@ -12,8 +12,13 @@
     "subtitle": "Suggestions may offer improvements to your experience.",
     "item": {
       "title": "{{modName}} may require an additional mod",
-      "description": "The following mod(s) may be required in some setups. Check <modLink>{{modName}}</modLink> description to confirm."
+      "description": "The following mod may be required in some setups. Check <modLink>{{modName}}</modLink> description to confirm."
     },
-    "is_this_suggestion_helpful": "Is this suggestion helpful?"
+    "was_this_suggestion_helpful": "Was this suggestion helpful?"
+  },
+  "premium_banner": {
+    "title": "Unlock 1-click installs with Premium.",
+    "subtitle": "Skip the website and install instantly.",
+    "button": "Unlock with Premium"
   }
 }

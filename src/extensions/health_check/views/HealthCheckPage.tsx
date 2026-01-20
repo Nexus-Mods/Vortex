@@ -7,13 +7,22 @@ import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
 import { Pictogram } from "../../../tailwind/components/pictogram";
+import {
+  TabBar,
+  TabButton,
+  TabPanel,
+  TabProvider,
+} from "../../../tailwind/components/next/tabs";
 
-interface HealthCheckItemProps {
+const Mod = ({
+  isHidden,
+  modName,
+  onClick,
+}: {
+  isHidden?: boolean;
   modName: string;
   onClick: () => void;
-}
-
-const Mod = ({ modName, onClick }: HealthCheckItemProps) => {
+}) => {
   const { t } = useTranslation("health_check");
 
   return (
@@ -34,9 +43,9 @@ const Mod = ({ modName, onClick }: HealthCheckItemProps) => {
       <Button
         buttonType="tertiary"
         filled="weak"
-        leftIconPath="mdiEyeOff"
+        leftIconPath={isHidden ? "mdiEye" : "mdiEyeOff"}
         size="sm"
-        title={t("common:::hide")}
+        title={isHidden ? t("common:::unhide") : t("common:::hide")}
       />
 
       <Icon
@@ -51,6 +60,7 @@ const Mod = ({ modName, onClick }: HealthCheckItemProps) => {
 function HealthCheckPage() {
   const { t } = useTranslation(["health_check", "common"]);
   const [showDetail, setShowDetail] = React.useState(false);
+  const [selectedTab, setSelectedTab] = React.useState("active");
 
   if (showDetail) {
     return <HealthCheckDetailPage onBack={() => setShowDetail(false)} />;
@@ -108,31 +118,56 @@ function HealthCheckPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-x-1.5">
-              <button>{t("common:::active")}</button>
+          <TabProvider
+            tab={selectedTab}
+            tabListId="health-check-mods"
+            tabType="secondary"
+            onSetSelectedTab={setSelectedTab}
+          >
+            <div className="flex items-center justify-between">
+              <TabBar>
+                <TabButton count={3} name={t("common:::active")} />
+                <TabButton count={1} name={t("common:::hidden")} />
+              </TabBar>
 
-              <button>{t("common:::hidden")} (0)</button>
+              <Button
+                buttonType="tertiary"
+                filled="weak"
+                leftIconPath={selectedTab === "active" ? "mdiEyeOff" : "mdiEye"}
+                size="sm"
+              >
+                {selectedTab === "active"
+                  ? `${t("common:::hide_all")} (3)`
+                  : `${t("common:::unhide_all")} (1)`}
+              </Button>
             </div>
 
-            <Button
-              buttonType="tertiary"
-              filled="weak"
-              leftIconPath="mdiEyeOff"
-              size="sm"
-            >
-              {t("common:::hide_all")}
-            </Button>
-          </div>
+            <TabPanel name="active">
+              <div className="space-y-2">
+                <Mod
+                  modName="Sprint Swim Redux SKSE"
+                  onClick={() => setShowDetail(true)}
+                />
 
-          <div className="space-y-2">
-            <Mod
-              modName="Sprint Swim Redux SKSE"
-              onClick={() => setShowDetail(true)}
-            />
+                <Mod modName="SkyUI" onClick={() => setShowDetail(true)} />
 
-            <Mod modName="SkyUI" onClick={() => setShowDetail(true)} />
-          </div>
+                <Mod
+                  modName="kryptopyr's Patch Hub"
+                  onClick={() => setShowDetail(true)}
+                />
+              </div>
+            </TabPanel>
+
+            <TabPanel name="hidden">
+              <div className="space-y-2">
+                <Mod
+                  isHidden={true}
+                  modName="Hidden mod"
+                  onClick={() => setShowDetail(true)}
+                />
+              </div>
+            </TabPanel>
+          </TabProvider>
         </div>
       </MainPage.Body>
     </MainPage>

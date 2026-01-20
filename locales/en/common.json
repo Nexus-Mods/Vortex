@@ -32,6 +32,8 @@
   "beta": "Beta",
   "hide": "Hide",
   "hide_all": "Hide all",
+  "unhide": "Unhide",
+  "unhide_all": "Unhide all",
   "active": "Active",
   "hidden": "Hidden",
   "helpful": "Helpful",

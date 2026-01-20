@@ -105,5 +105,4 @@ export type {
   TabsState,
   TabProviderProps,
   TabButtonProps,
-  TabLinkProps,
 } from "./components/next/tabs";

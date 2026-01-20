@@ -101,8 +101,8 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
   return (
     <MainPage id="health-check-detail-page">
       <MainPage.Body>
-        <div className="p-6">
-          <div className="flex justify-between items-center gap-x-6 mb-6">
+        <div className="p-6 space-y-6">
+          <div className="flex justify-between items-center gap-x-6">
             <div className="grow flex gap-x-2 items-center">
               <Pictogram name="health-check" size="sm" />
 
@@ -144,84 +144,65 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
+          <div className="flex items-center justify-between rounded bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 py-3 px-4 gap-x-6 shadow-xs mb-4 border border-premium-moderate/23">
+            <div className="flex items-center gap-x-1.5">
+              <Icon
+                className="text-netural-strong shrink-0"
+                path="mdiLightningBolt"
+              />
+
+              <div className="flex gap-x-2 items-center grow">
+                <Typography className="font-semibold">
+                  {t("premium_banner::title")}
+                </Typography>
+
+                <Typography appearance="none" className="text-premium-strong">
+                  {t("premium_banner::subtitle")}
+                </Typography>
+              </div>
+            </div>
+
+            <Button buttonType="premium" size="sm">
+              {t("premium_banner::button")}
+            </Button>
+          </div>
+
           <div className="flex items-start gap-x-3 border border-stroke-weak p-6 rounded-lg">
             <Icon
               className="mt-0.5 text-info-strong shrink-0"
               path="mdiAlertCircle"
             />
 
-            <div className="grow">
-              <Typography className="font-semibold">
-                {t("detail::item::title", {
-                  modName: "Sprint Swim Redux SKSE or Longer mod name",
-                })}
-              </Typography>
+            <div className="grow space-y-4">
+              <div className="flex gap-x-3">
+                <div className="grow">
+                  <Typography className="font-semibold">
+                    {t("detail::item::title", {
+                      modName: "Sprint Swim Redux SKSE or Longer mod name",
+                    })}
+                  </Typography>
 
-              <Typography appearance="moderate">
-                <Trans
-                  i18nKey="detail::item::description"
-                  ns="health_check"
-                  components={{
-                    modLink: (
-                      <TypographyLink
-                        as="button"
-                        appearance="primary"
-                        typographyType="inherit"
-                        variant="secondary"
-                        onClick={() => alert("to go mod page")}
-                      />
-                    ),
-                  }}
-                  values={{ modName: "Sprint Swim Redux SKSE" }}
-                />
-              </Typography>
+                  <Typography appearance="moderate">
+                    <Trans
+                      i18nKey="detail::item::description"
+                      ns="health_check"
+                      components={{
+                        modLink: (
+                          <TypographyLink
+                            as="button"
+                            appearance="primary"
+                            typographyType="inherit"
+                            variant="secondary"
+                            onClick={() => alert("to go mod page")}
+                          />
+                        ),
+                      }}
+                      values={{ modName: "Sprint Swim Redux SKSE" }}
+                    />
+                  </Typography>
+                </div>
 
-              <div className="space-y-2 my-4">
-                <Mod modName="Address Library for SKSE Plugins">
-                  Check the description before installing.
-                </Mod>
-
-                <Mod modName="Name of Nexus Mods mod with author note">
-                  {`Note from mod author:\nSelect the 2nd link down.\n\nCheck the description before installing.`}
-                </Mod>
-
-                <Mod isExternal={true} modName="Name of external mod">
-                  This mod is hosted outside Nexus Mods. Check the description
-                  before installing.
-                </Mod>
-
-                <Mod
-                  isExternal={true}
-                  modName="Name of external mod with author note"
-                >
-                  {`This mod is hosted outside Nexus Mods. Check the description before installing.\n\nNote from mod author:\nSelect the 2nd link down.`}
-                </Mod>
-              </div>
-
-              <div className="flex gap-x-3 items-center justify-end">
-                <Typography appearance="subdued">
-                  {t("detail::is_this_suggestion_helpful")}
-                </Typography>
-
-                <div className="flex gap-x-2 shrink-0">
-                  <Button
-                    buttonType="tertiary"
-                    filled="weak"
-                    leftIconPath="mdiThumbUp"
-                    size="sm"
-                    title={t("common:::helpful")}
-                  />
-
-                  <Button
-                    buttonType="tertiary"
-                    filled="weak"
-                    leftIconPath="mdiThumbDown"
-                    size="sm"
-                    title={t("common:::not_helpful")}
-                  />
-
-                  <div className="w-px bg-stroke-weak" />
-
+                <div className="shrink-0">
                   <Button
                     buttonType="tertiary"
                     filled="weak"
@@ -231,30 +212,44 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Mod modName="Address Library for SKSE Plugins">
+                  Check the description before installing.
+                </Mod>
+
+                <Mod
+                  isExternal={true}
+                  modName="Name of external mod with author note"
+                >
+                  {`This mod is hosted outside Nexus Mods. Check the description before installing.\n\nNote from mod author:\nSelect the 2nd link down.`}
+                </Mod>
+              </div>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between rounded bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 py-3 px-4 gap-x-6 shadow-xs mb-4 border border-premium-moderate/23">
-            <div className="flex items-center gap-x-1.5">
-              <Icon
-                className="text-netural-strong shrink-0"
-                path="mdiLightningBolt"
+          <div className="flex gap-x-3 items-center justify-end">
+            <Typography appearance="subdued">
+              {t("detail::was_this_suggestion_helpful")}
+            </Typography>
+
+            <div className="flex gap-x-2 shrink-0">
+              <Button
+                buttonType="tertiary"
+                filled="weak"
+                leftIconPath="mdiThumbUp"
+                size="sm"
+                title={t("common:::helpful")}
               />
 
-              <div className="flex gap-x-2 items-center grow">
-                <Typography className="font-semibold">
-                  Unlock 1-click installs with Premium.
-                </Typography>
-
-                <Typography appearance="none" className="text-premium-strong">
-                  Skip the website and install instantly.
-                </Typography>
-              </div>
+              <Button
+                buttonType="tertiary"
+                filled="weak"
+                leftIconPath="mdiThumbDown"
+                size="sm"
+                title={t("common:::not_helpful")}
+              />
             </div>
-
-            <Button buttonType="premium" size="sm">
-              Unlock with Premium
-            </Button>
           </div>
         </div>
       </MainPage.Body>
