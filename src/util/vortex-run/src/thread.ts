@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
@@ -77,8 +77,8 @@ function runThreaded(
   func: (...args: any[]) => any,
   moduleBase: string,
   ...args: any[]
-): Promise<any> {
-  return new Promise((resolve, reject) => {
+): PromiseBB<any> {
+  return new PromiseBB((resolve, reject) => {
     tmp.file(
       { postfix: ".js" },
       (err: any, tmpPath: string, fd: number, cleanup: () => void) => {

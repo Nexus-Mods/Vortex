@@ -1,7 +1,7 @@
 import { log } from "../../util/log";
 import IconBase from "./Icon.base";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import * as fs from "fs";
@@ -32,12 +32,12 @@ export interface IIconProps {
 export function installIconSet(
   set: string,
   setPath: string,
-): Promise<Set<string>> {
+): PromiseBB<Set<string>> {
   const newset = document.createElement("div");
   newset.id = "iconset-" + set;
   document.getElementById("icon-sets").appendChild(newset);
   log("info", "read font", setPath);
-  return new Promise((resolve, reject) => {
+  return new PromiseBB((resolve, reject) => {
     fs.readFile(setPath, {}, (err, data) => {
       if (err !== null) {
         return reject(err);
@@ -61,7 +61,7 @@ class Icon extends React.Component<
   IIconProps,
   { sets: { [setId: string]: Set<string> } }
 > {
-  private mLoadPromise: Promise<any>;
+  private mLoadPromise: PromiseBB<any>;
   private mMounted: boolean = false;
 
   constructor(props: IIconProps) {
@@ -87,7 +87,7 @@ class Icon extends React.Component<
     return <IconBase {...this.props} getSet={this.loadSet} />;
   }
 
-  private loadSet = (set: string): Promise<Set<string>> => {
+  private loadSet = (set: string): PromiseBB<Set<string>> => {
     const { sets } = this.state;
     if (sets[set] === undefined && !loadingIconSets.has(set)) {
       {
@@ -111,7 +111,7 @@ class Icon extends React.Component<
         newSymbols.forEach((ele) => {
           newSet.add(ele.id);
         });
-        this.mLoadPromise = Promise.resolve(newSet);
+        this.mLoadPromise = PromiseBB.resolve(newSet);
       } else {
         // make sure that no other icon instance tries to render this icon
         const fontPath = path.resolve(
@@ -135,7 +135,7 @@ class Icon extends React.Component<
         return newSet;
       });
     } else {
-      return Promise.resolve(sets[set] || null);
+      return PromiseBB.resolve(sets[set] || null);
     }
   };
 }

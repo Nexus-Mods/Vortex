@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import { pathToFileURL } from "url";
 import getVortexPath from "../util/getVortexPath";
@@ -10,7 +10,7 @@ class SplashScreen {
   public fadeOut() {
     // apparently we can't prevent the user from closing the splash with alt-f4...
     if (this.mWindow === null || this.mWindow.isDestroyed()) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
     // ensure the splash screen remains visible
     this.mWindow.setAlwaysOnTop(true);
@@ -18,7 +18,7 @@ class SplashScreen {
     // don't fade out immediately, otherwise the it looks odd
     // as the main window appears at the same time
     return (
-      Promise.delay(200)
+      PromiseBB.delay(200)
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
             try {
@@ -30,7 +30,7 @@ class SplashScreen {
         })
         // wait for the fade out animation to finish before destroying
         // the window
-        .then(() => Promise.delay(500))
+        .then(() => PromiseBB.delay(500))
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
             this.mWindow.close();
@@ -40,11 +40,11 @@ class SplashScreen {
     );
   }
 
-  public create(disableGPU: boolean): Promise<void> {
+  public create(disableGPU: boolean): PromiseBB<void> {
     const BrowserWindow: typeof Electron.BrowserWindow =
       require("electron").BrowserWindow;
 
-    return new Promise<void>((resolve, reject) => {
+    return new PromiseBB<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         log("warn", "splash screen taking awfully long");
         resolve?.();

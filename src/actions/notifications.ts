@@ -15,7 +15,7 @@ import { getErrorMessageOrDefault } from "../shared/errors";
 
 import safeCreateAction from "./safeCreateAction";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
 
 import * as reduxAct from "redux-act";
@@ -162,7 +162,7 @@ export function addNotification(notification: INotification) {
     const noti = { ...notification };
 
     if (noti.id !== undefined && suppressNotification(noti.id)) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
     if (noti.id === undefined) {
@@ -192,7 +192,7 @@ export function addNotification(notification: INotification) {
 
     dispatch(startNotification(storeNoti));
     if (noti.displayMS !== undefined) {
-      return new Promise((resolve) => {
+      return new PromiseBB((resolve) => {
         timers[noti.id] = setTimeout(() => resolve(), noti.displayMS);
       }).then(() => {
         dispatch(dismissNotification(noti.id));
@@ -203,7 +203,7 @@ export function addNotification(notification: INotification) {
 
 export function dismissNotification(id: string) {
   return (dispatch) =>
-    new Promise<void>((resolve, reject) => {
+    new PromiseBB<void>((resolve, reject) => {
       delete timers[id];
       delete notificationActions[id];
       dispatch(stopNotification(id));
@@ -213,7 +213,7 @@ export function dismissNotification(id: string) {
 
 export function dismissAllNotifications() {
   return (dispatch) =>
-    new Promise<void>((resolve, reject) => {
+    new PromiseBB<void>((resolve, reject) => {
       const ids = Array.from(
         new Set<string>(
           [].concat(Object.keys(timers), Object.keys(notificationActions)),
@@ -258,7 +258,7 @@ export function showDialog(
   inId?: string,
 ) {
   return (dispatch) => {
-    return new Promise<IDialogResult>((resolve, reject) => {
+    return new PromiseBB<IDialogResult>((resolve, reject) => {
       const id = inId || shortid();
       const defaultAction = actions.find((iter) => iter.default === true);
       const defaultLabel =

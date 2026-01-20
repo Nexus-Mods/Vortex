@@ -6,7 +6,7 @@ import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { sanitizeCSSId } from "./util";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
 import * as _ from "lodash";
 import * as path from "path";
@@ -164,7 +164,7 @@ class StyleManager {
     reject: (err: Error) => void;
   };
   private mAutoRefresh: boolean = false;
-  private mSetQueue: Promise<void> = Promise.resolve();
+  private mSetQueue: PromiseBB<void> = PromiseBB.resolve();
 
   constructor(api: IExtensionApi) {
     this.mPartials = [
@@ -259,9 +259,9 @@ class StyleManager {
     try {
       const statProm = () =>
         filePath === undefined
-          ? Promise.resolve<void>(undefined)
+          ? PromiseBB.resolve<void>(undefined)
           : path.extname(filePath) === ""
-            ? Promise.any([
+            ? PromiseBB.any([
                 fs.statAsync(filePath + ".scss"),
                 fs.statAsync(filePath + ".css"),
               ]).then(() => null)
@@ -300,10 +300,10 @@ class StyleManager {
     }
   }
 
-  public renderNow(): Promise<void> {
+  public renderNow(): PromiseBB<void> {
     this.mSetQueue = this.mSetQueue.then(
       () =>
-        new Promise<void>((resolve, reject) => {
+        new PromiseBB<void>((resolve, reject) => {
           this.mRenderDebouncer.runNow((err) => {
             if (err !== null) {
               return reject(err);
@@ -316,7 +316,7 @@ class StyleManager {
     return this.mSetQueue;
   }
 
-  private render(): Promise<void> {
+  private render(): PromiseBB<void> {
     const stylesheets: string[] = this.mPartials
       .filter((partial) => partial.file !== undefined)
       .map((partial) =>
@@ -325,7 +325,7 @@ class StyleManager {
           : partial.file,
       );
 
-    return new Promise<string>((resolve, reject) => {
+    return new PromiseBB<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send("__renderSASS", stylesheets);
     }).then((css: string) => {

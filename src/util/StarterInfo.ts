@@ -23,7 +23,7 @@ import {
 } from "./CustomErrors";
 import getVortexPath from "./getVortexPath";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
@@ -96,9 +96,9 @@ class StarterInfo implements IStarterInfo {
     onShowError: OnShowErrorFunc,
   ) {
     const game: IGame = getGame(info.gameId);
-    const launcherPromise: Promise<{ launcher: string; addInfo?: any }> =
+    const launcherPromise: PromiseBB<{ launcher: string; addInfo?: any }> =
       game.requiresLauncher !== undefined && info.isGame
-        ? Promise.resolve(
+        ? PromiseBB.resolve(
             game.requiresLauncher(path.dirname(info.exePath), info.store),
           ).catch((err) => {
             if (err instanceof UserCanceled) {
@@ -129,9 +129,9 @@ class StarterInfo implements IStarterInfo {
                 );
               }
             }
-            return Promise.resolve(undefined);
+            return PromiseBB.resolve(undefined);
           })
-        : Promise.resolve(undefined);
+        : PromiseBB.resolve(undefined);
 
     const onSpawned = () => {
       api.store.dispatch(
@@ -219,7 +219,7 @@ class StarterInfo implements IStarterInfo {
     api: IExtensionApi,
     onShowError: OnShowErrorFunc,
     onSpawned: () => void,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     const spawned = () => {
       onSpawned();
       if (["hide", "hide_recover"].includes(info.onStart)) {
@@ -327,18 +327,18 @@ class StarterInfo implements IStarterInfo {
     info: IStarterInfo,
     api: IExtensionApi,
     addInfo: any,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     let gameLauncher;
     try {
       gameLauncher = GameStoreHelper.getGameStore(launcher);
     } catch (err) {
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
     const infoObj =
       addInfo !== undefined ? addInfo : path.dirname(info.exePath);
     return gameLauncher !== undefined
       ? gameLauncher.launchGame(infoObj, api)
-      : Promise.reject(new Error(`unsupported launcher ${launcher}`));
+      : PromiseBB.reject(new Error(`unsupported launcher ${launcher}`));
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {

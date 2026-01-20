@@ -8,11 +8,12 @@ import * as fs from "./util/fs";
 import { log } from "./util/log";
 import * as selectors from "./util/selectors";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 
 export * from "./renderer/controls/api";
 export * from "./renderer/views/api";
-export { actions, Promise, fs, log, selectors, types, util };
+// TODO: don't re-export bluebird Promis as "Promise", that's fucking insidious
+export { actions, PromiseBB as Promise, fs, log, selectors, types, util };
 export { ComponentEx, PureComponentEx } from "./renderer/controls/ComponentEx";
 
 // Tailwind component library (namespaced to avoid conflicts)

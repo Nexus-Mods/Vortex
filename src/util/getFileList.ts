@@ -1,6 +1,6 @@
 import walk from "./walk";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type * as fs from "fs";
 import { getErrorCode } from "../shared/errors";
 
@@ -11,7 +11,7 @@ export interface IFileEntry {
 
 export const IGNORABLE_PREFIXES = ["__vortex", "__merged"];
 
-function getFileList(basePath: string): Promise<IFileEntry[]> {
+function getFileList(basePath: string): PromiseBB<IFileEntry[]> {
   const result: IFileEntry[] = [];
 
   return walk(basePath, (filePath: string, stats: fs.Stats) => {
@@ -22,16 +22,16 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
     ) {
       result.push({ filePath, stats });
     }
-    return Promise.resolve();
+    return PromiseBB.resolve();
   })
     .then(() => result)
     .catch((err) => {
       const code = getErrorCode(err);
       if (code === "ENOENT") {
         // if the directory doesn't exist it obviously doesn't contain files, right?
-        return Promise.resolve([]);
+        return PromiseBB.resolve([]);
       } else {
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       }
     });
 }

@@ -3,7 +3,7 @@ import { checksum } from "./checksum";
 import * as fs from "./fs";
 import { log } from "./log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { createHash } from "crypto";
 import { file } from "tmp";
 
@@ -15,7 +15,7 @@ function writeFileAtomicImpl(
   filePath: string,
   input: string | Buffer,
   attempts: number,
-): Promise<void> {
+): PromiseBB<void> {
   const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
@@ -42,8 +42,8 @@ function writeFileAtomicImpl(
         tmpPath = pathIn;
         return fs
           .writeAsync(fd, buf, 0, buf.byteLength, 0)
-          .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-          .then(() => fs.closeAsync(fd).catch(() => Promise.resolve()));
+          .then(() => fs.fsyncAsync(fd).catch(() => PromiseBB.resolve()))
+          .then(() => fs.closeAsync(fd).catch(() => PromiseBB.resolve()));
       },
       {
         cleanup: false,
@@ -56,7 +56,7 @@ function writeFileAtomicImpl(
         filePath,
         fd,
       });
-      return Promise.resolve(undefined);
+      return PromiseBB.resolve(undefined);
     })
     .then((data) => {
       if (data === undefined || checksum(data) !== hash) {
@@ -64,7 +64,7 @@ function writeFileAtomicImpl(
         return attempts > 0
           ? // retry
             writeFileAtomicImpl(filePath, input, attempts - 1)
-          : Promise.reject(new Error("Write failed, checksums differ"));
+          : PromiseBB.reject(new Error("Write failed, checksums differ"));
       } else {
         return fs.renameAsync(tmpPath, filePath).catch({ code: "EEXIST" }, () =>
           // renameAsync is supposed to overwrite so this is likely to fail as well
@@ -77,7 +77,7 @@ function writeFileAtomicImpl(
     .catch((unknownErr) => {
       const err = unknownToError(unknownErr);
       err.stack = err.stack + "\n" + stackErr.stack;
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     })
     .finally(() => {
       callCleanup();
@@ -94,15 +94,15 @@ function writeFileAtomicImpl(
  * @export
  * @param {string} srcPath
  * @param {string} destPath
- * @returns {Promise<void>}
+ * @returns {PromiseBB<void>}
  */
 export function copyFileAtomic(
   srcPath: string,
   destPath: string,
-): Promise<void> {
+): PromiseBB<void> {
   let cleanup: () => void;
   let tmpPath: string;
-  return new Promise((resolve, reject) => {
+  return new PromiseBB((resolve, reject) => {
     file(
       { template: `${destPath}.XXXXXX.tmp` },
       (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
@@ -124,22 +124,24 @@ export function copyFileAtomic(
           // if the file is currently in use, try a second time
           // 100ms later
           log("debug", "file locked, retrying delete", destPath);
-          return Promise.delay(100).then(() => fs.unlinkAsync(destPath));
+          return PromiseBB.delay(100).then(() => fs.unlinkAsync(destPath));
         } else if (code === "ENOENT") {
           // file doesn't exist anyway? no problem
-          return Promise.resolve();
+          return PromiseBB.resolve();
         } else {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         }
       }),
     )
     .catch((err) =>
-      getErrorCode(err) === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+      getErrorCode(err) === "ENOENT"
+        ? PromiseBB.resolve()
+        : PromiseBB.reject(err),
     )
     .then(() =>
       tmpPath !== undefined
         ? fs.renameAsync(tmpPath, destPath)
-        : Promise.resolve(),
+        : PromiseBB.resolve(),
     )
     .catch((unknownErr) => {
       const err = unknownToError(unknownErr);
@@ -151,6 +153,6 @@ export function copyFileAtomic(
           log("error", "failed to clean up temporary file", cleanupErr);
         }
       }
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     });
 }
