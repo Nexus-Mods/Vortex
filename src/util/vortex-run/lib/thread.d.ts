@@ -1,7 +1,7 @@
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 declare function runThreaded(
   func: (...args: any[]) => any,
   moduleBase: string,
   ...args: any[]
-): Promise<any>;
+): PromiseBB<any>;
 export default runThreaded;

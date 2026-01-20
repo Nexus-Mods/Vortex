@@ -60,6 +60,14 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 5);
             height: calc(var(--spacing) * 5);
+
+            &:first-child {
+                margin-left: calc(var(--spacing) * -0.5);
+            }
+
+            &:last-child {
+                margin-right: calc(var(--spacing) * -0.5);
+            }
         }
 
         &:not(.nxm-button-icon-only) .nxm-button-icon {
@@ -163,7 +171,7 @@
 
     .nxm-button-tertiary-filled-weak {
         color: var(--color-neutral-moderate);
-        background-color: var(--color-neutral-800);
+        background-color: var(--color-translucent-100);
 
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:before {
@@ -198,14 +206,23 @@
 .nxm-button-xs,
 .nxm-button-sm {
     min-width: 0;
+    padding-inline: calc(var(--spacing) * 2);
 
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     line-height: calc(var(--spacing) * 4);
-    letter-spacing: var(--tracking-normal);
+    letter-spacing: var(--tracking-wide);
 
     & .nxm-button-icon {
         width: calc(var(--spacing) * 4);
         height: calc(var(--spacing) * 4);
+
+        &:first-child {
+            margin-left: calc(var(--spacing) * -0.5);
+        }
+
+        &:last-child {
+            margin-right: calc(var(--spacing) * -0.5);
+        }
     }
 
     &:not(.nxm-button-icon-only) .nxm-button-icon {
@@ -221,10 +238,8 @@
 
 .nxm-button-sm {
     min-height: calc(var(--spacing) * 7);
-    padding-inline: calc(var(--spacing) * 2.5);
 }
 
 .nxm-button-xs {
     min-height: calc(var(--spacing) * 6);
-    padding-inline: calc(var(--spacing) * 1.5);
 }

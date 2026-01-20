@@ -1,6 +1,6 @@
 import { log } from "./log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import type * as winapiT from "winapi-bindings";
 
@@ -35,18 +35,18 @@ function isUrlTarget(target: string): boolean {
   }
 }
 
-function openExternal(target: string): Promise<void> {
-  return Promise.resolve(shell.openExternal(target, { activate: true }));
+function openExternal(target: string): PromiseBB<void> {
+  return PromiseBB.resolve(shell.openExternal(target, { activate: true }));
 }
 
-function openLocalPath(target: string): Promise<void> {
+function openLocalPath(target: string): PromiseBB<void> {
   const resolvedTarget = isAbsolutePath(target) ? target : path.resolve(target);
 
   if (process.platform === "win32") {
     return openExternal(resolvedTarget);
   }
 
-  return Promise.resolve(shell.openPath(resolvedTarget)).then((error) => {
+  return PromiseBB.resolve(shell.openPath(resolvedTarget)).then((error) => {
     if (error) {
       throw new Error(error);
     }
@@ -73,12 +73,12 @@ if (ipcMain !== undefined && winapi?.ShellExecuteEx !== undefined) {
   });
 }
 
-function open(target: string, wait?: boolean): Promise<void> {
+function open(target: string, wait?: boolean): PromiseBB<void> {
   // TODO: technically with ShellExecuteEx we should be able to reproduce the wait behaviour
   if (winapi?.ShellExecuteEx !== undefined && !wait) {
     if (ipcRenderer !== undefined) {
       ipcRenderer.send("__opn_win32", target);
-      return Promise.resolve();
+      return PromiseBB.resolve();
     } else {
       try {
         winapi.ShellExecuteEx({
@@ -87,9 +87,9 @@ function open(target: string, wait?: boolean): Promise<void> {
           file: target,
           mask: ["flag_no_ui"],
         });
-        return Promise.resolve();
+        return PromiseBB.resolve();
       } catch (err) {
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       }
     }
   } else {
@@ -106,7 +106,7 @@ function open(target: string, wait?: boolean): Promise<void> {
       return openPromise;
     }
 
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 }
 

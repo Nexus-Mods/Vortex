@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import { Typography } from "../typography";
 import { TabBar } from "./tab-bar";
-import { TabButton, TabLink } from "./tab";
+import { TabButton } from "./tab";
 import { TabPanel } from "./tab-panel";
 import { TabProvider } from "./tabs.context";
 
@@ -37,6 +37,7 @@ export const TabsDemo = () => {
             <TabButton name="Files" count={42} />
             <TabButton name="Comments" count={156} />
             <TabButton name="Settings" />
+            <TabButton disabled={true} name="Disabled" />
           </TabBar>
 
           <div className="mt-6">
@@ -86,43 +87,91 @@ export const TabsDemo = () => {
                 </Typography>
               </div>
             </TabPanel>
+
+            <TabPanel name="Disabled">
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Disabled</strong>
+                </Typography>
+              </div>
+            </TabPanel>
           </div>
         </TabProvider>
       </div>
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-md" appearance="strong">
-          Tabs with Link Tab
+          Basic Secondary Tabs
         </Typography>
 
         <TabProvider
           tab={selectedTab2}
-          tabListId="demo-tabs-with-link"
+          tabListId="demo-secondary-tabs"
+          tabType="secondary"
           onSetSelectedTab={setSelectedTab2}
         >
           <TabBar>
             <TabButton name="Overview" />
-            <TabButton name="Details" />
-            <TabLink
-              name="External Docs"
-              href="https://nexusmods.com"
-              target="_blank"
-            />
+            <TabButton name="Files" count={42} />
+            <TabButton name="Comments" count={156} />
+            <TabButton name="Settings" />
+            <TabButton disabled={true} name="Disabled" />
           </TabBar>
 
           <div className="mt-6">
             <TabPanel name="Overview">
-              <Typography typographyType="body-md" appearance="subdued">
-                Overview content. Notice the "External Docs" tab is a link, not
-                a button.
-              </Typography>
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Overview Tab Content</strong>
+                </Typography>
+                <Typography typographyType="body-md" appearance="subdued">
+                  This is the overview panel. Click other tabs to see different
+                  content.
+                </Typography>
+              </div>
             </TabPanel>
 
-            <TabPanel name="Details">
-              <Typography typographyType="body-md" appearance="subdued">
-                Details content. Link tabs can be focused with keyboard
-                navigation but don't change content.
-              </Typography>
+            <TabPanel name="Files">
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Files Tab Content (42 files)</strong>
+                </Typography>
+                <Typography typographyType="body-md" appearance="subdued">
+                  Notice the count badge showing 42 files. This tab demonstrates
+                  count badges.
+                </Typography>
+              </div>
+            </TabPanel>
+
+            <TabPanel name="Comments">
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Comments Tab Content (156 comments)</strong>
+                </Typography>
+                <Typography typographyType="body-md" appearance="subdued">
+                  The count badge uses the numeral library for proper formatting
+                  (e.g., 1,234).
+                </Typography>
+              </div>
+            </TabPanel>
+
+            <TabPanel name="Settings">
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Settings Tab Content</strong>
+                </Typography>
+                <Typography typographyType="body-md" appearance="subdued">
+                  This tab has no count badge, which is optional.
+                </Typography>
+              </div>
+            </TabPanel>
+
+            <TabPanel name="Disabled">
+              <div className="space-y-4">
+                <Typography typographyType="body-lg" appearance="moderate">
+                  <strong>Disabled</strong>
+                </Typography>
+              </div>
             </TabPanel>
           </div>
         </TabProvider>

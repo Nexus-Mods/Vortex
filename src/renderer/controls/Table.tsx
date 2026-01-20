@@ -29,7 +29,7 @@ import TableRow from "./table/TableRow";
 import ToolbarIcon from "./ToolbarIcon";
 import Usage from "./Usage";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import update from "immutability-helper";
 import * as _ from "lodash";
 import * as React from "react";
@@ -213,7 +213,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeaderUpdateDebouncer = new Debouncer(
       () => {
         this.updateColumnWidth();
-        return Promise.resolve();
+        return PromiseBB.resolve();
       },
       200,
       false,
@@ -1301,7 +1301,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         ).then((cont: boolean) =>
           cont && iterations > 0
             ? this.scrollToItem(item, false, iterations - 1)
-            : Promise.resolve(),
+            : PromiseBB.resolve(),
         );
       } else {
         this.mScrollRef.scrollTop = targetPos;
@@ -1376,10 +1376,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private updateCalculatedValues(
     props: IProps,
     forceUpdateId?: string,
-  ): Promise<string[]> {
+  ): PromiseBB<string[]> {
     this.mNextUpdateState = props;
     if (this.mUpdateInProgress) {
-      return Promise.resolve([]);
+      return PromiseBB.resolve([]);
     }
     this.mUpdateInProgress = true;
 
@@ -1393,10 +1393,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
-    return Promise.map(Object.keys(data), (rowId: string) => {
+    return PromiseBB.map(Object.keys(data), (rowId: string) => {
       const delta: any = {};
 
-      return Promise.map(objects, (attribute: ITableAttribute) => {
+      return PromiseBB.map(objects, (attribute: ITableAttribute) => {
         // avoid recalculating if the source data hasn't changed. To support
         // isVolatile we still go through each attribute even if the entire row didn't change
         if (
@@ -1404,12 +1404,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           attribute.id !== forceUpdateId &&
           oldState.data[rowId] === data[rowId]
         ) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
         if (attribute.calc === undefined) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
-        return Promise.resolve(attribute.calc(data[rowId], t))
+        return PromiseBB.resolve(attribute.calc(data[rowId], t))
           .then((newValue) => {
             if (
               !_.isEqual(
@@ -1441,7 +1441,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       });
     })
       .then(() =>
-        Promise.map(Object.keys(oldState.data), (rowId) => {
+        PromiseBB.map(Object.keys(oldState.data), (rowId) => {
           if (data[rowId] === undefined) {
             delete newValues[rowId];
           }
@@ -1450,7 +1450,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       .then(
         () =>
           // once everything is recalculated, update the cache
-          new Promise<void>((resolve, reject) => {
+          new PromiseBB<void>((resolve, reject) => {
             this.updateState(
               update(this.mNextState, {
                 calculatedValues: { $set: newValues },
@@ -1472,12 +1472,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           // another update was queued while this was active
           return this.updateCalculatedValues(this.mNextUpdateState);
         } else {
-          return Promise.resolve(Array.from(changedColumns));
+          return PromiseBB.resolve(Array.from(changedColumns));
         }
       })
       .catch((err) => {
         this.mUpdateInProgress = false;
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       });
   }
 

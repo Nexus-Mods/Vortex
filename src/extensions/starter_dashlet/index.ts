@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import path from "path";
 import { fs } from "../..";
 
@@ -19,7 +19,7 @@ import settingsReducer from "./reducers";
 import Tools from "./Tools";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
-function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
+function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   const state = api.store.getState();
   const notifyInvalid = () => {
     api.sendNotification({
@@ -49,7 +49,7 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
 
   const gameMode = activeGameId(state);
   if (gameMode === undefined) {
-    return Promise.resolve(undefined);
+    return PromiseBB.resolve(undefined);
   }
   const primaryToolId = getSafe(
     state,
@@ -77,26 +77,26 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
       const requiredFiles = primaryTool.requiredFiles.map((file) =>
         path.join(workingDir, file),
       );
-      return Promise.each(requiredFiles, (file: string) => fs.statAsync(file))
-        .then(() => Promise.resolve(undefined))
+      return PromiseBB.each(requiredFiles, (file: string) => fs.statAsync(file))
+        .then(() => PromiseBB.resolve(undefined))
         .catch((err) => {
           notifyInvalid();
           api.store.dispatch(setPrimaryTool(gameMode, undefined));
-          return Promise.resolve(undefined);
+          return PromiseBB.resolve(undefined);
         });
     }
   }
 
-  return Promise.resolve(undefined);
+  return PromiseBB.resolve(undefined);
 }
 
-const onDeploymentEvent = (api: IExtensionApi): Promise<void> => {
+const onDeploymentEvent = (api: IExtensionApi): PromiseBB<void> => {
   const state = api.store.getState();
   const gameMode = activeGameId(state);
   if (gameMode !== undefined) {
     return api.emitAndAwait("discover-tools", gameMode);
   }
-  return Promise.resolve();
+  return PromiseBB.resolve();
 };
 
 const toolsValidation = memoize(validateTools);
@@ -146,14 +146,14 @@ function validateTools(
     {},
   );
   if (discovery?.path === undefined) {
-    return Promise.resolve([]);
+    return PromiseBB.resolve([]);
   }
 
-  return Promise.reduce(
+  return PromiseBB.reduce(
     starters,
     (accum, iter) => {
       if (!iter?.exePath) {
-        return Promise.resolve(accum);
+        return PromiseBB.resolve(accum);
       }
       const exePath = path.isAbsolute(iter.exePath)
         ? iter.exePath
@@ -161,8 +161,8 @@ function validateTools(
       return fs
         .statAsync(exePath)
         .then(() => accum.push(iter.id))
-        .catch(() => Promise.resolve())
-        .then(() => Promise.resolve(accum));
+        .catch(() => PromiseBB.resolve())
+        .then(() => PromiseBB.resolve(accum));
     },
     [],
   );

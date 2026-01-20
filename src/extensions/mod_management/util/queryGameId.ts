@@ -14,7 +14,7 @@ import {
   nexusGameId,
 } from "../../nexus_integration/util/convertGameId";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 
 /**
  * Determine which game to install a download for.
@@ -24,7 +24,7 @@ function queryGameId(
   store: ThunkStore<any>,
   downloadGameIds: string[],
   fileName: string,
-): Promise<string> {
+): PromiseBB<string> {
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
@@ -35,12 +35,12 @@ function queryGameId(
   if (gameMode === undefined && downloadGameIds.length === 1) {
     // Surely if there's no active game, and the downloaded game id
     //  array contains a single element, then we can just use that.
-    return Promise.resolve(downloadGameIds[0]);
+    return PromiseBB.resolve(downloadGameIds[0]);
   }
 
   if (downloadGameIds.indexOf(gameMode) !== -1) {
     // the managed game is compatible to the archive so use that
-    return Promise.resolve(gameMode);
+    return PromiseBB.resolve(gameMode);
   }
 
   // Check for game ID conversion compatibility (e.g., skyrimse <-> skyrimspecialedition)
@@ -52,12 +52,12 @@ function queryGameId(
       convertGameIdReverse(games, id),
     );
     if (convertedDownloadIds.indexOf(gameMode) !== -1) {
-      return Promise.resolve(gameMode);
+      return PromiseBB.resolve(gameMode);
     }
     // Check if current game's nexus ID matches any downloadGameIds
     const currentGameNexusId = nexusGameId(currentGame);
     if (downloadGameIds.indexOf(currentGameNexusId) !== -1) {
-      return Promise.resolve(gameMode);
+      return PromiseBB.resolve(gameMode);
     }
   }
 
@@ -66,7 +66,7 @@ function queryGameId(
     downloadGameIds[0] === SITE_ID &&
     fileName.toLowerCase().includes("extension")
   ) {
-    return Promise.resolve(downloadGameIds[0]);
+    return PromiseBB.resolve(downloadGameIds[0]);
   }
 
   const profiles = state.persistent.profiles;
@@ -85,7 +85,7 @@ function queryGameId(
   );
 
   // ask the user
-  return new Promise<string>((resolve, reject) => {
+  return new PromiseBB<string>((resolve, reject) => {
     const options = [
       { label: "Cancel", action: () => reject(new UserCanceled()) },
     ];

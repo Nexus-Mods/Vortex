@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 import type { IDialogResult } from "../../../types/IDialog";
@@ -17,7 +17,7 @@ export const DOWNLOADS_DIR_TAG = "__vortex_downloads_folder";
 export function writeDownloadsTag(
   api: IExtensionApi,
   tagPath: string,
-): Promise<void> {
+): PromiseBB<void> {
   const state: IState = api.store.getState();
   const data = {
     instance: state.app.instanceId,
@@ -53,22 +53,22 @@ export function writeDownloadsTag(
       .then((res) =>
         res.action === "Proceed"
           ? fs.removeAsync(path.join(tagPath, DOWNLOADS_DIR_TAG))
-          : Promise.reject(err),
+          : PromiseBB.reject(err),
       )
-      .catch({ code: "ENOENT" }, (remErr) => Promise.resolve())
+      .catch({ code: "ENOENT" }, (remErr) => PromiseBB.resolve())
       .then(() => writeTag())
-      .catch((innerErr) => Promise.reject(err));
+      .catch((innerErr) => PromiseBB.reject(err));
   });
 }
 
-function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
+function removeDownloadsMetadata(api: IExtensionApi): PromiseBB<void> {
   const state: IState = api.store.getState();
   const downloads: { [id: string]: IDownload } =
     state.persistent.downloads.files;
-  return Promise.each(Object.keys(downloads), (dlId) => {
+  return PromiseBB.each(Object.keys(downloads), (dlId) => {
     api.store.dispatch(removeDownload(dlId));
-    return Promise.resolve();
-  }).then(() => Promise.resolve());
+    return PromiseBB.resolve();
+  }).then(() => PromiseBB.resolve());
 }
 
 function queryDownloadFolderInvalid(
@@ -76,7 +76,7 @@ function queryDownloadFolderInvalid(
   err: Error,
   dirExists: boolean,
   currentDownloadPath: string,
-): Promise<IDialogResult> {
+): PromiseBB<IDialogResult> {
   if (dirExists) {
     // dir exists but not tagged
     return api.showDialog(
@@ -125,7 +125,7 @@ function queryDownloadFolderInvalid(
 function validateDownloadsTag(
   api: IExtensionApi,
   tagPath: string,
-): Promise<void> {
+): PromiseBB<void> {
   return fs
     .readFileAsync(tagPath, { encoding: "utf8" })
     .then((data) => {
@@ -146,11 +146,11 @@ function validateDownloadsTag(
           )
           .then((result) =>
             result.action === "Cancel"
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve(),
+              ? PromiseBB.reject(new UserCanceled())
+              : PromiseBB.resolve(),
           );
       }
-      return Promise.resolve();
+      return PromiseBB.resolve();
     })
     .catch(() => {
       return api
@@ -166,13 +166,13 @@ function validateDownloadsTag(
         )
         .then((result) =>
           result.action === "Cancel"
-            ? Promise.reject(new UserCanceled())
-            : Promise.resolve(),
+            ? PromiseBB.reject(new UserCanceled())
+            : PromiseBB.resolve(),
         );
     });
 }
 
-export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
+export function ensureDownloadsDirectory(api: IExtensionApi): PromiseBB<void> {
   const state: IState = api.getState();
 
   let currentDownloadPath = getDownloadPath(state.settings.downloads.path);
@@ -191,7 +191,9 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
         Object.keys(state.persistent.downloads.files ?? {}).length === 0
       ) {
         return fs
-          .ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve())
+          .ensureDirWritableAsync(currentDownloadPath, () =>
+            PromiseBB.resolve(),
+          )
           .catch({ code: "ENOENT" }, () => {
             // user has no downloads yet so no point asking them for the location but
             // the current one is invalid so we reset
@@ -201,7 +203,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
             );
             return fs
               .ensureDirWritableAsync(currentDownloadPath, () =>
-                Promise.resolve(),
+                PromiseBB.resolve(),
               )
               .then(() => ensureDownloadsDirectory(api))
               .then(() =>
@@ -222,7 +224,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
       ).then((result) => {
         if (result.action === "Quit Vortex") {
           getApplication().quit(0);
-          return Promise.reject(new UserCanceled());
+          return PromiseBB.reject(new UserCanceled());
         } else if (result.action === "Reinitialize") {
           const id = shortid();
           api.sendNotification({
@@ -233,7 +235,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
           return removeDownloadsMetadata(api)
             .then(() =>
               fs.ensureDirWritableAsync(currentDownloadPath, () =>
-                Promise.resolve(),
+                PromiseBB.resolve(),
               ),
             )
             .catch(() => {
@@ -249,7 +251,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
                 },
                 [{ label: "Close" }],
               );
-              return Promise.reject(
+              return PromiseBB.reject(
                 new ProcessCanceled(
                   "Failed to reinitialize download directory",
                 ),
@@ -259,7 +261,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
               api.dismissNotification(id);
             });
         } else if (result.action === "Ignore") {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         } else {
           // Browse...
           return api
@@ -269,7 +271,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
             })
             .then((selectedPath) => {
               if (!truthy(selectedPath)) {
-                return Promise.reject(new UserCanceled());
+                return PromiseBB.reject(new UserCanceled());
               }
               return validateDownloadsTag(
                 api,
@@ -277,7 +279,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): Promise<void> {
               ).then(() => {
                 currentDownloadPath = selectedPath;
                 api.store.dispatch(setDownloadPath(currentDownloadPath));
-                return Promise.resolve();
+                return PromiseBB.resolve();
               });
             })
             .catch(() => ensureDownloadsDirectory(api));

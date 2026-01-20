@@ -9,7 +9,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { setModArchiveId } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 
 /**
@@ -38,7 +38,7 @@ function refreshMods(
       fs
         .statAsync(path.join(installPath, modName))
         .then((stats) => stats.isDirectory())
-        .catch(() => Promise.resolve(false)),
+        .catch(() => PromiseBB.resolve(false)),
     )
     .then((modNames: string[]) => {
       const filtered = modNames
@@ -57,7 +57,7 @@ function refreshMods(
       );
 
       if (addedMods.length === 0 && removedMods.length === 0) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
 
       log("warn", "manual mod changed", {
@@ -108,7 +108,7 @@ function refreshMods(
         )
         .then((res) => {
           if (res.action === "Apply Changes") {
-            return Promise.map(addedMods, (modName: string) => {
+            return PromiseBB.map(addedMods, (modName: string) => {
               const fullPath: string = path.join(installPath, modName);
               return fs
                 .statAsync(fullPath)

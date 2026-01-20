@@ -14,7 +14,7 @@ import { truthy } from "../../util/util";
 
 import Icon from "./Icon";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import { webUtils } from "electron";
 
 import * as React from "react";
@@ -46,7 +46,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
 }
 
 type DropMode = "no" | "url" | "file" | "hover" | "invalid";

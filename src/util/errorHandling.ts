@@ -22,7 +22,7 @@ import type {
   IOAuthCredentials,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
 import { dialog as dialogIn, ipcRenderer } from "electron";
 import * as fs from "fs-extra";
@@ -165,7 +165,7 @@ function nexusReport(
   reporterProcess: string,
   sourceProcess: string,
   attachment: string,
-): Promise<IFeedbackResponse> {
+): PromiseBB<IFeedbackResponse> {
   const Nexus: typeof NexusT = require("@nexusmods/nexus-api").default;
 
   const referenceId = require("uuid").v4();
@@ -183,7 +183,7 @@ function nexusReport(
     id: OAUTH_CLIENT_ID,
   };
   const anonymous = oauthCredentials === undefined;
-  return Promise.resolve(
+  return PromiseBB.resolve(
     Nexus.createWithOAuth(
       oauthCredentials,
       config,
@@ -276,9 +276,9 @@ if (ipcRenderer !== undefined) {
   });
 }
 
-export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
+export function sendReportFile(fileName: string): PromiseBB<IFeedbackResponse> {
   let reportInfo: any;
-  return Promise.resolve(fs.readFile(fileName, { encoding: "utf8" }))
+  return PromiseBB.resolve(fs.readFile(fileName, { encoding: "utf8" }))
     .then((reportData) => {
       reportInfo = JSON.parse(reportData.toString());
       const userData = reportInfo["userData"] ?? getVortexPath("userData");
@@ -333,7 +333,7 @@ export function sendReport(
   reporterProcess: string,
   sourceProcess: string,
   attachment: string,
-): Promise<IFeedbackResponse> {
+): PromiseBB<IFeedbackResponse> {
   const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === "development") {
@@ -357,7 +357,7 @@ export function sendReport(
         2,
       ),
     );
-    return Promise.resolve(undefined);
+    return PromiseBB.resolve(undefined);
   } else {
     return nexusReport(
       hash,
@@ -461,7 +461,7 @@ function showTerminateError(
       buttons: ["Quit", "I understand"],
       title: "Are you sure?",
       message:
-        "The error was unhandled which may lead to unforseen consequences including data loss. " +
+        "The error was unhandled which may lead to unforeseen consequences including data loss. " +
         "Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ",
       noLink: true,
     });
@@ -700,7 +700,7 @@ export function clearErrorContext(id: string) {
 export function withContext(
   id: string,
   value: string,
-  fun: () => Promise<any>,
+  fun: () => PromiseBB<any>,
 ) {
   setErrorContext(id, value);
   return fun().finally(() => {

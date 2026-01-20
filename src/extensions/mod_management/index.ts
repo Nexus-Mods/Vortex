@@ -1265,11 +1265,10 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
         if (mod.installationPath !== undefined) {
           const instPath = installPathForGame(store.getState(), gameId);
           const fullPath = path.join(instPath, mod.installationPath);
-          log(
-            "warn",
-            "mod was not installed completelely and will be removed",
-            { mod, fullPath },
-          );
+          log("warn", "mod was not installed completely and will be removed", {
+            mod,
+            fullPath,
+          });
           // this needs to be synchronous because once is synchronous and we have to complete this
           // before the application fires the gamemode-changed event because at that point we
           // create new mods from the unknown directories (especially the .installing ones)

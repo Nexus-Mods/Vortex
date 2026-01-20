@@ -3,7 +3,7 @@ import { unknownToError } from "../shared/errors";
 import { terminate } from "../util/errorHandling";
 import { log } from "../util/log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 
 function isObject(state: unknown): state is object {
@@ -59,7 +59,7 @@ class ReduxPersistor<T> {
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};
   private mHydrating: Set<string> = new Set();
-  private mUpdateQueue: Promise<void> = Promise.resolve();
+  private mUpdateQueue: PromiseBB<void> = PromiseBB.resolve();
 
   constructor(store: Redux.Store<T>) {
     this.mStore = store;
@@ -67,19 +67,19 @@ class ReduxPersistor<T> {
     store.subscribe(this.handleChange);
   }
 
-  public finalizeWrite(): Promise<void> {
+  public finalizeWrite(): PromiseBB<void> {
     return this.mUpdateQueue;
   }
 
-  public insertPersistor(hive: string, persistor: IPersistor): Promise<void> {
+  public insertPersistor(hive: string, persistor: IPersistor): PromiseBB<void> {
     return this.resetData(hive, persistor).then(() => {
       this.mPersistors[hive] = persistor;
       persistor.setResetCallback(() => this.resetData(hive, persistor));
     });
   }
 
-  private resetData(hive: string, persistor: IPersistor): Promise<void> {
-    const kvProm: Promise<Array<{ key: PersistorKey; value: unknown }>> =
+  private resetData(hive: string, persistor: IPersistor): PromiseBB<void> {
+    const kvProm: PromiseBB<Array<{ key: PersistorKey; value: unknown }>> =
       persistor.getAllKVs !== undefined
         ? persistor
             .getAllKVs()
@@ -90,7 +90,7 @@ class ReduxPersistor<T> {
         : persistor
             .getAllKeys()
             .then((keys) =>
-              Promise.map(keys, (key) =>
+              PromiseBB.map(keys, (key) =>
                 persistor
                   .getItem(key)
                   .then((value) => ({ key, value: this.deserialize(value) }))
@@ -103,9 +103,9 @@ class ReduxPersistor<T> {
                       // The more worrying part is: If getAllKeys may return keys that don't exist,
                       // may it be missing keys that do? Why is this happening in the first place?
                       log("error", "key missing from database", { key });
-                      return Promise.resolve(undefined);
+                      return PromiseBB.resolve(undefined);
                     }
-                    return Promise.reject(err);
+                    return PromiseBB.reject(err);
                   }),
               ),
             )
@@ -128,7 +128,7 @@ class ReduxPersistor<T> {
         this.mStore.getState()[hive],
       ).then(() => {
         this.mHydrating.delete(hive);
-        return Promise.resolve();
+        return PromiseBB.resolve();
       });
     });
   }
@@ -159,15 +159,15 @@ class ReduxPersistor<T> {
     );
   };
 
-  private doProcessChange(oldState: T, newState: T): Promise<void> {
+  private doProcessChange(oldState: T, newState: T): PromiseBB<void> {
     if (oldState === newState) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
     return this.ensureStoreDiffHive(oldState, newState);
   }
 
-  private ensureStoreDiffHive(oldState: T, newState: T): Promise<void> {
+  private ensureStoreDiffHive(oldState: T, newState: T): PromiseBB<void> {
     return this.storeDiffHive(oldState, newState).catch((unknownError) => {
       const err = unknownToError(unknownError);
       // Only way this has ever gone wrong during alpha is when the disk
@@ -202,8 +202,8 @@ class ReduxPersistor<T> {
     });
   }
 
-  private storeDiffHive(oldState: T, newState: T): Promise<void> {
-    let res = Promise.resolve();
+  private storeDiffHive(oldState: T, newState: T): PromiseBB<void> {
+    let res = PromiseBB.resolve();
 
     Object.keys(oldState).forEach((key) => {
       if (
@@ -229,9 +229,9 @@ class ReduxPersistor<T> {
     statePath: string[],
     oldState: T,
     newState: T,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     if (persistor === undefined || oldState === newState) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
     try {
@@ -239,7 +239,7 @@ class ReduxPersistor<T> {
         const oldkeys = Object.keys(oldState);
         const newkeys = Object.keys(newState);
 
-        return Promise.mapSeries(oldkeys, (key) =>
+        return PromiseBB.mapSeries(oldkeys, (key) =>
           newState[key] === undefined
             ? // keys that exist in oldState but not newState
               this.remove(persistor, [].concat(statePath, key), oldState[key])
@@ -252,12 +252,12 @@ class ReduxPersistor<T> {
               ),
         )
           .then(() =>
-            Promise.mapSeries(newkeys, (key) =>
+            PromiseBB.mapSeries(newkeys, (key) =>
               oldState[key] === undefined && newState[key] !== undefined
                 ? // keys that exist in newState but not oldState
                   this.add(persistor, [].concat(statePath, key), newState[key])
                 : // keys that exist in both - already handled above
-                  Promise.resolve(),
+                  PromiseBB.resolve(),
             ),
           )
           .then(() => undefined);
@@ -267,7 +267,7 @@ class ReduxPersistor<T> {
           : this.remove(persistor, statePath, oldState);
       }
     } catch (err) {
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
   }
 
@@ -275,9 +275,9 @@ class ReduxPersistor<T> {
     persistor: IPersistor,
     statePath: string[],
     state: T,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     return isObject(state)
-      ? Promise.mapSeries(Object.keys(state), (key) =>
+      ? PromiseBB.mapSeries(Object.keys(state), (key) =>
           this.remove(persistor, [].concat(statePath, key), state[key]),
         ).then(() => undefined)
       : persistor.removeItem(statePath);
@@ -287,12 +287,12 @@ class ReduxPersistor<T> {
     persistor: IPersistor,
     statePath: string[],
     state: T,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     if (state === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
     return isObject(state)
-      ? Promise.mapSeries(Object.keys(state), (key) =>
+      ? PromiseBB.mapSeries(Object.keys(state), (key) =>
           this.add(persistor, [].concat(statePath, key), state[key]),
         ).then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));

@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 // we don't want errors from this function to be reported to the user, there is
 // sensible fallbacks for if fs calls fail
 import * as fsOrig from "fs-extra";
@@ -43,21 +43,21 @@ export interface INormalizeParameters {
 function isCaseSensitiveFailed(
   testPath: string,
   reason: string,
-): Promise<boolean> {
+): PromiseBB<boolean> {
   if (testPath === undefined) {
-    return Promise.resolve(process.platform !== "win32");
+    return PromiseBB.resolve(process.platform !== "win32");
   }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
     // on windows, assume case insensitive, everywhere else: case sensitive
-    return Promise.resolve(process.platform !== "win32");
+    return PromiseBB.resolve(process.platform !== "win32");
   } else {
     return isCaseSensitive(parentPath);
   }
 }
 
-function isCaseSensitive(testPath: string): Promise<boolean> {
-  return Promise.resolve(fsOrig.readdir(testPath))
+function isCaseSensitive(testPath: string): PromiseBB<boolean> {
+  return PromiseBB.resolve(fsOrig.readdir(testPath))
     .then((files) => {
       // we need a filename that contains letters with case variants, otherwise we can't
       // determine case sensitivity
@@ -71,13 +71,13 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
 
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
       // if they are all the same file, it's case insensitive
-      return Promise.map(
+      return PromiseBB.map(
         [fileName, fileName.toLowerCase(), fileName.toUpperCase()],
         (file) =>
-          Promise.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
+          PromiseBB.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
       );
     })
-    .then((stats: Array<Promise.Inspection<fsOrig.Stats>>) => {
+    .then((stats: Array<PromiseBB.Inspection<fsOrig.Stats>>) => {
       if (stats === null) {
         return isCaseSensitiveFailed(testPath, "Not found");
       }
@@ -107,12 +107,12 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
  * normalization anyway.
  *
  * @param {string} path
- * @returns {Promise<Normalize>}
+ * @returns {PromiseBB<Normalize>}
  */
 function getNormalizeFunc(
   testPath: string,
   parameters?: INormalizeParameters,
-): Promise<Normalize> {
+): PromiseBB<Normalize> {
   if (parameters === undefined) {
     parameters = {};
   }
@@ -141,10 +141,10 @@ function getNormalizeFunc(
       if (code === "ENOENT") {
         const parent = path.dirname(testPath);
         return parent === testPath
-          ? Promise.reject(restackErr(err, stackErr))
+          ? PromiseBB.reject(restackErr(err, stackErr))
           : getNormalizeFunc(parent);
       } else {
-        return Promise.reject(restackErr(err, stackErr));
+        return PromiseBB.reject(restackErr(err, stackErr));
       }
     });
 }

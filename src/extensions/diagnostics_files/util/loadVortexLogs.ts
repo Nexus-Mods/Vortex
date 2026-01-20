@@ -3,7 +3,7 @@ import type { LogLevel } from "../../../util/log";
 
 import type { ILog, ISession } from "../types/ISession";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import getVortexPath from "../../../util/getVortexPath";
 
@@ -23,16 +23,16 @@ function parseLine(line: string, idx: number): ILog {
   }
 }
 
-export function loadVortexLogs(): Promise<ISession[]> {
+export function loadVortexLogs(): PromiseBB<ISession[]> {
   const logPath = getVortexPath("userData");
 
-  return Promise.resolve(fs.readdirAsync(logPath))
+  return PromiseBB.resolve(fs.readdirAsync(logPath))
     .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
     .then((logFileNames: string[]) => {
       logFileNames = logFileNames.sort((lhs: string, rhs: string) =>
         rhs.localeCompare(lhs),
       );
-      return Promise.mapSeries(logFileNames, (logFileName: string) =>
+      return PromiseBB.mapSeries(logFileNames, (logFileName: string) =>
         fs.readFileAsync(path.join(logPath, logFileName), "utf8"),
       );
     })

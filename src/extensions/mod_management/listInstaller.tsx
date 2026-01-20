@@ -6,19 +6,19 @@ import type { ISupportedInstaller } from "./types/IModInstaller";
 import type { ProgressDelegate } from "./types/InstallFunc";
 import type { ISupportedResult } from "./types/TestSupported";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import { XXHash64 } from "xxhash-addon";
 
-function testSupported(): Promise<ISupportedResult> {
-  return Promise.resolve({
+function testSupported(): PromiseBB<ISupportedResult> {
+  return PromiseBB.resolve({
     supported: true,
     requiredFiles: [],
   });
 }
 
 function makeXXHash64() {
-  return (filePath: string): Promise<string> => {
+  return (filePath: string): PromiseBB<string> => {
     return fs.readFileAsync(filePath).then((data) => {
       const buf: Buffer = XXHash64.hash(data);
       return buf.toString("base64");
@@ -33,9 +33,10 @@ function makeXXHash64() {
 function makeListInstaller(
   extractList: IFileListItem[],
   basePath: string,
-): Promise<ISupportedInstaller> {
-  let lookupFunc: (filePath: string) => Promise<string> = (filePath: string) =>
-    Promise.resolve(fileMD5(filePath));
+): PromiseBB<ISupportedInstaller> {
+  let lookupFunc: (filePath: string) => PromiseBB<string> = (
+    filePath: string,
+  ) => PromiseBB.resolve(fileMD5(filePath));
 
   let idxId = "md5";
 
@@ -49,7 +50,7 @@ function makeListInstaller(
     idxId = "xxh64";
   }
 
-  return Promise.resolve({
+  return PromiseBB.resolve({
     installer: {
       id: "list-installer",
       priority: 0,
@@ -62,7 +63,7 @@ function makeListInstaller(
       ) => {
         let prog = 0;
         // build lookup table of the existing files on disk md5 -> source path
-        return Promise.reduce(
+        return PromiseBB.reduce(
           files.filter((relPath) => !relPath.endsWith(path.sep)),
           (prev, relPath, idx, length) => {
             return lookupFunc(path.join(basePath, relPath)).then((checksum) => {

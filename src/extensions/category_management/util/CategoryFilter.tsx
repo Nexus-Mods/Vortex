@@ -13,7 +13,7 @@ import type { IMod } from "../../mod_management/types/IMod";
 import filterModInfo from "../../mod_management/util/filterModInfo";
 import { activeGameId } from "../../profile_management/selectors";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import update from "immutability-helper";
 import * as _ from "lodash";
 import * as React from "react";
@@ -191,7 +191,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
       customOption = { label: customFilter.slice(1), value: customFilter };
     }
 
-    Promise.map(filtered, (archiveId) =>
+    PromiseBB.map(filtered, (archiveId) =>
       filterModInfo({ download: props.downloads[archiveId] }, undefined).then(
         (info) => {
           if (info.category !== undefined) {

@@ -18,7 +18,7 @@ import type {
 
 import { Icon } from "../icon";
 import { Link } from "../link";
-import { XOr, joinClasses } from "../utils";
+import { type XOr, joinClasses } from "../utils";
 
 export type ButtonType =
   | "primary"

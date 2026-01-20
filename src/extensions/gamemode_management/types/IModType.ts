@@ -4,13 +4,13 @@ import type {
 } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 
 export interface IModType {
   typeId: string;
   priority: number;
   isSupported: (gameId: string) => boolean;
   getPath: (game: IGame) => string;
-  test: (installInstructions: IInstruction[]) => Promise<boolean>;
+  test: (installInstructions: IInstruction[]) => PromiseBB<boolean>;
   options: IModTypeOptions;
 }

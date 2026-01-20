@@ -24,7 +24,7 @@ import { activeGameId } from "../profile_management/selectors";
 import { iniFiles, iniFormat } from "./gameSupport";
 import renderINITweaks from "./TweakList";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as path from "path";
 import type { IniFile } from "vortex-parse-ini";
@@ -34,11 +34,11 @@ function ensureIniBackups(
   t: TFunction,
   gameMode: string,
   discovery: IDiscoveryResult,
-): Promise<void> {
-  return Promise.map(iniFiles(gameMode, discovery), (file) => {
+): PromiseBB<void> {
+  return PromiseBB.map(iniFiles(gameMode, discovery), (file) => {
     const backupFile = file + ".base";
     const bakedFile = file + ".baked";
-    return Promise.map([backupFile, bakedFile], (copy) =>
+    return PromiseBB.map([backupFile, bakedFile], (copy) =>
       fs.statAsync(copy).catch(() =>
         fs
           .copyAsync(file, copy, { noSelfCopy: true })
@@ -46,9 +46,9 @@ function ensureIniBackups(
           .catch((copyErr) => {
             if (copyErr.code === "ENOENT") {
               log("warn", "ini file missing", file);
-              return Promise.resolve();
+              return PromiseBB.resolve();
             } else {
-              return Promise.reject(copyErr);
+              return PromiseBB.reject(copyErr);
             }
           }),
       ),
@@ -91,17 +91,17 @@ function discoverSettingsChanges(
   api: IExtensionApi,
   gameMode: string,
   discovery: IDiscoveryResult,
-): Promise<void> {
+): PromiseBB<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const parser = new IniParser(genIniFormat(format));
 
   const t: TFunction = api.translate;
 
-  return Promise.map(iniFiles(gameMode, discovery), (iniFileName) => {
+  return PromiseBB.map(iniFiles(gameMode, discovery), (iniFileName) => {
     let newContent: any;
     let oldContent: any;
     return parser
@@ -118,7 +118,7 @@ function discoverSettingsChanges(
         const delta = objDiff(oldContent, newContent);
         // don't bother if there was no change
         if (Object.keys(delta).length === 0) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
         applyDelta(ini.data, delta);
         return fs.forcePerm(t, () =>
@@ -157,7 +157,10 @@ function getBaseFile(input: string): string {
   }
 }
 
-type ApplySettings = (fileName: string, parser: IniFile<any>) => Promise<void>;
+type ApplySettings = (
+  fileName: string,
+  parser: IniFile<any>,
+) => PromiseBB<void>;
 
 function bakeSettings(
   t: TFunction,
@@ -166,11 +169,11 @@ function bakeSettings(
   mods: IMod[],
   state: IState,
   onApplySettings: ApplySettings,
-): Promise<void> {
+): PromiseBB<void> {
   const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
@@ -185,9 +188,9 @@ function bakeSettings(
   const parser = new IniParser(genIniFormat(format));
 
   // get a list of all tweaks we need to apply
-  return Promise.each(mods, (mod) => {
+  return PromiseBB.each(mods, (mod) => {
     if (mod.installationPath === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
     const tweaksPath = path.join(
       modsPath,
@@ -212,12 +215,12 @@ function bakeSettings(
               path.join(tweaksPath, file),
             );
           });
-        return Promise.resolve();
+        return PromiseBB.resolve();
       })
-      .catch((err) => Promise.resolve(undefined));
+      .catch((err) => PromiseBB.resolve(undefined));
   })
     .then(() =>
-      Promise.mapSeries(baseFiles, (iniFileName) => {
+      PromiseBB.mapSeries(baseFiles, (iniFileName) => {
         // starting with the .base file for each ini, re-bake the file by applying
         // the ini tweaks
         const baseName = path.basename(iniFileName).toLowerCase();
@@ -228,7 +231,9 @@ function bakeSettings(
             fs
               .unlinkAsync(iniFileName + ".baked")
               .catch((err) =>
-                err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+                err.code === "ENOENT"
+                  ? PromiseBB.resolve()
+                  : PromiseBB.reject(err),
               )
               .then(() =>
                 fs
@@ -249,18 +254,18 @@ function bakeSettings(
                             }),
                           )
                           .then(() =>
-                            Promise.all([
+                            PromiseBB.all([
                               fs.makeFileWritableAsync(iniFileName + ".base"),
                               fs.makeFileWritableAsync(iniFileName + ".baked"),
                             ]),
                           )
-                      : Promise.reject(err),
+                      : PromiseBB.reject(err),
                   ),
               ),
           )
           .then(() => parser.read(iniFileName + ".baked"))
           .then((ini) =>
-            Promise.each(enabledTweaks[baseName] || [], (tweak) =>
+            PromiseBB.each(enabledTweaks[baseName] || [], (tweak) =>
               parser.read(tweak).then((patchIni) => {
                 ini.data = deepMerge(ini.data, patchIni.data);
               }),
@@ -274,7 +279,7 @@ function bakeSettings(
               )
               .then(() => {
                 if (iniFileName === undefined) {
-                  return Promise.reject(
+                  return PromiseBB.reject(
                     new Error(
                       `Path is undefined. Game="${gameMode}"; FileList="${baseFiles.join(", ")}"`,
                     ),
@@ -295,7 +300,7 @@ function purgeChanges(
   gameMode: string,
   discovery: IDiscoveryResult,
 ) {
-  return Promise.map(iniFiles(gameMode, discovery), (iniFileName) =>
+  return PromiseBB.map(iniFiles(gameMode, discovery), (iniFileName) =>
     fs
       .copyAsync(iniFileName + ".base", iniFileName + ".baked", {
         noSelfCopy: true,
@@ -306,10 +311,10 @@ function purgeChanges(
   );
 }
 
-function testProtectedFolderAccess(): Promise<ITestResult> {
+function testProtectedFolderAccess(): PromiseBB<ITestResult> {
   if (process.platform !== "win32") {
     // Windows only! (for now)
-    return Promise.resolve(undefined);
+    return PromiseBB.resolve(undefined);
   }
 
   let writablePath;
@@ -340,7 +345,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
       "Should only exist temporarily, feel free to delete",
     )
     .then(() => fs.removeAsync(canary))
-    .then(() => Promise.resolve(undefined))
+    .then(() => PromiseBB.resolve(undefined))
     .catch((err) => {
       // Theoretically the only reason why writing/removing this file would fail is if/when
       //  an external application has blocked Vortex from running the file operation.
@@ -442,20 +447,20 @@ function main(context: IExtensionContext) {
       (gameId: string, mods: IMod[], profile: IProfile) => {
         log("debug", "baking settings", { gameId, deactivated });
         if (deactivated) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
         const state: IState = context.api.store.getState();
         const discovery: IDiscoveryResult =
           state.settings.gameMode.discovered[profile.gameId];
 
         if (discovery === undefined || discovery.path === undefined) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
 
         const onApplySettings = (
           fileName: string,
           parser: IniFile<any>,
-        ): Promise<void> =>
+        ): PromiseBB<void> =>
           context.api.emitAndAwait("apply-settings", profile, fileName, parser);
 
         return discoverSettingsChanges(context.api, profile.gameId, discovery)

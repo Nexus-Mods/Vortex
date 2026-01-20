@@ -3,16 +3,22 @@
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "item": {
-      "title": "{{modName}} requires an additional dependency.",
-      "description": "You must install the required mod for it to function properly."
+      "title": "{{modName}} may require an additional mod",
+      "description": "The following mod may be required in some setups, check the mod description to confirm."
     }
   },
   "detail": {
-    "title": "Health Check: <highlight>Suggestion</highlight>",
+    "title": "Health Check Suggestion",
     "subtitle": "Suggestions may offer improvements to your experience.",
     "item": {
-      "title": "{{modName}} may require an additional dependency",
-      "description": "The following mod/s may be required in some setups, check the mod description to confirm."
-    }
+      "title": "{{modName}} may require an additional mod",
+      "description": "The following mod may be required in some setups. Check <modLink>{{modName}}</modLink> description to confirm."
+    },
+    "was_this_suggestion_helpful": "Was this suggestion helpful?"
+  },
+  "premium_banner": {
+    "title": "Unlock 1-click installs with Premium.",
+    "subtitle": "Skip the website and install instantly.",
+    "button": "Unlock with Premium"
   }
 }

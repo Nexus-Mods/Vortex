@@ -12,7 +12,7 @@ import ReduxPersistor from "./ReduxPersistor";
 import type { StateError } from "./reduxSanity";
 import { reduxSanity } from "./reduxSanity";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { dialog, ipcMain } from "electron";
 import { forwardToRenderer } from "electron-redux";
 import encode from "encoding-down";
@@ -44,9 +44,9 @@ export function querySanitize(errors: string[]): Decision {
   return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
 }
 
-export function finalizeStoreWrite(): Promise<void> {
+export function finalizeStoreWrite(): PromiseBB<void> {
   if (basePersistor === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
   return basePersistor.finalizeWrite();
 }
@@ -132,7 +132,7 @@ export function createVortexStore(
 export function insertPersistor(
   hive: string,
   persistor: IPersistor,
-): Promise<void> {
+): PromiseBB<void> {
   return basePersistor.insertPersistor(hive, persistor);
 }
 
@@ -155,13 +155,13 @@ export function allHives(extensions: ExtensionManager): string[] {
  * @export
  * @param {Redux.Store<IState>} store
  * @param {ExtensionManager} extensions
- * @returns {Promise<void>}
+ * @returns {PromiseBB<void>}
  */
 export function extendStore(
   store: Redux.Store<IState>,
   extensions: ExtensionManager,
-): Promise<void> {
-  let queue = Promise.resolve();
+): PromiseBB<void> {
+  let queue = PromiseBB.resolve();
   extensions.apply(
     "registerPersistor",
     (hive: string, persistor: IPersistor, debounce?: number) => {
@@ -171,8 +171,8 @@ export function extendStore(
   return queue;
 }
 
-function importStateV1(importPath: string): Promise<any> {
-  return new Promise((resolve, reject) => {
+function importStateV1(importPath: string): PromiseBB<any> {
+  return new PromiseBB((resolve, reject) => {
     const leveldown: typeof leveldownT = require("leveldown");
     const db = levelup(
       encode(leveldown(importPath)),
@@ -215,15 +215,15 @@ function exists(filePath: string): boolean {
   }
 }
 
-export function markImported(basePath: string): Promise<void> {
+export function markImported(basePath: string): PromiseBB<void> {
   return fs
     .writeFileAsync(path.join(basePath, currentStatePath, IMPORTED_TAG), "")
     .then(() => null);
 }
 
-export function importState(basePath: string): Promise<any> {
+export function importState(basePath: string): PromiseBB<any> {
   if (exists(path.join(basePath, currentStatePath, IMPORTED_TAG))) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const versionDirs = [
@@ -236,13 +236,13 @@ export function importState(basePath: string): Promise<any> {
   return importVer !== undefined && importVer.func !== null
     ? // read and transform data to import
       importVer.func(importVer.path)
-    : Promise.resolve();
+    : PromiseBB.resolve();
 }
 
 export function createFullStateBackup(
   backupName: string,
   store: Redux.Store<any>,
-): Promise<string> {
+): PromiseBB<string> {
   const before = Date.now();
   // not backing up confidential, session or extension persistors
   const state = _.pick(store.getState(), [
@@ -256,7 +256,7 @@ export function createFullStateBackup(
     serialized = JSON.stringify(state, undefined, 2);
   } catch (err) {
     log("error", "Failed to create state backup", err);
-    return Promise.reject(new DataInvalid("Failed to create state backup"));
+    return PromiseBB.reject(new DataInvalid("Failed to create state backup"));
   }
 
   const basePath = path.join(
@@ -268,7 +268,7 @@ export function createFullStateBackup(
   const backupFilePath = path.join(basePath, backupName + ".json");
 
   return fs
-    .ensureDirWritableAsync(basePath, () => Promise.resolve())
+    .ensureDirWritableAsync(basePath, () => PromiseBB.resolve())
     .then(() => writeFileAtomic(backupFilePath, serialized))
     .then(() => {
       log("info", "state backup created", {

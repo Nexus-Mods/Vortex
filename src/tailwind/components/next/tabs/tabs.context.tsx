@@ -15,6 +15,8 @@ type RegisterTabArgs = {
   type: "link" | "button";
 };
 
+type TabType = "primary" | "secondary";
+
 /**
  * State for the TabContext
  */
@@ -24,6 +26,7 @@ export interface TabsState {
   registerTab: (args: RegisterTabArgs) => void;
   selectedTab: string;
   tabListId: string;
+  tabType: TabType;
 }
 
 /**
@@ -34,6 +37,7 @@ export interface TabProviderProps {
   onSetSelectedTab?: (tab: string) => void;
   tab: string;
   tabListId: string;
+  tabType?: TabType;
 }
 
 /**
@@ -49,6 +53,7 @@ export const TabProvider = ({
   onSetSelectedTab,
   tab,
   tabListId,
+  tabType = "primary",
 }: TabProviderProps) => {
   // Handles callback for tab select behaviour (e.g. scrolling)
   const setSelectedTab = (tabToSet: string) => {
@@ -131,6 +136,7 @@ export const TabProvider = ({
         registerTab,
         selectedTab,
         tabListId,
+        tabType,
       }}
     >
       {children}

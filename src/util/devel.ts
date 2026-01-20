@@ -1,7 +1,7 @@
 import { getErrorMessageOrDefault } from "../shared/errors";
 import { log } from "./log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 
 /**
  * downloads and installs development extensions that help with redux / react development.
@@ -10,8 +10,8 @@ import Promise from "bluebird";
  * @export
  * @returns
  */
-export function installDevelExtensions(): Promise<void> {
-  return new Promise<void>((resolved, reject) => {
+export function installDevelExtensions(): PromiseBB<void> {
+  return new PromiseBB<void>((resolved, reject) => {
     if (process.env.NODE_ENV === "development") {
       const installExtension = require("electron-devtools-installer").default;
       const {

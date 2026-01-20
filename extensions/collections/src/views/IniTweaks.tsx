@@ -165,7 +165,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
                       <More id='edit-ini-file' name={t('Edit Ini File')}>
                       {t('"Edit" allows you to input the ini tweak you want to '
                        + 'apply to the target ini file. Please provide the section as '
-                       + 'well as your tweak(s). e.g.:\n\n[General]\nsIntroSequence=0')}
+                       + 'well as your tweak(s). e.g.:\n\n[General]\n\nsIntroSequence=0')}
                       </More>
                   </th>
                 </tr>

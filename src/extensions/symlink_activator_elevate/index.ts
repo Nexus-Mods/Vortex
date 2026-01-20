@@ -27,7 +27,7 @@ import { remoteCode } from "./remoteCode";
 import Settings from "./Settings";
 import walk from "./walk";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import JsonSocket from "json-socket";
 import * as net from "net";
@@ -187,7 +187,7 @@ class DeploymentMethod extends LinkingDeployment {
     );
   }
 
-  public userGate(): Promise<void> {
+  public userGate(): PromiseBB<void> {
     // In the past, we used to block the user from deploying/purging his mods
     //  until he would give us consent to elevate permissions to do so.
     // That is a redundant anti-pattern as the elevation UI itself will already inform the user
@@ -202,7 +202,7 @@ class DeploymentMethod extends LinkingDeployment {
     // I could add a Promise.race([this.waitForUser(), this.waitForElevation()]) to replace the mWaitForUser
     //  functor - but what's the point - if the user clicked deploy, he surely wants to elevate his instance
     //  as well. (And if not, he can always cancel the Windows API dialog!)
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public prepare(
@@ -210,7 +210,7 @@ class DeploymentMethod extends LinkingDeployment {
     clean: boolean,
     lastActivation: IDeployedFile[],
     normalize: Normalize,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     this.mCounter = 0;
     this.mOpenRequests = {};
     return super.prepare(dataPath, clean, lastActivation, normalize);
@@ -220,7 +220,7 @@ class DeploymentMethod extends LinkingDeployment {
     gameId: string,
     dataPath: string,
     installationPath: string,
-  ): Promise<IDeployedFile[]> {
+  ): PromiseBB<IDeployedFile[]> {
     Object.keys(this.mOpenRequests).forEach((num) => {
       this.mOpenRequests[num].reject(new ProcessCanceled("unfinished"));
     });
@@ -287,7 +287,7 @@ class DeploymentMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     const dirName = path.dirname(linkPath);
     return this.ensureDir(dirName, dirTags)
       .then((created) =>
@@ -297,9 +297,11 @@ class DeploymentMethod extends LinkingDeployment {
             fs
               .removeAsync(linkPath)
               .catch((err) =>
-                err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+                err.code === "ENOENT"
+                  ? PromiseBB.resolve()
+                  : PromiseBB.reject(err),
               )
-          : Promise.resolve(),
+          : PromiseBB.resolve(),
       )
       .then(() =>
         this.emitOperation("link-file", {
@@ -309,13 +311,13 @@ class DeploymentMethod extends LinkingDeployment {
       );
   }
 
-  protected unlinkFile(linkPath: string): Promise<void> {
+  protected unlinkFile(linkPath: string): PromiseBB<void> {
     return this.emitOperation("remove-link", {
       destination: linkPath,
     });
   }
 
-  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installPath: string, dataPath: string): PromiseBB<void> {
     let hadErrors = false;
     // purge by removing all symbolic links that point to a file inside
     // the install directory
@@ -323,13 +325,13 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() =>
         walk(dataPath, (iterPath: string, stats: fs.Stats) => {
           if (!stats.isSymbolicLink()) {
-            return Promise.resolve();
+            return PromiseBB.resolve();
           }
           return fs
             .readlinkAsync(iterPath)
             .then((symlinkPath) =>
               path.relative(installPath, symlinkPath).startsWith("..")
-                ? Promise.resolve()
+                ? PromiseBB.resolve()
                 : this.emitOperation("remove-link", { destination: iterPath }),
             )
             .catch((err) => {
@@ -355,14 +357,14 @@ class DeploymentMethod extends LinkingDeployment {
             "Some files could not be purged, please check the log file",
           );
           err["attachLogOnReport"] = true;
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         } else {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       });
   }
 
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+  protected isLink(linkPath: string, sourcePath: string): PromiseBB<boolean> {
     return (
       fs
         .readlinkAsync(linkPath)
@@ -378,11 +380,11 @@ class DeploymentMethod extends LinkingDeployment {
     return false;
   }
 
-  private closeServer(): Promise<void> {
+  private closeServer(): PromiseBB<void> {
     if (this.mIPCServer === undefined || this.mQuitTimer !== undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
-    return new Promise((resolve, reject) => {
+    return new PromiseBB((resolve, reject) => {
       this.mIPCServer.close((err?: Error) => {
         // note: err may be undefined instead of null
         if (err) {
@@ -423,7 +425,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private emitAsync(command: string, args: any, requestNum: number) {
-    return new Promise<void>((resolve, reject) => {
+    return new PromiseBB<void>((resolve, reject) => {
       this.emit(command, { ...args, num: requestNum });
       this.mOpenRequests[requestNum] = { resolve, reject };
     });
@@ -433,16 +435,16 @@ class DeploymentMethod extends LinkingDeployment {
     command: string,
     args: any,
     tries: number = 3,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     const requestNum = this.mCounter++;
     return this.emitAsync(command, args, requestNum)
       .timeout(5000)
-      .catch(Promise.TimeoutError, (err) => {
+      .catch(PromiseBB.TimeoutError, (err) => {
         if (this.mOpenRequests[requestNum] === undefined) {
           // this makes no sense, why would the timeout expire if the request
           // was resolved?
           log("warn", "request timed out after being fulfilled?");
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
 
         delete this.mOpenRequests[requestNum];
@@ -450,18 +452,18 @@ class DeploymentMethod extends LinkingDeployment {
           log("debug", "retrying fs op", { command, args, tries });
           return this.emitOperation(command, args, tries - 1);
         } else {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         }
       });
   }
 
-  private startElevated(): Promise<void> {
+  private startElevated(): PromiseBB<void> {
     return this.startElevatedImpl().tapCatch(() => {
       this.api.store.dispatch(clearUIBlocker("elevating"));
     });
   }
 
-  private startElevatedImpl(): Promise<void> {
+  private startElevatedImpl(): PromiseBB<void> {
     this.mOpenRequests = {};
     this.mDone = null;
 
@@ -471,7 +473,7 @@ class DeploymentMethod extends LinkingDeployment {
     // can't use dynamic id for the task
     const ipcPath: string = useTask ? IPC_ID : `${IPC_ID}_${shortid()}`;
 
-    return new Promise<void>((resolve, reject) => {
+    return new PromiseBB<void>((resolve, reject) => {
       let elevating = false;
 
       if (this.mQuitTimer !== undefined) {
@@ -559,8 +561,8 @@ class DeploymentMethod extends LinkingDeployment {
       }
 
       const remoteProm = useTask
-        ? Promise.resolve()
-        : Promise.delay(0)
+        ? PromiseBB.resolve()
+        : PromiseBB.delay(0)
             .then(() => runElevated(ipcPath, remoteCode, {}))
             .tap((tmpPath) => {
               this.mTmpFilePath = tmpPath;
@@ -628,7 +630,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private stopElevated() {
-    return new Promise<void>((resolve, reject) => {
+    return new PromiseBB<void>((resolve, reject) => {
       this.mDone = () => {
         resolve();
       };
@@ -702,7 +704,7 @@ const __req = undefined; // dummy
 function baseFunc(
   moduleRoot: string,
   ipcPath: string,
-  main: (ipc, req: NodeRequireFunction) => void | Promise<void>,
+  main: (ipc, req: NodeRequireFunction) => void | PromiseBB<void>,
 ) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
@@ -838,8 +840,8 @@ function installTask(scriptPath: string) {
     { scriptPath, taskName, exePath, exeArgs },
   ).catch((err) =>
     err["nativeCode"] === 1223 || err["systemCode"] === 1223
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err),
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.reject(err),
   );
 }
 
@@ -851,7 +853,7 @@ function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
       // not checking if the task is actually set up correctly
       // (proper path and arguments for the action) so if we change any of those we
       // need migration code. If the user changes the task, screw them.
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
     if (delayed) {
@@ -905,7 +907,7 @@ function findTask() {
   }
 }
 
-function removeTask(): Promise<void> {
+function removeTask(): PromiseBB<void> {
   const ipcPath = `ipc_${shortid()}`;
   const ipcServer: net.Server = startIPCServer(
     ipcPath,
@@ -934,17 +936,17 @@ function removeTask(): Promise<void> {
     { taskName },
   ).catch((err) =>
     err["nativeCode"] === 1223 || err["systemCode"] === 1223
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err),
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.reject(err),
   );
 }
 
 function ensureTaskDeleted(
   api: IExtensionApi,
   delayed: boolean,
-): Promise<void> {
+): PromiseBB<void> {
   if (findTask() === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   if (delayed) {
@@ -967,7 +969,7 @@ function ensureTaskDeleted(
       ],
     });
     // ensureTaskDeleted returns immediately even though nothing has been done yet
-    return Promise.resolve();
+    return PromiseBB.resolve();
   } else {
     return removeTask();
   }
@@ -977,7 +979,7 @@ function ensureTask(
   api: IExtensionApi,
   enabled: boolean,
   delayed: boolean,
-): Promise<void> {
+): PromiseBB<void> {
   if (enabled) {
     return ensureTaskEnabled(api, delayed)
       .catch((err) => {
@@ -1012,7 +1014,7 @@ function migrate(api: IExtensionApi, oldVersion: string) {
       displayMS: null,
     });
   }
-  return Promise.resolve();
+  return PromiseBB.resolve();
 }
 
 const localState: { symlinkRight: boolean } = makeReactive({
@@ -1102,8 +1104,8 @@ function giveSymlinkRight(enable: boolean) {
     { sid, enable },
   ).catch((err) =>
     err["nativeCode"] === 1223 || err["systemCode"] === 1223
-      ? Promise.reject(new UserCanceled())
-      : Promise.reject(err),
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.reject(err),
   );
 }
 

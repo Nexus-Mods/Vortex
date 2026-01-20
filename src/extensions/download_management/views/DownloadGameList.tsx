@@ -7,7 +7,7 @@ import * as selectors from "../../../util/selectors";
 
 import { SITE_ID } from "../../gamemode_management/constants";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
 import * as React from "react";
@@ -23,7 +23,7 @@ export interface IDownloadGameListProps {
   id: string;
   currentGames: string[];
   games: IGameStored[];
-  onSetDownloadGames: (dlId: string, gameIds: string[]) => Promise<void>;
+  onSetDownloadGames: (dlId: string, gameIds: string[]) => PromiseBB<void>;
 }
 
 class DownloadGameList extends PureComponentEx<IDownloadGameListProps, {}> {

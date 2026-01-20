@@ -244,7 +244,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {this.renderChangedSources(
           t(
             "Source files were deleted " +
-              '("Save" will remove the corresponding files permanenly, "Revert" will restore them)',
+              '("Save" will remove the corresponding files permanently, "Revert" will restore them)',
           ),
           "srcdeleted",
           sd,
@@ -285,7 +285,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         {this.renderChangedFile(
           t(
             "Source files were deleted" +
-              '("Save" will remove the files permanenly, "Revert" will restore them)',
+              '("Save" will remove the files permanently, "Revert" will restore them)',
           ),
           "srcdeleted",
           srcDeleted,

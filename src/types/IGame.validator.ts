@@ -28,7 +28,7 @@ var validate = (function () {
       executable: {
         defaultProperties: [],
         description:
-          "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existance",
+          "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existence",
         typeof: "function",
       },
       id: {
@@ -1809,7 +1809,7 @@ validate.schema = {
         executable: {
           defaultProperties: [],
           description:
-            "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existance",
+            "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existence",
           typeof: "function",
         },
         id: {
@@ -1875,13 +1875,13 @@ validate.schema = {
   properties: {
     contributed: {
       description:
-        "set to name of the contributor that added support for this game. For officialy supported\ngames this is undefined",
+        "set to name of the contributor that added support for this game. For officially supported\ngames this is undefined",
       type: "string",
     },
     deploymentGate: {
       defaultProperties: [],
       description:
-        "if set this function is always called before automatic deployment and it will be delayed\nuntil the promise resolves.\nThis can be used if the deployment process is very slow and/or involves user interaction\n(e.g. through will-deploy/did-deploy event handlers) to prevent managament becoming impractical\ndue to automated deployment constantly requiring attention.\n\nOnce the promise resolves the mods as enabled at that time will be deployed, so for example\nif the user enabled a mod while this promise is pending, that mod will be deployed.",
+        "if set this function is always called before automatic deployment and it will be delayed\nuntil the promise resolves.\nThis can be used if the deployment process is very slow and/or involves user interaction\n(e.g. through will-deploy/did-deploy event handlers) to prevent management becoming impractical\ndue to automated deployment constantly requiring attention.\n\nOnce the promise resolves the mods as enabled at that time will be deployed, so for example\nif the user enabled a mod while this promise is pending, that mod will be deployed.",
       typeof: "function",
     },
     detach: {
@@ -1913,7 +1913,7 @@ validate.schema = {
     executable: {
       defaultProperties: [],
       description:
-        "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existance",
+        "return the path of the tool executable relative to the tool base path,\ni.e. binaries/UT3.exe or TESV.exe\nThis is a function so that you can return different things based on\nthe operating system for example but be aware that it will be evaluated at\napplication start and only once, so the return value can not depend on things\nthat change at runtime.\n\nOptional: Game extensions are free to ignore the parameter and they have\n   to work if the parameter is undefined.\n   executable will be called with the parameter set at the time the game is discovered.\n   If there are multiple versions of the game with different executables, it can return\n   the correct executable based on the variant installed.\n   This is a synchronous function so game extensions will probably want to use something\n   like fs.statSync to text for file existence",
       typeof: "function",
     },
     extensionPath: {

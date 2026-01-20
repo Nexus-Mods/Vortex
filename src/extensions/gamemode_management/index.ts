@@ -78,7 +78,7 @@ import {
   gameById,
 } from "./selectors";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as fsExtra from "fs-extra";
 import * as path from "path";
 import type * as Redux from "redux";
@@ -113,7 +113,7 @@ const gameInfoProviders: IProvider[] = [];
 function refreshGameInfo(
   store: Redux.Store<IState>,
   gameId: string,
-): Promise<void> {
+): PromiseBB<void> {
   interface IKeyProvider {
     [key: string]: { priority: number; provider: string };
   }
@@ -176,7 +176,7 @@ function refreshGameInfo(
     }
   };
 
-  return Promise.map(providersToQuery, (prov) => {
+  return PromiseBB.map(providersToQuery, (prov) => {
     const expires = now + prov.expireMS;
     return prov
       .query({ ...game, ...gameDiscovery })
@@ -217,9 +217,9 @@ function refreshGameInfo(
   }).then(() => undefined);
 }
 
-function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
-  return Promise.map(game.requiredFiles || [], (file) =>
-    Promise.resolve(fsExtra.stat(path.join(gamePath, file))),
+function verifyGamePath(game: IGame, gamePath: string): PromiseBB<void> {
+  return PromiseBB.map(game.requiredFiles || [], (file) =>
+    PromiseBB.resolve(fsExtra.stat(path.join(gamePath, file))),
   )
     .then(() => undefined)
     .catch((err) => {
@@ -230,7 +230,7 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
       if (err.code !== "ENOENT") {
         return undefined;
       }
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     });
 }
 
@@ -252,9 +252,9 @@ function findGamePath(
   selectedPath: string,
   depth: number,
   maxDepth: number,
-): Promise<string> {
+): PromiseBB<string> {
   if (depth > maxDepth) {
-    return Promise.reject(new ProcessCanceled("not found"));
+    return PromiseBB.reject(new ProcessCanceled("not found"));
   }
 
   return verifyGamePath(game, selectedPath)
@@ -267,7 +267,7 @@ function findGamePath(
 function manualGameStoreSelection(
   api: IExtensionApi,
   correctedGamePath: string,
-): Promise<{ store: string; corrected: string }> {
+): PromiseBB<{ store: string; corrected: string }> {
   const gameStores = getGameStores();
   return GameStoreHelper.identifyStore(correctedGamePath).then((storeId) => {
     const detectedStore = gameStores.find((store) => store.id === storeId);
@@ -298,7 +298,7 @@ function manualGameStoreSelection(
       .then((res) => {
         const selected = Object.keys(res.input).find((iter) => res.input[iter]);
         if (selected === undefined) {
-          return Promise.reject(new UserCanceled());
+          return PromiseBB.reject(new UserCanceled());
         }
         if (selected === "other") {
           return { store: storeId, corrected: correctedGamePath };
@@ -309,7 +309,10 @@ function manualGameStoreSelection(
   });
 }
 
-function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
+function browseGameLocation(
+  api: IExtensionApi,
+  gameId: string,
+): PromiseBB<void> {
   const state: IState = api.store.getState();
 
   if (gameById(state, gameId) === undefined) {
@@ -330,12 +333,12 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const game = getGame(gameId);
 
   if (game === undefined) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const discovery = state.settings.gameMode.discovered[gameId];
 
-  return new Promise<void>((resolve) => {
+  return new PromiseBB<void>((resolve) => {
     const defaultPath = discovery?.path;
 
     // Check for test path stored in global (for automated testing)
@@ -344,7 +347,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
     // If test path is set, use it; otherwise open the dialog
     const pathPromise =
       testPath !== undefined
-        ? Promise.resolve(testPath)
+        ? PromiseBB.resolve(testPath)
         : api.selectDir(defaultPath !== undefined ? { defaultPath } : {});
 
     // Clear the global after using it
@@ -417,7 +420,7 @@ function installGameExtension(
   api: IExtensionApi,
   gameId: string,
   dlInfo: IExtensionDownloadInfo,
-): Promise<void> {
+): PromiseBB<void> {
   if (dlInfo !== undefined) {
     log("info", "installing missing game extension", { gameId });
     const name = dlInfo.name.replace(/^Game: /, "");
@@ -455,32 +458,32 @@ function installGameExtension(
           );
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
-          return Promise.resolve(false);
+          return PromiseBB.resolve(false);
         }
       })
       .catch((err) => {
         if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
         api.showErrorNotification("Failed to install game extension", err);
       });
   } else {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 }
 
-function awaitProfileSwitch(api: IExtensionApi): Promise<string> {
+function awaitProfileSwitch(api: IExtensionApi): PromiseBB<string> {
   const { activeProfileId, nextProfileId } = api.getState().settings.profiles;
   log("info", "wait for profile switch to complete", {
     nextProfileId,
     activeProfileId,
   });
   if (activeProfileId !== nextProfileId) {
-    return new Promise((resolve) =>
+    return new PromiseBB((resolve) =>
       api.events.once("profile-did-change", resolve),
     );
   } else {
-    return Promise.resolve(activeProfileId);
+    return PromiseBB.resolve(activeProfileId);
   }
 }
 
@@ -488,7 +491,7 @@ function removeDisappearedGames(
   api: IExtensionApi,
   discoveredGames: Set<string>,
   gameStubs?: { [gameId: string]: IExtensionDownloadInfo },
-): Promise<void> {
+): PromiseBB<void> {
   let state: IState = api.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
@@ -502,24 +505,24 @@ function removeDisappearedGames(
   const assertRequiredFiles = (
     requiredFiles: string[],
     gameId: string,
-  ): Promise<void> => {
+  ): PromiseBB<void> => {
     if (requiredFiles === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
-    return Promise.map(requiredFiles, (file) =>
+    return PromiseBB.map(requiredFiles, (file) =>
       fsExtra.stat(path.join(discovered[gameId].path, file)),
     )
       .then(() => undefined)
       .catch((err) => {
         if (err.code === "ENOENT") {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         } else {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       });
   };
 
-  return Promise.map(
+  return PromiseBB.map(
     Object.keys(discovered).filter(
       (gameId) => discovered[gameId].path !== undefined,
     ),
@@ -531,13 +534,13 @@ function removeDisappearedGames(
         .catch((err) => {
           const code = getErrorCode(err);
           if (code === "ENOENT") {
-            return Promise.reject(err);
+            return PromiseBB.reject(err);
           }
           // if we can't stat the game directory for any other reason than it being missing
           // (almost certainly permission error) we just assume the game is installed and
           // can be launched through the store because that's how it works with the xbox store
           // and we have to support that.
-          return Promise.resolve();
+          return PromiseBB.resolve();
         })
         .catch((err) => {
           const gameName = stored?.name ?? discovered[gameId].name;
@@ -585,16 +588,16 @@ function removeDisappearedGames(
 
       if (gameStubs !== undefined) {
         const knownGameIds = new Set(known.map((game) => game.id));
-        return Promise.all(
+        return PromiseBB.all(
           Array.from(managedGames).map((gameId) => {
             if (knownGameIds.has(gameId)) {
-              return Promise.resolve();
+              return PromiseBB.resolve();
             }
             return installGameExtension(api, gameId, gameStubs[gameId]);
           }),
-        ).then(() => Promise.resolve());
+        ).then(() => PromiseBB.resolve());
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     });
 }
@@ -812,8 +815,8 @@ function init(context: IExtensionContext): boolean {
     ["path"],
     (game: IGame & IDiscoveryResult) =>
       game.path == null || typeof game.path !== "string"
-        ? Promise.resolve({})
-        : Promise.resolve({
+        ? PromiseBB.resolve({})
+        : PromiseBB.resolve({
             path: {
               title: "Path",
               value: path.normalize(game.path),
@@ -828,7 +831,7 @@ function init(context: IExtensionContext): boolean {
     60 * 1000,
     ["store"],
     (game: IGame & IDiscoveryResult) =>
-      Promise.resolve({
+      PromiseBB.resolve({
         store: {
           title: "Game Store",
           value:
@@ -961,8 +964,8 @@ function init(context: IExtensionContext): boolean {
 
   const onScan = (paths: string[]) =>
     $.gameModeManager.startSearchDiscovery(paths);
-  const onSelectPath = (basePath: string): Promise<string> =>
-    Promise.resolve(
+  const onSelectPath = (basePath: string): PromiseBB<string> =>
+    PromiseBB.resolve(
       context.api.selectDir({
         defaultPath: basePath,
       }),
@@ -1018,7 +1021,7 @@ function init(context: IExtensionContext): boolean {
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     });
 
@@ -1055,10 +1058,10 @@ function init(context: IExtensionContext): boolean {
     events.on("start-discovery", () => {
       try {
         const state = context.api.getState();
-        const initPromise: Promise<void> =
+        const initPromise: PromiseBB<void> =
           state.settings.gameMode.searchPaths.length > 0
-            ? Promise.resolve()
-            : Promise.resolve(getDriveList(context.api))
+            ? PromiseBB.resolve()
+            : PromiseBB.resolve(getDriveList(context.api))
                 .catch(() => [])
                 .then((drives) => {
                   context.api.store.dispatch(setGameSearchPaths(drives));
@@ -1098,14 +1101,14 @@ function init(context: IExtensionContext): boolean {
       oldGameId: string,
       newGameId: string,
       currentProfileId: string,
-    ): Promise<void> => {
+    ): PromiseBB<void> => {
       if (newGameId === undefined) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
       log("debug", "change game mode", { oldGameId, newGameId });
 
       if (getGame(newGameId) === undefined) {
-        return Promise.reject(
+        return PromiseBB.reject(
           new Error(`Attempt to switch to unknown game "${newGameId}"`),
         );
       }
@@ -1126,7 +1129,7 @@ function init(context: IExtensionContext): boolean {
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
           if (discovery === undefined || discovery.path === undefined) {
-            return Promise.reject(
+            return PromiseBB.reject(
               new ProcessCanceled("The game is no longer discovered"),
             );
           }
@@ -1215,7 +1218,7 @@ function init(context: IExtensionContext): boolean {
         const prom =
           oldGameId !== newGameId
             ? changeGameMode(oldGameId, newGameId, current)
-            : Promise.resolve();
+            : PromiseBB.resolve();
 
         prom.then(() => {
           const game = {

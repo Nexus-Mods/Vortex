@@ -16,7 +16,7 @@ import type {
   IUnavailableReason,
 } from "./types/IDeploymentMethod";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as path from "path";
@@ -65,7 +65,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
-  private mQueue: Promise<void> = Promise.resolve();
+  private mQueue: PromiseBB<void> = PromiseBB.resolve();
   private mContext: IDeploymentContext;
   private mDirCache: Set<string>;
 
@@ -95,11 +95,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * and we don't want auto-deployment to pop up a dialog that takes the focus away
    * from the application without having the user initiate it
    *
-   * @returns {Promise<void>}
+   * @returns {PromiseBB<void>}
    * @memberof LinkingActivator
    */
-  public userGate(): Promise<void> {
-    return Promise.resolve();
+  public userGate(): PromiseBB<void> {
+    return PromiseBB.resolve();
   }
 
   public detailedDescription(t: TFunction): string {
@@ -111,9 +111,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
     clean: boolean,
     lastDeployment: IDeployedFile[],
     normalize: Normalize,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     let queueResolve: () => void;
-    const queueProm = new Promise<void>((resolve) => {
+    const queueProm = new PromiseBB<void>((resolve) => {
       queueResolve = resolve;
     });
 
@@ -145,11 +145,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
     dataPath: string,
     installationPath: string,
     progressCB?: (files: number, total: number) => void,
-  ): Promise<IDeployedFile[]> {
+  ): PromiseBB<IDeployedFile[]> {
     if (this.mContext === undefined) {
       const err = new Error("No deployment in progress");
       err["attachLogOnReport"] = true;
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
 
     const context = this.mContext;
@@ -197,7 +197,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const initialDeployment = { ...context.previousDeployment };
 
     return (
-      Promise.map(removed, (key) =>
+      PromiseBB.map(removed, (key) =>
         this.removeDeployedFile(installationPath, dataPath, key, true).catch(
           (err) => {
             log("warn", "failed to remove deployed file", {
@@ -209,7 +209,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         ),
       )
         .then(() =>
-          Promise.map(sourceChanged, (key: string, idx: number) =>
+          PromiseBB.map(sourceChanged, (key: string, idx: number) =>
             this.removeDeployedFile(
               installationPath,
               dataPath,
@@ -226,7 +226,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           ),
         )
         .then(() =>
-          Promise.map(contentChanged, (key: string, idx: number) =>
+          PromiseBB.map(contentChanged, (key: string, idx: number) =>
             this.removeDeployedFile(
               installationPath,
               dataPath,
@@ -244,7 +244,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         )
         // then, (re-)link all files that were added
         .then(() =>
-          Promise.map(
+          PromiseBB.map(
             added,
             (key) =>
               this.deployFile(key, installationPath, dataPath, false, dirTags)
@@ -266,7 +266,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         )
         // then update modified files
         .then(() =>
-          Promise.map(
+          PromiseBB.map(
             [].concat(sourceChanged, contentChanged),
             (key: string) =>
               this.deployFile(key, installationPath, dataPath, true, dirTags)
@@ -345,7 +345,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       this.mContext = undefined;
       context.onComplete();
     }
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public activate(
@@ -353,7 +353,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     sourceName: string,
     deployPath: string,
     blackList: BlacklistSet,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     return fs
       .statAsync(sourcePath)
       .then(() =>
@@ -399,7 +399,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     sourcePath: string,
     dataPath: string,
     sourceName: string,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     return turbowalk(
       sourcePath,
       (entries) => {
@@ -423,8 +423,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     );
   }
 
-  public prePurge(): Promise<void> {
-    return Promise.resolve();
+  public prePurge(): PromiseBB<void> {
+    return PromiseBB.resolve();
   }
 
   public purge(
@@ -432,12 +432,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
     dataPath: string,
     gameId?: string,
     onProgress?: (num: number, total: number) => void,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     log("debug", "purging", { installPath, dataPath });
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
     if (gameId === undefined) {
       gameId = activeGameId(this.mApi.store.getState());
@@ -453,8 +453,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .then(() => undefined);
   }
 
-  public postPurge(): Promise<void> {
-    return Promise.resolve();
+  public postPurge(): PromiseBB<void> {
+    return PromiseBB.resolve();
   }
 
   public getDeployedPath(input: string): string {
@@ -465,7 +465,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     installPath: string,
     dataPath: string,
     file: IDeployedFile,
-  ): Promise<boolean> {
+  ): PromiseBB<boolean> {
     const fullPath = path.join(dataPath, file.target || "", file.relPath);
 
     return fs
@@ -479,10 +479,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
     installPath: string,
     dataPath: string,
     activation: IDeployedFile[],
-  ): Promise<IFileChange[]> {
+  ): PromiseBB<IFileChange[]> {
     const changes: IFileChange[] = [];
 
-    return Promise.map(
+    return PromiseBB.map(
       activation ?? [],
       (fileEntry) => {
         const fileDataPath = (
@@ -518,7 +518,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 error: err.message,
               });
             }
-            return Promise.resolve(undefined);
+            return PromiseBB.resolve(undefined);
           })
           .then((sourceStatsIn) => {
             sourceStats = sourceStatsIn;
@@ -537,14 +537,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 error: err.message,
               });
             }
-            return Promise.resolve(undefined);
+            return PromiseBB.resolve(undefined);
           })
           .then((destStats) => {
             if (destStats !== undefined) {
               destTime = destStats.mtime;
             }
             return sourceDeleted || destDeleted
-              ? Promise.resolve(false)
+              ? PromiseBB.resolve(false)
               : this.isLink(fileDataPath, fileModPath, destStats, sourceStats);
           })
           .then((isLink?: boolean) => {
@@ -577,11 +577,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
           */
             }
-            return Promise.resolve(undefined);
+            return PromiseBB.resolve(undefined);
           });
       },
       { concurrency: 200 },
-    ).then(() => Promise.resolve(this.deduplicate(changes)));
+    ).then(() => PromiseBB.resolve(this.deduplicate(changes)));
   }
 
   /**
@@ -592,16 +592,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): Promise<void>;
+  ): PromiseBB<void>;
   protected abstract unlinkFile(
     linkPath: string,
     sourcePath: string,
-  ): Promise<void>;
+  ): PromiseBB<void>;
   protected abstract purgeLinks(
     installPath: string,
     dataPath: string,
     onProgress?: (num: number, total: number) => void,
-  ): Promise<void>;
+  ): PromiseBB<void>;
   /**
    * test if a file is a link to another file. The stats parameters may not be available,
    * they are just intended as an optimization by avoiding doing redundant calls
@@ -617,7 +617,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     sourcePath: string,
     linkStats?: fs.Stats,
     sourceStats?: fs.Stats,
-  ): Promise<boolean>;
+  ): PromiseBB<boolean>;
   /**
    * must return true if this deployment method is able to restore a file after the
    * "original" was deleted. This is essentially true for hard links (since the file
@@ -637,15 +637,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return this.mContext;
   }
 
-  protected stat(filePath: string): Promise<fs.Stats> {
+  protected stat(filePath: string): PromiseBB<fs.Stats> {
     return fs.statAsync(filePath);
   }
 
-  protected statLink(filePath: string): Promise<fs.Stats> {
+  protected statLink(filePath: string): PromiseBB<fs.Stats> {
     return fs.lstatAsync(filePath);
   }
 
-  protected ensureDir(dirPath: string, dirTags?: boolean): Promise<boolean> {
+  protected ensureDir(dirPath: string, dirTags?: boolean): PromiseBB<boolean> {
     let didCreate = false;
     const onDirCreated = (createdPath: string) => {
       didCreate = true;
@@ -657,7 +657,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             "during purging if it's empty",
         );
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     };
 
@@ -669,7 +669,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }
             this.mDirCache.add(dirPath);
           })
-        : Promise.resolve()
+        : PromiseBB.resolve()
     ).then(() => didCreate);
   }
 
@@ -703,9 +703,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
     dataPath: string,
     key: string,
     restoreBackup: boolean,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     if (this.mContext.previousDeployment[key] === undefined) {
-      return Promise.reject(new Error(`failed to remove "${key}"`));
+      return PromiseBB.reject(new Error(`failed to remove "${key}"`));
     }
     const outputPath = path.join(
       dataPath,
@@ -722,15 +722,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
         err.code !== "ENOENT"
           ? // treat an ENOENT error for the unlink as if it was a success.
             // The end result either way is the link doesn't exist now.
-            Promise.reject(err)
-          : Promise.resolve(),
+            PromiseBB.reject(err)
+          : PromiseBB.resolve(),
       )
       .then(() =>
         restoreBackup
           ? fs
               .renameAsync(outputPath + BACKUP_TAG, outputPath)
               .catch(() => undefined)
-          : Promise.resolve(),
+          : PromiseBB.resolve(),
       )
       .then(() => {
         delete this.mContext.previousDeployment[key];
@@ -746,7 +746,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         this.mContext.newDeployment[key] =
           this.mContext.previousDeployment[key];
 
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       });
   }
 
@@ -756,7 +756,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     dataPath: string,
     replace: boolean,
     dirTags: boolean,
-  ): Promise<IDeployedFile> {
+  ): PromiseBB<IDeployedFile> {
     const fullPath = [
       installPathStr,
       this.mContext.newDeployment[key].source,
@@ -770,12 +770,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .filter((i) => i !== null)
       .join(path.sep);
 
-    const backupProm: Promise<void> = replace
-      ? Promise.resolve()
+    const backupProm: PromiseBB<void> = replace
+      ? PromiseBB.resolve()
       : this.isLink(fullOutputPath, fullPath)
           .then((link) =>
             link
-              ? Promise.resolve(undefined) // don't re-create link that's already correct
+              ? PromiseBB.resolve(undefined) // don't re-create link that's already correct
               : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG),
           )
           .catch((err) =>
@@ -783,8 +783,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
               ? // if the backup fails because there is nothing to backup, that's great,
                 // that's the most common outcome. Otherwise we failed to backup an existing
                 // file, so continuing could cause data loss
-                Promise.resolve(undefined)
-              : Promise.reject(err),
+                PromiseBB.resolve(undefined)
+              : PromiseBB.reject(err),
           );
 
     return backupProm
@@ -820,11 +820,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
     restoreBackups: boolean,
     directoryCleaning: DirectoryCleaningMode,
     reportMissing: boolean = true,
-  ): Promise<boolean> {
+  ): PromiseBB<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     let empty = true;
-    let queue = Promise.resolve();
+    let queue = PromiseBB.resolve();
 
     let allEntries: IEntry[] = [];
 
@@ -838,7 +838,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 LinkingActivator.isTagName(entry.filePath),
             ) !== undefined;
 
-    return Promise.resolve(
+    return PromiseBB.resolve(
       turbowalk(
         baseDir,
         (entries) => {
@@ -853,7 +853,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         const dirs = allEntries.filter((entry) => entry.isDirectory);
         // recurse into subdirectories
         queue = queue.then(() =>
-          Promise.each(dirs, (dir) =>
+          PromiseBB.each(dirs, (dir) =>
             this.postLinkPurge(
               dir.filePath,
               doRemove,
@@ -876,7 +876,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             if (files.length > 0) {
               empty = false;
               return restoreBackups
-                ? Promise.map(
+                ? PromiseBB.map(
                     files.filter(
                       (entry) => path.extname(entry.filePath) === BACKUP_TAG,
                     ),
@@ -884,9 +884,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   )
                     .catch(UserCanceled, () => undefined)
                     .then(() => undefined)
-                : Promise.resolve();
+                : PromiseBB.resolve();
             } else {
-              return Promise.resolve();
+              return PromiseBB.resolve();
             }
           }),
         );
@@ -902,7 +902,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
           } // otherwise ignore missing files
         } else {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         }
       })
       .then(() => queue)
@@ -921,7 +921,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 ),
               )
               .catch((err) =>
-                err.code === "ENOENT" ? Promise.resolve() : Promise.reject(err),
+                err.code === "ENOENT"
+                  ? PromiseBB.resolve()
+                  : PromiseBB.reject(err),
               )
               .then(() =>
                 fs.rmdirAsync(baseDir).catch((err) => {
@@ -936,7 +938,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 }),
               )
               .then(() => true)
-          : Promise.resolve(false),
+          : PromiseBB.resolve(false),
       );
   }
 
@@ -1004,7 +1006,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             )
             .then((res) =>
               res.action === "Really cancel"
-                ? Promise.reject(cancelErr)
+                ? PromiseBB.reject(cancelErr)
                 : this.restoreBackup(backupPath),
             );
         })
