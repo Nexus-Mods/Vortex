@@ -22,7 +22,7 @@ import { getSafe } from "../../../util/storeHelper";
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -44,7 +44,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
   onShowWarning: (
     message: string,
@@ -80,11 +80,11 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   private activate = () => {
     const { confirmPurge, onShowError } = this.props;
     const prom =
-      confirmPurge !== false ? this.confirmPurge() : Promise.resolve();
+      confirmPurge !== false ? this.confirmPurge() : PromiseBB.resolve();
     prom
       .then(
         () =>
-          new Promise((resolve, reject) => {
+          new PromiseBB((resolve, reject) => {
             this.context.api.events.emit("purge-mods", false, (err) => {
               if (err !== null) {
                 reject(err);
@@ -118,7 +118,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       .catch((err) => {
         if (err instanceof UserCanceled) {
           // not sure how we'd get here, UserCanceled is caught further up!
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
 
         if (err.code === undefined && err.errno !== undefined) {
@@ -163,7 +163,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     );
   };
 
-  private confirmPurge(): Promise<void> {
+  private confirmPurge(): PromiseBB<void> {
     const { onSetConfirmPurge, onShowDialog } = this.props;
     return onShowDialog(
       "question",
@@ -182,12 +182,12 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       [{ label: "Cancel" }, { label: "Continue" }],
     ).then((result) => {
       if (result.action === "Cancel") {
-        return Promise.reject(new UserCanceled());
+        return PromiseBB.reject(new UserCanceled());
       } else {
         if (result.input.confirm_purge) {
           onSetConfirmPurge(false);
         }
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     });
   }

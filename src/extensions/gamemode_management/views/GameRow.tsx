@@ -12,7 +12,7 @@ import type { IGameStored } from "../types/IGameStored";
 
 import GameInfoPopover from "./GameInfoPopover";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
@@ -29,8 +29,8 @@ export interface IProps {
   type: string;
   getBounds: () => ClientRect;
   container: HTMLElement;
-  onRefreshGameInfo: (gameId: string) => Promise<void>;
-  onBrowseGameLocation: (gameId: string) => Promise<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
+  onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
 }
 
 /**

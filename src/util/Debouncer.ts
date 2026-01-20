@@ -1,4 +1,3 @@
-import Promise from "bluebird";
 import { unknownToError } from "../shared/errors";
 
 type Callback = (err: Error) => void;

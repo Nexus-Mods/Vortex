@@ -26,7 +26,7 @@ import { log } from "./log";
 import { flatten, nexusModsURL, setdefault, truthy } from "./util";
 
 import type { IFeedbackResponse } from "@nexusmods/nexus-api";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type ZipT from "node-7z";
 import * as os from "os";
 import * as path from "path";
@@ -204,7 +204,7 @@ function shouldAllowReport(
 }
 
 function dataToFile(id, input: any) {
-  return new Promise<string>((resolve, reject) => {
+  return new PromiseBB<string>((resolve, reject) => {
     const data: Buffer = Buffer.from(JSON.stringify(input));
     tmpFile(
       {
@@ -231,14 +231,14 @@ function dataToFile(id, input: any) {
   });
 }
 
-function zipFiles(files: string[]): Promise<string> {
+function zipFiles(files: string[]): PromiseBB<string> {
   if (files.length === 0) {
-    return Promise.resolve(undefined);
+    return PromiseBB.resolve(undefined);
   }
   const Zip: typeof ZipT = require("node-7z");
   const task: ZipT = new Zip();
 
-  return new Promise<string>((resolve, reject) => {
+  return new PromiseBB<string>((resolve, reject) => {
     tmpName(
       {
         postfix: ".7z",
@@ -250,7 +250,7 @@ function zipFiles(files: string[]): Promise<string> {
   );
 }
 
-function serializeAttachments(input: IAttachment): Promise<string> {
+function serializeAttachments(input: IAttachment): PromiseBB<string> {
   if (input.type === "file") {
     return input.data;
   } else {
@@ -258,16 +258,16 @@ function serializeAttachments(input: IAttachment): Promise<string> {
   }
 }
 
-export function bundleAttachment(options?: IErrorOptions): Promise<string> {
+export function bundleAttachment(options?: IErrorOptions): PromiseBB<string> {
   if (
     options === undefined ||
     options.attachments === undefined ||
     options.attachments.length === 0
   ) {
-    return Promise.resolve(undefined);
+    return PromiseBB.resolve(undefined);
   }
 
-  return Promise.reduce(
+  return PromiseBB.reduce(
     options.attachments,
     (accum: string[], iter: IAttachment) => {
       if (iter.type === "file") {

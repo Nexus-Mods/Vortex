@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type {
   IDeploymentMethod,
   IExtensionContext,
@@ -40,39 +40,39 @@ class DeploymentMethod implements IDeploymentMethod {
   }
 
   public userGate() {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public prepare(dataPath, clean, lastActivation, normalize) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public finalize(gameId, dataPath, installationPath, progressCB) {
-    return Promise.resolve([]);
+    return PromiseBB.resolve([]);
   }
 
   public activate(sourcePath, sourceName, dataPath, blackList) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public deactivate(sourcePath, dataPath, sourceName) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public prePurge(installPath) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public purge(installPath, dataPtah, gameId) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public postPurge() {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   public externalChanges(gameId, installPath, dataPath, activation) {
-    return Promise.resolve([]);
+    return PromiseBB.resolve([]);
   }
 
   public getDeployedPath(input) {
@@ -80,7 +80,7 @@ class DeploymentMethod implements IDeploymentMethod {
   }
 
   public isDeployed(installPath, dataPath, file) {
-    return Promise.resolve(true);
+    return PromiseBB.resolve(true);
   }
 }
 

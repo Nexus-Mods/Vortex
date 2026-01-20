@@ -3,7 +3,7 @@ import * as fs from "../../util/fs";
 import { copyFileAtomic } from "../../util/fsAtomic";
 import { log } from "../../util/log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 
 export function syncToProfile(
@@ -14,12 +14,12 @@ export function syncToProfile(
     details: string | Error,
     allowReport?: boolean,
   ) => void,
-): Promise<void> {
+): PromiseBB<void> {
   log("debug", "sync to profile", { profilePath, sourceFiles });
   return fs
     .ensureDirAsync(profilePath)
     .then(() =>
-      Promise.map(sourceFiles, (filePath: string) => {
+      PromiseBB.map(sourceFiles, (filePath: string) => {
         const destPath = path.join(profilePath, path.basename(filePath));
         return copyFileAtomic(filePath, destPath)
           .catch(UserCanceled, () => {
@@ -39,7 +39,7 @@ export function syncToProfile(
       log("debug", "sync to profile complete");
     })
     .catch((err) =>
-      Promise.reject(new Error("failed to sync to profile: " + err.message)),
+      PromiseBB.reject(new Error("failed to sync to profile: " + err.message)),
     );
 }
 
@@ -51,9 +51,9 @@ export function syncFromProfile(
     details: string | Error,
     allowReport?: boolean,
   ) => void,
-): Promise<void> {
+): PromiseBB<void> {
   log("debug", "sync from profile", { profilePath, sourceFiles });
-  return Promise.map(sourceFiles, (filePath: string) => {
+  return PromiseBB.map(sourceFiles, (filePath: string) => {
     const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
       .catch(UserCanceled, () => {
@@ -75,6 +75,8 @@ export function syncFromProfile(
       log("debug", "sync from profile complete");
     })
     .catch((err) =>
-      Promise.reject(new Error("failed from sync to profile: " + err.message)),
+      PromiseBB.reject(
+        new Error("failed from sync to profile: " + err.message),
+      ),
     );
 }

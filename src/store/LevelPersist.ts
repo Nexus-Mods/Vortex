@@ -2,7 +2,7 @@ import type { IPersistor } from "../types/IExtensionContext";
 import { DataInvalid } from "../util/CustomErrors";
 import { log } from "../util/log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import encode from "encoding-down";
 import type leveldownT from "leveldown";
 import * as levelup from "levelup";
@@ -19,8 +19,8 @@ export class DatabaseLocked extends Error {
   }
 }
 
-function repairDB(dbPath: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+function repairDB(dbPath: string): PromiseBB<void> {
+  return new PromiseBB<void>((resolve, reject) => {
     log("warn", "repairing database", dbPath);
     const leveldown: typeof leveldownT = require("leveldown");
     leveldown.repair(dbPath, (err: Error) => {
@@ -33,8 +33,8 @@ function repairDB(dbPath: string): Promise<void> {
   });
 }
 
-function openDB(dbPath: string): Promise<levelup.LevelUp> {
-  return new Promise<levelup.LevelUp>((resolve, reject) => {
+function openDB(dbPath: string): PromiseBB<levelup.LevelUp> {
+  return new PromiseBB<levelup.LevelUp>((resolve, reject) => {
     const leveldown: typeof leveldownT = require("leveldown");
     const db = levelup.default(
       encode(leveldown(dbPath)),
@@ -54,19 +54,19 @@ class LevelPersist implements IPersistor {
     persistPath: string,
     tries: number = 10,
     repair: boolean = false,
-  ): Promise<LevelPersist> {
-    return (repair ? repairDB(persistPath) : Promise.resolve())
+  ): PromiseBB<LevelPersist> {
+    return (repair ? repairDB(persistPath) : PromiseBB.resolve())
       .then(() => openDB(persistPath))
       .then((db) => new LevelPersist(db))
       .catch((err) => {
         if (err instanceof DataInvalid) {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         }
         if (tries === 0) {
           log("info", "failed to open db", err);
-          return Promise.reject(new DatabaseLocked());
+          return PromiseBB.reject(new DatabaseLocked());
         } else {
-          return Promise.delay(500).then(() =>
+          return PromiseBB.delay(500).then(() =>
             LevelPersist.create(persistPath, tries - 1, false),
           );
         }
@@ -79,18 +79,18 @@ class LevelPersist implements IPersistor {
     this.mDB = db;
   }
 
-  public close = this.restackingFunc((): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
+  public close = this.restackingFunc((): PromiseBB<void> => {
+    return new PromiseBB<void>((resolve, reject) => {
       this.mDB.close((err) => (!!err ? reject(err) : resolve()));
     });
   });
 
-  public setResetCallback(cb: () => Promise<void>): void {
+  public setResetCallback(cb: () => PromiseBB<void>): void {
     return undefined;
   }
 
-  public getItem = this.restackingFunc((key: string[]): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  public getItem = this.restackingFunc((key: string[]): PromiseBB<string> => {
+    return new PromiseBB((resolve, reject) => {
       try {
         this.mDB.get(key.join(SEPARATOR), (error, value) => {
           if (error) {
@@ -104,8 +104,8 @@ class LevelPersist implements IPersistor {
     });
   });
 
-  public getAllKeys(options?: any): Promise<string[][]> {
-    return new Promise((resolve, reject) => {
+  public getAllKeys(options?: any): PromiseBB<string[][]> {
+    return new PromiseBB((resolve, reject) => {
       const keys: string[][] = [];
       let resolved = false;
       this.mDB
@@ -130,8 +130,8 @@ class LevelPersist implements IPersistor {
 
   public getAllKVs(
     prefix?: string,
-  ): Promise<Array<{ key: string[]; value: string }>> {
-    return new Promise((resolve, reject) => {
+  ): PromiseBB<Array<{ key: string[]; value: string }>> {
+    return new PromiseBB((resolve, reject) => {
       const kvs: Array<{ key: string[]; value: string }> = [];
 
       const options =
@@ -157,8 +157,8 @@ class LevelPersist implements IPersistor {
   }
 
   public setItem = this.restackingFunc(
-    (statePath: string[], newState: string): Promise<void> => {
-      return new Promise<void>((resolve, reject) => {
+    (statePath: string[], newState: string): PromiseBB<void> => {
+      return new PromiseBB<void>((resolve, reject) => {
         try {
           this.mDB.put(statePath.join(SEPARATOR), newState, (error) => {
             if (error) {
@@ -175,8 +175,8 @@ class LevelPersist implements IPersistor {
   );
 
   public removeItem = this.restackingFunc(
-    (statePath: string[]): Promise<void> => {
-      return new Promise<void>((resolve, reject) => {
+    (statePath: string[]): PromiseBB<void> => {
+      return new PromiseBB<void>((resolve, reject) => {
         try {
           this.mDB.del(statePath.join(SEPARATOR), (error) => {
             if (error) {
@@ -199,7 +199,7 @@ class LevelPersist implements IPersistor {
       return cb(...args).catch((unknownErr) => {
         const err = unknownToError(unknownErr);
         err.stack = stackErr.stack;
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       });
     };
   }

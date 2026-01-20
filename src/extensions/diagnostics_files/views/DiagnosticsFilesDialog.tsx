@@ -16,7 +16,7 @@ import type { ILog, ISession } from "../types/ISession";
 import { loadVortexLogs } from "../util/loadVortexLogs";
 
 import type * as RemoteT from "@electron/remote";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import update from "immutability-helper";
 import * as os from "os";
 import * as path from "path";
@@ -276,7 +276,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private updateLogs(): Promise<void> {
+  private updateLogs(): PromiseBB<void> {
     const { onShowError } = this.props;
     return loadVortexLogs()
       .then((sessions) => {
@@ -332,7 +332,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     this.props.onHide();
     const logPath = path.join(nativeCrashesPath, "session.log");
-    fs.ensureDirWritableAsync(nativeCrashesPath, () => Promise.resolve())
+    fs.ensureDirWritableAsync(nativeCrashesPath, () => PromiseBB.resolve())
       .then(() => fs.writeFileAsync(logPath, fullLog))
       .then(() => {
         this.context.api.events.emit("report-log-error", logPath);

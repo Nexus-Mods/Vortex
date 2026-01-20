@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -90,8 +90,8 @@ function copyDir(
  * @param {string} source source path to copy from
  * @param {string} destination destination path to copy to
  */
-function copyRecursive(source: string, destination: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+function copyRecursive(source: string, destination: string): PromiseBB<void> {
+  return new PromiseBB<void>((resolve, reject) => {
     const queue = {
       dir: [],
       file: [],

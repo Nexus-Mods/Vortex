@@ -101,8 +101,8 @@ class FixDeploymentDialog extends ComponentEx<
     return (
       // tslint:disable:max-line-length
       <Trans i18nKey="fix-deployment-instructions">
-        Vortex supports different Deployment Methods to support a wide variety of
-        systems and games, but some may only be available with the right
+        Vortex supports different Deployment Methods to support a wide variety
+        of systems and games, but some may only be available with the right
         settings.
         <br />
         Right now, none of the available deployment methods seem to be usable,

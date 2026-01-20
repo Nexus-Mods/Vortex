@@ -31,7 +31,7 @@ import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { generate as shortid } from "shortid";
 
 const MERGE_SUBDIR = "zzz_merge";
@@ -71,8 +71,8 @@ function filterManifest(
   deployPath: string,
   stagingPath: string,
   deployment: IDeployedFile[],
-): Promise<IDeployedFile[]> {
-  return Promise.filter(deployment, (file) =>
+): PromiseBB<IDeployedFile[]> {
+  return PromiseBB.filter(deployment, (file) =>
     activator.isDeployed(stagingPath, deployPath, file),
   );
 }
@@ -88,7 +88,7 @@ export function loadAllManifests(
     truthy(modPaths[typeId]),
   );
 
-  return Promise.reduce(
+  return PromiseBB.reduce(
     modTypes,
     (prev, typeId) =>
       loadActivation(
@@ -110,7 +110,7 @@ export function purgeMods(
   api: IExtensionApi,
   gameId?: string,
   isUnmanaging?: boolean,
-): Promise<void> {
+): PromiseBB<void> {
   const state = api.store.getState();
   let profile =
     gameId !== undefined
@@ -138,7 +138,7 @@ export function purgeMods(
   }
 
   if (profile === undefined) {
-    return Promise.reject(new TemporaryError("No active profile"));
+    return PromiseBB.reject(new TemporaryError("No active profile"));
   }
 
   return getManifest(api, "", gameId).then((manifest) => {
@@ -161,7 +161,7 @@ export function purgeMods(
             undefined,
           );
           if (game === undefined || discovery?.path === undefined) {
-            return Promise.reject(err);
+            return PromiseBB.reject(err);
           }
           const modTypePaths = game.getModPaths(discovery.path);
           const modPaths = Object.keys(modTypePaths).map(
@@ -170,10 +170,10 @@ export function purgeMods(
           if (modPaths.includes(err.path)) {
             // This confirms it - the mods folder is missing - user removed it.
             //  In this case we still want to allow the removal.
-            return Promise.resolve();
+            return PromiseBB.resolve();
           }
         } else {
-          return Promise.reject(err);
+          return PromiseBB.reject(err);
         }
       });
     }
@@ -184,7 +184,7 @@ function purgeModsImpl(
   api: IExtensionApi,
   activator: IDeploymentMethod,
   profile: IProfile,
-): Promise<void> {
+): PromiseBB<void> {
   const state = api.store.getState();
   const { gameId } = profile;
   const stagingPath = installPathForGame(state, gameId);
@@ -197,7 +197,7 @@ function purgeModsImpl(
       message: "Can't purge because game is not discovered",
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   log("info", "current deployment method is", {
@@ -211,7 +211,7 @@ function purgeModsImpl(
     // throwing this exception on stagingPath === undefined isn't exactly
     // accurate but the effect is the same: User has to activate the game
     // and review settings before deployment is possible
-    return Promise.reject(new NoDeployment());
+    return PromiseBB.reject(new NoDeployment());
   }
 
   if (
@@ -224,7 +224,7 @@ function purgeModsImpl(
       message: "Can't purge while the game or a tool is running",
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const notificationId: string = shortid();
@@ -285,7 +285,7 @@ function purgeModsImpl(
         .tap(() => onProgress(25, "Removing links"))
         // purge all mod types
         .then(() =>
-          Promise.mapSeries(modTypes, (typeId: string, idx: number) => {
+          PromiseBB.mapSeries(modTypes, (typeId: string, idx: number) => {
             // calculating progress for the actual file removal is a bit awkward, we get the idx
             // and total for each mod type separately. The total removal progress should cover 50%
             // of our progress bar, each mod type is then a fraction of that.
@@ -307,7 +307,7 @@ function purgeModsImpl(
         .tap(() => onProgress(75, "Saving updated manifest"))
         // save (empty) activation
         .then(() =>
-          Promise.map(modTypes, (typeId) =>
+          PromiseBB.map(modTypes, (typeId) =>
             saveActivation(
               gameId,
               typeId,
@@ -326,7 +326,7 @@ function purgeModsImpl(
             // to clean up
             return;
           }
-          return Promise.map(modTypes, (typeId) =>
+          return PromiseBB.map(modTypes, (typeId) =>
             filterManifest(
               activator,
               modPaths[typeId],
@@ -346,7 +346,7 @@ function purgeModsImpl(
           );
         })
         .catch(ProcessCanceled, () => null)
-        .then(() => Promise.resolve())
+        .then(() => PromiseBB.resolve())
         .tap(() => onProgress(85, "Post purge events"))
         .finally(() => activator.postPurge())
         .then(() => api.emitAndAwait("did-purge", profile.id))
@@ -364,7 +364,7 @@ export function purgeModsInPath(
   gameId: string,
   typeId: string,
   modPath: string,
-): Promise<void> {
+): PromiseBB<void> {
   const state = api.store.getState();
   const profile: IProfile =
     gameId !== undefined
@@ -380,7 +380,7 @@ export function purgeModsInPath(
   const activator = getCurrentActivator(state, gameId, false);
 
   if (activator === undefined) {
-    return Promise.reject(new NoDeployment());
+    return PromiseBB.reject(new NoDeployment());
   }
 
   if (
@@ -393,7 +393,7 @@ export function purgeModsInPath(
       message: "Can't purge while the game or a tool is running",
       displayMS: 5000,
     });
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const notificationId: string = shortid();
@@ -452,7 +452,7 @@ export function purgeModsInPath(
           ),
         )
         .catch(ProcessCanceled, () => null)
-        .then(() => Promise.resolve())
+        .then(() => PromiseBB.resolve())
         .finally(() => activator.postPurge())
         .tap(() => onProgress(75, "Post purge events"))
         .then(() => api.emitAndAwait("did-purge", profile.id))

@@ -1,5 +1,6 @@
 import * as path from "path";
 
+/** @type {import("eslint").Rule.RuleModule} */
 export default {
   meta: {
     type: "problem",
@@ -7,14 +8,18 @@ export default {
       description: "disallow specific cross-directory imports",
     },
     messages: {
-      importRendererInMain: "Importing {{ source }} from the renderer project is not allowed in the main project",
-      importMainInRenderer: "Importing {{ source }} from the main project is not allowed in the renderer project",
-      importMainInShared: "Importing {{ source }} from the main project is not allowed in the shared project",
-      importRendererInShared: "Importing {{ source }} from the renderer project is not allowed in the shared project",
+      importRendererInMain:
+        "Importing {{ source }} from the renderer project is not allowed in the main project",
+      importMainInRenderer:
+        "Importing {{ source }} from the main project is not allowed in the renderer project",
+      importMainInShared:
+        "Importing {{ source }} from the main project is not allowed in the shared project",
+      importRendererInShared:
+        "Importing {{ source }} from the renderer project is not allowed in the shared project",
     },
     schema: [],
   },
-  create: function(context) {
+  create: function (context) {
     return {
       ImportDeclaration(node) {
         const source = node.source.value;
@@ -39,16 +44,16 @@ export default {
             messageId: "importRendererInMain",
             node: node,
             data: {
-              source
-            }
+              source,
+            },
           });
         } else if (filename.startsWith(rendererDirectory) && importsFromMain) {
           context.report({
             messageId: "importMainInRenderer",
             node: node,
             data: {
-              source
-            }
+              source,
+            },
           });
         } else if (filename.startsWith(sharedDirectory)) {
           if (importsFromMain) {
@@ -56,21 +61,20 @@ export default {
               messageId: "importMainInShared",
               node: node,
               data: {
-                source
-              }
+                source,
+              },
             });
           } else if (importsFromRenderer) {
             context.report({
               messageId: "importRendererInShared",
               node: node,
               data: {
-                source
-              }
+                source,
+              },
             });
           }
         }
-      }
-    }
-  }
-}
-
+      },
+    };
+  },
+};

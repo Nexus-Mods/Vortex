@@ -2,7 +2,7 @@ import type { IExecInfo } from "./IExecInfo";
 import type { IExtensionApi } from "./IExtensionContext";
 import type { IGameStoreEntry } from "./IGameStoreEntry";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 
 export type GameLaunchType = "gamestore" | "commandline";
 
@@ -101,21 +101,21 @@ export interface IGameStore {
    *  resource intensive operation for each game the user attempts to
    *  manage.
    */
-  allGames: () => Promise<IGameStoreEntry[]>;
+  allGames: () => PromiseBB<IGameStoreEntry[]>;
 
   /**
    * Attempt to find a game entry using its game store Id/Ids.
    *
    * @param appId of the game entry. This is obviously game store specific.
    */
-  findByAppId: (appId: string | string[]) => Promise<IGameStoreEntry>;
+  findByAppId: (appId: string | string[]) => PromiseBB<IGameStoreEntry>;
 
   /**
    * Attempt to find a game store entry using the game's name.
    *
    * @param appName the game name which the game store uses to identify this game.
    */
-  findByName: (appName: string) => Promise<IGameStoreEntry>;
+  findByName: (appName: string) => PromiseBB<IGameStoreEntry>;
 
   /**
    * Returns the full path to the launcher's executable.
@@ -125,14 +125,14 @@ export interface IGameStore {
    *  "isGameStoreInstalled" function so that the game store helper
    *  is able to confirm that the gamestore is installed on the user's PC
    */
-  getGameStorePath: () => Promise<string>;
+  getGameStorePath: () => PromiseBB<string>;
 
   /**
    * Launches the game using this game launcher.
    * @param appId whatever the game store uses to identify a game.
    * @param api gives access to API functions if needed.
    */
-  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
+  launchGame: (appId: any, api?: IExtensionApi) => PromiseBB<void>;
 
   /**
    * Determine whether the game has been installed by this game store launcher.
@@ -140,7 +140,7 @@ export interface IGameStore {
    *
    * @param name of the game we're looking for.
    */
-  isGameInstalled?: (name: string) => Promise<boolean>;
+  isGameInstalled?: (name: string) => PromiseBB<boolean>;
 
   /**
    * In most cases the game store helper is fully capable of determining
@@ -150,7 +150,7 @@ export interface IGameStore {
    *  executable path MUST provide this function so that the game store helper
    *  can confirm that the store is installed correctly!
    */
-  isGameStoreInstalled?: () => Promise<boolean>;
+  isGameStoreInstalled?: () => PromiseBB<boolean>;
 
   /**
    * Some launchers may support Posix paths when attempting to launch a
@@ -163,7 +163,7 @@ export interface IGameStore {
    *
    * @param name of the game we want the posix path for.
    */
-  getPosixPath?: (name: string) => Promise<string>;
+  getPosixPath?: (name: string) => PromiseBB<string>;
 
   /**
    * Game store may support command line arguments when launching the game.
@@ -172,7 +172,7 @@ export interface IGameStore {
    *
    * @param appId - Whatever the game store uses to identify a game.
    */
-  getExecInfo?: (appId: any) => Promise<IExecInfo>;
+  getExecInfo?: (appId: any) => PromiseBB<IExecInfo>;
 
   /**
    * Generally the game store helper should be able to launch games directly.
@@ -182,7 +182,7 @@ export interface IGameStore {
   launchGameStore?: (
     api: IExtensionApi,
     parameters?: string[],
-  ) => Promise<void>;
+  ) => PromiseBB<void>;
 
   /**
    * Allows game stores to provide functionality to reload/refresh their
@@ -192,7 +192,7 @@ export interface IGameStore {
    * The game store helper is configured to call this function for all known
    *  game stores when a discovery scan is initiated.
    */
-  reloadGames?: () => Promise<void>;
+  reloadGames?: () => PromiseBB<void>;
 
   /**
    * determine if the specified game is managed by/installed through this store.
@@ -206,5 +206,5 @@ export interface IGameStore {
   identifyGame?: (
     gamePath: string,
     fallback: (gamePath: string) => PromiseLike<boolean>,
-  ) => Promise<boolean>;
+  ) => PromiseBB<boolean>;
 }

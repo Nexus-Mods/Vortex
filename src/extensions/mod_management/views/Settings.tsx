@@ -73,7 +73,7 @@ import { STAGING_DIR_TAG } from "../stagingDirectory";
 import getText from "../texts";
 
 import * as remote from "@electron/remote";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import * as React from "react";
 import {
@@ -122,7 +122,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onShowError: (
     message: string,
     details: string | Error | any,
@@ -355,13 +355,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             //  error cases pop up.
             log("warn", "Transfer failed - missing source directory", err);
             return ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1
-              ? Promise.resolve(undefined)
-              : Promise.reject(err);
+              ? PromiseBB.resolve(undefined)
+              : PromiseBB.reject(err);
           })
           .then((stats) => {
             const queryReset =
               stats !== undefined
-                ? Promise.resolve(false)
+                ? PromiseBB.resolve(false)
                 : onShowDialog(
                     "question",
                     "Missing staging folder",
@@ -382,8 +382,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     [{ label: "Cancel" }, { label: "Reinitialize" }],
                   ).then((result) =>
                     result.action === "Cancel"
-                      ? Promise.reject(new UserCanceled())
-                      : Promise.resolve(true),
+                      ? PromiseBB.reject(new UserCanceled())
+                      : PromiseBB.resolve(true),
                   );
 
             return queryReset.then((didReset) => {
@@ -404,7 +404,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   }
                 },
               ).catch({ code: "ENOENT" }, (err) =>
-                didReset ? Promise.resolve() : Promise.reject(err),
+                didReset ? PromiseBB.resolve() : PromiseBB.reject(err),
               );
             });
           }),
@@ -552,8 +552,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const doPurge = () =>
       oldInstallPath !== newInstallPath
         ? // ignore if there is no deployment method because in that case there is nothing to purge
-          this.purgeActivation().catch(NoDeployment, () => Promise.resolve())
-        : Promise.resolve();
+          this.purgeActivation().catch(NoDeployment, () => PromiseBB.resolve())
+        : PromiseBB.resolve();
 
     this.nextState.progress = 0;
     this.nextState.busy = t("Calculating required disk space");
@@ -570,7 +570,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           this.nextState.busy = t("Moving mod staging folder");
           return this.transferPath();
         } else {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       })
       .then(() => {
@@ -597,7 +597,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               { replace: { thePath: oldInstallPath } },
             ),
           },
-          [{ label: "Close", action: () => Promise.resolve() }],
+          [{ label: "Close", action: () => PromiseBB.resolve() }],
         );
 
         if (!(err.errorObject instanceof UserCanceled)) {
@@ -721,7 +721,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   };
 
   private checkTargetEmpty(oldInstallPath: string, newInstallPath: string) {
-    let queue = Promise.resolve();
+    let queue = PromiseBB.resolve();
     let fileCount = 0;
     let hasStagingTag: boolean = false;
     let tagInstance: string;
@@ -753,7 +753,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     // ensure the destination directories are empty
     return queue.then(
       () =>
-        new Promise((resolve, reject) => {
+        new PromiseBB((resolve, reject) => {
           if (fileCount > 0 && tagInstance !== this.props.instanceId) {
             if (tagInstance !== undefined) {
               return this.props.onShowDialog(
@@ -801,7 +801,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private purgeActivation(): Promise<void> {
+  private purgeActivation(): PromiseBB<void> {
     const { currentActivator } = this.props;
     const { supportedActivators } = this.state;
 
@@ -812,21 +812,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       supportedActivators.length === 0 ||
       currentActivator === undefined
     ) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
-    return new Promise((resolve, reject) => {
+    return new PromiseBB((resolve, reject) => {
       this.context.api.events.emit("purge-mods", true, (err) =>
         err !== null ? reject(err) : resolve(),
       );
     });
   }
 
-  private querySwitch(newActivatorId: string): Promise<void> {
+  private querySwitch(newActivatorId: string): PromiseBB<void> {
     const { activators } = this.props;
     const activator = activators.find((iter) => iter.id === newActivatorId);
     if (activator === undefined || activator.onSelected === undefined) {
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }
 
     return activator.onSelected(this.context.api);
@@ -855,8 +855,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           )
           .then((result) =>
             result.action === "Cancel"
-              ? Promise.reject(new UserCanceled())
-              : Promise.resolve(),
+              ? PromiseBB.reject(new UserCanceled())
+              : PromiseBB.resolve(),
           ),
       )
       .then(() => {
@@ -1081,7 +1081,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private suggestPath = () => {
     const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
-    Promise.join(
+    PromiseBB.join(
       fs.statAsync(modPaths[""]),
       fs.statAsync(remote.app.getPath("userData")),
     )

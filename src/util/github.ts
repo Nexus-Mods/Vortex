@@ -1,6 +1,6 @@
 import { log } from "./log";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as https from "https";
 import * as _ from "lodash";
 import * as semver from "semver";
@@ -97,37 +97,37 @@ class GitHub {
     return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;
   }
 
-  private mReleaseCache: Promise<IGitHubRelease[]>;
+  private mReleaseCache: PromiseBB<IGitHubRelease[]>;
   private mRatelimitReset: number;
 
-  public releases(): Promise<IGitHubRelease[]> {
+  public releases(): PromiseBB<IGitHubRelease[]> {
     if (this.mReleaseCache === undefined) {
       this.mReleaseCache = this.queryReleases().catch((err) => {
         this.mReleaseCache = undefined;
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       });
     }
 
     return this.mReleaseCache;
   }
 
-  public fetchConfig(config: string): Promise<any> {
+  public fetchConfig(config: string): PromiseBB<any> {
     return this.query(
       GitHub.rawUrl(),
       `${GitHub.CONFIG_BRANCH}/${config}.json`,
     );
   }
 
-  private query(baseUrl: string, request: string): Promise<any> {
+  private query(baseUrl: string, request: string): PromiseBB<any> {
     if (
       this.mRatelimitReset !== undefined &&
       this.mRatelimitReset > Date.now()
     ) {
-      return Promise.reject(new RateLimitExceeded());
+      return PromiseBB.reject(new RateLimitExceeded());
     }
     const stackErr = new Error();
 
-    return new Promise((resolve, reject) => {
+    return new PromiseBB((resolve, reject) => {
       const relUrl = new URL(`${baseUrl}/${request}`);
       const options: https.RequestOptions = {
         port: relUrl.port,
@@ -176,11 +176,11 @@ class GitHub {
     });
   }
 
-  private queryReleases(): Promise<IGitHubRelease[]> {
+  private queryReleases(): PromiseBB<IGitHubRelease[]> {
     return this.query(GitHub.repoUrl(), "releases").then(
       (releases: IGitHubRelease[]) => {
         if (!Array.isArray(releases)) {
-          return Promise.reject(
+          return PromiseBB.reject(
             new DataInvalid("expected array of github releases"),
           );
         }
@@ -192,7 +192,7 @@ class GitHub {
           )
           .sort((lhs, rhs) => semver.compare(lhs.name, rhs.name));
 
-        return Promise.resolve(current);
+        return PromiseBB.resolve(current);
       },
     );
   }

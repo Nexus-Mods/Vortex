@@ -29,7 +29,7 @@ import {
   readExtensions,
 } from "./util";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
 import { setDialogVisible, setExtensionEnabled } from "../../actions";
@@ -111,7 +111,7 @@ function checkForUpdates(api: IExtensionApi) {
   }
 
   if (updateable.length === 0) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   api.sendNotification({
@@ -129,7 +129,7 @@ function checkForUpdates(api: IExtensionApi) {
     ),
   });
 
-  return Promise.map(updateable, (update) =>
+  return PromiseBB.map(updateable, (update) =>
     downloadAndInstallExtension(api, update.update),
   ).then((success: boolean[]) => {
     api.dismissNotification("extension-updates");
@@ -159,7 +159,7 @@ function checkForUpdates(api: IExtensionApi) {
 function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
   const state: IState = api.store.getState();
   if (!state.session.base.networkConnected) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
   return fetchAvailableExtensions(true, force)
     .catch(DataInvalid, (err) => {
@@ -185,7 +185,7 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
           api.store.dispatch(setAvailableExtensions(extensions));
           return checkForUpdates(api);
         } else {
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       },
     );
@@ -194,8 +194,8 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
 function installDependency(
   api: IExtensionApi,
   depId: string,
-  updateInstalled: (initial: boolean) => Promise<void>,
-): Promise<boolean> {
+  updateInstalled: (initial: boolean) => PromiseBB<void>,
+): PromiseBB<boolean> {
   const state: IState = api.store.getState();
   const availableExtensions = state.session.extensions.available;
   const installedExtensions = state.session.extensions.installed;
@@ -204,7 +204,7 @@ function installDependency(
     // installed, probably failed to load or disabled
     if (!state.app.extensions[depId].enabled) {
       api.store.dispatch(setExtensionEnabled(depId, true));
-      return Promise.resolve(true);
+      return PromiseBB.resolve(true);
     } else {
       api.showErrorNotification(
         "Failed to install extension",
@@ -217,7 +217,7 @@ function installDependency(
         },
       );
 
-      return Promise.resolve(false);
+      return PromiseBB.resolve(false);
     }
   }
 
@@ -245,7 +245,7 @@ function installDependency(
       return success;
     });
   } else {
-    return Promise.resolve(false);
+    return PromiseBB.resolve(false);
   }
 }
 
@@ -281,7 +281,7 @@ function checkMissingDependencies(
         {
           title: "Fix",
           action: (dismiss: NotificationDismiss) => {
-            Promise.map(Object.keys(missingDependencies), (depId) =>
+            PromiseBB.map(Object.keys(missingDependencies), (depId) =>
               installDependency(api, depId, updateInstalled)
                 .then((results) => {
                   if (results) {
@@ -319,7 +319,7 @@ function checkMissingDependencies(
 }
 
 function genUpdateInstalledExtensions(api: IExtensionApi) {
-  return (initial: boolean): Promise<void> => {
+  return (initial: boolean): PromiseBB<void> => {
     return readExtensions(true)
       .then((ext) => {
         const state: IState = api.store.getState();
@@ -410,12 +410,12 @@ function init(context: IExtensionContext) {
     "site-installer",
     0,
     (files: string[], gameId: string) =>
-      Promise.resolve({
+      PromiseBB.resolve({
         supported: gameId === "site",
         requiredFiles: [],
       }),
     () => {
-      return Promise.reject(
+      return PromiseBB.reject(
         new ProcessCanceled(
           "Extensions have to be installed from the extensions page.",
         ),
@@ -425,7 +425,7 @@ function init(context: IExtensionContext) {
 
   context.once(() => {
     let onDidFetch: () => void;
-    const didFetchAvailableExtensions = new Promise(
+    const didFetchAvailableExtensions = new PromiseBB(
       (resolve) => (onDidFetch = resolve),
     );
     updateExtensions(true)
@@ -438,7 +438,7 @@ function init(context: IExtensionContext) {
           if (success) {
             return updateExtensions(false).then(() => success);
           } else {
-            return Promise.resolve().then(() => success);
+            return PromiseBB.resolve().then(() => success);
           }
         });
     });
@@ -536,7 +536,7 @@ function init(context: IExtensionContext) {
             type: "info",
             message: "Vortex extension is already installed",
           });
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
 
         if (modId !== undefined && ext !== undefined) {
@@ -555,7 +555,7 @@ function init(context: IExtensionContext) {
             message:
               "If this is a new extension it may not have been approved yet.",
           });
-          return Promise.resolve();
+          return PromiseBB.resolve();
         }
       },
     );

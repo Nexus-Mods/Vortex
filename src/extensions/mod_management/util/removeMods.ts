@@ -1,4 +1,4 @@
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { INotification } from "../../../types/INotification";
 import { toPromise } from "../../../util/util";
@@ -7,8 +7,8 @@ export function removeMod(
   api: IExtensionApi,
   gameId: string,
   modId: string,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
+): PromiseBB<void> {
+  return new PromiseBB((resolve, reject) => {
     api.events.emit("remove-mod", gameId, modId, (err) => {
       if (err) {
         reject(err);
@@ -23,9 +23,9 @@ export function removeMods(
   api: IExtensionApi,
   gameId: string,
   modIds: string[],
-): Promise<void> {
+): PromiseBB<void> {
   if (modIds.length === 0) {
-    return Promise.resolve();
+    return PromiseBB.resolve();
   }
 
   const notiParams: INotification = {

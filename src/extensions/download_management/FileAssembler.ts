@@ -4,7 +4,7 @@ import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { makeQueue } from "../../util/util";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
 import * as fsFast from "fs-extra";
 import * as path from "path";
@@ -21,7 +21,7 @@ const dialog =
  * @class FileAssembler
  */
 class FileAssembler {
-  public static create(fileName: string): Promise<FileAssembler> {
+  public static create(fileName: string): PromiseBB<FileAssembler> {
     let exists = false;
     let size = 0;
     return fs
@@ -29,11 +29,11 @@ class FileAssembler {
       .then(() => fs.statAsync(fileName))
       .then((stats) => {
         if (stats.isDirectory()) {
-          return Promise.reject(new Error("Download target is a directory"));
+          return PromiseBB.reject(new Error("Download target is a directory"));
         }
         size = stats.size;
         exists = true;
-        return Promise.resolve();
+        return PromiseBB.resolve();
       })
       .catch(() => null)
       .then(() => fs.openAsync(fileName, exists ? "r+" : "w"))
@@ -48,7 +48,10 @@ class FileAssembler {
   private mFD: number;
   private mFileName: string;
   private mTotalSize: number;
-  private mQueue: (cb: () => Promise<any>, tryOnly: boolean) => Promise<any>;
+  private mQueue: (
+    cb: () => PromiseBB<any>,
+    tryOnly: boolean,
+  ) => PromiseBB<any>;
   private mWritten: number = 0;
   private mLastFlushedTime: number = 0;
   private mLastFlushedSize: number = 0;
@@ -63,7 +66,7 @@ class FileAssembler {
   public setTotalSize(size: number) {
     this.mQueue(() => {
       this.mTotalSize = size;
-      return Promise.resolve();
+      return PromiseBB.resolve();
     }, false);
   }
 
@@ -71,10 +74,10 @@ class FileAssembler {
     return this.mFD === undefined;
   }
 
-  public rename(newName: string | Promise<string>) {
+  public rename(newName: string | PromiseBB<string>) {
     const closeFD = () =>
       this.isClosed()
-        ? Promise.reject(new ProcessCanceled("File is closed"))
+        ? PromiseBB.reject(new ProcessCanceled("File is closed"))
         : fs.closeAsync(this.mFD);
 
     let resolved: string;
@@ -85,7 +88,7 @@ class FileAssembler {
         closeFD()
           .catch({ code: "EBADF" }, () => null)
           .then(() =>
-            Promise.resolve(newName).then(
+            PromiseBB.resolve(newName).then(
               (nameResolved) => (resolved = nameResolved),
             ),
           )
@@ -94,14 +97,14 @@ class FileAssembler {
           .then((fd) => {
             this.mFD = fd;
             this.mFileName = resolved;
-            return Promise.resolve();
+            return PromiseBB.resolve();
           })
           .catch((err) => {
             if (err instanceof ProcessCanceled) {
               // This would only happen if we have closed the
               //  file in one of the queue's previous iterations.
               log("warn", "attempt to rename closed file", this.mFileName);
-              return Promise.reject(err);
+              return PromiseBB.reject(err);
             }
 
             // in case of error, re-open the original file name so we can continue writing,
@@ -111,18 +114,18 @@ class FileAssembler {
               .then((fd) => {
                 this.mFD = fd;
               })
-              .then(() => Promise.reject(err));
+              .then(() => PromiseBB.reject(err));
           }),
       false,
     );
   }
 
-  public addChunk(offset: number, data: Buffer): Promise<boolean> {
+  public addChunk(offset: number, data: Buffer): PromiseBB<boolean> {
     let synced = false;
     return this.mQueue(
       () =>
         (this.mFD === undefined
-          ? Promise.reject(new ProcessCanceled("file already closed"))
+          ? PromiseBB.reject(new ProcessCanceled("file already closed"))
           : this.writeAsync(data, offset)
         )
           .then(({ bytesWritten, buffer }) => {
@@ -143,15 +146,15 @@ class FileAssembler {
                 })
                 .then(() => bytesWritten);
             } else {
-              return Promise.resolve(bytesWritten);
+              return PromiseBB.resolve(bytesWritten);
             }
           })
           .then((bytesWritten: number) =>
             bytesWritten !== data.length
-              ? Promise.reject(
+              ? PromiseBB.reject(
                   new Error(`incomplete write ${bytesWritten}/${data.length}`),
                 )
-              : Promise.resolve(synced),
+              : PromiseBB.resolve(synced),
           )
           .catch({ code: "ENOSPC" }, () => {
             dialog.showMessageBoxSync(getVisibleWindow(), {
@@ -165,13 +168,13 @@ class FileAssembler {
               noLink: true,
             }) === 1
               ? this.addChunk(offset, data)
-              : Promise.reject(new UserCanceled());
+              : PromiseBB.reject(new UserCanceled());
           }),
       false,
     );
   }
 
-  public close(): Promise<void> {
+  public close(): PromiseBB<void> {
     return this.mQueue(() => {
       if (this.mFD !== undefined) {
         const fd = this.mFD;
@@ -181,11 +184,11 @@ class FileAssembler {
           .then(() => fs.closeAsync(fd))
           .catch({ code: "EBADF" }, () => {
             log("warn", "failed to sync or close file", this.mFileName);
-            return Promise.resolve();
+            return PromiseBB.resolve();
           })
-          .catch({ code: "ENOENT" }, () => Promise.resolve());
+          .catch({ code: "ENOENT" }, () => PromiseBB.resolve());
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     }, false);
   }
@@ -197,7 +200,7 @@ class FileAssembler {
         if (err.code === "EBADF") {
           err.message += ` (fd: ${this.mFD ?? "closed"})`;
         }
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       });
   }
 }

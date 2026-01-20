@@ -18,7 +18,7 @@ import type {
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import * as path from "path";
 import getVortexPath from "../../util/getVortexPath";
 import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
@@ -150,7 +150,7 @@ class DeploymendMethod extends LinkingDeployment {
       // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
       // I mean, why would I be able to create the files but not delete them?
       // just try again later - can't do that synchronously though
-      Promise.delay(100)
+      PromiseBB.delay(100)
         .then(() => fs.removeAsync(canary + ".link"))
         .then(() => fs.removeAsync(canary))
         .catch((err) => {
@@ -170,13 +170,13 @@ class DeploymendMethod extends LinkingDeployment {
     linkPath: string,
     sourcePath: string,
     dirTags?: boolean,
-  ): Promise<void> {
+  ): PromiseBB<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags).then(() =>
       fs
         .symlinkAsync(sourcePath, linkPath)
         .catch((err) =>
           err.code !== "EEXIST"
-            ? Promise.reject(err)
+            ? PromiseBB.reject(err)
             : fs
                 .removeAsync(linkPath)
                 .then(() => fs.symlinkAsync(sourcePath, linkPath)),
@@ -184,7 +184,7 @@ class DeploymendMethod extends LinkingDeployment {
     );
   }
 
-  protected unlinkFile(linkPath: string): Promise<void> {
+  protected unlinkFile(linkPath: string): PromiseBB<void> {
     return fs.lstatAsync(linkPath).then((stats) => {
       if (stats.isSymbolicLink()) {
         return fs.removeAsync(linkPath);
@@ -195,7 +195,7 @@ class DeploymendMethod extends LinkingDeployment {
     });
   }
 
-  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installPath: string, dataPath: string): PromiseBB<void> {
     let hadErrors = false;
     let canceled = false;
 
@@ -204,7 +204,7 @@ class DeploymendMethod extends LinkingDeployment {
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
       if (canceled || !stats.isSymbolicLink()) {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
       return fs
         .readlinkAsync(iterPath)
@@ -217,7 +217,7 @@ class DeploymendMethod extends LinkingDeployment {
         .catch((err) => {
           if (err instanceof UserCanceled) {
             canceled = true;
-            return Promise.reject(err);
+            return PromiseBB.reject(err);
           } else if (err.code === "ENOENT") {
             log("debug", "link already gone", { iterPath, error: err.message });
           } else {
@@ -234,14 +234,14 @@ class DeploymendMethod extends LinkingDeployment {
           "Some files could not be purged, please check the log file",
         );
         err["attachLogOnReport"] = true;
-        return Promise.reject(err);
+        return PromiseBB.reject(err);
       } else {
-        return Promise.resolve();
+        return PromiseBB.resolve();
       }
     });
   }
 
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+  protected isLink(linkPath: string, sourcePath: string): PromiseBB<boolean> {
     return (
       fs
         .readlinkAsync(linkPath)

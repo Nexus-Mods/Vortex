@@ -1,9 +1,9 @@
 import type { IPersistor, PersistorKey } from "../types/IExtensionContext";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 
 class SubPersistor implements IPersistor {
-  public getAllKVs: () => Promise<Array<{ key: string[]; value: string }>> =
+  public getAllKVs: () => PromiseBB<Array<{ key: string[]; value: string }>> =
     undefined;
 
   private mWrapped: IPersistor;
@@ -27,23 +27,23 @@ class SubPersistor implements IPersistor {
     }
   }
 
-  public setResetCallback(cb: () => Promise<void>): void {
+  public setResetCallback(cb: () => PromiseBB<void>): void {
     this.mWrapped.setResetCallback(cb);
   }
 
-  public getItem(key: string[]): Promise<string> {
+  public getItem(key: string[]): PromiseBB<string> {
     return this.mWrapped.getItem([].concat(this.mHive, key));
   }
 
-  public setItem(key: string[], value: string): Promise<void> {
+  public setItem(key: string[], value: string): PromiseBB<void> {
     return this.mWrapped.setItem([].concat(this.mHive, key), value);
   }
 
-  public removeItem(key: string[]): Promise<void> {
+  public removeItem(key: string[]): PromiseBB<void> {
     return this.mWrapped.removeItem([].concat(this.mHive, key));
   }
 
-  public getAllKeys(): Promise<string[][]> {
+  public getAllKeys(): PromiseBB<string[][]> {
     return this.mWrapped
       .getAllKeys()
       .then((keys) =>

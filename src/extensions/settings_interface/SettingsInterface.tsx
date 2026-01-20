@@ -51,7 +51,7 @@ import { nativeCountryName, nativeLanguageName } from "./languagemap";
 import getText from "./texts";
 
 import type * as remoteT from "@electron/remote";
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { app } from "electron";
 import * as path from "path";
 import * as React from "react";
@@ -112,7 +112,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
@@ -377,14 +377,14 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     const ext: { modId?: number } =
       extensions.find((iter) => iter.name === extName) || {};
     const { value } = target;
-    const dlProm: Promise<boolean[]> =
+    const dlProm: PromiseBB<boolean[]> =
       ext.modId !== undefined
         ? this.context.api
             .emitAndAwait("install-extension", ext)
             .tap((success) =>
-              success ? this.props.onReloadLanguages() : Promise.resolve(),
+              success ? this.props.onReloadLanguages() : PromiseBB.resolve(),
             )
-        : Promise.resolve([true]);
+        : PromiseBB.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
         this.props.onSetLanguage(value);
@@ -610,7 +610,9 @@ function isValidLanguageCode(langId: string) {
   }
 }
 
-function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
+function readLocales(
+  extensions: IAvailableExtension[],
+): PromiseBB<ILanguage[]> {
   const bundledLanguages = getVortexPath("locales");
   const userLanguages = path.normalize(
     path.join(getVortexPath("userData"), "locales"),
@@ -622,7 +624,7 @@ function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
 
   let local: string[] = [];
 
-  return Promise.join(
+  return PromiseBB.join(
     readExtensibleDir("translation", bundledLanguages, userLanguages)
       .map((file: string) => path.basename(file))
       .tap((files) => (local = files)),

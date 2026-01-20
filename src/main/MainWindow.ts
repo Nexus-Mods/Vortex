@@ -16,7 +16,7 @@ import type * as storeHelperT from "../util/storeHelper";
 import { parseBool, truthy } from "../util/util";
 import { closeAllViews } from "../util/webview";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import { ipcMain, screen, webContents } from "electron";
 import * as path from "path";
 import type * as Redux from "redux";
@@ -101,9 +101,9 @@ class MainWindow {
     }, 500);
   }
 
-  public create(store: ThunkStore<IState>): Promise<Electron.WebContents> {
+  public create(store: ThunkStore<IState>): PromiseBB<Electron.WebContents> {
     if (this.mWindow !== null) {
-      return Promise.resolve(undefined);
+      return PromiseBB.resolve(undefined);
     }
 
     const BrowserWindow: typeof Electron.BrowserWindow =
@@ -255,7 +255,7 @@ class MainWindow {
 
     this.initEventHandlers(store);
 
-    return new Promise<Electron.WebContents>((resolve) => {
+    return new PromiseBB<Electron.WebContents>((resolve) => {
       this.mWindow.once("ready-to-show", () => {
         if (resolve !== undefined && this.mWindow !== null) {
           resolve(this.mWindow.webContents);

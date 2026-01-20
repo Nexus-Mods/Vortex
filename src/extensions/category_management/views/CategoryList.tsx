@@ -39,7 +39,7 @@ import type {
 import type { ICategoriesTree } from "../types/ITrees";
 import createTreeDataObject from "../util/createTreeDataObject";
 
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 import * as React from "react";
 import { FormControl } from "react-bootstrap";
 import type * as SortableTreeT from "react-sortable-tree";
@@ -92,7 +92,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => Promise<IDialogResult>;
+  ) => PromiseBB<IDialogResult>;
 }
 
 interface IConnectedProps {

@@ -24,7 +24,7 @@ import DownloadProgressFilter from "./views/DownloadProgressFilter";
 import type { IDownloadViewProps } from "./views/DownloadView";
 import FileTime from "./views/FileTime";
 
-import Promise from "bluebird";
+import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
@@ -143,7 +143,7 @@ function createColumns(
   };
 
   const onSetDownloadGames = (dlId: string, games: string[]) => {
-    return Promise.resolve(
+    return PromiseBB.resolve(
       setDownloadGames(api, dlId, games, withAddInProgress),
     );
   };
@@ -283,7 +283,7 @@ function createColumns(
               (key) => downloads[key] === attributes,
             );
             onSetAttribute(id, stat.mtimeMs);
-            return Promise.resolve(stat.mtime);
+            return PromiseBB.resolve(stat.mtime);
           })
           .catch(() => undefined);
       },

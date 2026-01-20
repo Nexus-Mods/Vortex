@@ -1,4 +1,4 @@
-import type Promise from "bluebird";
+import type PromiseBB from "bluebird";
 
 export type ProblemSeverity = "warning" | "error" | "fatal";
 
@@ -11,6 +11,6 @@ export interface ITestResult {
     context?: any;
   };
   severity: ProblemSeverity;
-  automaticFix?: () => Promise<void>;
-  onRecheck?: () => Promise<void>;
+  automaticFix?: () => PromiseBB<void>;
+  onRecheck?: () => PromiseBB<void>;
 }
