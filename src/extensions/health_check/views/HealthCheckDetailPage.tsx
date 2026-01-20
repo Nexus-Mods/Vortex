@@ -10,12 +10,18 @@ import {
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Pictogram } from "../../../tailwind/components/pictogram";
 import { NexusMods } from "../../../tailwind/components/icons/NexusMods";
+import { Modal } from "../../../tailwind/components/modal";
 
 const Mod = ({
   children,
   isExternal,
   modName,
-}: React.PropsWithChildren<{ isExternal?: boolean; modName: string }>) => (
+  onShowVortexModal,
+}: React.PropsWithChildren<{
+  isExternal?: boolean;
+  modName: string;
+  onShowVortexModal?: () => void;
+}>) => (
   <div className="bg-surface-mid space-y-2 px-4 py-3 rounded">
     <div className="flex gap-x-2 items-center">
       <div className="grow">
@@ -62,6 +68,7 @@ const Mod = ({
                   <Icon className="size-4" path="mdiDiamondStone" size="none" />
                 </span>
               }
+              onClick={onShowVortexModal}
             >
               Install in app
             </Button>
@@ -97,10 +104,18 @@ const Mod = ({
 
 function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation(["health_check", "common"]);
+  const [showVortexModal, setShowVortexModal] = React.useState(false);
 
   return (
     <MainPage id="health-check-detail-page">
       <MainPage.Body>
+        <Modal
+          isOpen={showVortexModal}
+          onClose={() => setShowVortexModal(false)}
+        >
+          Modal content
+        </Modal>
+
         <div className="p-6 space-y-6">
           <div className="flex justify-between items-center gap-x-6">
             <div className="grow flex gap-x-2 items-center">
@@ -214,7 +229,10 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="space-y-2">
-                <Mod modName="Address Library for SKSE Plugins">
+                <Mod
+                  modName="Address Library for SKSE Plugins"
+                  onShowVortexModal={() => setShowVortexModal(true)}
+                >
                   Check the description before installing.
                 </Mod>
 
