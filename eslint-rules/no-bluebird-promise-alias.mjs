@@ -7,7 +7,7 @@ export default {
     },
     messages: {
       renamePromise:
-        "Do not import Bluebird as 'Promise'. Rename to 'PromiseBB'",
+        "Do not import Bluebird as 'Promise'. Rename to 'Bluebird'",
     },
     schema: [],
   },
