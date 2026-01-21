@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import MainPage from "../../../renderer/views/MainPage";
@@ -15,13 +15,14 @@ import {
 } from "../../../tailwind/components/next/tabs";
 import { useSelector } from "react-redux";
 import { modRequirementsCheckResult } from "../selectors";
-import type { IState } from "../../../types/api";
 
 const Mod = ({
+  dependencyModName,
   isHidden,
   modName,
   onClick,
 }: {
+  dependencyModName: string;
   isHidden?: boolean;
   modName: string;
   onClick: () => void;
@@ -39,7 +40,7 @@ const Mod = ({
         <Typography>{t("listing::item::title", { modName })}</Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          {t("listing::item::description")}
+          {t("listing::item::description", { dependencyModName })}
         </Typography>
       </div>
 
@@ -70,8 +71,8 @@ function HealthCheckPage({
   onDownloadRequirements,
 }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
-  const [showDetail, setShowDetail] = React.useState(false);
-  const [selectedTab, setSelectedTab] = React.useState("active");
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("active");
 
   const modRequirements = useSelector(modRequirementsCheckResult);
 
@@ -159,14 +160,14 @@ function HealthCheckPage({
             <TabPanel name="active">
               <div className="space-y-2">
                 <Mod
-                  modName="Sprint Swim Redux SKSE"
+                  dependencyModName="Apothecary - An Alchemy Overhaul"
+                  modName="Apothecary - Lighter Potions and Poisons"
                   onClick={() => setShowDetail(true)}
                 />
 
-                <Mod modName="SkyUI" onClick={() => setShowDetail(true)} />
-
                 <Mod
-                  modName="kryptopyr's Patch Hub"
+                  dependencyModName="Address Library for SKSE Plugins"
+                  modName="Better Jumping - Stamina Cost"
                   onClick={() => setShowDetail(true)}
                 />
               </div>
@@ -175,8 +176,9 @@ function HealthCheckPage({
             <TabPanel name="hidden">
               <div className="space-y-2">
                 <Mod
+                  dependencyModName="Address Library for SKSE Plugins"
                   isHidden={true}
-                  modName="Hidden mod"
+                  modName="Better Jumping - Stamina Cost"
                   onClick={() => setShowDetail(true)}
                 />
               </div>

@@ -37,5 +37,7 @@
   "active": "Active",
   "hidden": "Hidden",
   "helpful": "Helpful",
-  "not_helpful": "Not helpful"
+  "not_helpful": "Not helpful",
+  "was_this_helpful": "Was this helpful?",
+  "thanks_for_your_feedback": "Thanks for your feedback"
 }

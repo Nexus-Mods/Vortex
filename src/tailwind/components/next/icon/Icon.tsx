@@ -20,21 +20,19 @@
 import * as React from "react";
 import * as mdi from "@mdi/js";
 import * as nxm from "../../../lib/icon-paths";
-import type { XOr } from "../utils";
+import { joinClasses } from "../utils";
 
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 
-/* eslint-disable sort-keys */
 const sizeMap: { [key in IconSize]: string | undefined } = {
   none: undefined,
-  xs: "var(--icon-size-xs)",
-  sm: "var(--icon-size-sm)",
-  md: "var(--icon-size-md)",
-  lg: "var(--icon-size-lg)",
-  xl: "var(--icon-size-xl)",
-  "2xl": "var(--icon-size-2xl)",
+  xs: "size-3",
+  sm: "size-4",
+  md: "size-5",
+  lg: "size-6",
+  xl: "size-8",
+  "2xl": "size-12",
 };
-/* eslint-enable sort-keys */
 
 export type IconProps = Omit<React.SVGProps<SVGSVGElement>, "size" | "path"> & {
   /**
@@ -46,25 +44,15 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, "size" | "path"> & {
    */
   path: string;
   /**
+   * Named size from design system (default: 'md')
+   * Cannot be used with sizeOverride
+   */
+  size?: IconSize;
+  /**
    * Icon title for accessibility (optional)
    */
   title?: string;
-} & XOr<
-    {
-      /**
-       * Named size from design system (default: 'md')
-       * Cannot be used with sizeOverride
-       */
-      size?: IconSize;
-    },
-    {
-      /**
-       * Custom size override (e.g., '1.5rem', '24px', 'var(--custom-size)')
-       * Cannot be used with size
-       */
-      sizeOverride?: string;
-    }
-  >;
+};
 
 /**
  * Icon component that renders icons from multiple sources
@@ -74,13 +62,11 @@ export type IconProps = Omit<React.SVGProps<SVGSVGElement>, "size" | "path"> & {
  * - With Nexus icon name: <Icon path="nxmVortex" size="lg" />
  * - With direct path: <Icon path={mdiAccount} size="sm" />
  * - With className sizing: <Icon path="mdiAccount" size="none" className="size-5" />
- * - With custom size: <Icon path="mdiDownload" sizeOverride="1.75rem" />
  */
 export const Icon = ({
   path,
   size = "md",
-  sizeOverride,
-  className = "",
+  className,
   title,
   ...rest
 }: IconProps) => {
@@ -127,19 +113,16 @@ export const Icon = ({
     return null;
   }
 
-  // Determine size - use sizeOverride if provided, otherwise use size from map
-  const sizeValue = sizeOverride ?? sizeMap[size ?? "md"];
-
   return (
     <svg
       viewBox="0 0 24 24"
-      style={{ width: sizeValue, height: sizeValue }}
-      className={className}
+      className={joinClasses([sizeMap[size], className])}
       role={title ? "img" : "presentation"}
       aria-label={title}
       {...rest}
     >
       {title && <title>{title}</title>}
+
       <path d={svgPath} fill="currentColor" />
     </svg>
   );

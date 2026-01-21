@@ -2,7 +2,7 @@
     .nxm-button {
         z-index: 1;
         position: relative;
-        border-radius: 0.25rem;
+        border-radius: calc(var(--spacing) * 1);
 
         display: flex;
         align-items: center;

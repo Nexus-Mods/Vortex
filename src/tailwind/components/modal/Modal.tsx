@@ -1,20 +1,21 @@
 import { Dialog } from "@headlessui/react";
-import * as React from "react";
+import React, { type PropsWithChildren, type RefObject } from "react";
 import { joinClasses } from "../next/utils";
+import { Typography } from "../next/typography";
+import { Icon } from "../next/icon";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";
 
-// todo check these sizes
 const modalSize: { [key in ModalSize]: string } = {
-  sm: "max-w-md",
-  md: "max-w-xl",
+  sm: "max-w-xs",
+  md: "max-w-md",
   lg: "max-w-2xl",
-  xl: "max-w-4xl",
+  xl: "max-w-5xl",
 };
 
-type ModalProps = React.PropsWithChildren<{
+type ModalProps = PropsWithChildren<{
   className?: string;
-  initialFocusRef?: React.RefObject<HTMLElement | null>;
+  initialFocusRef?: RefObject<HTMLElement | null>;
   isOpen: boolean;
   onClose: () => void;
 }>;
@@ -41,18 +42,49 @@ export const ModalWrapper = ({
   </Dialog>
 );
 
+type ModalPanelProps = {
+  className?: string;
+  size?: ModalSize;
+  showCloseButton?: boolean;
+  title?: string;
+  onClose?: () => void;
+};
+
 export const ModalPanel = ({
   className,
   children,
   size = "md",
-}: React.PropsWithChildren<{ className?: string; size?: ModalSize }>) => (
+  showCloseButton = true,
+  title,
+  onClose,
+}: PropsWithChildren<ModalPanelProps>) => (
   <Dialog.Panel
     className={joinClasses([
-      "scrollbar bg-surface-low relative w-full overflow-y-auto shadow-xl",
+      "scrollbar bg-surface-low relative w-full overflow-y-auto shadow-xl rounded-lg border border-surface-translucent-low p-4",
       modalSize[size],
       className,
     ])}
   >
+    {!!title && (
+      <Dialog.Title
+        as={Typography}
+        className={joinClasses(["font-semibold mb-4"], {
+          "mr-7": showCloseButton,
+        })}
+      >
+        {title}
+      </Dialog.Title>
+    )}
+
+    {showCloseButton && (
+      <button
+        className="absolute flex justify-center items-center cursor-pointer p-1 top-3 right-3 text-neutral-strong hover:text-neutral-moderate transition-colors"
+        onClick={onClose}
+      >
+        <Icon path="mdiClose" />
+      </button>
+    )}
+
     {children}
   </Dialog.Panel>
 );
@@ -60,9 +92,13 @@ export const ModalPanel = ({
 export const Modal = ({
   children,
   size = "md",
+  title,
+  onClose,
   ...props
-}: ModalProps & { size?: ModalSize }) => (
-  <ModalWrapper {...props}>
-    <ModalPanel size={size}>{children}</ModalPanel>
+}: ModalProps & ModalPanelProps) => (
+  <ModalWrapper {...props} onClose={onClose}>
+    <ModalPanel size={size} title={title} onClose={onClose}>
+      {children}
+    </ModalPanel>
   </ModalWrapper>
 );

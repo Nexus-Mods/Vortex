@@ -3,12 +3,12 @@
  * 1. theme              - Tailwind theme variables
  * 2. base               - Tailwind preflight
  * 3. bootstrap-reset    - Bootstrap's normalize/scaffolding (overrides preflight)
- * 4. bootstrap-override - Bootstrap overrides (above reset)
- * 5. bootstrap-components - Bootstrap components
+ * 4. bootstrap-components - Bootstrap components
+ * 5. bootstrap-override - Bootstrap overrides (above components)
  * 6. components         - Tailwind components
  * 7. utilities          - Tailwind utilities (highest priority)
  */
-@layer theme, base, bootstrap-reset, bootstrap-override, bootstrap-components, components, utilities;
+@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, components, utilities;
 
 @import "tailwindcss";
 
@@ -28,16 +28,7 @@
 /* Import shared design system from nexus-next */
 @import "./shared/theme";
 @import "./shared/elements";
-
-:root {
-    /* Icon sizes for consistent icon sizing, don't think this is needed anymore should be able to use `size-[x]` */
-    --icon-size-xs: 12px;
-    --icon-size-sm: 16px;
-    --icon-size-md: 20px;
-    --icon-size-lg: 24px;
-    --icon-size-xl: 32px;
-    --icon-size-2xl: 48px;
-}
+@import "./shared/form";
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

@@ -3,22 +3,60 @@
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "item": {
-      "title": "{{modName}} may require an additional mod",
-      "description": "The following mod may be required in some setups, check the mod description to confirm."
+      "title": "Additional mod may be required for: {{modName}}",
+      "description": "Missing mod: {{dependencyModName}}"
     }
   },
   "detail": {
     "title": "Health Check Suggestion",
     "subtitle": "Suggestions may offer improvements to your experience.",
     "item": {
-      "title": "{{modName}} may require an additional mod",
-      "description": "The following mod may be required in some setups. Check <modLink>{{modName}}</modLink> description to confirm."
+      "title": "Additional mod may be required for: {{modName}}",
+      "description": "Check <modLink>{{modName}} description</modLink> for details.",
+      "missing_mod": "Missing mod",
+      "author_note": "Author note",
+      "check_the_description": "Check the description before installing.",
+      "open_mod_page": "Open mod page",
+      "open_external_mod_page": "Open external mod page",
+      "install_in_app": "Install in app",
+      "after_installing": "After installing, click Confirm install. We can’t automatically detect external mod installations.",
+      "confirm_install": "Confirm install"
     },
-    "was_this_suggestion_helpful": "Was this suggestion helpful?"
+    "feedback_modal": {
+      "title": "Thanks for letting us know",
+      "description": "Help us improve this message by telling us what went wrong.",
+      "options": {
+        "incorrect_requirement": "Incorrect requirement",
+        "requirement_already_installed": "Requirement already installed",
+        "explanation_was_unclear": "Explanation was unclear",
+        "other": "Other"
+      },
+      "buttons": {
+        "cancel": "Skip",
+        "confirm": "Send feedback"
+      }
+    }
   },
-  "premium_banner": {
-    "title": "Unlock 1-click installs with Premium.",
-    "subtitle": "Skip the website and install instantly.",
-    "button": "Unlock with Premium"
+  "premium": {
+    "banner": {
+      "title": "Unlock 1-click installs with Premium.",
+      "subtitle": "Skip the website and install instantly.",
+      "button": "Unlock with Premium"
+    },
+    "modal": {
+      "title": "Skip the website and install instantly.",
+      "description": "Downloading mods directly in Vortex requires Premium.",
+      "benefits_title": "With Premium you get:",
+      "benefits": {
+        "downloads": "Seamless in app mod downloads and updates",
+        "collections": "1-click collection installs",
+        "speed": "Uncapped download speeds",
+        "ad_free": "Ad-free for life, even if you cancel later"
+      },
+      "buttons": {
+        "download": "Download via website (free)",
+        "premium": "Unlock with Premium"
+      }
+    }
   }
 }
