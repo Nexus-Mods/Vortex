@@ -3037,6 +3037,7 @@ class ExtensionManager {
       "mod_load_order",
       "file_based_loadorder",
       "mod_management",
+      "add_new_mod",
       "category_management",
       "collections_integration",
       "profile_management",
