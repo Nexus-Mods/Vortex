@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-01-21">
+    <creator>NetworkX 3.6.1</creator>
+  </meta>
+  <graph defaultedgetype="directed" mode="static" name="">
+    <attributes mode="static" class="node">
+      <attribute id="0" title="project" type="string" />
+    </attributes>
+    <nodes>
+      <node id="util/extensionRequire.ts" label="util/extensionRequire.ts">
+        <attvalues>
+          <attvalue for="0" value="util" />
+        </attvalues>
+      </node>
+      <node id="renderer/ReduxProp.ts" label="renderer/ReduxProp.ts">
+        <attvalues>
+          <attvalue for="0" value="renderer" />
+        </attvalues>
+      </node>
+      <node id="main/MainWindow.ts" label="main/MainWindow.ts">
+        <attvalues>
+          <attvalue for="0" value="main" />
+        </attvalues>
+      </node>
+      <node id="renderer/controls/ReactSelectWrap.tsx" label="renderer/controls/ReactSelectWrap.tsx">
+        <attvalues>
+          <attvalue for="0" value="renderer" />
+        </attvalues>
+      </node>
+      <node id="main/Application.ts" label="main/Application.ts">
+        <attvalues>
+          <attvalue for="0" value="main" />
+        </attvalues>
+      </node>
+      <node id="types/IExtensionContext.ts" label="types/IExtensionContext.ts">
+        <attvalues>
+          <attvalue for="0" value="types" />
+        </attvalues>
+      </node>
+      <node id="util/ExtensionManager.ts" label="util/ExtensionManager.ts">
+        <attvalues>
+          <attvalue for="0" value="util" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="util/extensionRequire.ts" target="renderer/controls/ReactSelectWrap.tsx" id="0" />
+      <edge source="renderer/ReduxProp.ts" target="types/IExtensionContext.ts" id="1" />
+      <edge source="main/MainWindow.ts" target="types/IExtensionContext.ts" id="2" />
+      <edge source="main/Application.ts" target="util/ExtensionManager.ts" id="3" />
+      <edge source="main/Application.ts" target="types/IExtensionContext.ts" id="4" />
+      <edge source="main/Application.ts" target="main/MainWindow.ts" id="5" />
+      <edge source="types/IExtensionContext.ts" target="renderer/ReduxProp.ts" id="6" />
+      <edge source="util/ExtensionManager.ts" target="util/extensionRequire.ts" id="7" />
+    </edges>
+  </graph>
+</gexf>
