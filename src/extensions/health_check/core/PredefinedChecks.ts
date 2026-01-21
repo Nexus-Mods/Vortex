@@ -2,6 +2,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
+import { getErrorMessageOrDefault, unknownToError } from "../../../shared/errors";
 import { activeProfile } from "../../profile_management/selectors";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
@@ -356,13 +357,13 @@ export const PREDEFINED_CHECKS: Record<
         { details, metadata },
       );
     } catch (error) {
-      log("error", "Failed to check Nexus mod requirements", error);
+      log("error", "Failed to check Nexus mod requirements", unknownToError(error));
       return createResult(
         startTime,
         "error",
         HealthCheckSeverity.Error,
         "Failed to check Nexus mod requirements",
-        { details: (error as Error).message },
+        { details: getErrorMessageOrDefault(error) },
       );
     }
   },

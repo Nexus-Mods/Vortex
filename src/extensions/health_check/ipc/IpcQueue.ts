@@ -6,6 +6,7 @@
 
 import { ipcRenderer } from "electron";
 import { log } from "../../../util/log";
+import { unknownToError } from "../../../shared/errors";
 import {
   type ChunkedResponse,
   isChunkedMetadata,
@@ -115,7 +116,7 @@ class IpcQueueManager {
           chunks.push(chunk as ChunkedResponse);
         }
       } catch (error) {
-        log("error", "Failed to fetch chunk", { chunkIndex: i, error });
+        log("error", "Failed to fetch chunk", { chunkIndex: i, error: unknownToError(error) });
         return null;
       }
     }

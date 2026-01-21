@@ -9,6 +9,7 @@ import { log } from "../../../util/log";
 import type { PredefinedCheckId } from "../types";
 import { getIpcQueue } from "../ipc/IpcQueue";
 import { IPC_CHANNELS } from "../ipc/channels";
+import { unknownToError } from "../../../shared/errors";
 
 export interface IPredefinedCheckApi {
   run: (
@@ -40,7 +41,7 @@ export function createPredefinedCheckApi(): IPredefinedCheckApi {
         log("debug", "Predefined check completed", { checkId });
         return result;
       } catch (error) {
-        log("error", `Failed to run predefined check ${checkId}`, error);
+        log("error", `Failed to run predefined check ${checkId}`, unknownToError(error));
         return null;
       }
     },
@@ -55,7 +56,7 @@ export function createPredefinedCheckApi(): IPredefinedCheckApi {
           IPC_CHANNELS.LIST_PREDEFINED,
         );
       } catch (error) {
-        log("error", "Failed to list predefined checks", error);
+        log("error", "Failed to list predefined checks", unknownToError(error));
         return [];
       }
     },

@@ -4,6 +4,7 @@
  */
 
 import { log } from "../../../util/log";
+import { unknownToError } from "../../../shared/errors";
 
 /** Default chunk size: 2MB */
 export const DEFAULT_CHUNK_SIZE = 2 * 1024 * 1024;
@@ -149,7 +150,7 @@ export function reassembleChunks<T>(chunks: ChunkedResponse[]): T | null {
   try {
     return JSON.parse(json) as T;
   } catch (error) {
-    log("error", "Failed to parse reassembled chunks", error);
+    log("error", "Failed to parse reassembled chunks", unknownToError(error));
     return null;
   }
 }

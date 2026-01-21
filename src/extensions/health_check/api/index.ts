@@ -18,6 +18,7 @@ import {
 } from "./predefinedCheckApi";
 import { createLegacyApi, type ILegacyApi } from "./legacyApi";
 import { createResultsApi, type IResultsApi } from "./resultsApi";
+import { unknownToError } from "../../../shared/errors";
 
 export function createHealthCheckApi(
   registry: HealthCheckRegistry,
@@ -61,7 +62,7 @@ export function createHealthCheckApi(
         ] as IHealthCheckResult[];
       } catch (error) {
         // If main process checks fail, just return local results
-        console.error("Failed to run predefined checks:", error);
+        console.error("Failed to run predefined checks:", unknownToError(error));
         return localResults;
       }
     },

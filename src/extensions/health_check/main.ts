@@ -18,6 +18,7 @@ import {
   type ChunkedMetadata,
 } from "./ipc/chunking";
 import { log } from "../../util/log";
+import { unknownToError } from "../../shared/errors";
 
 let api: IExtensionApi | null = null;
 let mainWebContents: Electron.WebContents | null = null;
@@ -192,7 +193,7 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
 
     return true;
   } catch (error) {
-    log("error", "Failed to initialize health check main process", error);
+    log("error", "Failed to initialize health check main process", unknownToError(error));
     return false;
   }
 }
