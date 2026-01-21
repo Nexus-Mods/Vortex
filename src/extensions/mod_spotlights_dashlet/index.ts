@@ -39,8 +39,7 @@ const getLocalFilePath = (type: VideoEntryType) =>
   path.join(__dirname, FileMap[type]);
 
 const getFileLink = (type: VideoEntryType) => {
-  return `https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/mod-spotlights/out/${FileMap[type]}`;
-  // return `https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/${FileMap[type]}`;
+  return `https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/${FileMap[type]}`;
 };
 
 async function readLocalFile<T>(type: VideoEntryType): Promise<T[]> {
