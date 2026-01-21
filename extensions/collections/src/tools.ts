@@ -55,14 +55,36 @@ function normalizePath(input: string) {
   return path.normalize(input.toUpperCase());
 }
 
+function sameArgs(lhs: string[], rhs: string[]): boolean {
+  const lhsSet = new Set(lhs ?? []);
+  const rhsSet = new Set(rhs ?? []);
+  if (lhsSet.size !== rhsSet.size) {
+    return false;
+  }
+  for (const arg of lhsSet) {
+    if (!rhsSet.has(arg)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function isSameTool(discovery: types.IDiscoveryResult,
                     lhs: types.IDiscoveredTool,
                     rhs: ICollectionTool) {
   if (lhs?.path === undefined) {
     return false;
   }
-  return (normalizePath(lhs.path) === normalizePath(path.resolve(discovery.path, rhs.exe)))
-      || (lhs.name === rhs.name);
+
+  const samePath = normalizePath(lhs.path) === normalizePath(path.resolve(discovery.path, rhs.exe));
+  const sameName = lhs.name === rhs.name;
+
+  if (samePath) {
+    // Same executable - only consider it the same tool if arguments also match
+    return sameArgs(lhs.parameters, rhs.args);
+  }
+
+  return sameName;
 }
 
 function updatePaths(tool: ICollectionToolEx, gamePath: string) {
@@ -85,14 +107,9 @@ async function cloneTools(api: types.IExtensionApi,
   const knownTools = api.getState().settings.gameMode.discovered[gameId].tools;
 
   const includedTools: string[] = (tools ?? []).map(tool => {
-    const exePath = path.isAbsolute(tool.exe)
-      ? tool.exe
-      : path.join(discovery.path, tool.exe);
-
     return Object.keys(knownTools ?? {})
       .find(iter => (knownTools[iter].custom && !knownTools[iter].hidden)
-                && (normalizePath(knownTools[iter].path) === normalizePath(exePath)
-                 || knownTools[iter].name === tool.name));
+                && isSameTool(discovery, knownTools[iter], tool));
   })
   .filter(iter => iter !== undefined);
 
