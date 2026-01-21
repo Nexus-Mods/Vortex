@@ -7649,6 +7649,12 @@ class InstallManager {
   ): void {
     const aggregationId = `install-dependencies-${sourceModId}`;
 
+    // Don't allow reporting for user-initiated cancellations
+    const isCanceled =
+      details instanceof UserCanceled ||
+      (details instanceof String && ["usercanceled", "canceled", "cancelled"].some(term => details.toLowerCase().includes(term)));
+    const allowReport = isCanceled ? false : options.allowReport;
+
     if (this.mNotificationAggregator.isAggregating(aggregationId)) {
       this.mNotificationAggregator.addNotification(
         aggregationId,
@@ -7656,13 +7662,13 @@ class InstallManager {
         title,
         details,
         dependencyRef,
-        { allowReport: options.allowReport },
+        { allowReport },
       );
     } else {
       api.showErrorNotification(title, details, {
         id: `failed-install-dependency-${dependencyRef}`,
         message: dependencyRef,
-        allowReport: options.allowReport,
+        allowReport,
         replace: options.replace,
       });
     }
