@@ -1,10 +1,11 @@
 /**
  * IPC bridge for main process to call Nexus API functions in renderer.
- * Uses SharedBuffer for efficient data transfer of large payloads.
  *
  * Since api.ext is only populated in the renderer process (where extensions
  * register their APIs), the main process needs to request the renderer to
  * execute Nexus API calls on its behalf.
+ *
+ * Uses chunking for large payloads to prevent memory spikes.
  */
 
 import { ipcMain, ipcRenderer } from "electron";
@@ -12,28 +13,13 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModRequirements } from "@nexusmods/nexus-api";
 import { log } from "../../../util/log";
 import { IPC_CHANNELS } from "./channels";
-import { SharedBuffer } from "./SharedBuffer";
-
-/**
- * Shared buffer instance for the nexus bridge
- */
-const nexusBridgeBuffer = new SharedBuffer("NexusBridgeBuffer");
-
-/**
- * Initialize the shared buffer (called from main process)
- */
-export function initNexusBridgeBuffer(
-  size: number = 10 * 1024 * 1024,
-): SharedArrayBuffer {
-  return nexusBridgeBuffer.initialize(size);
-}
-
-/**
- * Attach to shared buffer (called from renderer process)
- */
-export function attachNexusBridgeBuffer(buffer: SharedArrayBuffer): void {
-  nexusBridgeBuffer.attach(buffer);
-}
+import {
+  chunkData,
+  shouldChunk,
+  reassembleChunks,
+  CHUNK_THRESHOLD,
+  type ChunkedResponse,
+} from "./chunking";
 
 /**
  * Setup the renderer-side IPC handler for Nexus API calls
@@ -56,37 +42,48 @@ export function setupNexusBridgeRenderer(api: IExtensionApi): void {
           ipcRenderer.send(
             `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
             requestId,
-            { error: "Nexus API not available", useSharedBuffer: false },
+            { error: "Nexus API not available" },
           );
           return;
         }
 
         const requirements = await nexusApi(gameId, modIds);
 
-        // Try to use shared buffer for large data
-        const useSharedBuffer =
-          nexusBridgeBuffer.isReady() && nexusBridgeBuffer.write(requirements);
-
         log("debug", "IPC bridge: sending requirements to main", {
           requestId,
           gameId,
           modIdsRequested: modIds.length,
           requirementsReturned: Object.keys(requirements || {}).length,
-          useSharedBuffer,
         });
 
-        if (useSharedBuffer) {
+        // Check if data needs chunking
+        if (shouldChunk(requirements, CHUNK_THRESHOLD)) {
+          const chunks = chunkData(requirements);
+          log("debug", "IPC bridge: chunking large requirements data", {
+            requestId,
+            totalChunks: chunks.length,
+          });
+
+          // Send chunks sequentially to avoid memory spikes
+          for (const chunk of chunks) {
+            ipcRenderer.send(
+              `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:chunk`,
+              requestId,
+              chunk,
+            );
+          }
+
+          // Signal completion
           ipcRenderer.send(
             `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
             requestId,
-            { useSharedBuffer: true },
+            { chunked: true, totalChunks: chunks.length },
           );
         } else {
-          // Fallback to direct IPC
           ipcRenderer.send(
             `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
             requestId,
-            { data: requirements, useSharedBuffer: false },
+            { data: requirements },
           );
         }
       } catch (error) {
@@ -99,7 +96,7 @@ export function setupNexusBridgeRenderer(api: IExtensionApi): void {
         ipcRenderer.send(
           `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
           requestId,
-          { error: err.message, useSharedBuffer: false },
+          { error: err.message },
         );
       }
     },
@@ -119,30 +116,53 @@ export function requestModRequirementsFromRenderer(
 ): Promise<{ [modId: number]: Partial<IModRequirements> } | null> {
   return new Promise((resolve, reject) => {
     const requestId = `${gameId}-${modIds.length}-${Date.now()}`;
+    const receivedChunks: ChunkedResponse[] = [];
+
     const timeout = setTimeout(() => {
-      ipcMain.removeListener(
-        `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
-        handler,
-      );
+      cleanup();
       reject(new Error("Timeout waiting for mod requirements"));
     }, 30000);
 
-    const handler = (
+    const cleanup = () => {
+      clearTimeout(timeout);
+      ipcMain.removeListener(
+        `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
+        responseHandler,
+      );
+      ipcMain.removeListener(
+        `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:chunk`,
+        chunkHandler,
+      );
+    };
+
+    // Handle incoming chunks
+    const chunkHandler = (
+      _event: Electron.IpcMainEvent,
+      chunkRequestId: string,
+      chunk: ChunkedResponse,
+    ) => {
+      if (chunkRequestId !== requestId) return;
+      receivedChunks.push(chunk);
+      log("debug", "IPC bridge (main): received chunk", {
+        requestId,
+        chunkIndex: chunk.chunkIndex,
+        totalChunks: chunk.totalChunks,
+      });
+    };
+
+    const responseHandler = (
       _event: Electron.IpcMainEvent,
       responseId: string,
       response: {
         data?: { [modId: number]: Partial<IModRequirements> };
         error?: string;
-        useSharedBuffer?: boolean;
+        chunked?: boolean;
+        totalChunks?: number;
       },
     ) => {
       if (responseId !== requestId) return;
 
-      clearTimeout(timeout);
-      ipcMain.removeListener(
-        `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
-        handler,
-      );
+      cleanup();
 
       if (response.error) {
         reject(new Error(response.error));
@@ -151,19 +171,16 @@ export function requestModRequirementsFromRenderer(
 
       let data: { [modId: number]: Partial<IModRequirements> } | null;
 
-      if (response.useSharedBuffer) {
-        // Read from shared buffer
-        data = nexusBridgeBuffer.read<{
+      if (response.chunked) {
+        // Reassemble chunks
+        data = reassembleChunks<{
           [modId: number]: Partial<IModRequirements>;
-        }>();
-        log(
-          "debug",
-          "IPC bridge (main): read requirements from shared buffer",
-          {
-            responseId,
-            dataKeysCount: data ? Object.keys(data).length : 0,
-          },
-        );
+        }>(receivedChunks);
+        log("debug", "IPC bridge (main): reassembled chunked requirements", {
+          responseId,
+          chunksReceived: receivedChunks.length,
+          dataKeysCount: data ? Object.keys(data).length : 0,
+        });
       } else {
         data = response.data || null;
         log("debug", "IPC bridge (main): received requirements via IPC", {
@@ -175,7 +192,11 @@ export function requestModRequirementsFromRenderer(
       resolve(data);
     };
 
-    ipcMain.on(`${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`, handler);
+    ipcMain.on(`${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:chunk`, chunkHandler);
+    ipcMain.on(
+      `${IPC_CHANNELS.GET_MOD_REQUIREMENTS}:response`,
+      responseHandler,
+    );
     webContents.send(
       IPC_CHANNELS.GET_MOD_REQUIREMENTS,
       requestId,
@@ -186,9 +207,8 @@ export function requestModRequirementsFromRenderer(
 }
 
 /**
- * Cleanup IPC handlers and reset buffer state
+ * Cleanup IPC handlers
  */
 export function cleanupNexusBridgeRenderer(): void {
   ipcRenderer.removeAllListeners(IPC_CHANNELS.GET_MOD_REQUIREMENTS);
-  ipcRenderer.removeAllListeners(IPC_CHANNELS.NEXUS_BRIDGE_BUFFER_READY);
 }

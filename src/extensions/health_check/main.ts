@@ -8,18 +8,52 @@ import {
   getAvailablePredefinedChecks,
 } from "./core/PredefinedChecks";
 import type { PredefinedCheckId } from "./types";
-import { HealthCheckSharedBuffer } from "./ipc/shared-buffer";
-import { initNexusBridgeBuffer } from "./ipc/nexus-bridge";
 import { IPC_CHANNELS } from "./ipc/channels";
+import {
+  chunkData,
+  shouldChunk,
+  estimateSize,
+  CHUNK_THRESHOLD,
+  type ChunkedResponse,
+  type ChunkedMetadata,
+} from "./ipc/chunking";
 import { log } from "../../util/log";
 
-/** Threshold for using SharedArrayBuffer (1MB) */
-const SHARED_BUFFER_THRESHOLD = 1024 * 1024;
-
 let api: IExtensionApi | null = null;
-let sharedBuffer: HealthCheckSharedBuffer | null = null;
-let nexusBridgeBuffer: SharedArrayBuffer | null = null;
 let mainWebContents: Electron.WebContents | null = null;
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+/**
+ * Cache for chunked results, keyed by request identifier
+ * Chunks are stored temporarily until renderer fetches them all
+ */
+const chunkCache = new Map<
+  string,
+  { chunks: ChunkedResponse[]; timestamp: number }
+>();
+
+/** Cache TTL: 60 seconds */
+const CHUNK_CACHE_TTL = 60 * 1000;
+
+/**
+ * Generate a cache key for chunked results
+ */
+function getChunkCacheKey(channel: string, ...args: unknown[]): string {
+  return `${channel}:${JSON.stringify(args)}`;
+}
+
+/**
+ * Clean up expired chunk cache entries
+ */
+function cleanupChunkCache(): void {
+  const now = Date.now();
+  for (const [key, entry] of chunkCache.entries()) {
+    if (now - entry.timestamp > CHUNK_CACHE_TTL) {
+      chunkCache.delete(key);
+      log("debug", "Expired chunk cache entry removed", { key });
+    }
+  }
+}
 
 /**
  * Get the webContents for IPC calls to renderer
@@ -32,21 +66,16 @@ export function getHealthCheckWebContents(): Electron.WebContents | null {
  * Main process entry point for health check extension
  * Handles predefined checks that can run in main process without function serialization
  *
- * Phase 1: Hybrid architecture with SharedArrayBuffer
- * - Extensions register custom checks in renderer (with functions)
- * - Predefined checks run in main process (pure functions, no serialization)
- * - Results use SharedArrayBuffer for large datasets (>1MB)
+ * Features:
+ * - Queued IPC with chunking for large payloads (>1MB)
+ * - Prevents memory spikes from large health check results
  */
 export function initHealthCheckMain(context: IExtensionContext): boolean {
   try {
     api = context.api;
 
-    // Note: Reducer is registered in index.ts (renderer) which runs during normal extension loading
-    // The main process shares the same Redux store via IPC sync
-
-    // Initialize SharedArrayBuffer (50MB for large mod collections)
-    sharedBuffer = new HealthCheckSharedBuffer();
-    sharedBuffer.initialize(50 * 1024 * 1024);
+    // Periodic cleanup of chunk cache
+    cleanupInterval = setInterval(cleanupChunkCache, 30000);
 
     // Register IPC handler for running predefined checks
     ipcMain.handle(
@@ -59,26 +88,39 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
         try {
           const result = await executePredefinedCheck(checkId, api, params);
 
-          // Check if result is large enough to use SharedArrayBuffer
-          const resultJson = JSON.stringify([result]); // Wrap in array for consistency
-          const resultSize = new TextEncoder().encode(resultJson).length;
-
-          if (resultSize > SHARED_BUFFER_THRESHOLD && sharedBuffer) {
-            log("debug", "Using SharedArrayBuffer for large result", {
+          // Check if result needs chunking
+          if (shouldChunk(result, CHUNK_THRESHOLD)) {
+            const size = estimateSize(result);
+            const chunks = chunkData(result);
+            const cacheKey = getChunkCacheKey(
+              IPC_CHANNELS.RUN_PREDEFINED,
               checkId,
-              size: resultSize,
+              params,
+            );
+
+            // Store chunks in cache
+            chunkCache.set(cacheKey, {
+              chunks,
+              timestamp: Date.now(),
             });
 
-            // Write to SharedArrayBuffer
-            const success = sharedBuffer.writeResults([result]);
+            log("debug", "Result chunked and cached", {
+              checkId,
+              size,
+              totalChunks: chunks.length,
+              cacheKey,
+            });
 
-            if (success) {
-              // Return indicator that data is in shared buffer
-              return { useSharedBuffer: true, size: resultSize };
-            }
+            // Return metadata so renderer knows to fetch chunks
+            const metadata: ChunkedMetadata = {
+              chunked: true,
+              totalChunks: chunks.length,
+              totalSize: size,
+            };
+            return metadata;
           }
 
-          // Return result directly via IPC (small data or SharedArrayBuffer failed)
+          // Return result directly via IPC (small data)
           return result;
         } catch (error) {
           const err = error as Error;
@@ -88,6 +130,49 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
           });
           throw error;
         }
+      },
+    );
+
+    // Register IPC handler for fetching individual chunks
+    ipcMain.handle(
+      IPC_CHANNELS.FETCH_CHUNK,
+      async (
+        _event,
+        originalChannel: string,
+        chunkIndex: number,
+        ...originalArgs: unknown[]
+      ) => {
+        const cacheKey = getChunkCacheKey(originalChannel, ...originalArgs);
+        const cached = chunkCache.get(cacheKey);
+
+        if (!cached) {
+          log("warn", "Chunk cache miss", { cacheKey, chunkIndex });
+          return null;
+        }
+
+        if (chunkIndex < 0 || chunkIndex >= cached.chunks.length) {
+          log("error", "Invalid chunk index", {
+            chunkIndex,
+            totalChunks: cached.chunks.length,
+          });
+          return null;
+        }
+
+        const chunk = cached.chunks[chunkIndex];
+
+        log("debug", "Serving chunk from cache", {
+          cacheKey,
+          chunkIndex,
+          totalChunks: cached.chunks.length,
+        });
+
+        // If this is the last chunk, clean up the cache entry
+        if (chunkIndex === cached.chunks.length - 1) {
+          chunkCache.delete(cacheKey);
+          log("debug", "All chunks served, cache entry removed", { cacheKey });
+        }
+
+        return chunk;
       },
     );
 
@@ -101,6 +186,7 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
       "Health check main process initialized with predefined checks",
       {
         availableChecks: getAvailablePredefinedChecks(),
+        chunkThreshold: CHUNK_THRESHOLD,
       },
     );
 
@@ -112,28 +198,14 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
 }
 
 /**
- * Set the web contents for sending SharedArrayBuffer to renderer
+ * Set the web contents for IPC calls to renderer
  * Must be called after window creation
  */
 export function setHealthCheckWebContents(
   webContents: Electron.WebContents,
 ): void {
-  // Store reference for IPC calls to renderer
   mainWebContents = webContents;
-
-  if (sharedBuffer && webContents) {
-    const buffer = sharedBuffer.initialize();
-    webContents.send(IPC_CHANNELS.SHARED_BUFFER_READY, { buffer });
-    log("debug", "Shared buffer sent to renderer process");
-  }
-
-  if (webContents) {
-    nexusBridgeBuffer = initNexusBridgeBuffer(10 * 1024 * 1024);
-    webContents.send(IPC_CHANNELS.NEXUS_BRIDGE_BUFFER_READY, {
-      buffer: nexusBridgeBuffer,
-    });
-    log("debug", "Nexus bridge buffer sent to renderer process");
-  }
+  log("debug", "Health check webContents set");
 }
 
 /**
@@ -142,7 +214,18 @@ export function setHealthCheckWebContents(
 export function cleanupHealthCheckMain(): void {
   ipcMain.removeHandler(IPC_CHANNELS.RUN_PREDEFINED);
   ipcMain.removeHandler(IPC_CHANNELS.LIST_PREDEFINED);
+  ipcMain.removeHandler(IPC_CHANNELS.FETCH_CHUNK);
+
+  // Clear cleanup interval
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+
+  // Clear chunk cache
+  chunkCache.clear();
+
   api = null;
-  sharedBuffer = null;
+  mainWebContents = null;
   log("info", "Health check main process cleaned up");
 }

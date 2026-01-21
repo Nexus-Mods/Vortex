@@ -8,14 +8,7 @@ import type { IExtensionContext } from "../../types/IExtensionContext";
 import HealthCheckPage from "./views/HealthCheckPage";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
-import { HealthCheckSharedBuffer } from "./ipc/shared-buffer";
-import {
-  setupNexusBridgeRenderer,
-  attachNexusBridgeBuffer,
-} from "./ipc/nexus-bridge";
-import { IPC_CHANNELS } from "./ipc/channels";
-import { ipcRenderer } from "electron";
-import { log } from "../../util/log";
+import { setupNexusBridgeRenderer } from "./ipc/nexus-bridge";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";
 import {
@@ -29,7 +22,6 @@ import type { IHealthCheckApi } from "./types";
 
 let registry: HealthCheckRegistry | null = null;
 let legacyAdapter: LegacyTestAdapter | null = null;
-let sharedBuffer: HealthCheckSharedBuffer | null = null;
 let healthCheckApi: IHealthCheckApi | null = null;
 
 function init(context: IExtensionContext): boolean {
@@ -67,38 +59,11 @@ function init(context: IExtensionContext): boolean {
     registry = new HealthCheckRegistry(context.api);
     legacyAdapter = new LegacyTestAdapter(registry, context.api);
 
-    // Initialize SharedArrayBuffer for predefined checks
-    sharedBuffer = new HealthCheckSharedBuffer();
-
-    // Listen for SharedArrayBuffer from main process
-    ipcRenderer.on(IPC_CHANNELS.SHARED_BUFFER_READY, (_event, { buffer }) => {
-      if (sharedBuffer) {
-        sharedBuffer.attach(buffer as SharedArrayBuffer);
-        log("debug", "Attached to SharedArrayBuffer from main process");
-      }
-    });
-
-    ipcRenderer.on(
-      IPC_CHANNELS.NEXUS_BRIDGE_BUFFER_READY,
-      (_event, { buffer }) => {
-        attachNexusBridgeBuffer(buffer as SharedArrayBuffer);
-        log(
-          "debug",
-          "Attached to nexus bridge SharedArrayBuffer from main process",
-        );
-      },
-    );
-
     // Set up IPC bridge for main process to call Nexus API
     setupNexusBridgeRenderer(context.api);
 
     // Create health check API using separated modules
-    healthCheckApi = createHealthCheckApi(
-      registry,
-      legacyAdapter,
-      sharedBuffer,
-      context.api,
-    );
+    healthCheckApi = createHealthCheckApi(registry, legacyAdapter, context.api);
 
     setupAutomaticTriggers(context.api, healthCheckApi);
 

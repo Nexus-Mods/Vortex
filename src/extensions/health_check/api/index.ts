@@ -10,7 +10,6 @@ import type {
 } from "../../../types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
-import type { HealthCheckSharedBuffer } from "../ipc/shared-buffer";
 import type { PredefinedCheckId, IHealthCheckApi } from "../types";
 import { createCustomCheckApi, type ICustomCheckApi } from "./customCheckApi";
 import {
@@ -23,12 +22,11 @@ import { createResultsApi, type IResultsApi } from "./resultsApi";
 export function createHealthCheckApi(
   registry: HealthCheckRegistry,
   legacyAdapter: LegacyTestAdapter,
-  sharedBuffer: HealthCheckSharedBuffer | null,
   api: IExtensionApi,
 ): IHealthCheckApi {
   // Create sub-APIs
   const customApi = createCustomCheckApi(registry, api);
-  const predefinedApi = createPredefinedCheckApi(sharedBuffer);
+  const predefinedApi = createPredefinedCheckApi();
   const legacyApi = createLegacyApi(legacyAdapter, registry);
   const resultsApi = createResultsApi(registry);
 
