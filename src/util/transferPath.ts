@@ -233,7 +233,7 @@ export function transferPath(
                               ? PromiseBB.resolve()
                               : PromiseBB.reject(err),
                           );
-                  }).then(() => null),
+                  }).then(() => {}),
                 )
                 .then(() =>
                   PromiseBB.map(files, (entry) => {
@@ -258,6 +258,7 @@ export function transferPath(
                         //  come on...
                         const code = getErrorCode(err);
                         if (
+                          code &&
                           ["EXDEV", "ENOTSUP", "EISDIR"].indexOf(code) !== -1
                         ) {
                           func = fs.copyAsync;
@@ -283,10 +284,9 @@ export function transferPath(
                         }
                       });
                   })
-                    .then(() => null)
+                    .then(() => {})
                     .catch((err) => {
                       exception = unknownToError(err);
-                      return null;
                     }),
                 );
         },
@@ -346,7 +346,7 @@ export function cleanFailedTransfer(dirPath: string): PromiseBB<void> {
   )
     .catch((err) => {
       const code = getErrorCode(err);
-      return ["ENOENT", "ENOTFOUND"].includes(code)
+      return code && ["ENOENT", "ENOTFOUND"].includes(code)
         ? PromiseBB.resolve()
         : PromiseBB.reject(err);
     })
@@ -375,7 +375,7 @@ function removeFolderTags(sourceDir: string) {
         ? fs.removeAsync(filePath).catch((err) => {
             log("error", "Unable to remove directory tag", err);
             const code = getErrorCode(err);
-            return ["ENOENT"].indexOf(code) !== -1
+            return code && ["ENOENT"].indexOf(code) !== -1
               ? // Tag file is gone ? no problem.
                 PromiseBB.resolve()
               : PromiseBB.reject(err);
@@ -394,7 +394,7 @@ function removeOldDirectories(directories: string[]): PromiseBB<void> {
   return PromiseBB.each(directories.sort(longestFirst), (dir) =>
     fs.removeAsync(dir).catch((err) => {
       const code = getErrorCode(err);
-      return ["ENOENT"].indexOf(code) !== -1
+      return code && ["ENOENT"].indexOf(code) !== -1
         ? // Directory missing ? odd but lets keep going.
           PromiseBB.resolve()
         : PromiseBB.reject(err);

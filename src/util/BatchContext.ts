@@ -86,7 +86,10 @@ function makeKey(id: string, key: string) {
   return `${id}-${key}`;
 }
 
-function previousBatch(keys: string[], context: BatchContext): BatchContext {
+function previousBatch(
+  keys: string[],
+  context: BatchContext,
+): BatchContext | undefined {
   for (const key of keys) {
     if (contexts[key] !== undefined && contexts[key][0] !== context) {
       return contexts[key][0];
@@ -99,7 +102,7 @@ export function getBatchContext(
   operation: string | string[],
   key: string,
   create: boolean = false,
-): IBatchContext {
+): IBatchContext | undefined {
   if (Array.isArray(operation)) {
     // We don't create contexts for multiple operations, only search.
     for (const op of operation) {
@@ -141,7 +144,7 @@ export async function withBatchContext<T>(
   // concurrently
   // This is necessary as the contexts are globals, fortunately it should be really rare
   // this becomes relevant
-  let preBatch: BatchContext = previousBatch(fullKeys, context);
+  let preBatch: BatchContext | undefined = previousBatch(fullKeys, context);
   while (preBatch !== undefined) {
     await preBatch.await();
     preBatch = previousBatch(fullKeys, context);

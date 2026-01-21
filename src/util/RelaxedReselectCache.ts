@@ -5,7 +5,7 @@ export class RelaxedReselectCache {
   constructor() {
     this.mCache = new Map();
   }
-  public set(key: string, selectorFn) {
+  public set(key: string, selectorFn: any) {
     this.mCache.set(key ?? NULL_KEY, selectorFn);
   }
 

@@ -218,7 +218,10 @@ export function dismissAllNotifications() {
     new PromiseBB<void>((resolve, reject) => {
       const ids = Array.from(
         new Set<string>(
-          [].concat(Object.keys(timers), Object.keys(notificationActions)),
+          Array<string>().concat(
+            Object.keys(timers),
+            Object.keys(notificationActions),
+          ),
         ),
       );
       ids.forEach((id) => {

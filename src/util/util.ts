@@ -63,7 +63,7 @@ export function setdefault<T, K extends keyof T>(
   key: K,
   def: T[K],
 ): T[K] {
-  if (!obj.hasOwnProperty(key)) {
+  if (!Object.prototype.hasOwnProperty.call(obj, key)) {
     obj[key] = def;
   }
   return obj[key];
@@ -211,7 +211,7 @@ interface IQueueItem {
  */
 export function makeQueue<T>() {
   const pending: IQueueItem[] = [];
-  let processing: IQueueItem;
+  let processing: IQueueItem | undefined;
 
   const tick = () => {
     processing = pending.shift();
@@ -219,7 +219,9 @@ export function makeQueue<T>() {
       processing
         .func()
         .then(processing.resolve)
-        .catch((err) => processing.reject(restackErr(err, processing.stackErr)))
+        .catch((err) =>
+          processing?.reject(restackErr(err, processing.stackErr)),
+        )
         .finally(() => {
           tick();
         });
@@ -317,7 +319,7 @@ export function timeToString(seconds: number): string {
 
 let convertDiv: HTMLDivElement;
 
-export function encodeHTML(input: string): string {
+export function encodeHTML(input: string): string | undefined {
   if (input === undefined) {
     return undefined;
   }
@@ -328,7 +330,7 @@ export function encodeHTML(input: string): string {
   return convertDiv.innerHTML;
 }
 
-export function decodeHTML(input: string): string {
+export function decodeHTML(input: string): string | undefined {
   if (input === undefined) {
     return undefined;
   }
@@ -555,7 +557,7 @@ const INVALID_FILEPATH_CHARACTERS =
 /**
  * characters invalid in a file name
  */
-const INVALID_FILENAME_CHARACTERS = [].concat(
+const INVALID_FILENAME_CHARACTERS = Array<string>().concat(
   INVALID_FILEPATH_CHARACTERS,
   path.sep,
 );
@@ -740,7 +742,7 @@ function flattenInner(
         ...flattenInner(
           obj[attr],
           [...key, attr],
-          [].concat(objStack, [obj[attr]]),
+          Array<string>().concat(objStack, [obj[attr]]),
           options,
         ),
       };
@@ -815,11 +817,13 @@ export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
   const keys = new Set<U>();
   return input.reduce((prev: T[], iter: T) => {
     const key = keyFunc?.(iter);
-    if (keys.has(key)) {
-      return prev;
+    if (key) {
+      if (keys.has(key)) {
+        return prev;
+      }
+      keys.add(key);
     }
-    keys.add(key);
-    return [].concat(prev, iter);
+    return Array<T>().concat(prev, iter);
   }, []);
 }
 
@@ -898,7 +902,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
   // Try to get cached chunk size for this action type
   const firstActionType = actions[0]?.type;
   if (firstActionType && chunkSizeCache.has(firstActionType)) {
-    return chunkSizeCache.get(firstActionType);
+    return chunkSizeCache.get(firstActionType)!;
   }
 
   // Sample first few actions to estimate average size

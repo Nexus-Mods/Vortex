@@ -39,6 +39,7 @@ export function rawRequest(
           err = `Request Failed. Status Code: ${statusCode}`;
         } else if (
           options.expectedContentType !== undefined &&
+          contentType &&
           !options.expectedContentType.test(contentType)
         ) {
           err = `Invalid content-type ${contentType}`;

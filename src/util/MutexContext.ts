@@ -6,7 +6,7 @@ import * as React from "react";
 import { generate as shortid } from "shortid";
 
 export interface IMutexContextValue {
-  current: string;
+  current: string | null;
   add: (newItem: string) => void;
   remove: (item: string) => void;
 }
@@ -14,7 +14,7 @@ export interface IMutexContextValue {
 class MutexContextValue implements IMutexContextValue {
   private mQueue: string[] = [];
 
-  public get current(): string {
+  public get current(): string | null {
     return this.mQueue.length > 0 ? this.mQueue[0] : null;
   }
 
@@ -33,7 +33,7 @@ class MutexContextValue implements IMutexContextValue {
   }
 }
 
-const MutexContext = React.createContext<IMutexContextValue>(null);
+const MutexContext = React.createContext<IMutexContextValue | null>(null);
 
 export function createQueue() {
   return new MutexContextValue();
@@ -49,7 +49,7 @@ export function useMutex(show: boolean) {
   const forceUpdate = React.useCallback(() => updateState({}), []);
 
   React.useEffect(() => {
-    if (ctx === undefined) {
+    if (ctx === undefined || ctx === null) {
       return;
     }
     if (show) {
@@ -63,7 +63,7 @@ export function useMutex(show: boolean) {
     };
   }, [show]);
 
-  return ctx.current === mutexId && mutexId !== null;
+  return ctx?.current === mutexId && mutexId !== null;
 }
 
 export function useRandomId() {

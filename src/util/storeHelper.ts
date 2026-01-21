@@ -6,6 +6,7 @@ import type { IGameStored } from "../extensions/gamemode_management/types/IGameS
 
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
+import type { IProfile } from "../types/api";
 
 function clone<T>(input: T): T {
   return Array.isArray(input) ? ([...input] as T) : { ...(input as any) };
@@ -24,12 +25,15 @@ function clone<T>(input: T): T {
  */
 export function getSafe<T>(
   state: any,
-  path: Array<string | number>,
+  path: Array<string | number | undefined>,
   fallback: T,
 ): T {
+  if (!path || path.length === 0) {
+    return state ?? fallback;
+  }
   let current = state;
   for (let i = 0; i < path.length; i++) {
-    current = current?.[path[i]];
+    current = current?.[path[i]!];
     if (current == null) {
       return fallback;
     }
@@ -202,7 +206,7 @@ export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   let result: any = state;
   if (path.length === 1) {
     if (Array.isArray(state)) {
-      result = [].concat(state);
+      result = Array<any>().concat(state);
       result.splice(firstElement as number, 1);
     } else if (Object.hasOwnProperty.call(state, firstElement)) {
       result = { ...(state as any) };
@@ -267,8 +271,8 @@ export function pushSafe<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, []);
-  getSafe(copy, path, undefined).push(value);
+  const copy = setDefaultArray(state, path, Array<any>());
+  getSafe<any | undefined>(copy, path, undefined)?.push(value);
   return copy;
 }
 
@@ -283,8 +287,8 @@ export function addUniqueSafe<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, []);
-  const arr = getSafe(copy, path, undefined);
+  const copy = setDefaultArray(state, path, Array<any>());
+  const arr = getSafe<any | undefined>(copy, path, undefined);
   if (arr.indexOf(value) !== -1) {
     return state;
   }
@@ -307,8 +311,8 @@ export function removeValue<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, []);
-  const list = getSafe(copy, path, undefined);
+  const copy = setDefaultArray(state, path, Array<any>());
+  const list = getSafe<any | undefined>(copy, path, undefined);
   const idx = list.indexOf(value);
   if (idx === -1) {
     return state;
@@ -399,21 +403,22 @@ function waitUntil(
  * @returns {PromiseBB<IGameStored>}
  */
 export function currentGame(store: Redux.Store<any>): PromiseBB<IGameStored> {
-  const fallback = {
+  const fallback: IGameStored = {
     id: "__placeholder",
     name: "<No game>",
     requiredFiles: [],
+    executable: "",
   };
 
   // Helper function to get the active game ID without importing selectors
   // This inlines the logic from activeGameId selector to break circular dependency
-  const getActiveGameId = (state: any): string => {
-    const profileId = getSafe(
+  const getActiveGameId = (state: any): string | undefined => {
+    const profileId = getSafe<string | undefined>(
       state,
       ["settings", "profiles", "activeProfileId"],
       undefined,
     );
-    const profile = getSafe(
+    const profile = getSafe<IProfile | undefined>(
       state,
       ["persistent", "profiles", profileId],
       undefined,
@@ -421,18 +426,18 @@ export function currentGame(store: Redux.Store<any>): PromiseBB<IGameStored> {
     return profile !== undefined ? profile.gameId : undefined;
   };
 
-  let knownGames = getSafe(
+  let knownGames = getSafe<IGameStored[] | null>(
     store.getState(),
     ["session", "gameMode", "known"],
     null,
   );
   if (knownGames !== null && knownGames !== undefined) {
     const gameMode = getActiveGameId(store.getState());
-    const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+    const res = knownGames.find((ele) => ele.id === gameMode);
     return PromiseBB.resolve(res || fallback);
   } else {
     return waitUntil(() => {
-      knownGames = getSafe(
+      knownGames = getSafe<IGameStored[] | null>(
         store.getState(),
         ["session", "gameMode", "known"],
         null,
@@ -441,7 +446,7 @@ export function currentGame(store: Redux.Store<any>): PromiseBB<IGameStored> {
     }).then(() => {
       const gameMode = getActiveGameId(store.getState());
 
-      const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+      const res = knownGames?.find((ele) => ele.id === gameMode);
       return PromiseBB.resolve(res || fallback);
     });
   }

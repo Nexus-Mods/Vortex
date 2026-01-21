@@ -2271,8 +2271,8 @@
     "@tybys/wasm-util" "^0.10.1"
 
 "@nexusmods/nexus-api@Nexus-Mods/node-nexus-api":
-  version "1.5.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/eb76107c4ba23d05e3b60600523d3748423c5fb3"
+  version "1.5.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679"
   dependencies:
     form-data "^4.0.0"
     jsonwebtoken "^9.0.0"

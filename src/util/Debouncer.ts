@@ -1,6 +1,6 @@
 import { unknownToError } from "../shared/errors";
 
-type Callback = (err: Error) => void;
+type Callback = (err: Error | null) => void;
 
 /**
  * management function. Prevents a function from being called too often
@@ -12,7 +12,7 @@ type Callback = (err: Error) => void;
 class Debouncer {
   private mDebounceMS: number;
   private mFunc: (...args: any[]) => Error | PromiseLike<void>;
-  private mTimer: NodeJS.Timeout;
+  private mTimer: NodeJS.Timeout | undefined;
 
   private mCallbacks: Callback[] = [];
   private mAddCallbacks: Callback[] = [];
@@ -124,7 +124,10 @@ class Debouncer {
    *
    * @memberOf Debouncer
    */
-  public wait(callback: (err: Error) => void, immediately: boolean = false) {
+  public wait(
+    callback: (err: Error | null) => void,
+    immediately: boolean = false,
+  ) {
     if (this.mTimer === undefined && !this.mRunning) {
       // not scheduled
       return callback(null);
@@ -193,7 +196,7 @@ class Debouncer {
     }
   }
 
-  private invokeCallbacks(localCallbacks: Callback[], err: Error) {
+  private invokeCallbacks(localCallbacks: Callback[], err: Error | null) {
     localCallbacks.forEach((cb) => cb(err));
     this.mAddCallbacks.forEach((cb) => cb(err));
     this.mAddCallbacks = [];

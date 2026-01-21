@@ -268,7 +268,7 @@ const SKIP_ARGS = {
 
 export function filterArgs(input: string[]): string[] {
   let skipCount = 0;
-  const result = [];
+  const result = Array<string>();
 
   input.forEach((arg, idx) => {
     if (skipCount > 0) {

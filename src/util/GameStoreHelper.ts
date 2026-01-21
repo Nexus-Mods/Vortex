@@ -17,6 +17,7 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import getNormalizeFunc from "./getNormalizeFunc";
 import { toBlue } from "./util";
 
+export const defaultPriority = 100;
 type SearchType = "name" | "id";
 
 export interface IStoreQuery {
@@ -31,7 +32,7 @@ class GameStoreHelper {
   private mStoresDict: { [storeId: string]: IGameStore };
 
   // Search for a specific game store.
-  public getGameStore(storeId: string): IGameStore {
+  public getGameStore(storeId: string): IGameStore | undefined {
     const gameStores = this.getStores();
     const gameStore = gameStores.find((store) => store.id === storeId);
     if (gameStores.length > 0 && gameStore === undefined) {
@@ -50,7 +51,10 @@ class GameStoreHelper {
   // If a store id is specified, it will return the provided
   //  store id if the game is installed using the specified store id;
   //  otherwise will return undefined.
-  public isGameInstalled(id: string, storeId?: string): Bluebird<string> {
+  public isGameInstalled(
+    id: string,
+    storeId?: string,
+  ): Bluebird<string | undefined> {
     return (
       storeId !== undefined
         ? this.findGameEntry("id", id, storeId)
@@ -63,10 +67,10 @@ class GameStoreHelper {
   public isGameStoreInstalled(storeId: string): Bluebird<boolean> {
     try {
       const gameStore = this.getGameStore(storeId);
-      return !!gameStore.isGameStoreInstalled
+      return gameStore?.isGameStoreInstalled
         ? gameStore.isGameStoreInstalled()
-        : gameStore
-            .getGameStorePath()
+        : (gameStore
+            ?.getGameStorePath()
             .then((execPath) =>
               execPath === undefined
                 ? Bluebird.reject(
@@ -78,7 +82,7 @@ class GameStoreHelper {
             .catch((err) => {
               log("debug", "gamestore is not installed", err);
               return Bluebird.resolve(false);
-            });
+            }) ?? Bluebird.resolve(false));
     } catch (err) {
       return Bluebird.resolve(false);
     }
@@ -128,7 +132,7 @@ class GameStoreHelper {
         gamePath: instPath.value as string,
         gameStoreId: undefined,
         name: path.basename(instPath.value as string),
-        priority: 100,
+        priority: defaultPriority,
       };
       return Bluebird.resolve(result);
     } catch (err) {
@@ -142,7 +146,7 @@ class GameStoreHelper {
       for (const storeId of Object.keys(query)) {
         let prioOffset = 0;
         for (const storeQuery of query[storeId]) {
-          let result: IGameStoreEntry;
+          let result: IGameStoreEntry | undefined = undefined;
           try {
             if (storeId === "registry") {
               result = await this.registryLookup(storeQuery.id);
@@ -166,12 +170,16 @@ class GameStoreHelper {
               });
             }
           }
-          if (result !== undefined) {
+          if (
+            result &&
+            result.gameStoreId !== undefined &&
+            result.priority !== undefined
+          ) {
             result.priority =
               storeQuery.prefer ??
               this.mStoresDict[result.gameStoreId]?.priority ??
-              100;
-            result.priority += prioOffset++ / 1000;
+              defaultPriority;
+            result.priority! += prioOffset++ / 1000;
             results.push(result);
           }
         }
@@ -214,16 +222,16 @@ class GameStoreHelper {
     parameters?: string[],
     askConsent: boolean = false,
   ): Bluebird<void> {
-    let gameStore: IGameStore;
+    let gameStore: IGameStore | undefined;
     try {
       gameStore = this.getGameStore(gameStoreId);
-      if (!gameStore.getGameStorePath) {
+      if (!gameStore?.getGameStorePath) {
         throw new ProcessCanceled(
           "gamestore implementation does not define getGameStorePath",
         );
       }
     } catch (err) {
-      api.showErrorNotification("Failed to launch game store", err);
+      api.showErrorNotification?.("Failed to launch game store", err);
       return Bluebird.resolve();
     }
 
@@ -231,7 +239,7 @@ class GameStoreHelper {
     const launchStore = () =>
       this.isGameStoreInstalled(gameStoreId).then((gamestoreInstalled) => {
         if (!gamestoreInstalled) {
-          api.showErrorNotification(
+          api.showErrorNotification?.(
             "Game store is not installed",
             t(
               "Please install/reinstall {{storeId}} to be able to launch this game store.",
@@ -243,9 +251,9 @@ class GameStoreHelper {
         }
 
         // Game Store specific launch has priority.
-        if (!!gameStore.launchGameStore) {
+        if (gameStore.launchGameStore) {
           return gameStore.launchGameStore(api, parameters).catch((err) => {
-            api.showErrorNotification("Failed to launch game store", err);
+            api.showErrorNotification?.("Failed to launch game store", err);
             return Bluebird.resolve();
           });
         }
@@ -262,7 +270,7 @@ class GameStoreHelper {
       });
 
     const isGameStoreRunning = () =>
-      !!gameStore.getGameStorePath
+      gameStore.getGameStorePath
         ? gameStore
             .getGameStorePath()
             .then(
@@ -276,7 +284,7 @@ class GameStoreHelper {
         res
           ? Bluebird.resolve()
           : new Bluebird((resolve, reject) => {
-              api.showDialog(
+              api.showDialog?.(
                 "info",
                 api.translate("Game Store not Started"),
                 {
@@ -348,7 +356,7 @@ class GameStoreHelper {
       this.mApi = api;
     }
     const stores = this.getStores().filter((store) => !!store);
-    this.mApi?.sendNotification({
+    this.mApi?.sendNotification?.({
       id: "gamestore-reload",
       type: "activity",
       message: "Loading game stores...",
@@ -369,7 +377,7 @@ class GameStoreHelper {
           })
         : Bluebird.resolve(),
     ).then(() => {
-      this.mApi?.dismissNotification("gamestore-reload");
+      this.mApi?.dismissNotification?.("gamestore-reload");
       return Bluebird.resolve();
     });
   }
@@ -379,7 +387,8 @@ class GameStoreHelper {
    */
   public storeIds(): IGameStore[] {
     return this.mStores.sort(
-      (lhs: IGameStore, rhs: IGameStore) => lhs.priority - rhs.priority,
+      (lhs: IGameStore, rhs: IGameStore) =>
+        (lhs.priority ?? defaultPriority) - (rhs.priority ?? defaultPriority),
     );
   }
 
@@ -400,7 +409,7 @@ class GameStoreHelper {
   }
 
   private getStores(): IGameStore[] {
-    if (!!this.mStores) {
+    if (this.mStores) {
       return this.mStores;
     }
     // It's possible that the game mode manager has yet
@@ -467,7 +476,7 @@ class GameStoreHelper {
 
     // queriedStore object is only populated if the game store helper caller
     //  is looking for a specific game store.
-    let queriedStore: IGameStore;
+    let queriedStore: IGameStore | undefined = undefined;
     if (!!storeId) {
       try {
         queriedStore = this.getGameStore(storeId);
@@ -484,7 +493,7 @@ class GameStoreHelper {
     }
 
     const gameStores: IGameStore[] = (
-      !!queriedStore ? [queriedStore] : this.getStores()
+      queriedStore ? [queriedStore] : this.getStores()
     ).filter((store) => !!store);
 
     if (gameStores === undefined || gameStores.length === 0) {

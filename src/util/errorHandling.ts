@@ -67,7 +67,7 @@ function createReport(
   context: IErrorContext,
   version: string,
   reporterProcess: string,
-  sourceProcess: string,
+  sourceProcess: string | undefined,
 ) {
   let proc: string = reporterProcess || "unknown";
   if (sourceProcess !== undefined) {
@@ -163,8 +163,8 @@ function nexusReport(
   context: IErrorContext,
   oauthToken: any,
   reporterProcess: string,
-  sourceProcess: string,
-  attachment: string,
+  sourceProcess: string | undefined,
+  attachment: string | undefined,
 ): PromiseBB<IFeedbackResponse> {
   const Nexus: typeof NexusT = require("@nexusmods/nexus-api").default;
 
@@ -325,8 +325,8 @@ export function sendReport(
   labels: string[],
   reporterToken: any,
   reporterProcess: string,
-  sourceProcess: string,
-  attachment: string,
+  sourceProcess: string | undefined,
+  attachment: string | undefined,
 ): PromiseBB<IFeedbackResponse | undefined> {
   const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
   const hash = genHash(error);

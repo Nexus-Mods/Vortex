@@ -54,7 +54,7 @@ class Steam implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mBaseFolder: PromiseBB<string>;
+  private mBaseFolder: PromiseBB<string | undefined>;
   private mCache: PromiseBB<ISteamEntry[]>;
 
   constructor() {
@@ -111,7 +111,7 @@ class Steam implements IGameStore {
     }
     const info = appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
     return this.getExecInfo(info).then((execInfo) =>
-      api.runExecutable(execInfo.execPath, execInfo.arguments, {
+      api?.runExecutable(execInfo.execPath, execInfo.arguments, {
         cwd: path.dirname(execInfo.execPath),
         suggestDeploy: true,
         shell: true,
@@ -153,7 +153,7 @@ class Steam implements IGameStore {
       }
       return this.mBaseFolder.then((basePath) => {
         const steamExec = {
-          execPath: path.join(basePath, STEAM_EXEC),
+          execPath: path.join(basePath!, STEAM_EXEC),
           arguments: ["-applaunch", appId, ...parameters],
         };
         return PromiseBB.resolve(steamExec);
@@ -193,7 +193,7 @@ class Steam implements IGameStore {
     return this.mCache;
   }
 
-  public getGameStorePath(): PromiseBB<string> {
+  public getGameStorePath(): PromiseBB<string | undefined> {
     return this.mBaseFolder.then((baseFolder) => {
       if (baseFolder === undefined) {
         return PromiseBB.resolve(undefined);
@@ -347,7 +347,7 @@ class Steam implements IGameStore {
                       obj["AppState"]["LastUpdated"] * 1000,
                     ),
                     manifestData: obj,
-                  };
+                  } as ISteamEntry;
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
@@ -356,7 +356,7 @@ class Steam implements IGameStore {
                   return undefined;
                 }
               })
-              .filter((obj) => obj !== undefined);
+              .filter((obj): obj is ISteamEntry => obj !== undefined);
           })
           .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
@@ -375,9 +375,9 @@ class Steam implements IGameStore {
       })
         .then((games: ISteamEntry[][]) =>
           games.reduce(
-            (prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
+            (prev, current): ISteamEntry[] =>
               current !== undefined ? prev.concat(current) : prev,
-            [],
+            Array<ISteamEntry>(),
           ),
         )
         .tap(() => {

@@ -10,14 +10,14 @@ function isObject(state: unknown): state is object {
   return state !== null && typeof state === "object" && !Array.isArray(state);
 }
 
-function insertValueAtLeaf<T, V>(
+function insertValueAtLeaf<T extends Record<string, unknown>, V>(
   target: T,
   key: string[],
   value: V,
   hive: string,
 ) {
   try {
-    key.reduce<unknown>((prev, keySegment, idx, fullKey) => {
+    key.reduce<Record<string, unknown>>((prev, keySegment, idx, fullKey) => {
       if (idx === fullKey.length - 1) {
         // previously we allowed this to cause a crash so we'd get the error reports,
         // but since that doesn't give the user any way to fix the issue, we now
@@ -29,7 +29,7 @@ function insertValueAtLeaf<T, V>(
             key: fullKey.slice(0, idx).join("."),
             was: prev,
           });
-          prev = {};
+          return { [keySegment]: value };
         }
         prev[keySegment] = value;
         return prev;
@@ -39,7 +39,7 @@ function insertValueAtLeaf<T, V>(
         if (!prev[keySegment]) {
           prev[keySegment] = {};
         }
-        return prev[keySegment];
+        return prev[keySegment] as Record<string, unknown>;
       }
     }, target);
   } catch (err) {
@@ -54,7 +54,7 @@ function insertValueAtLeaf<T, V>(
   }
 }
 
-class ReduxPersistor<T> {
+class ReduxPersistor<T extends Record<string, unknown>> {
   private mStore: Redux.Store<T>;
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};
@@ -174,7 +174,7 @@ class ReduxPersistor<T> {
       // is full, which is nothing we can fix.
       if (
         err.message.match(/IO error: .*Append: cannot write/) !== null ||
-        err.stack.match(/IO error: .*Append: cannot write/) !== null
+        err.stack?.match(/IO error: .*Append: cannot write/) !== null
       ) {
         terminate(
           {
@@ -242,11 +242,15 @@ class ReduxPersistor<T> {
         return PromiseBB.mapSeries(oldkeys, (key) =>
           newState[key] === undefined
             ? // keys that exist in oldState but not newState
-              this.remove(persistor, [].concat(statePath, key), oldState[key])
+              this.remove(
+                persistor,
+                Array<string>().concat(statePath, key),
+                oldState[key],
+              )
             : // keys that exist in both
               this.storeDiff(
                 persistor,
-                [].concat(statePath, key),
+                Array<string>().concat(statePath, key),
                 oldState[key],
                 newState[key],
               ),
@@ -255,7 +259,11 @@ class ReduxPersistor<T> {
             PromiseBB.mapSeries(newkeys, (key) =>
               oldState[key] === undefined && newState[key] !== undefined
                 ? // keys that exist in newState but not oldState
-                  this.add(persistor, [].concat(statePath, key), newState[key])
+                  this.add(
+                    persistor,
+                    Array<string>().concat(statePath, key),
+                    newState[key],
+                  )
                 : // keys that exist in both - already handled above
                   PromiseBB.resolve(),
             ),
@@ -278,7 +286,11 @@ class ReduxPersistor<T> {
   ): PromiseBB<void> {
     return isObject(state)
       ? PromiseBB.mapSeries(Object.keys(state), (key) =>
-          this.remove(persistor, [].concat(statePath, key), state[key]),
+          this.remove(
+            persistor,
+            Array<string>().concat(statePath, key),
+            state[key],
+          ),
         ).then(() => undefined)
       : persistor.removeItem(statePath);
   }
@@ -293,7 +305,11 @@ class ReduxPersistor<T> {
     }
     return isObject(state)
       ? PromiseBB.mapSeries(Object.keys(state), (key) =>
-          this.add(persistor, [].concat(statePath, key), state[key]),
+          this.add(
+            persistor,
+            Array<string>().concat(statePath, key),
+            state[key],
+          ),
         ).then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));
   }
