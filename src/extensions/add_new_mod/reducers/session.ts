@@ -8,7 +8,8 @@ import * as actions from "../actions/session";
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [actions.showAddModDialog as any]: (state, payload) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [actions.showAddModDialog as any]: (state, payload: boolean) =>
       setSafe(state, ["showDialog"], payload),
   },
   defaults: {

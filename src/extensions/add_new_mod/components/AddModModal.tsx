@@ -28,6 +28,8 @@ export const AddModModal = ({
   // Reset mod name when dialog opens
   useEffect(() => {
     if (isOpen) {
+      // This is intentional - reset state when modal opens
+      // eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
       setModName("");
     }
   }, [isOpen]);

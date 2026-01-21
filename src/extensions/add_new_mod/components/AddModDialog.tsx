@@ -6,10 +6,6 @@ import { showAddModDialog } from "../actions/session";
 import { createNewMod } from "../util/createMod";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 
-interface IConnectedState {
-  showDialog: boolean;
-}
-
 interface AddModDialogProps {
   api: IExtensionApi;
 }
@@ -21,6 +17,7 @@ interface AddModDialogProps {
 const AddModDialog = ({ api }: AddModDialogProps) => {
   const dispatch = useDispatch();
   const showDialog = useSelector(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (state: any) => state.session?.addNewMod?.showDialog ?? false,
   );
 
