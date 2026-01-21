@@ -1,6 +1,6 @@
 /**
- * IPC bridge for main process to call Nexus API functions in renderer
- * Uses SharedArrayBuffer for efficient data transfer of large payloads.
+ * IPC bridge for main process to call Nexus API functions in renderer.
+ * Uses SharedBuffer for efficient data transfer of large payloads.
  *
  * Since api.ext is only populated in the renderer process (where extensions
  * register their APIs), the main process needs to request the renderer to
@@ -12,19 +12,12 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModRequirements } from "@nexusmods/nexus-api";
 import { log } from "../../../util/log";
 import { IPC_CHANNELS } from "./channels";
+import { SharedBuffer } from "./SharedBuffer";
 
 /**
- * Shared buffer management for the bridge
+ * Shared buffer instance for the nexus bridge
  */
-let sharedBuffer: SharedArrayBuffer | null = null;
-let sharedDataView: Uint8Array | null = null;
-
-// Header layout (16 bytes):
-// [0-3]: Data length (uint32)
-// [4-7]: Sequence number (uint32)
-// [8-11]: Checksum (uint32)
-// [12-15]: Reserved
-const HEADER_SIZE = 16;
+const nexusBridgeBuffer = new SharedBuffer("NexusBridgeBuffer");
 
 /**
  * Initialize the shared buffer (called from main process)
@@ -32,114 +25,14 @@ const HEADER_SIZE = 16;
 export function initNexusBridgeBuffer(
   size: number = 10 * 1024 * 1024,
 ): SharedArrayBuffer {
-  sharedBuffer = new SharedArrayBuffer(size);
-  sharedDataView = new Uint8Array(sharedBuffer, HEADER_SIZE);
-
-  // Initialize header
-  const headerView = new DataView(sharedBuffer, 0, HEADER_SIZE);
-  headerView.setUint32(0, 0); // length
-  headerView.setUint32(4, 0); // sequence
-  headerView.setUint32(8, 0); // checksum
-  headerView.setUint32(12, 0); // reserved
-
-  log("debug", "Nexus bridge SharedArrayBuffer initialized", { size });
-  return sharedBuffer;
+  return nexusBridgeBuffer.initialize(size);
 }
 
 /**
  * Attach to shared buffer (called from renderer process)
  */
 export function attachNexusBridgeBuffer(buffer: SharedArrayBuffer): void {
-  sharedBuffer = buffer;
-  sharedDataView = new Uint8Array(buffer, HEADER_SIZE);
-  log("debug", "Nexus bridge attached to SharedArrayBuffer", {
-    size: buffer.byteLength,
-  });
-}
-
-/**
- * Write data to shared buffer
- */
-function writeToSharedBuffer(data: unknown): boolean {
-  if (!sharedBuffer || !sharedDataView) {
-    return false;
-  }
-
-  try {
-    const json = JSON.stringify(data);
-    const encoder = new TextEncoder();
-    const encoded = encoder.encode(json);
-
-    const availableSpace = sharedDataView.length;
-    if (encoded.length > availableSpace) {
-      log("error", "Data too large for shared buffer", {
-        dataSize: encoded.length,
-        bufferSize: availableSpace,
-      });
-      return false;
-    }
-
-    // Calculate checksum
-    let checksum = 0;
-    for (let i = 0; i < encoded.length; i++) {
-      checksum = (checksum + encoded[i]) & 0xffffffff;
-    }
-
-    // Write data
-    sharedDataView.set(encoded);
-
-    // Update header atomically
-    const currentSeq = Atomics.load(new Uint32Array(sharedBuffer, 4, 1), 0);
-    Atomics.store(new Uint32Array(sharedBuffer, 8, 1), 0, checksum);
-    Atomics.store(new Uint32Array(sharedBuffer, 0, 1), 0, encoded.length);
-    Atomics.store(new Uint32Array(sharedBuffer, 4, 1), 0, currentSeq + 1);
-
-    // Notify waiting threads
-    Atomics.notify(new Int32Array(sharedBuffer, 4, 1), 0);
-
-    return true;
-  } catch (error) {
-    log("error", "Failed to write to shared buffer", error);
-    return false;
-  }
-}
-
-/**
- * Read data from shared buffer
- */
-function readFromSharedBuffer<T>(): T | null {
-  if (!sharedBuffer || !sharedDataView) {
-    return null;
-  }
-
-  try {
-    const length = Atomics.load(new Uint32Array(sharedBuffer, 0, 1), 0);
-    const storedChecksum = Atomics.load(new Uint32Array(sharedBuffer, 8, 1), 0);
-
-    if (length === 0 || length > sharedDataView.length) {
-      return null;
-    }
-
-    // Read data
-    const data = sharedDataView.slice(0, length);
-
-    // Verify checksum
-    let checksum = 0;
-    for (let i = 0; i < data.length; i++) {
-      checksum = (checksum + data[i]) & 0xffffffff;
-    }
-
-    if (checksum !== storedChecksum) {
-      log("warn", "Checksum mismatch in shared buffer read");
-    }
-
-    const decoder = new TextDecoder();
-    const json = decoder.decode(data);
-    return JSON.parse(json) as T;
-  } catch (error) {
-    log("error", "Failed to read from shared buffer", error);
-    return null;
-  }
+  nexusBridgeBuffer.attach(buffer);
 }
 
 /**
@@ -172,7 +65,7 @@ export function setupNexusBridgeRenderer(api: IExtensionApi): void {
 
         // Try to use shared buffer for large data
         const useSharedBuffer =
-          sharedBuffer !== null && writeToSharedBuffer(requirements);
+          nexusBridgeBuffer.isReady() && nexusBridgeBuffer.write(requirements);
 
         log("debug", "IPC bridge: sending requirements to main", {
           requestId,
@@ -260,7 +153,7 @@ export function requestModRequirementsFromRenderer(
 
       if (response.useSharedBuffer) {
         // Read from shared buffer
-        data = readFromSharedBuffer<{
+        data = nexusBridgeBuffer.read<{
           [modId: number]: Partial<IModRequirements>;
         }>();
         log(
@@ -298,6 +191,4 @@ export function requestModRequirementsFromRenderer(
 export function cleanupNexusBridgeRenderer(): void {
   ipcRenderer.removeAllListeners(IPC_CHANNELS.GET_MOD_REQUIREMENTS);
   ipcRenderer.removeAllListeners(IPC_CHANNELS.NEXUS_BRIDGE_BUFFER_READY);
-  sharedBuffer = null;
-  sharedDataView = null;
 }

@@ -5,10 +5,15 @@ import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 
 const gameNum = (() => {
-  let cache: { [gameId: string]: number };
-  return (gameId: string): number => {
-    if (cache === undefined) {
-      cache = nexusGames().reduce((prev, game) => {
+  let cache: { [gameId: string]: number } | undefined;
+  return (gameId: string): number | undefined => {
+    const games = nexusGames();
+    // Rebuild cache if undefined or if it was built from an empty games list
+    if (
+      cache === undefined ||
+      (Object.keys(cache).length === 0 && games.length > 0)
+    ) {
+      cache = games.reduce<{ [gameId: string]: number }>((prev, game) => {
         prev[game.domain_name] = game.id;
         return prev;
       }, {});
