@@ -1,7 +1,6 @@
 import type { IExtensionApi } from "../types/api";
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
-import { truthy } from "../util/util";
 
 import type { BrowserWindow } from "electron";
 import { app, Menu, Tray } from "electron";
@@ -83,7 +82,7 @@ class TrayIcon {
 
   private showNotification(title: string, content: string) {
     const icon = path.join(getVortexPath("assets"), "images", "vortex.png");
-    if (!truthy(title) || !truthy(content) || this.mTrayIcon.isDestroyed()) {
+    if (!title || !content || this.mTrayIcon.isDestroyed()) {
       return;
     }
     log("debug", "showing balloon", { title, content });

@@ -20,13 +20,12 @@ import { UserCanceled } from "./CustomErrors";
 import { log } from "./log";
 
 import PromiseBB from "bluebird";
-import type { BrowserWindow, MessageBoxOptions } from "electron";
+import type { BrowserWindow } from "electron";
 import { dialog } from "electron";
 import * as path from "path";
 import type * as Redux from "redux";
 import * as semver from "semver";
 import format from "string-template";
-import { reinterpretUntilZeros } from "ref";
 import { getErrorCode } from "../shared/errors";
 
 interface IMigration {
@@ -35,11 +34,14 @@ interface IMigration {
   maySkip: boolean;
   doQuery: boolean;
   description: string;
-  apply: (window: BrowserWindow, store: Redux.Store<IState>) => PromiseBB<void>;
+  apply: (
+    window: BrowserWindow | null,
+    store: Redux.Store<IState>,
+  ) => PromiseBB<void>;
 }
 
 function selectDirectory(
-  window: BrowserWindow,
+  window: BrowserWindow | null,
   defaultPathPattern: string,
 ): PromiseBB<string> {
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
@@ -115,7 +117,7 @@ function transferPath(from: string, to: string): PromiseBB<void> {
 }
 
 function dialogProm(
-  window: BrowserWindow,
+  window: BrowserWindow | null,
   type: string,
   title: string,
   message: string,
@@ -159,7 +161,7 @@ function forceLogoutForOauth_1_9(
       "warn",
       "forceLogoutForOauth_1_9() not logged in so skipping migration",
     );
-    return;
+    return PromiseBB.resolve();
   }
 
   // this is going to force a logout and set the ForceLogout flag in the state so that the nexus_integration extension can pick up the change
@@ -170,7 +172,7 @@ function forceLogoutForOauth_1_9(
 
   log("info", "forceLogoutForOauth_1_9() should be logged out");
 
-  return;
+  return PromiseBB.resolve();
 }
 
 function moveDownloads_0_16(
@@ -207,7 +209,7 @@ function moveDownloads_0_16(
               ),
             );
         },
-      ).then(() => null);
+      ).then(() => {});
     });
 }
 
@@ -238,7 +240,7 @@ function updateInstallPath_0_16(
       ),
     );
     return PromiseBB.resolve();
-  }).then(() => null);
+  }).then(() => {});
 }
 
 const migrations: IMigration[] = [
@@ -272,7 +274,7 @@ const migrations: IMigration[] = [
 ];
 
 function queryMigration(
-  window: BrowserWindow,
+  window: BrowserWindow | null,
   migration: IMigration,
 ): PromiseBB<boolean> {
   if (!migration.doQuery) {
@@ -299,7 +301,10 @@ function queryMigration(
   });
 }
 
-function queryContinue(window: BrowserWindow, err: Error): PromiseBB<void> {
+function queryContinue(
+  window: BrowserWindow | null,
+  err: Error,
+): PromiseBB<void> {
   return dialogProm(
     window,
     "error",
@@ -314,7 +319,7 @@ function queryContinue(window: BrowserWindow, err: Error): PromiseBB<void> {
 
 function migrate(
   store: Redux.Store<IState>,
-  window: BrowserWindow,
+  window: BrowserWindow | null,
 ): PromiseBB<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || "0.0.0";
@@ -330,11 +335,13 @@ function migrate(
         store.dispatch(completeMigration(migration.id));
         return PromiseBB.resolve();
       })
-      .catch(
-        (err) => !(err instanceof UserCanceled),
-        (err: Error) => queryContinue(window, err),
-      ),
-  ).then(() => null);
+      .catch((err: Error) => {
+        if (err instanceof UserCanceled) {
+          throw err;
+        }
+        return queryContinue(window, err);
+      }),
+  ).then(() => {});
 }
 
 export default migrate;

@@ -60,7 +60,7 @@ export const addDialog = safeCreateAction(
     type: string,
     title: string,
     content: IDialogContent,
-    defaultAction: string,
+    defaultAction: string | undefined,
     actions: string[],
   ) => ({ id, type, title, content, defaultAction, actions }),
 );
@@ -191,11 +191,13 @@ export function addNotification(notification: INotification) {
     })) as any;
 
     dispatch(startNotification(storeNoti));
-    if (noti.displayMS !== undefined) {
-      return new PromiseBB((resolve) => {
-        timers[noti.id] = setTimeout(() => resolve(), noti.displayMS);
+    if (noti.id !== undefined && noti.displayMS !== undefined) {
+      const currentId = noti.id;
+      const currentDisplayMS = noti.displayMS;
+      return new Promise<void>((resolve) => {
+        timers[currentId] = setTimeout(() => resolve(), currentDisplayMS);
       }).then(() => {
-        dispatch(dismissNotification(noti.id));
+        dispatch(dismissNotification(currentId));
       });
     }
   };
@@ -275,7 +277,7 @@ export function showDialog(
       );
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         const action = actions.find((iter) => iter.label === actionKey);
-        if (truthy(action.action)) {
+        if (action?.action) {
           try {
             const res: any = action.action(input);
             if (res !== undefined && res.catch !== undefined) {
@@ -298,7 +300,7 @@ export function showDialog(
         resolve({ action: actionKey, input });
       };
       DialogCallbacks.instance()[`__link-${id}`] = (idx: string) => {
-        content.links[idx].action(() => {
+        content.links?.[idx]?.action(() => {
           dispatch(dismissDialog(id));
         }, content.links[idx].id);
       };

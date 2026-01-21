@@ -5,7 +5,7 @@ import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
 
 class SplashScreen {
-  private mWindow: Electron.BrowserWindow = null;
+  private mWindow: Electron.BrowserWindow | null = null;
 
   public fadeOut() {
     // apparently we can't prevent the user from closing the splash with alt-f4...
@@ -20,9 +20,9 @@ class SplashScreen {
     return (
       PromiseBB.delay(200)
         .then(() => {
-          if (!this.mWindow.isDestroyed()) {
+          if (!this.mWindow?.isDestroyed()) {
             try {
-              this.mWindow.webContents.send("fade-out");
+              this.mWindow?.webContents.send("fade-out");
             } catch (err) {
               log("warn", "failed to fade out splash screen", err);
             }
@@ -32,15 +32,15 @@ class SplashScreen {
         // the window
         .then(() => PromiseBB.delay(500))
         .then(() => {
-          if (!this.mWindow.isDestroyed()) {
-            this.mWindow.close();
+          if (!this.mWindow?.isDestroyed()) {
+            this.mWindow?.close();
           }
           this.mWindow = null;
         })
     );
   }
 
-  public create(disableGPU: boolean): PromiseBB<void> {
+  public create(disableGPU?: boolean): PromiseBB<void> {
     const BrowserWindow: typeof Electron.BrowserWindow =
       require("electron").BrowserWindow;
 
@@ -48,14 +48,14 @@ class SplashScreen {
       const timeout = setTimeout(() => {
         log("warn", "splash screen taking awfully long");
         resolve?.();
-        resolve = undefined;
+        resolve = undefined!;
       }, 1000);
 
       const onReady = () => {
         clearTimeout(timeout);
-        this.mWindow.show();
+        this.mWindow?.show();
         resolve?.();
-        resolve = undefined;
+        resolve = undefined!;
       };
 
       this.mWindow = new BrowserWindow({
@@ -95,7 +95,7 @@ class SplashScreen {
     });
   }
 
-  public getHandle(): Electron.BrowserWindow {
+  public getHandle(): Electron.BrowserWindow | null {
     return this.mWindow;
   }
 }
