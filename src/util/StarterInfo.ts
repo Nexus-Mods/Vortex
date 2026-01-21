@@ -28,6 +28,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getErrorCode, unknownToError } from "../shared/errors";
+import { isWindowsExecutable } from "./linux/proton";
+import { Steam, type ISteamEntry } from "./Steam";
 
 function getCurrentWindow() {
   if (process.type === "renderer") {
@@ -65,6 +67,63 @@ type OnShowErrorFunc = (
 ) => void;
 
 /**
+ * Check if we should force Steam launcher on Linux
+ * Steam handles Proton automatically for Windows games
+ */
+function shouldUseSteamLauncherOnLinux(info: IStarterInfo): boolean {
+  if (process.platform === "win32" || !info.isGame) {
+    return false;
+  }
+
+  // Check if store is explicitly set to steam
+  if (info.store === "steam") {
+    return true;
+  }
+
+  // Fallback: check if the path looks like a Steam path
+  // This handles cases where store wasn't set during discovery
+  const lowerPath = info.exePath.toLowerCase();
+  return lowerPath.includes("/steamapps/") || lowerPath.includes("\\steamapps\\");
+}
+
+/**
+ * Check if a tool should run through Proton
+ */
+async function shouldRunToolWithProton(
+  info: IStarterInfo,
+  api: IExtensionApi,
+): Promise<ISteamEntry | undefined> {
+  if (process.platform === "win32") {
+    return undefined;
+  }
+  if (!isWindowsExecutable(info.exePath)) {
+    return undefined;
+  }
+  if (info.store !== "steam") {
+    return undefined;
+  }
+
+  try {
+    const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+    const games = await steamStore.allGames();
+
+    // Find the game entry that matches this tool's game
+    return games.find(
+      (g) =>
+        info.workingDirectory
+          ?.toLowerCase()
+          .startsWith(g.gamePath.toLowerCase()) ||
+        info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
+    );
+  } catch (err: any) {
+    log("debug", "Could not check for Proton tool execution", {
+      error: err?.message,
+    });
+    return undefined;
+  }
+}
+
+/**
  * wrapper for information about a game or tool, combining static and runtime/discovery information
  * for the purpose of actually starting them in a uniform way.
  * This implements things like running the game through a launcher (steam/epic/...) if necessary
@@ -96,42 +155,45 @@ class StarterInfo implements IStarterInfo {
     onShowError: OnShowErrorFunc,
   ) {
     const game: IGame = getGame(info.gameId);
+    // Determine launcher - Linux Steam games always use Steam launcher
     const launcherPromise: PromiseBB<{ launcher: string; addInfo?: any }> =
-      game.requiresLauncher !== undefined && info.isGame
-        ? PromiseBB.resolve(
-            game.requiresLauncher(path.dirname(info.exePath), info.store),
-          ).catch((err) => {
-            if (err instanceof UserCanceled) {
-              // warning because it'd be kind of unusual for the user to have to confirm anything
-              // in requiresLauncher
-              log(
-                "warn",
-                "failed to determine if launcher is required because user canceled something",
-              );
-            } else {
-              const allowReport = !game.contributed;
-              const errorObj = allowReport
-                ? err
-                : {
-                    message:
-                      "Report this to the community extension author, not Vortex support!",
-                  };
-              onShowError(
-                "Failed to determine if launcher is required",
-                errorObj,
-                allowReport,
-              );
-              if (!allowReport) {
+      shouldUseSteamLauncherOnLinux(info)
+        ? PromiseBB.resolve({ launcher: "steam" })
+        : game.requiresLauncher !== undefined && info.isGame
+          ? PromiseBB.resolve(
+              game.requiresLauncher(path.dirname(info.exePath), info.store),
+            ).catch((err) => {
+              if (err instanceof UserCanceled) {
+                // warning because it'd be kind of unusual for the user to have to confirm anything
+                // in requiresLauncher
                 log(
-                  "error",
-                  "failed to determine if launcher is required",
-                  errorObj.message,
+                  "warn",
+                  "failed to determine if launcher is required because user canceled something",
                 );
+              } else {
+                const allowReport = !game.contributed;
+                const errorObj = allowReport
+                  ? err
+                  : {
+                      message:
+                        "Report this to the community extension author, not Vortex support!",
+                    };
+                onShowError(
+                  "Failed to determine if launcher is required",
+                  errorObj,
+                  allowReport,
+                );
+                if (!allowReport) {
+                  log(
+                    "error",
+                    "failed to determine if launcher is required",
+                    errorObj.message,
+                  );
+                }
               }
-            }
-            return PromiseBB.resolve(undefined);
-          })
-        : PromiseBB.resolve(undefined);
+              return PromiseBB.resolve(undefined);
+            })
+          : PromiseBB.resolve(undefined);
 
     const onSpawned = () => {
       api.store.dispatch(
@@ -151,9 +213,13 @@ class StarterInfo implements IStarterInfo {
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
-            api.store.dispatch(
-              setToolRunning(info.exePath, Date.now(), info.exclusive),
-            );
+            // On Linux with Steam, we can't track when the game exits (ProcessMonitor
+            // only works on Windows), so don't set tool as running to avoid stuck spinner
+            if (!(process.platform !== "win32" && res.launcher === "steam")) {
+              api.store.dispatch(
+                setToolRunning(info.exePath, Date.now(), info.exclusive),
+              );
+            }
             if (["hide", "hide_recover"].includes(info.onStart)) {
               getCurrentWindow().hide();
             } else if (info.onStart === "close") {
@@ -214,12 +280,12 @@ class StarterInfo implements IStarterInfo {
     return info["__iconCache"];
   }
 
-  private static runDirectly(
+  private static async runDirectly(
     info: IStarterInfo,
     api: IExtensionApi,
     onShowError: OnShowErrorFunc,
     onSpawned: () => void,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     const spawned = () => {
       onSpawned();
       if (["hide", "hide_recover"].includes(info.onStart)) {
@@ -228,6 +294,26 @@ class StarterInfo implements IStarterInfo {
         getApplication().quit();
       }
     };
+
+    // Check if tool should run through Proton on Linux
+    const protonGameEntry = await shouldRunToolWithProton(info, api);
+    if (protonGameEntry?.usesProton) {
+      const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+      return steamStore.runToolWithProton(
+        api,
+        info.exePath,
+        info.commandLine,
+        {
+          cwd: info.workingDirectory || path.dirname(info.exePath),
+          env: info.environment,
+          suggestDeploy: true,
+          shell: info.shell,
+          detach: info.detach || info.onStart === "close",
+          onSpawned: spawned,
+        },
+        protonGameEntry,
+      );
+    }
 
     return api
       .runExecutable(info.exePath, info.commandLine, {
