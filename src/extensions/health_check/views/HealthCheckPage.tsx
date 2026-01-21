@@ -119,6 +119,7 @@ function HealthCheckPage({
                 leftIconPath="mdiRefresh"
                 size="sm"
                 title={t("common:::refresh")}
+                onClick={() => onRefresh?.()}
               />
 
               <Button
@@ -127,10 +128,7 @@ function HealthCheckPage({
                 leftIconPath="mdiCog"
                 size="sm"
                 title={t("common:::settings")}
-                onClick={() => onRefresh?.()}
-              >
-                {t("common:::refresh")}
-              </Button>
+              />
             </div>
           </div>
 
