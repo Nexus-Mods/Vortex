@@ -68,7 +68,9 @@ export const FeedbackModal = ({
           className="w-full"
           size="sm"
           onClick={() => {
-            // todo send checkedOptions to mixpanel
+            // todo:
+            //  send checkedOptions to mixpanel,
+            //  can set loading={true} while awaiting request, prevents sending data twice and indicates state to user
             onSuccess();
           }}
         >

@@ -15,14 +15,10 @@ import { FeedbackModal } from "../components/feedback_modal";
 import type { IModRequirementExt } from "../types";
 
 const Mod = ({
-  authorNote,
-  isExternal,
-  modName,
+  mod,
   onShowVortexModal,
 }: {
-  authorNote?: string;
-  isExternal?: boolean;
-  modName: string;
+  mod: IModRequirementExt;
   onShowVortexModal?: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
@@ -32,25 +28,36 @@ const Mod = ({
       <Typography as="div" appearance="moderate" className="space-y-2">
         <p className="font-semibold">{t("detail::item::missing_mod")}</p>
 
-        {!!authorNote && (
+        {!!mod.notes && (
           <p>
-            {t("detail::item::author_note")}: {authorNote}
+            {t("detail::item::author_note")}: {mod.notes}
           </p>
         )}
       </Typography>
 
       <div className="bg-surface-mid space-y-2 px-4 py-3 rounded">
         <div className="flex gap-x-2 items-center">
-          <div className="grow">
-            <Typography>{modName}</Typography>
+          <div className="flex items-center gap-x-2 grow">
+            <div className="relative w-16 shrink-0 flex items-center justify-center overflow-hidden aspect-video bg-surface-translucent-low border border-stroke-weak rounded-md">
+              {/* todo update src to use correct mod image */}
+              <img
+                alt=""
+                className="absolute max-h-full"
+                src="https://staticdelivery.nexusmods.com/mods/1303/images/thumbnails/2400/2400-1739896414-1995424095.png"
+              />
+            </div>
 
-            <Typography appearance="subdued" typographyType="body-sm">
-              {t("detail::item::check_the_description")}
-            </Typography>
+            <div>
+              <Typography>{mod.modName}</Typography>
+
+              <Typography appearance="subdued" typographyType="body-sm">
+                {t("detail::item::check_the_description")}
+              </Typography>
+            </div>
           </div>
 
           <div className="flex gap-x-2 shrink-0">
-            {isExternal ? (
+            {mod.externalRequirement ? (
               <Button
                 buttonType="tertiary"
                 filled="weak"
@@ -94,7 +101,7 @@ const Mod = ({
           </div>
         </div>
 
-        {isExternal && (
+        {mod.externalRequirement && (
           <div className="rounded p-3 flex items-center bg-info-weak/20">
             <Typography
               as="div"
@@ -245,11 +252,10 @@ function HealthCheckDetailPage({ mod, onBack }: IHealthCheckDetailPageProps) {
                   />
                 </div>
               </div>
+
               <Mod
                 key={`${mod.modId}`}
-                authorNote={mod.notes}
-                isExternal={mod.externalRequirement}
-                modName={mod.modName}
+                mod={mod}
                 onShowVortexModal={() => setShowPremiumModal(true)}
               />
             </div>

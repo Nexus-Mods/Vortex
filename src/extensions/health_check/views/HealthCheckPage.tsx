@@ -246,19 +246,17 @@ function HealthCheckPage({
             </div>
 
             <TabPanel name="active">
-              {/* listings */}
-              <div className="space-y-2">
-                {activeMods.length === 0 ? (
-                  /* empty state */
-                  <NoResults
-                    appearance="success"
-                    className="py-24"
-                    iconPath="mdiCheckCircle"
-                    message={t("listing::no_results_active::message")}
-                    title={t("listing::no_results_active::title")}
-                  />
-                ) : (
-                  activeMods.map((mod) => (
+              {!activeCount ? (
+                <NoResults
+                  appearance="success"
+                  className="py-24"
+                  iconPath="mdiCheckCircle"
+                  message={t("listing::no_results_active::message")}
+                  title={t("listing::no_results_active::title")}
+                />
+              ) : (
+                <div className="space-y-2">
+                  {activeMods.map((mod) => (
                     <Mod
                       key={`${mod.requiredBy.modId}-${mod.modId}`}
                       requirementInfo={mod}
@@ -268,37 +266,34 @@ function HealthCheckPage({
                       }}
                       onToggleHide={() => toggleHideMod(mod)}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </TabPanel>
 
             <TabPanel name="hidden">
-              {/* listings */}
-              <div className="space-y-2">
-                {hiddenMods.length === 0 ? (
-                  <NoResults
-                    className="py-24"
-                    iconPath="mdiEyeOff"
-                    title={t("listing::no_results_hidden::title")}
-                  />
-                ) : (
-                  hiddenMods.map((mod) => {
-                    return (
-                      <Mod
-                        key={`${mod.requiredBy.modId}-${mod.modId}`}
-                        isHidden={true}
-                        requirementInfo={mod}
-                        onClick={() => {
-                          setSelectedRequirement(mod);
-                          setShowDetail(true);
-                        }}
-                        onToggleHide={() => toggleHideMod(mod)}
-                      />
-                    );
-                  })
-                )}
-              </div>
+              {!hiddenCount ? (
+                <NoResults
+                  className="py-24"
+                  iconPath="mdiEyeOff"
+                  title={t("listing::no_results_hidden::title")}
+                />
+              ) : (
+                <div className="space-y-2">
+                  {hiddenMods.map((mod) => (
+                    <Mod
+                      key={`${mod.requiredBy.modId}-${mod.modId}`}
+                      isHidden={true}
+                      requirementInfo={mod}
+                      onClick={() => {
+                        setSelectedRequirement(mod);
+                        setShowDetail(true);
+                      }}
+                      onToggleHide={() => toggleHideMod(mod)}
+                    />
+                  ))}
+                </div>
+              )}
             </TabPanel>
           </TabProvider>
         </div>
