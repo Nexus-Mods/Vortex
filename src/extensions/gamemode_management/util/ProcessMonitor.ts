@@ -11,30 +11,30 @@ import { setdefault } from "../../../util/util";
 import type { BrowserWindow } from "electron";
 import * as path from "path";
 import type * as Redux from "redux";
-import * as winapi from "winapi-bindings";
+import type { IProcessInfo, IProcessProvider } from "./processProvider";
+import { defaultProcessProvider } from "./processProvider";
 
 class ProcessMonitor {
   private mTimer: NodeJS.Timeout;
   private mStore: Redux.Store<IState>;
   private mWindow: BrowserWindow;
   private mActive: boolean = false;
+  private mProcessProvider: IProcessProvider;
 
-  constructor(api: IExtensionApi) {
+  constructor(
+    api: IExtensionApi,
+    processProvider: IProcessProvider = defaultProcessProvider,
+  ) {
     this.mStore = api.store;
+    this.mProcessProvider = processProvider;
   }
 
   public start(): void {
-    if (winapi.GetProcessList === undefined) {
-      // Linux, MacOS
-      return;
-    }
     if (this.mActive) {
-      // already running
       return;
     }
 
     if (this.mTimer !== undefined) {
-      // ensure we don't have multiple timers running in parallel
       clearTimeout(this.mTimer);
     }
 
@@ -43,88 +43,89 @@ class ProcessMonitor {
     }
 
     log("debug", "start process monitor");
-    this.mTimer = setTimeout(() => this.check(), 2000);
     this.mActive = true;
-  }
-
-  public end(): void {
-    if (this.mTimer === undefined) {
-      // not running
-      return;
-    }
-    clearTimeout(this.mTimer);
-    this.mTimer = undefined;
-    this.mActive = false;
-    log("debug", "stop process monitor");
+    this.mTimer = setTimeout(() => this.check(), 2000);
   }
 
   private check(): void {
     if (!this.mActive) {
       return;
     }
-    // skip check and tick slower when in background, for performance reasons
-    if (this.mWindow === undefined || this.mWindow.isFocused()) {
-      this.doCheck();
-      if (this.mActive) {
-        this.mTimer = setTimeout(() => this.check(), 2000);
-      }
-    } else {
-      this.mTimer = setTimeout(() => this.check(), 5000);
-    }
+
+    const isFocused = this.mWindow === undefined || this.mWindow.isFocused();
+    const delay = isFocused ? 2000 : 5000;
+    const startedAt = Date.now();
+
+    void this.doCheck()
+      .catch((err) => log("warn", "process monitor check failed", err))
+      .finally(() => {
+        if (this.mActive) {
+          const elapsed = Date.now() - startedAt;
+          const remaining = Math.max(0, delay - elapsed);
+          // Avoid overlapping async checks; preserve cadence by subtracting elapsed time.
+          this.mTimer = setTimeout(() => this.check(), remaining);
+        }
+      });
   }
 
-  private doCheck(): void {
-    const processes = winapi.GetProcessList();
+  private async doCheck(): Promise<void> {
+    let processes: IProcessInfo[];
+    try {
+      processes = await this.mProcessProvider.list();
+    } catch (err) {
+      log("warn", "failed to list processes", err);
+      return;
+    }
 
-    const byPid: { [pid: number]: winapi.ProcessEntry } = processes.reduce(
+    const getCommandPath = (cmd?: string): string | undefined => {
+      if (!cmd) {
+        return undefined;
+      }
+      const trimmed = cmd.trim();
+      if (trimmed.startsWith('"')) {
+        const end = trimmed.indexOf('"', 1);
+        return end > 1 ? trimmed.slice(1, end) : undefined;
+      }
+      const first = trimmed.split(" ")[0];
+      return first.length > 0 ? first : undefined;
+    };
+
+    const getProcessPath = (proc: IProcessInfo): string | undefined =>
+      proc.path ?? getCommandPath(proc.cmd);
+
+    const byPid: { [pid: number]: IProcessInfo } = processes.reduce(
       (prev, proc) => {
-        prev[proc.processID] = proc;
+        prev[proc.pid] = proc;
         return prev;
       },
       {},
     );
 
-    const byName: { [exeId: string]: winapi.ProcessEntry[] } = processes.reduce(
-      (prev: { [exeId: string]: winapi.ProcessEntry[] }, entry) => {
-        setdefault(prev, entry.exeFile.toLowerCase(), []).push(entry);
+    const byName: { [exeId: string]: IProcessInfo[] } = processes.reduce(
+      (prev: { [exeId: string]: IProcessInfo[] }, proc) => {
+        setdefault(prev, makeExeId(proc.name), []).push(proc);
         return prev;
       },
-      {},
+      {} as { [exeId: string]: IProcessInfo[] },
     );
+
     const state = this.mStore.getState();
-
     const vortexPid = process.pid;
 
     const isChildProcess = (
-      proc: winapi.ProcessEntry,
+      proc: IProcessInfo,
       visited: Set<number>,
     ): boolean => {
-      if (proc === undefined || proc.parentProcessID === 0) {
+      if (proc === undefined || proc.ppid === 0) {
         return false;
-      } else if (visited.has(proc.parentProcessID)) {
-        // a loop in process hierarchy? Apparently that is possible, see #6508
+      } else if (visited.has(proc.ppid)) {
         return false;
-      } else {
-        visited.add(proc.parentProcessID);
-        return (
-          proc.parentProcessID === vortexPid ||
-          isChildProcess(byPid[proc.parentProcessID], visited)
-        );
       }
+      visited.add(proc.ppid);
+      return (
+        proc.ppid === vortexPid || isChildProcess(byPid[proc.ppid], visited)
+      );
     };
-
-    const game = currentGame(state);
-    const gameDiscovery = currentGameDiscovery(state);
-    const gameExe =
-      getSafe(gameDiscovery, ["executable"], undefined) ||
-      getSafe(game, ["executable"], undefined);
-    const gamePath = getSafe(gameDiscovery, ["path"], undefined);
-    if (gameExe === undefined || gamePath === undefined) {
-      // How in the world can we manage to get the executable for the game
-      //  but not the path from the discovery object ?
-      // https://github.com/Nexus-Mods/Vortex/issues/4656
-      return;
-    }
 
     const update = (
       exePath: string,
@@ -136,7 +137,6 @@ class ProcessMonitor {
       const exeRunning = byName[exeId];
 
       if (exeRunning === undefined) {
-        // nothing with a matching exe name is running
         if (knownRunning !== undefined) {
           this.mStore.dispatch(setToolStopped(exePath));
         }
@@ -144,31 +144,55 @@ class ProcessMonitor {
       }
 
       if (knownRunning !== undefined && byPid[knownRunning.pid] !== undefined) {
-        // we already know this tool is running and the corresponding process is still active
+        // We already know this tool is running and the process is still active.
         return;
       }
-
-      // at this point the tool is running (or an exe with the same name is)
-      // and we don't know about it
 
       const candidates = considerDetached
         ? exeRunning
         : exeRunning.filter((proc) => isChildProcess(proc, new Set()));
-      const match = candidates.find((exe) => {
-        const modules = winapi.GetModuleList(exe.processID);
+      const exePathLower = exePath.toLowerCase();
+      const candidatesWithPath = candidates.map((proc) => ({
+        proc,
+        path: getProcessPath(proc),
+      }));
+      const pathMatch = candidatesWithPath.find(
+        (entry) =>
+          entry.path !== undefined && entry.path.toLowerCase() === exePathLower,
+      );
 
-        return (
-          modules.length > 0 &&
-          modules[0].exePath.toLowerCase() === exePath.toLowerCase()
+      if (pathMatch !== undefined) {
+        this.mStore.dispatch(
+          setToolPid(exePath, pathMatch.proc.pid, exclusive),
         );
-      });
+        return;
+      }
 
-      if (match !== undefined) {
-        this.mStore.dispatch(setToolPid(exePath, match.processID, exclusive));
-      } else if (knownRunning !== undefined) {
+      // Fallback: when ps-list does not expose path/cmd (Windows), accept name-only.
+      if (
+        candidatesWithPath.length > 0 &&
+        candidatesWithPath.every((entry) => entry.path === undefined)
+      ) {
+        this.mStore.dispatch(
+          setToolPid(exePath, candidatesWithPath[0].proc.pid, exclusive),
+        );
+        return;
+      }
+
+      if (knownRunning !== undefined) {
         this.mStore.dispatch(setToolStopped(exePath));
       }
     };
+
+    const game = currentGame(state);
+    const gameDiscovery = currentGameDiscovery(state);
+    const gameExe =
+      getSafe(gameDiscovery, ["executable"], undefined) ||
+      getSafe(game, ["executable"], undefined);
+    const gamePath = getSafe(gameDiscovery, ["path"], undefined);
+    if (gameExe === undefined || gamePath === undefined) {
+      return;
+    }
 
     const gameExePath = path.join(gamePath, gameExe);
     update(gameExePath, true, true);
@@ -189,6 +213,16 @@ class ProcessMonitor {
         false,
       );
     });
+  }
+
+  public end(): void {
+    if (this.mTimer === undefined) {
+      return;
+    }
+    clearTimeout(this.mTimer);
+    this.mTimer = undefined;
+    this.mActive = false;
+    log("debug", "stop process monitor");
   }
 }
 
