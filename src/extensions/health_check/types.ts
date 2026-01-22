@@ -2,6 +2,7 @@
  * Health check extension types
  */
 
+import type { IModRequiring, IModRequirement } from "@nexusmods/nexus-api";
 import type {
   HealthCheckTrigger,
   IHealthCheckResult,
@@ -27,19 +28,26 @@ export type PredefinedCheckId = Extract<
 >;
 
 /**
+ * A subset of IModRequiring representing the mod that requires a missing mod.
+ * Picks only modId and modName, and converts modId to number.
+ */
+export type RequiringMod = Omit<
+  Pick<IModRequiring, "modId" | "modName">,
+  "modId"
+> & {
+  modId: number;
+};
+
+/**
  * A required mod that is missing
  */
-export interface IMissingRequiredMod {
-  /** Nexus mod ID of the required mod */
-  nexusModId: number;
-  /** Display name of the required mod */
-  name: string;
-  /** Optional notes from the mod author about this requirement */
-  notes?: string;
-  /** URL to the required mod on Nexus */
-  nexusUrl?: string;
-  /** Latest available file ID for the required mod */
-  latestMainFileId?: number;
+export interface IModRequirementExt extends Omit<IModRequirement, "modId"> {
+  /** Unique DB identifier */
+  uid: string;
+  /** The mod that requires this mod */
+  requiredBy: RequiringMod;
+  /** Nexus mod ID as number */
+  modId: number;
 }
 
 /**
@@ -65,7 +73,7 @@ export interface IModMissingRequirements {
   /** Display name of the mod */
   modName: string;
   /** List of missing mod requirements */
-  missingMods: IMissingRequiredMod[];
+  missingMods: IModRequirementExt[];
   /** List of DLC requirements (informational, cannot be auto-verified) */
   dlcRequirements: IMissingRequiredDlc[];
 }

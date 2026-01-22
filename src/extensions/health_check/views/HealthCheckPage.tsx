@@ -13,20 +13,27 @@ import {
   TabPanel,
   TabProvider,
 } from "../../../tailwind/components/next/tabs";
-import { useSelector } from "react-redux";
-import { modRequirementsCheckResult } from "../selectors";
+
 import { NoResults } from "../../../tailwind/components/no_results";
+import { useSelector, useDispatch } from "react-redux";
+import { hiddenRequirements, modRequirementsArray } from "../selectors";
+import {
+  setRequirementHidden,
+  clearAllHiddenRequirements,
+} from "../actions/persistent";
+import type { IModRequirementExt } from "../types";
+import { batchDispatch } from "../../../util/util";
 
 const Mod = ({
-  dependencyModName,
   isHidden,
-  modName,
   onClick,
+  onToggleHide,
+  requirementInfo,
 }: {
-  dependencyModName: string;
   isHidden?: boolean;
-  modName: string;
+  requirementInfo: IModRequirementExt;
   onClick: () => void;
+  onToggleHide?: (e: React.MouseEvent) => void;
 }) => {
   const { t } = useTranslation("health_check");
 
@@ -38,19 +45,30 @@ const Mod = ({
       <Icon className="text-info-strong shrink-0" path="mdiAlertCircle" />
 
       <div className="grow space-y-0.5 text-left">
-        <Typography>{t("listing::item::title", { modName })}</Typography>
+        <Typography>
+          {t("listing::item::title", {
+            modName: requirementInfo.requiredBy.modName,
+          })}
+        </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          {t("listing::item::description", { dependencyModName })}
+          {t("listing::item::description", {
+            dependencyModName: requirementInfo.modName,
+          })}
         </Typography>
       </div>
 
       <Button
+        as="button"
         buttonType="tertiary"
         filled="weak"
         leftIconPath={isHidden ? "mdiEye" : "mdiEyeOff"}
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleHide?.(e);
+        }}
       />
 
       <Icon
@@ -72,17 +90,72 @@ function HealthCheckPage({
   onDownloadRequirements,
 }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
+  const dispatch = useDispatch();
   const [showDetail, setShowDetail] = useState(false);
   const [selectedTab, setSelectedTab] = useState("active");
+  const [selectedRequirement, setSelectedRequirement] =
+    useState<IModRequirementExt | null>(null);
 
-  const modRequirements = useSelector(modRequirementsCheckResult);
+  const modRequirements: IModRequirementExt[] =
+    useSelector(modRequirementsArray);
 
-  if (showDetail) {
-    return <HealthCheckDetailPage onBack={() => setShowDetail(false)} />;
+  const hiddenReqsMap = useSelector(hiddenRequirements);
+
+  const isModRequirementHidden = React.useCallback(
+    (mod: IModRequirementExt): boolean => {
+      const hiddenReqs = hiddenReqsMap[mod.requiredBy.modId] || [];
+      return hiddenReqs.includes(mod.modId);
+    },
+    [hiddenReqsMap],
+  );
+
+  // Filter active and hidden mods
+  const activeMods = React.useMemo(
+    () => modRequirements.filter((mod) => !isModRequirementHidden(mod)),
+    [modRequirements, isModRequirementHidden],
+  );
+
+  const hiddenMods = React.useMemo(
+    () => modRequirements.filter((mod) => isModRequirementHidden(mod)),
+    [modRequirements, isModRequirementHidden],
+  );
+
+  const toggleHideMod = (mod: IModRequirementExt) => {
+    const isHidden = isModRequirementHidden(mod);
+    if (isHidden) {
+      // Unhide: clear all hidden dependencies for this mod
+      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.modId, false));
+    } else {
+      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.modId, true));
+    }
+  };
+
+  const hideAllActive = () => {
+    const batched = [];
+    activeMods.forEach((mod) => {
+      batched.push(setRequirementHidden(mod.requiredBy.modId, mod.modId, true));
+    });
+    batchDispatch(dispatch, batched);
+  };
+
+  const unhideAll = () => {
+    dispatch(clearAllHiddenRequirements(undefined));
+  };
+
+  if (showDetail && selectedRequirement) {
+    return (
+      <HealthCheckDetailPage
+        mod={selectedRequirement}
+        onBack={() => {
+          setShowDetail(false);
+          setSelectedRequirement(null);
+        }}
+      />
+    );
   }
 
-  const activeCount = 2;
-  const hiddenCount = 0;
+  const activeCount = activeMods.length;
+  const hiddenCount = hiddenMods.length;
 
   return (
     <MainPage id="health-check-page">
@@ -145,8 +218,14 @@ function HealthCheckPage({
           >
             <div className="flex items-center justify-between">
               <TabBar>
-                <TabButton count={activeCount} name={t("common:::active")} />
-                <TabButton count={hiddenCount} name={t("common:::hidden")} />
+                <TabButton
+                  count={activeMods.length}
+                  name={t("common:::active")}
+                />
+                <TabButton
+                  count={hiddenMods.length}
+                  name={t("common:::hidden")}
+                />
               </TabBar>
 
               <Button
@@ -158,6 +237,7 @@ function HealthCheckPage({
                 filled="weak"
                 leftIconPath={selectedTab === "active" ? "mdiEyeOff" : "mdiEye"}
                 size="sm"
+                onClick={selectedTab === "active" ? hideAllActive : unhideAll}
               >
                 {selectedTab === "active"
                   ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
@@ -166,47 +246,58 @@ function HealthCheckPage({
             </div>
 
             <TabPanel name="active">
-              {/* empty state */}
-              <NoResults
-                appearance="success"
-                className="py-24"
-                iconPath="mdiCheckCircle"
-                message={t("listing::no_results_active::message")}
-                title={t("listing::no_results_active::title")}
-              />
-
               {/* listings */}
               <div className="space-y-2">
-                <Mod
-                  dependencyModName="Apothecary - An Alchemy Overhaul"
-                  modName="Apothecary - Lighter Potions and Poisons"
-                  onClick={() => setShowDetail(true)}
-                />
-
-                <Mod
-                  dependencyModName="Address Library for SKSE Plugins"
-                  modName="Better Jumping - Stamina Cost"
-                  onClick={() => setShowDetail(true)}
-                />
+                {activeMods.length === 0 ? (
+                  /* empty state */
+                  <NoResults
+                    appearance="success"
+                    className="py-24"
+                    iconPath="mdiCheckCircle"
+                    message={t("listing::no_results_active::message")}
+                    title={t("listing::no_results_active::title")}
+                  />
+                ) : (
+                  activeMods.map((mod) => (
+                    <Mod
+                      key={`${mod.requiredBy.modId}-${mod.modId}`}
+                      requirementInfo={mod}
+                      onClick={() => {
+                        setSelectedRequirement(mod);
+                        setShowDetail(true);
+                      }}
+                      onToggleHide={() => toggleHideMod(mod)}
+                    />
+                  ))
+                )}
               </div>
             </TabPanel>
 
             <TabPanel name="hidden">
-              {/* empty state */}
-              <NoResults
-                className="py-24"
-                iconPath="mdiEyeOff"
-                title={t("listing::no_results_hidden::title")}
-              />
-
               {/* listings */}
               <div className="space-y-2">
-                <Mod
-                  dependencyModName="Address Library for SKSE Plugins"
-                  isHidden={true}
-                  modName="Better Jumping - Stamina Cost"
-                  onClick={() => setShowDetail(true)}
-                />
+                {hiddenMods.length === 0 ? (
+                  <NoResults
+                    className="py-24"
+                    iconPath="mdiEyeOff"
+                    title={t("listing::no_results_hidden::title")}
+                  />
+                ) : (
+                  hiddenMods.map((mod) => {
+                    return (
+                      <Mod
+                        key={`${mod.requiredBy.modId}-${mod.modId}`}
+                        isHidden={true}
+                        requirementInfo={mod}
+                        onClick={() => {
+                          setSelectedRequirement(mod);
+                          setShowDetail(true);
+                        }}
+                        onToggleHide={() => toggleHideMod(mod)}
+                      />
+                    );
+                  })
+                )}
               </div>
             </TabPanel>
           </TabProvider>

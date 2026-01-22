@@ -193,7 +193,11 @@ export function initHealthCheckMain(context: IExtensionContext): boolean {
 
     return true;
   } catch (error) {
-    log("error", "Failed to initialize health check main process", unknownToError(error));
+    log(
+      "error",
+      "Failed to initialize health check main process",
+      unknownToError(error),
+    );
     return false;
   }
 }

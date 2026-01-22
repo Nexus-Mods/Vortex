@@ -1,7 +1,12 @@
 import type { IState } from "../../types/IState";
 import type { IHealthCheckSessionState } from "./reducers/session";
+import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckResult } from "../../types/IHealthCheck";
-import type { HealthCheckId } from "./types";
+import type {
+  HealthCheckId,
+  IModMissingRequirements,
+  IModRequirementExt,
+} from "./types";
 
 export type { HealthCheckId } from "./types";
 
@@ -32,9 +37,22 @@ export const healthCheckResult = (
  */
 export const modRequirementsCheckResult = (
   state: IState,
-): IHealthCheckResult | undefined => {
+): Record<string, IModMissingRequirements> | undefined => {
   const result = healthCheckResult(state, "check-nexus-mod-requirements");
   return result?.metadata?.modRequirements;
+};
+
+/**
+ * Get the array of all missing mod requirements from the health check result
+ * Flattens the structure into a single array
+ */
+export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
+  const modRequirements = modRequirementsCheckResult(state);
+  if (!modRequirements) {
+    return [];
+  }
+
+  return Object.values(modRequirements).flatMap((mod) => mod.missingMods);
 };
 
 /**
@@ -56,3 +74,40 @@ export const isHealthCheckRunning = (
  */
 export const isAnyHealthCheckRunning = (state: IState): boolean =>
   healthCheckState(state).runningChecks.length > 0;
+
+/**
+ * Get the health check persistent state
+ */
+export const healthCheckPersistentState = (
+  state: IState,
+): IHealthCheckPersistentState =>
+  state.persistent?.healthCheck ?? { hiddenRequirements: {} };
+
+/**
+ * Get the hidden requirements map
+ * Returns a map of mod nexusModId to array of hidden requirement nexusModIds
+ */
+export const hiddenRequirements = (
+  state: IState,
+): { [modId: number]: number[] } =>
+  healthCheckPersistentState(state).hiddenRequirements;
+
+/**
+ * Check if a specific requirement is hidden for a mod
+ */
+export const isDependencyHidden = (
+  state: IState,
+  modId: number,
+  requirementModId: number,
+): boolean => {
+  const hidden = hiddenRequirements(state)[modId] || [];
+  return hidden.includes(requirementModId);
+};
+
+/**
+ * Get all hidden requirement IDs for a specific mod
+ */
+export const getModHiddenRequirements = (
+  state: IState,
+  modId: number,
+): number[] => hiddenRequirements(state)[modId] || [];

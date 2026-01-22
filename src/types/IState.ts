@@ -21,6 +21,7 @@ import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { IParameters } from "../util/commandLine";
 import type { VortexInstallType } from "./VortexInstallType";
 import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
+import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -384,6 +385,7 @@ export interface IState {
     deployment: { needToDeploy: { [gameId: string]: boolean } };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
+    healthCheck: IHealthCheckPersistentState;
   };
 }
 

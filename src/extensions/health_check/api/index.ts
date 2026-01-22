@@ -62,7 +62,10 @@ export function createHealthCheckApi(
         ] as IHealthCheckResult[];
       } catch (error) {
         // If main process checks fail, just return local results
-        console.error("Failed to run predefined checks:", unknownToError(error));
+        console.error(
+          "Failed to run predefined checks:",
+          unknownToError(error),
+        );
         return localResults;
       }
     },

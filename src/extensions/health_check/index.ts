@@ -17,6 +17,7 @@ import {
   HealthCheckSeverity,
 } from "../../types/IHealthCheck";
 import { sessionReducer } from "./reducers/session";
+import { persistentReducer } from "./reducers/persistent";
 import { onDownloadRequirements } from "./util";
 import type { IHealthCheckApi } from "./types";
 
@@ -34,6 +35,9 @@ function init(context: IExtensionContext): boolean {
 
   // Register session reducer for health check state (registered in both main and renderer)
   context.registerReducer(["session", "healthCheck"], sessionReducer);
+
+  // Register persistent reducer for health check settings (hidden mods, etc.)
+  context.registerReducer(["persistent", "healthCheck"], persistentReducer);
 
   // Register the Health Check page
   context.registerMainPage("health", "Health Check", HealthCheckPage, {

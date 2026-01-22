@@ -12,6 +12,7 @@ import { Pictogram } from "../../../tailwind/components/pictogram";
 import { NexusMods } from "../../../tailwind/components/icons/NexusMods";
 import { PremiumModal } from "../components/premium_modal";
 import { FeedbackModal } from "../components/feedback_modal";
+import type { IModRequirementExt } from "../types";
 
 const Mod = ({
   authorNote,
@@ -119,7 +120,12 @@ const Mod = ({
   );
 };
 
-function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
+interface IHealthCheckDetailPageProps {
+  mod: IModRequirementExt;
+  onBack: () => void;
+}
+
+function HealthCheckDetailPage({ mod, onBack }: IHealthCheckDetailPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -205,7 +211,7 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
                 <div className="grow">
                   <Typography className="font-semibold">
                     {t("detail::item::title", {
-                      modName: "Sprint Swim Redux SKSE or Longer mod name",
+                      modName: mod.modName,
                     })}
                   </Typography>
 
@@ -224,7 +230,7 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
                           />
                         ),
                       }}
-                      values={{ modName: "Sprint Swim Redux SKSE" }}
+                      values={{ modName: mod.modName }}
                     />
                   </Typography>
                 </div>
@@ -239,17 +245,11 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
                   />
                 </div>
               </div>
-
-              {/* only one mod will be shown on this page, two here to show internal and external views */}
               <Mod
-                authorNote="Required"
-                modName="Address Library for SKSE Plugins"
-                onShowVortexModal={() => setShowPremiumModal(true)}
-              />
-
-              <Mod
-                isExternal={true}
-                modName="Address Library for SKSE Plugins"
+                key={`${mod.modId}`}
+                authorNote={mod.notes}
+                isExternal={mod.externalRequirement}
+                modName={mod.modName}
                 onShowVortexModal={() => setShowPremiumModal(true)}
               />
             </div>

@@ -41,7 +41,11 @@ export function createPredefinedCheckApi(): IPredefinedCheckApi {
         log("debug", "Predefined check completed", { checkId });
         return result;
       } catch (error) {
-        log("error", `Failed to run predefined check ${checkId}`, unknownToError(error));
+        log(
+          "error",
+          `Failed to run predefined check ${checkId}`,
+          unknownToError(error),
+        );
         return null;
       }
     },

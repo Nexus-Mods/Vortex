@@ -116,7 +116,10 @@ class IpcQueueManager {
           chunks.push(chunk as ChunkedResponse);
         }
       } catch (error) {
-        log("error", "Failed to fetch chunk", { chunkIndex: i, error: unknownToError(error) });
+        log("error", "Failed to fetch chunk", {
+          chunkIndex: i,
+          error: unknownToError(error),
+        });
         return null;
       }
     }

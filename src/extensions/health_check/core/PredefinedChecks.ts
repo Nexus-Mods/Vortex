@@ -2,7 +2,10 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
-import { getErrorMessageOrDefault, unknownToError } from "../../../shared/errors";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../../shared/errors";
 import { activeProfile } from "../../profile_management/selectors";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
@@ -22,6 +25,7 @@ import type {
   IModMissingRequirements,
 } from "../types";
 import { renderModName } from "../../../util/api";
+import { makeModUID } from "../../nexus_integration/util/UIDs";
 
 export type { PredefinedCheckId } from "../types";
 
@@ -74,7 +78,7 @@ function buildDetailsString(
     for (const modEntry of modsWithMissingMods) {
       parts.push(`${modEntry.modName}:`);
       for (const req of modEntry.missingMods) {
-        parts.push(`  • ${req.name}${req.notes ? ` (${req.notes})` : ""}`);
+        parts.push(`  • ${req.modName}${req.notes ? ` (${req.notes})` : ""}`);
       }
     }
     parts.push("");
@@ -299,10 +303,17 @@ export const PREDEFINED_CHECKS: Record<
 
             if (!isInstalled) {
               getModEntry().missingMods.push({
-                nexusModId: requiredModId,
-                name: req.modName,
-                notes: req.notes,
-                nexusUrl: req.url,
+                ...req,
+                modId: requiredModId,
+                uid: makeModUID({
+                  modId: req.modId,
+                  fileId: "0",
+                  gameId: mod.attributes.downloadGame,
+                }),
+                requiredBy: {
+                  modId,
+                  modName,
+                },
               });
             }
           }
@@ -357,7 +368,11 @@ export const PREDEFINED_CHECKS: Record<
         { details, metadata },
       );
     } catch (error) {
-      log("error", "Failed to check Nexus mod requirements", unknownToError(error));
+      log(
+        "error",
+        "Failed to check Nexus mod requirements",
+        unknownToError(error),
+      );
       return createResult(
         startTime,
         "error",
