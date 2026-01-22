@@ -5,6 +5,13 @@
     "item": {
       "title": "Additional mod may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}"
+    },
+    "no_results_active": {
+      "title": "Health check passed",
+      "message": "Ready for gaming"
+    },
+    "no_results_hidden": {
+      "title": "No hidden items"
     }
   },
   "detail": {

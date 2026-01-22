@@ -15,6 +15,7 @@ import {
 } from "../../../tailwind/components/next/tabs";
 import { useSelector } from "react-redux";
 import { modRequirementsCheckResult } from "../selectors";
+import { NoResults } from "../../../tailwind/components/no_results";
 
 const Mod = ({
   dependencyModName,
@@ -80,6 +81,9 @@ function HealthCheckPage({
     return <HealthCheckDetailPage onBack={() => setShowDetail(false)} />;
   }
 
+  const activeCount = 2;
+  const hiddenCount = 0;
+
   return (
     <MainPage id="health-check-page">
       <MainPage.Body>
@@ -141,41 +145,35 @@ function HealthCheckPage({
           >
             <div className="flex items-center justify-between">
               <TabBar>
-                <TabButton count={3} name={t("common:::active")} />
-                <TabButton count={1} name={t("common:::hidden")} />
+                <TabButton count={activeCount} name={t("common:::active")} />
+                <TabButton count={hiddenCount} name={t("common:::hidden")} />
               </TabBar>
 
               <Button
                 buttonType="tertiary"
+                disabled={
+                  (selectedTab === "active" && !activeCount) ||
+                  (selectedTab === "hidden" && !hiddenCount)
+                }
                 filled="weak"
                 leftIconPath={selectedTab === "active" ? "mdiEyeOff" : "mdiEye"}
                 size="sm"
               >
                 {selectedTab === "active"
-                  ? `${t("common:::hide_all")} (3)`
-                  : `${t("common:::unhide_all")} (1)`}
+                  ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
+                  : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
               </Button>
             </div>
 
             <TabPanel name="active">
               {/* empty state */}
-              <div className="py-24 flex items-center flex-col gap-y-2">
-                <Icon
-                  className="text-success-strong"
-                  path="mdiCheckCircle"
-                  size="xl"
-                />
-
-                <Typography
-                  as="div"
-                  appearance="subdued"
-                  className="text-center space-y-2"
-                >
-                  <p className="font-semibold">Health check passed</p>
-
-                  <p>Ready for gaming</p>
-                </Typography>
-              </div>
+              <NoResults
+                appearance="success"
+                className="py-24"
+                iconPath="mdiCheckCircle"
+                message={t("listing::no_results_active::message")}
+                title={t("listing::no_results_active::title")}
+              />
 
               {/* listings */}
               <div className="space-y-2">
@@ -195,20 +193,11 @@ function HealthCheckPage({
 
             <TabPanel name="hidden">
               {/* empty state */}
-              <div className="py-24 flex items-center flex-col gap-y-2">
-                <Icon
-                  className="text-neutral-moderate"
-                  path="mdiEyeOff"
-                  size="xl"
-                />
-
-                <Typography
-                  appearance="subdued"
-                  className="text-center font-semibold"
-                >
-                  No hidden items
-                </Typography>
-              </div>
+              <NoResults
+                className="py-24"
+                iconPath="mdiEyeOff"
+                title={t("listing::no_results_hidden::title")}
+              />
 
               {/* listings */}
               <div className="space-y-2">
