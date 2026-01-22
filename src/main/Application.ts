@@ -59,7 +59,6 @@ import {
   replaceRecursive,
   spawnSelf,
   timeout,
-  truthy,
 } from "../util/util";
 
 import { addNotification, setCommandLine, showDialog } from "../actions";
@@ -110,7 +109,7 @@ class Application {
       return true;
     }
 
-    if (!truthy(error)) {
+    if (!error) {
       log("error", "empty error unhandled", {
         wasPromise: promise !== undefined,
       });
@@ -246,6 +245,9 @@ class Application {
     this.mMainWindow = new MainWindow(this.mStore, this.mArgs.inspector);
     log("debug", "creating main window");
     return this.mMainWindow.create(this.mStore).then((webContents) => {
+      if (!webContents) {
+        return PromiseBB.reject(new Error("no web contents from main window"));
+      }
       log("debug", "window created");
       this.mExtensions.setupApiMain(this.mStore, webContents);
 
@@ -312,7 +314,9 @@ class Application {
       let userData =
         args.userData ??
         // (only on windows) use ProgramData from environment
-        (args.shared && process.platform === "win32"
+        (args.shared &&
+        process.platform === "win32" &&
+        process.env.ProgramData !== undefined
           ? path.join(process.env.ProgramData, "vortex")
           : // this allows the development build to access data from the
             // production version and vice versa
@@ -325,7 +329,7 @@ class Application {
         this.applyArguments(cfgFile);
       });
 
-      let startupMode: PromiseBB<void>;
+      let startupMode: PromiseBB<void> | undefined = undefined;
       if (args.get) {
         startupMode = this.handleGet(args.get, userData);
       } else if (args.set) {
@@ -354,7 +358,7 @@ class Application {
 
   private attachWebView = (
     event: Electron.Event,
-    webPreferences: Electron.WebPreferences & { preloadURL: string },
+    webPreferences: Electron.WebPreferences & { preloadURL?: string },
     params,
   ) => {
     // disallow creation of insecure webviews
@@ -376,7 +380,7 @@ class Application {
   }
 
   private regularStart(args: IParameters): PromiseBB<void> {
-    let splash: SplashScreenT;
+    let splash: SplashScreenT | undefined;
     return (
       fs
         .writeFileAsync(this.mStartupLogPath, new Date().toUTCString())
@@ -595,7 +599,7 @@ class Application {
             }
           });
           const adminConsent = res[0];
-          return adminConsent.type === "REG_DWORD" && adminConsent.value === 0
+          return adminConsent?.type === "REG_DWORD" && adminConsent?.value === 0
             ? PromiseBB.resolve(false)
             : PromiseBB.resolve(true);
         })
@@ -731,9 +735,11 @@ class Application {
   }
 
   private splitPath(statePath: string): string[] {
-    return statePath
-      .match(/(\\.|[^.])+/g)
-      .map((input) => input.replace(/\\(.)/g, "$1"));
+    return (
+      statePath
+        .match(/(\\.|[^.])+/g)
+        ?.map((input) => input.replace(/\\(.)/g, "$1")) ?? []
+    );
   }
 
   private handleGet(
@@ -742,7 +748,7 @@ class Application {
   ): PromiseBB<void> {
     if (typeof getPaths === "boolean") {
       fs.writeSync(1, "Usage: vortex --get <path>\n");
-      return;
+      return PromiseBB.resolve();
     }
 
     let persist: LevelPersist;
@@ -773,7 +779,7 @@ class Application {
                 process.stderr.write(getErrorMessageOrDefault(err) + "\n");
               });
           }),
-        ).then(() => null);
+        ).then(() => {});
       })
       .catch((err) => {
         process.stderr.write(getErrorMessageOrDefault(err) + "\n");
@@ -816,7 +822,7 @@ class Application {
                 process.stderr.write(getErrorMessageOrDefault(err) + "\n");
               });
           }),
-        ).then(() => null);
+        ).then(() => {});
       })
       .catch((err) => {
         process.stderr.write(getErrorMessageOrDefault(err) + "\n");
@@ -854,7 +860,7 @@ class Application {
               ),
             );
           }),
-        ).then(() => null);
+        ).then(() => {});
       })
       .catch((err) => {
         process.stderr.write(getErrorMessageOrDefault(err) + "\n");
@@ -877,7 +883,7 @@ class Application {
   }
 
   private multiUserPath() {
-    if (process.platform === "win32") {
+    if (process.platform === "win32" && process.env.ProgramData !== undefined) {
       const muPath = path.join(process.env.ProgramData, "vortex");
       try {
         fs.ensureDirSync(muPath);
@@ -956,6 +962,9 @@ class Application {
       })
       .catch(DataInvalid, (err) => {
         const failedPersistor = this.mLevelPersistors.pop();
+        if (!failedPersistor) {
+          return PromiseBB.reject(err);
+        }
         return failedPersistor.close().then(() => PromiseBB.reject(err));
       })
       .then(() => {
@@ -1270,7 +1279,7 @@ class Application {
     }
   }
 
-  private showMainWindow(startMinimized: boolean) {
+  private showMainWindow(startMinimized?: boolean) {
     if (this.mMainWindow === null) {
       // ??? renderer has signaled it's done loading before we even started it?
       // that can't be right...
@@ -1361,7 +1370,7 @@ class Application {
         if (this.mMainWindow !== undefined) {
           if (args.download || args.install) {
             this.mMainWindow.sendExternalURL(
-              args.download || args.install,
+              args.download! || args.install!,
               args.install !== undefined,
             );
           }

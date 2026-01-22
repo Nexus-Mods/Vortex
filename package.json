@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "vortex_devel",
+  "type": "commonjs",
   "version": "0.0.1",
   "main": "out/main.js",
   "author": "Black Tree Gaming Ltd.",
@@ -9,6 +10,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "scripts": {
+    "vite": "yarn electron-vite dev --entry out/main/main.js",
     "_assets_out": "yarn run update_aboutpage && node scripts/bundle-games.js && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css && yarn run build_tailwind_out",
     "_assets_app": "yarn run update_aboutpage && node scripts/bundle-games.js && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css && yarn run build_tailwind_app",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn autoclean --force",
@@ -115,6 +117,8 @@
     "provider": "github"
   },
   "devDependencies": {
+    "strip-ansi": "npm:strip-ansi@6.0.1",
+    "string-width": "npm:string-width@4.2.3",
     "@babel/cli": "^7.25.6",
     "@babel/core": "^7.25.2",
     "@babel/plugin-proposal-class-properties": "7.16.7",
@@ -188,6 +192,7 @@
     "@types/write-file-atomic": "^2.1.2",
     "@types/ws": "^6.0.3",
     "@types/xml2js": "^0.4.5",
+    "@vitejs/plugin-react": "^5.1.2",
     "@welldone-software/why-did-you-render": "^7.0.1",
     "@yarnpkg/lockfile": "*",
     "babel-jest": "^29.7.0",
@@ -202,6 +207,7 @@
     "electron": "37.4.0",
     "electron-builder": "^24.13.3",
     "electron-devtools-installer": "^3.2.0",
+    "electron-vite": "^5.0.0",
     "enzyme": "^3.10.0",
     "enzyme-adapter-react-16": "^1.15.1",
     "esbuild-loader": "^4.2.2",
@@ -236,6 +242,7 @@
     "ts-v-gen": "^1.0.1",
     "typescript": "^5.0.0",
     "typescript-eslint": "8.47.0",
+    "vite": "^7.3.1",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
@@ -299,7 +306,7 @@
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
     "prop-types": "^15.7.2",
-    "re-reselect": "^3.4.0",
+    "re-reselect": "4.0.1",
     "re-resizable": "^6.9.9",
     "react": "^16.12.0",
     "react-bootstrap": "^0.33.0",

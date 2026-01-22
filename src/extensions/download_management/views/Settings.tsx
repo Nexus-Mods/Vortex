@@ -73,7 +73,6 @@ import getText from "../texts";
 
 import PromiseBB from "bluebird";
 import * as path from "path";
-import * as process from "process";
 import * as React from "react";
 import {
   Button as BSButton,

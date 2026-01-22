@@ -13,7 +13,7 @@ import { log } from "../util/log";
 import opn from "../util/opn";
 import { downloadPath } from "../util/selectors";
 import type * as storeHelperT from "../util/storeHelper";
-import { parseBool, truthy } from "../util/util";
+import { parseBool } from "../util/util";
 import { closeAllViews } from "../util/webview";
 
 import PromiseBB from "bluebird";
@@ -72,7 +72,7 @@ function reactArea(input: IRect): number {
 }
 
 class MainWindow {
-  private mWindow: Electron.BrowserWindow = null;
+  private mWindow: Electron.BrowserWindow | null = null;
   // timers used to prevent window resize/move from constantly causeing writes to the
   // store
   private mResizeDebouncer: Debouncer;
@@ -89,19 +89,20 @@ class MainWindow {
         const size: number[] = this.mWindow.getSize();
         store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
       }
-      return null;
+      return PromiseBB.resolve();
     }, 500);
 
     this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
       if (this.mWindow !== null) {
         store.dispatch(setWindowPosition({ x, y }));
-        return null;
       }
-      return null;
+      return PromiseBB.resolve();
     }, 500);
   }
 
-  public create(store: ThunkStore<IState>): PromiseBB<Electron.WebContents> {
+  public create(
+    store: ThunkStore<IState>,
+  ): PromiseBB<Electron.WebContents | undefined> {
     if (this.mWindow !== null) {
       return PromiseBB.resolve(undefined);
     }
@@ -122,7 +123,10 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (this.mInspector || parseBool(process.env.START_DEVTOOLS)) {
+    if (
+      this.mInspector ||
+      (process.env.START_DEVTOOLS && parseBool(process.env.START_DEVTOOLS))
+    ) {
       // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }
@@ -191,7 +195,7 @@ class MainWindow {
     );
 
     const signalUrl = (item: Electron.DownloadItem) => {
-      if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
+      if (this.mWindow && !this.mWindow.isDestroyed()) {
         try {
           this.mWindow.webContents.send(
             "received-url",
@@ -256,10 +260,10 @@ class MainWindow {
     this.initEventHandlers(store);
 
     return new PromiseBB<Electron.WebContents>((resolve) => {
-      this.mWindow.once("ready-to-show", () => {
+      this.mWindow?.once("ready-to-show", () => {
         if (resolve !== undefined && this.mWindow !== null) {
           resolve(this.mWindow.webContents);
-          resolve = undefined;
+          resolve = undefined!;
         }
       });
       // if the show-window event is triggered before ready-to-show,
@@ -267,12 +271,12 @@ class MainWindow {
       ipcMain.on("show-window", () => {
         if (resolve !== undefined && this.mWindow !== null) {
           resolve(this.mWindow.webContents);
-          resolve = undefined;
+          resolve = undefined!;
         }
       });
       ipcMain.on("webview-dom-ready", (evt, id) => {
         const contents = webContents.fromId(id);
-        contents.setWindowOpenHandler(({ url, disposition }) => {
+        contents?.setWindowOpenHandler(({ url, disposition }) => {
           evt.sender.send("webview-open-url", id, url, disposition);
           return { action: "deny" };
         });
@@ -281,12 +285,15 @@ class MainWindow {
   }
 
   public connectToTray(tray: TrayIcon) {
+    if (this.mWindow === null) {
+      return;
+    }
     tray.setMainWindow(this.mWindow);
   }
 
-  public show(maximized: boolean, startMinimized: boolean) {
+  public show(maximized: boolean, startMinimized?: boolean) {
     this.mShown = true;
-    if (truthy(this.mWindow)) {
+    if (this.mWindow) {
       this.mWindow.show();
       if (maximized) {
         this.mWindow.maximize();
@@ -350,7 +357,7 @@ class MainWindow {
     }
   }
 
-  public getHandle(): Electron.BrowserWindow {
+  public getHandle(): Electron.BrowserWindow | null {
     return this.mWindow;
   }
 
@@ -401,7 +408,14 @@ class MainWindow {
   }
 
   private initEventHandlers(store: Redux.Store<IState>) {
+    if (this.mWindow === null) {
+      return;
+    }
+
     this.mWindow.on("close", () => {
+      if (this.mWindow === null) {
+        return;
+      }
       closeAllViews(this.mWindow);
     });
     this.mWindow.on("closed", () => {

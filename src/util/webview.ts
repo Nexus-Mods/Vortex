@@ -29,7 +29,7 @@ export const makeBrowserView = makeRemoteCall(
       vertical: true,
     });
 
-    window.addBrowserView(view);
+    window?.addBrowserView(view);
     view.webContents.loadURL(src);
     forwardEvents.forEach((eventId) => {
       view.webContents.on(eventId as any, (evt, ...args) => {
@@ -50,7 +50,7 @@ export const closeBrowserView = makeRemoteCall(
   (mainElectron, content, viewId: string) => {
     if (extraWebViews[content.id]?.[viewId] !== undefined) {
       const window = BrowserWindow.fromWebContents(content);
-      window.removeBrowserView(extraWebViews[content.id][viewId]);
+      window?.removeBrowserView(extraWebViews[content.id][viewId]);
       delete extraWebViews[content.id]?.[viewId];
     }
     return Promise.resolve();

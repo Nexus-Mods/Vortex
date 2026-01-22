@@ -15,7 +15,6 @@ import Bluebird from "bluebird";
 import { spawn } from "child_process";
 import * as _ from "lodash";
 import * as path from "path";
-import * as process from "process";
 import type * as Redux from "redux";
 import { batch } from "redux-act";
 import * as semver from "semver";

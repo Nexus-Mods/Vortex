@@ -17,13 +17,8 @@
  * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
  * - collapse: Tailwind's `visibility: collapse` overrides Bootstrap's collapse component
  */
-@utility container {
-    all: unset;
-}
-
-@utility collapse {
-    all: unset;
-}
+@source not inline('container');
+@source not inline('collapse');
 
 /* Import shared design system from nexus-next */
 @import "./shared/theme";
