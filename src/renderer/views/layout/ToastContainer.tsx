@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Toaster } from "react-hot-toast";
 
-const ToastContainer: React.FC = React.memo(() => (
+export const ToastContainer: React.FC = React.memo(() => (
   <Toaster
     position="bottom-center"
     reverseOrder={false}
@@ -24,5 +24,3 @@ const ToastContainer: React.FC = React.memo(() => (
     }}
   />
 ));
-
-export default ToastContainer;

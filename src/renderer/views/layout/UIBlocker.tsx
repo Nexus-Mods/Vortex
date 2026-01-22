@@ -7,7 +7,7 @@ import { Button as ReactButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-function UIBlocker(): JSX.Element | null {
+export const UIBlocker = (): JSX.Element | null => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { api } = React.useContext(MainContext);
@@ -47,6 +47,4 @@ function UIBlocker(): JSX.Element | null {
       ) : null}
     </div>
   );
-}
-
-export default UIBlocker;
+};

@@ -9,7 +9,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-function ProfileSwitcher(): JSX.Element {
+export const ProfileSwitcher = (): JSX.Element => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -60,6 +60,4 @@ function ProfileSwitcher(): JSX.Element {
       />
     </div>
   );
-}
-
-export default ProfileSwitcher;
+};

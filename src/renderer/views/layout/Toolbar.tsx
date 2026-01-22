@@ -13,10 +13,12 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+// Looks like we never really used them?
+// I haven't found any way to inject here anything
 const applicationButtons: IActionDefinition[] = [];
 const globalButtons: IActionDefinition[] = [];
 
-function Toolbar(): JSX.Element | null {
+export const Toolbar = (): JSX.Element | null => {
   const { t } = useTranslation();
   const customTitlebar = useSelector(
     (state: IState) => state.settings.window.customTitlebar,
@@ -96,6 +98,4 @@ function Toolbar(): JSX.Element | null {
       </div>
     </FlexLayout.Fixed>
   );
-}
-
-export default Toolbar;
+};

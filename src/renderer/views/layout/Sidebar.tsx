@@ -7,7 +7,7 @@ import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import { profileById } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import MainFooter from "../MainFooter";
-import PageGroup from "./PageGroup";
+import { PageGroup } from "./PageGroup";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -20,7 +20,7 @@ export interface ISidebarProps {
   onSidebarRef: (ref: HTMLElement | null) => void;
 }
 
-function Sidebar(props: ISidebarProps): JSX.Element {
+export const Sidebar = (props: ISidebarProps): JSX.Element => {
   const { objects, settingsPage, onClickPage, onToggleMenu, onSidebarRef } =
     props;
 
@@ -85,6 +85,4 @@ function Sidebar(props: ISidebarProps): JSX.Element {
       </Button>
     </FlexLayout.Fixed>
   );
-}
-
-export default Sidebar;
+};

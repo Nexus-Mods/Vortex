@@ -6,7 +6,7 @@ import Dialog from "../Dialog";
 import DialogContainer from "../DialogContainer";
 import OverlayContainer from "../OverlayContainer";
 
-function DialogLayer(): JSX.Element {
+export const DialogLayer = (): JSX.Element => {
   const dispatch = useDispatch();
 
   const visibleDialog = useSelector(
@@ -27,6 +27,4 @@ function DialogLayer(): JSX.Element {
       <OverlayContainer />
     </>
   );
-}
-
-export default DialogLayer;
+};

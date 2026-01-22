@@ -24,7 +24,7 @@ export interface IMainLayoutProps {
   objects: IMainPage[];
 }
 
-function MainLayout(props: IMainLayoutProps): JSX.Element {
+export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
   const { objects } = props;
   const dispatch = useDispatch();
 
@@ -146,6 +146,4 @@ function MainLayout(props: IMainLayoutProps): JSX.Element {
       </FlexLayout>
     </FlexLayout.Flex>
   );
-}
-
-export default MainLayout;
+};

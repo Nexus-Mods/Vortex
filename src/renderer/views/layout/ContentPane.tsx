@@ -6,18 +6,18 @@ export interface IContentPaneProps {
   children: React.ReactNode;
 }
 
-const ContentPane: React.FC<IContentPaneProps> = ({ children }) => (
-  <FlexLayout.Flex fill id="main-window-pane">
-    <DNDContainer
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-      }}
-    >
-      {children}
-    </DNDContainer>
-  </FlexLayout.Flex>
-);
-
-export default ContentPane;
+export const ContentPane = ({ children }: IContentPaneProps): JSX.Element => {
+  return (
+    <FlexLayout.Flex fill id="main-window-pane">
+      <DNDContainer
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
+      >
+        {children}
+      </DNDContainer>
+    </FlexLayout.Flex>
+  );
+};
