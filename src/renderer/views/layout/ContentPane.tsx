@@ -6,7 +6,7 @@ export interface IContentPaneProps {
   children: React.ReactNode;
 }
 
-const ContentPane: React.FC<IContentPaneProps> = React.memo(({ children }) => (
+const ContentPane: React.FC<IContentPaneProps> = ({ children }) => (
   <FlexLayout.Flex fill id="main-window-pane">
     <DNDContainer
       style={{
@@ -18,6 +18,6 @@ const ContentPane: React.FC<IContentPaneProps> = React.memo(({ children }) => (
       {children}
     </DNDContainer>
   </FlexLayout.Flex>
-));
+);
 
 export default ContentPane;
