@@ -211,7 +211,7 @@ function HealthCheckDetailPage({ mod, onBack }: IHealthCheckDetailPageProps) {
                 <div className="grow">
                   <Typography className="font-semibold">
                     {t("detail::item::title", {
-                      modName: mod.modName,
+                      modName: mod.requiredBy.modName,
                     })}
                   </Typography>
 
@@ -230,7 +230,7 @@ function HealthCheckDetailPage({ mod, onBack }: IHealthCheckDetailPageProps) {
                           />
                         ),
                       }}
-                      values={{ modName: mod.modName }}
+                      values={{ modName: mod.requiredBy.modName }}
                     />
                   </Typography>
                 </div>
