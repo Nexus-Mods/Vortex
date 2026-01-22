@@ -59,7 +59,7 @@
     "postinstall": "node postinstall.js",
     "install:debug": "cross-env VORTEX_BUILD_CONFIG=Debug yarn install",
     "test": "jest --no-cache",
-    "build": "yarn run check_packages && yarn run build_rest && tsc -p .",
+    "build": "yarn tsc -p src/shared/tsconfig.json && yarn run check_packages && yarn run build_rest && yarn tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
     "gen": "yarn ts-to-zod --all",
