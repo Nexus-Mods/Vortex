@@ -83,7 +83,7 @@ function HealthCheckPage({
   return (
     <MainPage id="health-check-page">
       <MainPage.Body>
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 max-w-5xl">
           <div className="flex items-center gap-x-6">
             <div className="grow flex gap-x-2 items-center">
               <Pictogram name="health-check" size="sm" />
@@ -158,6 +158,26 @@ function HealthCheckPage({
             </div>
 
             <TabPanel name="active">
+              {/* empty state */}
+              <div className="py-24 flex items-center flex-col gap-y-2">
+                <Icon
+                  className="text-success-strong"
+                  path="mdiCheckCircle"
+                  size="xl"
+                />
+
+                <Typography
+                  as="div"
+                  appearance="subdued"
+                  className="text-center space-y-2"
+                >
+                  <p className="font-semibold">Health check passed</p>
+
+                  <p>Ready for gaming</p>
+                </Typography>
+              </div>
+
+              {/* listings */}
               <div className="space-y-2">
                 <Mod
                   dependencyModName="Apothecary - An Alchemy Overhaul"
@@ -174,6 +194,23 @@ function HealthCheckPage({
             </TabPanel>
 
             <TabPanel name="hidden">
+              {/* empty state */}
+              <div className="py-24 flex items-center flex-col gap-y-2">
+                <Icon
+                  className="text-neutral-moderate"
+                  path="mdiEyeOff"
+                  size="xl"
+                />
+
+                <Typography
+                  appearance="subdued"
+                  className="text-center font-semibold"
+                >
+                  No hidden items
+                </Typography>
+              </div>
+
+              {/* listings */}
               <div className="space-y-2">
                 <Mod
                   dependencyModName="Address Library for SKSE Plugins"

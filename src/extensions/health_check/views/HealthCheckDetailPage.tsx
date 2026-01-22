@@ -128,7 +128,7 @@ function HealthCheckDetailPage({ onBack }: { onBack: () => void }) {
   return (
     <MainPage id="health-check-detail-page">
       <MainPage.Body>
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-w-5xl">
           <div className="flex justify-between items-center gap-x-6">
             <div className="grow flex gap-x-2 items-center">
               <Pictogram name="health-check" size="sm" />
