@@ -1,29 +1,18 @@
 {
-  "compileOnSave": true,
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
     "moduleResolution": "node",
 
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "verbatimModuleSyntax": false,
-
     "inlineSourceMap": true,
     "inlineSources": true,
-    "preserveConstEnums": true,
     "removeComments": true,
 
     "rootDir": "./src",
     "outDir": "./out",
 
     "jsx": "react",
-
-    "noImplicitAny": false,
-    "useUnknownInCatchVariables": true
   },
   "files": [
     "typings.custom/index.d.ts",
