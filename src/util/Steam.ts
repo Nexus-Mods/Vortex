@@ -333,7 +333,7 @@ class Steam implements IGameStore {
                   return undefined;
                 }
                 try {
-                  return {
+                  const result: ISteamEntry = {
                     appid: obj["AppState"]["appid"],
                     gameStoreId: STORE_ID,
                     name: obj["AppState"]["name"],
@@ -347,7 +347,8 @@ class Steam implements IGameStore {
                       obj["AppState"]["LastUpdated"] * 1000,
                     ),
                     manifestData: obj,
-                  } as ISteamEntry;
+                  };
+                  return result;
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
@@ -356,7 +357,7 @@ class Steam implements IGameStore {
                   return undefined;
                 }
               })
-              .filter((obj): obj is ISteamEntry => obj !== undefined);
+              .filter((obj): obj is ISteamEntry => !!obj);
           })
           .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
@@ -364,20 +365,20 @@ class Steam implements IGameStore {
             log("info", "Steam library not found", {
               error: getErrorMessageOrDefault(err),
             });
-            return undefined;
+            return [];
           })
           .catch((err) => {
             log("warn", "Failed to read steam library", {
               path: steamPath,
               error: getErrorMessageOrDefault(err),
             });
+            return [];
           });
       })
-        .then((games: ISteamEntry[][]) =>
+        .then((games) =>
           games.reduce(
-            (prev, current): ISteamEntry[] =>
-              current !== undefined ? prev.concat(current) : prev,
-            Array<ISteamEntry>(),
+            (prev, current) => (current ? prev.concat(current) : prev),
+            [],
           ),
         )
         .tap(() => {

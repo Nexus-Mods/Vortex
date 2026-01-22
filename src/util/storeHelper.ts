@@ -206,7 +206,7 @@ export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   let result: any = state;
   if (path.length === 1) {
     if (Array.isArray(state)) {
-      result = Array<any>().concat(state);
+      result = [...state];
       result.splice(firstElement as number, 1);
     } else if (Object.hasOwnProperty.call(state, firstElement)) {
       result = { ...(state as any) };
@@ -271,8 +271,8 @@ export function pushSafe<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, Array<any>());
-  getSafe<any | undefined>(copy, path, undefined)?.push(value);
+  const copy = setDefaultArray(state, path, Array<unknown>());
+  getSafe(copy, path, Array<unknown>())?.push(value);
   return copy;
 }
 
@@ -287,8 +287,8 @@ export function addUniqueSafe<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, Array<any>());
-  const arr = getSafe<any | undefined>(copy, path, undefined);
+  const copy = setDefaultArray(state, path, Array<unknown>());
+  const arr = getSafe(copy, path, Array<unknown>());
   if (arr.indexOf(value) !== -1) {
     return state;
   }
@@ -311,8 +311,8 @@ export function removeValue<T>(
   path: Array<string | number>,
   value: any,
 ): T {
-  const copy = setDefaultArray(state, path, Array<any>());
-  const list = getSafe<any | undefined>(copy, path, undefined);
+  const copy = setDefaultArray(state, path, Array<unknown>());
+  const list = getSafe(copy, path, Array<unknown>());
   const idx = list.indexOf(value);
   if (idx === -1) {
     return state;

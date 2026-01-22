@@ -242,15 +242,11 @@ class ReduxPersistor<T extends Record<string, unknown>> {
         return PromiseBB.mapSeries(oldkeys, (key) =>
           newState[key] === undefined
             ? // keys that exist in oldState but not newState
-              this.remove(
-                persistor,
-                Array<string>().concat(statePath, key),
-                oldState[key],
-              )
+              this.remove(persistor, [...statePath, key], oldState[key])
             : // keys that exist in both
               this.storeDiff(
                 persistor,
-                Array<string>().concat(statePath, key),
+                [...statePath, key],
                 oldState[key],
                 newState[key],
               ),
@@ -259,11 +255,7 @@ class ReduxPersistor<T extends Record<string, unknown>> {
             PromiseBB.mapSeries(newkeys, (key) =>
               oldState[key] === undefined && newState[key] !== undefined
                 ? // keys that exist in newState but not oldState
-                  this.add(
-                    persistor,
-                    Array<string>().concat(statePath, key),
-                    newState[key],
-                  )
+                  this.add(persistor, [...statePath, key], newState[key])
                 : // keys that exist in both - already handled above
                   PromiseBB.resolve(),
             ),
@@ -286,11 +278,7 @@ class ReduxPersistor<T extends Record<string, unknown>> {
   ): PromiseBB<void> {
     return isObject(state)
       ? PromiseBB.mapSeries(Object.keys(state), (key) =>
-          this.remove(
-            persistor,
-            Array<string>().concat(statePath, key),
-            state[key],
-          ),
+          this.remove(persistor, [...statePath, key], state[key]),
         ).then(() => undefined)
       : persistor.removeItem(statePath);
   }
@@ -305,11 +293,7 @@ class ReduxPersistor<T extends Record<string, unknown>> {
     }
     return isObject(state)
       ? PromiseBB.mapSeries(Object.keys(state), (key) =>
-          this.add(
-            persistor,
-            Array<string>().concat(statePath, key),
-            state[key],
-          ),
+          this.add(persistor, [...statePath, key], state[key]),
         ).then(() => undefined)
       : persistor.setItem(statePath, this.serialize(state));
   }

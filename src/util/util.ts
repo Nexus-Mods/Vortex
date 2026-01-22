@@ -319,7 +319,7 @@ export function timeToString(seconds: number): string {
 
 let convertDiv: HTMLDivElement;
 
-export function encodeHTML(input: string): string | undefined {
+export function encodeHTML(input: string | undefined): string | undefined {
   if (input === undefined) {
     return undefined;
   }
@@ -330,7 +330,7 @@ export function encodeHTML(input: string): string | undefined {
   return convertDiv.innerHTML;
 }
 
-export function decodeHTML(input: string): string | undefined {
+export function decodeHTML(input: string | undefined): string | undefined {
   if (input === undefined) {
     return undefined;
   }
@@ -557,10 +557,7 @@ const INVALID_FILEPATH_CHARACTERS =
 /**
  * characters invalid in a file name
  */
-const INVALID_FILENAME_CHARACTERS = Array<string>().concat(
-  INVALID_FILEPATH_CHARACTERS,
-  path.sep,
-);
+const INVALID_FILENAME_CHARACTERS = [...INVALID_FILEPATH_CHARACTERS, path.sep];
 
 const INVALID_FILENAME_RE = new RegExp(
   `[${escapeRE(INVALID_FILENAME_CHARACTERS.join(""))}]`,
@@ -742,7 +739,7 @@ function flattenInner(
         ...flattenInner(
           obj[attr],
           [...key, attr],
-          Array<string>().concat(objStack, [obj[attr]]),
+          [...objStack, obj[attr]],
           options,
         ),
       };
@@ -823,7 +820,7 @@ export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
       }
       keys.add(key);
     }
-    return Array<T>().concat(prev, iter);
+    return [...prev, iter];
   }, []);
 }
 

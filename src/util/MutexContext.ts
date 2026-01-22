@@ -49,7 +49,7 @@ export function useMutex(show: boolean) {
   const forceUpdate = React.useCallback(() => updateState({}), []);
 
   React.useEffect(() => {
-    if (ctx === undefined || ctx === null) {
+    if (!ctx) {
       return;
     }
     if (show) {

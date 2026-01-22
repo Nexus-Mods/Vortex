@@ -374,8 +374,7 @@ function removeFolderTags(sourceDir: string) {
       exists
         ? fs.removeAsync(filePath).catch((err) => {
             log("error", "Unable to remove directory tag", err);
-            const code = getErrorCode(err);
-            return code && ["ENOENT"].indexOf(code) !== -1
+            return getErrorCode(err) === "ENOENT"
               ? // Tag file is gone ? no problem.
                 PromiseBB.resolve()
               : PromiseBB.reject(err);
@@ -393,8 +392,7 @@ function removeOldDirectories(directories: string[]): PromiseBB<void> {
   const longestFirst = (lhs, rhs) => rhs.length - lhs.length;
   return PromiseBB.each(directories.sort(longestFirst), (dir) =>
     fs.removeAsync(dir).catch((err) => {
-      const code = getErrorCode(err);
-      return code && ["ENOENT"].indexOf(code) !== -1
+      return getErrorCode(err) === "ENOENT"
         ? // Directory missing ? odd but lets keep going.
           PromiseBB.resolve()
         : PromiseBB.reject(err);

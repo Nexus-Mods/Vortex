@@ -34,18 +34,15 @@ class SubPersistor implements IPersistor {
   }
 
   public getItem(key: string[]): PromiseBB<string> {
-    return this.mWrapped.getItem(Array<string>().concat(this.mHive, key));
+    return this.mWrapped.getItem([this.mHive, ...key]);
   }
 
   public setItem(key: string[], value: string): PromiseBB<void> {
-    return this.mWrapped.setItem(
-      Array<string>().concat(this.mHive, key),
-      value,
-    );
+    return this.mWrapped.setItem([this.mHive, ...key], value);
   }
 
   public removeItem(key: string[]): PromiseBB<void> {
-    return this.mWrapped.removeItem(Array<string>().concat(this.mHive, key));
+    return this.mWrapped.removeItem([this.mHive, ...key]);
   }
 
   public getAllKeys(): PromiseBB<string[][]> {
