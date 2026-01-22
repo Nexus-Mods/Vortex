@@ -2444,8 +2444,23 @@ class ExtensionManager {
                   .on("error", (err) => {
                     reject(err);
                   })
-                  .on("close", (code) => {
+                  .on("close", (code, signal) => {
                     const game = activeGameId(this.mApi.store.getState());
+                    if (code === null) {
+                      log("warn", "child process terminated by signal", {
+                        signal,
+                      });
+                      if (options.expectSuccess) {
+                        const err = new ProcessCanceled(
+                          `Process terminated by signal ${signal ?? "unknown"}`,
+                        );
+                        err["signal"] = signal;
+                        reject(err);
+                        return;
+                      }
+                      resolve();
+                      return;
+                    }
                     if (game === "fallout3" && code === 0xc0000135) {
                       // 0xC0000135 means that a dll couldn't be found.
                       // In the context of FO3 it's commonly xlive or other redistribs are

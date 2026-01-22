@@ -31,9 +31,14 @@ const buildState = (
   overrides: {
     toolsRunning?: IState["session"]["base"]["toolsRunning"];
     tools?: { [id: string]: IDiscoveredTool };
+    gamePath?: string;
+    gameExe?: string;
   } = {},
-): IState =>
-  ({
+): IState => {
+  const resolvedGamePath = overrides.gamePath ?? gamePath;
+  const resolvedGameExe = overrides.gameExe ?? gameExe;
+
+  return {
     session: {
       base: {
         toolsRunning: overrides.toolsRunning ?? {},
@@ -43,7 +48,7 @@ const buildState = (
           {
             id: gameId,
             name: "Test Game",
-            executable: gameExe,
+            executable: resolvedGameExe,
             requiredFiles: [],
           },
         ],
@@ -56,8 +61,8 @@ const buildState = (
       gameMode: {
         discovered: {
           [gameId]: {
-            path: gamePath,
-            executable: gameExe,
+            path: resolvedGamePath,
+            executable: resolvedGameExe,
             tools: overrides.tools ?? {},
           },
         },
@@ -68,7 +73,8 @@ const buildState = (
         [profileId]: { id: profileId, gameId },
       },
     },
-  }) as unknown as IState;
+  } as unknown as IState;
+};
 
 const createMonitor = (state: IState, processes: IProcessInfo[]) => {
   const store = {
@@ -149,6 +155,31 @@ it("matches detached game but filters non-child tools", async () => {
     setToolPid(gameExePath, 6001, true),
   );
   expect(store.dispatch).toHaveBeenNthCalledWith(2, setToolStopped(toolPath));
+});
+
+it("parses unquoted cmd paths with spaces", async () => {
+  const spacedGamePath = "/games/test path";
+  const spacedGameExe = "StardewValley";
+  const spacedGameExePath = path.join(spacedGamePath, spacedGameExe);
+  const state = buildState({
+    gamePath: spacedGamePath,
+    gameExe: spacedGameExe,
+  });
+  const processes: IProcessInfo[] = [
+    {
+      pid: 8001,
+      ppid: 0,
+      name: spacedGameExe,
+      cmd: `${spacedGameExePath} --arg`,
+    },
+  ];
+  const { monitor, store } = createMonitor(state, processes);
+
+  await (monitor as any).doCheck();
+
+  expect(store.dispatch).toHaveBeenCalledWith(
+    setToolPid(spacedGameExePath, 8001, true),
+  );
 });
 
 it("skips dispatch when known pid still exists", async () => {

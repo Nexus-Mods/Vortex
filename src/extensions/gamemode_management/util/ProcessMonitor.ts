@@ -185,23 +185,45 @@ class ProcessMonitor {
       return;
     }
 
-    // Parse the executable path from a raw command line; handles quoted paths.
-    const getCommandPath = (cmd?: string): string | undefined => {
+    const hasPathSeparator = (value: string): boolean =>
+      value.includes("/") || value.includes("\\");
+
+    // Parse the executable path from a raw command line; handles quoted paths and
+    // unquoted paths that may contain spaces (common on Linux/Steam paths).
+    const getCommandPath = (proc: IProcessInfo): string | undefined => {
+      const cmd = proc.cmd;
       if (!cmd) {
         return undefined;
       }
       const trimmed = cmd.trim();
       if (trimmed.startsWith('"')) {
         const end = trimmed.indexOf('"', 1);
-        return end > 1 ? trimmed.slice(1, end) : undefined;
+        const quoted = end > 1 ? trimmed.slice(1, end) : undefined;
+        return quoted !== undefined && hasPathSeparator(quoted)
+          ? quoted
+          : undefined;
       }
-      const first = trimmed.split(" ")[0];
-      return first.length > 0 ? first : undefined;
+
+      const parts = trimmed.split(/\s+/).filter((part) => part.length > 0);
+      if (parts.length === 0) {
+        return undefined;
+      }
+
+      const exeName = proc.name.toLowerCase();
+      let assembled = "";
+      for (const part of parts) {
+        assembled = assembled.length === 0 ? part : `${assembled} ${part}`;
+        if (assembled.toLowerCase().endsWith(exeName)) {
+          return hasPathSeparator(assembled) ? assembled : undefined;
+        }
+      }
+
+      return hasPathSeparator(parts[0]) ? parts[0] : undefined;
     };
 
     // Prefer explicit process path; fall back to cmd-derived path when available.
     const getProcessPath = (proc: IProcessInfo): string | undefined =>
-      proc.path ?? getCommandPath(proc.cmd);
+      proc.path ?? getCommandPath(proc);
 
     // Map for quick PID lookup to validate cached tool PIDs (avoid stale PID reuse).
     const byPid: { [pid: number]: IProcessInfo } = processes.reduce(
