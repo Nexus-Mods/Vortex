@@ -25,6 +25,7 @@
             (python3.withPackages (ps: [ ps.setuptools ]))
 
             # Build tools
+            gitMinimal
             gnumake
             pkg-config
 
