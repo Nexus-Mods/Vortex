@@ -14,6 +14,10 @@ import type * as Redux from "redux";
 import type { IProcessInfo, IProcessProvider } from "./processProvider";
 import { defaultProcessProvider } from "./processProvider";
 
+/**
+ * Monitors the active game and discovered tools by polling process snapshots.
+ * Uses a 2s cadence when focused and 5s when unfocused, without overlapping checks.
+ */
 class ProcessMonitor {
   private mTimer: NodeJS.Timeout;
   private mStore: Redux.Store<IState>;
@@ -29,6 +33,7 @@ class ProcessMonitor {
     this.mProcessProvider = processProvider;
   }
 
+  /** Start polling; safe to call multiple times. */
   public start(): void {
     if (this.mActive) {
       return;
@@ -77,6 +82,7 @@ class ProcessMonitor {
       return;
     }
 
+    // Parse the executable path from a raw command line; handles quoted paths.
     const getCommandPath = (cmd?: string): string | undefined => {
       if (!cmd) {
         return undefined;
@@ -90,9 +96,11 @@ class ProcessMonitor {
       return first.length > 0 ? first : undefined;
     };
 
+    // Prefer explicit process path; fall back to cmd-derived path when available.
     const getProcessPath = (proc: IProcessInfo): string | undefined =>
       proc.path ?? getCommandPath(proc.cmd);
 
+    // Map for quick PID lookup to validate cached tool PIDs (avoid stale PID reuse).
     const byPid: { [pid: number]: IProcessInfo } = processes.reduce(
       (prev, proc) => {
         prev[proc.pid] = proc;
@@ -101,6 +109,7 @@ class ProcessMonitor {
       {},
     );
 
+    // Map by exeId (normalized basename) for name-based candidate lookup.
     const byName: { [exeId: string]: IProcessInfo[] } = processes.reduce(
       (prev: { [exeId: string]: IProcessInfo[] }, proc) => {
         setdefault(prev, makeExeId(proc.name), []).push(proc);
@@ -112,6 +121,7 @@ class ProcessMonitor {
     const state = this.mStore.getState();
     const vortexPid = process.pid;
 
+    // Only treat child processes as tool instances unless detached processes are allowed.
     const isChildProcess = (
       proc: IProcessInfo,
       visited: Set<number>,
@@ -127,6 +137,8 @@ class ProcessMonitor {
       );
     };
 
+    // Match logic: prefer full path match; fall back to name-only when all paths are missing.
+    // Limitations: basename collisions and detached processes can lead to false matches.
     const update = (
       exePath: string,
       exclusive: boolean,
@@ -143,9 +155,16 @@ class ProcessMonitor {
         return;
       }
 
-      if (knownRunning !== undefined && byPid[knownRunning.pid] !== undefined) {
-        // We already know this tool is running and the process is still active.
-        return;
+      if (knownRunning !== undefined) {
+        // Verify cached PID is still valid to detect stale PID reuse.
+        const knownProc = byPid[knownRunning.pid];
+        if (knownProc !== undefined) {
+          // We know this process is running. If considerDetached is true, we're done.
+          // If considerDetached is false, we need to verify it's still a child process.
+          if (considerDetached || isChildProcess(knownProc, new Set())) {
+            return;
+          }
+        }
       }
 
       const candidates = considerDetached
@@ -169,6 +188,7 @@ class ProcessMonitor {
       }
 
       // Fallback: when ps-list does not expose path/cmd (Windows), accept name-only.
+      // Note: basename collisions can lead to false matches when multiple executables share the same name.
       if (
         candidatesWithPath.length > 0 &&
         candidatesWithPath.every((entry) => entry.path === undefined)
@@ -215,6 +235,7 @@ class ProcessMonitor {
     });
   }
 
+  /** Stop polling and clear any pending timer. */
   public end(): void {
     if (this.mTimer === undefined) {
       return;
