@@ -13,7 +13,7 @@ export interface IBaseProps {
 
 type IProps = IBaseProps;
 
-class MainPage extends ComponentEx<IProps, {}> {
+class MainPage extends ComponentEx<IProps, object> {
   public static Body = Body;
   public static Header = Header;
 

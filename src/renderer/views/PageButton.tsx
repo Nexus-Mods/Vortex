@@ -12,58 +12,57 @@ interface IPageButtonProps {
   namespace: string;
 }
 
-class PageButton extends React.Component<IPageButtonProps, {}> {
-  public componentDidMount() {
-    const { page } = this.props;
+function PageButton(props: IPageButtonProps): React.JSX.Element {
+  const { t, namespace, page } = props;
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+
+  // Create a stable object to pass to attach/detach that triggers re-renders
+  // ReduxProp expects an object with a forceUpdate method
+  const updateHandle = React.useMemo(
+    () => ({ forceUpdate }) as unknown as React.Component,
+    [],
+  );
+
+  React.useEffect(() => {
     if (page.badge) {
-      page.badge.attach(this);
+      page.badge.attach(updateHandle);
     }
     if (page.activity) {
-      page.activity.attach(this);
+      page.activity.attach(updateHandle);
     }
-  }
 
-  public componentWillUnmount() {
-    const { page } = this.props;
-    if (page.badge) {
-      page.badge.detach(this);
-    }
-    if (page.activity) {
-      page.activity.detach(this);
-    }
-  }
+    return () => {
+      if (page.badge) {
+        page.badge.detach(updateHandle);
+      }
+      if (page.activity) {
+        page.activity.detach(updateHandle);
+      }
+    };
+  }, [page, updateHandle]);
 
-  public render() {
-    const { t, namespace, page } = this.props;
-    return (
-      <div>
-        <Icon name={page.icon} />
-        <span className="menu-label">{t(page.title, { ns: namespace })}</span>
-        {this.renderBadge()}
-        {this.renderActivity()}
-      </div>
-    );
-  }
-
-  private renderBadge() {
-    const { page } = this.props;
-
+  const renderBadge = () => {
     if (page.badge === undefined) {
       return null;
     }
-
     return <Badge>{page.badge.calculate()}</Badge>;
-  }
+  };
 
-  private renderActivity() {
-    const { page } = this.props;
-
+  const renderActivity = () => {
     if (page.activity === undefined || !page.activity.calculate()) {
       return null;
     }
-
     return <Spinner />;
-  }
+  };
+
+  return (
+    <div>
+      <Icon name={page.icon} />
+      <span className="menu-label">{t(page.title, { ns: namespace })}</span>
+      {renderBadge()}
+      {renderActivity()}
+    </div>
+  );
 }
 
 export default PageButton;

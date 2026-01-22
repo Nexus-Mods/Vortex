@@ -13,7 +13,7 @@ import NXMUrl from "../NXMUrl";
 import { makeFileUID } from "../util/UIDs";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
-import { MainContext } from "../../../renderer/views/MainWindow";
+import { MainContext } from "../../../renderer/views/ApplicationLayout";
 import type { IComponentContext } from "../../../types/IComponentContext";
 import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";

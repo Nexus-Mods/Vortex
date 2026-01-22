@@ -7,7 +7,6 @@ import type {
   INotificationAction,
   NotificationType,
 } from "../../types/INotification";
-import { ComponentEx } from "../controls/ComponentEx";
 
 import type { TFunction } from "../../util/i18n";
 
@@ -23,26 +22,20 @@ interface IActionProps {
   onTrigger: (actionTitle: string) => void;
 }
 
-class Action extends React.Component<IActionProps, {}> {
-  public render(): JSX.Element {
-    const { t, count, icon, title } = this.props;
-    if (icon !== undefined) {
-      return (
-        <IconButton
-          onClick={this.trigger}
-          icon={icon}
-          tooltip={t(title, { count })}
-        />
-      );
-    } else {
-      return <Button onClick={this.trigger}>{t(title, { count })}</Button>;
-    }
-  }
+function Action(props: IActionProps): React.JSX.Element {
+  const { t, count, icon, title, onTrigger } = props;
 
-  private trigger = () => {
-    const { onTrigger, title } = this.props;
+  const trigger = React.useCallback(() => {
     onTrigger(title);
-  };
+  }, [onTrigger, title]);
+
+  if (icon !== undefined) {
+    return (
+      <IconButton onClick={trigger} icon={icon} tooltip={t(title, { count })} />
+    );
+  } else {
+    return <Button onClick={trigger}>{t(title, { count })}</Button>;
+  }
 }
 
 export interface IProps {
@@ -55,80 +48,96 @@ export interface IProps {
   onSuppress?: (id: string) => void;
 }
 
-class Notification extends ComponentEx<IProps, { open: boolean }> {
-  private menuRef: React.RefObject<any>;
-
-  constructor(props: IProps) {
-    super(props);
-
-    this.menuRef = React.createRef<any>();
-
-    this.initState({ open: false });
+function typeToStyle(type: NotificationType): string {
+  switch (type) {
+    case "success":
+      return "success";
+    case "activity":
+      return "info";
+    case "info":
+      return "info";
+    case "warning":
+      return "warning";
+    case "error":
+      return "danger";
+    default:
+      return "warning";
   }
+}
 
-  public render(): JSX.Element {
-    const { t, collapsed, onDismiss, onExpand, onTriggerAction } = this.props;
-    const { actions, id, message, noDismiss, progress, title, type } =
-      this.props.params;
-
-    if (message === undefined && title === undefined) {
+function typeToIcon(type: NotificationType): React.JSX.Element {
+  switch (type) {
+    case "activity":
+      return <Spinner />;
+    case "success":
+      return <Icon name="feedback-success" />;
+    case "info":
+      return <Icon name="feedback-info" />;
+    case "warning":
+      return <Icon name="feedback-warning" />;
+    case "error":
+      return <Icon name="feedback-error" />;
+    default:
       return null;
-    }
-
-    const lines = (message || "")
-      // improve chance the message can be line-broken on hover
-      .replace(/\W/g, (_) => `${_}\u200b`)
-      .split("\n");
-
-    const styleName = this.typeToStyle(type);
-
-    return (
-      <div role="alert" className={`notification alert-${styleName}`}>
-        {progress !== undefined ? (
-          <span
-            className="notification-progress"
-            style={{ left: `${progress}%` }}
-          />
-        ) : null}
-        <div className="btn btn-default btn-embed no-hover">
-          {this.typeToIcon(type)}{" "}
-        </div>
-        <div className="notification-textbox">
-          {title !== undefined ? (
-            <div className="notification-title">{title}</div>
-          ) : null}
-          <div className="notification-message hover-expand">
-            {lines.map((line, idx) => (
-              <span key={idx}>{line}</span>
-            ))}
-          </div>
-        </div>
-        <div className="notification-buttons">
-          {actions !== undefined && onTriggerAction !== undefined
-            ? actions.map((action) => this.renderAction(action, collapsed))
-            : null}
-          {!noDismiss && onDismiss !== undefined ? (
-            <IconButton
-              icon="close"
-              tooltip={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}
-              onClick={this.dismiss}
-            />
-          ) : null}
-          {collapsed > 1 && onExpand !== undefined ? (
-            <Button onClick={this.expand}>
-              {t("{{ count }} More", { count: collapsed - 1 })}
-            </Button>
-          ) : null}
-          {id !== undefined ? this.renderExtraOptions() : null}
-        </div>
-      </div>
-    );
   }
+}
 
-  private renderExtraOptions() {
-    const { t, onSuppress, params } = this.props;
-    const { open } = this.state;
+function Notification(props: IProps): React.JSX.Element {
+  const {
+    t,
+    collapsed,
+    onDismiss,
+    onExpand,
+    onSuppress,
+    onTriggerAction,
+    params,
+  } = props;
+  const { actions, id, message, noDismiss, progress, title, type } = params;
 
+  const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<any>(null);
+
+  const handleOpen = React.useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const handleClose = React.useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  const suppressNotification = React.useCallback(() => {
+    onSuppress?.(params.id);
+  }, [onSuppress, params.id]);
+
+  const trigger = React.useCallback(
+    (actionTitle: string) => {
+      onTriggerAction?.(params.id, actionTitle);
+    },
+    [onTriggerAction, params.id],
+  );
+
+  const expand = React.useCallback(() => {
+    onExpand?.(params.group);
+  }, [onExpand, params.group]);
+
+  const dismiss = React.useCallback(() => {
+    onDismiss?.(params.id);
+  }, [onDismiss, params.id]);
+
+  const renderAction = (action: INotificationAction) => {
+    return (
+      <Action
+        key={action.title ?? action.icon}
+        t={t}
+        icon={action.icon}
+        title={action.title}
+        count={collapsed}
+        onTrigger={trigger}
+      />
+    );
+  };
+
+  const renderExtraOptions = () => {
     // currently that's the only extra option
     const hasExtraOptions = params.allowSuppress === true;
     if (!hasExtraOptions) {
@@ -139,99 +148,80 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
       <Dropdown
         id={`notification-${params.id}-extra`}
         className="notification-extra-options"
-        ref={this.menuRef}
+        ref={menuRef}
       >
-        <Dropdown.Toggle onClick={this.open}>
+        <Dropdown.Toggle onClick={handleOpen}>
           <Icon name="settings" />
         </Dropdown.Toggle>
         <PortalMenu
           open={open}
-          onClick={this.close}
-          onClose={this.close}
-          target={this.menuRef.current}
+          onClick={handleClose}
+          onClose={handleClose}
+          target={menuRef.current}
           bsRole="menu"
         >
           {params.allowSuppress && onSuppress !== undefined ? (
-            <MenuItem onClick={this.suppressNotification} eventKey="suppress">
+            <MenuItem onClick={suppressNotification} eventKey="suppress">
               {t("Never show again")}
             </MenuItem>
           ) : null}
         </PortalMenu>
       </Dropdown>
     );
+  };
+
+  if (message === undefined && title === undefined) {
+    return null;
   }
 
-  private open = () => {
-    this.nextState.open = true;
-  };
+  const lines = (message || "")
+    // improve chance the message can be line-broken on hover
+    .replace(/\W/g, (_) => `${_}\u200b`)
+    .split("\n");
 
-  private close = () => {
-    this.nextState.open = false;
-  };
+  const styleName = typeToStyle(type);
 
-  private suppressNotification = () => {
-    const { onSuppress, params } = this.props;
-    onSuppress(params.id);
-  };
-
-  private renderAction = (action: INotificationAction, count) => {
-    return (
-      <Action
-        key={action.title ?? action.icon}
-        t={this.props.t}
-        icon={action.icon}
-        title={action.title}
-        count={count}
-        onTrigger={this.trigger}
-      />
-    );
-  };
-
-  private trigger = (actionTitle: string) => {
-    const { onTriggerAction, params } = this.props;
-
-    onTriggerAction(params.id, actionTitle);
-  };
-
-  private expand = () => {
-    this.props.onExpand(this.props.params.group);
-  };
-
-  private typeToStyle(type: NotificationType) {
-    switch (type) {
-      case "success":
-        return "success";
-      case "activity":
-        return "info";
-      case "info":
-        return "info";
-      case "warning":
-        return "warning";
-      case "error":
-        return "danger";
-      default:
-        return "warning";
-    }
-  }
-
-  private typeToIcon(type: NotificationType): JSX.Element {
-    switch (type) {
-      case "activity":
-        return <Spinner />;
-      case "success":
-        return <Icon name="feedback-success" />;
-      case "info":
-        return <Icon name="feedback-info" />;
-      case "warning":
-        return <Icon name="feedback-warning" />;
-      case "error":
-        return <Icon name="feedback-error" />;
-      default:
-        return null;
-    }
-  }
-
-  private dismiss = () => this.props.onDismiss(this.props.params.id);
+  return (
+    <div role="alert" className={`notification alert-${styleName}`}>
+      {progress !== undefined ? (
+        <span
+          className="notification-progress"
+          style={{ left: `${progress}%` }}
+        />
+      ) : null}
+      <div className="btn btn-default btn-embed no-hover">
+        {typeToIcon(type)}{" "}
+      </div>
+      <div className="notification-textbox">
+        {title !== undefined ? (
+          <div className="notification-title">{title}</div>
+        ) : null}
+        <div className="notification-message hover-expand">
+          {lines.map((line, idx) => (
+            <span key={idx}>{line}</span>
+          ))}
+        </div>
+      </div>
+      <div className="notification-buttons">
+        {actions !== undefined && onTriggerAction !== undefined
+          ? actions.map((action) => renderAction(action))
+          : null}
+        {!noDismiss && onDismiss !== undefined ? (
+          <IconButton
+            icon="close"
+            tooltip={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}
+            onClick={dismiss}
+          />
+        ) : null}
+        {collapsed > 1 && onExpand !== undefined ? (
+          <Button onClick={expand}>
+            {t("{{ count }} More", { count: collapsed - 1 })}
+          </Button>
+        ) : null}
+        {id !== undefined ? renderExtraOptions() : null}
+      </div>
+    </div>
+  );
 }
 
 export default Notification;

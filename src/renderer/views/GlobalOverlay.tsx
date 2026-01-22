@@ -3,7 +3,6 @@ import type { IActionDefinition } from "../../types/IActionDefinition";
 import { ComponentEx } from "../controls/ComponentEx";
 
 import type { TFunction } from "i18next";
-import * as React from "react";
 
 export interface IBaseProps {
   t: TFunction;
@@ -11,7 +10,7 @@ export interface IBaseProps {
 
 type IProps = IBaseProps;
 
-class GlobalOverlay extends ComponentEx<IProps, {}> {
+class GlobalOverlay extends ComponentEx<IProps, object> {
   private buttons: IActionDefinition[];
   constructor(props: IProps) {
     super(props);
@@ -27,9 +26,11 @@ class GlobalOverlay extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
+    const { t } = this.props;
     return (
       <div className="global-overlay">
         <IconBar
+          t={t}
           group="help-icons"
           staticElements={this.buttons}
           orientation="vertical"

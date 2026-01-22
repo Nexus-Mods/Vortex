@@ -68,7 +68,6 @@ import reducer, { Decision } from "./reducers/index";
 import "./util/application.electron";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
 import ExtensionManager from "./util/ExtensionManager";
-import { ExtensionContext } from "./util/ExtensionProvider";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, {
@@ -81,8 +80,9 @@ import { initApplicationMenu } from "./util/menu";
 import { showError } from "./util/message";
 import "./util/monkeyPatching";
 import { reduxSanity, StateError } from "./store/reduxSanity";
+import { ExtensionContext } from "./util/ExtensionProvider";
 import LoadingScreen from "./renderer/views/LoadingScreen";
-import MainWindow from "./renderer/views/MainWindow";
+import ApplicationLayout from "./renderer/views/ApplicationLayout";
 
 import * as remote from "@electron/remote";
 import * as msgpackT from "@msgpack/msgpack";
@@ -824,11 +824,7 @@ function renderer(extensions: ExtensionManager) {
           <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
               <ExtensionContext.Provider value={extensions}>
-                <MainWindow
-                  className="full-height"
-                  api={extensions.getApi()}
-                  t={tFunc}
-                />
+                <ApplicationLayout className="full-height" />
               </ExtensionContext.Provider>
             </I18nextProvider>
           </DndProvider>

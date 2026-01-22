@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { setInstallerSandbox } from "../actions/sandbox";
 import type { IState } from "../../../types/IState";
-import { MainContext } from "../../../renderer/views/MainWindow";
+import { MainContext } from "../../../renderer/views/ApplicationLayout";
 import Toggle from "../../../renderer/controls/Toggle";
 
 export interface IWorkaroundsProps {

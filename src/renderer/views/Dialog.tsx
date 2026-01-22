@@ -3,7 +3,7 @@ import { triggerDialogLink } from "../../actions";
 import type { DialogContentItem } from "../../actions/notifications";
 import { closeDialog, closeDialogs } from "../../actions/notifications";
 import Collapse from "../controls/Collapse";
-import ErrorBoundary, { ErrorContext } from "../controls/ErrorBoundary";
+import ErrorBoundary from "../controls/ErrorBoundary";
 import Icon from "../controls/Icon";
 import Webview from "../controls/Webview";
 import type {
@@ -51,32 +51,30 @@ interface IActionProps {
   isDisabled: boolean;
 }
 
-class Action extends React.Component<IActionProps, {}> {
-  public render(): JSX.Element {
-    const { t, action, isDefault, isDisabled } = this.props;
-    return (
-      <Button
-        id="close"
-        onClick={this.dismiss}
-        bsStyle={isDefault ? "primary" : undefined}
-        ref={isDefault ? this.focus : undefined}
-        disabled={isDisabled}
-      >
-        {t(action)}
-      </Button>
-    );
-  }
+function Action(props: IActionProps): React.JSX.Element {
+  const { t, action, isDefault, isDisabled, onDismiss } = props;
 
-  private focus = (ref) => {
+  const focus = React.useCallback((ref: Button | null) => {
     if (ref !== null) {
       (ReactDOM.findDOMNode(ref) as HTMLElement).focus();
     }
-  };
+  }, []);
 
-  private dismiss = () => {
-    const { onDismiss, action } = this.props;
+  const dismiss = React.useCallback(() => {
     onDismiss(action);
-  };
+  }, [onDismiss, action]);
+
+  return (
+    <Button
+      id="close"
+      onClick={dismiss}
+      bsStyle={isDefault ? "primary" : undefined}
+      ref={isDefault ? focus : undefined}
+      disabled={isDisabled}
+    >
+      {t(action)}
+    </Button>
+  );
 }
 
 interface IDialogConnectedProps {

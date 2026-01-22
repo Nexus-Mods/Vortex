@@ -20,7 +20,6 @@ import { healthDownvoteDialog } from '../../actions/session';
 import { IMod, IState } from 'vortex-api/lib/types/IState';
 import { updateSuccessRate } from '../../actions/persistent';
 import * as nexus from '@nexusmods/nexus-api';
-import { IConnectedProps } from 'vortex-api/lib/views/MainWindow';
 import { getSafe } from 'vortex-api/lib/util/api';
 import { ICollection } from '../../types/ICollection';
 import { IStateEx } from '../../types/IStateEx';

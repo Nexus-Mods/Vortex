@@ -3,7 +3,7 @@ import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 import * as React from "react";
 import { IconButton } from "./TooltipControls";
 import { clipboard } from "electron";
-import { MainContext } from "../views/MainWindow";
+import { MainContext } from "../views/ApplicationLayout";
 
 export interface ICopyClipboardInputProps {
   inputValue: string;

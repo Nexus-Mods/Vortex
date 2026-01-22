@@ -22,37 +22,40 @@ export interface IExtendedProps {
 
 type IProps = IBaseProps & IExtendedProps;
 
-class DialogContainer extends React.Component<IProps, never> {
-  public render(): JSX.Element {
-    const { objects } = this.props;
-    return (
-      <div id="dialog-container">
-        {objects.map((dialog) => this.renderDialog(dialog))}
-      </div>
-    );
-  }
+function renderDialog(
+  dialog: IExtDialog,
+  visibleDialog: string,
+  onHideDialog: () => void,
+): React.JSX.Element {
+  const props = dialog.props !== undefined ? dialog.props() : {};
+  return (
+    <ErrorBoundary
+      key={dialog.id}
+      className="errorboundary-dialog"
+      canDisplayError={false}
+      visible={dialog.id === visibleDialog}
+      onHide={onHideDialog}
+    >
+      <ExtensionGate id={dialog.id}>
+        <dialog.component
+          visible={dialog.id === visibleDialog}
+          onHide={onHideDialog}
+          {...props}
+        />
+      </ExtensionGate>
+    </ErrorBoundary>
+  );
+}
 
-  private renderDialog(dialog: IExtDialog): JSX.Element {
-    const { onHideDialog, visibleDialog } = this.props;
-    const props = dialog.props !== undefined ? dialog.props() : {};
-    return (
-      <ErrorBoundary
-        key={dialog.id}
-        className="errorboundary-dialog"
-        canDisplayError={false}
-        visible={dialog.id === visibleDialog}
-        onHide={onHideDialog}
-      >
-        <ExtensionGate id={dialog.id}>
-          <dialog.component
-            visible={dialog.id === visibleDialog}
-            onHide={onHideDialog}
-            {...props}
-          />
-        </ExtensionGate>
-      </ErrorBoundary>
-    );
-  }
+function DialogContainer(props: IProps): React.JSX.Element {
+  const { objects, onHideDialog, visibleDialog } = props;
+  return (
+    <div id="dialog-container">
+      {objects.map((dialog) =>
+        renderDialog(dialog, visibleDialog, onHideDialog),
+      )}
+    </div>
+  );
 }
 
 function registerDialog(

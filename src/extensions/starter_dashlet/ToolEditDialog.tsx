@@ -41,7 +41,7 @@ import {
   splitCommandLine,
   resolveToolName,
 } from "./util";
-import { MainContext } from "../../renderer/views/MainWindow";
+import { MainContext } from "../../renderer/views/ApplicationLayout";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { useSelector } from "react-redux";
 

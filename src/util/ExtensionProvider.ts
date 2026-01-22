@@ -4,13 +4,16 @@ import type {
   IExtendedProps,
   IExtensibleProps,
 } from "../types/IExtensionProvider";
+import type { IExtensionContext } from "../types/IExtensionContext";
 
 import * as _ from "lodash";
 import * as React from "react";
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
-export const ExtensionContext = React.createContext({});
+export const ExtensionContext = React.createContext<ExtensionManager | null>(
+  null,
+);
 
 export interface IExtensionProps {
   extensions: ExtensionManager;
@@ -36,10 +39,10 @@ export function extend(
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
 
-  const updateExtensions = (props: any, context: any) => {
+  const updateExtensions = (props: any, context: ExtensionManager) => {
     extensions[props[groupProp]] = [];
     context.apply(
-      registerFunc.name,
+      registerFunc.name as keyof IExtensionContext,
       (extInfo, ...args) => {
         const res = registerFunc(props[groupProp], extInfo, ...args);
         if (res !== undefined) {

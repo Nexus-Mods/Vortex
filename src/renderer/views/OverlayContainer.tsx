@@ -19,21 +19,20 @@ export interface IExtendedProps {
 
 type IProps = IBaseProps & IExtendedProps;
 
-class OverlayContainer extends React.Component<IProps, {}> {
-  public render(): JSX.Element {
-    const { objects } = this.props;
-    return <div>{objects.map((dialog) => this.renderOverlay(dialog))}</div>;
-  }
-  private renderOverlay(overlay: IExtOverlay): JSX.Element {
-    const props = overlay.props !== undefined ? overlay.props() : {};
-    return (
-      <ErrorBoundary key={overlay.id} className="errorboundary-overlay">
-        <ExtensionGate id={overlay.id}>
-          <overlay.component {...props} />
-        </ExtensionGate>
-      </ErrorBoundary>
-    );
-  }
+function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
+  const props = overlay.props !== undefined ? overlay.props() : {};
+  return (
+    <ErrorBoundary key={overlay.id} className="errorboundary-overlay">
+      <ExtensionGate id={overlay.id}>
+        <overlay.component {...props} />
+      </ExtensionGate>
+    </ErrorBoundary>
+  );
+}
+
+function OverlayContainer(props: IProps): React.JSX.Element {
+  const { objects } = props;
+  return <div>{objects.map((overlay) => renderOverlay(overlay))}</div>;
 }
 
 function registerOverlay(

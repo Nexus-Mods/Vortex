@@ -1,47 +1,30 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { connect } from "../controls/ComponentEx";
 import { truthy } from "../../util/util";
+import { PageHeaderContext } from "./MainPageContainer";
 
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Portal } from "react-overlays";
 
-export interface IComponentContext {
-  api: IExtensionApi;
-  headerPortal: () => HTMLElement;
-  page: string;
-}
-
 interface IConnectedProps {
   mainPage: string;
+  children?: React.ReactNode;
 }
 
 type IProps = IConnectedProps;
 
-class MainPageHeader extends React.Component<IProps, {}> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-    headerPortal: PropTypes.func,
-    page: PropTypes.string,
-  };
+function MainPageHeader(props: IProps): React.JSX.Element {
+  const { mainPage, children } = props;
+  const { headerPortal, page } = React.useContext(PageHeaderContext);
 
-  declare public context: IComponentContext;
-
-  public shouldComponentUpdate() {
-    return true;
+  if (!truthy(headerPortal?.())) {
+    return null;
   }
-
-  public render(): JSX.Element {
-    if (!truthy(this.context.headerPortal())) {
-      return null;
-    }
-    return this.props.mainPage === this.context.page ? (
-      <Portal container={this.context.headerPortal}>
-        <div className="mainpage-header">{this.props.children}</div>
-      </Portal>
-    ) : null;
-  }
+  return mainPage === page ? (
+    <Portal container={headerPortal}>
+      <div className="mainpage-header">{children}</div>
+    </Portal>
+  ) : null;
 }
 
 function mapStateToProps(state: IState): IConnectedProps {

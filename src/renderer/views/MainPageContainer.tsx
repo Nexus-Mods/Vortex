@@ -22,6 +22,16 @@ export interface IMainPageContext {
   globalOverlay: JSX.Element;
 }
 
+export interface IPageHeaderContext {
+  headerPortal: () => HTMLElement;
+  page: string;
+}
+
+export const PageHeaderContext = React.createContext<IPageHeaderContext>({
+  headerPortal: () => null,
+  page: "",
+});
+
 type IProps = IBaseProps & WithTranslation;
 
 interface IComponentState {
@@ -90,19 +100,29 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
     try {
       const props = page.propsFunc();
 
+      const headerContextValue: IPageHeaderContext = {
+        headerPortal: () => this.headerRef,
+        page: page.id,
+      };
+
       return (
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
-          <div className="mainpage-header-container" ref={this.setHeaderRef} />
-          <div className="mainpage-body-container">
-            <ExtensionGate id={page.id}>
-              <page.component
-                active={active}
-                secondary={secondary}
-                {...props}
-              />
-            </ExtensionGate>
+        <PageHeaderContext.Provider value={headerContextValue}>
+          <div id={`page-${page.id}`} className={classes.join(" ")}>
+            <div
+              className="mainpage-header-container"
+              ref={this.setHeaderRef}
+            />
+            <div className="mainpage-body-container">
+              <ExtensionGate id={page.id}>
+                <page.component
+                  active={active}
+                  secondary={secondary}
+                  {...props}
+                />
+              </ExtensionGate>
+            </div>
           </div>
-        </div>
+        </PageHeaderContext.Provider>
       );
     } catch (err) {
       log("warn", "error rendering extension main page", err);
