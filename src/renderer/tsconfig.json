@@ -5,8 +5,16 @@
         "module": "commonjs",
         "moduleResolution": "node",
 
+        "jsx": "react",
+
         "rootDir": "../",
         "outDir": "../../out"
     },
-    "include": ["../main.ts", "**/*", "../shared/**/*"]
+  "files": [
+    "../../typings.custom/index.d.ts",
+    "../index.ts",
+    "../renderer.tsx",
+    "../splash.ts",
+    "../extensions/index.ts"
+  ]
 }
