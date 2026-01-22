@@ -2,7 +2,7 @@ import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 
 import * as React from "react";
 import { clipboard } from "electron";
-import { MainContext } from "../views/ApplicationLayout";
+import { MainContext } from "../views/MainWindow";
 import type { types } from "vortex-api";
 import { ContextMenu, FlexLayout, tooltip } from "vortex-api";
 import { event } from "d3";

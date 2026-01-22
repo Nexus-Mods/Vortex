@@ -147,7 +147,7 @@ import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
 import type { IComponentContext } from "../../types/IComponentContext";
-import { MainContext } from "../../renderer/views/ApplicationLayout";
+import { MainContext } from "../../renderer/views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
 import { selectors } from "vortex-api";
 import { app } from "electron";

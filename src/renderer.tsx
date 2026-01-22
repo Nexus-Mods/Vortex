@@ -82,7 +82,7 @@ import "./util/monkeyPatching";
 import { reduxSanity, StateError } from "./store/reduxSanity";
 import { ExtensionContext } from "./util/ExtensionProvider";
 import LoadingScreen from "./renderer/views/LoadingScreen";
-import ApplicationLayout from "./renderer/views/ApplicationLayout";
+import AppLayout from "./renderer/views/AppLayout";
 
 import * as remote from "@electron/remote";
 import * as msgpackT from "@msgpack/msgpack";
@@ -824,7 +824,7 @@ function renderer(extensions: ExtensionManager) {
           <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
               <ExtensionContext.Provider value={extensions}>
-                <ApplicationLayout className="full-height" />
+                <AppLayout className="full-height" />
               </ExtensionContext.Provider>
             </I18nextProvider>
           </DndProvider>

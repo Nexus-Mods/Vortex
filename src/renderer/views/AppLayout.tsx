@@ -85,7 +85,7 @@ class LegacyContextProvider extends React.Component<ILegacyContextProviderProps>
   }
 }
 
-export const ApplicationLayout: React.FC<IProps> = (props) => {
+export const AppLayout: React.FC<IProps> = (props) => {
   const { objects } = props;
 
   const dispatch = useDispatch();
@@ -336,4 +336,4 @@ function registerMainPage(
   };
 }
 
-export default extend(registerMainPage, undefined, true)(ApplicationLayout);
+export default extend(registerMainPage, undefined, true)(AppLayout);

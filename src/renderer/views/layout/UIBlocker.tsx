@@ -1,7 +1,7 @@
 import { clearUIBlocker } from "../../../actions/session";
 import Icon from "../../controls/Icon";
 import type { IState } from "../../../types/IState";
-import { MainContext } from "../ApplicationLayout";
+import { MainContext } from "../AppLayout";
 import * as React from "react";
 import { Button as ReactButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
