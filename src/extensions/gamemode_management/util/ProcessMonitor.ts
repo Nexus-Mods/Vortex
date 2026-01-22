@@ -15,8 +15,74 @@ import type { IProcessInfo, IProcessProvider } from "./processProvider";
 import { defaultProcessProvider } from "./processProvider";
 
 /**
- * Monitors the active game and discovered tools by polling process snapshots.
- * Uses a 2s cadence when focused and 5s when unfocused, without overlapping checks.
+ * Monitors running processes to track game and tool execution state.
+ *
+ * Polls system processes to detect when the active game or discovered tools
+ * are running. Updates Redux state so the UI can reflect tool/game status
+ * and enable features like exclusive tool handling.
+ *
+ * ## Public API
+ * - `start()` - Begin polling (idempotent, safe to call multiple times)
+ * - `end()` - Stop polling and cleanup timers
+ *
+ * ## Polling Behavior
+ * - 2 second cadence when Vortex window is focused
+ * - 5 second cadence when unfocused
+ * - Non-overlapping: waits for current check to complete before scheduling next
+ *
+ * ## Process Matching
+ * 1. Builds lookup maps by PID and normalized exe name (exeId)
+ * 2. For each tracked executable (game + discovered tools):
+ *    - Prefers exact full path match
+ *    - Falls back to name-only match when paths unavailable (Windows)
+ * 3. Tools only match Vortex child processes; games match any process
+ *
+ * ## Listening to Process Changes
+ * ProcessMonitor writes to Redux state at `session.base.toolsRunning`. Other
+ * parts of the application can listen for process start/stop events:
+ *
+ * **React components** - Use `useSelector` to automatically re-render:
+ * ```typescript
+ * import { makeExeId } from '../reducers/session';
+ *
+ * const toolsRunning = useSelector(state => state.session.base.toolsRunning);
+ * const isRunning = toolsRunning[makeExeId(exePath)] !== undefined;
+ * ```
+ *
+ * **Extensions** - Use `api.onStateChange` for callback-based notifications:
+ * ```typescript
+ * api.onStateChange(['session', 'base', 'toolsRunning'], (prev, current) => {
+ *   // prev/current are { [exeId: string]: IRunningTool }
+ *   const wasRunning = prev['game.exe'] !== undefined;
+ *   const isRunning = current['game.exe'] !== undefined;
+ *   if (wasRunning && !isRunning) {
+ *     // Process stopped
+ *   }
+ * });
+ * ```
+ *
+ * **One-time reads**:
+ * ```typescript
+ * const running = api.getState().session.base.toolsRunning;
+ * ```
+ *
+ * The `IRunningTool` object contains: `{ pid: number, exclusive: boolean, started: number }`
+ *
+ * Note: Detection uses polling (2-5s cadence), so there may be a brief delay
+ * between a process actually stopping and the state update.
+ *
+ * ## Platform Notes
+ * On Windows, ps-list may not provide executable paths, triggering the
+ * name-only fallback. This can cause false matches with basename collisions
+ * (e.g., multiple tools named "launcher.exe").
+ *
+ * @example
+ * ```typescript
+ * const monitor = new ProcessMonitor(api);
+ * monitor.start();
+ * // ... on shutdown
+ * monitor.end();
+ * ```
  */
 class ProcessMonitor {
   private mTimer: NodeJS.Timeout;
@@ -25,6 +91,15 @@ class ProcessMonitor {
   private mActive: boolean = false;
   private mProcessProvider: IProcessProvider;
 
+  /**
+   * Creates a new ProcessMonitor instance.
+   *
+   * @param api - Extension API providing access to the Redux store for reading
+   *              game/tool configuration and dispatching state updates.
+   * @param processProvider - Optional process list provider for dependency injection.
+   *                          Defaults to ps-list based implementation. Useful for
+   *                          testing with mock process data.
+   */
   constructor(
     api: IExtensionApi,
     processProvider: IProcessProvider = defaultProcessProvider,
@@ -33,7 +108,15 @@ class ProcessMonitor {
     this.mProcessProvider = processProvider;
   }
 
-  /** Start polling; safe to call multiple times. */
+  /**
+   * Starts the process monitoring loop.
+   *
+   * Idempotent: calling start() when already running has no effect.
+   * If called after end(), restarts monitoring from scratch.
+   *
+   * In the renderer process, acquires a reference to the current BrowserWindow
+   * to detect focus state for adaptive polling cadence (2s focused, 5s unfocused).
+   */
   public start(): void {
     if (this.mActive) {
       return;
@@ -52,6 +135,13 @@ class ProcessMonitor {
     this.mTimer = setTimeout(() => this.check(), 2000);
   }
 
+  /**
+   * Timer callback that initiates an async check and schedules the next one.
+   *
+   * Determines polling delay based on window focus state, then delegates to
+   * doCheck(). Schedules next check after completion, adjusting delay to
+   * maintain target cadence regardless of check duration.
+   */
   private check(): void {
     if (!this.mActive) {
       return;
@@ -73,6 +163,19 @@ class ProcessMonitor {
       });
   }
 
+  /**
+   * Core process matching logic.
+   *
+   * 1. Fetches current process list from the provider
+   * 2. Builds lookup maps by PID (for validation) and by exeId (for matching)
+   * 3. Updates state for the active game executable (considers detached processes)
+   * 4. Updates state for each discovered tool (child processes only)
+   *
+   * The `update` closure handles the matching algorithm:
+   * - Validates any cached PID is still the same process
+   * - Prefers full path match over name-only match
+   * - Falls back to name-only when all candidates lack path info (Windows)
+   */
   private async doCheck(): Promise<void> {
     let processes: IProcessInfo[];
     try {
@@ -235,7 +338,16 @@ class ProcessMonitor {
     });
   }
 
-  /** Stop polling and clear any pending timer. */
+  /**
+   * Stops the process monitoring loop and releases resources.
+   *
+   * Clears any pending timer and marks the monitor as inactive. Safe to call
+   * even when monitoring is not active (no-op if already stopped).
+   *
+   * Note: Does not dispatch any final state updates. Running tools will remain
+   * marked as running in Redux state until the next start()/check() cycle or
+   * explicit state reset.
+   */
   public end(): void {
     if (this.mTimer === undefined) {
       return;
