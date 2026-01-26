@@ -7652,7 +7652,10 @@ class InstallManager {
     // Don't allow reporting for user-initiated cancellations
     const isCanceled =
       details instanceof UserCanceled ||
-      (details instanceof String && ["usercanceled", "canceled", "cancelled"].some(term => details.toLowerCase().includes(term)));
+      (details instanceof String &&
+        ["usercanceled", "canceled", "cancelled"].some((term) =>
+          details.toLowerCase().includes(term),
+        ));
     const allowReport = isCanceled ? false : options.allowReport;
 
     if (this.mNotificationAggregator.isAggregating(aggregationId)) {
