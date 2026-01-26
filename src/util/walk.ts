@@ -67,7 +67,8 @@ function walk(
       const code = getErrorCode(err);
       if (
         opt.ignoreErrors !== undefined &&
-        (opt.ignoreErrors === true || opt.ignoreErrors.indexOf(code) !== -1)
+        (opt.ignoreErrors === true ||
+          (code && opt.ignoreErrors.indexOf(code) !== -1))
       ) {
         return PromiseBB.resolve();
       } else {

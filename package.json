@@ -117,8 +117,6 @@
     "provider": "github"
   },
   "devDependencies": {
-    "strip-ansi": "npm:strip-ansi@6.0.1",
-    "string-width": "npm:string-width@4.2.3",
     "@babel/cli": "^7.25.6",
     "@babel/core": "^7.25.2",
     "@babel/plugin-proposal-class-properties": "7.16.7",
@@ -235,6 +233,8 @@
     "resolve-url-loader": "^5.0.0-beta.1",
     "rm-local-modules": "^0.0.2",
     "sass-loader": "^8.0.0",
+    "string-width": "npm:string-width@4.2.3",
+    "strip-ansi": "npm:strip-ansi@6.0.1",
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",

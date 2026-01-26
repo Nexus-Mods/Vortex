@@ -4,7 +4,10 @@ export interface IDecoded {
   rethrowAs: string;
 }
 
-export function decodeSystemError(err: Error, filePath: string): IDecoded {
+export function decodeSystemError(
+  err: Error,
+  filePath: string,
+): IDecoded | undefined {
   const code = err["systemCode"] ?? err["nativeCode"];
 
   if (code === undefined || process.platform !== "win32") {

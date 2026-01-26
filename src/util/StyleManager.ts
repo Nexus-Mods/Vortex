@@ -157,9 +157,9 @@ if (ipcMain !== undefined) {
 
 class StyleManager {
   private static RENDER_DELAY = 200;
-  private mPartials: Array<{ key: string; file: string }>;
+  private mPartials: Array<{ key: string; file: string | undefined }>;
   private mRenderDebouncer: Debouncer;
-  private mExpectingResult: {
+  private mExpectingResult?: {
     resolve: (css: string) => void;
     reject: (err: Error) => void;
   };
@@ -182,7 +182,7 @@ class StyleManager {
     this.mRenderDebouncer = new Debouncer(
       () => {
         return this.render().catch((err) => {
-          api.showErrorNotification("Style failed to compile", err, {
+          api.showErrorNotification?.("Style failed to compile", err, {
             allowReport: false,
           });
         });
@@ -226,7 +226,7 @@ class StyleManager {
     this.mSetQueue = this.mSetQueue.then(() =>
       fs
         .removeAsync(cachePath())
-        .catch({ code: "ENOENT" }, () => null)
+        .catch({ code: "ENOENT" }, () => {})
         .catch((err) =>
           log("error", "failed to remove css cache", {
             error: getErrorMessageOrDefault(err),
@@ -319,11 +319,10 @@ class StyleManager {
   private render(): PromiseBB<void> {
     const stylesheets: string[] = this.mPartials
       .filter((partial) => partial.file !== undefined)
-      .map((partial) =>
-        path.isAbsolute(partial.file)
-          ? asarUnpacked(partial.file)
-          : partial.file,
-      );
+      .map((partial) => {
+        const file = partial.file!;
+        return path.isAbsolute(file) ? asarUnpacked(file) : file;
+      });
 
     return new PromiseBB<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
@@ -341,8 +340,9 @@ class StyleManager {
     const head = document.getElementsByTagName("head")[0];
     let found = false;
     for (let i = 0; i < head.children.length && !found; ++i) {
-      if (head.children.item(i).id === "theme") {
-        head.replaceChild(style, head.children.item(i));
+      const item = head.children.item(i)!;
+      if (item.id === "theme") {
+        head.replaceChild(style, item);
         found = true;
       }
     }

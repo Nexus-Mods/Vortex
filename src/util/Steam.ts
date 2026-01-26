@@ -54,7 +54,7 @@ class Steam implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mBaseFolder: PromiseBB<string>;
+  private mBaseFolder: PromiseBB<string | undefined>;
   private mCache: PromiseBB<ISteamEntry[]>;
 
   constructor() {
@@ -111,7 +111,7 @@ class Steam implements IGameStore {
     }
     const info = appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
     return this.getExecInfo(info).then((execInfo) =>
-      api.runExecutable(execInfo.execPath, execInfo.arguments, {
+      api?.runExecutable(execInfo.execPath, execInfo.arguments, {
         cwd: path.dirname(execInfo.execPath),
         suggestDeploy: true,
         shell: true,
@@ -153,7 +153,7 @@ class Steam implements IGameStore {
       }
       return this.mBaseFolder.then((basePath) => {
         const steamExec = {
-          execPath: path.join(basePath, STEAM_EXEC),
+          execPath: path.join(basePath!, STEAM_EXEC),
           arguments: ["-applaunch", appId, ...parameters],
         };
         return PromiseBB.resolve(steamExec);
@@ -193,7 +193,7 @@ class Steam implements IGameStore {
     return this.mCache;
   }
 
-  public getGameStorePath(): PromiseBB<string> {
+  public getGameStorePath(): PromiseBB<string | undefined> {
     return this.mBaseFolder.then((baseFolder) => {
       if (baseFolder === undefined) {
         return PromiseBB.resolve(undefined);
@@ -333,7 +333,7 @@ class Steam implements IGameStore {
                   return undefined;
                 }
                 try {
-                  return {
+                  const result: ISteamEntry = {
                     appid: obj["AppState"]["appid"],
                     gameStoreId: STORE_ID,
                     name: obj["AppState"]["name"],
@@ -348,6 +348,7 @@ class Steam implements IGameStore {
                     ),
                     manifestData: obj,
                   };
+                  return result;
                 } catch (err) {
                   log("warn", "failed to parse steam manifest", {
                     name,
@@ -356,7 +357,7 @@ class Steam implements IGameStore {
                   return undefined;
                 }
               })
-              .filter((obj) => obj !== undefined);
+              .filter((obj): obj is ISteamEntry => !!obj);
           })
           .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
@@ -364,19 +365,19 @@ class Steam implements IGameStore {
             log("info", "Steam library not found", {
               error: getErrorMessageOrDefault(err),
             });
-            return undefined;
+            return [];
           })
           .catch((err) => {
             log("warn", "Failed to read steam library", {
               path: steamPath,
               error: getErrorMessageOrDefault(err),
             });
+            return [];
           });
       })
-        .then((games: ISteamEntry[][]) =>
+        .then((games) =>
           games.reduce(
-            (prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-              current !== undefined ? prev.concat(current) : prev,
+            (prev, current) => (current ? prev.concat(current) : prev),
             [],
           ),
         )

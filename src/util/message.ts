@@ -231,7 +231,7 @@ function dataToFile(id, input: any) {
   });
 }
 
-function zipFiles(files: string[]): PromiseBB<string> {
+function zipFiles(files: string[]): PromiseBB<string | undefined> {
   if (files.length === 0) {
     return PromiseBB.resolve(undefined);
   }
@@ -258,7 +258,9 @@ function serializeAttachments(input: IAttachment): PromiseBB<string> {
   }
 }
 
-export function bundleAttachment(options?: IErrorOptions): PromiseBB<string> {
+export function bundleAttachment(
+  options?: IErrorOptions,
+): PromiseBB<string | undefined> {
   if (
     options === undefined ||
     options.attachments === undefined ||
@@ -362,7 +364,11 @@ export function showError(
     details?.["attachLogOnReport"] === true &&
     (options.attachments ?? []).find((iter) => iter.id === "log") === undefined
   ) {
-    options.attachments = setdefault(options, "attachments", []).concat([
+    options.attachments = setdefault(
+      options,
+      "attachments",
+      Array<IAttachment>(),
+    )?.concat([
       {
         id: "log",
         type: "file",
@@ -379,7 +385,11 @@ export function showError(
   }
 
   if (details?.["attachFilesOnReport"] !== undefined) {
-    options.attachments = setdefault(options, "attachments", []).concat(
+    options.attachments = setdefault(
+      options,
+      "attachments",
+      Array<IAttachment>(),
+    )?.concat(
       details["attachFilesOnReport"].map((filePath: string, idx: number) => ({
         id: `file${idx}`,
         type: "file",
@@ -402,7 +412,7 @@ export function showError(
         .join("\n");
   }
 
-  let extIssueTrackerURL = undefined;
+  let extIssueTrackerURL: string | undefined = undefined;
   if (options.extension?.info?.issueTrackerURL !== undefined) {
     extIssueTrackerURL = options.extension.info.issueTrackerURL;
   } else if (options.extension?.info?.modId !== undefined) {
@@ -514,7 +524,7 @@ export function showError(
       id: options.id,
       type: options?.warning ? "warning" : "error",
       title: haveMessage ? title : undefined,
-      message: haveMessage ? options.message : title,
+      message: haveMessage ? options.message! : title,
       allowSuppress: options.allowSuppress,
       replace: options.replace,
       actions:
@@ -929,7 +939,7 @@ export function renderError(
   if (typeof err === "string") {
     return {
       text: err,
-      parameters: options.replace,
+      parameters: options?.replace,
       wrap: true,
     };
   } else if (err instanceof StalledError) {

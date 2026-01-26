@@ -28,7 +28,7 @@ class EpicGamesLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mDataPath: PromiseBB<string>;
+  private mDataPath: PromiseBB<string | undefined>;
   private mLauncherExecPath: string;
   private mCache: PromiseBB<IGameStoreEntry[]>;
 
@@ -78,7 +78,7 @@ class EpicGamesLauncher implements IGameStore {
 
   public queryPath() {
     return this.mDataPath.then((dataPath) =>
-      path.join(dataPath, this.executable()),
+      path.join(dataPath!, this.executable()),
     );
   }
 
@@ -143,7 +143,7 @@ class EpicGamesLauncher implements IGameStore {
     });
   }
 
-  public getGameStorePath(): PromiseBB<string> {
+  public getGameStorePath(): PromiseBB<string | undefined> {
     const getExecPath = () => {
       try {
         const epicLauncher = winapi.RegGetValue(
@@ -247,7 +247,7 @@ class EpicGamesLauncher implements IGameStore {
   }
 }
 
-const instance: IGameStore =
+const instance: IGameStore | undefined =
   process.platform === "win32" ? new EpicGamesLauncher() : undefined;
 
 export default instance;
