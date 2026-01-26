@@ -22,7 +22,7 @@ function mainOn<C extends keyof RendererChannels>(
 ): void {
   ipcMain.on(
     channel,
-    (event, args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
+    (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
       assertTrustedSender(event);
       listener(event, ...args);
     },
@@ -38,7 +38,7 @@ function mainHandle<C extends keyof InvokeChannels>(
 ): void {
   ipcMain.handle(
     channel,
-    (event, args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
+    (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
       assertTrustedSender(event);
       return listener(event, ...args);
     },
