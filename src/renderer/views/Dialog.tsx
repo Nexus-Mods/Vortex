@@ -12,7 +12,6 @@ import Icon from "../controls/Icon";
 import Webview from "../controls/Webview";
 import type {
   ConditionResults,
-  DialogInputData,
   DialogType,
   ICheckbox,
   IConditionResult,
@@ -40,6 +39,9 @@ import {
 import ReactMarkdown from "react-markdown";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+// TODO: Port to DialogResult.input
+type DialogInputData = Record<string, boolean | string | undefined>;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
@@ -135,7 +137,11 @@ export const Dialog: React.FC = () => {
   );
 
   const translateParts = React.useCallback(
-    (message: string, tFunc: TFunction, parameters?: Record<string, unknown>) => {
+    (
+      message: string,
+      tFunc: TFunction,
+      parameters?: Record<string, unknown>,
+    ) => {
       return (message || "")
         .split("\n")
         .map((line: string) =>
@@ -144,7 +150,10 @@ export const Dialog: React.FC = () => {
             .map((block: string) =>
               tFunc(block, {
                 replace: parameters,
-                count: parameters && typeof parameters['count'] === "number" ? parameters['count'] : undefined,
+                count:
+                  parameters && typeof parameters["count"] === "number"
+                    ? parameters["count"]
+                    : undefined,
               }),
             )
             .join(" "),
@@ -211,7 +220,9 @@ export const Dialog: React.FC = () => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.checkboxes.findIndex((box: ICheckbox) => box.id === checkboxId);
+      const idx = state.checkboxes.findIndex(
+        (box: ICheckbox) => box.id === checkboxId,
+      );
 
       if (idx === -1) {
         return;
@@ -272,7 +283,9 @@ export const Dialog: React.FC = () => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.choices.findIndex((box: ICheckbox) => box.id === radioId);
+      const idx = state.choices.findIndex(
+        (box: ICheckbox) => box.id === radioId,
+      );
 
       if (idx < 0) {
         return;
@@ -406,7 +419,10 @@ export const Dialog: React.FC = () => {
             label={input.label}
             placeholder={input.placeholder}
             onChange={(e: React.FormEvent<FormControl>) => {
-              if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+              if (
+                e.target instanceof HTMLInputElement ||
+                e.target instanceof HTMLTextAreaElement
+              ) {
                 changeInput(input.id, e.target.value);
               }
             }}
@@ -427,9 +443,7 @@ export const Dialog: React.FC = () => {
     (link: ILink, idx: number) => {
       return (
         <div key={idx}>
-          <Button onClick={() => triggerLink(idx)}>
-            {link.label}
-          </Button>
+          <Button onClick={() => triggerLink(idx)}>{link.label}</Button>
         </div>
       );
     },
@@ -440,7 +454,12 @@ export const Dialog: React.FC = () => {
     (link: ILink, idx: number) => {
       return (
         <div key={idx}>
-          <a onClick={(e) => { e.preventDefault(); triggerLink(idx); }}>
+          <a
+            onClick={(e) => {
+              e.preventDefault();
+              triggerLink(idx);
+            }}
+          >
             {link.label}
           </a>
         </div>

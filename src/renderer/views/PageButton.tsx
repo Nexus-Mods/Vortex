@@ -19,10 +19,7 @@ export function PageButton(props: IPageButtonProps): React.JSX.Element {
   const { t } = useTranslation();
 
   // Create a stable object to pass to attach/detach that triggers re-renders
-  const updateHandle: IUpdateable = React.useMemo(
-    () => ({ forceUpdate }),
-    [],
-  );
+  const updateHandle: IUpdateable = React.useMemo(() => ({ forceUpdate }), []);
 
   React.useEffect(() => {
     if (page.badge) {

@@ -132,10 +132,7 @@ export interface IDialogContent {
   condition?: Condition;
 }
 
-// Numberics will be converted to strings in the input data
-export type DialogInputData = Record<string, boolean | string | undefined>;
-
 export interface IDialogResult {
   action: string;
-  input: DialogInputData;
+  input: any;
 }
