@@ -6,7 +6,7 @@ import type { IState } from "../../../types/IState";
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import { profileById } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
-import MainFooter from "../MainFooter";
+import { MainFooter } from "../MainFooter";
 import { PageGroup } from "./PageGroup";
 import * as React from "react";
 import { useTranslation } from "react-i18next";

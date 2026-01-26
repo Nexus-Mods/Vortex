@@ -1,6 +1,6 @@
 import * as React from "react";
 import FlexLayout from "../../controls/FlexLayout";
-import DNDContainer from "../DNDContainer";
+import { DNDContainer } from "../DNDContainer";
 
 export interface IContentPaneProps {
   children: React.ReactNode;

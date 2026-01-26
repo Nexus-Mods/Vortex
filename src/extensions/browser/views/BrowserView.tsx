@@ -16,7 +16,7 @@ import {
 import Debouncer from "../../../util/Debouncer";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";
-import Notification from "../../../renderer/views/Notification";
+import { Notification } from "../../../renderer/views/Notification";
 
 import { closeBrowser } from "../actions";
 

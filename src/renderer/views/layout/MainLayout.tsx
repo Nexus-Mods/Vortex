@@ -5,8 +5,8 @@ import FlexLayout from "../../controls/FlexLayout";
 import type { IMainPage } from "../../../types/IMainPage";
 import type { IState } from "../../../types/IState";
 import { getSafe } from "../../../util/storeHelper";
-import MainPageContainer from "../MainPageContainer";
-import Settings from "../Settings";
+import { MainPageContainer } from "../MainPageContainer";
+import { Settings } from "../Settings";
 import { useDispatch, useSelector } from "react-redux";
 import { ContentPane, Sidebar } from "./index";
 

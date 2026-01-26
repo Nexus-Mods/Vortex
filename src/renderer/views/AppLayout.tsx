@@ -26,7 +26,7 @@ import {
   Toolbar,
   UIBlocker,
 } from "./layout";
-import WindowControls from "./WindowControls";
+import { WindowControls } from "./WindowControls";
 
 import * as _ from "lodash";
 import PropTypes from "prop-types";

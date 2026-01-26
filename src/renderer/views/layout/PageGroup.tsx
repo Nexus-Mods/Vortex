@@ -2,7 +2,7 @@ import { NavItem } from "../../controls/TooltipControls";
 import type { IMainPage } from "../../../types/IMainPage";
 import { log } from "../../../util/log";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
-import PageButton from "../PageButton";
+import { PageButton } from "../PageButton";
 import * as React from "react";
 import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";

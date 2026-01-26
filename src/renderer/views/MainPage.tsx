@@ -1,5 +1,5 @@
-import Body from "./MainPageBody";
-import Header from "./MainPageHeader";
+import { MainPageBody } from "./MainPageBody";
+import { MainPageHeader } from "./MainPageHeader";
 
 import * as React from "react";
 
