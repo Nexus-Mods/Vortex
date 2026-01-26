@@ -26,7 +26,9 @@ try {
   });
 
   expose("api", {
-    ping: () => betterIpcRenderer.invoke("ping"),
+    example: {
+      ping: () => betterIpcRenderer.invoke("example:ping"),
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);

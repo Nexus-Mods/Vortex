@@ -1402,6 +1402,6 @@ class Application {
   }
 }
 
-betterIpcMain.handle("ping", () => Promise.resolve("pong"));
+betterIpcMain.handle("example:ping", () => Promise.resolve("pong"));
 
 export default Application;
