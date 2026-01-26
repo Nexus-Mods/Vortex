@@ -1,4 +1,1 @@
-/**
- * Icon Component - Exports
- */
-export * from "./Icon";
+export { Icon, type IconSize } from "./Icon";

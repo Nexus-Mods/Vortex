@@ -24,15 +24,5 @@
 @import "./shared/theme";
 @import "./shared/elements";
 
-:root {
-    /* Icon sizes for consistent icon sizing, don't think this is needed anymore should be able to use `size-[x]` */
-    --icon-size-xs: 12px;
-    --icon-size-sm: 16px;
-    --icon-size-md: 20px;
-    --icon-size-lg: 24px;
-    --icon-size-xl: 32px;
-    --icon-size-2xl: 48px;
-}
-
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);
