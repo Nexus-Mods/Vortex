@@ -13,6 +13,7 @@ export default defineConfig([
     ignores: [
       "out/**",
       "dist/**",
+      "app/**",
       "__tests__",
       "__mocks__",
       "extensions/**",
