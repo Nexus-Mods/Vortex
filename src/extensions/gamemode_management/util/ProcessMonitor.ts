@@ -298,7 +298,7 @@ class ProcessMonitor {
     // ─── Step 5: Define child-process ancestry check ──────────────────────────
     // Recursively walks the parent chain to determine if a process descends from Vortex.
     // Used to distinguish tools we launched vs. unrelated processes with the same name.
-    const isChildProcess = (
+    const isChildProcessOfVortex = (
       proc: IProcessInfo,
       visited: Set<number>,
     ): boolean => {
@@ -313,7 +313,7 @@ class ProcessMonitor {
       visited.add(proc.ppid);
       // Success if direct child of Vortex, otherwise recurse up the tree
       return (
-        proc.ppid === vortexPid || isChildProcess(byPid[proc.ppid], visited)
+        proc.ppid === vortexPid || isChildProcessOfVortex(byPid[proc.ppid], visited)
       );
     };
 
@@ -353,7 +353,7 @@ class ProcessMonitor {
           // Step 6c-i: Process with cached PID still exists - but is it still "ours"?
           // For games (considerDetached=true): any process is valid, we're done
           // For tools (considerDetached=false): must still be a Vortex child process
-          if (considerDetached || isChildProcess(knownProc, new Set())) {
+          if (considerDetached || isChildProcessOfVortex(knownProc, new Set())) {
             return; // Still valid, no state change needed
           }
           // Step 6c-ii: Process exists but is no longer a child - fall through to re-match
@@ -365,7 +365,7 @@ class ProcessMonitor {
       // Step 6d: Build candidate list - filter by child status if required
       const candidates = considerDetached
         ? exeRunning
-        : exeRunning.filter((proc) => isChildProcess(proc, new Set()));
+        : exeRunning.filter((proc) => isChildProcessOfVortex(proc, new Set()));
 
       // Step 6e: Enrich candidates with resolved paths (from proc.path or parsed from proc.cmd)
       const exePathLower = exePath.toLowerCase();
