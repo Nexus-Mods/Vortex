@@ -4,6 +4,7 @@ import type { IProcessInfo, IProcessProvider } from "../util/processProvider";
 import { setToolPid, setToolStopped } from "../../../actions";
 import { makeExeId } from "../../../reducers/session";
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 
 const gameId = "test-game";
@@ -84,9 +85,15 @@ const createMonitor = (state: IState, processes: IProcessInfo[]) => {
   const processProvider: IProcessProvider = {
     list: jest.fn().mockResolvedValue(processes),
   };
-  const api = { store } as any;
-  const monitor = new ProcessMonitor(api, processProvider);
-  return { monitor, store, processProvider };
+  const monitor = new ProcessMonitor(
+    { store } as unknown as IExtensionApi,
+    processProvider,
+  );
+  return {
+    monitor: monitor as unknown as { doCheck(): Promise<void> },
+    store,
+    processProvider,
+  };
 };
 
 it("dispatches setToolPid for matching child process", async () => {
@@ -102,7 +109,7 @@ it("dispatches setToolPid for matching child process", async () => {
   ];
   const { monitor, store } = createMonitor(state, processes);
 
-  await (monitor as any).doCheck();
+  await monitor.doCheck();
 
   expect(store.dispatch).toHaveBeenCalledWith(
     setToolPid(toolPath, 3001, false),
@@ -119,7 +126,7 @@ it("dispatches setToolStopped when no matching process exists", async () => {
   });
   const { monitor, store } = createMonitor(state, []);
 
-  await (monitor as any).doCheck();
+  await monitor.doCheck();
 
   expect(store.dispatch).toHaveBeenCalledWith(setToolStopped(toolPath));
 });
@@ -148,7 +155,7 @@ it("matches detached game but filters non-child tools", async () => {
   ];
   const { monitor, store } = createMonitor(state, processes);
 
-  await (monitor as any).doCheck();
+  await monitor.doCheck();
 
   expect(store.dispatch).toHaveBeenNthCalledWith(
     1,
@@ -175,7 +182,7 @@ it("parses unquoted cmd paths with spaces", async () => {
   ];
   const { monitor, store } = createMonitor(state, processes);
 
-  await (monitor as any).doCheck();
+  await monitor.doCheck();
 
   expect(store.dispatch).toHaveBeenCalledWith(
     setToolPid(spacedGameExePath, 8001, true),
@@ -203,7 +210,7 @@ it("skips dispatch when known pid still exists", async () => {
   ];
   const { monitor, store } = createMonitor(state, processes);
 
-  await (monitor as any).doCheck();
+  await monitor.doCheck();
 
   expect(store.dispatch).not.toHaveBeenCalled();
 });
