@@ -5,7 +5,9 @@ export interface RendererChannels {}
 export interface MainChannels {}
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
-export interface InvokeChannels {}
+export interface InvokeChannels {
+  ping(): Promise<string>;
+}
 
 /** Represents all IPC-safe typed arrays */
 export type TypedArray =

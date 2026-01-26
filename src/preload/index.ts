@@ -24,6 +24,10 @@ try {
     electron: process.versions.electron,
     node: process.versions.node,
   });
+
+  expose("api", {
+    ping: () => betterIpcRenderer.invoke("ping"),
+  });
 } catch (err) {
   console.error("failed to run preload code", err);
 }

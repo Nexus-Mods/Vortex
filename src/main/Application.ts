@@ -87,6 +87,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
+import { betterIpcMain } from "./ipc";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
@@ -1400,5 +1401,7 @@ class Application {
     }
   }
 }
+
+betterIpcMain.handle("ping", () => Promise.resolve("pong"));
 
 export default Application;

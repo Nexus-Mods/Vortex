@@ -3,7 +3,9 @@ export interface PreloadWindow {
   versions: Versions;
 }
 
-export interface Api {}
+export interface Api {
+  ping(): Promise<string>;
+}
 
 export interface Versions {
   node: string;
