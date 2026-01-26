@@ -1,4 +1,4 @@
-import js from "@eslint/js";
+import eslint from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
@@ -9,6 +9,7 @@ import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias
 
 export default defineConfig([
   {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     // NOTE(erri120): exclude build output and tests as well as any submodules
     ignores: [
       "out/**",
@@ -20,22 +21,24 @@ export default defineConfig([
       "api/**",
     ],
   },
+
+  eslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
+  eslintReact.configs["recommended-typescript"],
+  prettierConfig,
+
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    plugins: { js },
-    extends: ["js/recommended"],
-    languageOptions: { globals: { ...globals.browser, ...globals.node } },
-  },
-  tseslint.configs.recommended,
-  {
-    ...eslintReact.configs["recommended-typescript"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+      parserOptions: { projectService: true },
+    },
     settings: {
       "react-x": {
         version: "16",
       },
     },
   },
-  prettierConfig,
+
   {
     plugins: {
       vortex: {
@@ -50,6 +53,7 @@ export default defineConfig([
       "vortex/no-bluebird-promise-alias": "error",
     },
   },
+
   {
     name: "Migrating Webpack to Vite",
     rules: {
@@ -64,6 +68,7 @@ export default defineConfig([
       ],
     },
   },
+
   {
     // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)
     name: "Vortex legacy config",
@@ -88,19 +93,47 @@ export default defineConfig([
       "@eslint-react/no-create-ref": "warn",
       "@eslint-react/no-direct-mutation-state": "warn",
       "@eslint-react/no-missing-key": "warn",
+      "@typescript-eslint/await-thenable": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-array-constructor": "warn",
+      "@typescript-eslint/no-array-delete": "warn",
       "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-for-in-array": "warn",
+      "@typescript-eslint/no-misused-new": "warn",
+      "@typescript-eslint/no-misused-promises": "warn",
       "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
+      "@typescript-eslint/no-redundant-type-constituents": "warn",
       "@typescript-eslint/no-require-imports": "warn",
       "@typescript-eslint/no-this-alias": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+      "@typescript-eslint/no-unsafe-argument": "warn",
+      "@typescript-eslint/no-unsafe-assignment": "warn",
+      "@typescript-eslint/no-unsafe-call": "warn",
       "@typescript-eslint/no-unsafe-function-type": "warn",
+      "@typescript-eslint/no-unsafe-member-access": "warn",
+      "@typescript-eslint/no-unsafe-return": "warn",
       "@typescript-eslint/no-unused-expressions": "warn",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       "@typescript-eslint/no-wrapper-object-types": "warn",
       "@typescript-eslint/prefer-namespace-keyword": "warn",
+      "@typescript-eslint/prefer-promise-reject-errors": "warn",
+      "@typescript-eslint/restrict-plus-operands": "warn",
+      "@typescript-eslint/restrict-template-expressions": "warn",
       "@typescript-eslint/triple-slash-reference": "warn",
+      "@typescript-eslint/unbound-method": "warn",
       "no-async-promise-executor": "warn",
       "no-case-declarations": "warn",
       "no-cond-assign": "warn",
