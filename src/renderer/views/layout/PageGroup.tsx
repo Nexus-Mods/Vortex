@@ -14,7 +14,7 @@ export interface IPageGroupProps {
   mainPage: string;
   secondaryPage: string;
   tabsMinimized: boolean;
-  onClickPage: (evt: React.MouseEvent<any>) => void;
+  onClickPage: (pageId: string, ctrlKey: boolean) => void;
 }
 
 export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
@@ -67,7 +67,7 @@ export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
             eventKey={page.id}
             tooltip={t(page.title, { ns: page.namespace })}
             placement="right"
-            onClick={onClickPage}
+            onClick={(e) => onClickPage(page.id, e.ctrlKey)}
           >
             <PageButton namespace={page.namespace} page={page} />
           </NavItem>

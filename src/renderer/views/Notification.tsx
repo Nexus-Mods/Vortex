@@ -95,7 +95,7 @@ export function Notification(props: IProps): React.JSX.Element {
   const { t } = useTranslation(["common"]);
 
   const [open, setOpen] = React.useState(false);
-  const menuRef = React.useRef<any>(null);
+  const menuRef = React.useRef<InstanceType<typeof Dropdown>>(null);
 
   const handleOpen = React.useCallback(() => {
     setOpen(true);
@@ -196,8 +196,8 @@ export function Notification(props: IProps): React.JSX.Element {
           <div className="notification-title">{title}</div>
         ) : null}
         <div className="notification-message hover-expand">
-          {lines.map((line, idx) => (
-            <span key={idx}>{line}</span>
+          {lines.map((line) => (
+            <span key={line}>{line}</span>
           ))}
         </div>
       </div>

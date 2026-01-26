@@ -26,11 +26,9 @@ import { pathToFileURL } from "url";
 import { unknownToError } from "../../shared/errors";
 import { useTranslation } from "react-i18next";
 
-export interface IBaseProps {}
-
 type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 
-export const QuickLauncher: React.FC<IBaseProps> = () => {
+export const QuickLauncher: React.FC = () => {
   const dispatch = useDispatch();
   const extensions = React.useContext(ExtensionContext);
   const api = extensions.getApi();
@@ -97,7 +95,7 @@ export const QuickLauncher: React.FC<IBaseProps> = () => {
           game: knownGame,
         };
         return prev;
-      }, {} as IGameIconCache);
+      }, {} satisfies IGameIconCache);
     },
   );
 
@@ -132,7 +130,7 @@ export const QuickLauncher: React.FC<IBaseProps> = () => {
           game: knownGame,
         };
         return prev;
-      }, {} as IGameIconCache);
+      }, {} satisfies IGameIconCache);
 
       setGameIconCache(newCache);
       return Promise.resolve();

@@ -1,5 +1,6 @@
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";
+import type { IUpdateable } from "../ReduxProp";
 import type { IMainPage } from "../../types/IMainPage";
 
 import * as React from "react";
@@ -18,9 +19,8 @@ export function PageButton(props: IPageButtonProps): React.JSX.Element {
   const { t } = useTranslation();
 
   // Create a stable object to pass to attach/detach that triggers re-renders
-  // ReduxProp expects an object with a forceUpdate method
-  const updateHandle = React.useMemo(
-    () => ({ forceUpdate }) as unknown as React.Component,
+  const updateHandle: IUpdateable = React.useMemo(
+    () => ({ forceUpdate }),
     [],
   );
 

@@ -24,8 +24,7 @@ export const UIBlocker = (): JSX.Element | null => {
     uiBlockerId !== undefined ? uiBlockers[uiBlockerId] : undefined;
 
   const onUnblock = React.useCallback(
-    (evt: React.MouseEvent<any>) => {
-      const id = evt.currentTarget.getAttribute("data-id");
+    (id: string) => {
       api?.events.emit(`force-unblock-${id}`);
       dispatch(clearUIBlocker(id));
     },
@@ -41,7 +40,7 @@ export const UIBlocker = (): JSX.Element | null => {
       <Icon name={blocker.icon} />
       <div className="blocker-text">{blocker.description}</div>
       {blocker.mayCancel ? (
-        <ReactButton data-id={uiBlockerId} onClick={onUnblock}>
+        <ReactButton onClick={() => onUnblock(uiBlockerId)}>
           {t("Cancel")}
         </ReactButton>
       ) : null}

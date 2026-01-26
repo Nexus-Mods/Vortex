@@ -15,7 +15,7 @@ import { useSelector } from "react-redux";
 export interface ISidebarProps {
   objects: IMainPage[];
   settingsPage: IMainPage;
-  onClickPage: (evt: React.MouseEvent<any>) => void;
+  onClickPage: (pageId: string, ctrlKey: boolean) => void;
   onToggleMenu: () => void;
   onSidebarRef: (ref: HTMLElement | null) => void;
 }

@@ -12,6 +12,7 @@ import Icon from "../controls/Icon";
 import Webview from "../controls/Webview";
 import type {
   ConditionResults,
+  DialogInputData,
   DialogType,
   ICheckbox,
   IConditionResult,
@@ -109,14 +110,14 @@ export const Dialog: React.FC = () => {
 
   // Dispatch callbacks
   const onDismiss = React.useCallback(
-    (id: string, action: string, input: IDialogContent) => {
+    (id: string, action: string, input: DialogInputData) => {
       dispatch(closeDialog(id, action, input));
     },
     [dispatch],
   );
 
   const onDismissMultiple = React.useCallback(
-    (ids: string[], action: string, input: IDialogContent) => {
+    (ids: string[], action: string, input: DialogInputData) => {
       dispatch(closeDialogs(ids, action, input));
     },
     [dispatch],
@@ -134,14 +135,17 @@ export const Dialog: React.FC = () => {
   );
 
   const translateParts = React.useCallback(
-    (message: string, tFunc: TFunction, parameters?: any) => {
+    (message: string, tFunc: TFunction, parameters?: Record<string, unknown>) => {
       return (message || "")
         .split("\n")
         .map((line: string) =>
           line
             .split("\t")
             .map((block: string) =>
-              tFunc(block, { replace: parameters, count: parameters?.count }),
+              tFunc(block, {
+                replace: parameters,
+                count: parameters && typeof parameters['count'] === "number" ? parameters['count'] : undefined,
+              }),
             )
             .join(" "),
         )
@@ -179,15 +183,14 @@ export const Dialog: React.FC = () => {
 
   // Event handlers
   const changeInput = React.useCallback(
-    (evt: any) => {
+    (inputId: string, value: string) => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const id = evt.currentTarget.id.split("-").slice(1).join("-");
-      const idx = state.input.findIndex((form: IInput) => form.id === id);
+      const idx = state.input.findIndex((form: IInput) => form.id === inputId);
 
       const newInput = { ...state.input[idx] };
-      newInput.value = evt.currentTarget.value;
+      newInput.value = value;
 
       const newDialogState = update(state, {
         input: { $splice: [[idx, 1, newInput]] },
@@ -204,13 +207,11 @@ export const Dialog: React.FC = () => {
   );
 
   const toggleCheckbox = React.useCallback(
-    (evt: React.MouseEvent<any>) => {
+    (checkboxId: string) => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.checkboxes.findIndex((box: ICheckbox) => {
-        return box.id === evt.currentTarget.id;
-      });
+      const idx = state.checkboxes.findIndex((box: ICheckbox) => box.id === checkboxId);
 
       if (idx === -1) {
         return;
@@ -267,13 +268,11 @@ export const Dialog: React.FC = () => {
   }, [enableMultiple]);
 
   const toggleRadio = React.useCallback(
-    (evt: React.MouseEvent<any>) => {
+    (radioId: string) => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const idx = state.choices.findIndex((box: ICheckbox) => {
-        return box.id === evt.currentTarget.id;
-      });
+      const idx = state.choices.findIndex((box: ICheckbox) => box.id === radioId);
 
       if (idx < 0) {
         return;
@@ -299,17 +298,16 @@ export const Dialog: React.FC = () => {
     [validateContent],
   );
 
-  const triggerLink = React.useCallback((evt: React.MouseEvent<any>) => {
-    evt.preventDefault();
+  const triggerLink = React.useCallback((linkIdx: number) => {
     const { dialogs: d } = stateRef.current;
-    triggerDialogLink(d[0].id, evt.currentTarget.getAttribute("data-linkidx"));
+    triggerDialogLink(d[0].id, linkIdx);
   }, []);
 
   const dismiss = React.useCallback(
     (action: string) => {
       const { dialogs: d, dialogState: state } = stateRef.current;
 
-      const data: Record<string, unknown> = {};
+      const data: DialogInputData = {};
       if (state?.checkboxes !== undefined) {
         state.checkboxes.forEach((box: ICheckbox) => {
           data[box.id] = box.value;
@@ -345,9 +343,9 @@ export const Dialog: React.FC = () => {
           )
           .map((dialog) => dialog.id);
 
-        onDismissMultiple(matchingDialogIds, action, data as IDialogContent);
+        onDismissMultiple(matchingDialogIds, action, data);
       } else {
-        onDismiss(d[0].id, action, data as IDialogContent);
+        onDismiss(d[0].id, action, data);
       }
     },
     [onDismiss, onDismissMultiple],
@@ -407,7 +405,11 @@ export const Dialog: React.FC = () => {
             value={input.value || ""}
             label={input.label}
             placeholder={input.placeholder}
-            onChange={changeInput}
+            onChange={(e: React.FormEvent<FormControl>) => {
+              if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                changeInput(input.id, e.target.value);
+              }
+            }}
             inputRef={idx === 0 ? focusMe : undefined}
           />
           {valRes !== undefined && valRes.length !== 0 ? (
@@ -425,7 +427,7 @@ export const Dialog: React.FC = () => {
     (link: ILink, idx: number) => {
       return (
         <div key={idx}>
-          <Button onClick={triggerLink} data-linkidx={idx}>
+          <Button onClick={() => triggerLink(idx)}>
             {link.label}
           </Button>
         </div>
@@ -438,7 +440,7 @@ export const Dialog: React.FC = () => {
     (link: ILink, idx: number) => {
       return (
         <div key={idx}>
-          <a onClick={triggerLink} data-linkidx={idx}>
+          <a onClick={(e) => { e.preventDefault(); triggerLink(idx); }}>
             {link.label}
           </a>
         </div>
@@ -472,7 +474,7 @@ export const Dialog: React.FC = () => {
           id={checkbox.id}
           key={checkbox.id}
           checked={checkbox.value}
-          onChange={toggleCheckbox}
+          onChange={() => toggleCheckbox(checkbox.id)}
           disabled={checkbox.disabled}
         >
           {text}
@@ -503,7 +505,7 @@ export const Dialog: React.FC = () => {
           key={checkbox.id}
           name="dialog-radio"
           checked={checkbox.value}
-          onChange={toggleRadio}
+          onChange={() => toggleRadio(checkbox.id)}
           disabled={checkbox.disabled}
         >
           {content}
@@ -519,8 +521,8 @@ export const Dialog: React.FC = () => {
       if (content.options?.translated) {
         // bit of a hack, setting lngs to empty list so that no translation happens,
         // but we still make use of the i18next interpolator
-        tFunc = (input: string, options?: any) =>
-          t(input, { ...options, lngs: [] });
+        tFunc = ((input: string, options?: Record<string, unknown>) =>
+          t(input, { ...options, lngs: [] })) as typeof t;
       }
 
       const controls: Array<{ id: DialogContentItem; control: JSX.Element }> =
@@ -637,6 +639,7 @@ export const Dialog: React.FC = () => {
             <div
               key="dialog-content-html-text"
               className="dialog-content-html"
+              // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
               dangerouslySetInnerHTML={{ __html: content.htmlText }}
             />
           ),

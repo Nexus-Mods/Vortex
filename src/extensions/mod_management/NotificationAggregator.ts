@@ -1,5 +1,9 @@
 import { createHash } from "crypto";
-import type { IExtensionApi } from "../../types/IExtensionContext";
+import type {
+  IErrorOptions,
+  IExtensionApi,
+} from "../../types/IExtensionContext";
+import type { INotificationAction } from "../../types/INotification";
 import { log } from "../../util/log";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
@@ -27,7 +31,7 @@ export interface IAggregatedNotification {
   items: string[];
   count: number;
   allowReport?: boolean;
-  actions?: any[];
+  actions?: INotificationAction[];
 }
 
 export interface IPendingNotification {
@@ -36,7 +40,7 @@ export interface IPendingNotification {
   details: string | Error;
   item: string;
   allowReport?: boolean;
-  actions?: any[];
+  actions?: INotificationAction[];
 }
 
 /**
@@ -96,7 +100,7 @@ export class NotificationAggregator {
     title: string,
     details: string | Error,
     item: string,
-    options: { allowReport?: boolean; actions?: any[] } = {},
+    options: { allowReport?: boolean; actions?: INotificationAction[] } = {},
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
       setImmediatePolyfill(() => {
@@ -486,14 +490,11 @@ export class NotificationAggregator {
     notification: IAggregatedNotification,
   ): void {
     setImmediatePolyfill(() => {
-      const options: any = {
+      const options: IErrorOptions = {
         id: notification.id,
         allowReport: notification.allowReport,
+        actions: notification.actions,
       };
-
-      if (notification.actions) {
-        options.actions = notification.actions;
-      }
 
       // Add count information to the title if multiple items
       const displayTitle =
@@ -514,9 +515,9 @@ export class NotificationAggregator {
             id: notification.id,
             type: "warning",
             title: displayTitle,
-            details: notification.details,
-            text: notification.text,
-            ...options,
+            message: notification.text,
+            actions: notification.actions,
+            allowSuppress: options.allowReport,
           });
           break;
         case "info":
@@ -524,9 +525,9 @@ export class NotificationAggregator {
             id: notification.id,
             type: "info",
             title: displayTitle,
-            details: notification.details,
-            text: notification.text,
-            ...options,
+            message: notification.text,
+            actions: notification.actions,
+            allowSuppress: options.allowReport,
           });
           break;
       }

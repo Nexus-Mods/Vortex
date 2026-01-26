@@ -67,9 +67,9 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
   );
 
   const handleClickPage = React.useCallback(
-    (evt: React.MouseEvent) => {
-      if (mainPage !== evt.currentTarget.id) {
-        setMainPage(evt.currentTarget.id, evt.ctrlKey);
+    (pageId: string, ctrlKey: boolean) => {
+      if (mainPage !== pageId) {
+        setMainPage(pageId, ctrlKey);
       } else {
         const page = objects.find((iter) => iter.id === mainPage);
         page?.onReset?.();

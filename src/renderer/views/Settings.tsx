@@ -34,6 +34,8 @@ interface ICombinedSettingsPage {
   elements: ISettingsPage[];
 }
 
+type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
+
 function registerSettings(
   instanceGroup: undefined,
   title: string,
@@ -62,9 +64,9 @@ export const Settings: React.FC = () => {
     startupSettingsRef.current[key] = value;
   }, []);
 
-  const setCurrentPage = React.useCallback(
-    (page: any) => {
-      dispatch(setSettingsPage(page));
+  const setCurrentPage: TabSelectHandler = React.useCallback(
+    (eventKey) => {
+      dispatch(setSettingsPage(eventKey));
     },
     [dispatch],
   );

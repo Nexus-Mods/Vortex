@@ -150,7 +150,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   const [focused, setFocused] = React.useState(true);
   const [menuOpen, setMenuOpen] = React.useState(false);
 
-  const menuLayerRef = React.useRef<HTMLDivElement>(null);
+  const menuLayerRef = React.useRef<HTMLDivElement | null>(null);
   const menuObserverRef = React.useRef<MutationObserver | undefined>(undefined);
   const modifiersRef = React.useRef<IModifiers>({
     alt: false,
@@ -190,8 +190,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   }, []);
 
   const setMenuLayer = React.useCallback((ref: HTMLDivElement | null) => {
-    (menuLayerRef as React.MutableRefObject<HTMLDivElement | null>).current =
-      ref;
+    menuLayerRef.current = ref;
 
     if (menuObserverRef.current !== undefined) {
       menuObserverRef.current.disconnect();

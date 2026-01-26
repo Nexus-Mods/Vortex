@@ -81,8 +81,8 @@ import { showError } from "./util/message";
 import "./util/monkeyPatching";
 import { reduxSanity, StateError } from "./store/reduxSanity";
 import { ExtensionContext } from "./util/ExtensionProvider";
-import LoadingScreen from "./renderer/views/LoadingScreen";
-import AppLayout from "./renderer/views/AppLayout";
+import { LoadingScreen } from "./renderer/views/LoadingScreen";
+import { AppLayout } from "./renderer/views/AppLayout";
 
 import * as remote from "@electron/remote";
 import * as msgpackT from "@msgpack/msgpack";
