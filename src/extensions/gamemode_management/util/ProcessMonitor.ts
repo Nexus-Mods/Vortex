@@ -177,6 +177,7 @@ class ProcessMonitor {
    * - Falls back to name-only when all candidates lack path info (Windows)
    */
   private async doCheck(): Promise<void> {
+    // ─── Step 1: Fetch process list ───────────────────────────────────────────
     let processes: IProcessInfo[];
     try {
       processes = await this.mProcessProvider.list();
@@ -185,17 +186,58 @@ class ProcessMonitor {
       return;
     }
 
+    // ─── Step 2: Define path-extraction helpers ───────────────────────────────
     const hasPathSeparator = (value: string): boolean =>
       value.includes("/") || value.includes("\\");
 
-    // Parse the executable path from a raw command line; handles quoted paths and
-    // unquoted paths that may contain spaces (common on Linux/Steam paths).
+    /**
+     * Extracts the executable path from a process's raw command line string.
+     *
+     * Why this is needed:
+     * - `proc.path` is often undefined on Windows (ps-list limitation)
+     * - `proc.cmd` contains the full command line, but parsing it is non-trivial
+     *
+     * The command line can take several forms:
+     * - Quoted path: `"C:\Program Files\Game\game.exe" --fullscreen`
+     * - Unquoted path with spaces: `/home/user/Steam Games/game.exe --arg`
+     * - Simple path: `game.exe` or `/usr/bin/game`
+     *
+     * Parsing strategy:
+     * 1. If the command starts with a quote, extract the quoted portion
+     * 2. Otherwise, split by whitespace and progressively reassemble parts
+     *    until the assembled string ends with the known process name
+     * 3. Final fallback: use the first whitespace-delimited token
+     *
+     * Only returns a path if it contains a path separator (/ or \), since
+     * bare names like "game.exe" aren't useful for exact matching.
+     *
+     * @example
+     * // Quoted path
+     * cmd = '"C:\\Program Files\\Game\\game.exe" --fullscreen'
+     * // Returns: "C:\\Program Files\\Game\\game.exe"
+     *
+     * @example
+     * // Unquoted path with spaces (Linux/Steam)
+     * cmd = '/home/user/Steam Games/game.exe --windowed'
+     * name = 'game.exe'
+     * // Reassembles: "/home/user/Steam" -> "/home/user/Steam Games/game.exe" (matches!)
+     * // Returns: "/home/user/Steam Games/game.exe"
+     *
+     * @example
+     * // No path separator (bare name)
+     * cmd = 'game.exe --arg'
+     * // Returns: undefined (not useful for path matching)
+     */
     const getCommandPath = (proc: IProcessInfo): string | undefined => {
       const cmd = proc.cmd;
       if (!cmd) {
         return undefined;
       }
+
+      // Step 2a: Trim leading/trailing whitespace
       const trimmed = cmd.trim();
+
+      // Step 2b: Handle quoted paths - extract content between first pair of quotes
       if (trimmed.startsWith('"')) {
         const end = trimmed.indexOf('"', 1);
         const quoted = end > 1 ? trimmed.slice(1, end) : undefined;
@@ -204,11 +246,14 @@ class ProcessMonitor {
           : undefined;
       }
 
+      // Step 2c: Split into whitespace-delimited tokens
       const parts = trimmed.split(/\s+/).filter((part) => part.length > 0);
       if (parts.length === 0) {
         return undefined;
       }
 
+      // Step 2d: Progressively reassemble tokens until we find one ending with the exe name
+      // This handles unquoted paths with spaces like "/home/user/My Games/game.exe"
       const exeName = proc.name.toLowerCase();
       let assembled = "";
       for (const part of parts) {
@@ -218,6 +263,7 @@ class ProcessMonitor {
         }
       }
 
+      // Step 2e: Fallback - return first token if it looks like a path
       return hasPathSeparator(parts[0]) ? parts[0] : undefined;
     };
 
@@ -225,7 +271,9 @@ class ProcessMonitor {
     const getProcessPath = (proc: IProcessInfo): string | undefined =>
       proc.path ?? getCommandPath(proc);
 
-    // Map for quick PID lookup to validate cached tool PIDs (avoid stale PID reuse).
+    // ─── Step 3: Build lookup maps ────────────────────────────────────────────
+
+    // Step 3a: Map by PID for quick validation of cached tool PIDs (avoid stale PID reuse)
     const byPid: { [pid: number]: IProcessInfo } = processes.reduce(
       (prev, proc) => {
         prev[proc.pid] = proc;
@@ -234,7 +282,7 @@ class ProcessMonitor {
       {},
     );
 
-    // Map by exeId (normalized basename) for name-based candidate lookup.
+    // Step 3b: Map by exeId (normalized lowercase basename) for name-based candidate lookup
     const byName: { [exeId: string]: IProcessInfo[] } = processes.reduce(
       (prev: { [exeId: string]: IProcessInfo[] }, proc) => {
         setdefault(prev, makeExeId(proc.name), []).push(proc);
@@ -243,36 +291,54 @@ class ProcessMonitor {
       {} as { [exeId: string]: IProcessInfo[] },
     );
 
+    // ─── Step 4: Capture current state and Vortex PID ─────────────────────────
     const state = this.mStore.getState();
     const vortexPid = process.pid;
 
-    // Only treat child processes as tool instances unless detached processes are allowed.
+    // ─── Step 5: Define child-process ancestry check ──────────────────────────
+    // Recursively walks the parent chain to determine if a process descends from Vortex.
+    // Used to distinguish tools we launched vs. unrelated processes with the same name.
     const isChildProcess = (
       proc: IProcessInfo,
       visited: Set<number>,
     ): boolean => {
+      // Base case: no process or reached init (PID 0)
       if (proc === undefined || proc.ppid === 0) {
         return false;
-      } else if (visited.has(proc.ppid)) {
+      }
+      // Cycle detection: avoid infinite loops from corrupted process trees
+      if (visited.has(proc.ppid)) {
         return false;
       }
       visited.add(proc.ppid);
+      // Success if direct child of Vortex, otherwise recurse up the tree
       return (
         proc.ppid === vortexPid || isChildProcess(byPid[proc.ppid], visited)
       );
     };
 
-    // Match logic: prefer full path match; fall back to name-only when all paths are missing.
-    // Limitations: basename collisions and detached processes can lead to false matches.
+    // ─── Step 6: Define the update() matching closure ─────────────────────────
+    // This closure matches a given exePath against running processes and updates
+    // Redux state accordingly. It prefers full path matches but falls back to
+    // name-only matching when path info is unavailable (common on Windows).
+    //
+    // Parameters:
+    // - exePath: full path to the executable we're looking for
+    // - exclusive: whether this tool should block other tools from running
+    // - considerDetached: if true, match any process; if false, only match Vortex children
     const update = (
       exePath: string,
       exclusive: boolean,
       considerDetached: boolean,
     ) => {
+      // Step 6a: Lookup current state
+      // - knownRunning: what we previously recorded as running (may be stale)
+      // - exeRunning: all processes with matching basename currently in the process list
       const exeId = makeExeId(exePath);
       const knownRunning = state.session.base.toolsRunning[exeId];
       const exeRunning = byName[exeId];
 
+      // Step 6b: Early exit - no process with this name is running
       if (exeRunning === undefined) {
         if (knownRunning !== undefined) {
           this.mStore.dispatch(setToolStopped(exePath));
@@ -280,26 +346,35 @@ class ProcessMonitor {
         return;
       }
 
+      // Step 6c: Validate cached PID - if we already track this tool, verify it's still valid
       if (knownRunning !== undefined) {
-        // Verify cached PID is still valid to detect stale PID reuse.
         const knownProc = byPid[knownRunning.pid];
         if (knownProc !== undefined) {
-          // We know this process is running. If considerDetached is true, we're done.
-          // If considerDetached is false, we need to verify it's still a child process.
+          // Step 6c-i: Process with cached PID still exists - but is it still "ours"?
+          // For games (considerDetached=true): any process is valid, we're done
+          // For tools (considerDetached=false): must still be a Vortex child process
           if (considerDetached || isChildProcess(knownProc, new Set())) {
-            return;
+            return; // Still valid, no state change needed
           }
+          // Step 6c-ii: Process exists but is no longer a child - fall through to re-match
+          // This can happen if a tool spawns a subprocess and the original exits
         }
+        // Step 6c-iii: Cached PID no longer exists (process exited) - fall through to find new match
       }
 
+      // Step 6d: Build candidate list - filter by child status if required
       const candidates = considerDetached
         ? exeRunning
         : exeRunning.filter((proc) => isChildProcess(proc, new Set()));
+
+      // Step 6e: Enrich candidates with resolved paths (from proc.path or parsed from proc.cmd)
       const exePathLower = exePath.toLowerCase();
       const candidatesWithPath = candidates.map((proc) => ({
         proc,
         path: getProcessPath(proc),
       }));
+
+      // Step 6f: Attempt exact path match (preferred - most reliable)
       const pathMatch = candidatesWithPath.find(
         (entry) =>
           entry.path !== undefined && entry.path.toLowerCase() === exePathLower,
@@ -312,8 +387,9 @@ class ProcessMonitor {
         return;
       }
 
-      // Fallback: when ps-list does not expose path/cmd (Windows), accept name-only.
-      // Note: basename collisions can lead to false matches when multiple executables share the same name.
+      // Step 6g: Fallback - name-only match when ALL candidates lack path info
+      // This handles Windows where ps-list often cannot retrieve executable paths.
+      // Warning: basename collisions (e.g., multiple "launcher.exe") cause false positives.
       if (
         candidatesWithPath.length > 0 &&
         candidatesWithPath.every((entry) => entry.path === undefined)
@@ -324,11 +400,19 @@ class ProcessMonitor {
         return;
       }
 
+      // Step 6h: No match found - if we previously thought it was running, mark it stopped
+      // This happens when:
+      // - All candidates had paths, but none matched our target path (different exe with same name)
+      // - Candidates existed but weren't child processes (and considerDetached=false)
       if (knownRunning !== undefined) {
         this.mStore.dispatch(setToolStopped(exePath));
       }
     };
 
+    // ─── Step 7: Match the active game executable ─────────────────────────────
+    // Games use considerDetached=true since they typically outlive Vortex's process tree
+    // (user may close Vortex while game is running, then reopen Vortex).
+    // Games are always marked exclusive=true to enable features like deploy-on-exit.
     const game = currentGame(state);
     const gameDiscovery = currentGameDiscovery(state);
     const gameExe =
@@ -342,6 +426,9 @@ class ProcessMonitor {
     const gameExePath = path.join(gamePath, gameExe);
     update(gameExePath, true, true);
 
+    // ─── Step 8: Match each discovered tool ───────────────────────────────────
+    // Tools use considerDetached=false - we only want to track tools that Vortex launched.
+    // This prevents false matches when the user runs the same tool outside of Vortex.
     const discoveredTools: { [toolId: string]: IDiscoveredTool } = getSafe(
       state,
       ["settings", "gameMode", "discovered", game.id, "tools"],
