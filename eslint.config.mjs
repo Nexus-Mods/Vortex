@@ -1,11 +1,9 @@
 import eslint from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
-import prettierConfig from "eslint-config-prettier";
-import eslintReact from "@eslint-react/eslint-plugin";
-import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
+
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
+import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 
 const isCI = !!process.env.CI;
 const tseslintConfig = isCI
