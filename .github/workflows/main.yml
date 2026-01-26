@@ -52,6 +52,9 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
 
+      - name: Lint
+        run: yarn lint:quiet
+
       - name: Build
         run: yarn build
 
