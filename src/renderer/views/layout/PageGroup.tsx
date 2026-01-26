@@ -1,14 +1,13 @@
 import { NavItem } from "../../controls/TooltipControls";
 import type { IMainPage } from "../../../types/IMainPage";
-import type { TFunction } from "../../../util/i18n";
 import { log } from "../../../util/log";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 import PageButton from "../PageButton";
 import * as React from "react";
 import { Nav } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 
 export interface IPageGroupProps {
-  t: TFunction;
   title: string | undefined;
   groupKey: string;
   pages: IMainPage[];
@@ -20,7 +19,6 @@ export interface IPageGroupProps {
 
 export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
   const {
-    t,
     title,
     groupKey,
     pages,
@@ -29,6 +27,8 @@ export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
     tabsMinimized,
     onClickPage,
   } = props;
+
+  const { t } = useTranslation();
 
   const visiblePages = React.useMemo(() => {
     return pages.filter((page) => {
@@ -69,7 +69,7 @@ export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
             placement="right"
             onClick={onClickPage}
           >
-            <PageButton t={t} namespace={page.namespace} page={page} />
+            <PageButton namespace={page.namespace} page={page} />
           </NavItem>
         ))}
       </Nav>

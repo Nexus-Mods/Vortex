@@ -253,7 +253,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         ? t(translated.message, { replace: translated.replace })
         : translated.message;
 
-    return <Notification key={idx} t={t} collapsed={1} params={translated} />;
+    return <Notification key={idx} collapsed={1} params={translated} />;
   };
 
   private renderLoadingOverlay(): JSX.Element {

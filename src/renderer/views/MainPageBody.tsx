@@ -1,6 +1,6 @@
 import * as React from "react";
 
-function MainPageBody(
+export function MainPageBody(
   props: React.HTMLAttributes<HTMLDivElement>,
 ): React.JSX.Element {
   return (

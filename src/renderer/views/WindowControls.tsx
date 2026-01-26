@@ -4,6 +4,7 @@ import * as React from "react";
 import { IconButton } from "../controls/TooltipControls";
 import lazyRequire from "../../util/lazyRequire";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 const getWindow = (() => {
@@ -16,7 +17,7 @@ const getWindow = (() => {
   };
 })();
 
-function WindowControls(): React.JSX.Element {
+export function WindowControls(): React.JSX.Element {
   const [isMaximized, setIsMaximized] = React.useState(() =>
     getWindow().isMaximized(),
   );

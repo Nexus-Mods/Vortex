@@ -1,23 +1,24 @@
 import ErrorBoundary from "../controls/ErrorBoundary";
 import type { PropsCallback } from "../../types/IExtensionContext";
-import { extend } from "../controls/ComponentEx";
+import { useExtensionObjects } from "../../util/ExtensionProvider";
 
 import * as React from "react";
 import ExtensionGate from "../controls/ExtensionGate";
 
 interface IExtOverlay {
   id: string;
-  component: React.ComponentType<any>;
+  component: React.ComponentType;
   props: PropsCallback;
 }
 
-export interface IBaseProps {}
-
-export interface IExtendedProps {
-  objects: IExtOverlay[];
+function registerOverlay(
+  instanceGroup: undefined,
+  id: string,
+  component: React.ComponentClass,
+  props?: PropsCallback,
+): IExtOverlay {
+  return { id, component, props };
 }
-
-type IProps = IBaseProps & IExtendedProps;
 
 function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
   const props = overlay.props !== undefined ? overlay.props() : {};
@@ -30,20 +31,10 @@ function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
   );
 }
 
-function OverlayContainer(props: IProps): React.JSX.Element {
-  const { objects } = props;
+export const OverlayContainer: React.FC = () => {
+  const objects = useExtensionObjects<IExtOverlay>(registerOverlay);
+
   return <div>{objects.map((overlay) => renderOverlay(overlay))}</div>;
-}
+};
 
-function registerOverlay(
-  instanceGroup: undefined,
-  id: string,
-  component: React.ComponentClass<any>,
-  props?: PropsCallback,
-): IExtOverlay {
-  return { id, component, props };
-}
-
-export default extend(registerOverlay)(
-  OverlayContainer,
-) as React.ComponentClass<IBaseProps>;
+export default OverlayContainer;

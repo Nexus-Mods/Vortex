@@ -62,7 +62,6 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
           return (
             <PageGroup
               key={key}
-              t={t}
               title={title}
               groupKey={key}
               pages={groupPages}

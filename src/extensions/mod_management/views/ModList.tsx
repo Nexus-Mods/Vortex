@@ -426,7 +426,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <MainPage ref={this.setBoundsRef}>
+      <MainPage domRef={this.setBoundsRef}>
         <MainPage.Header>
           <IconBar
             group="mod-icons"

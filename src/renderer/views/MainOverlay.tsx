@@ -1,52 +1,53 @@
 import IconBar from "../controls/IconBar";
 import type { IActionDefinition } from "../../types/IActionDefinition";
-import { ComponentEx } from "../controls/ComponentEx";
+import { MainContext } from "./MainWindow";
 
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 export interface IBaseProps {
   open: boolean;
-  overlayRef: (ref: HTMLElement) => void;
+  overlayRef: (ref: HTMLElement | null) => void;
 }
 
-type IProps = IBaseProps;
+export const MainOverlay: React.FC<IBaseProps> = ({ open, overlayRef }) => {
+  const { t } = useTranslation();
+  const context = React.useContext(MainContext);
 
-class MainOverlay extends ComponentEx<IProps, {}> {
-  private buttons: IActionDefinition[];
-
-  constructor(props: IProps) {
-    super(props);
-
-    this.buttons = [];
+  const buttons = React.useMemo<IActionDefinition[]>(() => {
+    const result: IActionDefinition[] = [];
     if (process.env.NODE_ENV === "development") {
-      this.buttons.push({
+      result.push({
         icon: "mods",
         title: "Developer",
-        action: () => this.context.api.events.emit("show-modal", "developer"),
+        action: () => context.api.events.emit("show-modal", "developer"),
       });
     }
-  }
+    return result;
+  }, [context.api]);
 
-  public render(): JSX.Element {
-    const { open, overlayRef } = this.props;
-    const classes = ["overlay"];
+  const classes = React.useMemo(() => {
+    const result = ["overlay"];
     if (open) {
-      classes.push("in");
+      result.push("in");
     }
-    return (
-      <div className={classes.join(" ")}>
-        <div ref={overlayRef} />
-        <div className="flex-fill" />
-        <div className="global-overlay">
-          <IconBar
-            group="help-icons"
-            staticElements={this.buttons}
-            orientation="vertical"
-          />
-        </div>
-      </div>
-    );
-  }
-}
+    return result;
+  }, [open]);
 
-export default MainOverlay as React.ComponentClass<IBaseProps>;
+  return (
+    <div className={classes.join(" ")}>
+      <div ref={overlayRef} />
+      <div className="flex-fill" />
+      <div className="global-overlay">
+        <IconBar
+          t={t}
+          group="help-icons"
+          staticElements={buttons}
+          orientation="vertical"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default MainOverlay;

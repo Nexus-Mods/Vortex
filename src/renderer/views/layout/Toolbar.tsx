@@ -46,7 +46,7 @@ export const Toolbar = (): JSX.Element | null => {
 
   return (
     <FlexLayout.Fixed id="main-toolbar" className={className}>
-      <QuickLauncher t={t} />
+      <QuickLauncher />
       <Banner group="main-toolbar" />
       <DynDiv group="main-toolbar" />
       <div className="flex-fill" />

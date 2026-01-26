@@ -1,13 +1,13 @@
 import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
 import type { PropsCallback } from "../../types/IExtensionContext";
-import { extend } from "../controls/ComponentEx";
+import { useExtensionObjects } from "../../util/ExtensionProvider";
 
 import * as React from "react";
 
 interface IExtDialog {
   id: string;
-  component: React.ComponentType<any>;
+  component: React.ComponentType;
   props: PropsCallback;
 }
 
@@ -16,11 +16,14 @@ export interface IBaseProps {
   onHideDialog: () => void;
 }
 
-export interface IExtendedProps {
-  objects: IExtDialog[];
+function registerDialog(
+  _instanceGroup: undefined,
+  id: string,
+  component: React.ComponentClass,
+  props?: PropsCallback,
+): IExtDialog {
+  return { id, component, props };
 }
-
-type IProps = IBaseProps & IExtendedProps;
 
 function renderDialog(
   dialog: IExtDialog,
@@ -47,8 +50,12 @@ function renderDialog(
   );
 }
 
-function DialogContainer(props: IProps): React.JSX.Element {
-  const { objects, onHideDialog, visibleDialog } = props;
+export const DialogContainer: React.FC<IBaseProps> = ({
+  visibleDialog,
+  onHideDialog,
+}) => {
+  const objects = useExtensionObjects<IExtDialog>(registerDialog);
+
   return (
     <div id="dialog-container">
       {objects.map((dialog) =>
@@ -56,17 +63,6 @@ function DialogContainer(props: IProps): React.JSX.Element {
       )}
     </div>
   );
-}
+};
 
-function registerDialog(
-  instanceGroup: undefined,
-  id: string,
-  component: React.ComponentClass<any>,
-  props?: PropsCallback,
-): IExtDialog {
-  return { id, component, props };
-}
-
-export default extend(registerDialog)(
-  DialogContainer,
-) as React.ComponentClass<IBaseProps>;
+export default DialogContainer;

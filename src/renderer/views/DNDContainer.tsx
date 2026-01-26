@@ -10,13 +10,11 @@ interface IDNDContainerProps {
  * up to the parent, but I'll have to admit I don't understand 100% how "context" and
  * "manager" work in react-dnd and what changed in its api since we needed this.
  */
-function DNDContainer(props: IDNDContainerProps): React.JSX.Element {
+export function DNDContainer(props: IDNDContainerProps): React.JSX.Element {
   const { children, style } = props;
 
-  const childCount = React.Children.count(children);
-  if (childCount === 0) {
-    // should this be reported as an error? it might just be the child Element
-    // is disabled/hidden for whatever reason
+  // Return null if no children provided
+  if (!children) {
     return null;
   }
 

@@ -1,20 +1,21 @@
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";
 import type { IMainPage } from "../../types/IMainPage";
-import type { TFunction } from "../../util/i18n";
 
 import * as React from "react";
 import { Badge } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 
 interface IPageButtonProps {
-  t: TFunction;
   page: IMainPage;
   namespace: string;
 }
 
-function PageButton(props: IPageButtonProps): React.JSX.Element {
-  const { t, namespace, page } = props;
+export function PageButton(props: IPageButtonProps): React.JSX.Element {
+  const { namespace, page } = props;
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+
+  const { t } = useTranslation();
 
   // Create a stable object to pass to attach/detach that triggers re-renders
   // ReduxProp expects an object with a forceUpdate method

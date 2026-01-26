@@ -9,8 +9,10 @@ import type {
 import type { IMainPage } from "../../types/IMainPage";
 import type { IModifiers } from "../../types/IModifiers";
 import type { IState } from "../../types/IState";
-import { extend } from "../controls/ComponentEx";
-import { ExtensionContext } from "../../util/ExtensionProvider";
+import {
+  ExtensionContext,
+  useExtensionObjects,
+} from "../../util/ExtensionProvider";
 import { useDispatch, useSelector } from "react-redux";
 import type { IRegisteredExtension } from "../../util/ExtensionManager";
 import { createQueue, MutexProvider } from "../../util/MutexContext";
@@ -39,14 +41,8 @@ addStyle(ReactButton, "link");
 addStyle(ReactButton, "inverted");
 
 export interface IBaseProps {
-  className: string;
+  className?: string;
 }
-
-export interface IExtendedProps {
-  objects: IMainPage[];
-}
-
-export type IProps = IBaseProps & IExtendedProps;
 
 export const MainContext = React.createContext<IComponentContext>({
   api: undefined,
@@ -85,8 +81,45 @@ class LegacyContextProvider extends React.Component<ILegacyContextProviderProps>
   }
 }
 
-export const AppLayout: React.FC<IProps> = (props) => {
-  const { objects } = props;
+function trueFunc() {
+  return true;
+}
+
+function emptyFunc() {
+  return {};
+}
+
+function registerMainPage(
+  _instanceGroup: undefined,
+  extInfo: Partial<IRegisteredExtension>,
+  icon: string,
+  title: string,
+  component: React.ComponentClass | React.StatelessComponent,
+  options: IMainPageOptions,
+): IMainPage {
+  return {
+    id: options.id || title,
+    icon,
+    title,
+    component,
+    propsFunc: options.props || emptyFunc,
+    visible: options.visible || trueFunc,
+    group: options.group,
+    badge: options.badge,
+    activity: options.activity,
+    priority: options.priority !== undefined ? options.priority : 100,
+    onReset: options.onReset,
+    namespace: extInfo.namespace,
+  };
+}
+
+export const AppLayout: React.FC<IBaseProps> = () => {
+  const objects = useExtensionObjects<IMainPage>(
+    registerMainPage,
+    undefined,
+    undefined,
+    true,
+  );
 
   const dispatch = useDispatch();
 
@@ -303,37 +336,3 @@ export const AppLayout: React.FC<IProps> = (props) => {
     </React.Suspense>
   );
 };
-
-function trueFunc() {
-  return true;
-}
-
-function emptyFunc() {
-  return {};
-}
-
-function registerMainPage(
-  instanceGroup: undefined,
-  extInfo: Partial<IRegisteredExtension>,
-  icon: string,
-  title: string,
-  component: React.ComponentClass | React.StatelessComponent,
-  options: IMainPageOptions,
-): IMainPage {
-  return {
-    id: options.id || title,
-    icon,
-    title,
-    component,
-    propsFunc: options.props || emptyFunc,
-    visible: options.visible || trueFunc,
-    group: options.group,
-    badge: options.badge,
-    activity: options.activity,
-    priority: options.priority !== undefined ? options.priority : 100,
-    onReset: options.onReset,
-    namespace: extInfo.namespace,
-  };
-}
-
-export default extend(registerMainPage, undefined, true)(AppLayout);

@@ -3,15 +3,20 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import { log } from "../../util/log";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
-// Jest doesn't support setImmediate, so we provide a polyfill
-// This ensures compatibility across environments
-// In test environment, use synchronous execution to avoid timing issues
-const setImmediatePolyfill =
-  typeof setImmediate !== "undefined"
-    ? setImmediate
-    : process?.env?.NODE_ENV === "test"
-      ? (fn: () => void) => fn() // Synchronous in tests
-      : (fn: () => void) => setTimeout(fn, 0);
+// In test environment, use synchronous execution to avoid timing issues with Jest fake timers
+// Check for jest global or NODE_ENV to detect test environment reliably
+const isTestEnvironment = (): boolean =>
+  typeof jest !== "undefined" || process?.env?.NODE_ENV === "test";
+
+const setImmediatePolyfill = (fn: () => void): void => {
+  if (isTestEnvironment()) {
+    fn(); // Synchronous in tests
+  } else if (typeof setImmediate !== "undefined") {
+    setImmediate(fn);
+  } else {
+    setTimeout(fn, 0);
+  }
+};
 
 export interface IAggregatedNotification {
   id: string;
@@ -195,8 +200,9 @@ export class NotificationAggregator {
   /**
    * Flush all pending notifications for an aggregation session
    * @param aggregationId The aggregation session to flush
+   * @returns Promise that resolves when all notifications have been processed
    */
-  public flushAggregation(aggregationId: string): void {
+  public async flushAggregation(aggregationId: string): Promise<void> {
     if (!this.mActiveAggregations.has(aggregationId)) {
       log("warn", "flushAggregation called for inactive aggregation", {
         aggregationId,
@@ -211,21 +217,19 @@ export class NotificationAggregator {
       return;
     }
 
-    // Wait for async processing to complete before cleaning up
-    this.processNotificationsAsync(pending, aggregationId)
-      .then(() => {
-        log("debug", "notification processing complete, cleaning up", {
-          aggregationId,
-        });
-        this.cleanupAggregation(aggregationId);
-      })
-      .catch((err) => {
-        log("error", "error processing notifications", {
-          aggregationId,
-          error: getErrorMessageOrDefault(err),
-        });
-        this.cleanupAggregation(aggregationId);
+    try {
+      await this.processNotificationsAsync(pending, aggregationId);
+      log("debug", "notification processing complete, cleaning up", {
+        aggregationId,
       });
+    } catch (err) {
+      log("error", "error processing notifications", {
+        aggregationId,
+        error: getErrorMessageOrDefault(err),
+      });
+    } finally {
+      this.cleanupAggregation(aggregationId);
+    }
   }
 
   private async processNotificationsAsync(
@@ -233,10 +237,9 @@ export class NotificationAggregator {
     aggregationId: string,
   ): Promise<void> {
     try {
-      // Process aggregation in next tick to prevent blocking (synchronous in tests)
-      if (process?.env?.NODE_ENV !== "test") {
-        // Synchronous in test environment
-      } else {
+      // Process aggregation in next tick to prevent blocking
+      // Skip the delay in test environment for predictable timing
+      if (!isTestEnvironment()) {
         await new Promise<void>((resolve) => setImmediatePolyfill(resolve));
       }
 
@@ -285,7 +288,7 @@ export class NotificationAggregator {
         this.showAggregatedNotification(aggregated[i]);
 
         // Add small delay between notifications to prevent UI blocking (skip in tests)
-        if (i < aggregated.length - 1 && process?.env?.NODE_ENV !== "test") {
+        if (i < aggregated.length - 1 && !isTestEnvironment()) {
           await new Promise<void>((resolve) => setTimeout(resolve, 1));
         }
       }
@@ -300,9 +303,10 @@ export class NotificationAggregator {
   /**
    * Stop aggregation and flush any pending notifications
    * @param aggregationId The aggregation session to stop
+   * @returns Promise that resolves when all notifications have been processed
    */
-  public stopAggregation(aggregationId: string): void {
-    this.flushAggregation(aggregationId);
+  public async stopAggregation(aggregationId: string): Promise<void> {
+    await this.flushAggregation(aggregationId);
   }
 
   /**

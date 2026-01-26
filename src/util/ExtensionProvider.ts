@@ -9,6 +9,63 @@ import type { IExtensionContext } from "../types/IExtensionContext";
 import * as _ from "lodash";
 import * as React from "react";
 
+// Cache for extension objects to avoid re-collecting on every render
+const extensionCache: Map<string, unknown[]> = new Map();
+
+/**
+ * Hook to get extension objects for a given register function.
+ * This is the hook equivalent of the `extend` HOC.
+ *
+ * @param registerFunc - The register function (e.g., registerSettings)
+ * @param staticElements - Optional static elements to merge with extensions
+ * @param group - Optional group identifier for grouped extensions
+ * @param addExtInfo - Whether to add extension info to the callback
+ * @returns Array of collected extension objects
+ */
+export function useExtensionObjects<T>(
+  registerFunc: (...args: unknown[]) => T | undefined,
+  staticElements?: T[],
+  group?: string,
+  addExtInfo?: boolean,
+): T[] {
+  const context = React.useContext(ExtensionContext);
+  const cacheKey = `${registerFunc.name}:${group ?? "default"}`;
+
+  // Register the UI API on first use
+  React.useEffect(() => {
+    const ExtensionManagerImpl: typeof ExtensionManager =
+      require("./ExtensionManager").default;
+    ExtensionManagerImpl.registerUIAPI(registerFunc.name);
+  }, [registerFunc.name]);
+
+  return React.useMemo(() => {
+    if (context === null) {
+      return staticElements ?? [];
+    }
+
+    // Check cache first
+    if (!extensionCache.has(cacheKey)) {
+      const collected: T[] = [];
+      context.apply(
+        registerFunc.name as keyof IExtensionContext,
+        (extInfo: unknown, ...args: unknown[]) => {
+          // Always pass extInfo - when addExtInfo is false, extInfo contains
+          // the first registered argument (e.g., id), not extension metadata
+          const res = registerFunc(group, extInfo, ...args);
+          if (res !== undefined) {
+            collected.push(res);
+          }
+        },
+        addExtInfo,
+      );
+      extensionCache.set(cacheKey, collected);
+    }
+
+    const cached = extensionCache.get(cacheKey) as T[];
+    return [...(staticElements ?? []), ...cached];
+  }, [context, cacheKey, staticElements, registerFunc, group, addExtInfo]);
+}
+
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export const ExtensionContext = React.createContext<ExtensionManager | null>(

@@ -1,23 +1,19 @@
 import type { IState } from "../../types/IState";
-import { connect } from "../controls/ComponentEx";
-import { truthy } from "../../util/util";
 import { PageHeaderContext } from "./MainPageContainer";
 
 import * as React from "react";
 import { Portal } from "react-overlays";
+import { useSelector } from "react-redux";
 
-interface IConnectedProps {
-  mainPage: string;
+export interface IProps {
   children?: React.ReactNode;
 }
 
-type IProps = IConnectedProps;
-
-function MainPageHeader(props: IProps): React.JSX.Element {
-  const { mainPage, children } = props;
+export const MainPageHeader: React.FC<IProps> = ({ children }) => {
+  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
   const { headerPortal, page } = React.useContext(PageHeaderContext);
 
-  if (!truthy(headerPortal?.())) {
+  if (!headerPortal?.()) {
     return null;
   }
   return mainPage === page ? (
@@ -25,12 +21,6 @@ function MainPageHeader(props: IProps): React.JSX.Element {
       <div className="mainpage-header">{children}</div>
     </Portal>
   ) : null;
-}
+};
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    mainPage: state.session.base.mainPage,
-  };
-}
-
-export default connect(mapStateToProps)(MainPageHeader) as any;
+export default MainPageHeader;

@@ -2,12 +2,7 @@ import { setSettingsPage } from "../../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import type { PropsCallback } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
-import {
-  ComponentEx,
-  connect,
-  extend,
-  translate,
-} from "../controls/ComponentEx";
+import { useExtensionObjects } from "../../util/ExtensionProvider";
 import lazyRequire from "../../util/lazyRequire";
 import makeReactive from "../../util/makeReactive";
 import type startupSettingsT from "../../util/startupSettings";
@@ -16,17 +11,18 @@ import MainPage from "./MainPage";
 
 import * as React from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 
 const startupSettings = lazyRequire<typeof startupSettingsT>(
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   () => require("../../util/startupSettings"),
   "default",
 );
 
 interface ISettingsPage {
   title: string;
-  component: React.ComponentClass<any>;
+  component: React.ComponentClass;
   props: PropsCallback;
   visible: () => boolean;
   priority: number;
@@ -38,93 +34,72 @@ interface ICombinedSettingsPage {
   elements: ISettingsPage[];
 }
 
-interface ISettingsProps {
-  objects: ISettingsPage[];
+function registerSettings(
+  instanceGroup: undefined,
+  title: string,
+  component: React.ComponentClass,
+  props: PropsCallback,
+  visible: () => boolean,
+  priority?: number,
+): ISettingsPage {
+  return { title, component, props, visible, priority: priority || 100 };
 }
 
-interface IConnectedProps {
-  settingsPage: string;
-}
+export const Settings: React.FC = () => {
+  const { t } = useTranslation(["common"]);
+  const dispatch = useDispatch();
 
-interface IActionProps {
-  onSetPage: (page: string) => void;
-}
+  // Get extension objects using the hook instead of HOC
+  const objects = useExtensionObjects<ISettingsPage>(registerSettings);
 
-type IProps = ISettingsProps & IConnectedProps & IActionProps;
+  const settingsPage = useSelector(
+    (state: IState) => state.session.base.settingsPage || undefined,
+  );
 
-/**
- * settings dialog
- *
- * @class Settings
- * @extends {ComponentEx<ISettingsProps, {}>}
- */
-class Settings extends ComponentEx<IProps, {}> {
-  private mStartupSettings;
+  const startupSettingsRef = React.useRef(makeReactive(startupSettings));
 
-  constructor(props: IProps) {
-    super(props);
-    this.mStartupSettings = makeReactive(startupSettings);
-  }
+  const changeStartup = React.useCallback((key: string, value: unknown) => {
+    startupSettingsRef.current[key] = value;
+  }, []);
 
-  public render(): JSX.Element {
-    const { settingsPage, objects } = this.props;
+  const setCurrentPage = React.useCallback(
+    (page: any) => {
+      dispatch(setSettingsPage(page));
+    },
+    [dispatch],
+  );
 
-    const combined = objects.reduce(
-      (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
-        const result = prev.slice();
-        const existingPage = prev.find(
-          (ele: ICombinedSettingsPage) => ele.title === current.title,
-        );
-        if (existingPage === undefined) {
-          result.push({
-            title: current.title,
-            elements: [current],
-            priority: current.priority,
-          });
-        } else {
-          existingPage.elements.push(current);
-          if (
-            existingPage.priority === undefined ||
-            current.priority < existingPage.priority
-          ) {
-            existingPage.priority = current.priority;
-          }
-        }
-        return result;
-      },
-      [],
-    );
+  const sortByPriority = (
+    lhs: ICombinedSettingsPage,
+    rhs: ICombinedSettingsPage,
+  ) => {
+    return lhs.priority - rhs.priority;
+  };
 
-    const page =
-      combined.find((iter) => iter.title === settingsPage) !== undefined
-        ? settingsPage
-        : combined[0].title;
-
+  const renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
+    const props = page.props !== undefined ? page.props() : {};
     return (
-      <MainPage>
-        <MainPage.Body>
-          <Tabs
-            id="settings-tab"
-            activeKey={page}
-            onSelect={this.setCurrentPage}
-          >
-            {combined.sort(this.sortByPriority).map(this.renderTab)}
-          </Tabs>
-        </MainPage.Body>
-      </MainPage>
+      <Panel key={idx}>
+        <Panel.Body>
+          {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+          <page.component
+            {...props}
+            startup={startupSettingsRef.current}
+            changeStartup={changeStartup}
+          />
+        </Panel.Body>
+      </Panel>
     );
-  }
+  };
 
-  private renderTab = (page: ICombinedSettingsPage): JSX.Element => {
-    const { t } = this.props;
-
+  const renderTab = (page: ICombinedSettingsPage): JSX.Element => {
     const elements = page.elements
       .filter((ele) => ele.visible === undefined || ele.visible())
       .sort((lhs, rhs) => lhs.priority - rhs.priority);
 
     const content =
       elements.length > 0 ? (
-        <div>{elements.map(this.renderTabElement)}</div>
+        <div>{elements.map(renderTabElement)}</div>
       ) : (
         <EmptyPlaceholder
           icon="settings"
@@ -140,69 +115,46 @@ class Settings extends ComponentEx<IProps, {}> {
     );
   };
 
-  private renderTabElement = (
-    page: ISettingsPage,
-    idx: number,
-  ): JSX.Element => {
-    const props = page.props !== undefined ? page.props() : {};
-    return (
-      <Panel key={idx}>
-        <Panel.Body>
-          {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
-          <page.component
-            {...props}
-            startup={this.mStartupSettings}
-            changeStartup={this.changeStartup}
-          />
-        </Panel.Body>
-      </Panel>
-    );
-  };
+  const combined = objects.reduce(
+    (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
+      const result = prev.slice();
+      const existingPage = prev.find(
+        (ele: ICombinedSettingsPage) => ele.title === current.title,
+      );
+      if (existingPage === undefined) {
+        result.push({
+          title: current.title,
+          elements: [current],
+          priority: current.priority,
+        });
+      } else {
+        existingPage.elements.push(current);
+        if (
+          existingPage.priority === undefined ||
+          current.priority < existingPage.priority
+        ) {
+          existingPage.priority = current.priority;
+        }
+      }
+      return result;
+    },
+    [],
+  );
 
-  private sortByPriority = (
-    lhs: ICombinedSettingsPage,
-    rhs: ICombinedSettingsPage,
-  ) => {
-    return lhs.priority - rhs.priority;
-  };
+  const page =
+    combined.find((iter) => iter.title === settingsPage) !== undefined
+      ? settingsPage
+      : combined[0].title;
 
-  private setCurrentPage = (page) => {
-    this.props.onSetPage(page);
-  };
+  return (
+    <MainPage>
+      <MainPage.Body>
+        <Tabs id="settings-tab" activeKey={page} onSelect={setCurrentPage}>
+          {combined.sort(sortByPriority).map(renderTab)}
+        </Tabs>
+      </MainPage.Body>
+    </MainPage>
+  );
+};
 
-  private changeStartup = (key: string, value: any) => {
-    this.mStartupSettings[key] = value;
-  };
-}
-
-function registerSettings(
-  instanceGroup: undefined,
-  title: string,
-  component: React.ComponentClass<any>,
-  props: PropsCallback,
-  visible: () => boolean,
-  priority?: number,
-): ISettingsPage {
-  return { title, component, props, visible, priority: priority || 100 };
-}
-
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    settingsPage: state.session.base.settingsPage || undefined,
-  };
-}
-
-function mapDispatchToProps(
-  dispatch: ThunkDispatch<any, null, Redux.Action>,
-): IActionProps {
-  return {
-    onSetPage: (title: string) => dispatch(setSettingsPage(title)),
-  };
-}
-
-export default translate(["common"])(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(extend(registerSettings)(Settings)),
-) as React.ComponentClass<{}>;
+export default Settings;

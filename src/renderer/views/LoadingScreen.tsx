@@ -17,7 +17,7 @@ function readable(input: string): string {
     .join(" ");
 }
 
-function LoadingScreen(props: ILoadingScreenProps): React.JSX.Element {
+export function LoadingScreen(props: ILoadingScreenProps): React.JSX.Element {
   const { extensions } = props;
 
   const [currentlyLoading, setCurrentlyLoading] = React.useState("");

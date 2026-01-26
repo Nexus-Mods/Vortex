@@ -8,14 +8,12 @@ import type {
   NotificationType,
 } from "../../types/INotification";
 
-import type { TFunction } from "../../util/i18n";
-
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";
 import { IconButton } from "../controls/TooltipControls";
+import { useTranslation } from "react-i18next";
 
 interface IActionProps {
-  t: TFunction;
   icon: string;
   title: string;
   count: number;
@@ -23,7 +21,9 @@ interface IActionProps {
 }
 
 function Action(props: IActionProps): React.JSX.Element {
-  const { t, count, icon, title, onTrigger } = props;
+  const { count, icon, title, onTrigger } = props;
+
+  const { t } = useTranslation(["common"]);
 
   const trigger = React.useCallback(() => {
     onTrigger(title);
@@ -39,7 +39,6 @@ function Action(props: IActionProps): React.JSX.Element {
 }
 
 export interface IProps {
-  t: TFunction;
   collapsed: number;
   params: INotification & { process?: string };
   onExpand?: (groupId: string) => void;
@@ -82,9 +81,8 @@ function typeToIcon(type: NotificationType): React.JSX.Element {
   }
 }
 
-function Notification(props: IProps): React.JSX.Element {
+export function Notification(props: IProps): React.JSX.Element {
   const {
-    t,
     collapsed,
     onDismiss,
     onExpand,
@@ -93,6 +91,8 @@ function Notification(props: IProps): React.JSX.Element {
     params,
   } = props;
   const { actions, id, message, noDismiss, progress, title, type } = params;
+
+  const { t } = useTranslation(["common"]);
 
   const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<any>(null);
@@ -128,7 +128,6 @@ function Notification(props: IProps): React.JSX.Element {
     return (
       <Action
         key={action.title ?? action.icon}
-        t={t}
         icon={action.icon}
         title={action.title}
         count={collapsed}
