@@ -70,8 +70,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "docs": "yarn api-extractor run --local",
-    "lint": "yarn eslint .",
-    "lint:quiet": "yarn eslint . --quiet",
+    "lint": "yarn eslint --cache .",
+    "lint:quiet": "yarn eslint --cache --quiet .",
     "format": "yarn prettier src --write",
     "format:check": "yarn prettier src --check"
   },
