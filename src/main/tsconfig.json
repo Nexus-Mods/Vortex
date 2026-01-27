@@ -1,12 +1,12 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-        "target": "esnext",
-        "module": "commonjs",
-        "moduleResolution": "node",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
 
-        "rootDir": "../",
-        "outDir": "../../out"
-    },
-    "include": ["../main.ts", "**/*", "../shared/**/*"]
+    "rootDir": "../",
+    "outDir": "../../out"
+  },
+  "include": ["../main.ts", "**/*", "../shared/**/*"]
 }

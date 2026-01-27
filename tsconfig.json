@@ -4,21 +4,20 @@
     "target": "esnext",
     "module": "commonjs",
     "moduleResolution": "node",
-
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true,
-
     "rootDir": "./src",
     "outDir": "./out",
-
-    "jsx": "react",
+    "jsx": "react"
   },
   "files": [
     "typings.custom/index.d.ts",
     "src/main.ts",
+    "src/preload/index.ts",
     "src/index.ts",
     "src/renderer.tsx",
+    "src/renderer/preload.d.ts",
     "src/splash.ts",
     "src/extensions/index.ts"
   ]
