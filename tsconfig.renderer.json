@@ -17,9 +17,7 @@
     "src/types/**/*",
     "src/util/**/*"
   ],
-  "exclude": [
-    "src/util/vortex-run/**/*"
-  ],
+  "exclude": ["src/util/vortex-run/**/*"],
   "compilerOptions": {
     "composite": true,
     "target": "esnext",
@@ -28,18 +26,10 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@renderer/*": [
-        "src/renderer/*"
-      ],
-      "@shared/*": [
-        "src/shared/*"
-      ]
+      "@renderer/*": ["src/renderer/*"],
+      "@shared/*": ["src/shared/*"]
     },
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "outDir": "./out",
     "rootDir": "./src",
     "inlineSourceMap": true,

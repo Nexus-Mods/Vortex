@@ -18,6 +18,6 @@
     "strict": false,
     "strictFunctionTypes": false,
     "strictNullChecks": false,
-    "strictPropertyInitialization": false,
+    "strictPropertyInitialization": false
   }
 }
