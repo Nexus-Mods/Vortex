@@ -72,6 +72,7 @@
     "docs": "yarn api-extractor run --local",
     "lint": "yarn eslint --cache .",
     "lint:quiet": "yarn eslint --cache --quiet .",
+    "lint:ci": "yarn eslint --quiet .",
     "format": "yarn prettier src --write",
     "format:check": "yarn prettier src --check"
   },
