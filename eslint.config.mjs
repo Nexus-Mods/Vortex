@@ -7,9 +7,13 @@ import eslintReact from "@eslint-react/eslint-plugin";
 import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
 
+const isCI = !!process.env.CI;
+const tseslintConfig = isCI
+  ? tseslint.configs.recommended
+  : tseslint.configs.recommendedTypeChecked;
+
 export default defineConfig([
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     // NOTE(erri120): exclude build output and tests as well as any submodules
     ignores: [
       "out/**",
@@ -22,15 +26,21 @@ export default defineConfig([
     ],
   },
 
+  {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+  },
+
   eslint.configs.recommended,
-  tseslint.configs.recommendedTypeChecked,
+  tseslintConfig,
   eslintReact.configs["recommended-typescript"],
   prettierConfig,
 
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
-      parserOptions: { projectService: true },
+      parserOptions: {
+        projectService: !isCI,
+      },
     },
     settings: {
       "react-x": {
@@ -97,6 +107,7 @@ export default defineConfig([
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-array-constructor": "warn",
       "@typescript-eslint/no-array-delete": "warn",
+      "@typescript-eslint/no-duplicate-type-constituents": "warn",
       "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-floating-promises": "warn",
@@ -130,6 +141,7 @@ export default defineConfig([
       "@typescript-eslint/no-wrapper-object-types": "warn",
       "@typescript-eslint/prefer-namespace-keyword": "warn",
       "@typescript-eslint/prefer-promise-reject-errors": "warn",
+      "@typescript-eslint/require-await": "warn",
       "@typescript-eslint/restrict-plus-operands": "warn",
       "@typescript-eslint/restrict-template-expressions": "warn",
       "@typescript-eslint/triple-slash-reference": "warn",
