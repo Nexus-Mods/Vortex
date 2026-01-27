@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "target": "esnext",
@@ -9,7 +10,11 @@
     "removeComments": true,
     "rootDir": "./src",
     "outDir": "./out",
-    "jsx": "react"
+    "jsx": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"]
+    }
   },
   "files": [
     "typings.custom/index.d.ts",

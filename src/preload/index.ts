@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { PreloadWindow } from "../shared/types/preload";
+import type { PreloadWindow } from "@shared/types/preload";
 import type {
   RendererChannels,
   InvokeChannels,
   MainChannels,
   SerializableArgs,
   AssertSerializable,
-} from "../shared/types/ipc";
+} from "@shared/types/ipc";
 
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.

@@ -1,39 +1,45 @@
-const webpack = require('webpack');
-const nodeExternals = require('webpack-node-externals');
-const TerserPlugin = require('terser-webpack-plugin');
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const webpack = require("webpack");
+const nodeExternals = require("webpack-node-externals");
+const TerserPlugin = require("terser-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const path = require("path");
 
-const mode = 'production';
+const mode = "production";
 
 // transpileOnly leads to type declarations not being removed from the js output
 // which for some reason currently leads to starup errors
-const transpileOnly = ((ForkTsCheckerWebpackPlugin !== undefined)
-                    || (process.env['BUILD_QUICK_AND_DIRTY'] !== undefined))
-                    && false;
-
+const transpileOnly =
+  (ForkTsCheckerWebpackPlugin !== undefined ||
+    process.env["BUILD_QUICK_AND_DIRTY"] !== undefined) &&
+  false;
 
 const plugins = [
-  new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify('production') }),
+  new webpack.DefinePlugin({
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  }),
 ];
 
-if ((ForkTsCheckerWebpackPlugin !== undefined) && (process.env['BUILD_QUICK_AND_DIRTY'] === undefined)) {
+if (
+  ForkTsCheckerWebpackPlugin !== undefined &&
+  process.env["BUILD_QUICK_AND_DIRTY"] === undefined
+) {
   plugins.push(new ForkTsCheckerWebpackPlugin());
 }
 
 module.exports = {
-  entry: './src/main.ts',
-  target: 'electron-main',
+  entry: "./src/main.ts",
+  target: "electron-main",
   node: { __filename: false, __dirname: false },
   mode,
   output: {
-    libraryTarget: 'commonjs2',
-    filename: '../app/main.js'
+    libraryTarget: "commonjs2",
+    filename: "../app/main.js",
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        loader: 'ts-loader',
+        loader: "ts-loader",
         exclude: /node_modules/,
         options: {
           transpileOnly,
@@ -41,14 +47,19 @@ module.exports = {
             sourceMap: true,
             inlineSourceMap: false,
             inlineSources: false,
-          }
+          },
         },
       },
     ],
   },
-  resolve: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'] },
+  resolve: {
+    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+    alias: {
+      "@shared": path.resolve(__dirname, "src/shared/"),
+    },
+  },
   plugins,
-  devtool: 'source-map',
+  devtool: "source-map",
   optimization: {
     minimizer: [
       new TerserPlugin({
@@ -61,15 +72,15 @@ module.exports = {
           mangle: false,
           sourceMap: true,
           keep_fnames: true, // required atm, name mangling breaks extensions
-        }
-      })
-    ]
+        },
+      }),
+    ],
   },
   // we can't pack any node_modules, otherwise extensions can't load those modules
   externals: [
     nodeExternals(),
     // Explicitly exclude local file: dependencies that must remain external
-    'fomod-installer-ipc',
-    'fomod-installer-native',
+    "fomod-installer-ipc",
+    "fomod-installer-native",
   ],
 };

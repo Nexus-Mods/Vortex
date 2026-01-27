@@ -5,7 +5,7 @@ import type {
   InvokeChannels,
   SerializableArgs,
   AssertSerializable,
-} from "../shared/types/ipc.js";
+} from "@shared/types/ipc.js";
 
 export const betterIpcMain = {
   on: mainOn,
