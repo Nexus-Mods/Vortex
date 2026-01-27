@@ -50,6 +50,7 @@ export default defineConfig([
   },
 
   {
+    name: "Vortex custom rules",
     plugins: {
       vortex: {
         rules: {
@@ -146,32 +147,17 @@ export default defineConfig([
       "@typescript-eslint/restrict-template-expressions": "warn",
       "@typescript-eslint/triple-slash-reference": "warn",
       "@typescript-eslint/unbound-method": "warn",
-      "no-async-promise-executor": "warn",
       "no-case-declarations": "warn",
-      "no-cond-assign": "warn",
-      "no-constant-binary-expression": "warn",
-      "no-constant-condition": "warn",
       "no-empty": "warn",
-      "no-ex-assign": "warn",
       "no-extra-boolean-cast": "warn",
-      "no-fallthrough": "warn",
       "no-global-assign": "warn",
-      "no-irregular-whitespace": "warn",
-      "no-misleading-character-class": "warn",
       "no-prototype-builtins": "warn",
-      "no-redeclare": "warn",
-      "no-setter-return": "warn",
-      "no-sparse-arrays": "warn",
-      "no-unreachable": "warn",
-      "no-unsafe-optional-chaining": "warn",
       "no-useless-catch": "warn",
       "no-useless-escape": "warn",
       "no-var": "warn",
       "prefer-const": "warn",
       "prefer-rest-params": "warn",
       "prefer-spread": "warn",
-      "require-yield": "warn",
-      "valid-typeof": "warn",
     },
   },
 ]);
