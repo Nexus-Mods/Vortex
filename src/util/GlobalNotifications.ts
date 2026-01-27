@@ -8,18 +8,18 @@ import getVortexPath from "./getVortexPath";
 import * as path from "path";
 
 class GlobalNotifications {
-  private mCurrentId: string;
+  private mCurrentId: string | undefined;
   private mCurrentNotification: any;
   private mKnownNotifications: INotification[];
   private mIsEnabled: () => boolean;
 
   constructor(api: IExtensionApi) {
-    api.onStateChange(
+    api.onStateChange?.(
       ["session", "notifications", "global_notifications"],
       (oldState, newState) => {
         this.mKnownNotifications = newState;
 
-        let currentNotification: INotification;
+        let currentNotification: INotification | undefined = undefined;
 
         if (this.mCurrentId !== undefined) {
           currentNotification = this.mKnownNotifications.find(
@@ -34,10 +34,7 @@ class GlobalNotifications {
         }
 
         // close notification if it was dismissed
-        if (
-          this.mCurrentId === undefined &&
-          this.mCurrentNotification !== undefined
-        ) {
+        if (this.mCurrentId === undefined && this.mCurrentNotification) {
           log("debug", "close notification", {
             id: this.mCurrentNotification.tag,
             name: this.mCurrentNotification.body,
@@ -45,18 +42,20 @@ class GlobalNotifications {
           this.mCurrentNotification.close();
           this.mCurrentNotification = undefined;
         } else if (
-          this.mCurrentNotification !== undefined &&
-          currentNotification.message !== this.mCurrentNotification.body
+          this.mCurrentNotification &&
+          currentNotification?.message !== this.mCurrentNotification.body
         ) {
           log("debug", "replace notification", { id: this.mCurrentId });
           this.mCurrentNotification.close();
           this.mCurrentNotification = undefined;
-          this.showNotification(currentNotification);
+          if (currentNotification) {
+            this.showNotification(currentNotification);
+          }
         } else {
           currentNotification =
             this.mKnownNotifications[this.mKnownNotifications.length - 1];
           if (
-            currentNotification !== undefined &&
+            currentNotification &&
             this.mCurrentId !== currentNotification.id &&
             this.mIsEnabled()
           ) {
@@ -76,7 +75,7 @@ class GlobalNotifications {
     );
 
     this.mIsEnabled = () => {
-      const state: IState = api.store.getState();
+      const state: IState = api.store?.getState();
       return state.settings.interface.desktopNotifications;
     };
   }
@@ -84,7 +83,7 @@ class GlobalNotifications {
   private showNotification(notification: INotification): void {
     this.mCurrentId = notification.id;
     try {
-      this.mCurrentNotification = new Notification(notification.title, {
+      this.mCurrentNotification = new Notification(notification.title!, {
         tag: notification.id,
         icon:
           notification.icon ||

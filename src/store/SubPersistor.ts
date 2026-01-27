@@ -1,10 +1,11 @@
 import type { IPersistor, PersistorKey } from "../types/IExtensionContext";
 
-import type PromiseBB from "bluebird";
+import PromiseBB from "bluebird";
 
 class SubPersistor implements IPersistor {
-  public getAllKVs: () => PromiseBB<Array<{ key: string[]; value: string }>> =
-    undefined;
+  public getAllKVs:
+    | (() => PromiseBB<Array<{ key: string[]; value: string }>>)
+    | undefined = undefined;
 
   private mWrapped: IPersistor;
   private mHive: string;
@@ -13,17 +14,18 @@ class SubPersistor implements IPersistor {
     this.mWrapped = wrapped;
     this.mHive = hive;
 
-    if (wrapped.getAllKVs !== undefined) {
+    if (this.mWrapped.getAllKVs) {
       this.getAllKVs = () =>
-        this.mWrapped
-          .getAllKVs(hive)
-          .filter(
-            (kv: { key: PersistorKey; value: string }) => kv.key[0] === hive,
-          )
-          .map((kv: { key: PersistorKey; value: string }) => ({
-            key: kv.key.slice(1),
-            value: kv.value,
-          }));
+        this.mWrapped.getAllKVs?.(hive).then((kvs) =>
+          kvs
+            .filter(
+              (kv: { key: PersistorKey; value: string }) => kv.key[0] === hive,
+            )
+            .map((kv: { key: PersistorKey; value: string }) => ({
+              key: kv.key.slice(1),
+              value: kv.value,
+            })),
+        ) ?? PromiseBB.resolve([]);
     }
   }
 
@@ -32,15 +34,15 @@ class SubPersistor implements IPersistor {
   }
 
   public getItem(key: string[]): PromiseBB<string> {
-    return this.mWrapped.getItem([].concat(this.mHive, key));
+    return this.mWrapped.getItem([this.mHive, ...key]);
   }
 
   public setItem(key: string[], value: string): PromiseBB<void> {
-    return this.mWrapped.setItem([].concat(this.mHive, key), value);
+    return this.mWrapped.setItem([this.mHive, ...key], value);
   }
 
   public removeItem(key: string[]): PromiseBB<void> {
-    return this.mWrapped.removeItem([].concat(this.mHive, key));
+    return this.mWrapped.removeItem([this.mHive, ...key]);
   }
 
   public getAllKeys(): PromiseBB<string[][]> {

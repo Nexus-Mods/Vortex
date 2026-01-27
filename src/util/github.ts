@@ -97,7 +97,7 @@ class GitHub {
     return `https://raw.githubusercontent.com/Nexus-Mods/${repo}`;
   }
 
-  private mReleaseCache: PromiseBB<IGitHubRelease[]>;
+  private mReleaseCache: PromiseBB<IGitHubRelease[]> | undefined;
   private mRatelimitReset: number;
 
   public releases(): PromiseBB<IGitHubRelease[]> {

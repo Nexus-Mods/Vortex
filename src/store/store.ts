@@ -26,7 +26,7 @@ import thunkMiddleware from "redux-thunk";
 import getVortexPath from "../util/getVortexPath";
 import { getErrorCode, unknownToError } from "../shared/errors";
 
-let basePersistor: ReduxPersistor<IState>;
+let basePersistor: ReduxPersistor<IState & Record<string, unknown>>;
 
 const IMPORTED_TAG = "imported__do_not_delete.txt";
 
@@ -218,7 +218,7 @@ function exists(filePath: string): boolean {
 export function markImported(basePath: string): PromiseBB<void> {
   return fs
     .writeFileAsync(path.join(basePath, currentStatePath, IMPORTED_TAG), "")
-    .then(() => null);
+    .then(() => {});
 }
 
 export function importState(basePath: string): PromiseBB<any> {

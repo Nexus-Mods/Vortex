@@ -6,6 +6,7 @@
 import * as React from "react";
 import { Button } from "./Button";
 import { Typography } from "../typography/Typography";
+import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 
 export const ButtonDemo: React.ComponentType = () => {
   const [loadingStates, setLoadingStates] = React.useState<
@@ -270,20 +271,20 @@ export const ButtonDemo: React.ComponentType = () => {
         </Typography>
 
         <div className="flex gap-4 flex-wrap items-center">
-          <Button buttonType="primary" size="md" leftIconPath="mdiDownload">
+          <Button buttonType="primary" size="md" leftIconPath={mdiDownload}>
             Download
           </Button>
           <Button
             buttonType="secondary"
             size="md"
-            rightIconPath="mdiChevronRight"
+            rightIconPath={mdiChevronRight}
           >
             Next
           </Button>
-          <Button buttonType="success" size="sm" leftIconPath="mdiCheck">
+          <Button buttonType="success" size="sm" leftIconPath={mdiCheck}>
             Confirm
           </Button>
-          <Button buttonType="tertiary" size="md" leftIconPath="mdiCog">
+          <Button buttonType="tertiary" size="md" leftIconPath={mdiCog}>
             Settings
           </Button>
         </div>

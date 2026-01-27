@@ -17,7 +17,7 @@ function writeFileAtomicImpl(
   attempts: number,
 ): PromiseBB<void> {
   const stackErr = new Error();
-  let cleanup: () => void;
+  let cleanup: (() => void) | undefined;
   let tmpPath: string;
   const buf: Buffer = input instanceof Buffer ? input : Buffer.from(input);
 

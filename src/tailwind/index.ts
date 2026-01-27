@@ -81,11 +81,7 @@ export type {
   ButtonType,
 } from "./components/next/button/Button";
 
-export type {
-  // Icon types
-  IconProps,
-  IconSize,
-} from "./components/next/icon/Icon";
+export type { IconSize } from "./components/next/icon/Icon";
 
 export type {
   // CollectionTile types

@@ -9,9 +9,9 @@ const RETRIES = 5;
 class ConcurrencyLimiter {
   private mInitialLimit: number;
   private mLimit: number;
-  private mNext: () => any;
+  private mNext: (() => any) | undefined;
   private mEndOfQueue: Promise<void>;
-  private mRepeatTest: (err: Error) => boolean;
+  private mRepeatTest: ((err: Error) => boolean) | undefined;
 
   /**
    * Constructor

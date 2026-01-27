@@ -4,7 +4,7 @@ export interface IApplication {
   name: string;
   version: string;
   isFocused: boolean;
-  window: Electron.BrowserWindow;
+  window: Electron.BrowserWindow | null;
   memory: {
     total: number;
   };

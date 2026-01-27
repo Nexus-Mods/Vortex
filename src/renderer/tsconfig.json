@@ -1,15 +1,15 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-        "target": "esnext",
-        "module": "commonjs",
-        "moduleResolution": "node",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
 
-        "jsx": "react",
+    "jsx": "react",
 
-        "rootDir": "../",
-        "outDir": "../../out"
-    },
+    "rootDir": "../",
+    "outDir": "../../out"
+  },
   "files": [
     "../../typings.custom/index.d.ts",
     "../index.ts",

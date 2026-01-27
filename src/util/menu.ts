@@ -26,7 +26,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       return;
     }
     factor = Math.round(factor * 10) / 10;
-    extensions.getApi().sendNotification({
+    extensions.getApi().sendNotification?.({
       id: "zoom-factor-changed",
       type: "info",
       message: extensions.getApi().translate("Zoom: {{factor}}%", {
@@ -39,7 +39,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       },
     });
     webFrame.setZoomFactor(factor);
-    extensions.getApi().store.dispatch(setZoomFactor(factor));
+    extensions.getApi().store?.dispatch(setZoomFactor(factor));
   };
 
   const fileMenu: Electron.MenuItemConstructorOptions[] = [
@@ -125,7 +125,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           } else {
             extensions
               .getApi()
-              .showErrorNotification(
+              .showErrorNotification?.(
                 "Failed to open developer tools",
                 "no focused window",
               );
@@ -224,7 +224,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       remote.contentTracing
         .stopRecording(outPath)
         .then(() => {
-          extensions.getApi().sendNotification({
+          extensions.getApi().sendNotification?.({
             id: "profiling",
             message: "Profiling done",
             type: "success",
@@ -261,7 +261,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
             remote.contentTracing.startRecording(options).then(() => {
               console.log("Tracing started");
-              extensions.getApi().sendNotification({
+              extensions.getApi().sendNotification?.({
                 id: "profiling",
                 message: "Profiling",
                 type: "activity",

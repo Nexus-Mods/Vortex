@@ -195,7 +195,7 @@ const removeSelfAsProtocolClient = makeRemoteCallSync(
 const showOpenDialog = makeRemoteCall(
   "show-open-dialog",
   (electron, contents, options: Electron.OpenDialogOptions) => {
-    let window: Electron.BrowserWindow = null;
+    let window: Electron.BrowserWindow | null = null;
     try {
       window = electron.BrowserWindow?.fromWebContents?.(contents);
     } catch (err) {

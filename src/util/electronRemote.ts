@@ -92,7 +92,8 @@ export function makeRemoteCallSync<T, ArgsT extends Arr>(
     return (...args: ArgsT) => {
       return cb(
         electron,
-        electron.webContents?.getFocusedWebContents?.(),
+        // Seems that it can't be null, plus we're removing it anyway
+        electron.webContents?.getFocusedWebContents()!,
         ...args,
       );
     };
@@ -120,7 +121,8 @@ function makeRemoteCall<T, ArgsT extends Arr>(
     return (...args: ArgsT) => {
       return cb(
         electron,
-        electron.webContents.getFocusedWebContents(),
+        // Seems that it can't be null, plus we're removing it anyway
+        electron.webContents.getFocusedWebContents()!,
         ...args,
       );
     };
