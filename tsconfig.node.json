@@ -4,12 +4,15 @@
   "include": [
     "./ts-to-zod.config.mjs",
     "./eslint.config.mjs",
-    "./eslint-rules/*.mjs"
+    "./eslint-rules/*.mjs",
+    "./jest.config.mjs"
   ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
     "allowJs": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   }
 }

@@ -75,38 +75,6 @@
     "format": "yarn prettier src --write",
     "format:check": "yarn prettier src --check"
   },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest",
-      "^.+\\.(js|jsx)$": "babel-jest"
-    },
-    "moduleNameMapper": {
-      "^cheerio$": "<rootDir>/__mocks__/cheerio.js",
-      "^cheerio/lib/utils$": "<rootDir>/__mocks__/cheerio-utils.js",
-      "^shortid$": "<rootDir>/__mocks__/shortid.js",
-      "^../util/ComponentEx$": "<rootDir>/__mocks__/ComponentEx.js"
-    },
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/dist/",
-      "/app/",
-      "/playwright/",
-      "/extensions/fomod-installer/"
-    ],
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "jsx",
-      "ts",
-      "tsx",
-      "node"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>setupTests.js"
-    ]
-  },
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true,
