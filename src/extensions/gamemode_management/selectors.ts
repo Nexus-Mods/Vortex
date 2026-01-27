@@ -4,7 +4,7 @@ import { getSafe } from "../../util/storeHelper";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import { SITE_ID } from "./constants";
-import createCachedSelector from "re-reselect";
+import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
 export function knownGames(state): IGameStored[] {
