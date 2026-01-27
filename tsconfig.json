@@ -10,6 +10,9 @@
     },
     {
       "path": "./tsconfig.renderer.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
     }
   ]
 }
