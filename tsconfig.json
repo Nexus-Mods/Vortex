@@ -1,29 +1,15 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "removeComments": true,
-    "rootDir": "./src",
-    "outDir": "./out",
-    "jsx": "react",
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["src/shared/*"]
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.shared.json"
+    },
+    {
+      "path": "./tsconfig.main.json"
+    },
+    {
+      "path": "./tsconfig.renderer.json"
     }
-  },
-  "files": [
-    "typings.custom/index.d.ts",
-    "src/main.ts",
-    "src/preload/index.ts",
-    "src/index.ts",
-    "src/renderer.tsx",
-    "src/renderer/preload.d.ts",
-    "src/splash.ts",
-    "src/extensions/index.ts"
   ]
 }
