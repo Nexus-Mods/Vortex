@@ -20,9 +20,11 @@ const ListItem = ({ children }: { children: ReactNode }) => (
 export const PremiumModal = ({
   isOpen,
   onClose,
+  onDownload,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onDownload: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
 
@@ -55,7 +57,7 @@ export const PremiumModal = ({
           className="w-full"
           filled="weak"
           size="sm"
-          onClick={onClose}
+          onClick={onDownload}
         >
           {t("premium::modal::buttons::download")}
         </Button>

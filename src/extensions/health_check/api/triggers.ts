@@ -51,6 +51,22 @@ export function setupAutomaticTriggers(
       triggerHealthChecks(healthCheckApi, HealthCheckTrigger.ModsChanged);
     });
 
+    api.onAsync("did-enable-mods", () => {
+      log("debug", "Triggering mod change health checks (deployed)");
+      triggerHealthChecks(healthCheckApi, HealthCheckTrigger.ModsChanged);
+      return Promise.resolve();
+    });
+
+    api.onStateChange?.(
+      ["session", "healthCheck", "lastFullRun"],
+      (lastFullRun) => {
+        log("debug", "Triggering requirements change health checks", {
+          lastFullRun,
+        });
+        triggerHealthChecks(healthCheckApi, HealthCheckTrigger.ResultsChanged);
+      },
+    );
+
     log("debug", "Automatic triggers setup complete");
   } catch (error) {
     const err = error as Error;

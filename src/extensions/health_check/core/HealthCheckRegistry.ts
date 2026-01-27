@@ -12,6 +12,7 @@ import type {
 } from "../../../types/IHealthCheck";
 import { log } from "../../../util/log";
 import type { HealthCheckId } from "../types";
+import { setHealthCheckResult } from "../actions/session";
 
 export class HealthCheckRegistry {
   private mHealthChecks: Map<HealthCheckId, IHealthCheckEntry> = new Map();
@@ -200,6 +201,11 @@ export class HealthCheckRegistry {
       entry.lastExecuted = new Date();
       this.mResults.set(checkId, result);
 
+      // Dispatch result to Redux so UI can access it
+      if (this.mApi.store) {
+        this.mApi.store.dispatch(setHealthCheckResult(checkId, result));
+      }
+
       log("debug", "Health check completed", {
         id: checkId,
         status: result.status,
@@ -224,6 +230,11 @@ export class HealthCheckRegistry {
       entry.lastResult = errorResult;
       entry.lastExecuted = new Date();
       this.mResults.set(checkId, errorResult);
+
+      // Dispatch error result to Redux so UI can access it
+      if (this.mApi.store) {
+        this.mApi.store.dispatch(setHealthCheckResult(checkId, errorResult));
+      }
 
       log("warn", "Health check failed", {
         id: checkId,

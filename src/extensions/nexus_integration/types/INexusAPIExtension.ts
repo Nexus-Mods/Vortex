@@ -15,6 +15,7 @@ import type {
   IModFileContentSearchFilter,
   IRevision,
   IModRequirements,
+  IModInfo,
 } from "@nexusmods/nexus-api";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IValidateKeyDataV2 } from "./IValidateKeyData";
@@ -116,6 +117,11 @@ export interface INexusAPIExtension {
   nexusGetPreferences?: (
     query: IPreferenceQuery,
   ) => PromiseLike<Partial<IPreference>>;
+
+  nexusGetModInfo?: (
+    gameId: string,
+    modId: number,
+  ) => PromiseLike<Partial<IModInfo>>;
 
   nexusGetModRequirements?: (
     gameId: string,

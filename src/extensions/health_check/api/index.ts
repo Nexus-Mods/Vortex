@@ -4,21 +4,13 @@
  */
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type {
-  HealthCheckTrigger,
-  IHealthCheckResult,
-} from "../../../types/IHealthCheck";
+import type { HealthCheckTrigger } from "../../../types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
-import type { PredefinedCheckId, IHealthCheckApi } from "../types";
+import type { IHealthCheckApi } from "../types";
 import { createCustomCheckApi, type ICustomCheckApi } from "./customCheckApi";
-import {
-  createPredefinedCheckApi,
-  type IPredefinedCheckApi,
-} from "./predefinedCheckApi";
 import { createLegacyApi, type ILegacyApi } from "./legacyApi";
 import { createResultsApi, type IResultsApi } from "./resultsApi";
-import { unknownToError } from "../../../shared/errors";
 
 export function createHealthCheckApi(
   registry: HealthCheckRegistry,
@@ -27,47 +19,20 @@ export function createHealthCheckApi(
 ): IHealthCheckApi {
   // Create sub-APIs
   const customApi = createCustomCheckApi(registry, api);
-  const predefinedApi = createPredefinedCheckApi();
   const legacyApi = createLegacyApi(legacyAdapter, registry);
   const resultsApi = createResultsApi(registry);
 
   return {
     custom: customApi,
-    predefined: predefinedApi,
     legacy: legacyApi,
     results: resultsApi,
 
     /**
-     * Run all health checks (both custom and predefined)
-     * @returns Combined results from renderer and main process checks
+     * Run all health checks
+     * @returns Combined results from all checks
      */
     runAll: async () => {
-      // Run local custom checks
-      const localResults = await registry.runAllHealthChecks(api);
-
-      // Also run all predefined checks
-      try {
-        const predefinedCheckIds: PredefinedCheckId[] =
-          await predefinedApi.list();
-        const predefinedResults = await Promise.all(
-          predefinedCheckIds.map((id: PredefinedCheckId) =>
-            predefinedApi.run(id),
-          ),
-        );
-
-        // Combine results (filter out nulls from failed predefined checks)
-        return [
-          ...localResults,
-          ...predefinedResults.filter((r) => r !== null),
-        ] as IHealthCheckResult[];
-      } catch (error) {
-        // If main process checks fail, just return local results
-        console.error(
-          "Failed to run predefined checks:",
-          unknownToError(error),
-        );
-        return localResults;
-      }
+      return registry.runAllHealthChecks(api);
     },
     runChecksByTrigger: async (trigger: HealthCheckTrigger) => {
       return registry.runChecksByTrigger(trigger, api);
@@ -76,4 +41,4 @@ export function createHealthCheckApi(
 }
 
 // Re-export sub-interfaces for convenience
-export type { ICustomCheckApi, IPredefinedCheckApi, ILegacyApi, IResultsApi };
+export type { ICustomCheckApi, ILegacyApi, IResultsApi };

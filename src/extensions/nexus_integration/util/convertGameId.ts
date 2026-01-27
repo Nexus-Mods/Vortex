@@ -8,6 +8,9 @@ import type {
   IGameStoredExt,
 } from "../../gamemode_management/types/IGameStored";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { knownGames } from "../../gamemode_management/selectors";
+import { IState } from "../../../types/IState";
+import { nexusGames } from "../util";
 
 /**
  * get the nexus page id for a game
@@ -147,4 +150,8 @@ export function toNXMId(game: IGameStoredExt, gameId: string): string {
   } else {
     return gameId;
   }
+}
+
+export function numericGameIdToDomainName(gameId: number): string | undefined {
+  return nexusGames().find((g) => g.id === gameId)?.domain_name;
 }

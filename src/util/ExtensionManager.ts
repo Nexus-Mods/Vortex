@@ -5,10 +5,6 @@ import {
   setExtensionVersion,
 } from "../actions/app";
 import {
-  initHealthCheckMain,
-  setHealthCheckWebContents,
-} from "../extensions/health_check/main";
-import {
   addNotification,
   closeDialog,
   dismissNotification,
@@ -1366,18 +1362,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public initMainProcessExtensions(): void {
-    // Initialize health check extension (development only)
-    if (process.env.NODE_ENV !== "production") {
-      try {
-        const context: IExtensionContext = {
-          api: this.mApi,
-        } as IExtensionContext;
-        initHealthCheckMain(context);
-        log("info", "Health check main process initialized");
-      } catch (error) {
-        log("error", "Failed to initialize health check main process", error);
-      }
-    }
+    // No-op: health check now runs entirely in renderer process
   }
 
   /**
@@ -1389,15 +1374,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setWebContents(webContents: WebContents): void {
-    // Set web contents for health check extension
-    if (process.env.NODE_ENV !== "production") {
-      try {
-        setHealthCheckWebContents(webContents);
-        log("debug", "Health check web contents set");
-      } catch (error) {
-        log("error", "Failed to set health check web contents", error);
-      }
-    }
+    // No-op: health check now runs entirely in renderer process
   }
 
   /**

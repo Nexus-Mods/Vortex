@@ -7,25 +7,12 @@ import type {
   HealthCheckTrigger,
   IHealthCheckResult,
 } from "../../types/IHealthCheck";
-import type {
-  ICustomCheckApi,
-  ILegacyApi,
-  IPredefinedCheckApi,
-  IResultsApi,
-} from "./api";
+import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 
 /**
- * Known health check IDs (both custom and predefined)
+ * Known health check IDs
  */
 export type HealthCheckId = "check-nexus-mod-requirements";
-
-/**
- * Predefined check IDs (subset of HealthCheckId that run in main process)
- */
-export type PredefinedCheckId = Extract<
-  HealthCheckId,
-  "check-nexus-mod-requirements"
->;
 
 /**
  * A subset of IModRequiring representing the mod that requires a missing mod.
@@ -36,18 +23,67 @@ export type RequiringMod = Omit<
   "modId"
 > & {
   modId: number;
+  modUrl: string;
 };
 
 /**
  * A required mod that is missing
  */
-export interface IModRequirementExt extends Omit<IModRequirement, "modId"> {
+export interface IModRequirementExt
+  extends Omit<IModRequirement, "modId" | "gameId"> {
   /** Unique DB identifier */
   uid: string;
   /** The mod that requires this mod */
   requiredBy: RequiringMod;
   /** Nexus mod ID as number */
   modId: number;
+  /** Nexus game domain ID */
+  gameId: string;
+  /** Url to view mod information */
+  modUrl: string;
+}
+
+/**
+ * Nexus mod file category IDs
+ */
+export enum ModFileCategory {
+  Main = 1,
+  Update = 2,
+  Optional = 3,
+  OldVersion = 4,
+  Miscellaneous = 5,
+  Deleted = 6,
+  Archived = 7,
+}
+
+/**
+ * File information for a mod from Nexus
+ */
+export interface IModFileInfo {
+  /** File ID on Nexus */
+  fileId: number;
+  /** Mod ID on Nexus */
+  modId: number;
+  /** Nexus game domain ID */
+  gameId: string;
+  /** File name */
+  name: string;
+  /** File version */
+  version: string;
+  /** File category (main, update, optional, etc.) */
+  category: ModFileCategory;
+  /** Category display name */
+  categoryName: string;
+  /** File description */
+  description: string;
+  /** File size in bytes */
+  size: number;
+  /** Upload timestamp */
+  uploadedTimestamp: number;
+  /** Whether this is the primary/recommended file */
+  isPrimary: boolean;
+  /** Thumbnail URL if available */
+  thumbnailUrl?: string;
 }
 
 /**
@@ -68,6 +104,8 @@ export interface IMissingRequiredDlc {
 export interface IModMissingRequirements {
   /** Vortex mod ID */
   modId: string;
+  /** Nexus game domain ID */
+  gameId: string;
   /** Nexus mod ID */
   nexusModId: number;
   /** Display name of the mod */
@@ -109,11 +147,8 @@ export interface IModRequirementsCheckMetadata {
  * Organized into separate namespaces for different functionality
  */
 export interface IHealthCheckApi {
-  /** Custom health checks (renderer process) */
+  /** Custom health checks */
   custom: ICustomCheckApi;
-
-  /** Predefined checks (main process) */
-  predefined: IPredefinedCheckApi;
 
   /** Legacy test adapter */
   legacy: ILegacyApi;
@@ -121,7 +156,7 @@ export interface IHealthCheckApi {
   /** Results management */
   results: IResultsApi;
 
-  /** Run all checks (custom + predefined) */
+  /** Run all health checks */
   runAll: () => Promise<IHealthCheckResult[]>;
 
   /** Run checks by trigger type */

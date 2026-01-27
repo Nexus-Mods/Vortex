@@ -6,6 +6,7 @@ import type {
   HealthCheckId,
   IModMissingRequirements,
   IModRequirementExt,
+  IModFileInfo,
 } from "./types";
 
 export type { HealthCheckId } from "./types";
@@ -14,7 +15,12 @@ export type { HealthCheckId } from "./types";
  * Get the health check session state
  */
 export const healthCheckState = (state: IState): IHealthCheckSessionState =>
-  state.session?.healthCheck ?? { results: {}, runningChecks: [] };
+  state.session?.healthCheck ?? {
+    results: {},
+    runningChecks: [],
+    modFiles: {},
+    loadingModFiles: [],
+  };
 
 /**
  * Get all health check results
@@ -43,8 +49,21 @@ export const modRequirementsCheckResult = (
 };
 
 /**
+ * Get all missing mod requirements without filtering
+ * Returns all requirements including hidden ones
+ */
+export const allModRequirements = (state: IState): IModRequirementExt[] => {
+  const modRequirements = modRequirementsCheckResult(state);
+  if (!modRequirements) {
+    return [];
+  }
+
+  return Object.values(modRequirements).flatMap((mod) => mod.missingMods);
+};
+
+/**
  * Get the array of all missing mod requirements from the health check result
- * Flattens the structure into a single array
+ * Flattens the structure into a single array and filters out hidden requirements
  */
 export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
   const modRequirements = modRequirementsCheckResult(state);
@@ -52,7 +71,11 @@ export const modRequirementsArray = (state: IState): IModRequirementExt[] => {
     return [];
   }
 
-  return Object.values(modRequirements).flatMap((mod) => mod.missingMods);
+  const hidden = hiddenRequirements(state);
+
+  return Object.values(modRequirements).flatMap((mod) =>
+    mod.missingMods.filter((req) => !hidden[mod.nexusModId]?.includes(req.id)),
+  );
 };
 
 /**
@@ -85,11 +108,11 @@ export const healthCheckPersistentState = (
 
 /**
  * Get the hidden requirements map
- * Returns a map of mod nexusModId to array of hidden requirement nexusModIds
+ * Returns a map of mod nexusModId to array of hidden requirement IDs
  */
 export const hiddenRequirements = (
   state: IState,
-): { [modId: number]: number[] } =>
+): { [modId: number]: string[] } =>
   healthCheckPersistentState(state).hiddenRequirements;
 
 /**
@@ -98,10 +121,10 @@ export const hiddenRequirements = (
 export const isDependencyHidden = (
   state: IState,
   modId: number,
-  requirementModId: number,
+  requirementId: string,
 ): boolean => {
   const hidden = hiddenRequirements(state)[modId] || [];
-  return hidden.includes(requirementModId);
+  return hidden.includes(requirementId);
 };
 
 /**
@@ -110,4 +133,18 @@ export const isDependencyHidden = (
 export const getModHiddenRequirements = (
   state: IState,
   modId: number,
-): number[] => hiddenRequirements(state)[modId] || [];
+): string[] => hiddenRequirements(state)[modId] || [];
+
+/**
+ * Get cached mod files for a specific mod
+ */
+export const getModFiles = (
+  state: IState,
+  modId: number,
+): IModFileInfo[] | undefined => healthCheckState(state).modFiles?.[modId];
+
+/**
+ * Check if mod files are currently being loaded
+ */
+export const isModFilesLoading = (state: IState, modId: number): boolean =>
+  healthCheckState(state).loadingModFiles?.includes(modId) ?? false;

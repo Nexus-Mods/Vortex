@@ -2,12 +2,13 @@ import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * Set whether a specific requirement is hidden for a mod
+ * Uses the unique requirement ID from Nexus API instead of modId to properly support external requirements
  */
 export const setRequirementHidden = safeCreateAction(
   "SET_HEALTH_CHECK_REQUIREMENT_HIDDEN",
-  (modId: number, requirementModId: number, hidden: boolean) => ({
+  (modId: number, requirementId: string, hidden: boolean) => ({
     modId,
-    requirementModId,
+    requirementId,
     hidden,
   }),
 );
@@ -17,9 +18,9 @@ export const setRequirementHidden = safeCreateAction(
  */
 export const setAllModRequirementsHidden = safeCreateAction(
   "SET_ALL_MOD_REQUIREMENTS_HIDDEN",
-  (modId: number, requirementModIds: number[]) => ({
+  (modId: number, requirementIds: string[]) => ({
     modId,
-    requirementModIds,
+    requirementIds,
   }),
 );
 

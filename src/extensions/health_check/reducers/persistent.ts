@@ -5,11 +5,12 @@ import * as actions from "../actions/persistent";
 
 export interface IHealthCheckPersistentState {
   /**
-   * Map of mod nexusModId to array of hidden requirement nexusModIds
-   * Example: { 95885: [95142, 83937, 93634] }
-   * This means mod 95885 has requirements 95142, 83937, and 93634 hidden
+   * Map of mod nexusModId to array of hidden requirement IDs (from Nexus API)
+   * Uses requirement.id instead of requirement.modId to properly support external requirements
+   * Example: { 95885: ["req-id-1", "req-id-2", "req-id-3"] }
+   * This means mod 95885 has requirements with IDs "req-id-1", "req-id-2", and "req-id-3" hidden
    */
-  hiddenRequirements: { [modId: number]: number[] };
+  hiddenRequirements: { [modId: number]: string[] };
 }
 
 /**
@@ -18,17 +19,17 @@ export interface IHealthCheckPersistentState {
 export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
   reducers: {
     [actions.setRequirementHidden as any]: (state, payload) => {
-      const { modId, requirementModId, hidden } = payload;
+      const { modId, requirementId, hidden } = payload;
       const currentHidden = state.hiddenRequirements?.[modId] || [];
 
-      if (hidden && !currentHidden.includes(requirementModId)) {
+      if (hidden && !currentHidden.includes(requirementId)) {
         return setSafe(
           state,
           ["hiddenRequirements", modId],
-          [...currentHidden, requirementModId],
+          [...currentHidden, requirementId],
         );
-      } else if (!hidden && currentHidden.includes(requirementModId)) {
-        const filtered = currentHidden.filter((id) => id !== requirementModId);
+      } else if (!hidden && currentHidden.includes(requirementId)) {
+        const filtered = currentHidden.filter((id) => id !== requirementId);
         if (filtered.length === 0) {
           // Remove the mod entry entirely if no more hidden requirements
           return deleteOrNop(state, ["hiddenRequirements", modId]);
@@ -38,11 +39,11 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
       return state;
     },
     [actions.setAllModRequirementsHidden as any]: (state, payload) => {
-      const { modId, requirementModIds } = payload;
-      if (requirementModIds.length === 0) {
+      const { modId, requirementIds } = payload;
+      if (requirementIds.length === 0) {
         return deleteOrNop(state, ["hiddenRequirements", modId]);
       }
-      return setSafe(state, ["hiddenRequirements", modId], requirementModIds);
+      return setSafe(state, ["hiddenRequirements", modId], requirementIds);
     },
     [actions.clearAllHiddenRequirements as any]: (state) => {
       return setSafe(state, ["hiddenRequirements"], {});

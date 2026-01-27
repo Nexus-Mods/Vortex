@@ -16,13 +16,14 @@ import {
 
 import { NoResults } from "../../../tailwind/components/no_results";
 import { useSelector, useDispatch } from "react-redux";
-import { hiddenRequirements, modRequirementsArray } from "../selectors";
+import { hiddenRequirements, allModRequirements } from "../selectors";
 import {
   setRequirementHidden,
   clearAllHiddenRequirements,
 } from "../actions/persistent";
-import type { IModRequirementExt } from "../types";
+import type { IModFileInfo, IModRequirementExt } from "../types";
 import { batchDispatch } from "../../../util/util";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 const Mod = ({
   isHidden,
@@ -81,13 +82,18 @@ const Mod = ({
 };
 
 interface IHealthCheckPageProps {
+  api: IExtensionApi;
   onRefresh?: () => void;
-  onDownloadRequirements?: (modIds: number[]) => void;
+  onDownloadRequirement?: (
+    mod: IModRequirementExt,
+    file?: IModFileInfo,
+  ) => Promise<void>;
 }
 
 function HealthCheckPage({
+  api,
   onRefresh,
-  onDownloadRequirements,
+  onDownloadRequirement,
 }: IHealthCheckPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
@@ -96,15 +102,14 @@ function HealthCheckPage({
   const [selectedRequirement, setSelectedRequirement] =
     useState<IModRequirementExt | null>(null);
 
-  const modRequirements: IModRequirementExt[] =
-    useSelector(modRequirementsArray);
+  const modRequirements: IModRequirementExt[] = useSelector(allModRequirements);
 
   const hiddenReqsMap = useSelector(hiddenRequirements);
 
   const isModRequirementHidden = React.useCallback(
     (mod: IModRequirementExt): boolean => {
       const hiddenReqs = hiddenReqsMap[mod.requiredBy.modId] || [];
-      return hiddenReqs.includes(mod.modId);
+      return hiddenReqs.includes(mod.id);
     },
     [hiddenReqsMap],
   );
@@ -124,16 +129,16 @@ function HealthCheckPage({
     const isHidden = isModRequirementHidden(mod);
     if (isHidden) {
       // Unhide: clear all hidden dependencies for this mod
-      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.modId, false));
+      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, false));
     } else {
-      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.modId, true));
+      dispatch(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
     }
   };
 
   const hideAllActive = () => {
     const batched = [];
     activeMods.forEach((mod) => {
-      batched.push(setRequirementHidden(mod.requiredBy.modId, mod.modId, true));
+      batched.push(setRequirementHidden(mod.requiredBy.modId, mod.id, true));
     });
     batchDispatch(dispatch, batched);
   };
@@ -146,6 +151,9 @@ function HealthCheckPage({
     return (
       <HealthCheckDetailPage
         mod={selectedRequirement}
+        api={api}
+        onRefresh={onRefresh}
+        onDownloadMod={(mod, file) => onDownloadRequirement?.(mod, file)}
         onBack={() => {
           setShowDetail(false);
           setSelectedRequirement(null);
@@ -258,7 +266,7 @@ function HealthCheckPage({
                 <div className="space-y-2">
                   {activeMods.map((mod) => (
                     <Mod
-                      key={`${mod.requiredBy.modId}-${mod.modId}`}
+                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
                       requirementInfo={mod}
                       onClick={() => {
                         setSelectedRequirement(mod);
@@ -282,7 +290,7 @@ function HealthCheckPage({
                 <div className="space-y-2">
                   {hiddenMods.map((mod) => (
                     <Mod
-                      key={`${mod.requiredBy.modId}-${mod.modId}`}
+                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
                       isHidden={true}
                       requirementInfo={mod}
                       onClick={() => {

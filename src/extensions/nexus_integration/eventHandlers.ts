@@ -90,6 +90,7 @@ import type {
   IModFileContentSearchFilter,
   IPreferenceQuery,
   IPreference,
+  IModInfoEx,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -1004,6 +1005,27 @@ export function onModFileContents(
 }
 
 /**
+ * Fetches mod information from the Nexus Mods API via REST.
+ */
+export function onGetModInfo(
+  api: IExtensionApi,
+  nexus: Nexus,
+): (gameId: string, modId: number) => Bluebird<Partial<IModInfo>> {
+  return (gameId: string, modId: number) => {
+    const state = api.getState();
+    const game = gameById(state, gameId);
+    return Bluebird.resolve(
+      nexus.getModInfo(modId, nexusGameId(game, gameId) || gameId),
+    ).catch((err) => {
+      api.showErrorNotification("Failed to get mod info", err, {
+        allowReport: false,
+      });
+      return Bluebird.resolve({});
+    });
+  };
+}
+
+/**
  * Fetches mod requirements (dependencies) from the Nexus Mods API.
  * Uses modsByUid to fetch mod data with nested modRequirements field.
  * Supports fetching multiple mods in a single API call for efficiency.
@@ -1059,29 +1081,17 @@ export function onGetModRequirements(
     // Query must include modId to map results back to mods
     return Bluebird.resolve(
       nexus.modsByUid(
-        { modId: true, modRequirements: MOD_REQUIREMENTS_INFO },
+        {
+          modId: true,
+          modRequirements: MOD_REQUIREMENTS_INFO,
+          uid: true,
+          thumbnailUrl: true,
+        },
         validUids,
       ),
     )
       .then((mods) => {
-        const result: { [modId: number]: Partial<IModRequirements> } = {};
-
-        log("debug", "modsByUid returned mods", {
-          count: mods.length,
-          firstModKeys: mods[0] ? Object.keys(mods[0]) : [],
-          firstMod: mods[0]
-            ? {
-                modId: mods[0].modId,
-                hasModRequirements: "modRequirements" in mods[0],
-                modRequirementsType: typeof mods[0].modRequirements,
-                modRequirementsKeys: mods[0].modRequirements
-                  ? Object.keys(mods[0].modRequirements)
-                  : [],
-                rawModRequirements: JSON.stringify(mods[0].modRequirements),
-              }
-            : null,
-        });
-
+        const result: Record<number, Partial<IModRequirements>> = {};
         for (const mod of mods) {
           if (mod.modId !== undefined) {
             result[mod.modId] = mod.modRequirements || {
