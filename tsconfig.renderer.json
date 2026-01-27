@@ -41,6 +41,9 @@
       "DOM.Iterable"
     ],
     "outDir": "./out",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "removeComments": true
   }
 }

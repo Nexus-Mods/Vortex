@@ -24,5 +24,8 @@
     "outDir": "./out",
     "rootDir": "./src",
     "jsx": "react-jsx", // TODO: remove after renderer separation
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "removeComments": true
   }
 }
