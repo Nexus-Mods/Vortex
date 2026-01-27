@@ -282,7 +282,7 @@ class StarterInfo implements IStarterInfo {
             },
             false,
           );
-        } else if (code === "UNKNOWN") {
+        } else if (["UNKNOWN", "EFTYPE"].includes(code)) {
           // info sucks but node.js doesn't give us too much information about what went wrong
           // and we can't have users misconfigure their tools and then report the error they
           // get as feedback

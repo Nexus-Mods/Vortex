@@ -80,7 +80,6 @@ import { ParametricKeySelector } from 're-reselect';
 import { ParametricSelector } from 're-reselect';
 import { default as Promise_2 } from 'bluebird';
 import type * as Promise_3 from 'bluebird';
-import PromiseBB from 'bluebird';
 import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
@@ -404,7 +403,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise_2<void>;
+function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -421,7 +420,7 @@ export const Advanced: React_2.ComponentType<{}>;
 const apiKey: (state: IState) => any;
 
 // @public (undocumented)
-const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => PromiseBB<void>;
+const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => Promise_2<void>;
 
 // @public
 class Archive {
@@ -504,10 +503,10 @@ enum Campaign {
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
 // @public (undocumented)
-function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs_2.Stats): PromiseBB<void>;
+function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs_2.Stats): Promise_2<void>;
 
 // @public (undocumented)
-function changeFileOwnership(filePath: string, stat: fs_2.Stats): PromiseBB<void>;
+function changeFileOwnership(filePath: string, stat: fs_2.Stats): Promise_2<void>;
 
 // @public
 function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T;
@@ -519,7 +518,7 @@ type CheckFunction = () => Promise_2<ITestResult>;
 function checksum(input: Buffer): string;
 
 // @public (undocumented)
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void>;
+const chmodAsync: (path: string, mode: string | number) => Promise_2<void>;
 
 // @public (undocumented)
 const clearDialog: ComplexActionCreator1<string, {
@@ -556,7 +555,7 @@ class ClickPopover extends React_2.Component<ClickPopoverProps, {
 type ClickPopoverProps = ButtonProps_2 & IIconButtonExtraProps & {};
 
 // @public (undocumented)
-const closeAsync: (fd: number) => PromiseBB<void>;
+const closeAsync: (fd: number) => Promise_2<void>;
 
 // @public (undocumented)
 const closeBrowser: EmptyActionCreator;
@@ -712,7 +711,7 @@ function convertGameIdReverse(knownGames: IGameStored[], input: string): string;
 function copyAsync(src: string, dest: string, options?: fs_2.CopyOptions & {
     noSelfCopy?: boolean;
     showDialogCallback?: () => boolean;
-}): PromiseBB<void>;
+}): Promise_2<void>;
 
 // @public
 function copyFileAtomic(srcPath: string, destPath: string): Promise_2<void>;
@@ -941,16 +940,16 @@ instanceId: string;
 }, {}>;
 
 // @public (undocumented)
-function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => PromiseBB<void>): PromiseBB<void>;
+function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => Promise_2<void>): Promise_2<void>;
 
 // @public (undocumented)
 function ensureDirSync(dirPath: string): void;
 
 // @public (undocumented)
-function ensureDirWritableAsync(dirPath: string, confirm?: () => PromiseLike<void>): PromiseBB<void>;
+function ensureDirWritableAsync(dirPath: string, confirm?: () => PromiseLike<void>): Promise_2<void>;
 
 // @public (undocumented)
-function ensureFileAsync(filePath: string): PromiseBB<void>;
+function ensureFileAsync(filePath: string): Promise_2<void>;
 
 // @public (undocumented)
 export const ErrorBoundary: any;
@@ -1017,7 +1016,7 @@ export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
 }
 
 // @public (undocumented)
-function forcePerm<T>(t: TFunction, op: () => PromiseBB<T>, filePath?: string, maxTries?: number): PromiseBB<T>;
+function forcePerm<T>(t: TFunction, op: () => Promise_2<T>, filePath?: string, maxTries?: number): Promise_2<T>;
 
 // @public (undocumented)
 const forgetExtension: reduxAct.ComplexActionCreator1<any, any, {}>;
@@ -1140,7 +1139,7 @@ declare namespace fs {
 export { fs }
 
 // @public (undocumented)
-const fsyncAsync: (fd: number) => PromiseBB<void>;
+const fsyncAsync: (fd: number) => Promise_2<void>;
 
 // @public (undocumented)
 const gameById: ParametricSelector<any, string, IGameStored> & {
@@ -1205,7 +1204,7 @@ class GameStoreNotFound extends Error {
 function generateCollectionSessionId(collectionId: string, profileId: string): string;
 
 // @public (undocumented)
-function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => PromiseBB<any>;
+function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
 function getActivator(activatorId: string): IDeploymentMethod;
@@ -1453,7 +1452,7 @@ function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
 function getText(group: TextGroup, textId: string, t: TFunction): string;
 
 // @public (undocumented)
-function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null;
+function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null;
 
 // Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point index.d.ts
 //
@@ -3295,7 +3294,7 @@ clearCache: () => void;
 const isCollectionPhaseComplete: (state: IState, phase: number) => boolean;
 
 // @public (undocumented)
-function isDirectoryAsync(dirPath: string): PromiseBB<boolean>;
+function isDirectoryAsync(dirPath: string): Promise_2<boolean>;
 
 // @public
 interface ISession {
@@ -4050,7 +4049,7 @@ const lastActiveProfileForGame: ParametricSelector<IState, string, string> & {
 };
 
 // @public (undocumented)
-function linkAsync(src: string, dest: string, options?: ILinkFileOptions): PromiseBB<void>;
+function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point index.d.ts
 //
@@ -4083,7 +4082,7 @@ export function log(level: LogLevel, message: string, metadata?: unknown): void;
 function lookupFromDownload(download: IDownload): IModLookupInfo;
 
 // @public (undocumented)
-const lstatAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const lstatAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // @public (undocumented)
 export const MainContext: React_2.Context<IComponentContext>;
@@ -4103,7 +4102,7 @@ export class MainPage extends ComponentEx<IProps_11, {}> {
 }
 
 // @public (undocumented)
-function makeFileWritableAsync(filePath: string): PromiseBB<void>;
+function makeFileWritableAsync(filePath: string): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "GetSelection" needs to be exported by the entry point index.d.ts
 //
@@ -4164,10 +4163,10 @@ class MissingInterpreter extends Error {
 }
 
 // @public (undocumented)
-const mkdirAsync: (path: string) => PromiseBB<void>;
+const mkdirAsync: (path: string) => Promise_2<void>;
 
 // @public (undocumented)
-const mkdirsAsync: (path: string) => PromiseBB<void>;
+const mkdirsAsync: (path: string) => Promise_2<void>;
 
 // @public (undocumented)
 export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props, {}> {
@@ -4228,10 +4227,10 @@ const modsForGame: (state: IState, gameId: string) => {
 export const More: React_2.ComponentClass<IMoreProps>;
 
 // @public (undocumented)
-const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => PromiseBB<void>;
+const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => Promise_2<void>;
 
 // @public
-function moveRenameAsync(src: string, dest: string): PromiseBB<string>;
+function moveRenameAsync(src: string, dest: string): Promise_2<string>;
 
 // @public (undocumented)
 function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void;
@@ -4330,7 +4329,7 @@ function onceCB<T extends Function>(func: T): T;
 function open_2(target: string, wait?: boolean): Promise_2<void>;
 
 // @public (undocumented)
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number>;
+const openAsync: (path: string, flags: string | number, mode?: number) => Promise_2<number>;
 
 // @public (undocumented)
 export class OptionsFilter implements ITableFilter {
@@ -4499,25 +4498,25 @@ export const RadialProgress: React_2.ComponentClass<IBaseProps_10>;
 function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string | Buffer>;
 
 // @public (undocumented)
-const readAsync: <BufferT>(...args: any[]) => PromiseBB<{
+const readAsync: <BufferT>(...args: any[]) => Promise_2<{
     bytesRead: number;
     buffer: BufferT;
 }>;
 
 // @public (undocumented)
-const readdirAsync: (path: string) => PromiseBB<string[]>;
+const readdirAsync: (path: string) => Promise_2<string[]>;
 
 // @public (undocumented)
 function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string): Promise_2<any[]>;
 
 // @public (undocumented)
-const readFileAsync: (...args: any[]) => PromiseBB<any>;
+const readFileAsync: (...args: any[]) => Promise_2<any>;
 
 // @public
 function readFileBOM(filePath: string, fallbackEncoding: string): Promise<string>;
 
 // @public (undocumented)
-function readlinkAsync(linkPath: string): PromiseBB<string>;
+function readlinkAsync(linkPath: string): Promise_2<string>;
 
 // @public (undocumented)
 class ReduxProp<T> {
@@ -4569,7 +4568,7 @@ function rehydrate<T extends object>(state: T, inbound: any, path: string[], rep
 function relativeTime(date: Date, t: TFunction): string;
 
 // @public (undocumented)
-function removeAsync(remPath: string, options?: IRemoveFileOptions): PromiseBB<void>;
+function removeAsync(remPath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
 const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
@@ -4619,7 +4618,7 @@ function removeValue<T>(state: T, path: Array<string | number>, value: any): T;
 function removeValueIf<T extends object>(state: T, path: Array<string | number>, predicate: (element: any) => boolean): T;
 
 // @public (undocumented)
-function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void>;
+function renameAsync(sourcePath: string, destinationPath: string): Promise_2<void>;
 
 // @public (undocumented)
 const renameCategory: reduxAct.ComplexActionCreator3<string, string, string, {
@@ -4655,7 +4654,7 @@ function resolveCategoryPath(category: string | number, state: IState): string;
 type Revertability = "yes" | "never" | "invalid";
 
 // @public (undocumented)
-function rmdirAsync(dirPath: string): PromiseBB<void>;
+function rmdirAsync(dirPath: string): Promise_2<void>;
 
 // @public
 function sanitizeCSSId(input: string): string;
@@ -5429,13 +5428,13 @@ class StarterInfo implements IStarterInfo {
 const startNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
-const statAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const statAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // @public (undocumented)
 type StateChangeCallback<T = any> = (previous: T, current: T) => void;
 
 // @public (undocumented)
-const statSilentAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const statSilentAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // Warning: (ae-forgotten-export) The symbol "ISteps" needs to be exported by the entry point index.d.ts
 //
@@ -5464,7 +5463,7 @@ suppress: boolean;
 }, {}>;
 
 // @public (undocumented)
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void>;
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps_11" needs to be exported by the entry point index.d.ts
 //
@@ -5973,7 +5972,7 @@ export { types }
 function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[];
 
 // @public (undocumented)
-function unlinkAsync(filePath: string, options?: IRemoveFileOptions): PromiseBB<void>;
+function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
 const UPDATE_CHANNELS: readonly ["stable", "beta", "next", "none"];
@@ -6176,7 +6175,7 @@ declare namespace util {
 export { util }
 
 // @public (undocumented)
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void>;
+const utimesAsync: (path: string, atime: number, mtime: number) => Promise_2<void>;
 
 // @public (undocumented)
 type ValidationState = "success" | "warning" | "error";
@@ -6228,22 +6227,22 @@ const willRemoveProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 function withContext(id: string, value: string, fun: () => Promise_2<any>): Promise_2<any>;
 
 // @public (undocumented)
-const withTmpDir: (...args: any[]) => PromiseBB<any>;
+const withTmpDir: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
-function withTmpDirImpl<T>(cb: (tmpPath: string) => PromiseBB<T>): PromiseBB<T>;
+function withTmpDirImpl<T>(cb: (tmpPath: string) => Promise_2<T>): Promise_2<T>;
 
 // @public (undocumented)
-const withTmpFile: (...args: any[]) => PromiseBB<any>;
+const withTmpFile: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
-const writeAsync: <BufferT>(...args: any[]) => PromiseBB<{
+const writeAsync: <BufferT>(...args: any[]) => Promise_2<{
     bytesWritten: number;
     buffer: BufferT;
 }>;
 
 // @public (undocumented)
-const writeFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => PromiseBB<void>;
+const writeFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => Promise_2<void>;
 
 // @public (undocumented)
 function writeFileAtomic(filePath: string, input: string | Buffer): Promise_2<void>;

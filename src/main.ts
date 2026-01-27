@@ -22,7 +22,7 @@ if (process.send) {
  * entry point for the main process
  */
 import os from "os";
-import { VORTEX_VERSION } from "./constants";
+import { VORTEX_VERSION } from "./shared/constants";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 import "./util/application.electron";
@@ -82,7 +82,7 @@ if (!process.argv.includes('--relaunched')
 }
 */
 
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./constants";
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 
 import * as sourceMapSupport from "source-map-support";
 sourceMapSupport.install();

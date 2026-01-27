@@ -4,7 +4,13 @@
  * Adapted from Figma design for collection browsing
  */
 
-import * as React from "react";
+import React, {
+  type ComponentType,
+  Fragment,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Button } from "../button/Button";
 import { Typography } from "../typography/Typography";
 import { Icon } from "../icon";
@@ -14,6 +20,7 @@ import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import { isCollectionModPresent } from "../../../../util/selectors";
 import Debouncer from "../../../../util/Debouncer";
 import { delayed } from "../../../../util/util";
+import { mdiOpenInNew, mdiStar, mdiThumbUp } from "@mdi/js";
 
 const debouncer = new Debouncer(
   (func: () => void) => {
@@ -67,7 +74,7 @@ export interface CollectionTileProps {
   className?: string;
 }
 
-export const CollectionTile: React.ComponentType<
+export const CollectionTile: ComponentType<
   CollectionTileProps & { api: IExtensionApi }
 > = ({
   api,
@@ -83,10 +90,10 @@ export const CollectionTile: React.ComponentType<
   onViewPage,
   className,
 }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [canBeAdded, setCanBeAdded] = React.useState(true);
-  const [tooltip, setTooltip] = React.useState<string>("Add this collection");
-  const [pending, setPending] = React.useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [canBeAdded, setCanBeAdded] = useState(true);
+  const [tooltip, setTooltip] = useState<string>("Add this collection");
+  const [pending, setPending] = useState(false);
   // Helper to extract tag text from string or object
   const getTagText = (tag: any): string => {
     if (typeof tag === "string") {
@@ -107,7 +114,7 @@ export const CollectionTile: React.ComponentType<
     );
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const state = api?.getState?.();
     if (!state) {
       // No state available means we're likely in demo mode, so skip checks.
@@ -125,7 +132,7 @@ export const CollectionTile: React.ComponentType<
   }, [api, slug, pending, isHovered]);
 
   // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
-  React.useEffect(() => {
+  useEffect(() => {
     if (isHovered && api?.events) {
       userInfoDebouncer.schedule(undefined, () => {
         api.events.emit("refresh-user-info");
@@ -135,16 +142,16 @@ export const CollectionTile: React.ComponentType<
 
   // Take max 2 tags
   const displayTags = tags.slice(0, 2);
-  const addCollection = React.useCallback(() => {
+  const addCollection = useCallback(() => {
     if (!pending && canBeAdded) {
       setPending(true);
       addCollectionDebounced();
     }
   }, [onAddCollection, canBeAdded, pending]);
-  const mouseEnter = React.useCallback(() => {
+  const mouseEnter = useCallback(() => {
     setIsHovered(true);
   }, []);
-  const mouseLeave = React.useCallback(() => {
+  const mouseLeave = useCallback(() => {
     setIsHovered(false);
   }, []);
 
@@ -180,7 +187,7 @@ export const CollectionTile: React.ComponentType<
                     appearance="none"
                     className="flex items-center gap-x-0.5 px-1.5 py-0.5 bg-info-weak text-info-50"
                   >
-                    <Icon path="mdiStar" size="xs" />
+                    <Icon path={mdiStar} size="xs" />
                     <span
                       className="px-0.5 leading-5"
                       title={easyInstallBadge.description}
@@ -235,7 +242,7 @@ export const CollectionTile: React.ComponentType<
                   {displayTags.map((tag, index) => {
                     const tagText = getTagText(tag);
                     return (
-                      <React.Fragment key={index}>
+                      <Fragment key={index}>
                         <Typography
                           as="div"
                           typographyType="body-sm"
@@ -251,7 +258,7 @@ export const CollectionTile: React.ComponentType<
                         {index < displayTags.length - 1 && (
                           <div className="w-1 h-1 rotate-45 bg-neutral-subdued" />
                         )}
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </div>
@@ -263,7 +270,7 @@ export const CollectionTile: React.ComponentType<
               <div className="flex-1 py-1.5 border-b border-stroke-weak flex justify-start items-center gap-5">
                 {/* Endorsements */}
                 <div className="flex justify-start items-center gap-1 overflow-hidden">
-                  <Icon path="mdiThumbUp" size="sm" />
+                  <Icon path={mdiThumbUp} size="sm" />
                   <Typography
                     as="div"
                     typographyType="body-sm"
@@ -333,7 +340,7 @@ export const CollectionTile: React.ComponentType<
           buttonType="tertiary"
           size="sm"
           onClick={onViewPage}
-          leftIconPath="mdiOpenInNew"
+          leftIconPath={mdiOpenInNew}
         >
           View page
         </Button>

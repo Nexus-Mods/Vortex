@@ -397,6 +397,7 @@ class MainWindow {
       titleBarStyle:
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
+        preload: path.join(__dirname, "../preload/index.js"),
         nodeIntegration: true, // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,

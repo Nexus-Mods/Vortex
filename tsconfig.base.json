@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        // base options
+        "allowJs": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        // TODO: turn on after chaning type in package.json to module
+        "verbatimModuleSyntax": false,
+
+        // strictness
+        "useUnknownInCatchVariables": true,
+
+        // TODO: turn all of these on eventually
+        "noImplicitAny": false,
+        "noImplicitOverride": false,
+        "noImplicitThis": false,
+        "noUncheckedIndexedAccess": false,
+        "strict": false,
+        "strictFunctionTypes": false,
+        "strictNullChecks": false,
+        "strictPropertyInitialization": false,
+
+        // code smells
+        // TODO: turn all of these on eventually
+        "noUnusedLocals": false,
+        "noUnusedParameters": false
+    }
+}

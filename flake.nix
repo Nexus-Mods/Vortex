@@ -28,6 +28,9 @@
             clang
             llvmPackages.libcxx
 
+            # Dotnet
+            dotnetCorePackages.sdk_9_0
+
             # Electron (wrapped with GTK dependencies)
             electron_39 # 14 Dec 2025: We're ahead of Vortex which is on 37. Doing this for default Wayland support.
 
@@ -53,6 +56,9 @@
 
             # Point to Nix-provided Electron
             ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
+
+            # Make the dotnet runtime available
+            DOTNET_ROOT = "${pkgs.dotnetCorePackages.runtime_9_0}/share/dotnet";
           };
 
           # Set up GTK environment (mimics wrapGAppsHook3)

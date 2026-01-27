@@ -6,19 +6,19 @@
  * Uses shared CSS classes from button.css (nxm-button-*) for styling.
  */
 
-import * as React from "react";
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  ComponentProps,
-  MutableRefObject,
-  ReactNode,
-  Ref,
+import React, {
+  type AnchorHTMLAttributes,
+  type ButtonHTMLAttributes,
+  type ComponentProps,
+  type MutableRefObject,
+  type ReactNode,
+  type Ref,
 } from "react";
 
 import { Icon } from "../icon";
 import { Link } from "../link";
 import { type XOr, joinClasses } from "../utils";
+import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 
 export type ButtonType =
   | "primary"
@@ -134,8 +134,8 @@ const ButtonIcon = ({
   if (isLoading) {
     return (
       <span className="nxm-button-icon animate-spin relative">
-        <Icon className="opacity-40" path="mdiCircleOutline" size="none" />
-        <Icon className="absolute inset-0" path="mdiLoading" size="none" />
+        <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+        <Icon className="absolute inset-0" path={mdiLoading} size="none" />
       </span>
     );
   }

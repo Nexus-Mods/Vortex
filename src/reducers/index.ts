@@ -52,7 +52,8 @@ function safeCombineReducers(
         ...state,
         ...combined(red, action),
       };
-    } catch (err) {
+    } catch (unknownError) {
+      const err = unknownToError(unknownError);
       if (action["meta"]?.["extension"] !== undefined) {
         err["extension"] = action["meta"]?.["extension"];
       }
@@ -94,7 +95,7 @@ function verifyElement(verifier: IStateVerifier, value: any) {
 // exported for the purpose of testing
 export function verify(
   statePath: string,
-  verifiers: { [key: string]: IStateVerifier },
+  verifiers: { [key: string]: IStateVerifier } | undefined,
   input: any,
   defaults: { [key: string]: any },
   emitDescription: (description: string) => void,

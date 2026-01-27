@@ -61,7 +61,7 @@ function isCaseSensitive(testPath: string): PromiseBB<boolean> {
     .then((files) => {
       // we need a filename that contains letters with case variants, otherwise we can't
       // determine case sensitivity
-      const fileName: string = files.find(
+      const fileName = files.find(
         (file) => file !== file.toLowerCase() || file !== file.toUpperCase(),
       );
 

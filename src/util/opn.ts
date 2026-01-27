@@ -7,7 +7,7 @@ import type * as winapiT from "winapi-bindings";
 import { ipcMain, ipcRenderer, shell } from "electron";
 import { getErrorMessageOrDefault } from "../shared/errors";
 
-let winapi: typeof winapiT;
+let winapi: typeof winapiT | undefined;
 try {
   winapi = require("winapi-bindings");
 } catch {

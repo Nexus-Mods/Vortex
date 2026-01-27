@@ -119,7 +119,7 @@ import stringFormat from "string-template";
 import type * as winapiT from "vortex-run";
 import { getApplication } from "./application";
 import makeRemoteCall, { makeRemoteCallSync } from "./electronRemote";
-import { VCREDIST_URL } from "../constants";
+import { VCREDIST_URL } from "../shared/constants";
 import { fileMD5 } from "vortexmt";
 import * as fsVortex from "../util/fs";
 
@@ -195,7 +195,7 @@ const removeSelfAsProtocolClient = makeRemoteCallSync(
 const showOpenDialog = makeRemoteCall(
   "show-open-dialog",
   (electron, contents, options: Electron.OpenDialogOptions) => {
-    let window: Electron.BrowserWindow = null;
+    let window: Electron.BrowserWindow | null = null;
     try {
       window = electron.BrowserWindow?.fromWebContents?.(contents);
     } catch (err) {

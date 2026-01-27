@@ -1,0 +1,17 @@
+{
+  // NOTE(erri120): this config only exists for your editor
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": [],
+
+    "strict": true,
+    "useUnknownInCatchVariables": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+
+    "noEmit": true
+  },
+  "include": ["**/*"]
+}

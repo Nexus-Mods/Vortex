@@ -1,11 +1,11 @@
 const NULL_KEY = "e210e05b-5b22-47ee-96d7-cfd10ae18ef9";
 
 export class RelaxedReselectCache {
-  private mCache: Map<string, any>;
+  private mCache: Map<string, unknown>;
   constructor() {
     this.mCache = new Map();
   }
-  public set(key: string, selectorFn) {
+  public set(key: string, selectorFn: unknown) {
     this.mCache.set(key ?? NULL_KEY, selectorFn);
   }
 
