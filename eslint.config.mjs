@@ -1,11 +1,15 @@
 import eslint from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import stylistic from "@stylistic/eslint-plugin";
+import perfectionist from "eslint-plugin-perfectionist";
+import betterTailwindcss from "eslint-plugin-better-tailwindcss";
 import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
 import eslintReact from "@eslint-react/eslint-plugin";
-import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
+
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
+import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 
 const isCI = !!process.env.CI;
 const tseslintConfig = isCI
@@ -34,6 +38,7 @@ export default defineConfig([
   tseslintConfig,
   eslintReact.configs["recommended-typescript"],
   prettierConfig,
+  betterTailwindcss.configs.recommended,
 
   {
     languageOptions: {
@@ -46,6 +51,43 @@ export default defineConfig([
       "react-x": {
         version: "16",
       },
+      "better-tailwindcss": {
+        entryPoint: "src/stylesheets/tailwind-v4.css",
+        callees: [
+          ["joinClasses", [{ match: "strings" }]],
+          ["joinClasses", [{ match: "objectKeys" }]],
+        ],
+      },
+    },
+  },
+
+  {
+    plugins: {
+      perfectionist,
+    },
+    rules: {
+      "@eslint-react/jsx-shorthand-boolean": ["warn", -1],
+      "@eslint-react/no-useless-fragment": "warn",
+      "better-tailwindcss/no-unknown-classes": "off",
+      "perfectionist/sort-imports": "warn",
+      "perfectionist/sort-exports": "warn",
+      "perfectionist/sort-jsx-props": ["warn", {
+        type: "alphabetical",
+        groups: ["shorthand-prop", "unknown", "callback"],
+        customGroups: [{ groupName: "callback", elementNamePattern: "^on.+" }],
+      }],
+    },
+  },
+
+  // Stylistic rules that complement Prettier without conflicts.
+  // These rules support consistent decisions.
+  {
+    plugins: {
+      "@stylistic": stylistic,
+    },
+    rules: {
+      "@stylistic/jsx-newline": ["warn", { prevent: false }],
+      "@stylistic/jsx-self-closing-comp": "warn",
     },
   },
 
