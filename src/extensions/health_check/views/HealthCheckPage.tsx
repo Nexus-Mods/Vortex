@@ -1,29 +1,38 @@
+import {
+  mdiAlertCircle,
+  mdiCheckCircle,
+  mdiChevronRight,
+  mdiCog,
+  mdiEye,
+  mdiEyeOff,
+  mdiRefresh,
+} from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector, useDispatch } from "react-redux";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IModFileInfo, IModRequirementExt } from "../types";
 
 import MainPage from "../../../renderer/views/MainPage";
 import { Button } from "../../../tailwind/components/next/button";
 import { Icon } from "../../../tailwind/components/next/icon";
-import { Typography } from "../../../tailwind/components/next/typography";
-import HealthCheckDetailPage from "./HealthCheckDetailPage";
-import { Pictogram } from "../../../tailwind/components/pictogram";
 import {
   TabBar,
   TabButton,
   TabPanel,
   TabProvider,
 } from "../../../tailwind/components/next/tabs";
-
+import { Typography } from "../../../tailwind/components/next/typography";
 import { NoResults } from "../../../tailwind/components/no_results";
-import { useSelector, useDispatch } from "react-redux";
-import { hiddenRequirements, allModRequirements } from "../selectors";
+import { Pictogram } from "../../../tailwind/components/pictogram";
+import { batchDispatch } from "../../../util/util";
 import {
   setRequirementHidden,
   clearAllHiddenRequirements,
 } from "../actions/persistent";
-import type { IModFileInfo, IModRequirementExt } from "../types";
-import { batchDispatch } from "../../../util/util";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { hiddenRequirements, allModRequirements } from "../selectors";
+import HealthCheckDetailPage from "./HealthCheckDetailPage";
 
 const Mod = ({
   isHidden,
@@ -40,10 +49,10 @@ const Mod = ({
 
   return (
     <div
-      className="w-full hover-overlay-weak flex items-center rounded bg-surface-mid py-3 px-4 gap-x-4 shadow-xs"
+      className="hover-overlay-weak flex w-full items-center gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs"
       onClick={onClick}
     >
-      <Icon className="text-info-strong shrink-0" path="mdiAlertCircle" />
+      <Icon className="shrink-0 text-info-strong" path={mdiAlertCircle} />
 
       <div className="grow space-y-0.5 text-left">
         <Typography>
@@ -63,7 +72,7 @@ const Mod = ({
         as="button"
         buttonType="tertiary"
         filled="weak"
-        leftIconPath={isHidden ? "mdiEye" : "mdiEyeOff"}
+        leftIconPath={isHidden ? mdiEye : mdiEyeOff}
         size="sm"
         title={isHidden ? t("common:::unhide") : t("common:::hide")}
         onClick={(e) => {
@@ -73,8 +82,8 @@ const Mod = ({
       />
 
       <Icon
-        className="text-translucent-moderate shrink-0"
-        path="mdiChevronRight"
+        className="shrink-0 text-translucent-moderate"
+        path={mdiChevronRight}
         size="lg"
       />
     </div>
@@ -150,14 +159,14 @@ function HealthCheckPage({
   if (showDetail && selectedRequirement) {
     return (
       <HealthCheckDetailPage
-        mod={selectedRequirement}
         api={api}
-        onRefresh={onRefresh}
-        onDownloadMod={(mod, file) => onDownloadRequirement?.(mod, file)}
+        mod={selectedRequirement}
         onBack={() => {
           setShowDetail(false);
           setSelectedRequirement(null);
         }}
+        onDownloadMod={(mod, file) => onDownloadRequirement?.(mod, file)}
+        onRefresh={onRefresh}
       />
     );
   }
@@ -168,9 +177,9 @@ function HealthCheckPage({
   return (
     <MainPage id="health-check-page">
       <MainPage.Body>
-        <div className="p-6 space-y-4 max-w-5xl">
+        <div className="max-w-5xl space-y-4 p-6">
           <div className="flex items-center gap-x-6">
-            <div className="grow flex gap-x-2 items-center">
+            <div className="flex grow items-center gap-x-2">
               <Pictogram name="health-check" size="sm" />
 
               <div className="grow">
@@ -185,7 +194,7 @@ function HealthCheckPage({
 
                   <Typography
                     as="div"
-                    className="leading-4 rounded border border-neutral-strong flex items-center justity-center px-1 min-h-4"
+                    className="justity-center flex min-h-4 items-center rounded-sm border border-neutral-strong px-1 leading-4"
                     typographyType="title-xs"
                   >
                     {t("common:::beta")}
@@ -198,11 +207,11 @@ function HealthCheckPage({
               </div>
             </div>
 
-            <div className="flex gap-x-2 shrink-0">
+            <div className="flex shrink-0 gap-x-2">
               <Button
                 buttonType="tertiary"
                 filled="weak"
-                leftIconPath="mdiRefresh"
+                leftIconPath={mdiRefresh}
                 size="sm"
                 title={t("common:::refresh")}
                 onClick={() => onRefresh?.()}
@@ -211,7 +220,7 @@ function HealthCheckPage({
               <Button
                 buttonType="tertiary"
                 filled="weak"
-                leftIconPath="mdiCog"
+                leftIconPath={mdiCog}
                 size="sm"
                 title={t("common:::settings")}
               />
@@ -230,6 +239,7 @@ function HealthCheckPage({
                   count={activeMods.length}
                   name={t("common:::active")}
                 />
+
                 <TabButton
                   count={hiddenMods.length}
                   name={t("common:::hidden")}
@@ -243,7 +253,7 @@ function HealthCheckPage({
                   (selectedTab === "hidden" && !hiddenCount)
                 }
                 filled="weak"
-                leftIconPath={selectedTab === "active" ? "mdiEyeOff" : "mdiEye"}
+                leftIconPath={selectedTab === "active" ? mdiEyeOff : mdiEye}
                 size="sm"
                 onClick={selectedTab === "active" ? hideAllActive : unhideAll}
               >
@@ -258,7 +268,7 @@ function HealthCheckPage({
                 <NoResults
                   appearance="success"
                   className="py-24"
-                  iconPath="mdiCheckCircle"
+                  iconPath={mdiCheckCircle}
                   message={t("listing::no_results_active::message")}
                   title={t("listing::no_results_active::title")}
                 />
@@ -283,15 +293,15 @@ function HealthCheckPage({
               {!hiddenCount ? (
                 <NoResults
                   className="py-24"
-                  iconPath="mdiEyeOff"
+                  iconPath={mdiEyeOff}
                   title={t("listing::no_results_hidden::title")}
                 />
               ) : (
                 <div className="space-y-2">
                   {hiddenMods.map((mod) => (
                     <Mod
-                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
                       isHidden={true}
+                      key={`${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`}
                       requirementInfo={mod}
                       onClick={() => {
                         setSelectedRequirement(mod);

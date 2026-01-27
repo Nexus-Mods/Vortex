@@ -1,15 +1,17 @@
+import { mdiCheck, mdiDiamondStone } from "@mdi/js";
 import React, { type ReactNode } from "react";
-import { Modal } from "../../../../tailwind/components/modal";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { Button } from "../../../../tailwind/components/next/button";
 import { useTranslation } from "react-i18next";
+
+import { Modal } from "../../../../tailwind/components/modal";
+import { Button } from "../../../../tailwind/components/next/button";
+import { Icon } from "../../../../tailwind/components/next/icon";
+import { Typography } from "../../../../tailwind/components/next/typography";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
   <li className="flex gap-x-1">
     <Icon
-      className="text-premium-strong mt-0.5 shrink-0"
-      path="mdiCheck"
+      className="mt-0.5 shrink-0 text-premium-strong"
+      path={mdiCheck}
       size="xs"
     />
 
@@ -31,8 +33,8 @@ export const PremiumModal = ({
   return (
     <Modal isOpen={isOpen} title={t("premium::modal::title")} onClose={onClose}>
       <Typography
-        as="div"
         appearance="subdued"
+        as="div"
         className="space-y-2"
         typographyType="body-sm"
       >
@@ -51,7 +53,7 @@ export const PremiumModal = ({
         </ul>
       </Typography>
 
-      <div className="grid grid-cols-2 gap-x-2 mt-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-2">
         <Button
           buttonType="tertiary"
           className="w-full"
@@ -65,7 +67,7 @@ export const PremiumModal = ({
         <Button
           buttonType="premium"
           className="w-full"
-          leftIconPath="mdiDiamondStone"
+          leftIconPath={mdiDiamondStone}
           size="sm"
           onClick={onClose}
         >

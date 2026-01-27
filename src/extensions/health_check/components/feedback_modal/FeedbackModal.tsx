@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Modal } from "../../../../tailwind/components/modal";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { Button } from "../../../../tailwind/components/next/button";
 import { useTranslation } from "react-i18next";
+
 import { Checkbox } from "../../../../tailwind/components/form/checkbox";
+import { Modal } from "../../../../tailwind/components/modal";
+import { Button } from "../../../../tailwind/components/next/button";
+import { Typography } from "../../../../tailwind/components/next/typography";
 
 export const FeedbackModal = ({
   isOpen,
@@ -28,7 +29,7 @@ export const FeedbackModal = ({
         {t("detail::feedback_modal::description")}
       </Typography>
 
-      <div className="space-y-2 mt-4">
+      <div className="mt-4 space-y-2">
         {[
           t("detail::feedback_modal::options::incorrect_requirement"),
           t("detail::feedback_modal::options::requirement_already_installed"),
@@ -36,8 +37,8 @@ export const FeedbackModal = ({
           t("detail::feedback_modal::options::other"),
         ].map((option) => (
           <Checkbox
-            key={option}
             checked={checkedOptions.includes(option)}
+            key={option}
             onChange={(e) => {
               const isChecked = e.target.checked;
               setCheckedOptions((prev) =>
@@ -52,7 +53,7 @@ export const FeedbackModal = ({
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-2 mt-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-2">
         <Button
           buttonType="tertiary"
           className="w-full"

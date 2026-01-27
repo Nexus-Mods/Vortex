@@ -1,8 +1,10 @@
 import { Dialog } from "@headlessui/react";
+import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
-import { joinClasses } from "../next/utils";
-import { Typography } from "../next/typography";
+
 import { Icon } from "../next/icon";
+import { Typography } from "../next/typography";
+import { joinClasses } from "../next/utils";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";
 
@@ -28,15 +30,14 @@ export const ModalWrapper = ({
   onClose,
 }: ModalProps) => (
   <Dialog
-    className={joinClasses([
-      "z-modal fixed inset-0 flex items-center flex-col justify-center overflow-y-auto p-4",
+    className={joinClasses(["fixed inset-0 z-modal flex flex-col items-center justify-center overflow-y-auto p-4",
       className,
     ])}
     initialFocus={initialFocusRef}
     open={isOpen}
     onClose={onClose}
   >
-    <Dialog.Overlay className="bg-translucent-dark-800 fixed inset-0 -z-1" />
+    <Dialog.Overlay className="fixed inset-0 -z-1 bg-translucent-dark-800" />
 
     {children}
   </Dialog>
@@ -59,8 +60,7 @@ export const ModalPanel = ({
   onClose,
 }: PropsWithChildren<ModalPanelProps>) => (
   <Dialog.Panel
-    className={joinClasses([
-      "scrollbar bg-surface-low relative w-full overflow-y-auto shadow-xl rounded-lg border border-surface-translucent-low p-4",
+    className={joinClasses(["scrollbar relative w-full overflow-y-auto rounded-lg border border-surface-translucent-low bg-surface-low p-4 shadow-xl",
       modalSize[size],
       className,
     ])}
@@ -68,7 +68,7 @@ export const ModalPanel = ({
     {!!title && (
       <Dialog.Title
         as={Typography}
-        className={joinClasses(["font-semibold mb-4"], {
+        className={joinClasses(["mb-4 font-semibold"], {
           "mr-7": showCloseButton,
         })}
       >
@@ -78,10 +78,10 @@ export const ModalPanel = ({
 
     {showCloseButton && (
       <button
-        className="absolute flex justify-center items-center cursor-pointer p-1 top-3 right-3 text-neutral-strong hover:text-neutral-moderate transition-colors"
+        className="absolute top-3 right-3 flex cursor-pointer items-center justify-center p-1 text-neutral-strong transition-colors hover:text-neutral-moderate"
         onClick={onClose}
       >
-        <Icon path="mdiClose" />
+        <Icon path={mdiClose} />
       </button>
     )}
 
