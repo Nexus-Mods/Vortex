@@ -1,7 +1,4 @@
-/* eslint-disable */
-
 if (process.env.DEBUG_REACT_RENDERS === "true") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
   whyDidYouRender?.(require("react"), {
     trackAllPureComponents: true,
@@ -11,7 +8,6 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
 
 const earlyErrHandler = (evt) => {
   const { error } = evt;
-  // tslint:disable-next-line:no-shadowed-variable
   const remote = require("@electron/remote");
   remote.dialog.showErrorBox("Unhandled error", error.stack);
   remote.app.exit(1);
@@ -20,9 +16,7 @@ const earlyErrHandler = (evt) => {
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets
 // relayed.
-// tslint:disable-next-line:no-console
 const oldErr = console.error;
-// tslint:disable-next-line:no-console
 console.error = (...args) => {
   oldErr(args.concat(" ") + "\n" + new Error().stack);
 };
@@ -34,11 +28,9 @@ import requireRemap from "./util/requireRemap";
 requireRemap();
 
 if (process.env.NODE_ENV === "development") {
-  // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require("./util/requireRebuild").default;
   rebuildRequire();
   process.traceProcessWarnings = true;
-  // tslint:disable-next-line:no-var-requires
   const sourceMapSupport = require("source-map-support");
   sourceMapSupport.install();
 } else {
@@ -58,18 +50,51 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(["en-US"]);
 }
 
-import * as path from "path";
+import type * as msgpackT from "@msgpack/msgpack";
+import type crashDumpT from "crash-dump";
+import type * as I18next from "i18next";
 
+import "./util/application.electron";
+import * as remote from "@electron/remote";
+import Bluebird from "bluebird";
+import { ipcRenderer, webFrame } from "electron";
+import { EventEmitter } from "events";
+import * as fs from "fs-extra";
+import * as nativeErr from "native-errors";
+import * as path from "path";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+
+import "./util/monkeyPatching";
+import * as ReactDOM from "react-dom";
+import { I18nextProvider } from "react-i18next";
+import { Provider } from "react-redux";
+import { applyMiddleware, compose, createStore } from "redux";
+import thunkMiddleware from "redux-thunk";
+import { generate as shortid } from "shortid";
+
+import type { ThunkStore } from "./types/IExtensionContext";
+import type { IState } from "./types/IState";
+
+import { setLanguage, setNetworkConnected } from "./actions";
 import {
   addNotification,
   setupNotificationSuppression,
 } from "./actions/notifications";
 import reducer, { Decision } from "./reducers/index";
-import "./util/application.electron";
+import LoadingScreen from "./renderer/views/LoadingScreen";
+import MainWindow from "./renderer/views/MainWindow";
+import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
+import { reduxLogger } from "./store/reduxLogger";
+import { reduxSanity, type StateError } from "./store/reduxSanity";
+import { relaunch } from "./util/commandLine";
+import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
 import ExtensionManager from "./util/ExtensionManager";
 import { ExtensionContext } from "./util/ExtensionProvider";
+import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
+import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, {
   changeLanguage,
@@ -79,50 +104,15 @@ import getI18n, {
 import { log } from "./util/log";
 import { initApplicationMenu } from "./util/menu";
 import { showError } from "./util/message";
-import "./util/monkeyPatching";
-import { reduxSanity, StateError } from "./store/reduxSanity";
-import LoadingScreen from "./renderer/views/LoadingScreen";
-import MainWindow from "./renderer/views/MainWindow";
-
-import * as remote from "@electron/remote";
-import * as msgpackT from "@msgpack/msgpack";
-import Promise from "bluebird";
-import { ipcRenderer, webFrame } from "electron";
-import { forwardToMain, replayActionRenderer } from "electron-redux";
+import presetManager from "./util/PresetManager";
 import safeForwardToMain from "./util/safeForwardToMain";
 import safeReplayActionRenderer from "./util/safeReplayActionRenderer";
-import { EventEmitter } from "events";
-import * as fs from "fs-extra";
-import * as I18next from "i18next";
-import * as nativeErr from "native-errors";
-import * as React from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import * as ReactDOM from "react-dom";
-import { I18nextProvider } from "react-i18next";
-import { Provider } from "react-redux";
-import { applyMiddleware, compose, createStore } from "redux";
-import thunkMiddleware from "redux-thunk";
-import { generate as shortid } from "shortid";
-
-import crashDumpT from "crash-dump";
-
-import { setLanguage, setNetworkConnected } from "./actions";
-import type { ThunkStore } from "./types/IExtensionContext";
-import type { IState } from "./types/IState";
-import { relaunch } from "./util/commandLine";
-import { UserCanceled } from "./util/CustomErrors";
-import {} from "./util/extensionRequire";
-import getVortexPath, { setVortexPath } from "./util/getVortexPath";
-import presetManager from "./util/PresetManager";
-import { reduxLogger } from "./store/reduxLogger";
 import { getSafe } from "./util/storeHelper";
 import {
   bytesToString,
   getAllPropertyNames,
   replaceRecursive,
 } from "./util/util";
-import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
 
 log("debug", "renderer process started", { pid: process["pid"] });
 
@@ -207,7 +197,6 @@ setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 let deinitCrashDump: () => void;
 
 if (process.env.CRASH_REPORTING === "vortex") {
-  // tslint:disable-next-line:no-var-requires
   const crashDump: typeof crashDumpT = require("crash-dump").default;
   deinitCrashDump = crashDump(
     path.join(
@@ -237,7 +226,7 @@ if (process.platform === "win32") {
 }
 
 // allow promises to be cancelled.
-Promise.config({
+Bluebird.config({
   cancellation: true,
   // long stack traces would be sooo nice but the performance cost in some places is ridiculous
   longStackTraces: false,
@@ -463,7 +452,6 @@ function errorHandler(evt: any) {
     // By logging this error here we ensure that even a suppressed error will be reported to
     // user _if_ it managed to prevent the application start. Of course it would be nicer
     // if there was a proper api for that but it's quite the fringe case I think
-    // tslint:disable-next-line:no-console
     console.error(error.stack);
     return true;
   } else {
@@ -486,7 +474,6 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 let enhancer = null;
 
 if (process.env.NODE_ENV === "development") {
-  // tslint:disable-next-line:no-var-requires
   const freeze = require("redux-freeze");
   const devtool = window["__REDUX_DEVTOOLS_EXTENSION__"]?.({
     shouldRecordChanges: false,
@@ -514,7 +501,7 @@ function init() {
     // if there are outdated extensions
     log("warn", "outdated extensions discovered in renderer");
     relaunch();
-    return Promise.resolve(null);
+    return Bluebird.resolve(null);
   }
   const extReducers = extensions.getReducers();
 
@@ -577,10 +564,9 @@ function init() {
     lastHeapSize = stat.totalHeapSize;
   }, 5000);
 
-  const startupPromise = new Promise((resolve) => (startupFinished = resolve));
+  const startupPromise = new Bluebird((resolve) => (startupFinished = resolve));
 
   const api = extensions.getApi();
-  // tslint:disable-next-line:no-unused-variable
   const globalNotifications = new GlobalNotifications(api);
 
   function startinstallFromArchive(filePath: string) {
@@ -656,7 +642,7 @@ function init() {
     const id = args[args.length - 1];
     const cb = (...cbArgs) => {
       const newCBArgs = cbArgs.map((arg) => {
-        if (!(arg instanceof Promise)) {
+        if (!(arg instanceof Bluebird)) {
           return arg;
         }
         const promId = shortid();
@@ -714,7 +700,7 @@ function init() {
     }
   });
 
-  return Promise.resolve(extensions);
+  return Bluebird.resolve(extensions);
 }
 
 function renderer(extensions: ExtensionManager) {
@@ -762,7 +748,7 @@ function renderer(extensions: ExtensionManager) {
             path: ext.path,
           }));
 
-      return Promise.map(dynamicExts, (ext) => {
+      return Bluebird.map(dynamicExts, (ext) => {
         const filePath = path.join(ext.path, "language.json");
         return fs
           .readFile(filePath, { encoding: "utf-8" })
@@ -825,8 +811,8 @@ function renderer(extensions: ExtensionManager) {
             <I18nextProvider i18n={i18n}>
               <ExtensionContext.Provider value={extensions}>
                 <MainWindow
-                  className="full-height"
                   api={extensions.getApi()}
+                  className="full-height"
                   t={tFunc}
                 />
               </ExtensionContext.Provider>
