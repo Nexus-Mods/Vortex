@@ -298,7 +298,7 @@
     "jsonwebtoken": "^9.0.0",
     "leveldown": "^5.6.0",
     "levelup": "^4.4.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "memoize-one": "^5.1.1",
     "minimatch": "^3.0.5",
     "mixpanel-browser": "^2.71.0",
