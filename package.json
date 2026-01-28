@@ -226,6 +226,7 @@
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
     "@tailwindcss/cli": "^4.1.15",
+    "ps-list": "^7.2.0",
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "big.js": "^5.2.2",
     "bluebird": "^3.7.2",
