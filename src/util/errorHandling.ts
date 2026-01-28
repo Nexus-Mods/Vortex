@@ -1,29 +1,12 @@
-import {
-  NEXUS_BASE_URL,
-  OAUTH_CLIENT_ID,
-} from "../extensions/nexus_integration/constants";
-import type { IErrorOptions, IExtensionApi } from "../types/api";
-import type { IError } from "../types/IError";
-
-import { COMPANY_ID } from "./constants";
-import { UserCanceled } from "./CustomErrors";
-import { genHash } from "./genHash";
-import getVortexPath from "./getVortexPath";
-import { fallbackTFunc } from "./i18n";
-import { log } from "./log";
-import { bundleAttachment } from "./message";
-import opn from "./opn";
-import { getSafe } from "./storeHelper";
-import { flatten, getAllPropertyNames, spawnSelf } from "./util";
-
 import type * as RemoteT from "@electron/remote";
 import type {
   IFeedbackResponse,
   IOAuthCredentials,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
+import { type BrowserWindow, app } from "electron";
+
 import PromiseBB from "bluebird";
-import type { BrowserWindow } from "electron";
 import { dialog as dialogIn, ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
@@ -32,10 +15,28 @@ import * as path from "path";
 import * as semver from "semver";
 import { inspect } from "util";
 import {} from "uuid";
-import { getApplication } from "./application";
-import lazyRequire from "./lazyRequire";
-import { getCPUArch } from "./nativeArch";
+
+import type { IErrorOptions, IExtensionApi } from "../types/api";
+import type { IError } from "../types/IError";
+
+import {
+  NEXUS_BASE_URL,
+  OAUTH_CLIENT_ID,
+} from "../extensions/nexus_integration/constants";
 import { getErrorMessageOrDefault } from "../shared/errors";
+import { getApplication } from "./application";
+import { COMPANY_ID } from "./constants";
+import { UserCanceled } from "./CustomErrors";
+import { genHash } from "./genHash";
+import getVortexPath from "./getVortexPath";
+import { fallbackTFunc } from "./i18n";
+import lazyRequire from "./lazyRequire";
+import { log } from "./log";
+import { bundleAttachment } from "./message";
+import { getCPUArch } from "./nativeArch";
+import opn from "./opn";
+import { getSafe } from "./storeHelper";
+import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -548,7 +549,16 @@ export function terminate(
     );
   }
 
-  getApplication().quit(1);
+  // NOTE(erri120): This looks bad and is bad but it's the
+  // only fix for tsc to not break that doesn't involve
+  // a massive refactoring.
+  // TODO: hack, remove after main/renderer separation
+  if (window) {
+    (window as any).api.app.exit();
+  } else if (app) {
+    app.exit();
+  }
+
   throw new UserCanceled();
 }
 

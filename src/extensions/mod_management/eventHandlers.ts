@@ -1,8 +1,26 @@
-import { startActivity, stopActivity } from "../../actions/session";
+import type { RuleType } from "modmeta-db";
+
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import * as path from "path";
+
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IModTable, IProfile, IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+import type { Normalize } from "../../util/getNormalizeFunc";
+import type { IDownload } from "../download_management/types/IDownload";
+import type InstallManager from "./InstallManager";
+import type { IDeploymentManifest } from "./types/IDeploymentManifest";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+} from "./types/IDeploymentMethod";
+import type { IInstallOptions } from "./types/IInstallOptions";
+import type { IMod, IModRule } from "./types/IMod";
+import type { IRemoveModOptions } from "./types/IRemoveModOptions";
+
+import { startActivity, stopActivity } from "../../actions/session";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -11,28 +29,25 @@ import {
 } from "../../util/CustomErrors";
 import { setErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { downloadPathForGame } from "../../util/selectors";
+import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
-import { knownGames } from "../../util/selectors";
-
-import type { IDownload } from "../download_management/types/IDownload";
-import { activeGameId, activeProfile } from "../profile_management/selectors";
+import getDownloadGames from "../download_management/util/getDownloadGames";
+import { getGame } from "../gamemode_management/util/getGame";
+import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
-
+import { setModsEnabled } from "../profile_management/actions/profiles";
+import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { setDeploymentNecessary } from "./actions/deployment";
 import { addMod, removeMod } from "./actions/mods";
 import { setActivator } from "./actions/settings";
-import type { IDeploymentManifest } from "./types/IDeploymentManifest";
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-} from "./types/IDeploymentMethod";
-import type { IMod, IModRule } from "./types/IMod";
+import { setInstallPath } from "./actions/settings";
+import { currentActivator, installPath, installPathForGame } from "./selectors";
+import { ensureStagingDirectory } from "./stagingDirectory";
 import {
   getManifest,
   loadActivation,
@@ -40,35 +55,16 @@ import {
   saveActivation,
   withActivationLock,
 } from "./util/activationStore";
+import allTypesSupported from "./util/allTypesSupported";
+import { genSubDirFunc, purgeMods } from "./util/deploy";
 import {
   getCurrentActivator,
   getSelectedActivator,
   getSupportedActivators,
 } from "./util/deploymentMethods";
-
-import getDownloadGames from "../download_management/util/getDownloadGames";
-import { getGame } from "../gamemode_management/util/getGame";
-import { getModType } from "../gamemode_management/util/modTypeExtensions";
-import { setModsEnabled } from "../profile_management/actions/profiles";
-
-import { setInstallPath } from "./actions/settings";
-import type { IInstallOptions } from "./types/IInstallOptions";
-import type { IRemoveModOptions } from "./types/IRemoveModOptions";
-import allTypesSupported from "./util/allTypesSupported";
-import { genSubDirFunc, purgeMods } from "./util/deploy";
 import modName from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import refreshMods from "./util/refreshMods";
-
-import type InstallManager from "./InstallManager";
-import { currentActivator, installPath, installPathForGame } from "./selectors";
-import { ensureStagingDirectory } from "./stagingDirectory";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import type { RuleType } from "modmeta-db";
-import * as path from "path";
-import { getErrorMessageOrDefault } from "../../shared/errors";
 
 function checkStagingGame(
   api: IExtensionApi,
@@ -164,7 +160,7 @@ function checkStagingFolder(
         )
         .then((result: IDialogResult) => {
           if (result.action === "Quit Vortex") {
-            getApplication().quit();
+            window.api.app.quit();
             // resolve never
             return new PromiseBB(() => null);
           } else if (

@@ -1,10 +1,14 @@
+import type * as winapiT from "winapi-bindings";
+
 import Bluebird from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
+
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+
+import { isErrorWithSystemCode, unknownToError } from "../../shared/errors";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import lazyRequire from "../../util/lazyRequire";
@@ -12,15 +16,10 @@ import { log } from "../../util/log";
 import { activeGameId, installPathForGame } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-
 import { suggestStagingPath } from "../gamemode_management/util/discovery";
-
 import { setInstallPath } from "./actions/settings";
 import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
-
-import type * as winapiT from "winapi-bindings";
-import { isErrorWithSystemCode, unknownToError } from "../../shared/errors";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 
@@ -202,7 +201,7 @@ async function ensureStagingDirectoryImpl(
         instPath,
       );
       if (dialogResult.action === "Quit Vortex") {
-        getApplication().quit(0);
+        window.api.app.quit();
         throw new UserCanceled();
       } else if (dialogResult.action === "Reinitialize") {
         const id = shortid();

@@ -1,33 +1,28 @@
-import { setToolRunning } from "../actions";
-import type { IDiscoveredTool } from "../types/IDiscoveredTool";
-import type { IGame } from "../types/IGame";
-import { log } from "../util/log";
-
-import GameStoreHelper from "./GameStoreHelper";
-
-import { getSafe } from "../util/storeHelper";
+import PromiseBB from "bluebird";
+import * as fs from "fs";
+import * as path from "path";
 
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
-import { getGame } from "../extensions/gamemode_management/util/getGame";
-
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGame } from "../types/IGame";
 
-import { getApplication } from "./application";
+import { setToolRunning } from "../actions";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
+import { getErrorCode, unknownToError } from "../shared/errors";
+import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
+import { log } from "../util/log";
+import { getSafe } from "../util/storeHelper";
 import {
   MissingDependency,
   MissingInterpreter,
   ProcessCanceled,
   UserCanceled,
 } from "./CustomErrors";
+import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
-
-import PromiseBB from "bluebird";
-import * as fs from "fs";
-import * as path from "path";
-import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
-import { getErrorCode, unknownToError } from "../shared/errors";
 
 function getCurrentWindow() {
   if (process.type === "renderer") {
@@ -143,7 +138,7 @@ class StarterInfo implements IStarterInfo {
       if (res !== undefined) {
         const infoObj =
           res.addInfo === undefined
-            ? !!game.details
+            ? game.details
               ? game.details
               : path.dirname(info.exePath)
             : res.addInfo;
@@ -157,7 +152,11 @@ class StarterInfo implements IStarterInfo {
             if (["hide", "hide_recover"].includes(info.onStart)) {
               getCurrentWindow().hide();
             } else if (info.onStart === "close") {
-              getApplication().quit();
+              // NOTE(erri120): This looks bad and is bad but it's the
+              // only fix for tsc to not break that doesn't involve
+              // a massive refactoring.
+              // TODO: hack, remove after main/renderer separation
+              (window as any).api.app.quit();
             }
           })
           .catch(UserCanceled, () => null)
@@ -225,7 +224,11 @@ class StarterInfo implements IStarterInfo {
       if (["hide", "hide_recover"].includes(info.onStart)) {
         getCurrentWindow().hide();
       } else if (info.onStart === "close") {
-        getApplication().quit();
+        // NOTE(erri120): This looks bad and is bad but it's the
+        // only fix for tsc to not break that doesn't involve
+        // a massive refactoring.
+        // TODO: hack, remove after main/renderer separation
+        (window as any).api.app.quit();
       }
     };
 

@@ -22,14 +22,15 @@ if (process.send) {
  * entry point for the main process
  */
 import os from "os";
+
 import { VORTEX_VERSION } from "./shared/constants";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 import "./util/application.electron";
-import getVortexPath from "./util/getVortexPath";
-
 import { app, dialog } from "electron";
 import * as path from "path";
+
+import getVortexPath from "./util/getVortexPath";
 
 const earlyErrHandler = (error) => {
   if (error.stack.includes("[as dlopen]")) {
@@ -82,9 +83,9 @@ if (!process.argv.includes('--relaunched')
 }
 */
 
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
-
 import * as sourceMapSupport from "source-map-support";
+
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 sourceMapSupport.install();
 
 import requireRemap from "./util/requireRemap";
@@ -146,29 +147,26 @@ try {
   // nop
 }
 
-import {} from "./util/requireRebuild";
-
-import Application from "./main/Application";
-
 import type { IPresetStep, IPresetStepCommandLine } from "./types/IPreset";
 
+import Application from "./main/Application";
 import commandLine, { relaunch } from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
 // ensures tsc includes this dependency
 // Activate vortex-api polyfill for all extension requires as early as possible
 import extensionRequire from "./util/extensionRequire";
+import {} from "./util/requireRebuild";
 extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
-import {} from "./util/extensionRequire";
+import type * as child_processT from "child_process";
 
 // required for the side-effect!
 import "./util/exeIcon";
 import "./util/monkeyPatching";
 import "./util/webview";
-
-import type * as child_processT from "child_process";
+import { getErrorMessage } from "./shared/errors";
+import {} from "./util/extensionRequire";
 import * as fs from "./util/fs";
 import presetManager from "./util/PresetManager";
-import { getErrorMessage } from "./shared/errors";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

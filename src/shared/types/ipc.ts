@@ -9,6 +9,11 @@
 export interface RendererChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
+  /** Tries to close all windows successfully and then terminates the app */
+  "app:quit": () => void;
+  /** App immediately exists */
+  "app:exit": (exitCode?: number) => void;
+
   // Examples:
   "example:renderer_foo": () => void;
   "example:renderer_bar": (data: number) => void;
@@ -26,6 +31,9 @@ export interface MainChannels {
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
 export interface InvokeChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be Promises resolving serializable content.
+
+  /** Gets the current application version */
+  "app:version": () => Promise<string>;
 
   // Examples:
   "example:ping": () => Promise<string>;

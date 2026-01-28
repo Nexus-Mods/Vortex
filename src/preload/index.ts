@@ -1,5 +1,3 @@
-import { contextBridge, ipcRenderer } from "electron";
-import type { PreloadWindow } from "@shared/types/preload";
 import type {
   RendererChannels,
   InvokeChannels,
@@ -7,6 +5,9 @@ import type {
   SerializableArgs,
   AssertSerializable,
 } from "@shared/types/ipc";
+import type { PreloadWindow } from "@shared/types/preload";
+
+import { contextBridge, ipcRenderer } from "electron";
 
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.
@@ -19,13 +20,19 @@ const betterIpcRenderer = {
 };
 
 try {
-  expose("versions", {
+  expose("environment", {
     chromium: process.versions.chrome,
     electron: process.versions.electron,
     node: process.versions.node,
   });
 
   expose("api", {
+    app: {
+      quit: () => betterIpcRenderer.send("app:quit"),
+      exit: (exitCode) => betterIpcRenderer.send("app:exit", exitCode),
+      getAppVersion: () => betterIpcRenderer.invoke("app:version"),
+    },
+
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },
