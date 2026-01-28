@@ -13,6 +13,7 @@
     "module": "commonjs", // TODO: change to nodenext
     "moduleResolution": "node", // TODO: change to nodenext
     "types": ["node"],
+    "lib": ["ESNext", "DOM"], // TODO: remove DOM after renderer separation
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["src/shared/*"]

@@ -1,10 +1,11 @@
 import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
+
 import type { IDialogResult } from "../../../types/IDialog";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IDownload, IState } from "../../../types/IState";
-import { getApplication } from "../../../util/application";
+
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { truthy } from "../../../util/util";
@@ -223,7 +224,7 @@ export function ensureDownloadsDirectory(api: IExtensionApi): PromiseBB<void> {
         currentDownloadPath,
       ).then((result) => {
         if (result.action === "Quit Vortex") {
-          getApplication().quit(0);
+          window.api.app.quit();
           return PromiseBB.reject(new UserCanceled());
         } else if (result.action === "Reinitialize") {
           const id = shortid();

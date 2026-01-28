@@ -1,16 +1,15 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import { getApplication } from "../../../util/application";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
-import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
-import { getSafe } from "../../../util/storeHelper";
-
-import { setModArchiveId } from "../actions/mods";
-import type { IMod } from "../types/IMod";
-
 import PromiseBB from "bluebird";
 import * as path from "path";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+import type { IMod } from "../types/IMod";
+
+import * as fs from "../../../util/fs";
+import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
+import { log } from "../../../util/log";
+import { getSafe } from "../../../util/storeHelper";
+import { setModArchiveId } from "../actions/mods";
 
 /**
  * reads the installation dir and adds mods missing in our database
@@ -152,7 +151,7 @@ function refreshMods(
                 );
             }).then(() => onRemoveMods(removedMods));
           } else {
-            getApplication().quit();
+            window.api.app.quit();
           }
         });
     })

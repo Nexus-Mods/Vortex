@@ -2,23 +2,41 @@
 export interface PreloadWindow {
   api: Api;
 
-  /** Environment version information */
-  versions: Versions;
+  environment: Environment;
 }
 
 /** All API methods available to the renderer */
 export interface Api {
+  /** Electron related APIs */
+  app: App;
+
   /** Example APIs */
   example: Example;
+}
+
+export interface App {
+  /** Gets the Vortex version */
+  getAppVersion(): Promise<string>;
+
+  /** Tries to close all windows successfully and then terminates the app */
+  quit(): void;
+
+  /** App immediately exists */
+  exit(exitCode?: number): void;
+}
+
+export interface Environment {
+  /** Node.js version */
+  node: string;
+
+  /** Chromium version */
+  chromium: string;
+
+  /** Electron version */
+  electron: string;
 }
 
 export interface Example {
   /** pong */
   ping(): Promise<string>;
-}
-
-export interface Versions {
-  node: string;
-  chromium: string;
-  electron: string;
 }

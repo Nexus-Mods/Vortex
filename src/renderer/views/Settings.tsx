@@ -1,23 +1,25 @@
-import { setSettingsPage } from "../../actions/session";
-import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import * as React from "react";
+import { Panel, Tab, Tabs } from "react-bootstrap";
+
 import type { PropsCallback } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
+import type { IParameters } from "../../util/commandLine";
+import type startupSettingsT from "../../util/startupSettings";
+
+import { setSettingsPage } from "../../actions/session";
+import lazyRequire from "../../util/lazyRequire";
+import makeReactive from "../../util/makeReactive";
 import {
   ComponentEx,
   connect,
   extend,
   translate,
 } from "../controls/ComponentEx";
-import lazyRequire from "../../util/lazyRequire";
-import makeReactive from "../../util/makeReactive";
-import type startupSettingsT from "../../util/startupSettings";
-
+import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import MainPage from "./MainPage";
-
-import * as React from "react";
-import { Panel, Tab, Tabs } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 
 const startupSettings = lazyRequire<typeof startupSettingsT>(
   () => require("../../util/startupSettings"),
@@ -59,7 +61,7 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
-  private mStartupSettings;
+  private mStartupSettings: IParameters;
 
   constructor(props: IProps) {
     super(props);
@@ -104,8 +106,8 @@ class Settings extends ComponentEx<IProps, {}> {
       <MainPage>
         <MainPage.Body>
           <Tabs
-            id="settings-tab"
             activeKey={page}
+            id="settings-tab"
             onSelect={this.setCurrentPage}
           >
             {combined.sort(this.sortByPriority).map(this.renderTab)}
@@ -128,13 +130,13 @@ class Settings extends ComponentEx<IProps, {}> {
       ) : (
         <EmptyPlaceholder
           icon="settings"
-          text={t("Nothing to configure.")}
           subtext={t("Other games may require settings here.")}
+          text={t("Nothing to configure.")}
         />
       );
 
     return (
-      <Tab key={page.title} eventKey={page.title} title={t(page.title)}>
+      <Tab eventKey={page.title} key={page.title} title={t(page.title)}>
         <div>{content}</div>
       </Tab>
     );
@@ -149,10 +151,11 @@ class Settings extends ComponentEx<IProps, {}> {
       <Panel key={idx}>
         <Panel.Body>
           {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+
           <page.component
             {...props}
-            startup={this.mStartupSettings}
             changeStartup={this.changeStartup}
+            startup={this.mStartupSettings}
           />
         </Panel.Body>
       </Panel>

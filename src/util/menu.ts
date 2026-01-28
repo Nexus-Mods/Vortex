@@ -1,16 +1,16 @@
-import type { IMainPageOptions } from "../types/IExtensionContext";
-
-import type ExtensionManager from "./ExtensionManager";
-import { debugTranslations, getMissingTranslations } from "./i18n";
-import { log } from "./log";
-
 import type * as RemoteT from "@electron/remote";
+
 import { webFrame } from "electron";
 import * as path from "path";
+
+import type { IMainPageOptions } from "../types/IExtensionContext";
+import type ExtensionManager from "./ExtensionManager";
+
 import { setZoomFactor } from "../actions/window";
-import { getApplication } from "./application";
 import getVortexPath from "./getVortexPath";
+import { debugTranslations, getMissingTranslations } from "./i18n";
 import lazyRequire from "./lazyRequire";
+import { log } from "./log";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -46,7 +46,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     {
       label: "Close",
       click() {
-        getApplication().quit();
+        window.api.app.quit();
       },
     },
   ];

@@ -1695,7 +1695,11 @@ class ExtensionManager {
         )
         .then((result) => {
           if (result.action === "Quit") {
-            getApplication().quit();
+            // NOTE(erri120): This looks bad and is bad but it's the
+            // only fix for tsc to not break that doesn't involve
+            // a massive refactoring.
+            // TODO: hack, remove after main/renderer separation
+            (window as any).api.app.quit();
             return PromiseBB.reject(new ProcessCanceled("meta db locked"));
           }
           return this.connectMetaDB(gameId, apiKey);

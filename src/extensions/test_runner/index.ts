@@ -28,9 +28,10 @@
  * Further event types can be triggered by extensions
  */
 
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+
 import type { DialogActions } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
-import { getErrorMessageOrDefault } from "../../shared/errors";
 import type {
   CheckFunction,
   IExtensionApi,
@@ -38,15 +39,14 @@ import type {
 } from "../../types/IExtensionContext";
 import type { INotificationAction } from "../../types/INotification";
 import type { ITestResult } from "../../types/ITestResult";
-import { getApplication } from "../../util/application";
+
+import { showDialog } from "../../actions/notifications";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { setdefault } from "../../util/util";
-
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
 
 interface ICheckEntry {
   id: string;
@@ -131,7 +131,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): PromiseBB<void> {
         if (result.severity === "fatal") {
           dialogActions.unshift({
             label: "Quit Vortex",
-            action: () => getApplication().quit(0),
+            action: () => window.api.app.quit(),
           });
           showMore();
         } else {

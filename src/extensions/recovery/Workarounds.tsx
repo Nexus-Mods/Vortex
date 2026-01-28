@@ -1,11 +1,13 @@
 import type PromiseBB from "bluebird";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
 import * as path from "path";
 import * as React from "react";
 import { Button, ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+
 import type {
   DialogActions,
   DialogType,
@@ -13,17 +15,17 @@ import type {
   IDialogContent,
   IDialogResult,
 } from "../../actions";
-import { showDialog } from "../../actions";
 import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+
+import { showDialog } from "../../actions";
 import { ComponentEx } from "../../renderer/controls/ComponentEx";
+import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
+import { FULL_BACKUP_PATH } from "../../store/store";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
-import { FULL_BACKUP_PATH } from "../../store/store";
 import { spawnSelf } from "../../util/util";
-import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 export interface IBaseProps {
   onCreateManualBackup: () => void;
@@ -49,19 +51,23 @@ class Settings extends ComponentEx<IProps, {}> {
     return (
       <div className="danger-outline">
         <div className="danger-heading">{t("Caution")}</div>
+
         <form>
-          <FormGroup id="database-backups" controlId="restore-backup">
+          <FormGroup controlId="restore-backup" id="database-backups">
             <ControlLabel>{t("Database backup")}</ControlLabel>
+
             <div className="button-container">
               <Button onClick={this.onSelectBackup}>
                 {t("Restore") + "..."}
               </Button>
             </div>
+
             <div className="button-container">
               <Button onClick={onCreateManualBackup}>
                 {t("Create Backup")}
               </Button>
             </div>
+
             <HelpBlock>
               <div>
                 {t(
@@ -75,6 +81,7 @@ class Settings extends ComponentEx<IProps, {}> {
                     "function.",
                 )}
               </div>
+
               <div>
                 {t(
                   "You can have up to 3 backups: One is automatically created whenever Vortex " +
@@ -201,7 +208,7 @@ class Settings extends ComponentEx<IProps, {}> {
         );
         if (confirm.action === "Confirm") {
           spawnSelf(["--restore", filePath]);
-          getApplication().quit();
+          window.api.app.quit();
         }
       }
     } catch (err) {

@@ -313,7 +313,8 @@ class ProcessMonitor {
       visited.add(proc.ppid);
       // Success if direct child of Vortex, otherwise recurse up the tree
       return (
-        proc.ppid === vortexPid || isChildProcessOfVortex(byPid[proc.ppid], visited)
+        proc.ppid === vortexPid ||
+        isChildProcessOfVortex(byPid[proc.ppid], visited)
       );
     };
 
@@ -353,7 +354,10 @@ class ProcessMonitor {
           // Step 6c-i: Process with cached PID still exists - but is it still "ours"?
           // For games (considerDetached=true): any process is valid, we're done
           // For tools (considerDetached=false): must still be a Vortex child process
-          if (considerDetached || isChildProcessOfVortex(knownProc, new Set())) {
+          if (
+            considerDetached ||
+            isChildProcessOfVortex(knownProc, new Set())
+          ) {
             return; // Still valid, no state change needed
           }
           // Step 6c-ii: Process exists but is no longer a child - fall through to re-match
