@@ -1,11 +1,13 @@
-import { NavItem } from "../../controls/TooltipControls";
-import type { IMainPage } from "../../../types/IMainPage";
-import { log } from "../../../util/log";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
-import { PageButton } from "../PageButton";
 import * as React from "react";
 import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+
+import type { IMainPage } from "../../../types/IMainPage";
+
+import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { log } from "../../../util/log";
+import { NavItem } from "../../controls/TooltipControls";
+import { PageButton } from "../PageButton";
 
 export interface IPageGroupProps {
   title: string | undefined;
@@ -53,20 +55,21 @@ export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
   return (
     <div key={groupKey}>
       {showTitle ? <p className="main-nav-group-title">{t(title)}</p> : null}
+
       <Nav
-        bsStyle="pills"
-        stacked
         activeKey={mainPage}
+        bsStyle="pills"
         className="main-nav-group"
+        stacked={true}
       >
         {visiblePages.map((page) => (
           <NavItem
-            id={page.id}
             className={secondaryPage === page.id ? "secondary" : undefined}
-            key={page.id}
             eventKey={page.id}
-            tooltip={t(page.title, { ns: page.namespace })}
+            id={page.id}
+            key={page.id}
             placement="right"
+            tooltip={t(page.title, { ns: page.namespace })}
             onClick={(e) => onClickPage(page.id, e.ctrlKey)}
           >
             <PageButton namespace={page.namespace} page={page} />

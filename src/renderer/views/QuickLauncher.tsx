@@ -1,10 +1,14 @@
-import { util } from "../..";
-import EmptyPlaceholder from "../controls/EmptyPlaceholder";
-import Spinner from "../controls/Spinner";
-import { IconButton } from "../controls/TooltipControls";
+import * as React from "react";
+import { DropdownButton, MenuItem } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { pathToFileURL } from "url";
+
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
-import { makeExeId } from "../../reducers/session";
 import type { IState } from "../../types/IState";
+
+import { makeExeId } from "../../reducers/session";
+import { unknownToError } from "../../shared/errors";
 import Debouncer from "../../util/Debouncer";
 import { ExtensionContext } from "../../util/ExtensionProvider";
 import { log } from "../../util/log";
@@ -18,13 +22,9 @@ import {
 import StarterInfo from "../../util/StarterInfo";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-
-import * as React from "react";
-import { DropdownButton, MenuItem } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
-import { pathToFileURL } from "url";
-import { unknownToError } from "../../shared/errors";
-import { useTranslation } from "react-i18next";
+import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import Spinner from "../controls/Spinner";
+import { IconButton } from "../controls/TooltipControls";
 
 type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 
@@ -200,9 +200,9 @@ export const QuickLauncher: React.FC = () => {
     api.events.emit("analytics-track-click-event", "Header", "Play game");
     const state: IState = api.store.getState();
     const profile = activeProfile(state);
-    const currentModsState = util.getSafe(profile, ["modState"], false);
+    const currentModsState = getSafe(profile, ["modState"], false);
     const enabledMods = Object.keys(currentModsState).filter((modId) =>
-      util.getSafe(currentModsState, [modId, "enabled"], false),
+      getSafe(currentModsState, [modId, "enabled"], false),
     );
     const gameMods = state.persistent.mods[profile.gameId] || {};
     const collections = Object.values(gameMods)
@@ -274,6 +274,7 @@ export const QuickLauncher: React.FC = () => {
         >
           <div className="quicklaunch-item">
             <div className="quicklaunch-name">{t(displayName)}</div>
+
             {profilesVisible ? (
               <div className="quicklaunch-profile">
                 {t("Profile")} : {profile?.name ?? t("<None>")}
@@ -296,7 +297,7 @@ export const QuickLauncher: React.FC = () => {
   const renderGameOptions = React.useCallback(() => {
     if (Object.keys(gameIconCache).length === 1) {
       return (
-        <MenuItem key="no-other-games" disabled={true}>
+        <MenuItem disabled={true} key="no-other-games">
           <EmptyPlaceholder
             icon="layout-list"
             text={t("No other games managed")}
@@ -309,7 +310,7 @@ export const QuickLauncher: React.FC = () => {
       .filter((gameId) => gameId !== game?.id)
       .filter((gameId) => !getSafe(discoveredGames, [gameId, "hidden"], false))
       .map((gameId) => (
-        <MenuItem key={gameId} eventKey={gameId}>
+        <MenuItem eventKey={gameId} key={gameId}>
           {renderGameOption(gameId)}
         </MenuItem>
       ));
@@ -344,24 +345,25 @@ export const QuickLauncher: React.FC = () => {
   return (
     <div className="container-quicklaunch">
       <DropdownButton
-        id="dropdown-quicklaunch"
         className="btn-quicklaunch"
-        title={renderGameOption(game.id)}
+        id="dropdown-quicklaunch"
         key={game.id}
+        noCaret={true}
+        title={renderGameOption(game.id)}
         onSelect={changeGame}
-        noCaret
       >
         {renderGameOptions()}
       </DropdownButton>
+
       <div className="container-quicklaunch-launch">
         {exclusiveRunning || primaryRunning ? (
           <Spinner />
         ) : (
           <IconButton
-            id="btn-quicklaunch-play"
-            onClick={start}
-            tooltip={t("Launch")}
             icon="launch-application"
+            id="btn-quicklaunch-play"
+            tooltip={t("Launch")}
+            onClick={start}
           />
         )}
       </div>

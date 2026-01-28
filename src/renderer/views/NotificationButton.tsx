@@ -2,29 +2,29 @@
 // Disabled: This component legitimately syncs derived state (filtered notifications)
 // in effects based on notification changes and timers.
 
-import {
-  dismissNotification,
-  fireNotificationAction,
-} from "../../actions/notifications";
-import { suppressNotification } from "../../actions/notificationSettings";
-import type {
-  INotification,
-  INotificationAction,
-} from "../../types/INotification";
-import type { IState } from "../../types/IState";
-
-import Icon from "../controls/Icon";
-import type { IBar } from "../controls/RadialProgress";
-import RadialProgress from "../controls/RadialProgress";
-import Debouncer from "../../util/Debouncer";
-import { ExtensionContext } from "../../util/ExtensionProvider";
-import { Notification } from "./Notification";
-
 import * as _ from "lodash";
 import * as React from "react";
 import { Badge, Button, Overlay, Popover } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+import type {
+  INotification,
+  INotificationAction,
+} from "../../types/INotification";
+import type { IState } from "../../types/IState";
+import type { IBar } from "../controls/RadialProgress";
+
+import {
+  dismissNotification,
+  fireNotificationAction,
+} from "../../actions/notifications";
+import { suppressNotification } from "../../actions/notificationSettings";
+import Debouncer from "../../util/Debouncer";
+import { ExtensionContext } from "../../util/ExtensionProvider";
+import Icon from "../controls/Icon";
+import RadialProgress from "../controls/RadialProgress";
+import { Notification } from "./Notification";
 
 export interface IBaseProps {
   id: string;
@@ -374,13 +374,13 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
 
       return (
         <Notification
+          collapsed={collapsed[notification.group]}
           key={notification.id}
           params={translated}
-          collapsed={collapsed[notification.group]}
-          onExpand={expandGroup}
-          onTriggerAction={triggerAction}
           onDismiss={dismissAll}
+          onExpand={expandGroup}
           onSuppress={suppress}
+          onTriggerAction={triggerAction}
         />
       );
     },
@@ -430,8 +430,8 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
 
   const popover = (
     <Popover
-      id="notifications-popover"
       arrowOffsetLeft={64}
+      id="notifications-popover"
       style={{ display: hide ? "none" : "block" }}
     >
       {items.length > 0 ? items : t("No Notifications")}
@@ -457,15 +457,17 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
 
   return (
     <div style={{ display: "inline-block" }}>
-      <Button id="notifications-button" onClick={toggle} ref={buttonRef}>
+      <Button id="notifications-button" ref={buttonRef} onClick={toggle}>
         <Icon name="notifications" />
+
         <RadialProgress
           className="notifications-progress"
           data={combinedProgress}
-          spin={pendingActivities.length >= 1}
           offset={8}
+          spin={pendingActivities.length >= 1}
           totalRadius={8}
         />
+
         {notifications.length === 0 ? null : (
           <Badge>{notifications.length}</Badge>
         )}
@@ -474,10 +476,10 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
       <Overlay
         placement="bottom"
         rootClose={false}
-        onExit={unExpand}
+        shouldUpdatePosition={resizing}
         show={items.length > 0}
         target={buttonRef.current}
-        shouldUpdatePosition={resizing}
+        onExit={unExpand}
       >
         {popover}
       </Overlay>

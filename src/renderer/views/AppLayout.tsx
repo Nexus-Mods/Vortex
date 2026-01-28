@@ -1,6 +1,10 @@
-import { setOpenMainPage } from "../../actions/session";
-import FlexLayout from "../controls/FlexLayout";
-import Spinner from "../controls/Spinner";
+import * as _ from "lodash";
+import PropTypes from "prop-types";
+import * as React from "react";
+import { Button as ReactButton } from "react-bootstrap";
+import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
+import { useDispatch, useSelector } from "react-redux";
+
 import type { IComponentContext } from "../../types/IComponentContext";
 import type {
   IExtensionApi,
@@ -9,15 +13,18 @@ import type {
 import type { IMainPage } from "../../types/IMainPage";
 import type { IModifiers } from "../../types/IModifiers";
 import type { IState } from "../../types/IState";
+import type { IRegisteredExtension } from "../../util/ExtensionManager";
+
+import { setOpenMainPage } from "../../actions/session";
 import {
   ExtensionContext,
   useExtensionObjects,
 } from "../../util/ExtensionProvider";
-import { useDispatch, useSelector } from "react-redux";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
 import { createQueue, MutexProvider } from "../../util/MutexContext";
 import startupSettings from "../../util/startupSettings";
 import { truthy } from "../../util/util";
+import FlexLayout from "../controls/FlexLayout";
+import Spinner from "../controls/Spinner";
 import {
   DialogLayer,
   MainLayout,
@@ -27,12 +34,6 @@ import {
   UIBlocker,
 } from "./layout";
 import { WindowControls } from "./WindowControls";
-
-import * as _ from "lodash";
-import PropTypes from "prop-types";
-import * as React from "react";
-import { Button as ReactButton } from "react-bootstrap";
-import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
 
 addStyle(ReactButton, "secondary");
 addStyle(ReactButton, "ad");
@@ -157,7 +158,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     ctrl: false,
     shift: false,
   });
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
 
   const getModifiers = React.useCallback(() => modifiersRef.current, []);
 
@@ -309,25 +310,32 @@ export const AppLayout: React.FC<IBaseProps> = () => {
       <MainContext.Provider value={contextValue}>
         <LegacyContextProvider
           api={api}
-          menuLayer={menuLayerRef.current}
           getModifiers={getModifiers}
+          menuLayer={menuLayerRef.current}
         >
           <MutexProvider value={mutexQueue}>
-            <div key="main" className={classes.join(" ")}>
+            <div className={classes.join(" ")} key="main">
               <div className="menu-layer" ref={setMenuLayer} />
+
               <FlexLayout id="main-window-content" type="column">
                 <Toolbar />
+
                 {customTitlebar ? <div className="dragbar" /> : null}
+
                 {switchingProfile ? (
                   <ProfileSwitcher />
                 ) : (
                   <MainLayout objects={objects} />
                 )}
               </FlexLayout>
+
               <DialogLayer />
+
               <ToastContainer />
+
               {customTitlebar ? <WindowControls /> : null}
             </div>
+
             <UIBlocker />
           </MutexProvider>
         </LegacyContextProvider>

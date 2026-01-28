@@ -1,11 +1,13 @@
-import { clearUIBlocker } from "../../../actions/session";
-import Icon from "../../controls/Icon";
-import type { IState } from "../../../types/IState";
-import { MainContext } from "../AppLayout";
 import * as React from "react";
 import { Button as ReactButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+import type { IState } from "../../../types/IState";
+
+import { clearUIBlocker } from "../../../actions/session";
+import Icon from "../../controls/Icon";
+import { MainContext } from "../AppLayout";
 
 export const UIBlocker = (): JSX.Element | null => {
   const { t } = useTranslation();
@@ -38,7 +40,9 @@ export const UIBlocker = (): JSX.Element | null => {
   return (
     <div className="ui-blocker">
       <Icon name={blocker.icon} />
+
       <div className="blocker-text">{blocker.description}</div>
+
       {blocker.mayCancel ? (
         <ReactButton onClick={() => onUnblock(uiBlockerId)}>
           {t("Cancel")}

@@ -1,11 +1,13 @@
 import type * as RemoteT from "@electron/remote";
 import type { BrowserWindow } from "electron";
+
 import * as React from "react";
-import { IconButton } from "../controls/TooltipControls";
+
 import lazyRequire from "../../util/lazyRequire";
+import { IconButton } from "../controls/TooltipControls";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);
 
 const getWindow = (() => {
   let res: BrowserWindow;
@@ -22,7 +24,7 @@ export function WindowControls(): React.JSX.Element {
     getWindow().isMaximized(),
   );
   const closedRef = React.useRef(false);
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
 
   React.useEffect(() => {
     const win = getWindow();
@@ -76,24 +78,26 @@ export function WindowControls(): React.JSX.Element {
   return (
     <div id="window-controls">
       <IconButton
-        id="window-minimize"
         className="window-control"
-        tooltip=""
         icon="window-minimize"
+        id="window-minimize"
+        tooltip=""
         onClick={minimize}
       />
+
       <IconButton
-        id="window-maximize"
         className="window-control"
-        tooltip=""
         icon={isMaximized ? "window-restore" : "window-maximize"}
+        id="window-maximize"
+        tooltip=""
         onClick={toggleMaximize}
       />
+
       <IconButton
-        id="window-close"
         className="window-control"
-        tooltip=""
         icon="window-close"
+        id="window-close"
+        tooltip=""
         onClick={close}
       />
     </div>

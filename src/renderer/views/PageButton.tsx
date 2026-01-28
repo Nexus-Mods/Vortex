@@ -1,11 +1,12 @@
-import Icon from "../controls/Icon";
-import Spinner from "../controls/Spinner";
-import type { IUpdateable } from "../ReduxProp";
-import type { IMainPage } from "../../types/IMainPage";
-
 import * as React from "react";
 import { Badge } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+
+import type { IMainPage } from "../../types/IMainPage";
+import type { IUpdateable } from "../ReduxProp";
+
+import Icon from "../controls/Icon";
+import Spinner from "../controls/Spinner";
 
 interface IPageButtonProps {
   page: IMainPage;
@@ -14,7 +15,7 @@ interface IPageButtonProps {
 
 export function PageButton(props: IPageButtonProps): React.JSX.Element {
   const { namespace, page } = props;
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
 
   const { t } = useTranslation();
 
@@ -56,8 +57,11 @@ export function PageButton(props: IPageButtonProps): React.JSX.Element {
   return (
     <div>
       <Icon name={page.icon} />
+
       <span className="menu-label">{t(page.title, { ns: namespace })}</span>
+
       {renderBadge()}
+
       {renderActivity()}
     </div>
   );

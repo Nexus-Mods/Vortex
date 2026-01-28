@@ -1,7 +1,8 @@
-import ProgressBar from "../controls/ProgressBar";
+import * as React from "react";
+
 import type ExtensionManager from "../../util/ExtensionManager";
 
-import * as React from "react";
+import ProgressBar from "../controls/ProgressBar";
 
 export interface ILoadingScreenProps {
   extensions: ExtensionManager;
@@ -36,8 +37,8 @@ export function LoadingScreen(props: ILoadingScreenProps): React.JSX.Element {
       <ProgressBar
         labelLeft="Loading Extensions"
         labelRight={readable(currentlyLoading)}
-        now={loaded}
         max={totalExtensions}
+        now={loaded}
       />
     </div>
   );

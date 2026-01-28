@@ -1,16 +1,18 @@
-import FlexLayout from "../../controls/FlexLayout";
-import Icon from "../../controls/Icon";
-import { Button } from "../../controls/TooltipControls";
-import type { IMainPage } from "../../../types/IMainPage";
-import type { IState } from "../../../types/IState";
-import { getGame } from "../../../extensions/gamemode_management/util/getGame";
-import { profileById } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { MainFooter } from "../MainFooter";
-import { PageGroup } from "./PageGroup";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+
+import type { IMainPage } from "../../../types/IMainPage";
+import type { IState } from "../../../types/IState";
+
+import { getGame } from "../../../extensions/gamemode_management/util/getGame";
+import { profileById } from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import FlexLayout from "../../controls/FlexLayout";
+import Icon from "../../controls/Icon";
+import { Button } from "../../controls/TooltipControls";
+import { MainFooter } from "../MainFooter";
+import { PageGroup } from "./PageGroup";
 
 export interface ISidebarProps {
   objects: IMainPage[];
@@ -52,7 +54,7 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
   const sbClass = tabsMinimized ? "sidebar-compact" : "sidebar-expanded";
 
   return (
-    <FlexLayout.Fixed id="main-nav-sidebar" className={sbClass}>
+    <FlexLayout.Fixed className={sbClass} id="main-nav-sidebar">
       <div id="main-nav-container" ref={onSidebarRef}>
         {pageGroups.map(({ title, key }) => {
           const groupPages = objects.filter((page) => page.group === key);
@@ -61,24 +63,26 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
           }
           return (
             <PageGroup
-              key={key}
-              title={title}
               groupKey={key}
-              pages={groupPages}
+              key={key}
               mainPage={mainPage}
+              pages={groupPages}
               secondaryPage={secondaryPage}
               tabsMinimized={tabsMinimized}
+              title={title}
               onClickPage={onClickPage}
             />
           );
         })}
       </div>
+
       <MainFooter slim={tabsMinimized} />
+
       <Button
-        tooltip={tabsMinimized ? t("Restore") : t("Minimize")}
-        id="btn-minimize-menu"
-        onClick={onToggleMenu}
         className="btn-menu-minimize"
+        id="btn-minimize-menu"
+        tooltip={tabsMinimized ? t("Restore") : t("Minimize")}
+        onClick={onToggleMenu}
       >
         <Icon name={tabsMinimized ? "pane-right" : "pane-left"} />
       </Button>

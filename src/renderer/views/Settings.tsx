@@ -1,22 +1,22 @@
-import { setSettingsPage } from "../../actions/session";
-import EmptyPlaceholder from "../controls/EmptyPlaceholder";
-import type { PropsCallback } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import { useExtensionObjects } from "../../util/ExtensionProvider";
-import lazyRequire from "../../util/lazyRequire";
-import makeReactive from "../../util/makeReactive";
-import type startupSettingsT from "../../util/startupSettings";
-
-import MainPage from "./MainPage";
-
 import * as React from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-const startupSettings = lazyRequire<typeof startupSettingsT>(
+import type { PropsCallback } from "../../types/IExtensionContext";
+import type { IState } from "../../types/IState";
+import type startupSettingsT from "../../util/startupSettings";
+
+import { setSettingsPage } from "../../actions/session";
+import { useExtensionObjects } from "../../util/ExtensionProvider";
+import lazyRequire from "../../util/lazyRequire";
+import makeReactive from "../../util/makeReactive";
+import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import MainPage from "./MainPage";
+
+const startupSettings = lazyRequire(
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  () => require("../../util/startupSettings"),
+  () => require("../../util/startupSettings") as typeof startupSettingsT,
   "default",
 );
 
@@ -84,10 +84,11 @@ export const Settings: React.FC = () => {
       <Panel key={idx}>
         <Panel.Body>
           {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+
           <page.component
             {...props}
-            startup={startupSettingsRef.current}
             changeStartup={changeStartup}
+            startup={startupSettingsRef.current}
           />
         </Panel.Body>
       </Panel>
@@ -105,13 +106,13 @@ export const Settings: React.FC = () => {
       ) : (
         <EmptyPlaceholder
           icon="settings"
-          text={t("Nothing to configure.")}
           subtext={t("Other games may require settings here.")}
+          text={t("Nothing to configure.")}
         />
       );
 
     return (
-      <Tab key={page.title} eventKey={page.title} title={t(page.title)}>
+      <Tab eventKey={page.title} key={page.title} title={t(page.title)}>
         <div>{content}</div>
       </Tab>
     );
@@ -151,7 +152,7 @@ export const Settings: React.FC = () => {
   return (
     <MainPage>
       <MainPage.Body>
-        <Tabs id="settings-tab" activeKey={page} onSelect={setCurrentPage}>
+        <Tabs activeKey={page} id="settings-tab" onSelect={setCurrentPage}>
           {combined.sort(sortByPriority).map(renderTab)}
         </Tabs>
       </MainPage.Body>

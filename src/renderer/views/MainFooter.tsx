@@ -1,7 +1,8 @@
-import type { PropsCallback } from "../../types/IExtensionContext";
-import { useExtensionObjects } from "../../util/ExtensionProvider";
-
 import * as React from "react";
+
+import type { PropsCallback } from "../../types/IExtensionContext";
+
+import { useExtensionObjects } from "../../util/ExtensionProvider";
 
 export interface IBaseProps {
   slim: boolean;

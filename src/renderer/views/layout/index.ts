@@ -1,6 +1,6 @@
+export * from "./ContentPane";
 export * from "./DialogLayer";
 export * from "./MainLayout";
-export * from "./ContentPane";
 export * from "./PageGroup";
 export * from "./ProfileSwitcher";
 export * from "./Sidebar";

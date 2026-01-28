@@ -1,17 +1,18 @@
-import Dropdown from "../controls/Dropdown";
-import Icon from "../controls/Icon";
-import PortalMenu from "../controls/PortalMenu";
-import Spinner from "../controls/Spinner";
+import * as React from "react";
+import { Button, MenuItem } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+
 import type {
   INotification,
   INotificationAction,
   NotificationType,
 } from "../../types/INotification";
 
-import * as React from "react";
-import { Button, MenuItem } from "react-bootstrap";
+import Dropdown from "../controls/Dropdown";
+import Icon from "../controls/Icon";
+import PortalMenu from "../controls/PortalMenu";
+import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
-import { useTranslation } from "react-i18next";
 
 interface IActionProps {
   icon: string;
@@ -31,7 +32,7 @@ function Action(props: IActionProps): React.JSX.Element {
 
   if (icon !== undefined) {
     return (
-      <IconButton onClick={trigger} icon={icon} tooltip={t(title, { count })} />
+      <IconButton icon={icon} tooltip={t(title, { count })} onClick={trigger} />
     );
   } else {
     return <Button onClick={trigger}>{t(title, { count })}</Button>;
@@ -127,10 +128,10 @@ export function Notification(props: IProps): React.JSX.Element {
   const renderAction = (action: INotificationAction) => {
     return (
       <Action
-        key={action.title ?? action.icon}
-        icon={action.icon}
-        title={action.title}
         count={collapsed}
+        icon={action.icon}
+        key={action.title ?? action.icon}
+        title={action.title}
         onTrigger={trigger}
       />
     );
@@ -145,22 +146,23 @@ export function Notification(props: IProps): React.JSX.Element {
 
     return (
       <Dropdown
-        id={`notification-${params.id}-extra`}
         className="notification-extra-options"
+        id={`notification-${params.id}-extra`}
         ref={menuRef}
       >
         <Dropdown.Toggle onClick={handleOpen}>
           <Icon name="settings" />
         </Dropdown.Toggle>
+
         <PortalMenu
+          bsRole="menu"
           open={open}
+          target={menuRef.current}
           onClick={handleClose}
           onClose={handleClose}
-          target={menuRef.current}
-          bsRole="menu"
         >
           {params.allowSuppress && onSuppress !== undefined ? (
-            <MenuItem onClick={suppressNotification} eventKey="suppress">
+            <MenuItem eventKey="suppress" onClick={suppressNotification}>
               {t("Never show again")}
             </MenuItem>
           ) : null}
@@ -181,30 +183,41 @@ export function Notification(props: IProps): React.JSX.Element {
   const styleName = typeToStyle(type);
 
   return (
-    <div role="alert" className={`notification alert-${styleName}`}>
+    <div
+      className={`
+      notification
+      alert-${styleName}
+    `}
+      role="alert"
+    >
       {progress !== undefined ? (
         <span
           className="notification-progress"
           style={{ left: `${progress}%` }}
         />
       ) : null}
+
       <div className="btn btn-default btn-embed no-hover">
         {typeToIcon(type)}{" "}
       </div>
+
       <div className="notification-textbox">
         {title !== undefined ? (
           <div className="notification-title">{title}</div>
         ) : null}
+
         <div className="notification-message hover-expand">
           {lines.map((line) => (
             <span key={line}>{line}</span>
           ))}
         </div>
       </div>
+
       <div className="notification-buttons">
         {actions !== undefined && onTriggerAction !== undefined
           ? actions.map((action) => renderAction(action))
           : null}
+
         {!noDismiss && onDismiss !== undefined ? (
           <IconButton
             icon="close"
@@ -212,11 +225,13 @@ export function Notification(props: IProps): React.JSX.Element {
             onClick={dismiss}
           />
         ) : null}
+
         {collapsed > 1 && onExpand !== undefined ? (
           <Button onClick={expand}>
             {t("{{ count }} More", { count: collapsed - 1 })}
           </Button>
         ) : null}
+
         {id !== undefined ? renderExtraOptions() : null}
       </div>
     </div>

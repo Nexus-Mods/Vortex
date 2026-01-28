@@ -1,8 +1,9 @@
-import ErrorBoundary from "../controls/ErrorBoundary";
-import type { PropsCallback } from "../../types/IExtensionContext";
-import { useExtensionObjects } from "../../util/ExtensionProvider";
-
 import * as React from "react";
+
+import type { PropsCallback } from "../../types/IExtensionContext";
+
+import { useExtensionObjects } from "../../util/ExtensionProvider";
+import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
 
 interface IExtOverlay {
@@ -23,7 +24,7 @@ function registerOverlay(
 function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
   const props = overlay.props !== undefined ? overlay.props() : {};
   return (
-    <ErrorBoundary key={overlay.id} className="errorboundary-overlay">
+    <ErrorBoundary className="errorboundary-overlay" key={overlay.id}>
       <ExtensionGate id={overlay.id}>
         <overlay.component {...props} />
       </ExtensionGate>

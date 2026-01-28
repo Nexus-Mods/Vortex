@@ -1,13 +1,15 @@
-import { setOpenMainPage } from "../../../actions/session";
-import { setTabsMinimized } from "../../../actions/window";
 import * as React from "react";
-import FlexLayout from "../../controls/FlexLayout";
+import { useDispatch, useSelector } from "react-redux";
+
 import type { IMainPage } from "../../../types/IMainPage";
 import type { IState } from "../../../types/IState";
+
+import { setOpenMainPage } from "../../../actions/session";
+import { setTabsMinimized } from "../../../actions/window";
 import { getSafe } from "../../../util/storeHelper";
+import FlexLayout from "../../controls/FlexLayout";
 import { MainPageContainer } from "../MainPageContainer";
 import { Settings } from "../Settings";
-import { useDispatch, useSelector } from "react-redux";
 import { ContentPane, Sidebar } from "./index";
 
 const settingsPage: IMainPage = {
@@ -121,9 +123,9 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
 
     return (
       <MainPageContainer
+        active={active}
         key={page.id}
         page={page}
-        active={active}
         secondary={secondaryPage === page.id}
       />
     );
@@ -131,16 +133,18 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
 
   return (
     <FlexLayout.Flex>
-      <FlexLayout type="row" style={{ overflow: "hidden" }}>
+      <FlexLayout style={{ overflow: "hidden" }} type="row">
         <Sidebar
           objects={objects}
           settingsPage={settingsPage}
           onClickPage={handleClickPage}
-          onToggleMenu={handleToggleMenu}
           onSidebarRef={handleSidebarRef}
+          onToggleMenu={handleToggleMenu}
         />
+
         <ContentPane>
           {objects.map(renderPage)}
+
           {renderPage(settingsPage)}
         </ContentPane>
       </FlexLayout>

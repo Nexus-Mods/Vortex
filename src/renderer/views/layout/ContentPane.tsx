@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import FlexLayout from "../../controls/FlexLayout";
 import { DNDContainer } from "../DNDContainer";
 
@@ -8,7 +9,7 @@ export interface IContentPaneProps {
 
 export const ContentPane = ({ children }: IContentPaneProps): JSX.Element => {
   return (
-    <FlexLayout.Flex fill id="main-window-pane">
+    <FlexLayout.Flex fill={true} id="main-window-pane">
       <DNDContainer
         style={{
           display: "flex",

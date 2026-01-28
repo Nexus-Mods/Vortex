@@ -1,7 +1,7 @@
+import * as React from "react";
+
 import { MainPageBody } from "./MainPageBody";
 import { MainPageHeader } from "./MainPageHeader";
-
-import * as React from "react";
 
 // Vortex's backend depends on this, be careful when changing!
 
@@ -33,9 +33,9 @@ const MainPageInner = React.forwardRef<HTMLDivElement, IBaseProps>(
 
     return (
       <div
+        className={(className || "") + " main-page-inner"}
         id={id}
         ref={setRef}
-        className={(className || "") + " main-page-inner"}
       >
         {children}
       </div>

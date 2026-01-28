@@ -1,15 +1,16 @@
-import ExtensionGate from "../controls/ExtensionGate";
-import Icon from "../controls/Icon";
+import * as React from "react";
+import { Alert, Button, Jumbotron } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+
 import type { IMainPage } from "../../types/IMainPage";
+
+import { getApplication } from "../../util/application";
 import { didIgnoreError, isOutdated } from "../../util/errorHandling";
 import { genHash } from "../../util/genHash";
 import { log } from "../../util/log";
+import ExtensionGate from "../controls/ExtensionGate";
+import Icon from "../controls/Icon";
 import { MainContext } from "./MainWindow";
-
-import * as React from "react";
-import { Alert, Button, Jumbotron } from "react-bootstrap";
-import { getApplication } from "../../util/application";
-import { useTranslation } from "react-i18next";
 
 export interface IBaseProps {
   page: IMainPage;
@@ -63,10 +64,10 @@ class PageErrorBoundary extends React.Component<
     if (error !== undefined) {
       return (
         <ErrorFallback
-          pageId={pageId}
           classes={classes}
           error={error}
           errorInfo={errorInfo}
+          pageId={pageId}
           onRetry={() =>
             this.setState({ error: undefined, errorInfo: undefined })
           }
@@ -115,14 +116,17 @@ ComponentStack:
   }, [context.api, error, errorInfo]);
 
   return (
-    <div id={`page-${pageId}`} className={classes.join(" ")}>
-      <Alert className="render-failure" bsStyle="danger">
+    <div className={classes.join(" ")} id={`page-${pageId}`}>
+      <Alert bsStyle="danger" className="render-failure">
         <Icon className="render-failure-icon" name="sad" />
+
         <div className="render-failure-text">{t("Failed to render.")}</div>
+
         <div className="render-failure-buttons">
           {isOutdated() || didIgnoreError() ? null : (
             <Button onClick={report}>{t("Report")}</Button>
           )}
+
           <Button onClick={onRetry}>{t("Retry")}</Button>
         </div>
       </Alert>
@@ -165,8 +169,9 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
     const props = page.propsFunc();
     content = (
       <PageHeaderContext.Provider value={headerContextValue}>
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
+        <div className={classes.join(" ")} id={`page-${page.id}`}>
           <div className="mainpage-header-container" ref={handleHeaderRef} />
+
           <div className="mainpage-body-container">
             <ExtensionGate id={page.id}>
               <page.component
@@ -191,7 +196,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
   }
 
   return (
-    <PageErrorBoundary pageId={page.id} classes={classes}>
+    <PageErrorBoundary classes={classes} pageId={page.id}>
       {content}
     </PageErrorBoundary>
   );

@@ -2,29 +2,8 @@
 // Disabled: This component legitimately syncs dialog state in effects when the
 // dialogs array changes (tracking current dialog ID, content, and validation).
 
-import type { ILink } from "../../actions";
-import { triggerDialogLink } from "../../actions";
-import type { DialogContentItem } from "../../actions/notifications";
-import { closeDialog, closeDialogs } from "../../actions/notifications";
-import Collapse from "../controls/Collapse";
-import ErrorBoundary from "../controls/ErrorBoundary";
-import Icon from "../controls/Icon";
-import Webview from "../controls/Webview";
-import type {
-  ConditionResults,
-  DialogType,
-  ICheckbox,
-  IConditionResult,
-  IDialogContent,
-  IInput,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import bbcode from "../controls/bbcode";
-import type { TFunction } from "../../util/i18n";
-import lazyRequire from "../../util/lazyRequire";
-import { MutexWrapper } from "../../util/MutexContext";
-
 import type * as RemoteT from "@electron/remote";
+
 import update from "immutability-helper";
 import * as React from "react";
 import {
@@ -36,9 +15,32 @@ import {
   Modal,
   Radio,
 } from "react-bootstrap";
-import ReactMarkdown from "react-markdown";
 import { useTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
+
+import type { ILink } from "../../actions";
+import type { DialogContentItem } from "../../actions/notifications";
+import type {
+  ConditionResults,
+  DialogType,
+  ICheckbox,
+  IConditionResult,
+  IDialogContent,
+  IInput,
+} from "../../types/IDialog";
+import type { IState } from "../../types/IState";
+import type { TFunction } from "../../util/i18n";
+
+import { triggerDialogLink } from "../../actions";
+import { closeDialog, closeDialogs } from "../../actions/notifications";
+import lazyRequire from "../../util/lazyRequire";
+import { MutexWrapper } from "../../util/MutexContext";
+import bbcode from "../controls/bbcode";
+import Collapse from "../controls/Collapse";
+import ErrorBoundary from "../controls/ErrorBoundary";
+import Icon from "../controls/Icon";
+import Webview from "../controls/Webview";
 
 // TODO: Port to DialogResult.input
 type DialogInputData = Record<string, boolean | string | undefined>;
@@ -66,11 +68,11 @@ function Action(props: IActionProps): React.JSX.Element {
 
   return (
     <Button
+      autoFocus={isDefault}
+      bsStyle={isDefault ? "primary" : undefined}
+      disabled={isDisabled}
       id="close"
       onClick={dismiss}
-      bsStyle={isDefault ? "primary" : undefined}
-      autoFocus={isDefault}
-      disabled={isDisabled}
     >
       {t(action)}
     </Button>
@@ -166,11 +168,11 @@ export const Dialog: React.FC = () => {
   const iconForType = React.useCallback((type: DialogType) => {
     switch (type) {
       case "info":
-        return <Icon name="dialog-info" className="icon-info" />;
+        return <Icon className="icon-info" name="dialog-info" />;
       case "error":
-        return <Icon name="dialog-error" className="icon-error" />;
+        return <Icon className="icon-error" name="dialog-error" />;
       case "question":
-        return <Icon name="dialog-question" className="icon-question" />;
+        return <Icon className="icon-question" name="dialog-question" />;
       default:
         return null;
     }
@@ -411,13 +413,15 @@ export const Dialog: React.FC = () => {
       return (
         <FormGroup key={input.id} validationState={validationState}>
           {input.label ? <ControlLabel>{t(input.label)}</ControlLabel> : null}
+
           <FormControl
-            id={`dialoginput-${input.id}`}
             componentClass={input.type === "multiline" ? "textarea" : undefined}
-            type={effectiveType}
-            value={input.value || ""}
+            id={`dialoginput-${input.id}`}
+            inputRef={idx === 0 ? focusMe : undefined}
             label={input.label}
             placeholder={input.placeholder}
+            type={effectiveType}
+            value={input.value || ""}
             onChange={(e: React.FormEvent<FormControl>) => {
               if (
                 e.target instanceof HTMLInputElement ||
@@ -426,8 +430,8 @@ export const Dialog: React.FC = () => {
                 changeInput(input.id, e.target.value);
               }
             }}
-            inputRef={idx === 0 ? focusMe : undefined}
           />
+
           {valRes !== undefined && valRes.length !== 0 ? (
             <label className="control-label">
               {valRes.map((res) => res.errorText).join("\n")}
@@ -490,11 +494,11 @@ export const Dialog: React.FC = () => {
             : checkbox.text;
       return (
         <Checkbox
+          checked={checkbox.value}
+          disabled={checkbox.disabled}
           id={checkbox.id}
           key={checkbox.id}
-          checked={checkbox.value}
           onChange={() => toggleCheckbox(checkbox.id)}
-          disabled={checkbox.disabled}
         >
           {text}
         </Checkbox>
@@ -510,6 +514,7 @@ export const Dialog: React.FC = () => {
           {checkbox.subText !== undefined ? (
             <>
               <div className="choice-maintext">{t(checkbox.text)}</div>
+
               <div className="choice-subtext">{t(checkbox.subText)}</div>
             </>
           ) : (
@@ -520,12 +525,12 @@ export const Dialog: React.FC = () => {
 
       return (
         <Radio
+          checked={checkbox.value}
+          disabled={checkbox.disabled}
           id={checkbox.id}
           key={checkbox.id}
           name="dialog-radio"
-          checked={checkbox.value}
           onChange={() => toggleRadio(checkbox.id)}
-          disabled={checkbox.disabled}
         >
           {content}
         </Radio>
@@ -551,7 +556,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "text",
           control: (
-            <div key="dialog-content-text" className="dialog-content-text">
+            <div className="dialog-content-text" key="dialog-content-text">
               {tFunc(content.text, {
                 replace: content.parameters,
                 count: content.parameters?.count,
@@ -580,7 +585,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "bbcode",
           control: (
-            <div key="dialog-content-bbcode" className="dialog-content-bbcode">
+            <div className="dialog-content-bbcode" key="dialog-content-bbcode">
               {bbcode(bbcodeContent, content.options?.bbcodeContext)}
             </div>
           ),
@@ -592,8 +597,8 @@ export const Dialog: React.FC = () => {
           id: "md",
           control: (
             <div
-              key="dialog-content-markdown"
               className="dialog-content-markdown"
+              key="dialog-content-markdown"
             >
               <ReactMarkdown>
                 {tFunc(content.md, {
@@ -614,9 +619,9 @@ export const Dialog: React.FC = () => {
         const ctrl = (
           <textarea
             key="dialog-content-message"
-            wrap={wrap}
-            value={translateParts(content.message, tFunc, content.parameters)}
             readOnly={true}
+            value={translateParts(content.message, tFunc, content.parameters)}
+            wrap={wrap}
           />
         );
         if (
@@ -627,9 +632,9 @@ export const Dialog: React.FC = () => {
             id: "message",
             control: (
               <Collapse
+                hideText={t("Hide Details")}
                 key="dialog-content-message-wrapper"
                 showText={t("Show Details")}
-                hideText={t("Hide Details")}
               >
                 {ctrl}
               </Collapse>
@@ -656,10 +661,10 @@ export const Dialog: React.FC = () => {
           id: "htmlText",
           control: (
             <div
-              key="dialog-content-html-text"
               className="dialog-content-html"
               // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
               dangerouslySetInnerHTML={{ __html: content.htmlText }}
+              key="dialog-content-html-text"
             />
           ),
         });
@@ -669,7 +674,7 @@ export const Dialog: React.FC = () => {
         controls.push({
           id: "input",
           control: (
-            <div key="dialog-form-content" className="dialog-content-input">
+            <div className="dialog-content-input" key="dialog-form-content">
               {content.input.map(renderInput)}
             </div>
           ),
@@ -681,8 +686,8 @@ export const Dialog: React.FC = () => {
           id: "checkboxes",
           control: (
             <div
-              key="dialog-content-checkboxes"
               className="dialog-content-choices"
+              key="dialog-content-checkboxes"
             >
               {content.checkboxes.length > 3 ? (
                 <div className="dialog-apply-all-btns">
@@ -691,6 +696,7 @@ export const Dialog: React.FC = () => {
                   <a onClick={disableAll}>{t("Disable all")}</a>
                 </div>
               ) : null}
+
               <div>
                 {content.checkboxes.map((checkbox) =>
                   renderCheckbox(checkbox, content),
@@ -706,8 +712,8 @@ export const Dialog: React.FC = () => {
           id: "choices",
           control: (
             <div
-              key="dialog-content-choices"
               className="dialog-content-choices"
+              key="dialog-content-choices"
             >
               <div>{content.choices.map(renderRadiobutton)}</div>
             </div>
@@ -769,11 +775,11 @@ export const Dialog: React.FC = () => {
         ) !== undefined;
       return (
         <Action
-          key={action}
           action={action}
           isDefault={isDefault}
-          onDismiss={dismiss}
           isDisabled={isDisabled}
+          key={action}
+          onDismiss={dismiss}
         />
       );
     },
@@ -838,8 +844,10 @@ export const Dialog: React.FC = () => {
   return (
     <MutexWrapper show={dialog !== undefined}>
       <Modal
+        className={`
+          common-dialog-${type}
+        `}
         id={dialog.id}
-        className={`common-dialog-${type}`}
         show={dialog !== undefined}
         onHide={nop}
         onKeyPress={handleKeyPress}
@@ -853,11 +861,13 @@ export const Dialog: React.FC = () => {
             })}
           </Modal.Title>
         </Modal.Header>
+
         <Modal.Body>
           <ErrorBoundary visible={true}>
             {renderContent(dialogState)}
           </ErrorBoundary>
         </Modal.Body>
+
         <Modal.Footer>
           {dialog.actions.map((action) =>
             renderAction(action, action === dialog.defaultAction),

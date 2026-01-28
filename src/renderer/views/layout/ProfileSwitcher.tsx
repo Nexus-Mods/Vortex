@@ -1,13 +1,15 @@
-import { setDialogVisible } from "../../../actions/session";
-import ProgressBar from "../../controls/ProgressBar";
-import Spinner from "../../controls/Spinner";
-import type { IState } from "../../../types/IState";
-import { getSafe } from "../../../util/storeHelper";
-import { Dialog } from "../Dialog";
-import { DialogContainer } from "../DialogContainer";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+
+import type { IProfile, IState } from "../../../types/IState";
+
+import { setDialogVisible } from "../../../actions/session";
+import { getSafe } from "../../../util/storeHelper";
+import ProgressBar from "../../controls/ProgressBar";
+import Spinner from "../../controls/Spinner";
+import { Dialog } from "../Dialog";
+import { DialogContainer } from "../DialogContainer";
 
 export const ProfileSwitcher = (): JSX.Element => {
   const { t } = useTranslation();
@@ -51,9 +53,12 @@ export const ProfileSwitcher = (): JSX.Element => {
             replace: { name: profile?.name ?? t("None") },
           })}
         </h4>
+
         {control}
       </div>
+
       <Dialog />
+
       <DialogContainer
         visibleDialog={visibleDialog}
         onHideDialog={onHideDialog}

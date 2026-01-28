@@ -1,9 +1,10 @@
-import type { IState } from "../../types/IState";
-import { PageHeaderContext } from "./MainPageContainer";
-
 import * as React from "react";
 import { Portal } from "react-overlays";
 import { useSelector } from "react-redux";
+
+import type { IState } from "../../types/IState";
+
+import { PageHeaderContext } from "./MainPageContainer";
 
 export interface IProps {
   children?: React.ReactNode;

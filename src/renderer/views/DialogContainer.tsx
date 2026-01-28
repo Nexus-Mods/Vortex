@@ -1,9 +1,10 @@
+import * as React from "react";
+
+import type { PropsCallback } from "../../types/IExtensionContext";
+
+import { useExtensionObjects } from "../../util/ExtensionProvider";
 import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
-import type { PropsCallback } from "../../types/IExtensionContext";
-import { useExtensionObjects } from "../../util/ExtensionProvider";
-
-import * as React from "react";
 
 interface IExtDialog {
   id: string;
@@ -33,9 +34,9 @@ function renderDialog(
   const props = dialog.props !== undefined ? dialog.props() : {};
   return (
     <ErrorBoundary
-      key={dialog.id}
-      className="errorboundary-dialog"
       canDisplayError={false}
+      className="errorboundary-dialog"
+      key={dialog.id}
       visible={dialog.id === visibleDialog}
       onHide={onHideDialog}
     >
