@@ -16,24 +16,16 @@ import type { IState } from "../../types/IState";
 import type { IRegisteredExtension } from "../../util/ExtensionManager";
 
 import { setOpenMainPage } from "../../actions/session";
+import { setUseModernLayout } from "../../actions/window";
 import {
   ExtensionContext,
   useExtensionObjects,
 } from "../../util/ExtensionProvider";
 import { createQueue, MutexProvider } from "../../util/MutexContext";
-import startupSettings from "../../util/startupSettings";
 import { truthy } from "../../util/util";
-import FlexLayout from "../controls/FlexLayout";
+import { type IWindowContext, WindowProvider } from "../../util/WindowContext";
 import Spinner from "../controls/Spinner";
-import {
-  DialogLayer,
-  MainLayout,
-  ProfileSwitcher,
-  ToastContainer,
-  Toolbar,
-  UIBlocker,
-} from "./layout";
-import { WindowControls } from "./WindowControls";
+import { ClassicLayout, ModernLayout } from "./layout";
 
 addStyle(ReactButton, "secondary");
 addStyle(ReactButton, "ad");
@@ -136,6 +128,9 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   );
   const customTitlebar = useSelector(
     (state: IState) => state.settings.window.customTitlebar,
+  );
+  const useModernLayout = useSelector(
+    (state: IState) => state.settings.window.useModernLayout,
   );
 
   const onSetOpenMainPage = React.useCallback(
@@ -282,20 +277,6 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   const switchingProfile =
     activeProfileId !== nextProfileId && truthy(nextProfileId);
 
-  const classes = [];
-  classes.push(hidpi ? "hidpi" : "lodpi");
-  classes.push(focused ? "window-focused" : "window-unfocused");
-  if (customTitlebar) {
-    classes.push("window-frame");
-  }
-  if (menuOpen) {
-    classes.push("menu-open");
-  }
-
-  if (startupSettings.disableGPU) {
-    classes.push("no-gpu-acceleration");
-  }
-
   const contextValue: IComponentContext = React.useMemo(
     () => ({
       api,
@@ -305,41 +286,63 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     [api, getModifiers],
   );
 
+  const windowContextValue: IWindowContext = React.useMemo(
+    () => ({
+      isFocused: focused,
+      isMenuOpen: menuOpen,
+      isHidpi: hidpi,
+    }),
+    [focused, menuOpen, hidpi],
+  );
+
   return (
     <React.Suspense fallback={<Spinner className="suspense-spinner" />}>
-      <MainContext.Provider value={contextValue}>
-        <LegacyContextProvider
-          api={api}
-          getModifiers={getModifiers}
-          menuLayer={menuLayerRef.current}
-        >
-          <MutexProvider value={mutexQueue}>
-            <div className={classes.join(" ")} key="main">
-              <div className="menu-layer" ref={setMenuLayer} />
+      <WindowProvider value={windowContextValue}>
+        <MainContext.Provider value={contextValue}>
+          <LegacyContextProvider
+            api={api}
+            getModifiers={getModifiers}
+            menuLayer={menuLayerRef.current}
+          >
+            <MutexProvider value={mutexQueue}>
+              {useModernLayout ? (
+                <ModernLayout
+                  customTitlebar={customTitlebar}
+                  objects={objects}
+                  setMenuLayer={setMenuLayer}
+                  switchingProfile={switchingProfile}
+                />
+              ) : (
+                <ClassicLayout
+                  customTitlebar={customTitlebar}
+                  objects={objects}
+                  setMenuLayer={setMenuLayer}
+                  switchingProfile={switchingProfile}
+                />
+              )}
+            </MutexProvider>
 
-              <FlexLayout id="main-window-content" type="column">
-                <Toolbar />
-
-                {customTitlebar ? <div className="dragbar" /> : null}
-
-                {switchingProfile ? (
-                  <ProfileSwitcher />
-                ) : (
-                  <MainLayout objects={objects} />
-                )}
-              </FlexLayout>
-
-              <DialogLayer />
-
-              <ToastContainer />
-
-              {customTitlebar ? <WindowControls /> : null}
-            </div>
-
-            <UIBlocker />
-          </MutexProvider>
-        </LegacyContextProvider>
-      </MainContext.Provider>
+            <button
+              style={{
+                position: "fixed",
+                bottom: 16,
+                right: 16,
+                zIndex: 9999,
+                padding: "8px 12px",
+                borderRadius: 4,
+                border: "none",
+                backgroundColor: "#da8e35",
+                color: "white",
+                cursor: "pointer",
+                fontSize: 12,
+              }}
+              onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
+            >
+              {useModernLayout ? "Switch to Classic" : "Switch to Modern"}
+            </button>
+          </LegacyContextProvider>
+        </MainContext.Provider>
+      </WindowProvider>
     </React.Suspense>
   );
 };

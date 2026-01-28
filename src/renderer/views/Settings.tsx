@@ -79,7 +79,7 @@ export const Settings: React.FC = () => {
   };
 
   const renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
-    const props = page.props !== undefined ? page.props() : {};
+    const props = page.props ? page.props() : {};
     return (
       <Panel key={idx}>
         <Panel.Body>

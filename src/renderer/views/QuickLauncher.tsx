@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { pathToFileURL } from "url";
 
+import type { IDiscoveredTool, IToolStored } from "../.././/types/api";
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
 import type { IState } from "../../types/IState";
 
@@ -42,14 +43,14 @@ export const QuickLauncher: React.FC = () => {
     currentGameDiscovery(state),
   );
   const discoveredTools = useSelector((state: IState) =>
-    getSafe(
+    getSafe<{ [key: string]: IDiscoveredTool }>(
       state,
       ["settings", "gameMode", "discovered", gameMode, "tools"],
       {},
     ),
   );
   const primaryTool = useSelector((state: IState) =>
-    getSafe(
+    getSafe<IToolStored | undefined>(
       state,
       ["settings", "interface", "primaryTool", gameMode],
       undefined,
@@ -148,20 +149,24 @@ export const QuickLauncher: React.FC = () => {
     }
 
     try {
-      if (
-        !truthy(primaryTool) ||
-        (game.supportedTools[primaryTool] === undefined &&
-          discoveredTools[primaryTool] === undefined)
-      ) {
+      const foundGameSupportedTools = primaryTool
+        ? game.supportedTools?.find((tool) => tool.id === primaryTool.id)
+        : undefined;
+      const foundDiscoveredTool = primaryTool
+        ? Object.values(discoveredTools).find(
+            (tool) => tool.id === primaryTool.id,
+          )
+        : undefined;
+      if (!primaryTool || (!foundGameSupportedTools && !foundDiscoveredTool)) {
         return new StarterInfo(game, gameDiscovery);
       } else {
         try {
-          if (truthy(discoveredTools[primaryTool].path)) {
+          if (foundDiscoveredTool.path !== undefined) {
             return new StarterInfo(
               game,
               gameDiscovery,
-              game !== undefined ? game.supportedTools[primaryTool] : undefined,
-              discoveredTools[primaryTool],
+              game !== undefined ? foundGameSupportedTools : undefined,
+              foundDiscoveredTool,
             );
           } else {
             throw new Error("invalid path to primary tool");
@@ -198,7 +203,7 @@ export const QuickLauncher: React.FC = () => {
       return;
     }
     api.events.emit("analytics-track-click-event", "Header", "Play game");
-    const state: IState = api.store.getState();
+    const state = api.getState();
     const profile = activeProfile(state);
     const currentModsState = getSafe(profile, ["modState"], false);
     const enabledMods = Object.keys(currentModsState).filter((modId) =>
@@ -259,9 +264,13 @@ export const QuickLauncher: React.FC = () => {
         getSafe(
           discovered,
           ["shortName"],
-          getSafe(cachedGame, ["shortName"], undefined),
+          getSafe<string | undefined>(cachedGame, ["shortName"], undefined),
         ) ||
-        getSafe(discovered, ["name"], getSafe(cachedGame, ["name"], undefined));
+        getSafe<string | undefined>(
+          discovered,
+          ["name"],
+          getSafe<string | undefined>(cachedGame, ["name"], undefined),
+        );
 
       if (displayName !== undefined) {
         displayName = displayName.replace(/\t/g, " ");
