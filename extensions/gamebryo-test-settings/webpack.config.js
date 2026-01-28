@@ -1,3 +1,3 @@
-let webpack = require('vortex-api/bin/webpack').default;
+let webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('gamebryo-test-settings', __dirname, 5);
+module.exports = webpack("gamebryo-test-settings", __dirname, 5);

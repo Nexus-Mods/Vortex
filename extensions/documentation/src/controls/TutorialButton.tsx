@@ -1,16 +1,16 @@
-import { TFunction } from 'i18next';
-import * as React from 'react';
-import { Popover } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import * as Redux from 'redux';
+import { TFunction } from "i18next";
+import * as React from "react";
+import { Popover } from "react-bootstrap";
+import * as ReactDOM from "react-dom";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
 
-import { setTutorialOpen } from '../actions/session';
-import getEmbedLink from '../tutorialManager';
-import { IYoutubeInfo } from '../types/YoutubeInfo';
+import { setTutorialOpen } from "../actions/session";
+import getEmbedLink from "../tutorialManager";
+import { IYoutubeInfo } from "../types/YoutubeInfo";
 
-import { ComponentEx, Icon, Overlay, tooltip, util } from 'vortex-api';
+import { ComponentEx, Icon, Overlay, tooltip, util } from "vortex-api";
 
 export const VIDEO_WIDTH = 560;
 export const VIDEO_HEIGHT = 315;
@@ -18,7 +18,7 @@ export const VIDEO_HEIGHT = 315;
 export interface IBaseProps {
   children?: string;
   container?: Element;
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: "vertical" | "horizontal";
   video: IYoutubeInfo;
   dropdown?: boolean;
 
@@ -61,14 +61,15 @@ class TutorialButton extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { dropdown, children, video, t, tutorialId, orientation, isOpen } = this.props;
+    const { dropdown, children, video, t, tutorialId, orientation, isOpen } =
+      this.props;
 
     if (video === undefined) {
       return null;
     }
 
     let iconButton;
-    if (video.group === 'todo') {
+    if (video.group === "todo") {
       iconButton = this.renderTodo();
     } else {
       if (dropdown) {
@@ -79,12 +80,12 @@ class TutorialButton extends ComponentEx<IProps, {}> {
     }
 
     const popOverTitle = (
-      <div className='popover-title-container'>
+      <div className="popover-title-container">
         <h3>{t(video.name)}</h3>
         <tooltip.IconButton
-          icon='close-slim'
-          tooltip={t('Dismiss')}
-          className='btn-embed btn-dismiss'
+          icon="close-slim"
+          tooltip={t("Dismiss")}
+          className="btn-embed btn-dismiss"
           onClick={this.hide}
         />
       </div>
@@ -93,31 +94,38 @@ class TutorialButton extends ComponentEx<IProps, {}> {
     const popover = (
       <Popover
         id={`popover-${video.group}-${video.id}`}
-        className='tutorial-popover'
+        className="tutorial-popover"
         title={popOverTitle}
         onClick={this.stopClickEvent}
       >
         <div>
           <iframe
-            {...{
+            {...({
               width: VIDEO_WIDTH,
               height: VIDEO_HEIGHT,
               src: getEmbedLink(video.ytId, video.start, video.end),
-              referrerPolicy: 'strict-origin-when-cross-origin',
-              allow: 'encrypted-media; web-share; fullscreen',
-              title: 'YouTube video player',
+              referrerPolicy: "strict-origin-when-cross-origin",
+              allow: "encrypted-media; web-share; fullscreen",
+              title: "YouTube video player",
               style: { border: 0 },
               allowFullScreen: true,
-            } as any}
+            } as any)}
           />
-          <p className='youtube-privacy-notice'>{t('Playing this video will store cookies on your device')}</p>
-          {children ? children.split('\n\n').map((paragraph) =>
-            <p key={video.id}>{paragraph}</p>) : null}
+          <p className="youtube-privacy-notice">
+            {t("Playing this video will store cookies on your device")}
+          </p>
+          {children
+            ? children
+                .split("\n\n")
+                .map((paragraph) => <p key={video.id}>{paragraph}</p>)
+            : null}
         </div>
-        <div className='tutorial-footer'>
+        <div className="tutorial-footer">
           <a onClick={this.openLink}>
-            <Icon name='open-in-browser'/>
-            {' '}{t('More Videos by {{author}}', { replace: {author: video.attribution.author} })}
+            <Icon name="open-in-browser" />{" "}
+            {t("More Videos by {{author}}", {
+              replace: { author: video.attribution.author },
+            })}
           </a>
         </div>
       </Popover>
@@ -127,7 +135,7 @@ class TutorialButton extends ComponentEx<IProps, {}> {
       <Overlay
         show={tutorialId === video.id && isOpen}
         onHide={this.hide}
-        orientation={orientation === 'horizontal' ? 'horizontal' : 'vertical'}
+        orientation={orientation === "horizontal" ? "horizontal" : "vertical"}
         target={this.getRef}
         getBounds={this.getBounds}
       >
@@ -137,14 +145,14 @@ class TutorialButton extends ComponentEx<IProps, {}> {
 
     if (dropdown) {
       return (
-        <li className='tutorial-button-instance' role='presentation'>
+        <li className="tutorial-button-instance" role="presentation">
           {overlay}
           {iconButton}
         </li>
       );
     } else {
       return (
-        <div className='tutorial-button-instance'>
+        <div className="tutorial-button-instance">
           {overlay}
           {iconButton}
         </div>
@@ -154,11 +162,11 @@ class TutorialButton extends ComponentEx<IProps, {}> {
 
   private stopClickEvent = (e) => {
     e.stopPropagation();
-  }
+  };
 
   private renderTodo(): JSX.Element {
     return (
-      <div className='tutorial-link tutorial-link-todo' ref={this.setRef} />
+      <div className="tutorial-link tutorial-link-todo" ref={this.setRef} />
     );
   }
 
@@ -168,7 +176,7 @@ class TutorialButton extends ComponentEx<IProps, {}> {
       <a
         ref={container !== undefined ? null : this.setRef}
         onClick={this.show}
-        role='menuitem'
+        role="menuitem"
       >
         {t(name)}
       </a>
@@ -177,17 +185,17 @@ class TutorialButton extends ComponentEx<IProps, {}> {
 
   private renderButton(t: TFunction, name: string): JSX.Element {
     return (
-      <div className='tutorial-link' ref={this.setRef}>
-        <tooltip.IconButton tooltip={t(name)} onClick={this.show} icon='video'>
-          <div className='button-text'>{t(name)}</div>
+      <div className="tutorial-link" ref={this.setRef}>
+        <tooltip.IconButton tooltip={t(name)} onClick={this.show} icon="video">
+          <div className="button-text">{t(name)}</div>
         </tooltip.IconButton>
       </div>
     );
   }
 
   private openLink = () => {
-    util.opn(this.props.video.attribution.link).catch(err => null);
-  }
+    util.opn(this.props.video.attribution.link).catch((err) => null);
+  };
 
   private getRef = () => {
     const { container } = this.props;
@@ -196,16 +204,16 @@ class TutorialButton extends ComponentEx<IProps, {}> {
     }
 
     return this.mRef;
-  }
+  };
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     this.mRef = ref;
     if (ref !== null) {
       this.mRef = ReactDOM.findDOMNode(this.mRef) as Element;
     }
-  }
+  };
 
-  private show = evt => {
+  private show = (evt) => {
     const { onClick, onShow, video, isOpen } = this.props;
     evt.preventDefault();
     onShow(video.id, !isOpen);
@@ -213,26 +221,28 @@ class TutorialButton extends ComponentEx<IProps, {}> {
     if (onClick) {
       onClick(false);
     }
-  }
+  };
 
-  private hide = evt => {
+  private hide = (evt) => {
     const { onShow, video } = this.props;
     evt.preventDefault();
     onShow(video.id, false);
-  }
+  };
 
   private getBounds = (): DOMRect => {
     const { container } = this.props;
 
-    return container !== undefined ? container.getBoundingClientRect() : {
-      left: 0,
-      top: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
-    } as any;
-  }
+    return container !== undefined
+      ? container.getBoundingClientRect()
+      : ({
+          left: 0,
+          top: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+        } as any);
+  };
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -248,6 +258,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default withTranslation(['common'])(
-  connect(mapStateToProps, mapDispatchToProps)(
-    TutorialButton) as any) as React.ComponentClass<IBaseProps>;
+export default withTranslation(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(TutorialButton) as any,
+) as React.ComponentClass<IBaseProps>;

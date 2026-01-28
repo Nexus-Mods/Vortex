@@ -1,3 +1,5 @@
-import { createAction } from 'redux-act';
+import { createAction } from "redux-act";
 
-export const setShowMetaEditor = createAction<string, {}>('SET_SHOW_METAEDITOR');
+export const setShowMetaEditor = createAction<string, {}>(
+  "SET_SHOW_METAEDITOR",
+);

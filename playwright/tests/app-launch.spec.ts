@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
-import { launchVortex, closeVortex } from '../src/vortex-helpers';
+import { test, expect } from "@playwright/test";
+import path from "path";
+import fs from "fs";
+import { launchVortex, closeVortex } from "../src/vortex-helpers";
 
-const TEST_NAME = 'app-launch';
+const TEST_NAME = "app-launch";
 
 interface AppInfo {
   title: string;
@@ -13,27 +13,31 @@ interface AppInfo {
   contentPreview: string;
 }
 
-test('app launches successfully', async () => {
-
-  const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } = await launchVortex(TEST_NAME);
+test("app launches successfully", async () => {
+  const { app, mainWindow, testRunDir, appProcess, pid, userDataDir } =
+    await launchVortex(TEST_NAME);
 
   try {
-    await mainWindow.screenshot({ path: path.join(testRunDir, 'app-loaded.png') });
+    await mainWindow.screenshot({
+      path: path.join(testRunDir, "app-loaded.png"),
+    });
 
     const finalInfo: AppInfo = await mainWindow.evaluate(() => ({
       title: document.title,
       url: window.location.href,
       width: window.outerWidth,
       height: window.outerHeight,
-      contentPreview: document.body.textContent!.substring(0, 200)
+      contentPreview: document.body.textContent!.substring(0, 200),
     }));
 
-    console.log('App launch info:', finalInfo);
-    fs.writeFileSync(path.join(testRunDir, 'launch-info.json'), JSON.stringify(finalInfo, null, 2));
+    console.log("App launch info:", finalInfo);
+    fs.writeFileSync(
+      path.join(testRunDir, "launch-info.json"),
+      JSON.stringify(finalInfo, null, 2),
+    );
 
     expect(finalInfo.title).toBeTruthy();
-    expect(finalInfo.url).toContain('index.html');
-
+    expect(finalInfo.url).toContain("index.html");
   } finally {
     await closeVortex(app, appProcess, pid, userDataDir);
     console.log(`Test completed. Results in: ${testRunDir}`);

@@ -1,8 +1,8 @@
-import * as React from 'react';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { actions, ComponentEx, types, util } from 'vortex-api';
+import * as React from "react";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import { ThunkDispatch } from "redux-thunk";
+import { actions, ComponentEx, types, util } from "vortex-api";
 
 export interface IBaseProps {
   mods: types.IMod[];
@@ -10,11 +10,15 @@ export interface IBaseProps {
 }
 
 interface IActionProps {
-  onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
+  onSetModAttribute: (
+    gameMode: string,
+    modId: string,
+    attributeId: string,
+    value: any,
+  ) => void;
 }
 
-interface IConnectedProps {
-}
+interface IConnectedProps {}
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
@@ -38,8 +42,8 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
 
     this.mDebouncer = new util.Debouncer((newNote: string) => {
       const { gameMode, mods, onSetModAttribute } = this.props;
-      mods.forEach(mod => {
-        onSetModAttribute(gameMode, mod.id, 'notes', newNote);
+      mods.forEach((mod) => {
+        onSetModAttribute(gameMode, mod.id, "notes", newNote);
       });
       return null;
     }, 5000);
@@ -59,36 +63,42 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
   }
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
-    return this.props.mods !== nextProps.mods
-        || this.props.gameMode !== nextProps.gameMode
-        || this.state !== nextState;
+    return (
+      this.props.mods !== nextProps.mods ||
+      this.props.gameMode !== nextProps.gameMode ||
+      this.state !== nextState
+    );
   }
 
   public render(): JSX.Element {
     const { t, mods } = this.props;
     const { valueCache } = this.state;
 
-    if (mods.find(iter => iter.state !== 'installed') !== undefined) {
+    if (mods.find((iter) => iter.state !== "installed") !== undefined) {
       return null;
     }
 
     return (
       <textarea
-        value={valueCache !== null ? valueCache : ''}
+        value={valueCache !== null ? valueCache : ""}
         id={mods[0].id}
-        className='textarea-notes'
+        className="textarea-notes"
         onChange={this.handleChange}
-        placeholder={valueCache !== null
-          ? t('Write your own notes on this mod')
-          : t('Multiple values')}
+        placeholder={
+          valueCache !== null
+            ? t("Write your own notes on this mod")
+            : t("Multiple values")
+        }
       />
     );
   }
 
   private getValue(props: IProps) {
-    const value = util.getSafe(props.mods[0].attributes, ['notes'], '');
-    const different = props.mods.find(iter =>
-        util.getSafe(iter, ['attributes', 'notes'], '') !== value) !== undefined;
+    const value = util.getSafe(props.mods[0].attributes, ["notes"], "");
+    const different =
+      props.mods.find(
+        (iter) => util.getSafe(iter, ["attributes", "notes"], "") !== value,
+      ) !== undefined;
 
     return different ? null : value;
   }
@@ -98,22 +108,28 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.valueCache = newValue;
     this.mDebouncer.schedule(undefined, newValue);
-  }
+  };
 }
 
 function mapStateToProps(state: types.IState): IConnectedProps {
   return {};
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, any, any>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, any, any>,
+): IActionProps {
   return {
-    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
+    onSetModAttribute: (
+      gameMode: string,
+      modId: string,
+      attributeId: string,
+      value: any,
+    ) => {
       dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
   };
 }
 
-export default
-withTranslation(['common'])(
-  connect(mapStateToProps, mapDispatchToProps)(
-    TextareaNotes) as any) as React.ComponentClass<IBaseProps>;
+export default withTranslation(["common"])(
+  connect(mapStateToProps, mapDispatchToProps)(TextareaNotes) as any,
+) as React.ComponentClass<IBaseProps>;

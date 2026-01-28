@@ -1,19 +1,19 @@
 #pillars2-plugin-panel {
-  .list-group {
-    border: $border-width solid $border-color;
-    margin: $half-gutter;
-    min-height: $gutter-width;
-  }
-  .plugin-entry {
-    background-color: $brand-bg;
-    margin: 4px;
-
-    &.dragging {
-      opacity: 0;
+    .list-group {
+        border: $border-width solid $border-color;
+        margin: $half-gutter;
+        min-height: $gutter-width;
     }
-  }
+    .plugin-entry {
+        background-color: $brand-bg;
+        margin: 4px;
 
-  .layout-container > div {
-    padding: 0 $gutter-width;
-  }
+        &.dragging {
+            opacity: 0;
+        }
+    }
+
+    .layout-container > div {
+        padding: 0 $gutter-width;
+    }
 }
