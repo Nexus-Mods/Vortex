@@ -46,7 +46,7 @@ import Webview from "../controls/Webview";
 type DialogInputData = Record<string, boolean | string | undefined>;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);
 
 const nop = () => undefined;
 
@@ -232,7 +232,7 @@ export const Dialog: React.FC = () => {
 
       const newCheckboxes = JSON.parse(
         JSON.stringify(state.checkboxes.slice(0)),
-      );
+      ) as typeof state.checkboxes;
       newCheckboxes[idx].value = !newCheckboxes[idx].value;
 
       const newDialogState = update(state, {
@@ -254,8 +254,10 @@ export const Dialog: React.FC = () => {
       const { dialogState: state } = stateRef.current;
       if (!state) return;
 
-      const newCheckboxes = JSON.parse(
-        JSON.stringify(state.checkboxes.slice(0)),
+      const newCheckboxes = (
+        JSON.parse(
+          JSON.stringify(state.checkboxes.slice(0)),
+        ) as typeof state.checkboxes
       ).map((box: ICheckbox) => ({ ...box, value: enabled }));
 
       const newDialogState = update(state, {

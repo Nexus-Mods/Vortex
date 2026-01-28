@@ -44,20 +44,20 @@ function inverseSort(lhs: INotification, rhs: INotification) {
   return sortValue(lhs) - sortValue(rhs);
 }
 
+const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
+  warning: 10000,
+  error: 10000,
+  success: 5000,
+  info: 5000,
+  activity: null,
+};
+
 function displayTime(item: INotification): number | null {
   if (item.displayMS !== undefined) {
     return item.displayMS;
   }
 
-  return (
-    {
-      warning: 10000,
-      error: 10000,
-      success: 5000,
-      info: 5000,
-      activity: null,
-    }[item.type] || 10000
-  );
+  return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
 }
 
 export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {

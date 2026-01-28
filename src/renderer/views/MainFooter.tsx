@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import type { PropsCallback } from "../../types/IExtensionContext";
+import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 
 import { useExtensionObjects } from "../../util/ExtensionProvider";
 
@@ -10,15 +10,15 @@ export interface IBaseProps {
 
 interface IFooter {
   id: string;
-  component: React.ComponentClass;
-  props: PropsCallback;
+  component: React.ComponentType<IBaseProps>;
+  props: PropsCallbackTyped<IBaseProps>;
 }
 
 function registerFooter(
   _instanceGroup: undefined,
   id: string,
-  component: React.ComponentClass,
-  props: PropsCallback,
+  component: React.ComponentType<IBaseProps>,
+  props: PropsCallbackTyped<IBaseProps>,
 ): IFooter {
   return { id, component, props };
 }

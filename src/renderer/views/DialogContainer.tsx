@@ -1,27 +1,29 @@
 import * as React from "react";
 
-import type { PropsCallback } from "../../types/IExtensionContext";
+import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 
 import { useExtensionObjects } from "../../util/ExtensionProvider";
-import ErrorBoundary from "../controls/ErrorBoundary";
+import ErrorBoundary, {
+  type IBaseProps as IErrorBoundaryProps,
+} from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
-
-interface IExtDialog {
-  id: string;
-  component: React.ComponentType;
-  props: PropsCallback;
-}
 
 export interface IBaseProps {
   visibleDialog: string;
   onHideDialog: () => void;
 }
 
+interface IExtDialog {
+  id: string;
+  component: React.ComponentType<IErrorBoundaryProps>;
+  props: PropsCallbackTyped<IErrorBoundaryProps>;
+}
+
 function registerDialog(
   _instanceGroup: undefined,
   id: string,
-  component: React.ComponentClass,
-  props?: PropsCallback,
+  component: React.ComponentType<IErrorBoundaryProps>,
+  props?: PropsCallbackTyped<IErrorBoundaryProps>,
 ): IExtDialog {
   return { id, component, props };
 }

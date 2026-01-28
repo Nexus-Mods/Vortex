@@ -185,9 +185,9 @@ export function Notification(props: IProps): React.JSX.Element {
   return (
     <div
       className={`
-      notification
-      alert-${styleName}
-    `}
+        notification
+        alert-${styleName}
+      `}
       role="alert"
     >
       {progress !== undefined ? (

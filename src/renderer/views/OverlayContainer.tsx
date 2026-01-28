@@ -9,20 +9,20 @@ import ExtensionGate from "../controls/ExtensionGate";
 interface IExtOverlay {
   id: string;
   component: React.ComponentType;
-  props: PropsCallback;
+  props?: PropsCallback;
 }
 
 function registerOverlay(
   instanceGroup: undefined,
   id: string,
-  component: React.ComponentClass,
+  component: React.ComponentType,
   props?: PropsCallback,
 ): IExtOverlay {
   return { id, component, props };
 }
 
 function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
-  const props = overlay.props !== undefined ? overlay.props() : {};
+  const props = overlay.props ? overlay.props() : {};
   return (
     <ErrorBoundary className="errorboundary-overlay" key={overlay.id}>
       <ExtensionGate id={overlay.id}>

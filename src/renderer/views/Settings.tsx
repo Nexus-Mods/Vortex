@@ -3,7 +3,8 @@ import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { PropsCallback } from "../../types/IExtensionContext";
+import type { IBaseProps } from "../../extensions/settings_interface/SettingsInterface";
+import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type startupSettingsT from "../../util/startupSettings";
 
@@ -22,8 +23,8 @@ const startupSettings = lazyRequire(
 
 interface ISettingsPage {
   title: string;
-  component: React.ComponentClass;
-  props: PropsCallback;
+  component: React.ComponentType<IBaseProps>;
+  props: PropsCallbackTyped<IBaseProps>;
   visible: () => boolean;
   priority: number;
 }
@@ -39,8 +40,8 @@ type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
 function registerSettings(
   instanceGroup: undefined,
   title: string,
-  component: React.ComponentClass,
-  props: PropsCallback,
+  component: React.ComponentType<IBaseProps>,
+  props: PropsCallbackTyped<IBaseProps>,
   visible: () => boolean,
   priority?: number,
 ): ISettingsPage {
@@ -66,7 +67,9 @@ export const Settings: React.FC = () => {
 
   const setCurrentPage: TabSelectHandler = React.useCallback(
     (eventKey) => {
-      dispatch(setSettingsPage(eventKey));
+      if (typeof eventKey === "string") {
+        dispatch(setSettingsPage(eventKey));
+      }
     },
     [dispatch],
   );
