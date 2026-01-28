@@ -265,6 +265,22 @@ async function createNewCollection(
 ) {
   const id = makeCollectionId(shortid());
   await createCollection(api, profile.gameId, id, name, []);
+
+  const state = api.store.getState();
+  const game = selectors.gameById(state, profile.gameId);
+  const userInfo = state.persistent["nexus"]?.userInfo;
+  if (userInfo?.userId) {
+    api.events.emit("analytics-track-mixpanel-event", {
+      eventName: "Collections: Collection drafted in Vortex",
+      properties: {
+        collection_name: name,
+        game_name: game.name,
+        user_id: userInfo.userId,
+        creation_method: "empty",
+      },
+    });
+  }
+
   api.sendNotification({
     type: "success",
     id: "collection-created",

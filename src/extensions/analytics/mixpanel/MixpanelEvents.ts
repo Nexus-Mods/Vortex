@@ -97,6 +97,72 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
  * COLLECTION EVENTS
  */
 
+/* COLLECTION DRAFTING AND UPLOADING */
+
+/**
+ * Event sent when a collection draft is created in Vortex.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ * @param user_id Nexus Mods user ID
+ * @param creation_method How the collection was created
+ */
+export class CollectionsDraftedEvent implements MixpanelEvent {
+  readonly eventName = "Collections: Collection drafted in Vortex";
+  readonly properties: Record<string, any>;
+
+  constructor(
+    collection_name: string,
+    game_name: string,
+    user_id: number,
+    creation_method: "from_profile" | "quick_collection" | "empty",
+  ) {
+    this.properties = {
+      collection_name,
+      game_name,
+      user_id,
+      creation_method,
+    };
+  }
+}
+
+/**
+ * Event sent when a new draft collection is uploaded.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ * @param user_id Nexus Mods user ID
+ */
+export class CollectionsDraftUploadedEvent implements MixpanelEvent {
+  readonly eventName = "Collections: Draft uploaded";
+  readonly properties: Record<string, any>;
+
+  constructor(collection_name: string, game_name: string, user_id: number) {
+    this.properties = {
+      collection_name,
+      game_name,
+      user_id,
+    };
+  }
+}
+
+/**
+ * Event sent when a draft collection update is uploaded.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ * @param user_id Nexus Mods user ID
+ */
+export class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+  readonly eventName = "Collections: Draft update uploaded";
+  readonly properties: Record<string, any>;
+
+  constructor(collection_name: string, game_name: string, user_id: number) {
+    this.properties = {
+      collection_name,
+      game_name,
+      user_id,
+    };
+  }
+}
+
 /* COLLECTION DOWNLOAD */
 
 /**

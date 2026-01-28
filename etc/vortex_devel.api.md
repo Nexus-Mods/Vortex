@@ -19,7 +19,8 @@ import type { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
-import type { ComponentProps } from 'react';
+import { ComplexActionCreator6 } from 'redux-act';
+import { ComponentProps } from 'react';
 import { ComponentType } from 'react';
 import { constants } from 'fs';
 import { createReadStream } from 'original-fs';
@@ -99,6 +100,7 @@ import * as semver from 'semver';
 import SevenZip from 'node-7z';
 import { Stats } from 'fs';
 import { statSync } from 'original-fs';
+import { SVGAttributes } from 'react';
 import { symlinkSync } from 'original-fs';
 import type { TFunction as TFunction_2 } from 'i18next';
 import type { ThunkDispatch } from 'redux-thunk';
@@ -352,13 +354,13 @@ const activeGameId: (state: IState) => string;
 const activeProfile: (state: any) => IProfile | undefined;
 
 // @public
-const addDialog: reduxAct.ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
-    id: string;
-    type: string;
-    title: string;
-    content: IDialogContent;
-    defaultAction: string;
-    actions: string[];
+const addDialog: ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
+id: string;
+type: string;
+title: string;
+content: IDialogContent;
+defaultAction: string;
+actions: string[];
 }, {}>;
 
 // @public
@@ -425,14 +427,14 @@ const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions
 // @public
 class Archive {
     constructor(handler: IArchiveHandler);
-    get addFile(): (filePath: string, sourcePath: string) => Promise_2<void>;
-    get create(): (sourcePath: string) => Promise_2<void>;
-    get extractAll(): (outputPath: string) => Promise_2<void>;
-    get extractFile(): (filePath: string, outputPath: string) => Promise_2<void>;
-    get readDir(): (archivePath: string) => Promise_2<string[]>;
-    get readFile(): (filePath: string) => NodeJS.ReadableStream;
+    get addFile(): ((filePath: string, sourcePath: string) => Promise_2<void>) | undefined;
+    get create(): ((sourcePath: string) => Promise_2<void>) | undefined;
+    get extractAll(): ((outputPath: string) => Promise_2<void>) | undefined;
+    get extractFile(): ((filePath: string, outputPath: string) => Promise_2<void>) | undefined;
+    get readDir(): ((archivePath: string) => Promise_2<string[]>) | undefined;
+    get readFile(): ((filePath: string) => NodeJS.ReadableStream) | undefined;
     // (undocumented)
-    get write(): () => Promise_2<void>;
+    get write(): (() => Promise_2<void>) | undefined;
 }
 
 // @public (undocumented)
@@ -463,7 +465,7 @@ function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Actio
 function bbcodeToHTML(input: string): string;
 
 // @public (undocumented)
-function bundleAttachment(options?: IErrorOptions): Promise_2<string>;
+function bundleAttachment(options?: IErrorOptions): Promise_2<string | undefined>;
 
 // @public
 class Button_3 extends React_2.PureComponent<ButtonProps_2, {}> {
@@ -613,6 +615,33 @@ class CollectionsDownloadFailedEvent implements MixpanelEvent {
     constructor(collection_id: string, revision_id: string, game_id: number, error_code: string, error_message: string);
     // (undocumented)
     readonly eventName = "collections_download_failed";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number, creation_method: "from_profile" | "quick_collection" | "empty");
+    // (undocumented)
+    readonly eventName = "Collections: Collection drafted in Vortex";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft update uploaded";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft uploaded";
     // (undocumented)
     readonly properties: Record<string, any>;
 }
@@ -771,7 +800,7 @@ class Debouncer {
     clear(): void;
     runNow(callback: (err: Error) => void, ...args: any[]): void;
     schedule(callback?: (err: Error) => void, ...args: any[]): void;
-    wait(callback: (err: Error) => void, immediately?: boolean): void;
+    wait(callback: (err: Error | null) => void, immediately?: boolean): void;
 }
 
 // @public
@@ -835,7 +864,7 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 function dismissAllNotifications(): (dispatch: any) => Promise_2<void>;
 
 // @public
-const dismissDialog: reduxAct.ComplexActionCreator1<any, any, {}>;
+const dismissDialog: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 function dismissNotification(id: string): (dispatch: any) => Promise_2<void>;
@@ -1443,7 +1472,7 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
 function getReduxLog(): Promise<ILog[]>;
 
 // @public
-function getSafe<T>(state: any, path: Array<string | number>, fallback: T): T;
+function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T;
 
 // @public
 function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
@@ -1709,7 +1738,7 @@ export class Icon extends React_2.Component<IIconProps, {
 }
 
 // @public
-class Icon_3 extends React_2.Component<IconProps_2, {}> {
+class Icon_3 extends React_2.Component<IconProps, {}> {
     // (undocumented)
     render(): React_2.JSX.Element;
 }
@@ -1739,7 +1768,7 @@ interface IConditionResult {
 }
 
 // @public (undocumented)
-type IconProps_2 = ITooltipProps & ITooltipIconProps;
+type IconProps = ITooltipProps & ITooltipIconProps;
 
 // @public (undocumented)
 interface IControlBase {
@@ -2398,7 +2427,7 @@ interface IGameStore {
     findByAppId: (appId: string | string[]) => Promise_2<IGameStoreEntry>;
     findByName: (appName: string) => Promise_2<IGameStoreEntry>;
     getExecInfo?: (appId: any) => Promise_2<IExecInfo>;
-    getGameStorePath: () => Promise_2<string>;
+    getGameStorePath: () => Promise_2<string | undefined>;
     getPosixPath?: (name: string) => Promise_2<string>;
     id: string;
     identifyGame?: (gamePath: string, fallback: (gamePath: string) => PromiseLike<boolean>) => Promise_2<boolean>;
@@ -2456,7 +2485,7 @@ interface IGameStoreEntry {
     // (undocumented)
     gamePath: string;
     // (undocumented)
-    gameStoreId: string;
+    gameStoreId: string | undefined;
     // (undocumented)
     lastUpdated?: Date;
     // (undocumented)
@@ -2991,7 +3020,7 @@ const installPathForGame: ParametricSelector<IState, string, string> & {
 type InstallPathMode = "userData" | "suggested";
 
 // @public (undocumented)
-const instance: IGameStore;
+const instance: IGameStore | undefined;
 
 // Warning: (ae-forgotten-export) The symbol "GameStoreHelper" needs to be exported by the entry point index.d.ts
 //
@@ -4159,7 +4188,7 @@ type Method = "GET" | "POST" | "PUT";
 class MissingInterpreter extends Error {
     constructor(message: string, url?: string);
     // (undocumented)
-    get url(): string;
+    get url(): string | undefined;
 }
 
 // @public (undocumented)
@@ -5277,7 +5306,7 @@ const setUpdateChannel: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 class SetupError extends Error {
     constructor(message: string, component?: string);
     // (undocumented)
-    get component(): string;
+    get component(): string | undefined;
 }
 
 // @public (undocumented)
@@ -5425,7 +5454,7 @@ class StarterInfo implements IStarterInfo {
 }
 
 // @public
-const startNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const startNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 const statAsync: (path: string) => Promise_2<fs_2.Stats>;
@@ -5451,10 +5480,10 @@ const stopActivity: reduxAct.ComplexActionCreator2<string, string, {
 }>;
 
 // @public (undocumented)
-const stopAllNotifications: reduxAct.EmptyActionCreator;
+const stopAllNotifications: EmptyActionCreator;
 
 // @public
-const stopNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const stopNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public
 const suppressNotification: ComplexActionCreator2<string, boolean, {
@@ -5572,7 +5601,11 @@ export const Tailwind: {
     }>;
     CollectionTileDemo: ComponentType<ICollectionTileDemoProps>;
     Link: ForwardRefExoticComponent<link.LinkProps & RefAttributes<HTMLAnchorElement>>;
-    Icon: ({ path, size, sizeOverride, className, title, ...rest }: icon.IconProps) => JSX_2.Element;
+    Icon: ({ path, size, className, title, ...props }: Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
+        path: string;
+        size?: icon.IconSize;
+        title?: string;
+    }) => JSX_2.Element;
     Button: (all: (ButtonHTMLAttributes<HTMLButtonElement> & ({
         as?: "button";
         disabled?: boolean;
@@ -5739,7 +5772,7 @@ declare namespace tooltip {
         NavItemProps,
         NavItem_2 as NavItem,
         ITooltipIconProps,
-        IconProps_2 as IconProps,
+        IconProps,
         Icon_3 as Icon,
         ClickPopoverProps,
         ClickPopover
@@ -5989,13 +6022,13 @@ const updateCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictiona
 type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
 
 // @public (undocumented)
-const updateNotification: reduxAct.ComplexActionCreator3<string, number, string, {
-    id: string;
-    progress: number;
-    message: string;
+const updateNotification: ComplexActionCreator3<string, number, string, {
+id: string;
+progress: number;
+message: string;
 }, {
-    forward: boolean;
-    scope: string;
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
@@ -6138,6 +6171,9 @@ declare namespace util {
         CollectionsInstallationFailedEvent,
         CollectionsInstallationCancelledEvent,
         CollectionsDownloadClickedEvent,
+        CollectionsDraftedEvent,
+        CollectionsDraftUploadedEvent,
+        CollectionsDraftUpdateUploadedEvent,
         TextGroup,
         calcDuration,
         showSuccess,
@@ -6272,9 +6308,9 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // api/lib/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point index.d.ts
 // api/lib/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point index.d.ts
 // api/lib/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:101:5 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:109:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:169:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:103:9 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
 // api/lib/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
 // api/lib/types/IState.d.ts:361:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
 // api/lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
