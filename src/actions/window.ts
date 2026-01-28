@@ -37,3 +37,8 @@ export const setCustomTitlebar = safeCreateAction(
   "SET_CUSTOM_TITLEBAR",
   identity,
 );
+
+export const setUseModernLayout = safeCreateAction(
+  "SET_USE_MODERN_LAYOUT",
+  identity,
+);

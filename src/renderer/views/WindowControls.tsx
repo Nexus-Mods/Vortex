@@ -1,12 +1,15 @@
 import type * as RemoteT from "@electron/remote";
 import type { BrowserWindow } from "electron";
+
 import * as React from "react";
-import { IconButton } from "../controls/TooltipControls";
+
 import lazyRequire from "../../util/lazyRequire";
+import { IconButton } from "../controls/TooltipControls";
 
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);
 
-const window = (() => {
+const getWindow = (() => {
   let res: BrowserWindow;
   return () => {
     if (res === undefined) {
@@ -16,87 +19,89 @@ const window = (() => {
   };
 })();
 
-class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
-  private mClosed: boolean = false;
+export function WindowControls(): React.JSX.Element {
+  const [isMaximized, setIsMaximized] = React.useState(() =>
+    getWindow().isMaximized(),
+  );
+  const closedRef = React.useRef(false);
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
 
-  constructor(props: {}) {
-    super(props);
+  React.useEffect(() => {
+    const win = getWindow();
 
-    this.state = {
-      isMaximized: window().isMaximized(),
+    const onMaximize = () => {
+      setIsMaximized(true);
+      forceUpdate();
     };
-  }
 
-  public componentDidMount() {
-    window().on("maximize", this.onMaximize);
-    window().on("unmaximize", this.onUnMaximize);
-    window().on("close", this.onClose);
-  }
+    const onUnMaximize = () => {
+      setIsMaximized(false);
+      forceUpdate();
+    };
 
-  public componentWillUnmount() {
-    window().removeListener("maximize", this.onMaximize);
-    window().removeListener("unmaximize", this.onUnMaximize);
-    window().removeListener("close", this.onClose);
-  }
+    const onClose = () => {
+      closedRef.current = true;
+    };
 
-  public render(): JSX.Element {
-    const { isMaximized } = this.state;
-    if (this.mClosed) {
-      return null;
+    win.on("maximize", onMaximize);
+    win.on("unmaximize", onUnMaximize);
+    win.on("close", onClose);
+
+    return () => {
+      win.removeListener("maximize", onMaximize);
+      win.removeListener("unmaximize", onUnMaximize);
+      win.removeListener("close", onClose);
+    };
+  }, []);
+
+  const minimize = React.useCallback(() => {
+    getWindow().minimize();
+  }, []);
+
+  const toggleMaximize = React.useCallback(() => {
+    const win = getWindow();
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
     }
-    return (
-      <div id="window-controls">
-        <IconButton
-          id="window-minimize"
-          className="window-control"
-          tooltip=""
-          icon="window-minimize"
-          onClick={this.minimize}
-        />
-        <IconButton
-          id="window-maximize"
-          className="window-control"
-          tooltip=""
-          icon={isMaximized ? "window-restore" : "window-maximize"}
-          onClick={this.toggleMaximize}
-        />
-        <IconButton
-          id="window-close"
-          className="window-control"
-          tooltip=""
-          icon="window-close"
-          onClick={this.close}
-        />
-      </div>
-    );
+  }, []);
+
+  const close = React.useCallback(() => {
+    getWindow().close();
+  }, []);
+
+  if (closedRef.current) {
+    return null;
   }
 
-  private minimize = () => {
-    window().minimize();
-  };
+  return (
+    <div id="window-controls">
+      <IconButton
+        className="window-control"
+        icon="window-minimize"
+        id="window-minimize"
+        tooltip=""
+        onClick={minimize}
+      />
 
-  private onMaximize = () => {
-    this.setState({ isMaximized: true });
-    this.forceUpdate();
-  };
+      <IconButton
+        className="window-control"
+        icon={isMaximized ? "window-restore" : "window-maximize"}
+        id="window-maximize"
+        tooltip=""
+        onClick={toggleMaximize}
+      />
 
-  private onUnMaximize = () => {
-    this.setState({ isMaximized: false });
-    this.forceUpdate();
-  };
-
-  private onClose = () => {
-    this.mClosed = true;
-  };
-
-  private toggleMaximize = () => {
-    const wasMaximized = window().isMaximized();
-    wasMaximized ? window().unmaximize() : window().maximize();
-  };
-
-  private close = () => {
-    window().close();
-  };
+      <IconButton
+        className="window-control"
+        icon="window-close"
+        id="window-close"
+        tooltip=""
+        onClick={close}
+      />
+    </div>
+  );
 }
 
 export default WindowControls;

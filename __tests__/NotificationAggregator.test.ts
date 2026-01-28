@@ -12,6 +12,11 @@ describe('NotificationAggregator', () => {
   beforeEach(() => {
     aggregator = new NotificationAggregator(mockApi as any);
     jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   test('should show notifications immediately when aggregation is not active', async () => {
@@ -24,8 +29,8 @@ describe('NotificationAggregator', () => {
       { allowReport: false }
     );
 
-    // Wait for async notification to be processed
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Run any pending timers/setImmediate
+    jest.runAllTimers();
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith('Test Error', 'Test message', {
       message: 'TestMod',
@@ -42,11 +47,8 @@ describe('NotificationAggregator', () => {
     aggregator.addNotification('test-session', 'error', 'Failed to install dependency', 'Download failed', 'Mod2');
     aggregator.addNotification('test-session', 'error', 'Failed to install dependency', 'Download failed', 'Mod3');
 
-    // Flush aggregation
-    aggregator.flushAggregation('test-session');
-
-    // Wait for async processing
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Flush aggregation and wait for completion
+    await aggregator.flushAggregation('test-session');
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
@@ -62,13 +64,11 @@ describe('NotificationAggregator', () => {
   test('should handle different error types separately', async () => {
     aggregator.startAggregation('test-session', 0);
 
-    aggregator.addNotification('test-session', 'error', 'Failed to install dependency', 'Download failed', 'Mod1');
-    aggregator.addNotification('test-session', 'error', 'Failed to install dependency', 'Invalid URL', 'Mod2');
+    // Use different titles to ensure they are grouped separately
+    aggregator.addNotification('test-session', 'error', 'Download failed', 'Connection error', 'Mod1');
+    aggregator.addNotification('test-session', 'error', 'Invalid URL', 'Malformed URL', 'Mod2');
 
-    aggregator.flushAggregation('test-session');
-
-    // Wait for async processing
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await aggregator.flushAggregation('test-session');
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(2);
   });
@@ -81,10 +81,7 @@ describe('NotificationAggregator', () => {
       aggregator.addNotification('test-session', 'error', 'Failed to install dependency', 'Download failed', `Mod${i}`);
     }
 
-    aggregator.flushAggregation('test-session');
-
-    // Wait for async processing
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await aggregator.flushAggregation('test-session');
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
       "Failed to install dependency (7 dependencies)",
@@ -101,8 +98,11 @@ describe('NotificationAggregator', () => {
 
     aggregator.addNotification('test-session', 'error', 'Test Error', 'Test message', 'TestMod');
 
-    // Wait for timeout and additional processing time
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Advance timers past the timeout to trigger the auto-flush
+    jest.advanceTimersByTime(150);
+
+    // Stop the aggregation (which flushes remaining notifications)
+    await aggregator.stopAggregation('test-session');
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
   });
@@ -111,10 +111,7 @@ describe('NotificationAggregator', () => {
     aggregator.startAggregation('test-session', 0);
     aggregator.addNotification('test-session', 'error', 'Test Error', 'Test message', 'TestMod');
 
-    aggregator.stopAggregation('test-session');
-
-    // Wait for async processing
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await aggregator.stopAggregation('test-session');
 
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(aggregator.isAggregating('test-session')).toBe(false);
