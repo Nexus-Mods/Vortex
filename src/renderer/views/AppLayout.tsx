@@ -144,7 +144,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     () => (global.screen?.width ?? 0) > 1920,
   );
   const [focused, setFocused] = React.useState(true);
-  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(true);
 
   const menuLayerRef = React.useRef<HTMLDivElement | null>(null);
   const menuObserverRef = React.useRef<MutationObserver | undefined>(undefined);
@@ -291,6 +291,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
       isFocused: focused,
       isMenuOpen: menuOpen,
       isHidpi: hidpi,
+      setIsMenuOpen: setMenuOpen,
     }),
     [focused, menuOpen, hidpi],
   );

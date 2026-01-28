@@ -68,6 +68,7 @@ export default defineConfig([
     rules: {
       "@eslint-react/jsx-shorthand-boolean": ["warn", -1],
       "@eslint-react/no-useless-fragment": "warn",
+      "better-tailwindcss/enforce-consistent-line-wrapping": "off",
       "better-tailwindcss/no-unknown-classes": "off",
       "perfectionist/sort-imports": "warn",
       "perfectionist/sort-exports": "warn",
