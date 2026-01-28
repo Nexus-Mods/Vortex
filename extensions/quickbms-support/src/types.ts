@@ -1,10 +1,10 @@
-import Promise from 'bluebird';
+import Promise from "bluebird";
 
 export class QuickBMSError extends Error {
   private mErrorLines: string;
   constructor(message: string, stdErrLines: string[]) {
     super(message);
-    this.name = 'QuickBMSError';
+    this.name = "QuickBMSError";
 
     // We probably only care for the last ~40 lines which will
     //  generally contain some sort of clue as to what actually happened.
@@ -12,9 +12,10 @@ export class QuickBMSError extends Error {
     //  long (depending on how many mods the user had installed) which
     //  can cause the array to get truncated "<long array cut>"
     const filtered = this.trimContact(stdErrLines);
-    this.mErrorLines = (filtered.length > 40)
-      ? filtered.slice(filtered.length - 40).join('\n')
-      : filtered.join('\n');
+    this.mErrorLines =
+      filtered.length > 40
+        ? filtered.slice(filtered.length - 40).join("\n")
+        : filtered.join("\n");
   }
 
   public get errorLines(): string {
@@ -30,8 +31,9 @@ export class QuickBMSError extends Error {
     //  re-instate this information - let us know.
     // The attribution dashlet will remain in place, crediting QBMS's
     //  creator, Luigi Auriemma.
-    return stdErrLines.filter((line, idx) => (idx > 10)
-      ? true : !line.toLowerCase().includes('luigi'));
+    return stdErrLines.filter((line, idx) =>
+      idx > 10 ? true : !line.toLowerCase().includes("luigi"),
+    );
   }
 }
 
@@ -41,7 +43,7 @@ export class UnregisteredGameError extends Error {
   }
 }
 
-export type QBMSOperationType = 'extract' | 'reimport' | 'write' | 'list';
+export type QBMSOperationType = "extract" | "reimport" | "write" | "list";
 
 export interface IQBMSOptions {
   // qbms will overwrite any existing files during extraction.
@@ -100,7 +102,7 @@ export interface IQBMSOpProps {
   //  The generated error will still be forwarded to the calling extension, thus
   //  transferring all error handling responsibilities to the extension itself.
   // Note that this property will not affect QBMS's own verbosity!
-  quiet?: boolean
+  quiet?: boolean;
 
   // QBMS specific options.
   qbmsOptions?: IQBMSOptions;

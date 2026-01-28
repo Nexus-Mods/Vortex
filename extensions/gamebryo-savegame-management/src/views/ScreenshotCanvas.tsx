@@ -1,9 +1,9 @@
-import { ISavegame } from '../types/ISavegame';
+import { ISavegame } from "../types/ISavegame";
 
-import { Dimensions } from 'gamebryo-savegame';
-import * as React from 'react';
-import { log } from 'vortex-api';
-import { getScreenshot } from '../util/refreshSavegames';
+import { Dimensions } from "gamebryo-savegame";
+import * as React from "react";
+import { log } from "vortex-api";
+import { getScreenshot } from "../util/refreshSavegames";
 
 interface ICanvasProps {
   save: ISavegame;
@@ -27,30 +27,31 @@ class ScreenshotCanvas extends React.Component<ICanvasProps, {}> {
 
   public render(): JSX.Element {
     const { save } = this.props;
-    if ((save === undefined)
-        || (save.attributes['screenshot'] === undefined)) {
+    if (save === undefined || save.attributes["screenshot"] === undefined) {
       return null;
     }
     const dim: Dimensions = (save.attributes as any).screenshot;
     return (
       <canvas
-        className='screenshot-canvas'
+        className="screenshot-canvas"
         ref={this.refCanvas}
         width={dim.width}
         height={dim.height}
-      />);
+      />
+    );
   }
 
   private refCanvas = (ref) => {
     this.screenshotCanvas = ref;
-  }
+  };
 
   private updateImage() {
     const { save } = this.props;
     if (this.screenshotCanvas === null) {
       return;
     }
-    const ctx: CanvasRenderingContext2D = this.screenshotCanvas.getContext('2d');
+    const ctx: CanvasRenderingContext2D =
+      this.screenshotCanvas.getContext("2d");
     const width = Math.max(this.screenshotCanvas.width, 1);
     const height = Math.max(this.screenshotCanvas.height, 1);
     const buffer: Uint8ClampedArray = getScreenshot(save.id);
@@ -64,10 +65,14 @@ class ScreenshotCanvas extends React.Component<ICanvasProps, {}> {
     imgData.data.set(buffer);
 
     createImageBitmap(imgData)
-      .then((bitmap) => { ctx.drawImage(bitmap, 0, 0); })
-      .catch(err => {
-        log('warn', 'failed to read savegame screenshot',
-          { fileName: save.filePath, error: err.message });
+      .then((bitmap) => {
+        ctx.drawImage(bitmap, 0, 0);
+      })
+      .catch((err) => {
+        log("warn", "failed to read savegame screenshot", {
+          fileName: save.filePath,
+          error: err.message,
+        });
       });
   }
 }

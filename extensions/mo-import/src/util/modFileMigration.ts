@@ -1,8 +1,8 @@
-import {IModEntry} from '../types/moEntries';
+import { IModEntry } from "../types/moEntries";
 
-import Promise from 'bluebird';
-import * as path from 'path';
-import { fs, log, util } from 'vortex-api';
+import Promise from "bluebird";
+import * as path from "path";
+import { fs, log, util } from "vortex-api";
 
 /**
  * copy or move a list of mod archives
@@ -10,17 +10,21 @@ import { fs, log, util } from 'vortex-api';
  * @param {string} destSavePath
  * @param {boolean} keepSource
  */
-export function transferArchive(archivePath: string,
-                                downloadPath: string,
-                                keepSource: boolean): Promise<void> {
+export function transferArchive(
+  archivePath: string,
+  downloadPath: string,
+  keepSource: boolean,
+): Promise<void> {
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
-  return operation(archivePath, path.join(downloadPath, path.basename(archivePath)))
-    .catch(err => {
-      if (err.code !== 'ENOENT') {
-        return Promise.reject(err);
-      }
-    });
+  return operation(
+    archivePath,
+    path.join(downloadPath, path.basename(archivePath)),
+  ).catch((err) => {
+    if (err.code !== "ENOENT") {
+      return Promise.reject(err);
+    }
+  });
 }
 
 function byLength(lhs: string, rhs: string): number {
@@ -34,9 +38,12 @@ function byLength(lhs: string, rhs: string): number {
  * @param {string} currentModPath
  * @param {boolean} keepSource
  */
-export function transferUnpackedMod(mod: IModEntry, moModPath: string,
-                                    installPath: string,
-                                    keepSource: boolean): Promise<void> {
+export function transferUnpackedMod(
+  mod: IModEntry,
+  moModPath: string,
+  installPath: string,
+  keepSource: boolean,
+): Promise<void> {
   const operation = keepSource ? util.copyRecursive : fs.renameAsync;
 
   const destPath = path.join(installPath, mod.vortexId);
@@ -46,6 +53,7 @@ export function transferUnpackedMod(mod: IModEntry, moModPath: string,
   // for each file individually
   const directories = new Set<string>();
 
-  return operation(moModPath, destPath)
-    .then(() => fs.removeAsync(path.join(destPath, 'meta.ini')));
+  return operation(moModPath, destPath).then(() =>
+    fs.removeAsync(path.join(destPath, "meta.ini")),
+  );
 }

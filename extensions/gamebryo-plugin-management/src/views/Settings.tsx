@@ -1,16 +1,15 @@
-import { setAutoEnable } from '../actions/settings';
-import { NAMESPACE } from '../statics';
-import { gameSupported } from '../util/gameSupport';
+import { setAutoEnable } from "../actions/settings";
+import { NAMESPACE } from "../statics";
+import { gameSupported } from "../util/gameSupport";
 
-import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import * as Redux from 'redux';
-import { ComponentEx, selectors, Toggle, types } from 'vortex-api';
+import * as React from "react";
+import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ComponentEx, selectors, Toggle, types } from "vortex-api";
 
-export interface IBaseProps {
-}
+export interface IBaseProps {}
 
 interface IConnectedProps {
   gameMode: string;
@@ -33,17 +32,16 @@ class Settings extends ComponentEx<IProps, {}> {
 
     return (
       <form>
-        <FormGroup controlId='default-enable'>
-          <ControlLabel>{t('Plugins')}</ControlLabel>
-          <Toggle
-            checked={autoEnable}
-            onToggle={this.toggle}
-          >
-            {t('Enable externally added plugins automatically')}
+        <FormGroup controlId="default-enable">
+          <ControlLabel>{t("Plugins")}</ControlLabel>
+          <Toggle checked={autoEnable} onToggle={this.toggle}>
+            {t("Enable externally added plugins automatically")}
           </Toggle>
           <HelpBlock>
-            {t('If checked, plugins you add to the game directory outside Vortex '
-              + '(e.g. when you create one with the Creation Kit) will be enabled automatically.')}
+            {t(
+              "If checked, plugins you add to the game directory outside Vortex " +
+                "(e.g. when you create one with the Creation Kit) will be enabled automatically.",
+            )}
           </HelpBlock>
         </FormGroup>
       </form>
@@ -53,7 +51,7 @@ class Settings extends ComponentEx<IProps, {}> {
   private toggle = (enabled: boolean) => {
     const { onSetAutoEnable } = this.props;
     onSetAutoEnable(enabled);
-  }
+  };
 }
 
 function mapStateToProps(state: types.IState): IConnectedProps {
@@ -70,7 +68,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default
-  withTranslation(['common', NAMESPACE])(
-    connect(mapStateToProps, mapDispatchToProps)(Settings) as any,
-  ) as React.ComponentClass<{}>;
+export default withTranslation(["common", NAMESPACE])(
+  connect(mapStateToProps, mapDispatchToProps)(Settings) as any,
+) as React.ComponentClass<{}>;

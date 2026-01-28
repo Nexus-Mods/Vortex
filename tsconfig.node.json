@@ -11,8 +11,6 @@
     "composite": true,
     "noEmit": true,
     "allowJs": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   }
 }

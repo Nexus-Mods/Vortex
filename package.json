@@ -72,8 +72,8 @@
     "lint": "yarn eslint --cache --concurrency auto .",
     "lint:quiet": "yarn eslint --cache --concurrency auto --quiet .",
     "lint:ci": "yarn cross-env CI=1 yarn eslint --quiet .",
-    "format": "yarn prettier src --write",
-    "format:check": "yarn prettier src --check"
+    "format": "yarn prettier \"src/**/*.{ts,tsx,js,jsx,scss,css}\" \"extensions/**/*.{ts,tsx,js,jsx,scss,css}\" \"scripts/**/*.{js,mjs,cjs}\" \"tools/**/*.{js,mjs,cjs,ts}\" \"playwright/**/*.{ts,tsx,js}\" \".storybook/**/*.{js,ts,scss,css}\" \"typings.custom/**/*.{ts,d.ts}\" \"electron.vite.config.ts\" \"tsconfig*.json\" \"package.json\" \"jest.config.mjs\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"electron-builder-*.json\" \"webpack.*.js\" \"playwright.config.js\" \"*.yml\" --write",
+    "format:check": "yarn prettier \"src/**/*.{ts,tsx,js,jsx,scss,css}\" \"extensions/**/*.{ts,tsx,js,jsx,scss,css}\" \"scripts/**/*.{js,mjs,cjs}\" \"tools/**/*.{js,mjs,cjs,ts}\" \"playwright/**/*.{ts,tsx,js}\" \".storybook/**/*.{js,ts,scss,css}\" \"typings.custom/**/*.{ts,d.ts}\" \"electron.vite.config.ts\" \"tsconfig*.json\" \"package.json\" \"jest.config.mjs\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"electron-builder-*.json\" \"webpack.*.js\" \"playwright.config.js\" \"*.yml\" --check"
   },
   "parserOptions": {
     "ecmaFeatures": {

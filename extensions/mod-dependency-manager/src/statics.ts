@@ -1,1 +1,1 @@
-export const NAMESPACE: string = 'mod-dependency-manager';
+export const NAMESPACE: string = "mod-dependency-manager";

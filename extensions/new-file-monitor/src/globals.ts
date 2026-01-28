@@ -1,1 +1,1 @@
-export const NAMESPACE = 'new-file-monitor';
+export const NAMESPACE = "new-file-monitor";
