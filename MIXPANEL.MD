@@ -95,11 +95,11 @@ To test that Mixpanel events are firing correctly, you need to perform specific 
 
 | Event Name | Vortex User Action | How to Trigger |
 |------------|-------------------|----------------|
-| `Collections: Collection drafted in Vortex` | Creating a new collection draft | See methods below |
-| `Collections: Draft uploaded` | Uploading a new collection draft | Export collection to Nexus Mods API |
-| `Collections: Draft update uploaded` | Updating an existing collection | Export updated collection to Nexus Mods API |
+| `collection_drafted` | Creating a new collection draft | See methods below |
+| `collection_draft_uploaded` | Uploading a new collection draft | Export collection to Nexus Mods API |
+| `collection_draft_updated` | Updating an existing collection | Export updated collection to Nexus Mods API |
 
-### How to Trigger "Collections: Collection drafted in Vortex"
+### How to Trigger "collection_drafted"
 
 This event fires when you create a new collection draft. There are three ways to trigger it:
 
@@ -127,7 +127,7 @@ This event fires when you create a new collection draft. There are three ways to
 3. Complete the quick collection creation
 4. The event fires with `creation_method: "quick_collection"`
 
-### How to Trigger "Collections: Draft uploaded"
+### How to Trigger "collection_draft_uploaded"
 
 This event fires when you upload a collection draft to Nexus Mods for the **first time**:
 
@@ -137,7 +137,7 @@ This event fires when you upload a collection draft to Nexus Mods for the **firs
 4. Ensure this is a **new upload** (not an update to existing collection)
 5. The event fires with collection name, game name, and your user ID
 
-### How to Trigger "Collections: Draft update uploaded"
+### How to Trigger "collection_draft_updated"
 
 This event fires when you upload an **update** to an existing collection:
 
@@ -187,7 +187,7 @@ Add your event class to `src/extensions/analytics/mixpanel/MixpanelEvents.ts`:
  * @param creation_method How the collection was created
  */
 export class CollectionsDraftedEvent implements MixpanelEvent {
-  readonly eventName = "Collections: Collection drafted in Vortex";
+  readonly eventName = "collection_drafted";
   readonly properties: Record<string, any>;
 
   constructor(
@@ -248,9 +248,9 @@ Follow the Mixpanel naming convention with **Title Case and colons**:
 ```
 
 Examples:
-- `Collections: Collection drafted in Vortex`
-- `Collections: Draft uploaded`
-- `Collections: Draft update uploaded`
+- `collection_drafted`
+- `collection_draft_uploaded`
+- `collection_draft_updated`
 
 ## Standard Properties
 

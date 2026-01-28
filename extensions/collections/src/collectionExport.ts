@@ -378,8 +378,8 @@ export async function doExportToAPI(
 
       if (userInfo?.userId) {
         const eventName = isNewUpload
-          ? "Collections: Draft uploaded"
-          : "Collections: Draft update uploaded";
+          ? "collection_draft_uploaded"
+          : "collection_draft_updated";
         api.events.emit("analytics-track-mixpanel-event", {
           eventName,
           properties: {

@@ -107,7 +107,7 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
  * @param creation_method How the collection was created
  */
 export class CollectionsDraftedEvent implements MixpanelEvent {
-  readonly eventName = "Collections: Collection drafted in Vortex";
+  readonly eventName = "collection_drafted";
   readonly properties: Record<string, any>;
 
   constructor(
@@ -132,7 +132,7 @@ export class CollectionsDraftedEvent implements MixpanelEvent {
  * @param user_id Nexus Mods user ID
  */
 export class CollectionsDraftUploadedEvent implements MixpanelEvent {
-  readonly eventName = "Collections: Draft uploaded";
+  readonly eventName = "collection_draft_uploaded";
   readonly properties: Record<string, any>;
 
   constructor(collection_name: string, game_name: string, user_id: number) {
@@ -151,7 +151,7 @@ export class CollectionsDraftUploadedEvent implements MixpanelEvent {
  * @param user_id Nexus Mods user ID
  */
 export class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
-  readonly eventName = "Collections: Draft update uploaded";
+  readonly eventName = "collection_draft_updated";
   readonly properties: Record<string, any>;
 
   constructor(collection_name: string, game_name: string, user_id: number) {

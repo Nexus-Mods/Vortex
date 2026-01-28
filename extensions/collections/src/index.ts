@@ -271,7 +271,7 @@ async function createNewCollection(
   const userInfo = state.persistent["nexus"]?.userInfo;
   if (userInfo?.userId) {
     api.events.emit("analytics-track-mixpanel-event", {
-      eventName: "Collections: Collection drafted in Vortex",
+      eventName: "collection_drafted",
       properties: {
         collection_name: name,
         game_name: game.name,
