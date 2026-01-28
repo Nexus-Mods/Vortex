@@ -25,5 +25,11 @@
   "The mod you {{enabled}} depends on other mods, do you want to {{enable}} those as well?_plural": "The mods you {{enabled}} depend on other mods, do you want to {{enable}} those as well?",
   "actions": {
     "search": "Search"
-  }
+  },
+  "Create New Mod": "Create New Mod",
+  "Enter a name for your new mod. This will create an empty mod folder in your staging directory where you can add files manually.": "Enter a name for your new mod. This will create an empty mod folder in your staging directory where you can add files manually.",
+  "Mod Name": "Mod Name",
+  "My Custom Mod": "My Custom Mod",
+  "Cancel": "Cancel",
+  "Create Mod": "Create Mod"
 }

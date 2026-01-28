@@ -2,6 +2,7 @@
 // on the extensions and re-compiles them properly. They are completely
 // removed during compilation
 import {} from "./about_dialog";
+import {} from "./add_new_mod";
 import {} from "./analytics";
 import {} from "./announcement_dashlet";
 import {} from "./browser";
