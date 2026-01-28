@@ -58,7 +58,7 @@ export const Menu = () => {
   return (
     <div
       className={joinClasses([
-        "flex shrink-0 flex-col gap-y-0.5 px-3 pt-3",
+        "flex shrink-0 flex-col gap-y-0.5 px-3",
         isMenuOpen ? "w-56" : "w-16",
       ])}
     >
