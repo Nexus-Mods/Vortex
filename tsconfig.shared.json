@@ -1,0 +1,11 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.base.json",
+  "include": ["src/shared/**/*"],
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "types": [],
+    "lib": ["ESNext"]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "src/renderer/preload.d.ts",
+    "src/renderer/**/*",
+    "src/shared/**/*",
+    "src/renderer.tsx",
+    "src/splash.ts",
+    "typings.custom/*.d.ts",
+    // TODO: to be removed after main/renderer separation:
+    "src/actions/**/*",
+    "src/extensions/**/*",
+    "src/reducers/**/*",
+    "src/store/**/*",
+    "src/tailwind/**/*",
+    "src/types/**/*",
+    "src/util/**/*"
+  ],
+  "exclude": ["src/util/vortex-run/**/*"],
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "commonjs", // TODO: change to esnext
+    "moduleResolution": "node", // TODO: change to bundler
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["src/renderer/*"],
+      "@shared/*": ["src/shared/*"]
+    },
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "outDir": "./out",
+    "rootDir": "./src",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "removeComments": true
+  }
+}
