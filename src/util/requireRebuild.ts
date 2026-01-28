@@ -31,7 +31,7 @@ const loggingHandler = {
 // add module names here to get a console message for every call to a function of
 // that module (in development runs only) including arguments.
 // e.g. const modulesToLog = new Set(['https']);
-const modulesToLog = new Set([]);
+const modulesToLog = new Set(Array<string>());
 
 const cachePath = path.join(getVortexPath("temp"), "native_cache");
 fs.ensureDirSync(cachePath);

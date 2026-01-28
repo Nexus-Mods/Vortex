@@ -1,4 +1,5 @@
 import type * as pathT from "path";
+import { unknownToError } from "../shared/errors";
 
 /**
  * Monkey patching is obviously considered evil but there may be cases where the alternative
@@ -35,7 +36,7 @@ function fallbackDateFormat(
 
   // Force UTC if runtime timezone could not be detected.
   if (!tz || tz.toLowerCase() === "etc/unknown") {
-    options.timeZone = "UTC";
+    options = { ...options, timeZone: "UTC" };
     formatter = new Intl.DateTimeFormat(locales, options);
   }
   return formatter.format(this);
@@ -147,7 +148,8 @@ function applyMonkeyPatches() {
   path.join = function (...paths: string[]) {
     try {
       return oldJoin(...paths);
-    } catch (err) {
+    } catch (unknownError) {
+      const err = unknownToError(unknownError);
       err["paths"] = paths;
       throw err;
     }
@@ -156,7 +158,8 @@ function applyMonkeyPatches() {
   path.resolve = function (...paths: string[]) {
     try {
       return oldResolve(...paths);
-    } catch (err) {
+    } catch (unknownError) {
+      const err = unknownToError(unknownError);
       err["paths"] = paths;
       throw err;
     }

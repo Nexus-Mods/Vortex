@@ -4,10 +4,11 @@
  * 2. base               - Tailwind preflight
  * 3. bootstrap-reset    - Bootstrap's normalize/scaffolding (overrides preflight)
  * 4. bootstrap-components - Bootstrap components
- * 5. components         - Tailwind components
- * 6. utilities          - Tailwind utilities (highest priority)
+ * 5. bootstrap-override - Bootstrap overrides (above components)
+ * 6. components         - Tailwind components
+ * 7. utilities          - Tailwind utilities (highest priority)
  */
-@layer theme, base, bootstrap-reset, bootstrap-components, components, utilities;
+@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, components, utilities;
 
 @import "tailwindcss";
 
@@ -16,27 +17,12 @@
  * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
  * - collapse: Tailwind's `visibility: collapse` overrides Bootstrap's collapse component
  */
-@utility container {
-    all: unset;
-}
-
-@utility collapse {
-    all: unset;
-}
+@source not inline('container');
+@source not inline('collapse');
 
 /* Import shared design system from nexus-next */
 @import "./shared/theme";
 @import "./shared/elements";
-
-:root {
-    /* Icon sizes for consistent icon sizing, don't think this is needed anymore should be able to use `size-[x]` */
-    --icon-size-xs: 12px;
-    --icon-size-sm: 16px;
-    --icon-size-md: 20px;
-    --icon-size-lg: 24px;
-    --icon-size-xl: 32px;
-    --icon-size-2xl: 48px;
-}
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

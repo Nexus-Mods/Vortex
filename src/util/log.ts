@@ -31,7 +31,7 @@ function IPCTransport(options: winston.TransportOptions) {
   this.level = "debug";
 }
 
-let logger: typeof winston = null;
+let logger: typeof winston;
 
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect

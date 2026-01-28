@@ -10,7 +10,6 @@ import type {
 } from "../types/INotification";
 import local from "../util/local";
 import { log } from "../util/log";
-import { truthy } from "../util/util";
 import { getErrorMessageOrDefault } from "../shared/errors";
 
 import safeCreateAction from "./safeCreateAction";
@@ -18,7 +17,6 @@ import safeCreateAction from "./safeCreateAction";
 import PromiseBB from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
 
-import * as reduxAct from "redux-act";
 import { generate as shortid } from "shortid";
 
 export * from "../types/IDialog";
@@ -217,9 +215,10 @@ export function dismissAllNotifications() {
   return (dispatch) =>
     new PromiseBB<void>((resolve, reject) => {
       const ids = Array.from(
-        new Set<string>(
-          [].concat(Object.keys(timers), Object.keys(notificationActions)),
-        ),
+        new Set<string>([
+          ...Object.keys(timers),
+          ...Object.keys(notificationActions),
+        ]),
       );
       ids.forEach((id) => {
         delete timers[id];

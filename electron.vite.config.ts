@@ -33,7 +33,7 @@ export default defineConfig({
   preload: {
     build: {
       lib: {
-        entry: "./src/preload.ts"
+        entry: "./src/preload/index.ts"
       }
     }
   },
