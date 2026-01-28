@@ -59,8 +59,9 @@ import * as remote from "@electron/remote";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
-import * as fs from "fs-extra";
 import * as nativeErr from "native-errors";
+import { writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import * as path from "path";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -116,32 +117,11 @@ import {
 
 log("debug", "renderer process started", { pid: process["pid"] });
 
-function fetchReduxState(tries: number = 5) {
-  // using implicit structured clone algorithm
+function fetchReduxState(): IState {
   return ipcRenderer.sendSync("get-redux-state");
-
-  /* using explicit json cloning. This was used in an attempt to debug
-  mysterious issues transporting initial state between processes but this didn't
-  seem to help. Leaving it here in case the situation actually gets worse after
-  reverting to implicit serialization
-
-  const expectedMD5 = msg.slice(0, 32);
-  const dat = msg.slice(32);
-  const actualMD5 = checksum(Buffer.from(dat));
-  if (actualMD5 === expectedMD5) {
-    log('info', 'parsing state', dat.length);
-    return JSON.parse(dat.toString());
-  } else if (tries <= 0) {
-    throw new SyntaxError('failed to transfer state from main process');
-  } else {
-    log('warn', 'failed to transfer redux state',
-        { tries, expectedMD5, actualMD5, length: dat.length });
-    return fetchReduxState(tries - 1);
-  }
-  */
 }
 
-function initialState(): any {
+function initialState(): IState {
   try {
     return fetchReduxState();
   } catch (err) {
@@ -150,7 +130,7 @@ function initialState(): any {
         remote.app.getPath("temp"),
         "invalid_state.json",
       );
-      fs.writeFileSync(dumpPath, remote.getGlobal("getReduxState")());
+      writeFileSync(dumpPath, remote.getGlobal("getReduxState")());
       log(
         "error",
         "Failed to transfer application state. This indicates an issue with a " +
@@ -246,7 +226,7 @@ function sanityCheckCB(err: StateError) {
   );
 }
 
-let store: ThunkStore<any>;
+let store: ThunkStore<IState>;
 
 const terminateFromError = (error: any, allowReport?: boolean) => {
   log("warn", "about to report an error", { stack: new Error().stack });
@@ -488,11 +468,11 @@ if (process.env.NODE_ENV === "development") {
   enhancer = compose(applyMiddleware(...middleware, safeForwardToMain));
 }
 
-let tFunc: TFunction = fallbackTFunc;
+const tFunc: TFunction = fallbackTFunc;
 let startupFinished: () => void;
 let extensions: ExtensionManager;
 
-function init() {
+async function init(): Promise<ExtensionManager | null> {
   // extension manager initialized without store, the information about what
   // extensions are to be loaded has to be retrieved from the main process
   extensions = new ExtensionManager(undefined, eventEmitter);
@@ -501,8 +481,9 @@ function init() {
     // if there are outdated extensions
     log("warn", "outdated extensions discovered in renderer");
     relaunch();
-    return Bluebird.resolve(null);
+    return null;
   }
+
   const extReducers = extensions.getReducers();
 
   const reportReducerError = (err) =>
@@ -528,7 +509,7 @@ function init() {
   log("debug", "renderer connected to store");
 
   setupNotificationSuppression((id) => {
-    const state: IState = store.getState();
+    const state = store.getState();
     return getSafe(state.settings.notifications, ["suppress", id], false);
   });
 
@@ -564,52 +545,57 @@ function init() {
     lastHeapSize = stat.totalHeapSize;
   }, 5000);
 
-  const startupPromise = new Bluebird((resolve) => (startupFinished = resolve));
+  const startupPromise = new Promise<void>(
+    (resolve) => (startupFinished = resolve),
+  );
 
   const api = extensions.getApi();
-  const globalNotifications = new GlobalNotifications(api);
 
-  function startinstallFromArchive(filePath: string) {
-    startupPromise.then(() => {
-      if (typeof filePath !== "string" || !path.isAbsolute(filePath)) {
-        return;
-      }
-      api.events.emit("import-downloads", [filePath], (dlIds: string[]) => {
-        dlIds.forEach((dlId) => {
-          api.events.emit("start-install-download", dlId);
-        });
+  // NOTE(erri120): has side-effects
+  const _globalNotifications = new GlobalNotifications(api);
+
+  async function startinstallFromArchive(filePath: string): Promise<void> {
+    await startupPromise;
+    if (typeof filePath !== "string" || !path.isAbsolute(filePath)) {
+      return;
+    }
+
+    api.events.emit("import-downloads", [filePath], (dlIds: string[]) => {
+      dlIds.forEach((dlId) => {
+        api.events.emit("start-install-download", dlId);
       });
     });
   }
-  function startDownloadFromURL(
-    url: string,
-    fileName?: string,
-    install?: boolean,
-  ) {
-    startupPromise.then(() => {
-      if (typeof url !== "string") {
-        return;
-      }
-      const protocol = url.split(":")[0];
 
-      const handler = extensions.getProtocolHandler(protocol);
-      if (handler !== null) {
-        log("info", "handling url", { url });
-        handler(url, install);
-      } else {
-        store.dispatch(
-          addNotification({
-            type: "info",
-            message: tFunc(
-              "Vortex isn't set up to handle this protocol: {{url}}",
-              {
-                replace: { url },
-              },
-            ),
-          }),
-        );
-      }
-    });
+  async function startDownloadFromURL(
+    url: string,
+    _fileName?: string,
+    install?: boolean,
+  ): Promise<void> {
+    await startupPromise;
+    if (typeof url !== "string") {
+      return;
+    }
+
+    const protocol = url.split(":")[0];
+
+    const handler = extensions.getProtocolHandler(protocol);
+    if (handler !== null) {
+      log("info", "handling url", { url });
+      handler(url, install);
+    } else {
+      store.dispatch(
+        addNotification({
+          type: "info",
+          message: tFunc(
+            "Vortex isn't set up to handle this protocol: {{url}}",
+            {
+              replace: { url },
+            },
+          ),
+        }),
+      );
+    }
   }
 
   eventEmitter.on(
@@ -700,16 +686,106 @@ function init() {
     }
   });
 
-  return Bluebird.resolve(extensions);
+  return extensions;
 }
 
-function renderer(extensions: ExtensionManager) {
+async function load(extensions: ExtensionManager): Promise<void> {
+  const { i18n, tFunc, error } = await Promise.resolve(
+    getI18n("en", () => {
+      const state = store.getState();
+      return Object.values(state.session.extensions.installed).filter(
+        (ext) => ext.type === "translation",
+      );
+    }),
+  );
+
+  if (error) {
+    showError(store.dispatch, "failed to initialize localization", error, {
+      allowReport: false,
+    });
+  }
+
+  setTFunction(tFunc);
+
+  const dynamicExts = extensions.extensions
+    .filter((ext) => ext.dynamic)
+    .map((ext) => ({
+      name: ext.namespace,
+      path: ext.path,
+    }));
+
+  await Promise.all(
+    dynamicExts.map(async (ext) => {
+      const filePath = path.join(ext.path, "language.json");
+
+      try {
+        const fileData = await readFile(filePath, "utf-8");
+        i18n.addResources("en", ext.name, JSON.parse(fileData));
+      } catch (err) {
+        const code = getErrorCode(err);
+
+        // an extension not providing a locale file is ok
+        if (code === "ENOENT") return;
+
+        log("error", "Failed to load translation", {
+          filePath,
+          error: getErrorMessageOrDefault(err),
+        });
+      }
+    }),
+  );
+
+  extensions.setTranslation(i18n);
+  await Promise.resolve(extensions.doOnce());
+
+  log("info", "activating language", {
+    lang: store.getState().settings.interface.language,
+  });
+  await changeLanguage(store.getState().settings.interface.language);
+
+  try {
+    await Promise.resolve(extensions.renderStyle());
+  } catch (err) {
+    terminate(
+      {
+        message: "failed to parse UI theme",
+        details: getErrorMessageOrDefault(err),
+      },
+      store.getState(),
+    );
+  }
+
+  presetManager.start();
+
+  extensions.setUIReady();
+  log("debug", "render with language", { language: i18n.language });
+  const refresh = initApplicationMenu(extensions);
+  extensions.getApi().events.on("gamemode-activated", () => refresh());
+  startupFinished();
+  eventEmitter.emit("startup");
+  // render the page content
+  ReactDOM.render(
+    <Provider store={store}>
+      <DndProvider backend={HTML5Backend}>
+        <I18nextProvider i18n={i18n}>
+          <ExtensionContext.Provider value={extensions}>
+            <MainWindow
+              api={extensions.getApi()}
+              className="full-height"
+              t={tFunc}
+            />
+          </ExtensionContext.Provider>
+        </I18nextProvider>
+      </DndProvider>
+    </Provider>,
+    document.getElementById("content"),
+  );
+}
+
+function renderer(extensions: ExtensionManager | null) {
   if (!extensions) {
     return;
   }
-
-  let i18n: I18next.i18n;
-  let error: Error;
 
   webFrame.setZoomFactor(
     getSafe(store.getState(), ["settings", "window", "zoomFactor"], 1),
@@ -729,105 +805,16 @@ function renderer(extensions: ExtensionManager) {
     store.dispatch(setNetworkConnected(false));
   });
 
-  getI18n("en", () => {
-    const state: IState = store.getState();
-    return Object.values(state.session.extensions.installed).filter(
-      (ext) => ext.type === "translation",
-    );
-  })
-    .then((res) => {
-      ({ i18n, tFunc, error } = res);
-
-      setTFunction(tFunc);
-
-      const dynamicExts: Array<{ name: string; path: string }> =
-        extensions.extensions
-          .filter((ext) => ext.dynamic)
-          .map((ext) => ({
-            name: ext.namespace,
-            path: ext.path,
-          }));
-
-      return Bluebird.map(dynamicExts, (ext) => {
-        const filePath = path.join(ext.path, "language.json");
-        return fs
-          .readFile(filePath, { encoding: "utf-8" })
-          .then((fileData: string) => {
-            i18n.addResources("en", ext.name, JSON.parse(fileData));
-          })
-          .catch((err) => {
-            const code = getErrorCode(err);
-            if (code !== "ENOENT") {
-              // an extension not providing a locale file is ok
-              log("error", "Failed to load translation", {
-                filePath,
-                error: getErrorMessageOrDefault(err),
-              });
-            }
-          });
-      }).then(() => {
-        extensions.setTranslation(i18n);
-      });
-    })
-    .then(() => {
-      if (error !== undefined) {
-        showError(store.dispatch, "failed to initialize localization", error, {
-          allowReport: false,
-        });
-      }
-      return extensions.doOnce();
-    })
-    .then(() => {
-      log("info", "activating language", {
-        lang: store.getState().settings.interface.language,
-      });
-      return changeLanguage(store.getState().settings.interface.language);
-    })
-    .then(() =>
-      extensions.renderStyle().catch((err) => {
-        terminate(
-          {
-            message: "failed to parse UI theme",
-            details: err,
-          },
-          store.getState(),
-        );
-      }),
-    )
-    .then(() => {
-      presetManager.start();
-    })
-    .then(() => {
-      extensions.setUIReady();
-      log("debug", "render with language", { language: i18n.language });
-      const refresh = initApplicationMenu(extensions);
-      extensions.getApi().events.on("gamemode-activated", () => refresh());
-      startupFinished();
-      eventEmitter.emit("startup");
-      // render the page content
-      ReactDOM.render(
-        <Provider store={store}>
-          <DndProvider backend={HTML5Backend}>
-            <I18nextProvider i18n={i18n}>
-              <ExtensionContext.Provider value={extensions}>
-                <MainWindow
-                  api={extensions.getApi()}
-                  className="full-height"
-                  t={tFunc}
-                />
-              </ExtensionContext.Provider>
-            </I18nextProvider>
-          </DndProvider>
-        </Provider>,
-        document.getElementById("content"),
-      );
-      // ipcRenderer.send('show-window');
-    });
-
   // prevent the page from being changed through drag&drop
   document.ondragover = document.ondrop = (ev) => {
     ev.preventDefault();
   };
+
+  load(extensions).catch((err) =>
+    log("error", "error setting up renderer", err),
+  );
 }
 
-init().then((extensions: ExtensionManager) => renderer(extensions));
+init()
+  .then((extensions) => renderer(extensions))
+  .catch((err) => log("error", "error setting up renderer", err));
