@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 export interface ITimerProps {
   className?: string;
@@ -59,15 +59,17 @@ function Timer(props: ITimerProps) {
         remaining = duration - elapsed;
         setElapsed(null);
       } else {
-        remaining = (started + duration) - Date.now();
+        remaining = started + duration - Date.now();
       }
 
       if (remaining < 0) {
         remaining = duration;
       }
-      setTimer(setTimeout(() => {
-        onTrigger();
-      }, remaining));
+      setTimer(
+        setTimeout(() => {
+          onTrigger();
+        }, remaining),
+      );
     }
   }, [setTimer, setElapsed, paused, started]);
 
@@ -78,27 +80,27 @@ function Timer(props: ITimerProps) {
       style={{ strokeWidth: stroke }}
     >
       <circle
-        className='timer-background'
-        fill='none'
+        className="timer-background"
+        fill="none"
         cx={center}
         cy={center}
         r={radius}
       />
       <circle
-        className='timer-circle'
+        className="timer-circle"
         style={{
-          animationDuration: duration.toString() + 'ms',
-          animationDirection: 'reverse',
-          animationIterationCount: 'infinite',
-          animationTimingFunction: 'linear',
-          animationPlayState: paused ? 'paused' : 'running',
-          transform: 'rotate(-90deg)',
-          transformOrigin: 'center',
-          display: active ? undefined : 'none',
+          animationDuration: duration.toString() + "ms",
+          animationDirection: "reverse",
+          animationIterationCount: "infinite",
+          animationTimingFunction: "linear",
+          animationPlayState: paused ? "paused" : "running",
+          transform: "rotate(-90deg)",
+          transformOrigin: "center",
+          display: active ? undefined : "none",
         }}
         strokeDasharray={`${circumference},${circumference}`}
-        strokeLinecap='round'
-        fill='none'
+        strokeLinecap="round"
+        fill="none"
         cx={center}
         cy={center}
         r={radius}

@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import * as React from "react";
+import { ListGroup, ListGroupItem } from "react-bootstrap";
 
 interface IBaseProps {
   masters: string[];
@@ -18,10 +18,7 @@ class MasterList extends React.Component<IProps, {}> {
     if (masters === undefined) {
       return null;
     }
-    return (
-      <ListGroup>
-        {masters.map(this.renderPlugin)}
-      </ListGroup>);
+    return <ListGroup>{masters.map(this.renderPlugin)}</ListGroup>;
   }
 
   private renderPlugin = (pluginName: string): JSX.Element => {
@@ -31,10 +28,11 @@ class MasterList extends React.Component<IProps, {}> {
       <ListGroupItem
         style={{ padding: 5 }}
         key={`plugin-${pluginName}`}
-        bsStyle={isInstalled ? undefined : 'warning'}
+        bsStyle={isInstalled ? undefined : "warning"}
       >
         {pluginName}
-      </ListGroupItem>);
-  }
+      </ListGroupItem>
+    );
+  };
 }
 export default MasterList;

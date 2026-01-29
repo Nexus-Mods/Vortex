@@ -12,31 +12,30 @@
     height: 32px !important;
     transition: height 250ms ease 500ms;
     .menubar {
-      height: 100%;
+        height: 100%;
     }
 }
 
 .mainpage-header .btn {
-  .button-text {
-    opacity: 0;
-    transition: opacity 250ms ease;
+    .button-text {
+        opacity: 0;
+        transition: opacity 250ms ease;
 
-    position: absolute;
-    top: 32px;
-    z-index: 1;
-    background-color: $brand-bg;
-    border: $border-width solid $border-color;
-    padding: 8px;
-    font-size: 1em;
-    pointer-events: none;
-  }
+        position: absolute;
+        top: 32px;
+        z-index: 1;
+        background-color: $brand-bg;
+        border: $border-width solid $border-color;
+        padding: 8px;
+        font-size: 1em;
+        pointer-events: none;
+    }
 
-  &:hover .button-text {
-    opacity: 1;
-    transition: opacity 250ms ease 100ms;
-  }
+    &:hover .button-text {
+        opacity: 1;
+        transition: opacity 250ms ease 100ms;
+    }
 }
-
 
 // if the sidebar is collapsed, show the tab name when hovering
 // (this conflicts a bit with the tooltip which we can't disable from css)
@@ -96,8 +95,8 @@
     padding-left: 16px;
 
     .toolbar-version {
-      position: static;
-      margin-right: 12px;
+        position: static;
+        margin-right: 12px;
     }
 }
 
@@ -115,5 +114,5 @@
 }
 
 #titlebar-starter {
-  grid-template-rows: repeat(1, auto);
+    grid-template-rows: repeat(1, auto);
 }

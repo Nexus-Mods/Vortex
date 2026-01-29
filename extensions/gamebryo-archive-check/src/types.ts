@@ -1,4 +1,4 @@
-import { types } from 'vortex-api';
+import { types } from "vortex-api";
 
 export interface IDataArchive {
   name: string;

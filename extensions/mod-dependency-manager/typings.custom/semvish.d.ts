@@ -1,4 +1,4 @@
-declare module 'semvish' {
+declare module "semvish" {
   export function compare(v1: string, v2: string);
   export function rcompare(v1: string, v2: string);
 

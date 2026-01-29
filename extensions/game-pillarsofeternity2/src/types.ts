@@ -9,5 +9,5 @@ export interface ILoadOrder {
 
 export interface ILoadOrderDisplayItem {
   id: string;
-  name: string
+  name: string;
 }

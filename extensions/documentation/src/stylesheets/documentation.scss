@@ -2,99 +2,107 @@ $tut-video-width: 560;
 $tut-video-height: 315;
 
 .tutorial-link-todo {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
-.tutorial-link { height: 100%; }
+.tutorial-link {
+    height: 100%;
+}
 
-.tutorial-link button { 
-  margin-right: 0 !important;
-  height: 100%;
- }
+.tutorial-link button {
+    margin-right: 0 !important;
+    height: 100%;
+}
 
 // Temporary solution to the global margin issue when displaying
 //  items vertically.
 .tutorial-link svg {
-  margin-right: 0 !important;
+    margin-right: 0 !important;
 }
 
 .popover-title-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.popover-title-container button { color: white; }
+.popover-title-container button {
+    color: white;
+}
 
-.popover-title-container h3 { font-size: 14px !important; }
+.popover-title-container h3 {
+    font-size: 14px !important;
+}
 
-.tutorial-popover { max-width: 100%; }
+.tutorial-popover {
+    max-width: 100%;
+}
 
 .tutorial-popover .youtube-privacy-notice {
-  font-size: 0.85em;
-  opacity: 0.7;
-  margin: 8px 0;
-  text-align: center;
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin: 8px 0;
+    text-align: center;
 }
 
 .tutorial-popover-fullscreen {
-  position: absolute;
-  top: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  margin-top: 0 !important;
-
-  webview {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-  }
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-top: 0 !important;
+
+    webview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+    }
 }
 
-.tutorial-button-instance { 
-  width: $tut-video-width;
+.tutorial-button-instance {
+    width: $tut-video-width;
 }
 
 .tutorial-dropdown-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  right: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
 }
 
 // Temporary solution to the global margin issue when displaying
 //  items vertically.
 .tutorial-dropdown-title svg {
-  margin-right: 0 !important;
+    margin-right: 0 !important;
 }
 
 .tutorial-dropdown-group {
-  // not sure why this has to be row-reverse instead of row
-  flex-direction: row-reverse !important;
-  height: 100%;
+    // not sure why this has to be row-reverse instead of row
+    flex-direction: row-reverse !important;
+    height: 100%;
 
-  div:first-child {
-  }
+    div:first-child {
+    }
 }
 
 .tutorial-footer {
-  // since the footer is actually placed within popover-content (can't be helped)
-  // need a negative margin to offset the padding. Too bad that padding is hard-coded
-  // instead of a variable...
-  margin: 9px -14px -9px;
-  padding: 9px 14px;
-  font-size: 1em;
-  background-color: $popover-title-bg;
-  border-top: 1px solid darken($popover-title-bg, 5%);
+    // since the footer is actually placed within popover-content (can't be helped)
+    // need a negative margin to offset the padding. Too bad that padding is hard-coded
+    // instead of a variable...
+    margin: 9px -14px -9px;
+    padding: 9px 14px;
+    font-size: 1em;
+    background-color: $popover-title-bg;
+    border-top: 1px solid darken($popover-title-bg, 5%);
 }

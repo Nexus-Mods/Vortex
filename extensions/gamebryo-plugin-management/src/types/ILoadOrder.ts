@@ -1,4 +1,4 @@
 export interface ILoadOrder {
-  enabled: boolean | 'ghost';
+  enabled: boolean | "ghost";
   loadOrder: number;
 }

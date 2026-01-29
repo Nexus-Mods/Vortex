@@ -1,48 +1,47 @@
 .cell-screenshot .screenshot-canvas {
-  max-height: 56px;
-  border: $border-width solid $border-color;
-  width: 137px;
-  object-fit: contain;
+    max-height: 56px;
+    border: $border-width solid $border-color;
+    width: 137px;
+    object-fit: contain;
 }
 
-
 #table-savegames {
-  // prevent word wrap
-  .table-header-cell {
-    white-space: nowrap;
-  }
-  .header-name,
-  .header-location {
-    // use up remaining space
-    width: 50%;
-  }
-  .header-filesize {
-    min-width: 8em;
-  }
-  .header-creationtime {
-    min-width: 10em;
-  }
-  .cell-creationtime {
-    white-space: nowrap;
-  }
-  .cell-filesize {
-    text-align: center;
-  }
+    // prevent word wrap
+    .table-header-cell {
+        white-space: nowrap;
+    }
+    .header-name,
+    .header-location {
+        // use up remaining space
+        width: 50%;
+    }
+    .header-filesize {
+        min-width: 8em;
+    }
+    .header-creationtime {
+        min-width: 10em;
+    }
+    .cell-creationtime {
+        white-space: nowrap;
+    }
+    .cell-filesize {
+        text-align: center;
+    }
 }
 
 .savegames-busy-panel {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  svg {
-    width: 3em;
-    height: 3em;
-  }
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    svg {
+        width: 3em;
+        height: 3em;
+    }
 }

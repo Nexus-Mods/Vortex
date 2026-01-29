@@ -1,4 +1,4 @@
-export interface IESPFile  {
+export interface IESPFile {
   // setLightFlag(enabled: boolean): void;
   isMaster: boolean;
   isLight: boolean;

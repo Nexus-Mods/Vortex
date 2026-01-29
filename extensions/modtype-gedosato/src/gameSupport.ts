@@ -1,6 +1,6 @@
 const gameSupport = {
   darksouls2: {
-    id: 'DarkSoulsII',
+    id: "DarkSoulsII",
   },
 };
 

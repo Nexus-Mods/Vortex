@@ -9,25 +9,25 @@ platform:
 configuration:
   - Release
 install:
-- ps: Install-Product node $env:nodejs_version x64
-- ps: |
-    Write-Host "Installing newest Yarn!"
-    (New-Object Net.WebClient).DownloadFile("https://github.com/yarnpkg/yarn/releases/download/v1.22.19/yarn-1.22.19.msi", "$env:temp\yarn.msi")
-- cmd: |
-    msiexec.exe /i %TEMP%\yarn.msi /quiet /qn /norestart
-- cmd: |
-    yarn install
+  - ps: Install-Product node $env:nodejs_version x64
+  - ps: |
+      Write-Host "Installing newest Yarn!"
+      (New-Object Net.WebClient).DownloadFile("https://github.com/yarnpkg/yarn/releases/download/v1.22.19/yarn-1.22.19.msi", "$env:temp\yarn.msi")
+  - cmd: |
+      msiexec.exe /i %TEMP%\yarn.msi /quiet /qn /norestart
+  - cmd: |
+      yarn install
 branches:
   except:
     - announcements
 build_script:
-- cmd: >-
-    yarn run ci
+  - cmd: >-
+      yarn run ci
 test_script:
-- cmd: >-
-    yarn run test
+  - cmd: >-
+      yarn run test
 artifacts:
-- path: dist\Vortex Setup *.exe
-  name: Setup
+  - path: dist\Vortex Setup *.exe
+    name: Setup
 on_failure:
- - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

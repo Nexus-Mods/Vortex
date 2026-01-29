@@ -1,5 +1,5 @@
-import { ICollection } from './ICollection';
-import { types } from 'vortex-api';
+import { ICollection } from "./ICollection";
+import { types } from "vortex-api";
 
 export interface ICollectionConfig {
   recommendNewProfile: boolean;
@@ -16,6 +16,8 @@ export interface IConfigParserProps {
 }
 
 export interface IConfigSpecific {
-  generateConfig: (genProps: IConfigGeneratorProps) => Promise<ICollectionConfig>;
+  generateConfig: (
+    genProps: IConfigGeneratorProps,
+  ) => Promise<ICollectionConfig>;
   parseConfig: (parserProps: IConfigParserProps) => Promise<ICollectionConfig>;
 }

@@ -1,11 +1,11 @@
-import { types } from 'vortex-api';
+import { types } from "vortex-api";
 
-export type UnityDoorstopType = 'none' | 'default' | 'unity3';
+export type UnityDoorstopType = "none" | "default" | "unity3";
 
 export class NotPremiumError extends Error {
   constructor() {
-    super('User is not premium');
-    this.name = 'NotPremiumError';
+    super("User is not premium");
+    this.name = "NotPremiumError";
   }
 }
 
@@ -33,7 +33,9 @@ export interface IDoorstopConfig {
 
   // Some game extensions may want to validate the doorstop's configuration
   //  or assembly version, etc. This test will be kicked off on extension activation.
-  validateDoorStopConfig?: (doorStopAssemblyPath: string) => Promise<types.ITestResult>;
+  validateDoorStopConfig?: (
+    doorStopAssemblyPath: string,
+  ) => Promise<types.ITestResult>;
 }
 
 export interface IGithubAsset {
@@ -46,8 +48,8 @@ export interface IGithubRelease {
   assets: IGithubAsset[];
 }
 
-export type BepInExArchitecture = 'x86' | 'x64' | 'unix';
-export type BepInExUnityBuild = 'unitymono' | 'unityil2cpp';
+export type BepInExArchitecture = "x86" | "x64" | "unix";
+export type BepInExUnityBuild = "unitymono" | "unityil2cpp";
 export interface IBIXPackageResolver {
   rgx: RegExp;
   version: string; // Semver
@@ -124,12 +126,16 @@ export interface IBepInExGameConfig {
   //  from the website. The vortexTempDirPath property will provide the user
   //  with a suggested location where the archive should/could be created without
   //  fearing permissions related issues (hopefully)
-  customPackDownloader?: (vortexTempDirPath: string) => Promise<string | INexusDownloadInfo>;
+  customPackDownloader?: (
+    vortexTempDirPath: string,
+  ) => Promise<string | INexusDownloadInfo>;
 
   // Allows the game extension to validate the bepinex configuration/installation
   //  and inform the user if something is off. This test will be kicked off on
   //  extension activation.
-  validateBepInExConfiguration?: (bepinexPath: string) => Promise<types.ITestResult>;
+  validateBepInExConfiguration?: (
+    bepinexPath: string,
+  ) => Promise<types.ITestResult>;
 }
 
 export interface INexusDownloadInfoExt extends INexusDownloadInfo {
@@ -164,4 +170,6 @@ export interface INexusDownloadInfo {
   allowAutoInstall?: boolean;
 }
 
-export interface IAvailableDownloads { [version: string]: INexusDownloadInfoExt; }
+export interface IAvailableDownloads {
+  [version: string]: INexusDownloadInfoExt;
+}

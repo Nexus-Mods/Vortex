@@ -1,8 +1,8 @@
-import * as React from 'react';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import { Spinner, tooltip, util } from 'vortex-api';
-import { NAMESPACE } from '../statics';
+import * as React from "react";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import { Spinner, tooltip, util } from "vortex-api";
+import { NAMESPACE } from "../statics";
 
 interface IBaseProps {
   t: ReactI18Next.TranslationFunction;
@@ -18,11 +18,11 @@ const ProgressFooter = (props: IProps) => {
   const { t, working } = props;
 
   return working ? (
-    <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
+    <div style={{ display: "inline", marginLeft: 5, marginRight: 5 }}>
       <tooltip.Icon
-        id='update-file-conflicts'
-        name='conflict'
-        tooltip={t('Updating file conflicts')}
+        id="update-file-conflicts"
+        name="conflict"
+        tooltip={t("Updating file conflicts")}
       />
       <Spinner />
     </div>
@@ -31,10 +31,12 @@ const ProgressFooter = (props: IProps) => {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    working: util.getSafe(state, [ 'session', 'base', 'activity', 'mods' ], []).length > 0,
+    working:
+      util.getSafe(state, ["session", "base", "activity", "mods"], []).length >
+      0,
   };
 }
 
-export default
-  withTranslation(['common', NAMESPACE])(
-    connect(mapStateToProps)(ProgressFooter) as any) as React.ComponentClass<{}>;
+export default withTranslation(["common", NAMESPACE])(
+  connect(mapStateToProps)(ProgressFooter) as any,
+) as React.ComponentClass<{}>;

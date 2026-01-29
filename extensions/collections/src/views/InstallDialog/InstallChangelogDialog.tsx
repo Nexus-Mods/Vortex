@@ -1,13 +1,13 @@
-import CollectionThumbnail from '../CollectionTile';
+import CollectionThumbnail from "../CollectionTile";
 
-import React = require('react');
-import { Button, Media, Modal } from 'react-bootstrap';
-import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
-import { FlexLayout, MainContext, tooltip, types, util } from 'vortex-api';
+import React = require("react");
+import { Button, Media, Modal } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
+import { FlexLayout, MainContext, tooltip, types, util } from "vortex-api";
 
-import { IRevision } from '@nexusmods/nexus-api';
-import { useSelector } from 'react-redux';
+import { IRevision } from "@nexusmods/nexus-api";
+import { useSelector } from "react-redux";
 
 export interface IInstallChangelogDialogProps {
   gameId: string;
@@ -22,21 +22,34 @@ function nop() {
 }
 
 function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
-  const { collection, gameId, onCancel, onContinue, revisionInfo  } = props;
+  const { collection, gameId, onCancel, onContinue, revisionInfo } = props;
 
   const { t } = useTranslation();
-  const lang: string = useSelector<types.IState, string>(state =>
-    state.settings.interface.language);
+  const lang: string = useSelector<types.IState, string>(
+    (state) => state.settings.interface.language,
+  );
 
   const context = React.useContext(MainContext);
 
   const openUrl = React.useCallback(() => {
-    context.api.events.emit('analytics-track-click-event', 'Collections', 'View on site Updated Collection');
-    util.opn(util.nexusModsURL(
-      [revisionInfo.collection.game.domainName, 'collections', revisionInfo.collection.slug], {
-      campaign: util.Campaign.GeneralNavigation,
-      section: util.Section.Collections,
-    }));
+    context.api.events.emit(
+      "analytics-track-click-event",
+      "Collections",
+      "View on site Updated Collection",
+    );
+    util.opn(
+      util.nexusModsURL(
+        [
+          revisionInfo.collection.game.domainName,
+          "collections",
+          revisionInfo.collection.slug,
+        ],
+        {
+          campaign: util.Campaign.GeneralNavigation,
+          section: util.Section.Collections,
+        },
+      ),
+    );
   }, [collection]);
 
   if (collection === undefined) {
@@ -48,14 +61,15 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
 
   return (
     <Modal
-      id='install-changelog-dialog'
+      id="install-changelog-dialog"
       show={collection !== undefined}
       onHide={nop}
     >
       <Modal.Header>
         <Modal.Title>
-          {t('{{collectionName}} update',
-            { replace: { collectionName: util.renderModName(collection) } })}
+          {t("{{collectionName}} update", {
+            replace: { collectionName: util.renderModName(collection) },
+          })}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -64,33 +78,38 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
             t={t}
             gameId={gameId}
             collection={collection}
-            details='some'
+            details="some"
             imageTime={42}
             forceRevisionDisplay={revisionInfo.revisionNumber}
           />
         </Media.Left>
         <Media.Right>
-          <FlexLayout type='row'>
-            <h4>{t('Revision {{revNum}} Changelog',
-                  { replace: { revNum: revisionInfo.revisionNumber } })}</h4>
-            <div className='changelog-time'>{changelogDate.toLocaleDateString(lang)}</div>
+          <FlexLayout type="row">
+            <h4>
+              {t("Revision {{revNum}} Changelog", {
+                replace: { revNum: revisionInfo.revisionNumber },
+              })}
+            </h4>
+            <div className="changelog-time">
+              {changelogDate.toLocaleDateString(lang)}
+            </div>
           </FlexLayout>
-          <div className='changelog-scroll'>
+          <div className="changelog-scroll">
             <ReactMarkdown>{changelog.description}</ReactMarkdown>
           </div>
         </Media.Right>
         <tooltip.IconButton
-          className='collection-open-button'
-          icon='open-in-browser'
-          tooltip={t('Open Page')}
+          className="collection-open-button"
+          icon="open-in-browser"
+          tooltip={t("Open Page")}
           onClick={openUrl}
         >
-          {t('View Collection')}
+          {t("View Collection")}
         </tooltip.IconButton>
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={onCancel}>{t('Later')}</Button>
-        <Button onClick={onContinue}>{t('Download Update')}</Button>
+        <Button onClick={onCancel}>{t("Later")}</Button>
+        <Button onClick={onContinue}>{t("Download Update")}</Button>
       </Modal.Footer>
     </Modal>
   );
@@ -112,11 +131,11 @@ const localState = util.makeReactive<{ job: IInstallChangelogDialogProps }>({
 
 export class InstallChangelogDialog extends React.Component<{}> {
   public componentDidMount(): void {
-    localState['attach']?.(this);
+    localState["attach"]?.(this);
   }
 
   public componentWillUnmount(): void {
-    localState['detach']?.(this);
+    localState["detach"]?.(this);
   }
 
   public render() {
@@ -134,9 +153,11 @@ export class InstallChangelogDialog extends React.Component<{}> {
   }
 }
 
-function showChangelog(collection: types.IMod, gameId: string, revisionInfo: IRevision)
-  : Promise<void> {
-
+function showChangelog(
+  collection: types.IMod,
+  gameId: string,
+  revisionInfo: IRevision,
+): Promise<void> {
   return new Promise((resolve: () => void, reject: (err: Error) => void) => {
     localState.job = {
       collection,

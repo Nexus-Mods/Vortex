@@ -1,1 +1,1 @@
-export { IUMMGameConfig } from './types';
+export { IUMMGameConfig } from "./types";

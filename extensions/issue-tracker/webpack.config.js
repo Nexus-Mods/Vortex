@@ -1,3 +1,3 @@
-let webpack = require('vortex-api/bin/webpack').default;
+let webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('issue-tracker', __dirname, 5);
+module.exports = webpack("issue-tracker", __dirname, 5);

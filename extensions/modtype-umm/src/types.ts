@@ -33,4 +33,6 @@ export interface ISchemaViolation {
   message: string;
 }
 
-export interface IAvailableDownloads { [version: string]: INexusDownloadInfo; }
+export interface IAvailableDownloads {
+  [version: string]: INexusDownloadInfo;
+}

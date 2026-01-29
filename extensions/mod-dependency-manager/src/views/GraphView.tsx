@@ -1,7 +1,7 @@
-import cytoscape from 'cytoscape';
-import coseBilkent from 'cytoscape-cose-bilkent';
-import * as React from 'react';
-import { util } from 'vortex-api';
+import cytoscape from "cytoscape";
+import coseBilkent from "cytoscape-cose-bilkent";
+import * as React from "react";
+import { util } from "vortex-api";
 
 (cytoscape as any).use(coseBilkent);
 
@@ -30,13 +30,16 @@ export interface IGraphViewProps {
 }
 
 function san(input: string): string {
-  return input.replace(/[^a-zA-Z0-9_-]/g, (invalid) => `_${invalid.charCodeAt(0)}_`);
+  return input.replace(
+    /[^a-zA-Z0-9_-]/g,
+    (invalid) => `_${invalid.charCodeAt(0)}_`,
+  );
 }
 
 class GraphView extends React.Component<IGraphViewProps, {}> {
   private mGraph: cytoscape.Core;
   private mLayout: cytoscape.LayoutManipulation;
-  private mMousePos: { x: number, y: number } = { x: 0, y: 0 };
+  private mMousePos: { x: number; y: number } = { x: 0, y: 0 };
   private mLastProps: IGraphViewProps;
   private mEdgeIds: Set<string> = new Set();
 
@@ -55,16 +58,20 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
       const newConnections = [];
 
-      Object.keys(changed).forEach(id => {
-        if (id[0] === '+') {
+      Object.keys(changed).forEach((id) => {
+        if (id[0] === "+") {
           // node added
           this.mGraph.add({
-            data: { id: san(id.slice(1)), title: changed[id].title, originalId: id.slice(1) },
+            data: {
+              id: san(id.slice(1)),
+              title: changed[id].title,
+              originalId: id.slice(1),
+            },
             classes: changed[id].class,
             position: this.mMousePos,
           });
           const connections = changed[id].connections;
-          Object.keys(connections || []).forEach(refId => {
+          Object.keys(connections || []).forEach((refId) => {
             const from = san(id.slice(1));
             const to = san(connections[refId]);
             newConnections.push({
@@ -75,19 +82,21 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                 target: from,
                 targetOrig: id.slice(1),
               },
-              classes: (newProps.elements[id] !== undefined)
-                ? newProps.elements[id].class
-                : undefined,
+              classes:
+                newProps.elements[id] !== undefined
+                  ? newProps.elements[id].class
+                  : undefined,
             });
           });
-        } else if (id[0] === '-') {
+        } else if (id[0] === "-") {
           // node removed
-          this.mGraph.remove('#' + san(id.slice(1)));
+          this.mGraph.remove("#" + san(id.slice(1)));
         } else {
           // updated classes
           const nodeId = san(id);
           if (this.props.elements[id].class !== newProps.elements[id].class) {
-            this.mGraph.$(`node#${nodeId}, edge[target = "${nodeId}"]`)
+            this.mGraph
+              .$(`node#${nodeId}, edge[target = "${nodeId}"]`)
               .removeClass(this.props.elements[id].class)
               .addClass(newProps.elements[id].class);
           }
@@ -95,19 +104,19 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
           Object.keys(changed[id].connections || [])
             .sort((lhs, rhs) => {
               if (lhs[0] !== rhs[0]) {
-                return lhs[0] === '-' ? -1 : 1;
+                return lhs[0] === "-" ? -1 : 1;
               } else {
                 return lhs.localeCompare(rhs);
               }
             })
-            .forEach(refId => {
+            .forEach((refId) => {
               const from = san(id);
               const to = san(changed[id].connections[refId]);
               const connId = `${to}-to-${from}`;
-              if (refId[0] === '-') {
+              if (refId[0] === "-") {
                 this.mEdgeIds.delete(connId);
-                this.mGraph.remove('#' + connId);
-              } else if (refId[0] === '+') {
+                this.mGraph.remove("#" + connId);
+              } else if (refId[0] === "+") {
                 newConnections.push({
                   data: {
                     id: connId,
@@ -116,25 +125,27 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
                     target: from,
                     targetOrig: id,
                   },
-                  classes: (newProps.elements[id] !== undefined)
-                    ? newProps.elements[id].class
-                    : undefined,
+                  classes:
+                    newProps.elements[id] !== undefined
+                      ? newProps.elements[id].class
+                      : undefined,
                 });
               }
             });
         }
       });
 
-      newConnections.forEach(conn => {
+      newConnections.forEach((conn) => {
         if (!this.mEdgeIds.has(conn.data.id)) {
           this.mEdgeIds.add(conn.data.id);
           this.mGraph.add(conn);
         }
       });
 
-      this.mGraph.elements()
-        .removeClass('cycle-hidden')
-        .removeClass('cycle-highlight');
+      this.mGraph
+        .elements()
+        .removeClass("cycle-hidden")
+        .removeClass("cycle-highlight");
     }
   }
 
@@ -151,7 +162,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     const followers = this.mGraph
       .$(`#${san(nodeId)}`)
       .outgoers()
-      .filter(ele => (ele !== undefined) && (ele.group() === 'nodes'));
+      .filter((ele) => ele !== undefined && ele.group() === "nodes");
 
     const firstCycle = followers.reduce((prev, node) => {
       if (node === undefined) {
@@ -161,8 +172,10 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
         const root = san(node.id());
         const goal = san(nodeId);
 
-        if ((this.mGraph.getElementById(root).length === 0)
-            || (this.mGraph.getElementById(goal).length === 0)) {
+        if (
+          this.mGraph.getElementById(root).length === 0 ||
+          this.mGraph.getElementById(goal).length === 0
+        ) {
           throw new Error(`invalid route "${node.id()}" to "${nodeId}"`);
         }
 
@@ -180,18 +193,21 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
 
     if (firstCycle !== undefined) {
       // unhighlight previous cycle if necessary
-      this.mGraph.elements()
-        .addClass('cycle-hidden')
-        .removeClass('cycle-highlight');
+      this.mGraph
+        .elements()
+        .addClass("cycle-hidden")
+        .removeClass("cycle-highlight");
 
       // highlight edge to the node from which the cycle starts
-      this.mGraph.$(`#${san(nodeId)}-to-${san(firstCycle[0].id())}`)
-        .removeClass('cycle-hidden')
-        .addClass('cycle-highlight');
+      this.mGraph
+        .$(`#${san(nodeId)}-to-${san(firstCycle[0].id())}`)
+        .removeClass("cycle-hidden")
+        .addClass("cycle-highlight");
       // highlight all other edges in the cycle
-      firstCycle.filter(iter => iter.group() === 'edges')
-        .removeClass('cycle-hidden')
-        .addClass('cycle-highlight');
+      firstCycle
+        .filter((iter) => iter.group() === "edges")
+        .removeClass("cycle-hidden")
+        .addClass("cycle-highlight");
     }
   }
 
@@ -204,7 +220,7 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
   private setRef = (ref: HTMLDivElement) => {
     const { elements, visualStyle } = this.props;
     if (ref === null) {
-      (this.mGraph as any).off('cxttap', this.handleContext);
+      (this.mGraph as any).off("cxttap", this.handleContext);
       this.mGraph = undefined;
       return;
     }
@@ -220,46 +236,63 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
     this.mGraph.resize();
     this.mGraph.center();
     this.mLayout = this.mGraph.layout({
-      name: 'cose-bilkent',
+      name: "cose-bilkent",
       nodeDimensionsIncludeLabels: true,
       randomize: false,
       nodeRepulsion: 9000,
       idealEdgeLength: 500,
     } as any);
     this.mLayout.run();
-    (this.mGraph as any).on('cxttap', this.handleContext);
-  }
+    (this.mGraph as any).on("cxttap", this.handleContext);
+  };
 
   private handleContext = (evt: cytoscape.EventObject) => {
     let selection;
     if (evt.target.data !== undefined) {
       const data = evt.target.data();
-      if ((data.title === undefined) && (data.source === undefined)) {
+      if (data.title === undefined && data.source === undefined) {
         // an item was hit, but neither a node nor an edge. Probably the edge handle
         return;
       }
-      selection = (data.source !== undefined)
-        ? { source: data.sourceOrig, target: data.targetOrig, readonly: data.readonly }
-        : { id: data.originalId, readonly: data.readonly };
+      selection =
+        data.source !== undefined
+          ? {
+              source: data.sourceOrig,
+              target: data.targetOrig,
+              readonly: data.readonly,
+            }
+          : { id: data.originalId, readonly: data.readonly };
     }
     this.mMousePos = evt.position;
-    this.props.onContext(evt.renderedPosition.x, evt.renderedPosition.y, selection);
-  }
+    this.props.onContext(
+      evt.renderedPosition.x,
+      evt.renderedPosition.y,
+      selection,
+    );
+  };
 
   private addElements(elements: { [id: string]: IGraphElement }) {
     const width = MAX_COLUMNS;
     const distance = (this.mGraph.width() / width) * 2;
-    this.mGraph
-      .add(Object.keys(elements).reduce((prev, id: string, idx: number) => {
+    this.mGraph.add(
+      Object.keys(elements).reduce((prev, id: string, idx: number) => {
         const ele = elements[id];
         const row = Math.floor(idx / width);
-        const pos = (row % 2 === 0) ? (idx % width) : width - (idx % width);
+        const pos = row % 2 === 0 ? idx % width : width - (idx % width);
         prev.push({
-          data: { id: san(id), title: ele.title, originalId: id, readonly: ele.readonly },
+          data: {
+            id: san(id),
+            title: ele.title,
+            originalId: id,
+            readonly: ele.readonly,
+          },
           classes: ele.class,
-          position: { x: pos * distance, y: row * distance + (pos % 2) * (distance / 2) },
+          position: {
+            x: pos * distance,
+            y: row * distance + (pos % 2) * (distance / 2),
+          },
         });
-        (ele.connections || []).forEach(conn => {
+        (ele.connections || []).forEach((conn) => {
           prev.push({
             data: {
               id: san(`${san(conn)}-to-${san(id)}`),
@@ -273,7 +306,8 @@ class GraphView extends React.Component<IGraphViewProps, {}> {
           });
         });
         return prev;
-      }, []));
+      }, []),
+    );
   }
 }
 
