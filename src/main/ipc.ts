@@ -86,6 +86,8 @@ function mainSend<C extends keyof MainChannels>(
 function assertTrustedSender(
   event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
 ) {
+  // NOTE(erri120): https://www.electronjs.org/docs/latest/tutorial/security#17-validate-the-sender-of-all-ipc-messages
+
   const { senderFrame } = event;
   if (!senderFrame) return;
 
@@ -99,6 +101,8 @@ function assertTrustedSender(
 
 function isTrustedProtocol(url: URL): boolean {
   const { protocol } = url;
+
+  // TODO: use custom protocol https://www.electronjs.org/docs/latest/tutorial/security#18-avoid-usage-of-the-file-protocol-and-prefer-usage-of-custom-protocols
 
   // trusted local files
   if (protocol === "file:") return true;
