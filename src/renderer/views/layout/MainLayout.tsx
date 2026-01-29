@@ -1,12 +1,10 @@
 import * as React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import type { IMainPage } from "../../../types/IMainPage";
-import type { IState } from "../../../types/IState";
 
 import { setOpenMainPage } from "../../../actions/session";
-import { setTabsMinimized } from "../../../actions/window";
-import { getSafe } from "../../../util/storeHelper";
+import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
 import { ContentPane, Sidebar } from "./index";
 import { settingsPage, usePageRendering } from "./usePageRendering";
@@ -22,9 +20,7 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
   const { mainPage, secondaryPage, setLoadedPages, renderPage } =
     usePageRendering();
 
-  const tabsMinimized = useSelector((state: IState) =>
-    getSafe(state, ["settings", "window", "tabsMinimized"], false),
-  );
+  const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
 
   const sidebarRef = React.useRef<HTMLElement | null>(null);
   const sidebarTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
@@ -66,8 +62,8 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
   }, []);
 
   const handleToggleMenu = React.useCallback(() => {
-    const newMinimized = !tabsMinimized;
-    dispatch(setTabsMinimized(newMinimized));
+    const newMinimized = !menuIsCollapsed;
+    setMenuIsCollapsed(newMinimized);
     if (sidebarTimer.current !== undefined) {
       clearTimeout(sidebarTimer.current);
       sidebarTimer.current = undefined;
@@ -87,7 +83,7 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
         }, 500);
       }
     }
-  }, [tabsMinimized, dispatch]);
+  }, [menuIsCollapsed, setMenuIsCollapsed]);
 
   return (
     <FlexLayout.Flex>

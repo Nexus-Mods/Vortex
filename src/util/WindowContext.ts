@@ -8,6 +8,7 @@ import {
 export interface IWindowContext {
   isFocused: boolean;
   menuIsCollapsed: boolean;
+  menuLayerOpen: boolean;
   isHidpi: boolean;
   setMenuIsCollapsed: Dispatch<SetStateAction<boolean>>;
 }
@@ -15,6 +16,7 @@ export interface IWindowContext {
 const defaultValue: IWindowContext = {
   isFocused: true,
   menuIsCollapsed: false,
+  menuLayerOpen: false,
   isHidpi: false,
   setMenuIsCollapsed: () => {},
 };

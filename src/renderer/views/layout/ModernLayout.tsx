@@ -25,7 +25,7 @@ export const ModernLayout = ({
   customTitlebar: boolean;
   setMenuLayer: (ref: HTMLDivElement | null) => void;
 }>) => {
-  const { isFocused, menuIsCollapsed, isHidpi } = useWindowContext();
+  const { isFocused, menuLayerOpen, isHidpi } = useWindowContext();
 
   const switchingProfile = useSwitchingProfile();
 
@@ -40,7 +40,7 @@ export const ModernLayout = ({
           ],
           {
             "window-frame": customTitlebar,
-            "menu-open": !menuIsCollapsed,
+            "menu-open": menuLayerOpen,
             "no-gpu-acceleration": startupSettings.disableGPU,
           },
         )}

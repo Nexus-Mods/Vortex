@@ -7,7 +7,7 @@ import type { IState } from "../../../types/IState";
 
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import { profileById } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import { Button } from "../../controls/TooltipControls";
@@ -27,10 +27,8 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
     props;
 
   const { t } = useTranslation();
+  const { menuIsCollapsed } = useWindowContext();
 
-  const tabsMinimized = useSelector((state: IState) =>
-    getSafe(state, ["settings", "window", "tabsMinimized"], false),
-  );
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
   const secondaryPage = useSelector(
     (state: IState) => state.session.base.secondaryPage,
@@ -51,7 +49,7 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
     ];
   }, [profile]);
 
-  const sbClass = tabsMinimized ? "sidebar-compact" : "sidebar-expanded";
+  const sbClass = menuIsCollapsed ? "sidebar-compact" : "sidebar-expanded";
 
   return (
     <FlexLayout.Fixed className={sbClass} id="main-nav-sidebar">
@@ -68,7 +66,7 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
               mainPage={mainPage}
               pages={groupPages}
               secondaryPage={secondaryPage}
-              tabsMinimized={tabsMinimized}
+              tabsMinimized={menuIsCollapsed}
               title={title}
               onClickPage={onClickPage}
             />
@@ -76,15 +74,15 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
         })}
       </div>
 
-      <MainFooter slim={tabsMinimized} />
+      <MainFooter slim={menuIsCollapsed} />
 
       <Button
         className="btn-menu-minimize"
         id="btn-minimize-menu"
-        tooltip={tabsMinimized ? t("Restore") : t("Minimize")}
+        tooltip={menuIsCollapsed ? t("Restore") : t("Minimize")}
         onClick={onToggleMenu}
       >
-        <Icon name={tabsMinimized ? "pane-right" : "pane-left"} />
+        <Icon name={menuIsCollapsed ? "pane-right" : "pane-left"} />
       </Button>
     </FlexLayout.Fixed>
   );

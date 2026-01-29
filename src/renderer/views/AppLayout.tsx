@@ -16,7 +16,7 @@ import type { IState } from "../../types/IState";
 import type { IRegisteredExtension } from "../../util/ExtensionManager";
 
 import { setOpenMainPage } from "../../actions/session";
-import { setUseModernLayout } from "../../actions/window";
+import { setTabsMinimized, setUseModernLayout } from "../../actions/window";
 import { Button } from "../../tailwind/components/next/button";
 import {
   ExtensionContext,
@@ -126,6 +126,9 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,
   );
+  const tabsMinimized = useSelector(
+    (state: IState) => state.settings.window.tabsMinimized,
+  );
 
   const onSetOpenMainPage = React.useCallback(
     (page: string, secondary: boolean) => {
@@ -138,7 +141,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     () => (global.screen?.width ?? 0) > 1920,
   );
   const [focused, setFocused] = React.useState(true);
-  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [menuLayerOpen, setMenuLayerOpen] = React.useState(false);
 
   const menuLayerRef = React.useRef<HTMLDivElement | null>(null);
   const menuObserverRef = React.useRef<MutationObserver | undefined>(undefined);
@@ -196,7 +199,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
         const newHasChildren = menuLayerRef.current.children.length > 0;
         if (newHasChildren !== hasChildren) {
           hasChildren = newHasChildren;
-          setMenuOpen(hasChildren);
+          setMenuLayerOpen(hasChildren);
         }
       });
 
@@ -277,17 +280,24 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     [api, getModifiers],
   );
 
+  const handleSetMenuIsCollapsed = React.useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      const newValue =
+        typeof value === "function" ? value(tabsMinimized) : value;
+      dispatch(setTabsMinimized(newValue));
+    },
+    [tabsMinimized, dispatch],
+  );
+
   const windowContextValue: IWindowContext = React.useMemo(
     () => ({
       isFocused: focused,
-      menuIsCollapsed: !menuOpen,
+      menuIsCollapsed: tabsMinimized,
+      menuLayerOpen,
       isHidpi: hidpi,
-      setMenuIsCollapsed: (value) =>
-        setMenuOpen(
-          typeof value === "function" ? (open) => !value(!open) : !value,
-        ),
+      setMenuIsCollapsed: handleSetMenuIsCollapsed,
     }),
-    [focused, menuOpen, hidpi],
+    [focused, tabsMinimized, menuLayerOpen, hidpi, handleSetMenuIsCollapsed],
   );
 
   return (

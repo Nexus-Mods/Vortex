@@ -83,6 +83,10 @@ export const Header = () => {
     return game?.name ?? t("Home");
   }, [selection, knownGames, t]);
 
+  const handleToggleMenu = React.useCallback(() => {
+    setMenuIsCollapsed((prev) => !prev);
+  }, [setMenuIsCollapsed]);
+
   return (
     <div
       className="flex h-11 items-center justify-between pl-5"
@@ -95,7 +99,7 @@ export const Header = () => {
         <IconButton
           iconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
-          onClick={() => setMenuIsCollapsed((open) => !open)}
+          onClick={handleToggleMenu}
         />
 
         <Typography className="truncate leading-5 font-semibold">
