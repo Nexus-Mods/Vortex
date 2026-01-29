@@ -20,6 +20,7 @@ import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../util/WindowContext";
 import { settingsPage } from "../layout/usePageRendering";
+import { useSpineContext } from "./SpineContext";
 
 // Map legacy icon names to MDI paths
 const iconMap: Record<string, string> = {
@@ -80,6 +81,7 @@ export interface IMenuProps {
 export const Menu = ({ objects }: IMenuProps) => {
   const { t } = useTranslation();
   const { isMenuOpen } = useWindowContext();
+  const { selection } = useSpineContext();
   const dispatch = useDispatch();
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
@@ -91,12 +93,20 @@ export const Menu = ({ objects }: IMenuProps) => {
     [dispatch],
   );
 
-  // Filter visible pages - exclude per-game pages for now, include settings
+  // Filter visible pages based on Spine selection
   const visiblePages = React.useMemo(() => {
     const pages = objects.filter((page) => {
-      // Skip per-game pages (they'll be shown when a game is selected in spine)
-      if (page.group === "per-game") {
-        return false;
+      // When Home is selected, show global pages (not per-game)
+      // When a game is selected, show per-game pages
+      if (selection.type === "home") {
+        if (page.group === "per-game") {
+          return false;
+        }
+      } else {
+        // Game selected - only show per-game pages
+        if (page.group !== "per-game") {
+          return false;
+        }
       }
       try {
         return page.visible();
@@ -104,8 +114,12 @@ export const Menu = ({ objects }: IMenuProps) => {
         return false;
       }
     });
-    return [...pages, settingsPage];
-  }, [objects]);
+    // Only add settings page when in Home mode
+    if (selection.type === "home") {
+      return [...pages, settingsPage];
+    }
+    return pages;
+  }, [objects, selection]);
 
   return (
     <div

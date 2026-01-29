@@ -5,10 +5,14 @@ import type { IMainPage } from "../../../types/IMainPage";
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import startupSettings from "../../../util/startupSettings";
 import { useWindowContext } from "../../../util/WindowContext";
+import { ModernContentPane } from "../components/ContentPane";
 import { Header } from "../components/Header";
 import { Menu } from "../components/Menu";
 import { Spine } from "../components/Spine";
-import { ModernContentPane } from "../components/ContentPane";
+import { SpineProvider } from "../components/SpineContext";
+import { ToastContainer } from "./ToastContainer";
+import { DialogLayer } from "./DialogLayer";
+import { UIBlocker } from "./UIBlocker";
 
 export const ModernLayout = ({
   objects,
@@ -22,34 +26,42 @@ export const ModernLayout = ({
   const { isFocused, isMenuOpen, isHidpi } = useWindowContext();
 
   return (
-    <div
-      className={joinClasses(
-        [
-          "flex h-full bg-surface-base",
-          isHidpi ? "hidpi" : "lodpi",
-          isFocused ? "window-focused" : "window-unfocused",
-        ],
-        {
-          "window-frame": customTitlebar,
-          "menu-open": isMenuOpen,
-          "no-gpu-acceleration": startupSettings.disableGPU,
-        },
-      )}
-      key="main"
-    >
-      {/*<div className="menu-layer" ref={setMenuLayer} />*/}
+    <SpineProvider>
+      <div
+        className={joinClasses(
+          [
+            "flex h-full bg-surface-base",
+            isHidpi ? "hidpi" : "lodpi",
+            isFocused ? "window-focused" : "window-unfocused",
+          ],
+          {
+            "window-frame": customTitlebar,
+            "menu-open": isMenuOpen,
+            "no-gpu-acceleration": startupSettings.disableGPU,
+          },
+        )}
+        key="main"
+      >
+        {/*<div className="menu-layer" ref={setMenuLayer} />*/}
 
-      <Spine />
+        <Spine />
 
-      <div className="flex grow flex-col">
-        <Header />
+        <div className="flex grow flex-col">
+          <Header />
 
-        <div className="flex h-full pr-3 pb-3">
-          <Menu objects={objects} />
+          <div className="flex h-full pr-3 pb-3">
+            <Menu objects={objects} />
 
-          <ModernContentPane objects={objects} />
+            <ModernContentPane objects={objects} />
+
+            <DialogLayer />
+
+            <ToastContainer />
+          </div>
         </div>
       </div>
-    </div>
+
+      <UIBlocker />
+    </SpineProvider>
   );
 };
