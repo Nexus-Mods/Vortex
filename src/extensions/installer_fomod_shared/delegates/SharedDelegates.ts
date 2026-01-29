@@ -1,7 +1,9 @@
-import { discoveryByGame } from "../../gamemode_management/selectors";
-import type { IState } from "../../../types/IState";
+import { Application } from "@renderer/application";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { getApplication } from "../../../util/application";
+import type { IState } from "../../../types/IState";
+
+import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
 
@@ -39,8 +41,8 @@ export class SharedDelegates {
    */
   public getAppVersion = (): string => {
     try {
-      return getApplication().version;
-    } catch (error) {
+      return Application.getInstance().getVersion();
+    } catch {
       return "";
     }
   };
@@ -51,7 +53,7 @@ export class SharedDelegates {
   public getCurrentGameVersion = (): string => {
     try {
       return this.mGameVersion.split(/\-+/)[0];
-    } catch (error) {
+    } catch {
       return "";
     }
   };
@@ -62,7 +64,7 @@ export class SharedDelegates {
   public getExtenderVersion = (extender: string): string => {
     try {
       return this.mGameVersion.split(/\-+/)[0];
-    } catch (error) {
+    } catch {
       return "";
     }
   };

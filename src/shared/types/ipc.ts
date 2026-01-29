@@ -35,6 +35,9 @@ export interface InvokeChannels {
   /** Gets the current application version */
   "app:version": () => Promise<string>;
 
+  /** Gets the current application name */
+  "app:name": () => Promise<string>;
+
   // Examples:
   "example:ping": () => Promise<string>;
 }

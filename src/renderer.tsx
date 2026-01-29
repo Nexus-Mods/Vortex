@@ -88,6 +88,7 @@ import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
+import { Application } from "./util/application";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
@@ -471,6 +472,10 @@ if (process.env.NODE_ENV === "development") {
 const tFunc: TFunction = fallbackTFunc;
 let startupFinished: () => void;
 let extensions: ExtensionManager;
+
+async function initGlobals(): Promise<void> {
+  await Application.init();
+}
 
 async function init(): Promise<ExtensionManager | null> {
   // extension manager initialized without store, the information about what

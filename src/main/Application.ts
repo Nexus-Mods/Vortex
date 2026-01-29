@@ -946,7 +946,7 @@ class Application {
     // In development of 1.4 I assumed we had a case where this was necessary.
     // Turned out it wasn't, still feel it's sensible to have this
     // information available asap
-    startupSettings.storeVersion = getApplication().version;
+    startupSettings.storeVersion = app.getVersion();
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
@@ -1408,6 +1408,7 @@ betterIpcMain.on(
   },
   true,
 );
+
 betterIpcMain.on(
   "app:exit",
   (_, exitCode) => {
@@ -1415,7 +1416,9 @@ betterIpcMain.on(
   },
   true,
 );
+
 betterIpcMain.handle("app:version", () => app.getVersion());
+betterIpcMain.handle("app:name", () => app.getName());
 
 betterIpcMain.handle("example:ping", () => "pong");
 

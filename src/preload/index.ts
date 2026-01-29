@@ -31,6 +31,7 @@ try {
       quit: () => betterIpcRenderer.send("app:quit"),
       exit: (exitCode) => betterIpcRenderer.send("app:exit", exitCode),
       getAppVersion: () => betterIpcRenderer.invoke("app:version"),
+      getAppName: () => betterIpcRenderer.invoke("app:name"),
     },
 
     example: {

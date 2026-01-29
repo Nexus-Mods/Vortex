@@ -1,23 +1,24 @@
-import { setUpdateChannel, showDialog } from "../../actions";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState, UpdateChannel } from "../../types/IState";
-import { getVisibleWindow, UserCanceled } from "../../util/api";
-import { log } from "../../util/log";
-import opn from "../../util/opn";
-import { truthy } from "../../util/util";
-
-import { NEXUS_BASE_URL } from "../nexus_integration/constants";
-
-import { app as appIn, dialog as dialogIn, ipcMain } from "electron";
 import type {
   autoUpdater as AUType,
   CancellationToken,
   UpdateInfo,
 } from "electron-updater";
+
+import { app as appIn, dialog as dialogIn, ipcMain } from "electron";
 import * as semver from "semver";
 import uuidv5 from "uuid/v5";
 import { RegGetValue } from "winapi-bindings";
-import { getApplication } from "../../util/application";
+
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IState, UpdateChannel } from "../../types/IState";
+
+import { setUpdateChannel, showDialog } from "../../actions";
+import { getVisibleWindow, UserCanceled } from "../../util/api";
+import { log } from "../../util/log";
+import opn from "../../util/opn";
+import { truthy } from "../../util/util";
+import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { Application } from "@renderer/application";
 
 const CHECKING_FOR_UPDATES_ID = "vortex-checking-updates-notification";
 const UPDATE_AVAILABLE_ID = "vortex-update-available-notification";
@@ -83,7 +84,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   let channelOverride: UpdateChannel;
   let cancellationToken: CancellationToken;
   let updateChannel = state().settings.update.channel;
-  const currentVersion = semver.parse(getApplication().version);
+  const currentVersion = semver.parse(Application.getInstance().getVersion());
 
   /*
   if (process.env.IS_PREVIEW_BUILD === 'true') {
@@ -360,7 +361,9 @@ Are you sure you want to downgrade?`,
       releaseDate: info.releaseDate,
     });
 
-    const installedVersion = semver.parse(getApplication().version);
+    const installedVersion = semver.parse(
+      Application.getInstance().getVersion(),
+    );
     const version = semver.parse(info.version);
 
     const channel = channelOverride ?? api.getState().settings.update.channel;
@@ -426,7 +429,7 @@ Are you sure you want to downgrade?`,
       }
     }
     log("info", "update available", {
-      current: getApplication().version,
+      current: Application.getInstance().getVersion(),
       update: info.version,
       instPath,
     });

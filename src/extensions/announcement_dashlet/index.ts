@@ -1,17 +1,19 @@
+import type * as Redux from "redux";
+
 import Bluebird from "bluebird";
 import * as https from "https";
 import * as _ from "lodash";
 import * as path from "path";
-import type * as Redux from "redux";
-import * as url from "url";
 
-import { addNotification } from "../../actions/notifications";
 import type {
   IExtensionContext,
   ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+import type { IAnnouncement, ISurveyInstance } from "./types";
+
+import { addNotification } from "../../actions/notifications";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 import { DataInvalid } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
@@ -19,22 +21,18 @@ import { log } from "../../util/log";
 import opn from "../../util/opn";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-
-import sessionReducer from "./reducers/announcements";
-import persistentReducer from "./reducers/persistent";
-import surveySessionReducer from "./reducers/surveys";
-
 import {
   setAnnouncements,
   setAvailableSurveys,
   setSuppressSurvey,
 } from "./actions";
 import AnnouncementDashlet from "./AnnouncementDashlet";
-import type { IAnnouncement, ISurveyInstance } from "./types";
+import sessionReducer from "./reducers/announcements";
+import persistentReducer from "./reducers/persistent";
+import surveySessionReducer from "./reducers/surveys";
 import { ParserError } from "./types";
-
 import { matchesGameMode, matchesVersion } from "./util";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { Application } from "@renderer/application";
 
 const ANNOUNCEMENT_LINK =
   "https://raw.githubusercontent.com/Nexus-Mods/Vortex-Backend/main/out/announcements.json";
@@ -199,7 +197,7 @@ function showSurveyNotification(context) {
     return surveyCutoffDateMS <= now;
   };
 
-  const appVersion = getApplication().version;
+  const appVersion = Application.getInstance().getVersion();
 
   const filtered = surveys.filter((survey) => {
     const isSuppressed =

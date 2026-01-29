@@ -10,7 +10,7 @@ import type { AllHTMLAttributes } from 'react';
 import { AnchorHTMLAttributes } from 'react';
 import { appendFileSync } from 'original-fs';
 import Bluebird from 'bluebird';
-import type { BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron';
 import { Button as Button_2 } from 'react-bootstrap';
 import { ButtonHTMLAttributes } from 'react';
 import type { ClientRequest } from 'http';

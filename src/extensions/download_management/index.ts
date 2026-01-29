@@ -1,3 +1,14 @@
+import type * as RemoteT from "@electron/remote";
+import type * as Redux from "redux";
+
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import Zip from "node-7z";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+import { fileMD5 } from "vortexmt";
+import winapi from "winapi-bindings";
+
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -5,7 +16,16 @@ import type {
 import type { IPresetStep, IPresetStepInstallMod } from "../../types/IPreset";
 import type { IState } from "../../types/IState";
 import type { ITestResult } from "../../types/ITestResult";
-import { getApplication } from "../../util/application";
+import type { Normalize } from "../../util/getNormalizeFunc";
+import type DownloadManager from "./DownloadManager";
+import type { DownloadObserver } from "./DownloadObserver";
+import type observe from "./DownloadObserver";
+import type { DownloadState, IDownload } from "./types/IDownload";
+import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
+import type { IDownloadViewProps } from "./views/DownloadView";
+
+import ReduxProp from "../../renderer/ReduxProp";
+import { unknownToError } from "../../shared/errors";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -13,15 +33,20 @@ import {
 } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
+import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import presetManager from "../../util/PresetManager";
-import ReduxProp from "../../renderer/ReduxProp";
 import * as selectors from "../../util/selectors";
+import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
-
+import NXMUrl from "../nexus_integration/NXMUrl";
+import { ensureLoggedIn } from "../nexus_integration/util";
+import {
+  convertNXMIdReverse,
+  convertGameIdReverse,
+} from "../nexus_integration/util/convertGameId";
 import {
   addLocalDownload,
   downloadProgress,
@@ -34,48 +59,22 @@ import {
   setDownloadSpeed,
   setDownloadSpeeds,
 } from "./actions/state";
-
 import { setTransferDownloads } from "./actions/transactions";
+import downloadAttributes from "./downloadAttributes";
 import { settingsReducer } from "./reducers/settings";
 import { stateReducer } from "./reducers/state";
 import { transactionsReducer } from "./reducers/transactions";
-import type { DownloadState, IDownload } from "./types/IDownload";
-import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
+import extendAPI from "./util/extendApi";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
 import queryInfo from "./util/queryDLInfo";
-import type { IDownloadViewProps } from "./views/DownloadView";
+import setDownloadGames from "./util/setDownloadGames";
 import DownloadView from "./views/DownloadView";
 import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
-
-import downloadAttributes from "./downloadAttributes";
-import type DownloadManager from "./DownloadManager";
-import type { DownloadObserver } from "./DownloadObserver";
-import type observe from "./DownloadObserver";
-
-import type * as RemoteT from "@electron/remote";
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import Zip from "node-7z";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { fileMD5 } from "vortexmt";
-import winapi from "winapi-bindings";
-import lazyRequire from "../../util/lazyRequire";
-import setDownloadGames from "./util/setDownloadGames";
-import { ensureLoggedIn } from "../nexus_integration/util";
-import NXMUrl from "../nexus_integration/NXMUrl";
-import { knownGames } from "../../util/selectors";
-import {
-  convertNXMIdReverse,
-  convertGameIdReverse,
-} from "../nexus_integration/util/convertGameId";
-import extendAPI from "./util/extendApi";
-import { unknownToError } from "../../shared/errors";
+import { Application } from "@renderer/application";
 
 const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
@@ -294,7 +293,7 @@ function watchDownloads(
   }
 
   try {
-    currentWatch = fs.watch(downloadPath, {}, onChange) as fs.FSWatcher;
+    currentWatch = fs.watch(downloadPath, {}, onChange);
     currentWatch.on("error", (error) => {
       // these may happen when the download path gets moved.
       log("warn", "failed to watch mod directory", { downloadPath, error });
@@ -317,7 +316,8 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
     return;
   }
   const downloadPath = selectors.downloadPathForGame(state, gameId);
-  let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
+  const downloads: { [id: string]: IDownload } =
+    state.persistent.downloads.files;
 
   const incomplete = Object.keys(downloads).filter(
     (dlId) =>
@@ -1146,7 +1146,7 @@ function init(context: IExtensionContextExt): boolean {
     );
     return incomplete === undefined
       ? true
-      : (context.api.translate("Can only query finished downloads") as string);
+      : context.api.translate("Can only query finished downloads");
   };
 
   context.registerAction(
@@ -1521,7 +1521,7 @@ function init(context: IExtensionContextExt): boolean {
             powerTimer = setTimeout(stopTimer, 60000);
           }
         },
-        `Nexus Client v2.${getApplication().version}`,
+        `Nexus Client v2.${Application.getInstance().getVersion()}`,
         protocolHandlers,
         () => context.api.getState().settings.downloads.maxBandwidth * 8,
       );

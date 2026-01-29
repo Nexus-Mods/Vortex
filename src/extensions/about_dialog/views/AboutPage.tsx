@@ -1,20 +1,19 @@
-import More from "../../../renderer/controls/More";
-import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
-import github from "../../../util/github";
-import { log } from "../../../util/log";
-import MainPage from "../../../renderer/views/MainPage";
-
-import type { ILicense } from "../types/ILicense";
-
+import { Application } from "@renderer/application";
 import * as fs from "fs";
 import I18next from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import { getApplication } from "../../../util/application";
-import getVortexPath from "../../../util/getVortexPath";
+
+import type { ILicense } from "../types/ILicense";
+
+import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
+import MainPage from "../../../renderer/views/MainPage";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
+import getVortexPath from "../../../util/getVortexPath";
+import github from "../../../util/github";
+import { log } from "../../../util/log";
 
 let modules = {};
 let ownLicenseText: string = "";
@@ -62,7 +61,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       tag: undefined,
     });
 
-    this.mVersion = getApplication().version;
+    this.mVersion = Application.getInstance().getVersion();
   }
 
   public componentDidMount() {
@@ -137,6 +136,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
         <div>
           <h4>{t("Third-party libraries")}</h4>
         </div>
+
         <div className="about-panel">{moduleList.map(this.renderModule)}</div>
       </div>
     );
@@ -150,6 +150,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               <Media.Left>
                 <Image className="vortex-logo" src={imgPath} />
               </Media.Left>
+
               <Media.Body>
                 <h2 className="media-heading">
                   Vortex {this.mVersion}{" "}
@@ -157,22 +158,28 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                     ? `(${releaseDate.toLocaleDateString(I18next.language)})`
                     : ""}
                 </h2>
+
                 <p>&#169;2025 Black Tree Gaming Ltd.</p>
+
                 <p>
                   {t("Released under")}{" "}
                   <a onClick={this.showOwnLicense}>GPL-3</a> {t("License")}
                 </p>
               </Media.Body>
             </Media>
+
             <p>
               <strong>Electron</strong> {(process.versions as any).electron}
             </p>
+
             <p>
               <strong>Node</strong> {process.versions.node}
             </p>
+
             <p>
               <strong>Chrome</strong> {(process.versions as any).chrome}
             </p>
+
             {licenseBox}
           </PanelX.Body>
         </Panel>

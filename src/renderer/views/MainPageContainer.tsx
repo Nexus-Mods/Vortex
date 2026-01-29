@@ -1,16 +1,18 @@
-import ExtensionGate from "../controls/ExtensionGate";
-import Icon from "../controls/Icon";
-import type { IMainPage } from "../../types/IMainPage";
-import { ComponentEx, translate } from "../controls/ComponentEx";
-import { didIgnoreError, isOutdated } from "../../util/errorHandling";
-import { genHash } from "../../util/genHash";
-import { log } from "../../util/log";
+import type { WithTranslation } from "react-i18next";
 
+import { Application } from "@renderer/application";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Alert, Button, Jumbotron } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import { getApplication } from "../../util/application";
+
+import type { IMainPage } from "../../types/IMainPage";
+
+import { didIgnoreError, isOutdated } from "../../util/errorHandling";
+import { genHash } from "../../util/genHash";
+import { log } from "../../util/log";
+import { ComponentEx, translate } from "../controls/ComponentEx";
+import ExtensionGate from "../controls/ExtensionGate";
+import Icon from "../controls/Icon";
 
 export interface IBaseProps {
   page: IMainPage;
@@ -72,14 +74,17 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
 
     if (error !== undefined) {
       return (
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
-          <Alert className="render-failure" bsStyle="danger">
+        <div className={classes.join(" ")} id={`page-${page.id}`}>
+          <Alert bsStyle="danger" className="render-failure">
             <Icon className="render-failure-icon" name="sad" />
+
             <div className="render-failure-text">{t("Failed to render.")}</div>
+
             <div className="render-failure-buttons">
               {isOutdated() || didIgnoreError() ? null : (
                 <Button onClick={this.report}>{t("Report")}</Button>
               )}
+
               <Button onClick={this.retryRender}>{t("Retry")}</Button>
             </div>
           </Alert>
@@ -91,8 +96,9 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
       const props = page.propsFunc();
 
       return (
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
+        <div className={classes.join(" ")} id={`page-${page.id}`}>
           <div className="mainpage-header-container" ref={this.setHeaderRef} />
+
           <div className="mainpage-body-container">
             <ExtensionGate id={page.id}>
               <page.component
@@ -124,7 +130,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
       error.stack.split("\n")[0],
       `Component rendering error
 
-Vortex Version: ${getApplication().version},
+Vortex Version: ${Application.getInstance().getVersion()},
 
 ${error.stack}
 

@@ -24,18 +24,17 @@ export default {
       ImportDeclaration(node) {
         const source = node.source.value;
         if (typeof source !== "string") return;
-        if (!source.startsWith(".")) return;
+        if (!source.startsWith(".") && !source.startsWith("@")) return;
 
         const filename = context.filename;
         if (typeof filename !== "string") return;
-
-        const toImport = path.join(path.dirname(filename), source);
 
         const root = path.join(context.cwd, "src");
         const mainDirectory = path.join(root, "main");
         const rendererDirectory = path.join(root, "renderer");
         const sharedDirectory = path.join(root, "shared");
 
+        const toImport = path.join(path.dirname(filename), source);
         const importsFromMain = toImport.startsWith(mainDirectory);
         const importsFromRenderer = toImport.startsWith(rendererDirectory);
 

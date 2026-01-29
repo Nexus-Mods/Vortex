@@ -9,7 +9,6 @@ const app: { inst: IApplication } = local("application_global", {
   inst: {
     name: "vortex",
     version: "0.0.1",
-    quit: (code?: number) => process["exit"](code),
   },
 });
 
@@ -20,15 +19,3 @@ export function setApplication(appIn: IApplication) {
 export function getApplication() {
   return app.inst;
 }
-
-const proxy: unknown = new Proxy(app, {
-  get: (target, key, receiver) => Reflect.get(target.inst, key, receiver),
-  set: () => {
-    throw new Error("attempt to change read-only object");
-  },
-  deleteProperty: () => {
-    throw new Error("attempt to change read-only object");
-  },
-});
-
-export default proxy as IApplication;

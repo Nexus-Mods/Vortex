@@ -1,17 +1,58 @@
-import {
-  setDownloadModInfo,
-  setForcedLogout,
-  setModAttribute,
-} from "../../actions";
+import type {
+  IDownloadURL,
+  IFileInfo,
+  IFileUpdate,
+  IModFile,
+  IModFileQuery,
+  IModInfo,
+  IRevision,
+  IRevisionQuery,
+  IValidateKeyResponse,
+} from "@nexusmods/nexus-api";
+import type NexusT from "@nexusmods/nexus-api";
+import type { TFunction } from "i18next";
+import type { Action } from "redux";
+
+import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import PromiseBB from "bluebird";
+import { app } from "electron";
+import * as fuzz from "fuzzball";
+import * as path from "path";
+import * as React from "react";
+import { Button } from "react-bootstrap";
+import { toast } from "react-hot-toast";
+import {} from "uuid";
+import { selectors } from "vortex-api";
+
 import type { IDialogResult } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+import type { IComponentContext } from "../../types/IComponentContext";
 import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IModLookupResult } from "../../types/IModLookupResult";
 import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+import type { LogLevel } from "../../util/log";
+import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
+import type { IDownload } from "../download_management/types/IDownload";
+import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IMod, IModRepoId } from "../mod_management/types/IMod";
+import type { INexusAPIExtension } from "./types/INexusAPIExtension";
+import type { IRemoteInfo } from "./util";
+
+import {
+  setDownloadModInfo,
+  setForcedLogout,
+  setModAttribute,
+} from "../../actions";
+import { showDialog } from "../../actions/notifications";
+import FlexLayout from "../../renderer/controls/FlexLayout";
+import Icon from "../../renderer/controls/Icon";
+import Image from "../../renderer/controls/Image";
+import LazyComponent from "../../renderer/controls/LazyComponent";
+import { MainContext } from "../../renderer/views/MainWindow";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 import {
   DataInvalid,
   HTTPError,
@@ -22,8 +63,6 @@ import {
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
-import LazyComponent from "../../renderer/controls/LazyComponent";
-import type { LogLevel } from "../../util/log";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
@@ -44,20 +83,13 @@ import {
   Content,
   Campaign,
 } from "../../util/util";
-
-import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import { DownloadIsHTML } from "../download_management/DownloadManager";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import type { IMod, IModRepoId } from "../mod_management/types/IMod";
-
-import type { IDownload } from "../download_management/types/IDownload";
-import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
+import { getGame } from "../gamemode_management/util/getGame";
 import {
   isDownloadIdValid,
   isIdValid,
 } from "../mod_management/util/modUpdateState";
-
 import { setNewestVersion, setUserInfo } from "./actions/persistent";
 import {
   addFreeUserDLItem,
@@ -65,29 +97,6 @@ import {
   setOauthPending,
 } from "./actions/session";
 import { setAssociatedWithNXMURLs } from "./actions/settings";
-import { accountReducer } from "./reducers/account";
-import { persistentReducer } from "./reducers/persistent";
-import { sessionReducer } from "./reducers/session";
-import { settingsReducer } from "./reducers/settings";
-import type { INexusAPIExtension } from "./types/INexusAPIExtension";
-import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
-import {
-  fillNexusIdByMD5,
-  guessFromFileName,
-  queryResetSource,
-} from "./util/guessModID";
-import retrieveCategoryList from "./util/retrieveCategories";
-import Tracking from "./util/tracking";
-import { makeFileUID } from "./util/UIDs";
-import FreeUserDLDialog from "./views/FreeUserDLDialog";
-import GoPremiumDashlet from "./views/GoPremiumDashlet";
-import LoginDialog from "./views/LoginDialog";
-import LoginIcon from "./views/LoginIcon";
-import {} from "./views/Settings";
-import FlexLayout from "../../renderer/controls/FlexLayout";
-import Image from "../../renderer/controls/Image";
-import { toast } from "react-hot-toast";
-
 import {
   genCollectionIdAttribute,
   genEndorsedAttribute,
@@ -103,8 +112,11 @@ import {
 } from "./constants";
 import * as eh from "./eventHandlers";
 import NXMUrl from "./NXMUrl";
+import { accountReducer } from "./reducers/account";
+import { persistentReducer } from "./reducers/persistent";
+import { sessionReducer } from "./reducers/session";
+import { settingsReducer } from "./reducers/settings";
 import * as sel from "./selectors";
-import type { IRemoteInfo } from "./util";
 import {
   bringToFront,
   endorseThing,
@@ -123,36 +135,21 @@ import {
   updateToken,
 } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
-
-import type {
-  IDownloadURL,
-  IFileInfo,
-  IFileUpdate,
-  IModFile,
-  IModFileQuery,
-  IModInfo,
-  IRevision,
-  IRevisionQuery,
-  IValidateKeyResponse,
-} from "@nexusmods/nexus-api";
-import type NexusT from "@nexusmods/nexus-api";
-import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
-
-import PromiseBB from "bluebird";
-import * as fuzz from "fuzzball";
-import type { TFunction } from "i18next";
-import * as path from "path";
-import * as React from "react";
-import { Button } from "react-bootstrap";
-import type { Action } from "redux";
-import {} from "uuid";
-import type { IComponentContext } from "../../types/IComponentContext";
-import { MainContext } from "../../renderer/views/MainWindow";
-import { getGame } from "../gamemode_management/util/getGame";
-import { selectors } from "vortex-api";
-import { app } from "electron";
-import Icon from "../../renderer/controls/Icon";
-import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
+import { convertNXMIdReverse, nexusGameId } from "./util/convertGameId";
+import {
+  fillNexusIdByMD5,
+  guessFromFileName,
+  queryResetSource,
+} from "./util/guessModID";
+import retrieveCategoryList from "./util/retrieveCategories";
+import Tracking from "./util/tracking";
+import { makeFileUID } from "./util/UIDs";
+import FreeUserDLDialog from "./views/FreeUserDLDialog";
+import GoPremiumDashlet from "./views/GoPremiumDashlet";
+import LoginDialog from "./views/LoginDialog";
+import LoginIcon from "./views/LoginIcon";
+import {} from "./views/Settings";
+import { Application } from "@renderer/application";
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;
@@ -1279,7 +1276,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       new Proxy(
         new Nexus(
           "Vortex",
-          getApplication().version,
+          Application.getInstance().getVersion(),
           nexusGameId(getGame(gameMode)),
           30000,
         ),
@@ -1463,14 +1460,15 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
 
     return (
       <div id="nexus-header-ad">
-        <button onClick={trackAndGoToPremium} data-campaign={Content.HeaderAd}>
-          <FlexLayout type="row" className="ad-flex-container">
+        <button data-campaign={Content.HeaderAd} onClick={trackAndGoToPremium}>
+          <FlexLayout className="ad-flex-container" type="row">
             <FlexLayout.Flex>
-              <FlexLayout type="column" className="text-flex-container">
+              <FlexLayout className="text-flex-container" type="column">
                 <div className="nexus-header-ad-title">
                   Want <span className="ad-title-highlight">more time</span>{" "}
                   playing?
                 </div>
+
                 <div className="nexus-header-ad-body">
                   Save time with{" "}
                   <span className="ad-body-highlight">max download speeds</span>
@@ -1491,10 +1489,11 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<any> {
             </FlexLayout.Fixed>
           </FlexLayout>
 
-          <FlexLayout type="row" className="custom-hover-overlay">
+          <FlexLayout className="custom-hover-overlay" type="row">
             <FlexLayout.Fixed>
-              <FlexLayout type="row" className="hover-overlay-content">
+              <FlexLayout className="hover-overlay-content" type="row">
                 {t("Go Premium")}
+
                 <div className="arrow-forward" />
               </FlexLayout>
             </FlexLayout.Fixed>
@@ -2347,12 +2346,14 @@ function init(context: IExtensionContextExt): boolean {
             with AdBlock). Play your modded games{" "}
             <span className="text-highlight">faster with premium</span>.
           </div>
+
           <Button
-            id="get-premium-button"
             data-campaign={Content.DownloadsBannerAd}
+            id="get-premium-button"
             onClick={trackAndGoToPremium}
           >
             <Image srcs={[electricBoltIconPath]} />
+
             {t("Unlock max download speeds")}
           </Button>
         </div>

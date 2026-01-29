@@ -1,25 +1,3 @@
-import FlexLayout from "../../renderer/controls/FlexLayout";
-import FormInput from "../../renderer/controls/FormInput";
-import Icon from "../../renderer/controls/Icon";
-import Modal from "../../renderer/controls/Modal";
-import Spinner from "../../renderer/controls/Spinner";
-import { IconButton } from "../../renderer/controls/TooltipControls";
-import ZoomableImage from "../../renderer/controls/ZoomableImage";
-import { NEXUS_BASE_URL } from "../nexus_integration/constants";
-
-import type { IState } from "../../types/IState";
-import bbcode from "../../renderer/controls/bbcode";
-import {
-  ComponentEx,
-  connect,
-  translate,
-} from "../../renderer/controls/ComponentEx";
-import opn from "../../util/opn";
-import { largeNumToString } from "../../util/util";
-
-import type { IAvailableExtension, IExtension, ISelector } from "./types";
-import { downloadAndInstallExtension, selectorMatch } from "./util";
-
 import * as React from "react";
 import {
   Button,
@@ -29,7 +7,28 @@ import {
   ModalHeader,
 } from "react-bootstrap";
 import * as semver from "semver";
-import { getApplication } from "../../util/application";
+
+import type { IState } from "../../types/IState";
+import type { IAvailableExtension, IExtension, ISelector } from "./types";
+
+import bbcode from "../../renderer/controls/bbcode";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
+import FlexLayout from "../../renderer/controls/FlexLayout";
+import FormInput from "../../renderer/controls/FormInput";
+import Icon from "../../renderer/controls/Icon";
+import Modal from "../../renderer/controls/Modal";
+import Spinner from "../../renderer/controls/Spinner";
+import { IconButton } from "../../renderer/controls/TooltipControls";
+import ZoomableImage from "../../renderer/controls/ZoomableImage";
+import opn from "../../util/opn";
+import { largeNumToString } from "../../util/util";
+import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { downloadAndInstallExtension, selectorMatch } from "./util";
+import { Application } from "@renderer/application";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 const GITHUB_BASE_URL: string = "https://www.github.com";
@@ -72,26 +71,17 @@ interface IConnectedProps {
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
 
-const version = (() => {
-  let result: string;
-
-  return () => {
-    if (result === undefined) {
-      result = getApplication().version;
-    }
-
-    return result;
-  };
-})();
-
 function nop() {
   // nop
 }
 
 class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   private mModalRef: React.RefObject<any>;
+  #appVersion: string;
+
   constructor(props: IProps) {
     super(props);
+    this.#appVersion = Application.getInstance().getVersion();
 
     this.initState({
       error: undefined,
@@ -140,45 +130,51 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       <Modal
         id="browse-extensions-dialog"
+        ref={this.mModalRef}
         show={visible}
         onHide={nop}
-        ref={this.mModalRef}
       >
         <ModalHeader>
           <h3>{t("Browse Extensions")}</h3>
         </ModalHeader>
+
         <Modal.Body>
           <FlexLayout type="row">
             <FlexLayout.Fixed className="extension-list">
               <FlexLayout type="column">
                 <FlexLayout.Fixed>
                   <FormInput
+                    debounceTimer={200}
                     id="browse-extensions-search"
                     label={t("Search")}
                     placeholder={t("Search")}
                     value={searchTerm}
                     onChange={this.changeSearch}
-                    debounceTimer={200}
                   />
                 </FlexLayout.Fixed>
+
                 <FlexLayout.Fixed>
-                  <FlexLayout type="row" className="extension-sort-container">
+                  <FlexLayout className="extension-sort-container" type="row">
                     <FlexLayout.Fixed>{t("Sort by")}</FlexLayout.Fixed>
+
                     <FlexLayout.Flex>
                       <FormControl
                         componentClass="select"
-                        onChange={this.changeSort}
                         value={sort}
+                        onChange={this.changeSort}
                       >
                         <option key={"name"} value={"name"}>
                           {t("Name")}
                         </option>
+
                         <option key={"endorsements"} value={"endorsements"}>
                           {t("Endorsements")}
                         </option>
+
                         <option key="downloads" value="downloads">
                           {t("Downloads")}
                         </option>
+
                         <option key="recent" value="recent">
                           {t("Last update")}
                         </option>
@@ -186,6 +182,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                     </FlexLayout.Flex>
                   </FlexLayout>
                 </FlexLayout.Fixed>
+
                 <FlexLayout.Flex>
                   <ListGroup style={{ height: "100%" }}>
                     {availableExtensions
@@ -194,11 +191,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                       .map(this.renderListEntry)}
                   </ListGroup>
                 </FlexLayout.Flex>
+
                 <FlexLayout.Fixed>
                   <div className="extension-list-time">
                     {t("Last updated: {{time}}", {
                       replace: { time: updatedAt.toLocaleString(language) },
                     })}
+
                     <IconButton
                       icon="refresh"
                       tooltip={t("Refresh")}
@@ -208,11 +207,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 </FlexLayout.Fixed>
               </FlexLayout>
             </FlexLayout.Fixed>
+
             <FlexLayout.Flex fill={true}>
               {ext === null ? null : this.renderDescription(ext)}
             </FlexLayout.Flex>
           </FlexLayout>
         </Modal.Body>
+
         <Modal.Footer>
           <Button onClick={onHide}>{t("Close")}</Button>
         </Modal.Footer>
@@ -275,7 +276,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       return true;
     }
 
-    return semver.satisfies(version(), ext.dependencies["vortex"], {
+    return semver.satisfies(this.#appVersion, ext.dependencies["vortex"], {
       includePrerelease: true,
     });
   }
@@ -322,9 +323,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       ) : (
         <a
           className="extension-subscribe"
-          data-modid={ext.modId}
           data-github={ext.github}
           data-githubrawpath={ext.githubRawPath}
+          data-modid={ext.modId}
           onClick={this.install}
         >
           {t("Install")}
@@ -334,24 +335,27 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       <ListGroupItem
         className={classes.join(" ")}
-        key={makeSelectorId(ext)}
-        data-modid={ext.modId}
         data-github={ext.github}
         data-githubrawpath={ext.githubRawPath}
-        onClick={this.select}
+        data-modid={ext.modId}
         disabled={installed || incompatible}
+        key={makeSelectorId(ext)}
+        onClick={this.select}
       >
         <div className="extension-header">
           <div className="extension-title">
             <span className="extension-name">{ext.name}</span>
+
             <span className="extension-version">{ext.version}</span>
           </div>
+
           <div className="extension-stats">
             {ext.downloads !== undefined ? (
               <div className="extension-downloads">
                 <Icon name="download" /> {largeNumToString(ext.downloads)}
               </div>
             ) : null}
+
             {ext.endorsements !== undefined ? (
               <div className="extension-endorsements">
                 <Icon name="endorse-yes" /> {largeNumToString(ext.endorsements)}
@@ -359,9 +363,12 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             ) : null}
           </div>
         </div>
+
         <div className="extension-description">{ext.description.short}</div>
+
         <div className="extension-footer">
           <div className="extension-author">{ext.author}</div>
+
           {action}
         </div>
       </ListGroupItem>
@@ -380,12 +387,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const openInBrowser = (
       <a
         className="extension-browse"
-        data-modid={ext.modId}
         data-github={ext.github}
         data-githubrawpath={ext.githubRawPath}
+        data-modid={ext.modId}
         onClick={this.openPage}
       >
         <Icon name="open-in-browser" />
+
         {t("Open in Browser")}
       </a>
     );
@@ -400,9 +408,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       ) : (
         <a
           className="extension-subscribe"
-          data-modid={ext.modId}
           data-github={ext.github}
           data-githubrawpath={ext.githubRawPath}
+          data-modid={ext.modId}
           onClick={this.install}
         >
           {t("Install")}
@@ -412,33 +420,39 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       <FlexLayout type="column">
         <FlexLayout.Fixed>
-          <FlexLayout type="row" className="description-header" fill={false}>
+          <FlexLayout className="description-header" fill={false} type="row">
             <FlexLayout.Fixed>
               <div className="description-image-container">
                 <ZoomableImage className="extension-picture" url={ext.image} />
               </div>
             </FlexLayout.Fixed>
+
             <FlexLayout.Flex>
-              <FlexLayout type="column" className="description-header-content">
+              <FlexLayout className="description-header-content" type="column">
                 <div className="description-title">
                   <span className="description-name">{ext.name}</span>
+
                   <span className="description-author">
                     {t("by")} {ext.author}
                   </span>
                 </div>
+
                 <div className="description-short">{ext.description.short}</div>
+
                 <div className="description-stats">
                   {ext.downloads !== undefined ? (
                     <div className="extension-downloads">
                       <Icon name="download" /> {ext.downloads}
                     </div>
                   ) : null}
+
                   {ext.endorsements !== undefined ? (
                     <div className="extension-endorsements">
                       <Icon name="endorse-yes" /> {ext.endorsements}
                     </div>
                   ) : null}
                 </div>
+
                 <div className="description-actions">
                   {action} {openInBrowser}
                 </div>
@@ -446,6 +460,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             </FlexLayout.Flex>
           </FlexLayout>
         </FlexLayout.Fixed>
+
         <FlexLayout.Flex>
           <div className="description-text">{bbcode(ext.description.long)}</div>
         </FlexLayout.Flex>

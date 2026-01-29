@@ -117,7 +117,6 @@ import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
 import type * as winapiT from "vortex-run";
-import { getApplication } from "./application";
 import makeRemoteCall, { makeRemoteCallSync } from "./electronRemote";
 import { VCREDIST_URL } from "../shared/constants";
 import { fileMD5 } from "vortexmt";
@@ -130,6 +129,7 @@ import {
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
+import { Application } from "../renderer/application";
 
 export function isExtSame(
   installed: IExtension,
@@ -675,9 +675,13 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.getCalls("requireVersion").forEach((call) => {
       if (
         process.env.NODE_ENV !== "development" &&
-        !semver.satisfies(getApplication().version, call.arguments[0], {
-          includePrerelease: true,
-        })
+        !semver.satisfies(
+          Application.getInstance().getVersion(),
+          call.arguments[0],
+          {
+            includePrerelease: true,
+          },
+        )
       ) {
         setdefault(incompatibleExtensions, call.extension, []).push({
           id: "unsupported-version",

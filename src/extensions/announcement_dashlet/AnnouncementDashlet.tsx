@@ -1,23 +1,21 @@
 import type { TFunction } from "i18next";
-import * as React from "react";
 import type { WithTranslation } from "react-i18next";
-import { connect } from "react-redux";
 
-import { matchesGameMode, matchesVersion } from "./util";
-
-import Dashlet from "../../renderer/controls/Dashlet";
-import { Icon, IconButton } from "../../renderer/controls/TooltipControls";
-import { getApplication } from "../../util/application";
-import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
-import opn from "../../util/opn";
-import * as selectors from "../../util/selectors";
-
-import { EmptyPlaceholder, FlexLayout } from "../../renderer/controls/api";
-import type { AnnouncementSeverity, IAnnouncement } from "./types";
-import ReactMarkdown from "react-markdown";
-
+import { Application } from "@renderer/application";
 import dayjs from "dayjs";
 import relativeTimePlugin from "dayjs/plugin/relativeTime"; // import plugin
+import ReactMarkdown from "react-markdown";
+import { connect } from "react-redux";
+
+import type { AnnouncementSeverity, IAnnouncement } from "./types";
+
+import { EmptyPlaceholder, FlexLayout } from "../../renderer/controls/api";
+import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
+import Dashlet from "../../renderer/controls/Dashlet";
+import { Icon, IconButton } from "../../renderer/controls/TooltipControls";
+import opn from "../../util/opn";
+import * as selectors from "../../util/selectors";
+import { matchesGameMode, matchesVersion } from "./util";
 
 dayjs.extend(relativeTimePlugin);
 
@@ -33,7 +31,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   constructor(props: IProps) {
     super(props);
-    this.mAppVersion = getApplication().version;
+    this.mAppVersion = Application.getInstance().getVersion();
   }
 
   public render(): JSX.Element {
@@ -64,8 +62,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return (
       <EmptyPlaceholder
         icon="announcements"
-        text={t("No Announcements")}
         subtext={t("No news is good news!")}
+        text={t("No Announcements")}
       />
     );
   }
@@ -86,7 +84,10 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     if (icon !== undefined) {
       return (
         <Icon
-          className={`announcement-icon announcement-icon-${sev}`}
+          className={`
+            announcement-icon
+            announcement-icon-${sev}
+          `}
           name={icon}
           tooltip={this.severityToTooltip(t, sev)}
         />
@@ -154,11 +155,15 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <FlexLayout type="row" className="announcement-extras">
+      <FlexLayout className="announcement-extras" type="row">
         {this.renderIcon(announcement)}
+
         {renderTitle()}
+
         <div className="flex-fill" />
+
         {renderDate()}
+
         {renderLink()}
       </FlexLayout>
     );
@@ -167,7 +172,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private generateDescription = (announcement: IAnnouncement): JSX.Element => {
     const { t } = this.props;
     return (
-      <FlexLayout type="row" className="announcement-description">
+      <FlexLayout className="announcement-description" type="row">
         <ReactMarkdown
           allowedElements={["p", "a", "em", "strong"]}
           unwrapDisallowed={true}
@@ -184,6 +189,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
         {filtered.map((announcement, id) => (
           <div className="announcement-entry" key={id}>
             {this.generateExtraPanel(announcement)}
+
             {this.generateDescription(announcement)}
           </div>
         ))}

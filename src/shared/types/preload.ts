@@ -15,8 +15,11 @@ export interface Api {
 }
 
 export interface App {
-  /** Gets the Vortex version */
+  /** Gets the electron app version */
   getAppVersion(): Promise<string>;
+
+  /** Gets the electron app name */
+  getAppName(): Promise<string>;
 
   /** Tries to close all windows successfully and then terminates the app */
   quit(): void;

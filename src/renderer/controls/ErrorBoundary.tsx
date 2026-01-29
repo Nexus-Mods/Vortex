@@ -1,17 +1,17 @@
-import { ComponentEx, translate } from "./ComponentEx";
-import { didIgnoreError, isOutdated } from "../../util/errorHandling";
-import { genHash } from "../../util/genHash";
-import { renderError } from "../../util/message";
+import type { WithTranslation } from "react-i18next";
 
-import Icon from "./Icon";
-import { IconButton } from "./TooltipControls";
-
+import { Application } from "@renderer/application";
 import * as _ from "lodash";
 import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import { getApplication } from "../../util/application";
+
 import { unknownToError } from "../../shared/errors";
+import { didIgnoreError, isOutdated } from "../../util/errorHandling";
+import { genHash } from "../../util/genHash";
+import { renderError } from "../../util/message";
+import { ComponentEx, translate } from "./ComponentEx";
+import Icon from "./Icon";
+import { IconButton } from "./TooltipControls";
 
 export type CBFunction = (...args: any[]) => void;
 
@@ -126,20 +126,24 @@ class ErrorBoundary extends ComponentEx<
 
     return visible ? (
       <div className={classes.join(" ")}>
-        <Alert className="render-failure" bsStyle="danger">
+        <Alert bsStyle="danger" className="render-failure">
           <Icon className="render-failure-icon" name="sad" />
+
           <div className="render-failure-text">{t("Failed to render.")}</div>
+
           <div className="render-failure-buttons">
             {isOutdated() || didIgnoreError() ? null : (
               <Button onClick={this.report}>{t("Report")}</Button>
             )}
+
             <Button onClick={this.retryRender}>{t("Retry")}</Button>
           </div>
+
           {onHide !== undefined ? (
             <IconButton
               className="error-boundary-close"
-              tooltip={t("Hide")}
               icon="close"
+              tooltip={t("Hide")}
               onClick={onHide}
             />
           ) : null}
@@ -160,7 +164,7 @@ class ErrorBoundary extends ComponentEx<
     }
     let errMessage =
       "Component rendering error\n\n" +
-      `Vortex Version: ${getApplication().version}\n\n` +
+      `Vortex Version: ${Application.getInstance().getVersion()}\n\n` +
       `${error.stack}`;
 
     if (errorInfo !== undefined) {
