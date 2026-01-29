@@ -1,23 +1,15 @@
-import type { Level } from "@shared/types/logging";
-export type { Level as LogLevel } from "@shared/types/logging";
+import type { Level } from "../shared/types/logging";
+export type { Level as LogLevel } from "../shared/types/logging";
 
 // NOTE(erri120): This is a hack but the only way to make it work without massively refactoring everything else
 // TODO: remove after main/renderer separation
 
-async function logInRenderer(
-  level: Level,
-  message: string,
-  metadata?: unknown,
-): Promise<void> {
+function logInRenderer(level: Level, message: string, metadata?: unknown) {
   const logging = require("../renderer/logging");
   logging.log(level, message, metadata);
 }
 
-async function logInMain(
-  level: Level,
-  message: string,
-  metadata?: unknown,
-): Promise<void> {
+function logInMain(level: Level, message: string, metadata?: unknown) {
   const logging = require("../main/logging");
   logging.log(level, message, metadata);
 }
