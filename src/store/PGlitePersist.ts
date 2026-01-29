@@ -91,31 +91,50 @@ class PGlitePersist implements IPersistor {
   public getAllKVs(
     prefix?: string,
   ): PromiseBB<Array<{ key: string[]; value: string }>> {
-    let query: string;
-    let params: string[];
-
-    if (prefix === undefined) {
-      query = "SELECT key, value FROM vortex.state";
-      params = [];
-    } else {
-      // Match prefix with separator - same logic as LevelDB's gt/lt
-      const prefixWithSep = `${prefix}${SEPARATOR}`;
-      query = "SELECT key, value FROM vortex.state WHERE key LIKE $1";
-      params = [`${prefixWithSep}%`];
-    }
-
+    // Always query all data and filter in JS to match LevelDB behavior exactly
+    // This avoids any potential issues with SQL LIKE pattern matching
     return PromiseBB.resolve(
-      this.mDB.query<{ key: string; value: string }>(query, params),
+      this.mDB.query<{ key: string; value: string }>(
+        "SELECT key, value FROM vortex.state",
+      ),
     ).then((result) => {
-      log("debug", "getAllKVs query result", {
+      let rows = result.rows;
+
+      // Filter by prefix if specified (matching LevelDB's gt/lt behavior)
+      if (prefix !== undefined) {
+        const prefixWithSep = `${prefix}${SEPARATOR}`;
+        rows = rows.filter(
+          (row) =>
+            row.key > prefixWithSep &&
+            row.key < `${prefixWithSep}~`, // ~ is ASCII 126, higher than most key characters
+        );
+      }
+
+      log("info", "getAllKVs result", {
         prefix,
-        rowCount: result.rows.length,
-        sampleKeys:
-          result.rows.length > 0
-            ? result.rows.slice(0, 3).map((r) => r.key)
-            : [],
+        totalRows: result.rows.length,
+        filteredRows: rows.length,
+        sampleKeys: rows.length > 0 ? rows.slice(0, 5).map((r) => r.key) : [],
       });
-      return result.rows.map((row) => ({
+
+      // Debug: check for installationPath keys
+      const installPathKeys = rows.filter((r) =>
+        r.key.includes("installationPath"),
+      );
+      if (installPathKeys.length > 0) {
+        log("info", "Found installationPath keys", {
+          count: installPathKeys.length,
+          samples: installPathKeys.slice(0, 3).map((r) => ({
+            key: r.key,
+            valueLength: r.value?.length,
+            valuePreview: r.value?.substring(0, 50),
+          })),
+        });
+      } else if (prefix === "user") {
+        log("warn", "No installationPath keys found for user hive!");
+      }
+
+      return rows.map((row) => ({
         key: row.key.split(SEPARATOR),
         value: row.value,
       }));
