@@ -1,4 +1,4 @@
-import {IModLookupInfo} from '../types/IModLookupInfo';
+import { IModLookupInfo } from "../types/IModLookupInfo";
 
 function renderModLookup(mod: IModLookupInfo) {
   if (mod === undefined) {
@@ -7,7 +7,7 @@ function renderModLookup(mod: IModLookupInfo) {
   const id = mod.customFileName || mod.logicalFileName || mod.name;
 
   const version = mod.version;
-  return version !== undefined ? id + ' v' + version : id;
+  return version !== undefined ? id + " v" + version : id;
 }
 
 export default renderModLookup;

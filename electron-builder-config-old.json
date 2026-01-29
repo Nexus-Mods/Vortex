@@ -23,16 +23,11 @@
   "includeSubNodeModules": true,
   "win": {
     "target": "nsis",
-    "signingHashAlgorithms": [
-      "sha256"
-    ],
+    "signingHashAlgorithms": ["sha256"],
     "forceCodeSigning": true,
     "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
     "timeStampServer": "http://timestamp.comodoca.com",
-    "publisherName": [
-      "Black Tree Gaming Limited",
-      "Black Tree Gaming Ltd"
-    ]
+    "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"]
   },
   "nsis": {
     "perMachine": true,
@@ -70,9 +65,7 @@
   "snap": {
     "confinement": "devmode"
   },
-  "extraResources": [
-    "locales"
-  ],
+  "extraResources": ["locales"],
   "files": [
     "**/*",
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",

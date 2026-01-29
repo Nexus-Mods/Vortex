@@ -2,15 +2,15 @@
 
 /**
  * Automatic PR Link Opener
- * 
+ *
  * This script automatically opens pull request creation links in your default browser
  * for all repositories that have changes on the specified branch.
  */
 
-const { execSync } = require('child_process');
-const { MODULE_CONFIG } = require('./manage-node-modules.js');
-const path = require('path');
-const fs = require('fs');
+const { execSync } = require("child_process");
+const { MODULE_CONFIG } = require("./manage-node-modules.js");
+const path = require("path");
+const fs = require("fs");
 
 class PRLinkOpener {
   constructor() {
@@ -22,7 +22,9 @@ class PRLinkOpener {
    */
   isGitRepo(modulePath) {
     const fullPath = path.join(this.rootDir, modulePath);
-    return fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, '.git'));
+    return (
+      fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"))
+    );
   }
 
   /**
@@ -30,13 +32,13 @@ class PRLinkOpener {
    */
   execInDir(dir, command, options = {}) {
     const fullPath = path.join(this.rootDir, dir);
-    
+
     try {
       const result = execSync(command, {
         cwd: fullPath,
-        encoding: 'utf8',
-        stdio: options.silent ? 'pipe' : 'inherit',
-        ...options
+        encoding: "utf8",
+        stdio: options.silent ? "pipe" : "inherit",
+        ...options,
       });
       return result;
     } catch (error) {
@@ -52,20 +54,22 @@ class PRLinkOpener {
    */
   getFilteredModules(filter = null) {
     const entries = Object.entries(MODULE_CONFIG);
-    
+
     if (!filter) return entries;
-    
+
     const filters = Array.isArray(filter) ? filter : [filter];
-    return entries.filter(([name, config]) => 
-      filters.some(f => {
-        if (f === 'git') return config.repository !== null;
-        if (f === 'local') return config.type === 'local-csharp';
-        if (f === 'csharp') return config.type === 'csharp' || config.type === 'local-csharp';
-        if (f === 'cpp') return config.type === 'cpp';
-        if (f === 'nexus') return config.repository && config.repository.includes('Nexus-Mods');
-        if (f === 'third-party') return config.thirdParty === true;
+    return entries.filter(([name, config]) =>
+      filters.some((f) => {
+        if (f === "git") return config.repository !== null;
+        if (f === "local") return config.type === "local-csharp";
+        if (f === "csharp")
+          return config.type === "csharp" || config.type === "local-csharp";
+        if (f === "cpp") return config.type === "cpp";
+        if (f === "nexus")
+          return config.repository && config.repository.includes("Nexus-Mods");
+        if (f === "third-party") return config.thirdParty === true;
         return config.type === f;
-      })
+      }),
     );
   }
 
@@ -74,23 +78,31 @@ class PRLinkOpener {
    */
   hasChangesOnBranch(modulePath, branchName) {
     // Check if the branch exists locally
-    const localBranches = this.execInDir(modulePath, 'git branch', { silent: true });
+    const localBranches = this.execInDir(modulePath, "git branch", {
+      silent: true,
+    });
     if (!localBranches || !localBranches.includes(branchName)) {
       return false;
     }
 
     // Check if the branch exists on remote
-    const remoteBranches = this.execInDir(modulePath, 'git branch -r', { silent: true });
+    const remoteBranches = this.execInDir(modulePath, "git branch -r", {
+      silent: true,
+    });
     if (!remoteBranches || !remoteBranches.includes(`origin/${branchName}`)) {
       return false;
     }
 
     // Get the base branch (master or main)
-    const baseBranch = 'master'; // Could also check for 'main'
-    
+    const baseBranch = "master"; // Could also check for 'main'
+
     // Check if there are differences between the feature branch and base branch
-    const diff = this.execInDir(modulePath, `git rev-list --count ${baseBranch}..origin/${branchName}`, { silent: true });
-    
+    const diff = this.execInDir(
+      modulePath,
+      `git rev-list --count ${baseBranch}..origin/${branchName}`,
+      { silent: true },
+    );
+
     return diff && parseInt(diff.trim()) > 0;
   }
 
@@ -101,14 +113,14 @@ class PRLinkOpener {
     const platform = process.platform;
     let commands = [];
 
-    if (platform === 'win32') {
+    if (platform === "win32") {
       // Multiple approaches for Windows
       commands = [
         `cmd /c start "" "${url}"`,
         `powershell -Command "Start-Process '${url}'"`,
-        `explorer "${url}"`
+        `explorer "${url}"`,
       ];
-    } else if (platform === 'darwin') {
+    } else if (platform === "darwin") {
       commands = [`open "${url}"`];
     } else {
       commands = [`xdg-open "${url}"`];
@@ -117,14 +129,14 @@ class PRLinkOpener {
     // Try each command until one works
     for (const command of commands) {
       try {
-        execSync(command, { stdio: 'ignore' });
+        execSync(command, { stdio: "ignore" });
         return true;
       } catch (error) {
         console.log(`   ⚠️  Command failed: ${command}`);
         continue;
       }
     }
-    
+
     console.error(`   ❌ All attempts failed to open: ${url}`);
     console.error(`   🔗 Please manually open: ${url}`);
     return false;
@@ -133,8 +145,10 @@ class PRLinkOpener {
   /**
    * Open PR creation links for repositories with changes
    */
-  openPRLinks(branchName, filter = 'git', options = {}) {
-    console.log(`🔍 Checking for repositories with changes on branch: ${branchName}\n`);
+  openPRLinks(branchName, filter = "git", options = {}) {
+    console.log(
+      `🔍 Checking for repositories with changes on branch: ${branchName}\n`,
+    );
 
     const modules = this.getFilteredModules(filter);
     const linksToOpen = [];
@@ -152,12 +166,12 @@ class PRLinkOpener {
       }
 
       console.log(`📦 Checking ${moduleName}...`);
-      
+
       if (this.hasChangesOnBranch(config.path, branchName)) {
-        const repoUrl = config.repository.replace('.git', '');
-        const baseBranch = config.branch || 'master';
+        const repoUrl = config.repository.replace(".git", "");
+        const baseBranch = config.branch || "master";
         const prUrl = `${repoUrl}/compare/${baseBranch}...${branchName}?expand=1`;
-        
+
         console.log(`   ✅ Has changes - will open PR link`);
         linksToOpen.push({ name: moduleName, url: prUrl });
       } else {
@@ -166,7 +180,9 @@ class PRLinkOpener {
     }
 
     if (linksToOpen.length === 0) {
-      console.log(`\n⚠️  No repositories found with changes on branch '${branchName}'`);
+      console.log(
+        `\n⚠️  No repositories found with changes on branch '${branchName}'`,
+      );
       return;
     }
 
@@ -176,12 +192,14 @@ class PRLinkOpener {
     }
 
     if (dryRun) {
-      console.log(`\n🔍 Dry run mode - links not opened. Use --open to actually open them.`);
+      console.log(
+        `\n🔍 Dry run mode - links not opened. Use --open to actually open them.`,
+      );
       return;
     }
 
     console.log(`\n🌐 Opening PR creation links in your default browser...`);
-    
+
     // Open links with delay to prevent overwhelming the browser
     linksToOpen.forEach(({ name, url }, index) => {
       setTimeout(() => {
@@ -190,7 +208,9 @@ class PRLinkOpener {
       }, index * delay);
     });
 
-    console.log(`\n✅ All PR creation links will be opened. You can now create the pull requests manually.`);
+    console.log(
+      `\n✅ All PR creation links will be opened. You can now create the pull requests manually.`,
+    );
   }
 
   /**
@@ -238,22 +258,33 @@ WORKFLOW:
 function main() {
   const args = process.argv.slice(2);
   const branchName = args[0];
-  
-  if (!branchName || branchName === 'help' || branchName === '--help' || branchName === '-h') {
+
+  if (
+    !branchName ||
+    branchName === "help" ||
+    branchName === "--help" ||
+    branchName === "-h"
+  ) {
     new PRLinkOpener().showHelp();
     return;
   }
-  
-  const filter = args.find(arg => !arg.startsWith('--')) && args[1] !== branchName ? args[1] : 'git';
-  const dryRun = args.includes('--dry-run');
-  const shouldOpen = args.includes('--open') || !dryRun;
-  const delayIndex = args.indexOf('--delay');
-  const delay = delayIndex !== -1 && args[delayIndex + 1] ? parseInt(args[delayIndex + 1]) : 2000;
+
+  const filter =
+    args.find((arg) => !arg.startsWith("--")) && args[1] !== branchName
+      ? args[1]
+      : "git";
+  const dryRun = args.includes("--dry-run");
+  const shouldOpen = args.includes("--open") || !dryRun;
+  const delayIndex = args.indexOf("--delay");
+  const delay =
+    delayIndex !== -1 && args[delayIndex + 1]
+      ? parseInt(args[delayIndex + 1])
+      : 2000;
 
   const opener = new PRLinkOpener();
-  opener.openPRLinks(branchName, filter, { 
-    dryRun: !shouldOpen, 
-    delay 
+  opener.openPRLinks(branchName, filter, {
+    dryRun: !shouldOpen,
+    delay,
   });
 }
 

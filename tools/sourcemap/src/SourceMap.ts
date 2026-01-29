@@ -1,6 +1,6 @@
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import { SourceMapConsumer } from 'source-map';
+import * as fs from "fs-extra";
+import * as path from "path";
+import { SourceMapConsumer } from "source-map";
 
 interface IPosition {
   source: string;
@@ -11,7 +11,7 @@ interface IPosition {
 const sourceMappingRE = /^\/\/# sourceMappingURL=([a-zA-Z0-9._\-\/\\]+)$/;
 
 class SourceMap {
-  private mConsumers: { [fileName: string]: Promise<SourceMapConsumer>} = {};
+  private mConsumers: { [fileName: string]: Promise<SourceMapConsumer> } = {};
   private mSourcePath: string;
   private mBasePath: string;
 
@@ -21,46 +21,53 @@ class SourceMap {
   }
 
   public lookup(position: IPosition): Promise<IPosition> {
-    return this.getConsumer(position.source)
-    .then(consumer =>
-      (consumer === null)
+    return this.getConsumer(position.source).then((consumer) =>
+      consumer === null
         ? position
-        : consumer.originalPositionFor({ line: position.line, column: position.column }));
+        : consumer.originalPositionFor({
+            line: position.line,
+            column: position.column,
+          }),
+    );
   }
 
   private findSourceMapPath(sourceData: string): string {
     // search for the sourceMappingURL from back to front
     const sourceMappingLine = sourceData
-      .split('\n')
+      .split("\n")
       .reverse()
-      .find(line => line.match(sourceMappingRE) !== null);
-    return (sourceMappingLine !== undefined)
+      .find((line) => line.match(sourceMappingRE) !== null);
+    return sourceMappingLine !== undefined
       ? sourceMappingLine.match(sourceMappingRE)[1]
       : undefined;
   }
 
   private getConsumer(file: string): Promise<SourceMapConsumer> {
-    const relPath = this.mBasePath !== undefined
-      ? path.relative(this.mBasePath, file)
-      : file;
+    const relPath =
+      this.mBasePath !== undefined ? path.relative(this.mBasePath, file) : file;
 
     if (this.mConsumers[relPath] === undefined) {
       const correctedPath = path.join(this.mSourcePath, relPath);
-      this.mConsumers[relPath] = fs.readFile(correctedPath)
-        .then(data => {
+      this.mConsumers[relPath] = fs
+        .readFile(correctedPath)
+        .then((data) => {
           const sourceMapPath = this.findSourceMapPath(data.toString());
           if (sourceMapPath === undefined) {
             return Promise.reject(null);
           }
-          const fullPath: string = (sourceMapPath.startsWith('/'))
+          const fullPath: string = sourceMapPath.startsWith("/")
             ? this.mSourcePath + sourceMapPath
-            : path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath);
+            : path.resolve(
+                this.mSourcePath,
+                path.dirname(relPath),
+                sourceMapPath,
+              );
           return fs.readFile(fullPath);
         })
         .then((data: Buffer) => new SourceMapConsumer(data.toString()))
-        .catch(err => {
+        .catch((err) => {
           if (err !== null) {
-            console.error('failed to read sourcemap', err);
+            console.error("failed to read sourcemap", err);
           }
           return null;
         });

@@ -1,25 +1,28 @@
-import { IModEx } from '../../types/IModEx';
-import CollectionModDetails from './CollectionModDetails';
-import CollectionReleaseStatus from '../CollectionReleaseStatus';
-import SlideshowControls from './SlideshowControls';
+import { IModEx } from "../../types/IModEx";
+import CollectionModDetails from "./CollectionModDetails";
+import CollectionReleaseStatus from "../CollectionReleaseStatus";
+import SlideshowControls from "./SlideshowControls";
 
-import { ICollectionRevisionMod } from '@nexusmods/nexus-api';
-import i18next from 'i18next';
-import * as _ from 'lodash';
-import * as React from 'react';
-import { Image as BSImage, Media, Panel } from 'react-bootstrap';
-import { ComponentEx, tooltip, types, util } from 'vortex-api';
+import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
+import i18next from "i18next";
+import * as _ from "lodash";
+import * as React from "react";
+import { Image as BSImage, Media, Panel } from "react-bootstrap";
+import { ComponentEx, tooltip, types, util } from "vortex-api";
 
 interface ICollectionOverviewProps {
   t: i18next.TFunction;
   profile: types.IProfile;
   collection: types.IMod;
   incomplete: boolean;
-  modSelection: Array<{ local: IModEx, remote: ICollectionRevisionMod }>;
+  modSelection: Array<{ local: IModEx; remote: ICollectionRevisionMod }>;
   onDeselectMods?: () => void;
 }
 
-class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx: number }> {
+class CollectionOverview extends ComponentEx<
+  ICollectionOverviewProps,
+  { selIdx: number }
+> {
   constructor(props: ICollectionOverviewProps) {
     super(props);
 
@@ -36,15 +39,15 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
 
     const modDetails = modSelection.length > 0;
 
-    const classes = ['collection-overview'];
+    const classes = ["collection-overview"];
     if (modDetails) {
-      classes.push('collection-mod-selection');
+      classes.push("collection-mod-selection");
     }
 
     return (
-      <Panel className={classes.join(' ')}>
-        <div className='collection-overview-title'>
-          <div className='collection-title'>
+      <Panel className={classes.join(" ")}>
+        <div className="collection-overview-title">
+          <div className="collection-title">
             {util.renderModName(collection)}
           </div>
           <CollectionReleaseStatus
@@ -62,11 +65,11 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
                 onChangeItem={this.setSelection}
                 autoProgressTimeMS={5000}
               />
-              <div className='flex-filler' />
+              <div className="flex-filler" />
               <tooltip.IconButton
-                className='btn-embed'
-                tooltip={t('Deselects mods')}
-                icon='close'
+                className="btn-embed"
+                tooltip={t("Deselects mods")}
+                icon="close"
                 onClick={this.props.onDeselectMods}
               />
             </>
@@ -83,10 +86,11 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
   }
 
   private setSelection = (idx: number) => {
-    this.nextState.selIdx = (this.props.modSelection.length === 0)
-      ? 0
-      : idx % this.props.modSelection.length;
-  }
+    this.nextState.selIdx =
+      this.props.modSelection.length === 0
+        ? 0
+        : idx % this.props.modSelection.length;
+  };
 }
 
 export default CollectionOverview;

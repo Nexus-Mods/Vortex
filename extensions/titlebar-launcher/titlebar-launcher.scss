@@ -1,35 +1,35 @@
 $titlebar-rows: 2 !default;
 
 #titlebar-starter {
-  -webkit-app-region: no-drag;
-  background-color: $brand-menu;
-  border-right: $border-width solid $border-color;
-  height: 100%;
-  overflow-y: hidden;
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat($titlebar-rows, auto);
-  align-items: center;
+    -webkit-app-region: no-drag;
+    background-color: $brand-menu;
+    border-right: $border-width solid $border-color;
+    height: 100%;
+    overflow-y: hidden;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat($titlebar-rows, auto);
+    align-items: center;
 
-  padding: 0 $half-gutter;
-  gap: $half-gutter;
-  align-items: center;
+    padding: 0 $half-gutter;
+    gap: $half-gutter;
+    align-items: center;
 
-  .starter-tool-icon-container {
-    > .running-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+    .starter-tool-icon-container {
+        > .running-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     }
-  }
 }
 
 #titlebar-tools-toggle-container {
-  display: flex;
-  flex-direction: row;
-  .titlebar-tools-toggle-text {
-    margin-right: .5em;
-  }
+    display: flex;
+    flex-direction: row;
+    .titlebar-tools-toggle-text {
+        margin-right: 0.5em;
+    }
 }

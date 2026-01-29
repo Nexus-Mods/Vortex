@@ -1,395 +1,395 @@
 @import "node-content-renderer.scss";
 
 .btn-embed {
-  padding: 1px 5px;
-  border: 0px;
-  color: currentColor;
-  background-color: transparent;
+    padding: 1px 5px;
+    border: 0px;
+    color: currentColor;
+    background-color: transparent;
 
-  &:hover {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:active {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:focus {
-    color: $link-hover-color;
-    background-color: initial;
-  }
+    &:hover {
+        color: $link-hover-color;
+        background-color: initial;
+    }
+    &:active {
+        color: $link-hover-color;
+        background-color: initial;
+    }
+    &:focus {
+        color: $link-hover-color;
+        background-color: initial;
+    }
 }
 
 .btn-dependency {
-  @extend .btn-embed;
+    @extend .btn-embed;
 }
 
 .btn-dependency-hasrules svg {
-  fill: $link-color;
+    fill: $link-color;
 }
 
 .btn-dependency-unfulfilledrule svg {
-  fill: $brand-danger;
+    fill: $brand-danger;
 }
 
 .btn-dependency-norules svg {
-  fill: $gray-dark;
+    fill: $gray-dark;
 }
 
 .btn-dependency-norules:hover svg {
-  fill: $link-hover-color;
+    fill: $link-hover-color;
 }
 
 .btn-conflict {
-  @extend .btn-embed;
+    @extend .btn-embed;
 
-  transition: box-shadow 1s;
+    transition: box-shadow 1s;
 }
 
 .btn-conflict-unsolved {
-  svg {
-    color: $brand-danger;
-  }
-  &:hover {
     svg {
-      color: $link-hover-color;
+        color: $brand-danger;
     }
-  }
+    &:hover {
+        svg {
+            color: $link-hover-color;
+        }
+    }
 }
 
 .btn-conflict-allsolved {
-  svg {
-    color: $brand-success;
-  }
-  &:hover {
     svg {
-      color: $link-hover-color;
+        color: $brand-success;
     }
-  }
+    &:hover {
+        svg {
+            color: $link-hover-color;
+        }
+    }
 }
 
 .btn-conflict-highlight {
-  box-shadow: inset 0 0 2px 2px $brand-highlight;
+    box-shadow: inset 0 0 2px 2px $brand-highlight;
 }
 
 .btn-unfulfilled {
-  @extend .btn-embed;
-  color: $brand-danger;
+    @extend .btn-embed;
+    color: $brand-danger;
 }
 
 .btn-overrides {
-  @extend .btn-embed;
+    @extend .btn-embed;
 }
 
 .line {
-  border-bottom: 1px solid black;
+    border-bottom: 1px solid black;
 }
 
 .line-connect {
-  stroke: $brand-success;
-  stroke-width: 3;
+    stroke: $brand-success;
+    stroke-width: 3;
 }
 
 .line-disconnect {
-  stroke: $brand-danger;
-  stroke-dasharray: 5,5;
-  stroke-width: 2;
+    stroke: $brand-danger;
+    stroke-dasharray: 5, 5;
+    stroke-width: 2;
 }
 
 .conflict-popover {
-  max-width: 500px;
-  max-height: 600px;
-  overflow-y: auto;
+    max-width: 500px;
+    max-height: 600px;
+    overflow-y: auto;
 
-  p {
-    margin: 0px;
-    white-space: nowrap;
-  }
+    p {
+        margin: 0px;
+        white-space: nowrap;
+    }
 }
 
 .conflict-rule-select {
-  display: inline;
-  // max-width: 150px;
-  vertical-align: top;
+    display: inline;
+    // max-width: 150px;
+    vertical-align: top;
 }
 
 .conflict-rule-reference {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 
-  .conflict-rule-name {
-    flex: 2 1 0;
-    margin: 0 4px;
-    max-width: 100%;
-    > div {
-      text-overflow: ellipsis;
-      overflow: hidden;
+    .conflict-rule-name {
+        flex: 2 1 0;
+        margin: 0 4px;
+        max-width: 100%;
+        > div {
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
     }
-  }
-  .conflict-rule-version {
-    flex: 1 1 0;
-  }
+    .conflict-rule-version {
+        flex: 1 1 0;
+    }
 }
 
 .conflict-rule-owner {
-  div {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 15em;
-  }
+    div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 15em;
+    }
 }
 
 .rule-description {
-  display: flex;
+    display: flex;
 
-  p {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-  }
+    p {
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
 
-  .rule-mod-name {
-    flex: 1 1 0;
-    margin-left: 1em;
-  }
+    .rule-mod-name {
+        flex: 1 1 0;
+        margin-left: 1em;
+    }
 
-  .btn-embed {
-    margin-left: $half-gutter;
-  }
+    .btn-embed {
+        margin-left: $half-gutter;
+    }
 }
 
 .rule-fulfilled {
-  color: $brand-success;
+    color: $brand-success;
 }
 
 .rule-unfulfilled {
-  color: $brand-danger;
+    color: $brand-danger;
 }
 
 .rule-ignored {
-  color: $text-color-disabled;
+    color: $text-color-disabled;
 }
 
 .rule-fulfilled button,
 .rule-unfulfilled button {
-  margin-left: 0.75em;
+    margin-left: 0.75em;
 }
 
 .cell-dependencies {
-  height: 100%;
-  padding: 0 !important;
+    height: 100%;
+    padding: 0 !important;
 }
 
 .dependencies-inner {
-  text-align: center;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  &.connecting {
-    width: 150%;
-    margin-left: -25%;
-  }
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.connecting {
+        width: 150%;
+        margin-left: -25%;
+    }
 }
 
 .conflict-filter-input {
-  padding: 10px 0;
-  margin-bottom: 5px !important;
-  position: relative;
-  border-color: $border-color;
-  width: 20em;
-  z-index: 0;
-  .form-control {
-    position: initial;
-    float: unset;
-    z-index: unset;
-  }
+    padding: 10px 0;
+    margin-bottom: 5px !important;
+    position: relative;
+    border-color: $border-color;
+    width: 20em;
+    z-index: 0;
+    .form-control {
+        position: initial;
+        float: unset;
+        z-index: unset;
+    }
 }
 
 .conflict-editor-reverserule {
-  margin-left: 4px;
+    margin-left: 4px;
 }
 
 .mod-conflict-list {
-  select {
-    min-width: 4em;
-  }
+    select {
+        min-width: 4em;
+    }
 }
 
 .mod-conflict-graph {
-  svg circle {
-    fill: $text-color;
-  }
-  svg line { 
-    stroke: $brand-warning;
-    stroke-width: 4px;
-  }
-  .mod-label {
-    stroke: $text-color;
-  }
-  .cycle-link-highlighted {
-    stroke: $brand-info;
-  }
+    svg circle {
+        fill: $text-color;
+    }
+    svg line {
+        stroke: $brand-warning;
+        stroke-width: 4px;
+    }
+    .mod-label {
+        stroke: $text-color;
+    }
+    .cycle-link-highlighted {
+        stroke: $brand-info;
+    }
 }
 
 #file-override-dialog {
-  .modal-dialog {
-    width: 75vw;
+    .modal-dialog {
+        width: 75vw;
 
-    .modal-body {
-      .file-override-unsolved,
-      .file-override-sorting {
-        font-size: medium;
-        height: 60vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-    }
-  }
-
-  .ReactVirtualized__Grid__innerScrollContainer {
-    height: 100%;
-    overflow: visible !important;
-  }
-
-  .rstcustom__row {
-    &:hover {
-      background-color: $table-bg-hover;
+        .modal-body {
+            .file-override-unsolved,
+            .file-override-sorting {
+                font-size: medium;
+                height: 60vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
     }
 
-    flex: 1 1 0;
-    .rstcustom__rowToolbar:not(:first-child) {
-      flex: 1 1 auto;
-      justify-content: space-between;
-      align-items: center;
+    .ReactVirtualized__Grid__innerScrollContainer {
+        height: 100%;
+        overflow: visible !important;
     }
-    .rstcustom__rowLabel {
-      // flex: 1 1 auto;
-    }
-  }
 
-  .rstcustom__rowWrapper:hover {
-    opacity: initial;
-  }
+    .rstcustom__row {
+        &:hover {
+            background-color: $table-bg-hover;
+        }
+
+        flex: 1 1 0;
+        .rstcustom__rowToolbar:not(:first-child) {
+            flex: 1 1 auto;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rstcustom__rowLabel {
+            // flex: 1 1 auto;
+        }
+    }
+
+    .rstcustom__rowWrapper:hover {
+        opacity: initial;
+    }
 }
 
 .file-override-container {
-  height: 75vh;
-  display: flex;
-  flex-direction: column;
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .header-dependencies {
-  min-width: 110px;
+    min-width: 110px;
 }
 
 .search-box-input {
-  padding-left: 20px;
-  padding-right: 50px;
-  border-width: 0 0 1px 0;
-  background-color: initial;
+    padding-left: 20px;
+    padding-right: 50px;
+    border-width: 0 0 1px 0;
+    background-color: initial;
 }
 
 .override-editor-usage {
-  opacity: 0.75;
-  border: $border-width solid $border-color;
-  padding: 4px;
+    opacity: 0.75;
+    border: $border-width solid $border-color;
+    padding: 4px;
 }
 
 #table-mods .header-dependencies {
-  min-width: 10em;
+    min-width: 10em;
 }
 
 #conflict-editor-dialog {
-  .modal-dialog {
-    width: 60vw;
-  }
-  .modal-body {
-    padding: $gutter-width;
-    max-height: 80vh;
-    overflow-y: auto;
-    .mod-conflict-group-header {
-      label {
-        margin-top: 5px;
-        margin-right: 20px;
-      }
+    .modal-dialog {
+        width: 60vw;
+    }
+    .modal-body {
+        padding: $gutter-width;
+        max-height: 80vh;
+        overflow-y: auto;
+        .mod-conflict-group-header {
+            label {
+                margin-top: 5px;
+                margin-right: 20px;
+            }
+        }
+
+        table {
+            table-layout: fixed;
+        }
+
+        td {
+            border-top: 0;
+        }
     }
 
-    table{
-      table-layout: fixed;
+    .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        .conflict-editor-main-actions {
+            width: 100%;
+        }
+        .conflict-editor-secondary-actions {
+            display: flex;
+            width: 100%;
+            justify-self: left;
+        }
     }
-
-    td {
-      border-top: 0;
-    }
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: space-between;
-    .conflict-editor-main-actions {
-      width: 100%;
-    }
-    .conflict-editor-secondary-actions {
-      display: flex;
-      width: 100%;
-      justify-self: left;
-    }
-  }
 }
 
 #conflict-graph-dialog {
-  .modal-dialog {
-    width: 80vw;
-  }
-  .modal-body {
-    max-height: 80vh;
-  }
+    .modal-dialog {
+        width: 80vw;
+    }
+    .modal-body {
+        max-height: 80vh;
+    }
 }
 
 .conflict-graph {
-  width: 100%;
-  height: 70vh;
+    width: 100%;
+    height: 70vh;
 }
 
 .conflict-graph-working {
-  width: 100%;
-  height: 70vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  > svg {
-    width: 4em;
-    height: 4em;
-  }
+    width: 100%;
+    height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    > svg {
+        width: 4em;
+        height: 4em;
+    }
 }
 
 .popover-mod-rules {
-  max-width: 500px;
-  max-height: 40vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+    max-width: 500px;
+    max-height: 40vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .filter-dependencies-icon {
-  @extend .btn-embed;
+    @extend .btn-embed;
 }
 
 .modname-filter-wrapper {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 
-  &.modname-filter-indented {
-    margin-left: 0.5em;
-  }
+    &.modname-filter-indented {
+        margin-left: 0.5em;
+    }
 
-  .icon {
-    min-height: 1.2em;
-    min-width: 1.2em;
-    max-height: 1.2em;
-    max-width: 1.2em;
+    .icon {
+        min-height: 1.2em;
+        min-width: 1.2em;
+        max-height: 1.2em;
+        max-width: 1.2em;
 
-    margin-right: 0.5em;
-  }
+        margin-right: 0.5em;
+    }
 }

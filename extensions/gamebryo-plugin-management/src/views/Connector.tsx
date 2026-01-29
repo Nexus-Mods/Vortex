@@ -1,8 +1,8 @@
-import Line from './Line';
+import Line from "./Line";
 
-import * as React from 'react';
-import { connect } from 'react-redux';
-import { ComponentEx, util } from 'vortex-api';
+import * as React from "react";
+import { connect } from "react-redux";
+import { ComponentEx, util } from "vortex-api";
 
 interface ICoord {
   x: number;
@@ -10,8 +10,8 @@ interface ICoord {
 }
 
 interface IConnectorProps {
-  source?: { id: string, pos: ICoord };
-  target?: { id: string, pos: ICoord };
+  source?: { id: string; pos: ICoord };
+  target?: { id: string; pos: ICoord };
   mode?: string;
 }
 
@@ -25,14 +25,14 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
     let mode;
     if ((this.context as any).getModifiers().ctrl) {
-      mode = 'after';
+      mode = "after";
     }
 
-    if ((source === undefined) || (target === undefined)) {
+    if (source === undefined || target === undefined) {
       return null;
     }
 
-    const lineClass = target.id !== null ? 'line-connect' : 'line-disconnect';
+    const lineClass = target.id !== null ? "line-connect" : "line-disconnect";
 
     return (
       <Line
@@ -48,10 +48,16 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
 function mapStateToProps(state: any): IConnectorProps {
   return {
-    source:
-      util.getSafe(state, ['session', 'pluginDependencies', 'connection', 'source'], undefined),
-    target:
-      util.getSafe(state, ['session', 'pluginDependencies', 'connection', 'target'], undefined),
+    source: util.getSafe(
+      state,
+      ["session", "pluginDependencies", "connection", "source"],
+      undefined,
+    ),
+    target: util.getSafe(
+      state,
+      ["session", "pluginDependencies", "connection", "target"],
+      undefined,
+    ),
   };
 }
 

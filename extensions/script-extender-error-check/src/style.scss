@@ -1,10 +1,11 @@
-.header-script-extender-error-check, .cell-script-extender-error-check {
-  text-align: center;
-  > .icon {
-    color: $brand-warning;
-  }
+.header-script-extender-error-check,
+.cell-script-extender-error-check {
+    text-align: center;
+    > .icon {
+        color: $brand-warning;
+    }
 
-  .toggle-container {
-    justify-content: center;
-  }
+    .toggle-container {
+        justify-content: center;
+    }
 }

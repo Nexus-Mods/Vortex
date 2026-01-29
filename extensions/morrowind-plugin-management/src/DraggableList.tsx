@@ -1,23 +1,34 @@
-import Promise from 'bluebird';
-import * as React from 'react';
-import { ListGroup } from 'react-bootstrap';
+import Promise from "bluebird";
+import * as React from "react";
+import { ListGroup } from "react-bootstrap";
 import {
-  ConnectDragPreview, ConnectDragSource, ConnectDropTarget,
-  DragSource, DragSourceConnector, DragSourceMonitor,
-  DragSourceSpec, DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
-import * as ReactDOM from 'react-dom';
-import { ComponentEx, util } from 'vortex-api';
+  ConnectDragPreview,
+  ConnectDragSource,
+  ConnectDropTarget,
+  DragSource,
+  DragSourceConnector,
+  DragSourceMonitor,
+  DragSourceSpec,
+  DropTarget,
+  DropTargetConnector,
+  DropTargetMonitor,
+  DropTargetSpec,
+} from "react-dnd";
+import * as ReactDOM from "react-dom";
+import { ComponentEx, util } from "vortex-api";
 
 interface IItemBaseProps {
   index: number;
   item: any;
-  itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
+  itemRenderer: React.ComponentClass<{ className?: string; item: any }>;
   containerId: string;
   take: (item: any, list: any[]) => any;
-  onChangeIndex: (oldIndex: number,
-                  newIndex: number,
-                  changeContainer: boolean,
-                  take: (list: any[]) => any) => void;
+  onChangeIndex: (
+    oldIndex: number,
+    newIndex: number,
+    changeContainer: boolean,
+    take: (list: any[]) => any,
+  ) => void;
   apply: () => void;
 }
 
@@ -40,33 +51,31 @@ class DraggableItem extends React.Component<IItemProps, {}> {
     const { isDragging, item } = this.props;
     return (
       <this.props.itemRenderer
-        className={isDragging ? 'dragging' : undefined}
+        className={isDragging ? "dragging" : undefined}
         item={item}
         ref={this.setRef}
       />
     );
   }
 
-  private setRef = ref => {
+  private setRef = (ref) => {
     const { connectDragSource, connectDropTarget } = this.props;
     const node: any = ReactDOM.findDOMNode(ref);
     connectDragSource(node);
     connectDropTarget(node);
-  }
+  };
 }
 
-const DND_TYPE = 'morrowind-plugin-entry';
+const DND_TYPE = "morrowind-plugin-entry";
 
-function collectDrag(connect: DragSourceConnector,
-                     monitor: DragSourceMonitor) {
+function collectDrag(connect: DragSourceConnector, monitor: DragSourceMonitor) {
   return {
     connectDragSource: connect.dragSource(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connect: DropTargetConnector,
-                     monitor: DropTargetMonitor) {
+function collectDrop(connect: DropTargetConnector, monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
   };
@@ -88,7 +97,7 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
 
 const entryTarget: DropTargetSpec<IItemProps> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take } = monitor.getItem() as any;
     const hoverIndex = props.index;
 
     if (index === hoverIndex) {
@@ -104,12 +113,19 @@ const entryTarget: DropTargetSpec<IItemProps> = {
     const clientOffset = monitor.getClientOffset();
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 
-    if (((index < hoverIndex) && (hoverClientY < hoverMiddleY))
-        || ((index > hoverIndex) && (hoverClientY > hoverMiddleY))) {
+    if (
+      (index < hoverIndex && hoverClientY < hoverMiddleY) ||
+      (index > hoverIndex && hoverClientY > hoverMiddleY)
+    ) {
       return;
     }
 
-    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
+    props.onChangeIndex(
+      index,
+      hoverIndex,
+      containerId !== props.containerId,
+      take,
+    );
 
     (monitor.getItem() as any).index = hoverIndex;
     if (containerId !== props.containerId) {
@@ -122,9 +138,13 @@ const entryTarget: DropTargetSpec<IItemProps> = {
   },
 };
 
-const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
-    DragSource(DND_TYPE, entrySource, collectDrag)(
-      DraggableItem)) as React.ComponentClass<IItemBaseProps>;
+const Draggable = DropTarget(
+  DND_TYPE,
+  entryTarget,
+  collectDrop,
+)(
+  DragSource(DND_TYPE, entrySource, collectDrag)(DraggableItem),
+) as React.ComponentClass<IItemBaseProps>;
 
 interface IBaseProps {
   id: string;
@@ -152,7 +172,6 @@ class DraggableList extends ComponentEx<IProps, IState> {
       this.apply();
       return Promise.resolve();
     }, 500);
-
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -164,8 +183,8 @@ class DraggableList extends ComponentEx<IProps, IState> {
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer } = this.props;
     const { ordered } = this.state;
-    return connectDropTarget((
-      <div style={{ height: '100%' }}>
+    return connectDropTarget(
+      <div style={{ height: "100%" }}>
         <ListGroup>
           {ordered.map((item, idx) => (
             <Draggable
@@ -180,12 +199,16 @@ class DraggableList extends ComponentEx<IProps, IState> {
             />
           ))}
         </ListGroup>
-      </div>
-    ));
+      </div>,
+    );
   }
 
-  public changeIndex = (oldIndex: number, newIndex: number, changeContainer: boolean,
-                        take: (list: any[]) => any) => {
+  public changeIndex = (
+    oldIndex: number,
+    newIndex: number,
+    changeContainer: boolean,
+    take: (list: any[]) => any,
+  ) => {
     if (oldIndex === undefined) {
       return;
     }
@@ -196,7 +219,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule();
-  }
+  };
 
   private take = (item: any, list: any[]) => {
     const { ordered } = this.nextState;
@@ -212,33 +235,39 @@ class DraggableList extends ComponentEx<IProps, IState> {
       }
     }
     return res;
-  }
+  };
 
   private apply = () => {
     this.props.apply(this.state.ordered);
-  }
+  };
 }
 
 const containerTarget: DropTargetSpec<IProps> = {
   hover(props: IProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take } = monitor.getItem() as any;
 
     if (containerId !== props.id) {
       (component as any).changeIndex(index, 0, true, take);
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
+      (monitor.getItem() as any).take = (list) =>
+        (component as any).take(item, list);
     }
   },
 };
 
-function containerCollect(connect: DropTargetConnector,
-                          monitor: DropTargetMonitor) {
+function containerCollect(
+  connect: DropTargetConnector,
+  monitor: DropTargetMonitor,
+) {
   return {
     connectDropTarget: connect.dropTarget(),
   };
 }
 
-export default DropTarget(DND_TYPE, containerTarget, containerCollect)(
-  DraggableList) as React.ComponentClass<IBaseProps>;
+export default DropTarget(
+  DND_TYPE,
+  containerTarget,
+  containerCollect,
+)(DraggableList) as React.ComponentClass<IBaseProps>;

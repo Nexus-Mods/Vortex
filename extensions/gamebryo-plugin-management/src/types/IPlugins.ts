@@ -1,8 +1,8 @@
-import {ILoadOrder} from './ILoadOrder';
-import { ILootReference } from './ILOOTList';
+import { ILoadOrder } from "./ILoadOrder";
+import { ILootReference } from "./ILOOTList";
 
-import {Message, PluginCleaningData, Tag} from 'loot';
-import { IDialog } from '../views/UserlistEditor';
+import { Message, PluginCleaningData, Tag } from "loot";
+import { IDialog } from "../views/UserlistEditor";
 
 /**
  * generic information about a plugin
@@ -38,7 +38,7 @@ export interface IPlugin {
    * wishes to bring to the user's attention. Will add a warning
    * icon under plugin flags.
    */
-  warnings?: {[key: string]: boolean};
+  warnings?: { [key: string]: boolean };
 
   /**
    * true if the plugin is currently deployed
@@ -51,7 +51,9 @@ export interface IPluginNotification {
   notify: boolean;
 }
 
-export interface IPlugins { [key: string]: IPlugin; }
+export interface IPlugins {
+  [key: string]: IPlugin;
+}
 
 /**
  * details retrieved from the content of a plugin through esptk
@@ -93,42 +95,47 @@ export interface IPluginUserlist {
   group?: string;
 }
 
-export interface IPluginsLoot { [fileName: string]: IPluginLoot; }
+export interface IPluginsLoot {
+  [fileName: string]: IPluginLoot;
+}
 
-export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
-                            & IPluginLoot & IPluginUserlist & {
-  /**
-   * plugin id, which is the normalized (lower cased) name
-   */
-  id: string;
-  /**
-   * file name of the plugin
-   *
-   * @type {string}
-   */
-  name: string;
-  /**
-   * mod index of the plugin as used in form-ids. Please note that this is
-   * directly derived from other attributes, namely 'enabled', 'isNative' and
-   * 'loadOrder'
-   *
-   * @type {number}
-   */
-  modIndex: number,
-  eslIndex?: number,
-  mediumIndex?: number,
-};
+export type IPluginCombined = IPlugin &
+  ILoadOrder &
+  IPluginParsed &
+  IPluginLoot &
+  IPluginUserlist & {
+    /**
+     * plugin id, which is the normalized (lower cased) name
+     */
+    id: string;
+    /**
+     * file name of the plugin
+     *
+     * @type {string}
+     */
+    name: string;
+    /**
+     * mod index of the plugin as used in form-ids. Please note that this is
+     * directly derived from other attributes, namely 'enabled', 'isNative' and
+     * 'loadOrder'
+     *
+     * @type {number}
+     */
+    modIndex: number;
+    eslIndex?: number;
+    mediumIndex?: number;
+  };
 
 export interface IPluginDependencies {
   connection: {
     target: {
-      id: string,
-    },
+      id: string;
+    };
   };
   dialog: IDialog;
   quickEdit: {
-    plugin: string,
-    mode: string,
+    plugin: string;
+    mode: string;
   };
   groupEditorOpen: boolean;
 }

@@ -1,3 +1,3 @@
-import { createAction } from 'redux-act';
+import { createAction } from "redux-act";
 
-export const selectTheme = createAction<string, {}>('SELECT_UI_THEME');
+export const selectTheme = createAction<string, {}>("SELECT_UI_THEME");

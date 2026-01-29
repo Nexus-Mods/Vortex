@@ -1,172 +1,174 @@
 #import-dialog {
-  .modal-dialog {
-    width: 80%;
-  }
-  .modal-body {
-    align-items: center;
-    justify-content: center;
-  }
-
-  .revalidate-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .is-not-valid {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 50%;
-    height: 100%;
-    justify-content: space-evenly;
-    padding: 5px 5px;
-
-    .not-valid-title {
-      display: inherit;
-      flex-direction: column;
-      align-items: center;
-      svg {
-        height: 3em;
-        width: 3em;
-        fill: $brand-danger;
-      }
+    .modal-dialog {
+        width: 80%;
     }
-  }
-
-  .status-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    svg {
-      width: 5em;
-      height: 5em;
-    }
-  }
-
-  .table-mods-to-import.cell-local {
-    text-align: center;
-  }
-
-  .btn-mods-to-import-status-yes, .toggle-mods-to-import-status-yes {
-    background-color: $brand-success;
-  }
-
-  .btn-mods-to-import-status-no, .toggle-mods-to-import-status-no {
-    background-color: $gray;
-  }
-
-  #dropdown-mods-to-import-status {
-    padding: 2px 5px;
-    border: 0px;
-    border-left: 1px solid $gray-light;
-    min-width: 0px;
-  }
-
-  .import-start-container {
-    padding: $gutter-width;
-  }
-
-  .import-mods-selection {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: $gutter-width;
-  }
-
-  .import-working-container {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: $gutter-width;
-  }
-
-  .import-success {
-    @extend .h2;
-    text-align: center;
-    color: $brand-success;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    svg {
-      width: 2em;
-      height: 2em;
-    }
-  }
-
-  .import-conflict-title {
-    @extend .h3;
-    svg {
-      fill: $brand-warning;
-    }
-  }
-
-  .import-description-column {
-    display: inherit;
-    flex-direction: column;
-    width: 40%;
-    .import-description-item {
-      display: flex;
-      align-items: center;
-      svg {
-        min-width: 10%;
-      }
+    .modal-body {
+        align-items: center;
+        justify-content: center;
     }
 
-    &.import-description-positive {
-      svg {
-        fill: $brand-success;
-      }
+    .revalidate-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    &.import-description-negative {
-      svg {
-        fill: $brand-danger;
-      }
+    .is-not-valid {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 50%;
+        height: 100%;
+        justify-content: space-evenly;
+        padding: 5px 5px;
+
+        .not-valid-title {
+            display: inherit;
+            flex-direction: column;
+            align-items: center;
+            svg {
+                height: 3em;
+                width: 3em;
+                fill: $brand-danger;
+            }
+        }
     }
-  }
 
-  .import-start-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    height: 100%;
-    width: 100%;
-
-    .start-info {
-      display: flex;
-      justify-content: space-evenly;
-      flex-wrap: wrap;
+    .status-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        svg {
+            width: 5em;
+            height: 5em;
+        }
     }
-  }
 
-  .import-errors {
-    @extend .h3;
-    text-align: center;
-    color: $brand-danger;
-  }
+    .table-mods-to-import.cell-local {
+        text-align: center;
+    }
 
-  .import-review-text {
-    text-align: center;
-    color: $text-color-disabled;
-  }
+    .btn-mods-to-import-status-yes,
+    .toggle-mods-to-import-status-yes {
+        background-color: $brand-success;
+    }
 
-  .disk-space-insufficient {
-    color: $brand-danger;
-  }
+    .btn-mods-to-import-status-no,
+    .toggle-mods-to-import-status-no {
+        background-color: $gray;
+    }
 
-  .calculation-error {
-    color: $brand-danger;
-  }
+    #dropdown-mods-to-import-status {
+        padding: 2px 5px;
+        border: 0px;
+        border-left: 1px solid $gray-light;
+        min-width: 0px;
+    }
 
-  .import-archives-warning {
-    color: $brand-warning;
-  }
+    .import-start-container {
+        padding: $gutter-width;
+    }
 
-  .table-header-cell {
-    white-space: nowrap;
-  }
+    .import-mods-selection {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: $gutter-width;
+    }
+
+    .import-working-container {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: $gutter-width;
+    }
+
+    .import-success {
+        @extend .h2;
+        text-align: center;
+        color: $brand-success;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        svg {
+            width: 2em;
+            height: 2em;
+        }
+    }
+
+    .import-conflict-title {
+        @extend .h3;
+        svg {
+            fill: $brand-warning;
+        }
+    }
+
+    .import-description-column {
+        display: inherit;
+        flex-direction: column;
+        width: 40%;
+        .import-description-item {
+            display: flex;
+            align-items: center;
+            svg {
+                min-width: 10%;
+            }
+        }
+
+        &.import-description-positive {
+            svg {
+                fill: $brand-success;
+            }
+        }
+
+        &.import-description-negative {
+            svg {
+                fill: $brand-danger;
+            }
+        }
+    }
+
+    .import-start-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        height: 100%;
+        width: 100%;
+
+        .start-info {
+            display: flex;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+        }
+    }
+
+    .import-errors {
+        @extend .h3;
+        text-align: center;
+        color: $brand-danger;
+    }
+
+    .import-review-text {
+        text-align: center;
+        color: $text-color-disabled;
+    }
+
+    .disk-space-insufficient {
+        color: $brand-danger;
+    }
+
+    .calculation-error {
+        color: $brand-danger;
+    }
+
+    .import-archives-warning {
+        color: $brand-warning;
+    }
+
+    .table-header-cell {
+        white-space: nowrap;
+    }
 }

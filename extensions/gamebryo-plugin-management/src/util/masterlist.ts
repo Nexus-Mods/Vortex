@@ -1,19 +1,19 @@
-import * as path from 'path';
-import { fs, types, util } from 'vortex-api';
+import * as path from "path";
+import { fs, types, util } from "vortex-api";
 
-const LOOT_LIST_REVISION = 'v0.26';
+const LOOT_LIST_REVISION = "v0.26";
 const DOWNLOAD_THROTTLE_MS = 30 * 60 * 1000; // 30 minutes
 
 function getListUrl(gameId?: string) {
   return gameId != null
-  ? `https://raw.githubusercontent.com/loot/${gameId}/${LOOT_LIST_REVISION}/masterlist.yaml`
-  : `https://raw.githubusercontent.com/loot/prelude/${LOOT_LIST_REVISION}/prelude.yaml`;
+    ? `https://raw.githubusercontent.com/loot/${gameId}/${LOOT_LIST_REVISION}/masterlist.yaml`
+    : `https://raw.githubusercontent.com/loot/prelude/${LOOT_LIST_REVISION}/prelude.yaml`;
 }
 
 // TODO: this is for transitioning from loot 0.17 -> 0.18, remove it at some point
 async function tryRemoveDotGit(localPath: string) {
   try {
-    const gitDir = path.join(path.dirname(localPath), '.git');
+    const gitDir = path.join(path.dirname(localPath), ".git");
     await fs.statAsync(gitDir);
     await fs.removeAsync(gitDir);
   } catch (err) {
@@ -22,8 +22,12 @@ async function tryRemoveDotGit(localPath: string) {
 }
 
 let lastUpdated: number = 0;
-export async function isMasterlistOutdated(api: types.IExtensionApi, gameId: string, localPath: string): Promise<boolean> {
-  if ((Date.now() - lastUpdated) < DOWNLOAD_THROTTLE_MS) {
+export async function isMasterlistOutdated(
+  api: types.IExtensionApi,
+  gameId: string,
+  localPath: string,
+): Promise<boolean> {
+  if (Date.now() - lastUpdated < DOWNLOAD_THROTTLE_MS) {
     return false;
   }
   const masterlistUrl = getListUrl(gameId);
@@ -63,5 +67,10 @@ export async function masterlistExists(gameId: string) {
 }
 
 export function masterlistFilePath(gameMode: string) {
-  return path.join(util.getVortexPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
+  return path.join(
+    util.getVortexPath("userData"),
+    gameMode,
+    "masterlist",
+    "masterlist.yaml",
+  );
 }

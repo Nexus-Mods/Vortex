@@ -1,8 +1,8 @@
-import { ILoadOrder } from './ILoadOrder';
-import { ILOOTList } from './ILOOTList';
-import { IPluginDependencies, IPlugins } from './IPlugins';
+import { ILoadOrder } from "./ILoadOrder";
+import { ILOOTList } from "./ILOOTList";
+import { IPluginDependencies, IPlugins } from "./IPlugins";
 
-import { types } from 'vortex-api';
+import { types } from "vortex-api";
 
 const DummyState: types.IState = undefined;
 
@@ -11,8 +11,8 @@ export interface IStateEx extends types.IState {
   userlist: ILOOTList;
   session: typeof DummyState.session & {
     plugins: {
-      pluginList: IPlugins,
-    }
+      pluginList: IPlugins;
+    };
     pluginDependencies: IPluginDependencies;
   };
   loadOrder: { [pluginId: string]: ILoadOrder };

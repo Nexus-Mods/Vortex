@@ -28,7 +28,7 @@ export interface IGithubLabel {
   default: boolean;
 }
 
-export type IGithubIssueState = 'open' | 'closed';
+export type IGithubIssueState = "open" | "closed";
 
 export interface IGithubMilestone {
   url: string;
