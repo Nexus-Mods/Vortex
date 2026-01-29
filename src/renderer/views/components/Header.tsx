@@ -7,15 +7,17 @@ import {
   mdiBell,
   mdiHelpCircleOutline,
   mdiWindowRestore,
+  mdiAccountCircle,
 } from "@mdi/js";
-import React from "react";
+import React, { type ButtonHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IState } from "../../../types/IState";
 
-import { Button } from "../../../tailwind/components/next/button";
+import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../util/WindowContext";
 import {
   close,
@@ -24,6 +26,44 @@ import {
   useIsMaximized,
 } from "../../../util/windowManipulation";
 import { useSpineContext } from "./SpineContext";
+
+const IconButton = ({
+  className,
+  iconPath,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  className?: string;
+  iconPath: string;
+}) => (
+  <button
+    className={joinClasses([
+      "flex size-7 items-center justify-center rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong",
+      className,
+    ])}
+    {...props}
+  >
+    <Icon path={iconPath} />
+  </button>
+);
+
+const WindowControl = ({
+  className,
+  iconPath,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  className?: string;
+  iconPath: string;
+}) => (
+  <button
+    className={joinClasses([
+      "flex size-11 items-center justify-center text-neutral-subdued transition-colors hover:text-neutral-strong",
+      className,
+    ])}
+    {...props}
+  >
+    <Icon path={iconPath} size="sm" />
+  </button>
+);
 
 export const Header = () => {
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
@@ -45,69 +85,56 @@ export const Header = () => {
 
   return (
     <div
-      className="flex h-12 items-center justify-between pr-3 pl-4.5"
+      className="flex h-11 items-center justify-between pl-5"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       <div
-        className="flex items-center gap-x-2.5"
+        className="flex items-center gap-x-1"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
-        <Button
-          buttonType="tertiary"
-          leftIconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
-          size="sm"
+        <IconButton
+          iconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
           onClick={() => setMenuIsCollapsed((open) => !open)}
         />
 
-        {!menuIsCollapsed && (
-          <Typography appearance="moderate" className="truncate font-semibold">
-            {title}
-          </Typography>
-        )}
+        <Typography className="truncate leading-5 font-semibold">
+          {title}
+        </Typography>
       </div>
 
       <div
-        className="flex items-center gap-x-8"
+        className="flex items-center gap-x-4"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         <div className="flex gap-x-3">
-          <Button
-            buttonType="tertiary"
-            leftIconPath={mdiBell}
-            size="sm"
-            title="Notifications"
-          />
+          <IconButton iconPath={mdiBell} title="Notifications" />
 
-          <Button
-            buttonType="tertiary"
-            leftIconPath={mdiHelpCircleOutline}
-            size="sm"
-            title="Questions"
-          />
+          <IconButton iconPath={mdiHelpCircleOutline} title="Help" />
+
+          <IconButton iconPath={mdiAccountCircle} title="Profile" />
         </div>
 
-        <div className="flex gap-x-3">
-          <Button
-            buttonType="tertiary"
-            leftIconPath={mdiWindowMinimize}
-            size="sm"
+        <div className="h-6 w-px bg-stroke-weak" />
+
+        <div className="flex">
+          <WindowControl
+            className="hover:bg-surface-mid"
+            iconPath={mdiWindowMinimize}
             title="Minimize"
             onClick={minimize}
           />
 
-          <Button
-            buttonType="tertiary"
-            leftIconPath={isMaximized ? mdiWindowRestore : mdiWindowMaximize}
-            size="sm"
+          <WindowControl
+            className="hover:bg-surface-mid"
+            iconPath={isMaximized ? mdiWindowRestore : mdiWindowMaximize}
             title={isMaximized ? "Restore" : "Maximize"}
             onClick={toggleMaximize}
           />
 
-          <Button
-            buttonType="tertiary"
-            leftIconPath={mdiWindowClose}
-            size="sm"
+          <WindowControl
+            className="hover:bg-danger-subdued"
+            iconPath={mdiWindowClose}
             title="Close"
             onClick={close}
           />
