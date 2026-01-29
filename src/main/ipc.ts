@@ -45,7 +45,7 @@ function mainOn<C extends keyof RendererChannels>(
     event: Electron.IpcMainEvent,
     ...args: SerializableArgs<Parameters<RendererChannels[C]>>
   ) => void,
-  logOptions: LogOptions = false
+  logOptions: LogOptions = false,
 ): void {
   ipcMain.on(
     channel,
@@ -62,8 +62,10 @@ function mainHandle<C extends keyof InvokeChannels>(
   listener: (
     event: Electron.IpcMainInvokeEvent,
     ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-  ) => Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>,
-  logOptions: LogOptions = false
+  ) =>
+    | Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>
+    | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
+  logOptions: LogOptions = false,
 ): void {
   ipcMain.handle(
     channel,
