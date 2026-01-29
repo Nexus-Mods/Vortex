@@ -33,7 +33,8 @@ import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
-import LevelPersist, { DatabaseLocked } from "../store/LevelPersist";
+import PGlitePersist, { DatabaseLocked } from "../store/PGlitePersist";
+import { createPGlitePersistorWithMigration } from "../store/migrateToPGlite";
 import { log, setLogPath, setupLogging } from "../util/log";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
@@ -168,7 +169,7 @@ class Application {
 
   private mBasePath: string;
   private mStore: ThunkStore<IState>;
-  private mLevelPersistors: LevelPersist[] = [];
+  private mPersistors: PGlitePersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
@@ -755,9 +756,12 @@ class Application {
       return PromiseBB.resolve();
     }
 
-    let persist: LevelPersist;
+    let persist: PGlitePersist;
 
-    return LevelPersist.create(dbpath)
+    // Convert state.v2 path to state.pglite path for CLI access
+    const pglitePath = path.join(path.dirname(dbpath), "state.pglite");
+
+    return PGlitePersist.create(pglitePath)
       .then((persistIn) => {
         persist = persistIn;
         return persist.getAllKeys();
@@ -797,9 +801,12 @@ class Application {
     setParameters: ISetItem[],
     dbpath: string,
   ): PromiseBB<void> {
-    let persist: LevelPersist;
+    let persist: PGlitePersist;
 
-    return LevelPersist.create(dbpath)
+    // Convert state.v2 path to state.pglite path for CLI access
+    const pglitePath = path.join(path.dirname(dbpath), "state.pglite");
+
+    return PGlitePersist.create(pglitePath)
       .then((persistIn) => {
         persist = persistIn;
 
@@ -837,9 +844,12 @@ class Application {
   }
 
   private handleDel(delPaths: string[], dbpath: string): PromiseBB<void> {
-    let persist: LevelPersist;
+    let persist: PGlitePersist;
 
-    return LevelPersist.create(dbpath)
+    // Convert state.v2 path to state.pglite path for CLI access
+    const pglitePath = path.join(path.dirname(dbpath), "state.pglite");
+
+    return PGlitePersist.create(pglitePath)
       .then((persistIn) => {
         persist = persistIn;
         return persist.getAllKeys();
@@ -952,20 +962,15 @@ class Application {
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
-    return LevelPersist.create(
-      path.join(this.mBasePath, currentStatePath),
-      undefined,
-      repair ?? false,
+    return PromiseBB.resolve(
+      createPGlitePersistorWithMigration(this.mBasePath, repair ?? false),
     )
-      .then((levelPersistor) => {
-        this.mLevelPersistors.push(levelPersistor);
-        return insertPersistor(
-          "user",
-          new SubPersistor(levelPersistor, "user"),
-        );
+      .then((persistor) => {
+        this.mPersistors.push(persistor);
+        return insertPersistor("user", new SubPersistor(persistor, "user"));
       })
       .catch(DataInvalid, (err) => {
-        const failedPersistor = this.mLevelPersistors.pop();
+        const failedPersistor = this.mPersistors.pop();
         if (!failedPersistor) {
           return PromiseBB.reject(err);
         }
@@ -1003,12 +1008,10 @@ class Application {
           setLogPath(dataPath);
           log("info", "--------------------------");
           log("info", "Vortex Version", getApplication().version);
-          return LevelPersist.create(
-            path.join(dataPath, currentStatePath),
-            undefined,
-            repair ?? false,
-          ).then((levelPersistor) => {
-            this.mLevelPersistors.push(levelPersistor);
+          return PromiseBB.resolve(
+            createPGlitePersistorWithMigration(dataPath, repair ?? false),
+          ).then((persistor) => {
+            this.mPersistors.push(persistor);
           });
         } else {
           return PromiseBB.resolve();
@@ -1018,7 +1021,7 @@ class Application {
         log("debug", "reading app state");
         return insertPersistor(
           "app",
-          new SubPersistor(last(this.mLevelPersistors), "app"),
+          new SubPersistor(last(this.mPersistors), "app"),
         );
       })
       .then(() => {
@@ -1051,7 +1054,7 @@ class Application {
         return PromiseBB.mapSeries(allHives(this.mExtensions), (hive) =>
           insertPersistor(
             hive,
-            new SubPersistor(last(this.mLevelPersistors), hive),
+            new SubPersistor(last(this.mPersistors), hive),
           ),
         );
       })
