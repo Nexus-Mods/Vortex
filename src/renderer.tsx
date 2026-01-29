@@ -1,3 +1,5 @@
+import type * as remoteT from "@electron/remote";
+
 if (process.env.DEBUG_REACT_RENDERS === "true") {
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
   whyDidYouRender?.(require("react"), {
@@ -8,7 +10,7 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
 
 const earlyErrHandler = (evt) => {
   const { error } = evt;
-  const remote = require("@electron/remote");
+  const remote = require("@electron/remote") as typeof remoteT;
   remote.dialog.showErrorBox("Unhandled error", error.stack);
   remote.app.exit(1);
 };

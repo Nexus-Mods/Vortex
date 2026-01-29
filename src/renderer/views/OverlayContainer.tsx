@@ -13,7 +13,7 @@ interface IExtOverlay {
 }
 
 function registerOverlay(
-  instanceGroup: undefined,
+  _instanceGroup: undefined,
   id: string,
   component: React.ComponentType,
   props?: PropsCallback,

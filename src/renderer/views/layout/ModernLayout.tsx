@@ -8,16 +8,15 @@ import { useWindowContext } from "../../../util/WindowContext";
 import { Header } from "../components/Header";
 import { Menu } from "../components/Menu";
 import { Spine } from "../components/Spine";
+import { ModernContentPane } from "../components/ContentPane";
 
 export const ModernLayout = ({
   objects,
   customTitlebar,
-  switchingProfile,
   setMenuLayer,
 }: PropsWithChildren<{
   objects: IMainPage[];
   customTitlebar: boolean;
-  switchingProfile: boolean;
   setMenuLayer: (ref: HTMLDivElement | null) => void;
 }>) => {
   const { isFocused, isMenuOpen, isHidpi } = useWindowContext();
@@ -46,9 +45,9 @@ export const ModernLayout = ({
         <Header />
 
         <div className="flex h-full pr-3 pb-3">
-          <Menu />
+          <Menu objects={objects} />
 
-          <div className="grow rounded-xl bg-surface-low p-3">Content</div>
+          <ModernContentPane objects={objects} />
         </div>
       </div>
     </div>

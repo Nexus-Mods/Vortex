@@ -38,7 +38,7 @@ interface ICombinedSettingsPage {
 type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
 
 function registerSettings(
-  instanceGroup: undefined,
+  _instanceGroup: undefined,
   title: string,
   component: React.ComponentType<IBaseProps>,
   props: PropsCallbackTyped<IBaseProps>,

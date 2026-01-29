@@ -6,7 +6,7 @@ import * as semver from "semver";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 
-import { truthy } from "../../../util/util";
+import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
 import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";
@@ -26,14 +26,7 @@ export const Toolbar = (): JSX.Element | null => {
     (state: IState) => state.settings.window.customTitlebar,
   );
   const version = useSelector((state: IState) => state.app.appVersion);
-  const activeProfileId = useSelector(
-    (state: IState) => state.settings.profiles.activeProfileId,
-  );
-  const nextProfileId = useSelector(
-    (state: IState) => state.settings.profiles.nextProfileId,
-  );
-  const switchingProfile =
-    activeProfileId !== nextProfileId && truthy(nextProfileId);
+  const switchingProfile = useSwitchingProfile();
 
   const parsedVersion = semver.parse(version);
   const prerelease = parsedVersion?.prerelease[0] ?? "stable";

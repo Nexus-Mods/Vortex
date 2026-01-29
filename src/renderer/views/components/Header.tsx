@@ -6,16 +6,24 @@ import {
   mdiWindowClose,
   mdiBell,
   mdiHelpCircleOutline,
+  mdiWindowRestore,
 } from "@mdi/js";
 import React from "react";
 
 import { Button } from "../../../tailwind/components/next/button";
-import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../util/WindowContext";
+import {
+  minimize,
+  close,
+  toggleMaximize,
+  useIsMaximized,
+} from "../../../util/windowManipulation";
 
 export const Header = () => {
   const { isMenuOpen, setIsMenuOpen } = useWindowContext();
+
+  const isMaximized = useIsMaximized();
 
   return (
     <div className="flex h-12 items-center justify-between pr-3 pl-4.5">
@@ -30,7 +38,7 @@ export const Header = () => {
 
         {isMenuOpen && (
           <Typography appearance="moderate" className="truncate font-semibold">
-            Skyrim Special Edition
+            Home
           </Typography>
         )}
       </div>
@@ -58,13 +66,15 @@ export const Header = () => {
             leftIconPath={mdiWindowMinimize}
             size="sm"
             title="Minimize"
+            onClick={minimize}
           />
 
           <Button
             buttonType="tertiary"
-            leftIconPath={mdiWindowMaximize}
+            leftIconPath={isMaximized ? mdiWindowRestore : mdiWindowMaximize}
             size="sm"
-            title="Maximize"
+            title={isMaximized ? "Restore" : "Maximize"}
+            onClick={toggleMaximize}
           />
 
           <Button
@@ -72,6 +82,7 @@ export const Header = () => {
             leftIconPath={mdiWindowClose}
             size="sm"
             title="Close"
+            onClick={close}
           />
         </div>
       </div>
