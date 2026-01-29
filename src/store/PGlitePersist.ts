@@ -73,6 +73,7 @@ class PGlitePersist implements IPersistor {
       ),
     ).then((result) => {
       if (result.rows.length === 0) {
+        log("debug", "getItem key not found", { keyStr });
         return PromiseBB.reject(new Error(`Key not found: ${keyStr}`));
       }
       return result.rows[0].value;
@@ -106,6 +107,14 @@ class PGlitePersist implements IPersistor {
     return PromiseBB.resolve(
       this.mDB.query<{ key: string; value: string }>(query, params),
     ).then((result) => {
+      log("debug", "getAllKVs query result", {
+        prefix,
+        rowCount: result.rows.length,
+        sampleKeys:
+          result.rows.length > 0
+            ? result.rows.slice(0, 3).map((r) => r.key)
+            : [],
+      });
       return result.rows.map((row) => ({
         key: row.key.split(SEPARATOR),
         value: row.value,

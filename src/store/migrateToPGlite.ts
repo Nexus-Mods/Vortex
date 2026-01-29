@@ -186,6 +186,12 @@ async function migrateData(
   const allData = await readAllFromLevelDB(levelDb);
   log("info", `Migrating ${allData.length} records from LevelDB to PGlite`);
 
+  // Log some sample keys for debugging
+  if (allData.length > 0) {
+    const sampleKeys = allData.slice(0, 5).map((d) => d.key.join("###"));
+    log("info", "Sample keys being migrated", { sampleKeys });
+  }
+
   // Insert in batches
   for (let i = 0; i < allData.length; i += BATCH_SIZE) {
     const batch = allData.slice(i, i + BATCH_SIZE);
@@ -280,6 +286,25 @@ export async function createPGlitePersistorWithMigration(
         await pglite.close();
         throw err;
       }
+    }
+
+    // Verify PGlite has data
+    const allKeys = await pglite.getAllKeys();
+    log("info", "PGlite database status", {
+      keyCount: allKeys.length,
+      sampleKeys:
+        allKeys.length > 0 ? allKeys.slice(0, 5).map((k) => k.join("###")) : [],
+    });
+
+    if (allKeys.length === 0 && hasLevelDB) {
+      log(
+        "warn",
+        "PGlite is empty but LevelDB exists - forcing re-migration",
+      );
+      await migrateData(levelDb.db, pglite, true);
+
+      const newKeys = await pglite.getAllKeys();
+      log("info", "After forced re-migration", { keyCount: newKeys.length });
     }
 
     // Close LevelDB - we're done with it
