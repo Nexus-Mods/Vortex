@@ -52,8 +52,20 @@ class PGlitePersist implements IPersistor {
 
   private mDB: PGlite;
 
+  // Singleton instance for sharing with dev tools
+  private static sInstance: PGlitePersist | null = null;
+
   constructor(db: PGlite) {
     this.mDB = db;
+    PGlitePersist.sInstance = this;
+  }
+
+  /**
+   * Get the shared PGlite database instance.
+   * Used by dev tools like the SQL REPL to share the connection.
+   */
+  public static getSharedInstance(): PGlite | null {
+    return PGlitePersist.sInstance?.mDB ?? null;
   }
 
   public close = this.restackingFunc((): PromiseBB<void> => {

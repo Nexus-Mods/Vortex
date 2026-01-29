@@ -38,16 +38,18 @@ class PGlitePage extends React.Component<IPGlitePageProps, IPGlitePageState> {
 
   public async componentDidMount() {
     try {
-      // Dynamically import PGlite and the Repl component
-      const { PGlite } = await import("@electric-sql/pglite");
+      // Get the shared PGlite instance from the persistor
+      const PGlitePersist = (await import("../../../store/PGlitePersist"))
+        .default;
       const { Repl } = await import("@electric-sql/pglite-repl");
 
-      // Connect to the same database used by the app
-      const userDataPath = getVortexPath("userData");
-      const dbPath = path.join(userDataPath, "state.pglite");
+      const db = PGlitePersist.getSharedInstance();
 
-      const db = new PGlite(dbPath);
-      await db.waitReady;
+      if (!db) {
+        throw new Error(
+          "PGlite database not initialized. Make sure the app has started properly.",
+        );
+      }
 
       this.setState({
         db,
@@ -62,10 +64,8 @@ class PGlitePage extends React.Component<IPGlitePageProps, IPGlitePageState> {
     }
   }
 
-  public async componentWillUnmount() {
-    if (this.state.db) {
-      await this.state.db.close();
-    }
+  public componentWillUnmount() {
+    // Don't close the shared db instance - it's managed by the persistor
   }
 
   public render(): JSX.Element {
@@ -97,12 +97,20 @@ class PGlitePage extends React.Component<IPGlitePageProps, IPGlitePageState> {
                 and debug the PGlite state database.
               </p>
               <p
-                style={{ marginBottom: "10px", color: "#888", fontSize: "12px" }}
+                style={{
+                  marginBottom: "10px",
+                  color: "#888",
+                  fontSize: "12px",
+                }}
               >
                 Database: {path.join(getVortexPath("userData"), "state.pglite")}
               </p>
               <p
-                style={{ marginBottom: "10px", color: "#888", fontSize: "12px" }}
+                style={{
+                  marginBottom: "10px",
+                  color: "#888",
+                  fontSize: "12px",
+                }}
               >
                 Try: <code>SELECT * FROM vortex.state LIMIT 10;</code> or{" "}
                 <code>
