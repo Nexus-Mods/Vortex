@@ -1,4 +1,4 @@
-import type { LogLevel } from "@shared/types/logging";
+import type { Level } from "@shared/types/logging";
 
 import path from "path";
 import winston from "winston";
@@ -9,8 +9,13 @@ import { betterIpcMain } from "./ipc";
 type FormatOptions = {
   level: string;
   message?: string;
-  meta?: unknown;
+  meta: Metadata;
   timestamp: () => string;
+};
+
+type Metadata = {
+  process: "main" | "renderer";
+  extra?: string;
 };
 
 function customFormatter(options: FormatOptions, forConsole: boolean): string {
@@ -21,26 +26,16 @@ function customFormatter(options: FormatOptions, forConsole: boolean): string {
   // https://github.com/winstonjs/winston/blob/b8baf4c6797d652f882e61a8a3bd8d00875e5596/lib/winston/config.js#L21
   const logLevel = forConsole
     ? winston.config.colorize(
-      options.level as unknown as number,
-      formattedLogLevel,
-    )
+        options.level as unknown as number,
+        formattedLogLevel,
+      )
     : formattedLogLevel;
 
   const message = options.message ?? "";
-  let meta = "";
+  const meta = options.meta.extra ?? "";
+  const process = options.meta.process.toUpperCase();
 
-  if (options.meta) {
-    if (typeof options.meta === "string") {
-      meta = options.meta;
-    } else if (
-      typeof options.meta === "object" &&
-      Object.keys(options.meta).length > 0
-    ) {
-      meta = JSON.stringify(options.meta);
-    }
-  }
-
-  return `${timestamp} [${logLevel}] ${message} ${meta}`;
+  return `${timestamp} [${logLevel}] [${process}] ${message} ${meta}`;
 }
 
 function formatLogLevel(level: string): string {
@@ -83,10 +78,10 @@ function setupLogger(
 
   const consoleTransport = useConsole
     ? new winston.transports.Console({
-      level: "debug",
-      timestamp: timestamp,
-      formatter: formatter,
-    })
+        level: "debug",
+        timestamp: timestamp,
+        formatter: formatter,
+      })
     : undefined;
 
   const logger = new winston.Logger({
@@ -110,13 +105,25 @@ class LoggerSingleton {
     if (!this.#instance) throw new Error("Not initialized yet");
     return this.#instance;
   }
+
+  static log(level: Level, message: string, metadata?: unknown): void {
+    // TODO: broken logging because of the PresetManager import with side-effects
+    if (!this.#instance) {
+      console.log(`BROKEN LOGGING: ${level} ${message}`);
+    } else {
+      this.#instance.log(level, message, metadata);
+    }
+  }
 }
 
 export function setupLogging(basePath: string, useConsole: boolean): void {
   const logger = LoggerSingleton.initialize(setupLogger(basePath, useConsole));
 
   betterIpcMain.on("logging:log", (_, level, message, metadata) => {
-    logger.log(level, message, metadata);
+    logger.log(level, message, {
+      process: "renderer",
+      extra: metadata,
+    } satisfies Metadata);
   });
 }
 
@@ -128,10 +135,10 @@ export function changeLogPath(newBasePath: string): void {
   logger.add(fileTransport);
 }
 
-export function log(
-  level: LogLevel,
-  message: string,
-  metadata?: unknown,
-): void {
-  LoggerSingleton.instance().log(level, message, metadata);
+export function log(level: Level, message: string, metadata?: unknown): void {
+  const meta = metadata === undefined ? undefined : JSON.stringify(metadata);
+  LoggerSingleton.log(level, message, {
+    process: "main",
+    extra: meta,
+  } satisfies Metadata);
 }

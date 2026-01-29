@@ -2,7 +2,7 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type { LogLevel } from "./logging";
+import type { Level } from "./logging";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -12,7 +12,7 @@ export interface RendererChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be void.
 
   /** Logs a message */
-  "logging:log": (level: LogLevel, message: string, metadata?: string) => void;
+  "logging:log": (level: Level, message: string, metadata?: string) => void;
 
   // Examples:
   "example:renderer_foo": () => void;
