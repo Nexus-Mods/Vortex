@@ -1,7 +1,11 @@
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
-  process.on("message", (msg: any) => {
-    if (msg && msg.type === "get-app-info") {
+  process.on("message", (msg: unknown) => {
+    if (
+      typeof msg === "object" &&
+      "type" in msg &&
+      msg.type === "get-app-info"
+    ) {
       // You can expand this object with more info as needed
       process.send({
         type: "app-info",
@@ -22,16 +26,17 @@ if (process.send) {
  * entry point for the main process
  */
 import os from "os";
+
 import { VORTEX_VERSION } from "./shared/constants";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 import "./util/application.electron";
-import getVortexPath from "./util/getVortexPath";
-
 import { app, dialog } from "electron";
 import * as path from "path";
 
-const earlyErrHandler = (error) => {
+import getVortexPath from "./util/getVortexPath";
+
+const earlyErrHandler = (error: Error) => {
   if (error.stack.includes("[as dlopen]")) {
     dialog.showErrorBox(
       "Vortex failed to start up",
@@ -82,9 +87,9 @@ if (!process.argv.includes('--relaunched')
 }
 */
 
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
-
 import * as sourceMapSupport from "source-map-support";
+
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 sourceMapSupport.install();
 
 import requireRemap from "./util/requireRemap";
@@ -99,7 +104,6 @@ function setEnv(key: string, value: string, force?: boolean) {
 if (process.env.NODE_ENV !== "development") {
   setEnv("NODE_ENV", "production", true);
 } else {
-  // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require("./util/requireRebuild").default;
   rebuildRequire();
 }
@@ -139,42 +143,38 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
 import type * as winapiT from "winapi-bindings";
 
 try {
-  // tslint:disable-next-line:no-var-requires
   const winapi: typeof winapiT = require("winapi-bindings");
   winapi?.SetProcessPreferredUILanguages?.(["en-US"]);
 } catch (err) {
   // nop
 }
 
-import {} from "./util/requireRebuild";
-
-import Application from "./main/Application";
-
 import type { IPresetStep, IPresetStepCommandLine } from "./types/IPreset";
 
+import Application from "./main/Application";
 import commandLine, { relaunch } from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
 // ensures tsc includes this dependency
 // Activate vortex-api polyfill for all extension requires as early as possible
 import extensionRequire from "./util/extensionRequire";
+import {} from "./util/requireRebuild";
 extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
-import {} from "./util/extensionRequire";
+import type * as child_processT from "child_process";
 
 // required for the side-effect!
 import "./util/exeIcon";
 import "./util/monkeyPatching";
 import "./util/webview";
-
-import type * as child_processT from "child_process";
+import { getErrorMessage } from "./shared/errors";
+import {} from "./util/extensionRequire";
 import * as fs from "./util/fs";
 import presetManager from "./util/PresetManager";
-import { getErrorMessage } from "./shared/errors";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
 let application: Application;
 
-const handleError = (error: any) => {
+const handleError = (error: Error) => {
   if (Application.shouldIgnoreError(error)) {
     return;
   }
@@ -315,19 +315,18 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch("remote-debugging-port", DEBUG_PORT);
   }
 
-  // tslint:disable-next-line:no-submodule-imports
   try {
-    require("@electron/remote/main").initialize();
+    const remote = await import("@electron/remote/main");
+    remote.initialize();
   } catch (err) {
     const message = getErrorMessage(err);
     if (message && !message.includes("already been initialized")) {
       throw err;
     }
-
-    // @electron/remote already initialized, continue
   }
 
-  let fixedT = require("i18next").getFixedT("en");
+  let fixedT = (await import("i18next")).default.getFixedT("en");
+
   try {
     fixedT("dummy");
   } catch {
@@ -343,4 +342,4 @@ async function main(): Promise<void> {
   application = new Application(mainArgs);
 }
 
-main();
+main().catch((err: unknown) => console.error("failed to start", err));
