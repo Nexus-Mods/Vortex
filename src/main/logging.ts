@@ -1,0 +1,137 @@
+import type { LogLevel } from "@shared/types/logging";
+
+import path from "path";
+import winston from "winston";
+
+import { betterIpcMain } from "./ipc";
+
+// NOTE(erri120): There are no type definitions from the winston 2.x package for this, so here's a custom one:
+type FormatOptions = {
+  level: string;
+  message?: string;
+  meta?: unknown;
+  timestamp: () => string;
+};
+
+function customFormatter(options: FormatOptions, forConsole: boolean): string {
+  const formattedLogLevel = formatLogLevel(options.level);
+  const timestamp = options.timestamp();
+
+  // NOTE(erri120): looks weird but is correct, config.colorize is mistyped in 2.x
+  // https://github.com/winstonjs/winston/blob/b8baf4c6797d652f882e61a8a3bd8d00875e5596/lib/winston/config.js#L21
+  const logLevel = forConsole
+    ? winston.config.colorize(
+      options.level as unknown as number,
+      formattedLogLevel,
+    )
+    : formattedLogLevel;
+
+  const message = options.message ?? "";
+  let meta = "";
+
+  if (options.meta) {
+    if (typeof options.meta === "string") {
+      meta = options.meta;
+    } else if (
+      typeof options.meta === "object" &&
+      Object.keys(options.meta).length > 0
+    ) {
+      meta = JSON.stringify(options.meta);
+    }
+  }
+
+  return `${timestamp} [${logLevel}] ${message} ${meta}`;
+}
+
+function formatLogLevel(level: string): string {
+  switch (level) {
+    case "debug":
+      return "DEBG";
+    case "info":
+      return "INFO";
+    case "warn":
+      return "WARN";
+    case "error":
+      return "ERRO";
+    default:
+      return level.toUpperCase();
+  }
+}
+
+const timestamp = () => new Date().toISOString();
+const formatter = (options: unknown) =>
+  customFormatter(options as FormatOptions, true);
+
+function createFileTransport(basePath: string): winston.FileTransportInstance {
+  return new winston.transports.File({
+    filename: path.join(basePath, "vortex.log"),
+    json: false,
+    level: "debug",
+    maxsize: 1024 * 1024,
+    maxFiles: 5,
+    tailable: true,
+    timestamp: timestamp,
+    formatter: formatter,
+  });
+}
+
+function setupLogger(
+  basePath: string,
+  useConsole: boolean,
+): winston.LoggerInstance {
+  const fileTransport = createFileTransport(basePath);
+
+  const consoleTransport = useConsole
+    ? new winston.transports.Console({
+      level: "debug",
+      timestamp: timestamp,
+      formatter: formatter,
+    })
+    : undefined;
+
+  const logger = new winston.Logger({
+    level: "debug",
+    transports: [fileTransport, consoleTransport],
+  });
+
+  return logger;
+}
+
+class LoggerSingleton {
+  static #instance: winston.LoggerInstance | null = null;
+
+  static initialize(instance: winston.LoggerInstance): winston.LoggerInstance {
+    if (this.#instance) throw new Error("Already initialized");
+    this.#instance = instance;
+    return this.#instance;
+  }
+
+  static instance(): winston.LoggerInstance {
+    if (!this.#instance) throw new Error("Not initialized yet");
+    return this.#instance;
+  }
+}
+
+export function setupLogging(basePath: string, useConsole: boolean): void {
+  const logger = LoggerSingleton.initialize(setupLogger(basePath, useConsole));
+
+  betterIpcMain.on("logging:log", (_, level, message, metadata) => {
+    logger.log(level, message, metadata);
+  });
+}
+
+export function changeLogPath(newBasePath: string): void {
+  const logger = LoggerSingleton.instance();
+  const fileTransport = createFileTransport(newBasePath);
+
+  logger.remove(winston.transports.File);
+  logger.add(fileTransport);
+}
+
+export function log(
+  level: LogLevel,
+  message: string,
+  metadata?: unknown,
+): void {
+  LoggerSingleton.instance().log(level, message, metadata);
+}
