@@ -1,5 +1,7 @@
 import type { IPersistor } from "../types/IExtensionContext";
 import { log } from "../util/log";
+import * as fs from "../util/fs";
+import * as path from "path";
 
 import PromiseBB from "bluebird";
 import type { PGlite } from "@electric-sql/pglite";
@@ -14,21 +16,162 @@ export class DatabaseLocked extends Error {
   }
 }
 
-async function openDB(dbPath: string): Promise<PGlite> {
-  const { PGlite: PGliteClass } = await import("@electric-sql/pglite");
-  const db = new PGliteClass(dbPath);
-  await db.waitReady;
+// Version marker for PGlite database format compatibility
+// Increment this when upgrading PGlite to a version with incompatible storage format
+const PGLITE_VERSION_MARKER = "pglite-v0.3";
+const VERSION_FILE_NAME = ".vortex-pglite-version";
 
-  // Create schema and table if they don't exist
-  await db.exec(`
-    CREATE SCHEMA IF NOT EXISTS vortex;
-    CREATE TABLE IF NOT EXISTS vortex.state (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL
+/**
+ * Check if a directory exists
+ */
+async function directoryExists(dirPath: string): Promise<boolean> {
+  try {
+    const stat = await fs.statAsync(dirPath);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get the version marker from an existing PGlite database directory
+ */
+async function getDbVersionMarker(dbPath: string): Promise<string | null> {
+  const versionFilePath = path.join(dbPath, VERSION_FILE_NAME);
+  try {
+    const version = await fs.readFileAsync(versionFilePath, "utf8");
+    return version.trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write the version marker to a PGlite database directory
+ */
+async function writeDbVersionMarker(dbPath: string): Promise<void> {
+  const versionFilePath = path.join(dbPath, VERSION_FILE_NAME);
+  await fs.writeFileAsync(versionFilePath, PGLITE_VERSION_MARKER, {
+    encoding: "utf8",
+  });
+}
+
+/**
+ * Backup an existing database directory by renaming it
+ */
+async function backupExistingDb(dbPath: string): Promise<void> {
+  const timestamp = Date.now();
+  const backupPath = `${dbPath}.backup.${timestamp}`;
+  log("warn", "Backing up incompatible PGlite database", {
+    from: dbPath,
+    to: backupPath,
+  });
+  await fs.renameAsync(dbPath, backupPath);
+}
+
+/**
+ * Check database compatibility and handle version mismatches.
+ * This MUST be called before attempting to open PGlite, because
+ * opening an incompatible database causes an uncatchable WASM trap
+ * that crashes the entire process.
+ */
+async function ensureDbCompatibility(dbPath: string): Promise<void> {
+  const dbExists = await directoryExists(dbPath);
+
+  if (!dbExists) {
+    // Fresh database, nothing to check
+    log("debug", "PGlite database does not exist yet", { dbPath });
+    return;
+  }
+
+  const existingVersion = await getDbVersionMarker(dbPath);
+
+  if (existingVersion === PGLITE_VERSION_MARKER) {
+    // Version matches, safe to open
+    log("debug", "PGlite database version is compatible", {
+      dbPath,
+      version: existingVersion,
+    });
+    return;
+  }
+
+  if (existingVersion === null) {
+    // No version marker - this could be:
+    // 1. A database from before we added version markers
+    // 2. A corrupted/incomplete database
+    // Either way, it's potentially incompatible - backup and recreate
+    log(
+      "warn",
+      "PGlite database has no version marker - may be from older incompatible version",
+      { dbPath },
     );
-  `);
+    await backupExistingDb(dbPath);
+    return;
+  }
 
-  return db;
+  // Version mismatch - backup and recreate
+  log("warn", "PGlite database version mismatch - backing up and recreating", {
+    dbPath,
+    existingVersion,
+    requiredVersion: PGLITE_VERSION_MARKER,
+  });
+  await backupExistingDb(dbPath);
+}
+
+async function openDB(dbPath: string): Promise<PGlite> {
+  log("info", "Opening PGlite database", { dbPath });
+
+  try {
+    // IMPORTANT: Check compatibility BEFORE attempting to open
+    // Opening an incompatible database causes an uncatchable WASM trap
+    await ensureDbCompatibility(dbPath);
+
+    // Ensure the database directory exists
+    await fs.ensureDirAsync(dbPath);
+    log("debug", "PGlite database directory ensured", { dbPath });
+
+    const { PGlite: PGliteClass } = await import("@electric-sql/pglite");
+    log("debug", "PGlite module loaded successfully");
+
+    // Log WASM-related information for debugging
+    log("debug", "PGlite environment info", {
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      electronVersion: process.versions.electron,
+    });
+
+    // Use the static create method which handles initialization properly
+    log("debug", "Creating PGlite instance...");
+    const db = await PGliteClass.create(dbPath);
+    log("debug", "PGlite instance created and ready");
+
+    // Write version marker after successful open
+    await writeDbVersionMarker(dbPath);
+
+    // Create schema and table if they don't exist
+    await db.exec(`
+      CREATE SCHEMA IF NOT EXISTS vortex;
+      CREATE TABLE IF NOT EXISTS vortex.state (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+    log("debug", "PGlite schema initialized");
+
+    return db;
+  } catch (err) {
+    log("error", "Failed to open PGlite database", {
+      dbPath,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      // Additional debug info
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+    });
+    throw err;
+  }
 }
 
 class PGlitePersist implements IPersistor {
@@ -39,13 +182,34 @@ class PGlitePersist implements IPersistor {
     return PromiseBB.resolve(openDB(persistPath))
       .then((db) => new PGlitePersist(db))
       .catch((err) => {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const isLockError = errMsg.includes("lock") || errMsg.includes("LOCK");
+
         if (tries === 0) {
-          log("info", "failed to open pglite db", err);
-          return PromiseBB.reject(new DatabaseLocked());
-        } else {
+          log("error", "failed to open pglite db after all retries", {
+            error: errMsg,
+            stack: err instanceof Error ? err.stack : undefined,
+            persistPath,
+          });
+          // Only throw DatabaseLocked if it was actually a lock error
+          if (isLockError) {
+            return PromiseBB.reject(new DatabaseLocked());
+          }
+          return PromiseBB.reject(err);
+        } else if (isLockError) {
+          // Only retry for lock errors
+          log("debug", "pglite db locked, retrying", { tries, error: errMsg });
           return PromiseBB.delay(500).then(() =>
             PGlitePersist.create(persistPath, tries - 1),
           );
+        } else {
+          // For non-lock errors, fail immediately with the real error
+          log("error", "failed to open pglite db", {
+            error: errMsg,
+            stack: err instanceof Error ? err.stack : undefined,
+            persistPath,
+          });
+          return PromiseBB.reject(err);
         }
       });
   }
