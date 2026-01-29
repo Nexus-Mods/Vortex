@@ -2310,9 +2310,9 @@ function init(context: IExtensionContext): boolean {
   context.registerDialog(
     "fix-deployment",
     LazyComponent(() => require("./views/FixDeploymentDialog")),
-    () => {
+    () => ({
       // nop
-    },
+    }),
   );
 
   context.registerDialog(

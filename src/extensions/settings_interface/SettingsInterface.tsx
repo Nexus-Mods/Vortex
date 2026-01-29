@@ -76,7 +76,7 @@ interface ILanguage {
   ext: Array<Partial<IExtensionDownloadInfo>>;
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   startup: IParameters;
   changeStartup: (key: string, value: any) => void;
 }

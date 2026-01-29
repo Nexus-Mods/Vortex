@@ -84,8 +84,8 @@ import {
 } from "./actions/notifications";
 import reducer, { Decision } from "./reducers/index";
 import { log } from "./renderer/logging";
+import { AppLayout } from "./renderer/views/AppLayout";
 import LoadingScreen from "./renderer/views/LoadingScreen";
-import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
@@ -769,11 +769,7 @@ async function load(extensions: ExtensionManager): Promise<void> {
       <DndProvider backend={HTML5Backend}>
         <I18nextProvider i18n={i18n}>
           <ExtensionContext.Provider value={extensions}>
-            <MainWindow
-              api={extensions.getApi()}
-              className="full-height"
-              t={tFunc}
-            />
+            <AppLayout className="full-height" />
           </ExtensionContext.Provider>
         </I18nextProvider>
       </DndProvider>
