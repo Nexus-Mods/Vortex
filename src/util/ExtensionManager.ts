@@ -3082,6 +3082,7 @@ class ExtensionManager {
       "onboarding_dashlet",
       "mod_spotlights_dashlet",
       "tailwind_dev",
+      "pglite_dev",
       "browse_nexus",
       "installer_dotnet",
       "installer_nested_fomod",

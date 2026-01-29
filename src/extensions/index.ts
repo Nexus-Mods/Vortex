@@ -46,4 +46,5 @@ import {} from "./updater";
 import {} from "./onboarding_dashlet";
 import {} from "./mod_spotlights_dashlet";
 import {} from "./tailwind_dev";
+import {} from "./pglite_dev";
 import {} from "./browse_nexus";
