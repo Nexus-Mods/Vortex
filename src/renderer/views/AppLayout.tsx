@@ -17,6 +17,7 @@ import type { IRegisteredExtension } from "../../util/ExtensionManager";
 
 import { setOpenMainPage } from "../../actions/session";
 import { setUseModernLayout } from "../../actions/window";
+import { Button } from "../../tailwind/components/next/button";
 import {
   ExtensionContext,
   useExtensionObjects,
@@ -144,7 +145,7 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     () => (global.screen?.width ?? 0) > 1920,
   );
   const [focused, setFocused] = React.useState(true);
-  const [menuOpen, setMenuOpen] = React.useState(true);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   const menuLayerRef = React.useRef<HTMLDivElement | null>(null);
   const menuObserverRef = React.useRef<MutationObserver | undefined>(undefined);
@@ -289,9 +290,12 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   const windowContextValue: IWindowContext = React.useMemo(
     () => ({
       isFocused: focused,
-      isMenuOpen: menuOpen,
+      menuIsCollapsed: !menuOpen,
       isHidpi: hidpi,
-      setIsMenuOpen: setMenuOpen,
+      setMenuIsCollapsed: (value) =>
+        setMenuOpen(
+          typeof value === "function" ? (open) => !value(!open) : !value,
+        ),
     }),
     [focused, menuOpen, hidpi],
   );
@@ -323,24 +327,14 @@ export const AppLayout: React.FC<IBaseProps> = () => {
               )}
             </MutexProvider>
 
-            <button
-              style={{
-                position: "fixed",
-                bottom: 16,
-                right: 16,
-                zIndex: 9999,
-                padding: "8px 12px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: "#da8e35",
-                color: "white",
-                cursor: "pointer",
-                fontSize: 12,
-              }}
+            <Button
+              buttonType="primary"
+              className="fixed right-4 bottom-4 z-toast"
+              size="sm"
               onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
             >
               {useModernLayout ? "Switch to Classic" : "Switch to Modern"}
-            </button>
+            </Button>
           </LegacyContextProvider>
         </MainContext.Provider>
       </WindowProvider>

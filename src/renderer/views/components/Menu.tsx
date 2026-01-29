@@ -23,7 +23,7 @@ const Button = ({
   isActive?: boolean;
   isCollapsed?: boolean;
 }) => {
-  const { isMenuOpen } = useWindowContext();
+  const { menuIsCollapsed } = useWindowContext();
 
   return (
     <button
@@ -32,13 +32,13 @@ const Button = ({
         isActive
           ? "bg-surface-low text-neutral-moderate"
           : "text-neutral-subdued",
-        isMenuOpen ? "px-3" : "w-10 justify-center",
+        menuIsCollapsed ? "w-10 justify-center" : "px-3",
       ])}
       {...props}
     >
       <Icon className="shrink-0" path={iconPath} size="sm" />
 
-      {isMenuOpen && (
+      {!menuIsCollapsed && (
         <Typography
           appearance="none"
           as="span"
@@ -53,13 +53,13 @@ const Button = ({
 };
 
 export const Menu = () => {
-  const { isMenuOpen } = useWindowContext();
+  const { menuIsCollapsed } = useWindowContext();
 
   return (
     <div
       className={joinClasses([
         "flex shrink-0 flex-col gap-y-0.5 px-3",
-        isMenuOpen ? "w-56" : "w-16",
+        menuIsCollapsed ? "w-16" : "w-56",
       ])}
     >
       <Button iconPath={mdiViewDashboard} isActive={true}>

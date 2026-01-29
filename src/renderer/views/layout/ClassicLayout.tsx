@@ -26,7 +26,7 @@ export const ClassicLayout: React.FC<IClassicLayoutProps> = ({
   switchingProfile,
   setMenuLayer,
 }) => {
-  const { isFocused, isMenuOpen, isHidpi } = useWindowContext();
+  const { isFocused, menuIsCollapsed, isHidpi } = useWindowContext();
 
   const classes: string[] = [];
   classes.push(isHidpi ? "hidpi" : "lodpi");
@@ -34,7 +34,7 @@ export const ClassicLayout: React.FC<IClassicLayoutProps> = ({
   if (customTitlebar) {
     classes.push("window-frame");
   }
-  if (isMenuOpen) {
+  if (!menuIsCollapsed) {
     classes.push("menu-open");
   }
   if (startupSettings.disableGPU) {

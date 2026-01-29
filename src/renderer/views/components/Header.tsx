@@ -10,25 +10,24 @@ import {
 import React from "react";
 
 import { Button } from "../../../tailwind/components/next/button";
-import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../util/WindowContext";
 
 export const Header = () => {
-  const { isMenuOpen, setIsMenuOpen } = useWindowContext();
+  const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
 
   return (
     <div className="flex h-12 items-center justify-between pr-3 pl-4.5">
       <div className="flex items-center gap-x-2.5">
         <Button
           buttonType="tertiary"
-          leftIconPath={isMenuOpen ? mdiMenuOpen : mdiMenuClose}
+          leftIconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
           size="sm"
-          title={isMenuOpen ? "Collapse menu" : "Open menu"}
-          onClick={() => setIsMenuOpen((open) => !open)}
+          title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
+          onClick={() => setMenuIsCollapsed((open) => !open)}
         />
 
-        {isMenuOpen && (
+        {!menuIsCollapsed && (
           <Typography appearance="moderate" className="truncate font-semibold">
             Skyrim Special Edition
           </Typography>

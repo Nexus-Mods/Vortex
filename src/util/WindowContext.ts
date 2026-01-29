@@ -7,16 +7,16 @@ import {
 
 export interface IWindowContext {
   isFocused: boolean;
-  isMenuOpen: boolean;
+  menuIsCollapsed: boolean;
   isHidpi: boolean;
-  setIsMenuOpen: Dispatch<SetStateAction<boolean>>;
+  setMenuIsCollapsed: Dispatch<SetStateAction<boolean>>;
 }
 
 const defaultValue: IWindowContext = {
   isFocused: true,
-  isMenuOpen: false,
+  menuIsCollapsed: false,
   isHidpi: false,
-  setIsMenuOpen: () => {},
+  setMenuIsCollapsed: () => {},
 };
 
 const WindowContext = createContext<IWindowContext>(defaultValue);
