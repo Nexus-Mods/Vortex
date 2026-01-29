@@ -9,7 +9,12 @@ import {
   mdiWindowRestore,
   mdiAccountCircle,
 } from "@mdi/js";
-import React, { type ButtonHTMLAttributes } from "react";
+import React, {
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  useCallback,
+  useMemo,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -30,21 +35,40 @@ import { useSpineContext } from "./SpineContext";
 const IconButton = ({
   className,
   iconPath,
+  imageSrc,
+  isAvatar,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   className?: string;
   iconPath: string;
-}) => (
-  <button
-    className={joinClasses([
-      "flex size-7 items-center justify-center rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong",
-      className,
-    ])}
-    {...props}
-  >
-    <Icon path={iconPath} />
-  </button>
-);
+  imageSrc?: string;
+  isAvatar?: boolean;
+}) => {
+  const hasImage = !!imageSrc;
+
+  return (
+    <button
+      className={joinClasses([
+        "flex size-7 items-center justify-center",
+        hasImage || isAvatar
+          ? "hover-overlay relative overflow-hidden rounded-full"
+          : "rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong",
+        className,
+      ])}
+      {...props}
+    >
+      {hasImage ? (
+        <img alt="" className="size-6 rounded-full" src={imageSrc} />
+      ) : (
+        <Icon
+          className={isAvatar ? "size-6" : "size-5"}
+          path={iconPath}
+          size="none"
+        />
+      )}
+    </button>
+  );
+};
 
 const WindowControl = ({
   className,
@@ -75,7 +99,7 @@ export const Header = () => {
 
   const isMaximized = useIsMaximized();
 
-  const title = React.useMemo(() => {
+  const title = useMemo(() => {
     if (selection.type === "home") {
       return t("Home");
     }
@@ -83,18 +107,18 @@ export const Header = () => {
     return game?.name ?? t("Home");
   }, [selection, knownGames, t]);
 
-  const handleToggleMenu = React.useCallback(() => {
+  const handleToggleMenu = useCallback(() => {
     setMenuIsCollapsed((prev) => !prev);
   }, [setMenuIsCollapsed]);
 
   return (
     <div
-      className="flex h-11 items-center justify-between pl-5"
-      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      className="flex h-11 items-center justify-between pl-4"
+      style={{ WebkitAppRegion: "drag" } as CSSProperties}
     >
       <div
         className="flex items-center gap-x-1"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
       >
         <IconButton
           iconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
@@ -109,14 +133,28 @@ export const Header = () => {
 
       <div
         className="flex items-center gap-x-4"
-        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
       >
-        <div className="flex gap-x-3">
+        {/* todo show if user is premium */}
+        <Typography
+          appearance="moderate"
+          className="leading-5"
+          typographyType="title-sm"
+        >
+          Premium
+        </Typography>
+
+        <div className="flex gap-x-2">
           <IconButton iconPath={mdiBell} title="Notifications" />
 
           <IconButton iconPath={mdiHelpCircleOutline} title="Help" />
 
-          <IconButton iconPath={mdiAccountCircle} title="Profile" />
+          <IconButton
+            iconPath={mdiAccountCircle}
+            imageSrc="https://avatars.nexusmods.com/138908768/100"
+            isAvatar={true}
+            title="Profile"
+          />
         </div>
 
         <div className="h-6 w-px bg-stroke-weak" />

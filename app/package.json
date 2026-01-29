@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
+    "@headlessui/react": "^1.7.19",
     "@mdi/js": "7.4.47",
     "@msgpack/msgpack": "^2.7.0",
     "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
