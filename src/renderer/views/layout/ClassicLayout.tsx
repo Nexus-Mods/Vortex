@@ -3,6 +3,7 @@ import * as React from "react";
 import type { IMainPage } from "../../../types/IMainPage";
 
 import startupSettings from "../../../util/startupSettings";
+import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
 import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
 import { WindowControls } from "../WindowControls";
@@ -16,17 +17,16 @@ import { UIBlocker } from "./UIBlocker";
 export interface IClassicLayoutProps {
   objects: IMainPage[];
   customTitlebar: boolean;
-  switchingProfile: boolean;
   setMenuLayer: (ref: HTMLDivElement | null) => void;
 }
 
 export const ClassicLayout: React.FC<IClassicLayoutProps> = ({
   objects,
   customTitlebar,
-  switchingProfile,
   setMenuLayer,
 }) => {
   const { isFocused, menuIsCollapsed, isHidpi } = useWindowContext();
+  const switchingProfile = useSwitchingProfile();
 
   const classes: string[] = [];
   classes.push(isHidpi ? "hidpi" : "lodpi");

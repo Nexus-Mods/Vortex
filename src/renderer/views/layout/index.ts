@@ -1,3 +1,4 @@
+export * from "../components/ContentPane";
 export * from "./ClassicLayout";
 export * from "./ContentPane";
 export * from "./DialogLayer";
@@ -9,3 +10,4 @@ export * from "./Sidebar";
 export * from "./ToastContainer";
 export * from "./Toolbar";
 export * from "./UIBlocker";
+export * from "./usePageRendering";

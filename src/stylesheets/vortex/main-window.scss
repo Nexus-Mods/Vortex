@@ -118,13 +118,6 @@
     -webkit-app-region: no-drag;
 }
 
-// disable drag while any menu is open. They should close anyway if you click outside the menu
-// and if you click inside you don't want to move the window
-.menu-open #main-toolbar.toolbar-app-region,
-.menu-open#overlays {
-    -webkit-app-region: no-drag;
-}
-
 // we need a way to move the window while a modal is open though, otherwise a user
 // may get into a situation where the modal controls are off-screen so he can't close
 // the modal and he can't move it into view
@@ -355,7 +348,8 @@
     display: flex;
     flex-direction: column;
 
-    &.current {
+    &.current,
+    &.page-active {
         opacity: 1;
         z-index: 1000;
         transition-delay: 0s;

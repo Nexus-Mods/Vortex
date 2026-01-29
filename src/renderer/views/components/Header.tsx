@@ -6,19 +6,52 @@ import {
   mdiWindowClose,
   mdiBell,
   mdiHelpCircleOutline,
+  mdiWindowRestore,
 } from "@mdi/js";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+
+import type { IState } from "../../../types/IState";
 
 import { Button } from "../../../tailwind/components/next/button";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../util/WindowContext";
+import {
+  close,
+  minimize,
+  toggleMaximize,
+  useIsMaximized,
+} from "../../../util/windowManipulation";
+import { useSpineContext } from "./SpineContext";
 
 export const Header = () => {
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
+  const { t } = useTranslation();
+  const { selection } = useSpineContext();
+  const knownGames = useSelector(
+    (state: IState) => state.session.gameMode.known,
+  );
+
+  const isMaximized = useIsMaximized();
+
+  const title = React.useMemo(() => {
+    if (selection.type === "home") {
+      return t("Home");
+    }
+    const game = knownGames.find((g) => g.id === selection.gameId);
+    return game?.name ?? t("Home");
+  }, [selection, knownGames, t]);
 
   return (
-    <div className="flex h-12 items-center justify-between pr-3 pl-4.5">
-      <div className="flex items-center gap-x-2.5">
+    <div
+      className="flex h-12 items-center justify-between pr-3 pl-4.5"
+      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+    >
+      <div
+        className="flex items-center gap-x-2.5"
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+      >
         <Button
           buttonType="tertiary"
           leftIconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
@@ -29,12 +62,15 @@ export const Header = () => {
 
         {!menuIsCollapsed && (
           <Typography appearance="moderate" className="truncate font-semibold">
-            Skyrim Special Edition
+            {title}
           </Typography>
         )}
       </div>
 
-      <div className="flex items-center gap-x-8">
+      <div
+        className="flex items-center gap-x-8"
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+      >
         <div className="flex gap-x-3">
           <Button
             buttonType="tertiary"
@@ -57,13 +93,15 @@ export const Header = () => {
             leftIconPath={mdiWindowMinimize}
             size="sm"
             title="Minimize"
+            onClick={minimize}
           />
 
           <Button
             buttonType="tertiary"
-            leftIconPath={mdiWindowMaximize}
+            leftIconPath={isMaximized ? mdiWindowRestore : mdiWindowMaximize}
             size="sm"
-            title="Maximize"
+            title={isMaximized ? "Restore" : "Maximize"}
+            onClick={toggleMaximize}
           />
 
           <Button
@@ -71,6 +109,7 @@ export const Header = () => {
             leftIconPath={mdiWindowClose}
             size="sm"
             title="Close"
+            onClick={close}
           />
         </div>
       </div>

@@ -2,7 +2,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IProfile, IState } from "../../../types/IState";
+import type { IState } from "../../../types/IState";
 
 import { setDialogVisible } from "../../../actions/session";
 import { getSafe } from "../../../util/storeHelper";
@@ -10,6 +10,16 @@ import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
+
+// TODO: Move to redux
+type IProgressProfile = {
+  deploying?: IProfileDeploying;
+};
+
+type IProfileDeploying = {
+  percent: number;
+  text: string;
+};
 
 export const ProfileSwitcher = (): JSX.Element => {
   const { t } = useTranslation();
@@ -20,7 +30,11 @@ export const ProfileSwitcher = (): JSX.Element => {
   );
   const profiles = useSelector((state: IState) => state.persistent.profiles);
   const progressProfile = useSelector((state: IState) =>
-    getSafe(state.session.base, ["progress", "profile"], undefined),
+    getSafe<IProgressProfile | undefined>(
+      state.session.base,
+      ["progress", "profile"],
+      undefined,
+    ),
   );
   const visibleDialog = useSelector(
     (state: IState) => state.session.base.visibleDialog || undefined,
@@ -30,7 +44,11 @@ export const ProfileSwitcher = (): JSX.Element => {
     dispatch(setDialogVisible(undefined));
   }, [dispatch]);
 
-  const progress = getSafe(progressProfile, ["deploying"], undefined);
+  const progress = getSafe<IProfileDeploying | undefined>(
+    progressProfile,
+    ["deploying"],
+    undefined,
+  );
   const profile =
     nextProfileId !== undefined ? profiles[nextProfileId] : undefined;
 

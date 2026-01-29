@@ -23,7 +23,6 @@ import {
   useExtensionObjects,
 } from "../../util/ExtensionProvider";
 import { createQueue, MutexProvider } from "../../util/MutexContext";
-import { truthy } from "../../util/util";
 import { type IWindowContext, WindowProvider } from "../../util/WindowContext";
 import Spinner from "../controls/Spinner";
 import { ClassicLayout, ModernLayout } from "./layout";
@@ -121,12 +120,6 @@ export const AppLayout: React.FC<IBaseProps> = () => {
   const api = extensions.getApi();
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const activeProfileId = useSelector(
-    (state: IState) => state.settings.profiles.activeProfileId,
-  );
-  const nextProfileId = useSelector(
-    (state: IState) => state.settings.profiles.nextProfileId,
-  );
   const customTitlebar = useSelector(
     (state: IState) => state.settings.window.customTitlebar,
   );
@@ -275,9 +268,6 @@ export const AppLayout: React.FC<IBaseProps> = () => {
     }
   }, [mainPage, objects, onSetOpenMainPage]);
 
-  const switchingProfile =
-    activeProfileId !== nextProfileId && truthy(nextProfileId);
-
   const contextValue: IComponentContext = React.useMemo(
     () => ({
       api,
@@ -315,14 +305,12 @@ export const AppLayout: React.FC<IBaseProps> = () => {
                   customTitlebar={customTitlebar}
                   objects={objects}
                   setMenuLayer={setMenuLayer}
-                  switchingProfile={switchingProfile}
                 />
               ) : (
                 <ClassicLayout
                   customTitlebar={customTitlebar}
                   objects={objects}
                   setMenuLayer={setMenuLayer}
-                  switchingProfile={switchingProfile}
                 />
               )}
             </MutexProvider>

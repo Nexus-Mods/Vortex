@@ -4,53 +4,72 @@ import type { IMainPage } from "../../../types/IMainPage";
 
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import startupSettings from "../../../util/startupSettings";
+import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
 import { useWindowContext } from "../../../util/WindowContext";
+import { ModernContentPane } from "../components/ContentPane";
 import { Header } from "../components/Header";
 import { Menu } from "../components/Menu";
 import { Spine } from "../components/Spine";
+import { SpineProvider } from "../components/SpineContext";
+import { DialogLayer } from "./DialogLayer";
+import { ProfileSwitcher } from "./ProfileSwitcher";
+import { ToastContainer } from "./ToastContainer";
+import { UIBlocker } from "./UIBlocker";
 
 export const ModernLayout = ({
   objects,
   customTitlebar,
-  switchingProfile,
   setMenuLayer,
 }: PropsWithChildren<{
   objects: IMainPage[];
   customTitlebar: boolean;
-  switchingProfile: boolean;
   setMenuLayer: (ref: HTMLDivElement | null) => void;
 }>) => {
   const { isFocused, menuIsCollapsed, isHidpi } = useWindowContext();
 
+  const switchingProfile = useSwitchingProfile();
+
   return (
-    <div
-      className={joinClasses(
-        [
-          "flex h-full bg-surface-base",
-          isHidpi ? "hidpi" : "lodpi",
-          isFocused ? "window-focused" : "window-unfocused",
-        ],
-        {
-          "window-frame": customTitlebar,
-          "menu-open": !menuIsCollapsed,
-          "no-gpu-acceleration": startupSettings.disableGPU,
-        },
-      )}
-      key="main"
-    >
-      {/*<div className="menu-layer" ref={setMenuLayer} />*/}
+    <SpineProvider>
+      <div
+        className={joinClasses(
+          [
+            "flex h-full bg-surface-base",
+            isHidpi ? "hidpi" : "lodpi",
+            isFocused ? "window-focused" : "window-unfocused",
+          ],
+          {
+            "window-frame": customTitlebar,
+            "menu-open": !menuIsCollapsed,
+            "no-gpu-acceleration": startupSettings.disableGPU,
+          },
+        )}
+        key="main"
+      >
+        <div className="menu-layer" ref={setMenuLayer} />
 
-      <Spine />
+        <Spine />
 
-      <div className="flex grow flex-col">
-        <Header />
+        <div className="flex grow flex-col">
+          <Header />
 
-        <div className="flex h-full pr-3 pb-3">
-          <Menu />
+          {switchingProfile ? (
+            <ProfileSwitcher />
+          ) : (
+            <div className="flex h-full pr-3 pb-3">
+              <Menu objects={objects} />
 
-          <div className="grow rounded-xl bg-surface-low p-3">Content</div>
+              <ModernContentPane objects={objects} />
+
+              <DialogLayer />
+
+              <ToastContainer />
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      <UIBlocker />
+    </SpineProvider>
   );
 };

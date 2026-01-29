@@ -8,19 +8,8 @@ import { setOpenMainPage } from "../../../actions/session";
 import { setTabsMinimized } from "../../../actions/window";
 import { getSafe } from "../../../util/storeHelper";
 import FlexLayout from "../../controls/FlexLayout";
-import { MainPageContainer } from "../MainPageContainer";
-import { Settings } from "../Settings";
 import { ContentPane, Sidebar } from "./index";
-
-const settingsPage: IMainPage = {
-  id: "application_settings",
-  title: "Settings",
-  group: "global",
-  component: Settings,
-  icon: "settings",
-  propsFunc: () => undefined,
-  visible: () => true,
-};
+import { settingsPage, usePageRendering } from "./usePageRendering";
 
 export interface IMainLayoutProps {
   objects: IMainPage[];
@@ -30,26 +19,12 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
   const { objects } = props;
   const dispatch = useDispatch();
 
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const secondaryPage = useSelector(
-    (state: IState) => state.session.base.secondaryPage,
-  );
+  const { mainPage, secondaryPage, setLoadedPages, renderPage } =
+    usePageRendering();
+
   const tabsMinimized = useSelector((state: IState) =>
     getSafe(state, ["settings", "window", "tabsMinimized"], false),
   );
-
-  const [loadedPages, setLoadedPages] = React.useReducer(
-    (prev: string[], pageId: string) =>
-      prev.includes(pageId) ? prev : [...prev, pageId],
-    mainPage ? [mainPage] : [],
-  );
-
-  // Track mainPage changes and add to loadedPages if needed
-  React.useEffect(() => {
-    if (mainPage) {
-      setLoadedPages(mainPage);
-    }
-  }, [mainPage]);
 
   const sidebarRef = React.useRef<HTMLElement | null>(null);
   const sidebarTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
@@ -113,23 +88,6 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
       }
     }
   }, [tabsMinimized, dispatch]);
-
-  const renderPage = (page: IMainPage) => {
-    if (loadedPages.indexOf(page.id) === -1) {
-      return null;
-    }
-
-    const active = [mainPage, secondaryPage].indexOf(page.id) !== -1;
-
-    return (
-      <MainPageContainer
-        active={active}
-        key={page.id}
-        page={page}
-        secondary={secondaryPage === page.id}
-      />
-    );
-  };
 
   return (
     <FlexLayout.Flex>
