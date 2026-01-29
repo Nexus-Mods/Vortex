@@ -297,10 +297,7 @@ export async function createPGlitePersistorWithMigration(
     });
 
     if (allKeys.length === 0 && hasLevelDB) {
-      log(
-        "warn",
-        "PGlite is empty but LevelDB exists - forcing re-migration",
-      );
+      log("warn", "PGlite is empty but LevelDB exists - forcing re-migration");
       await migrateData(levelDb.db, pglite, true);
 
       const newKeys = await pglite.getAllKeys();

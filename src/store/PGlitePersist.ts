@@ -104,9 +104,7 @@ class PGlitePersist implements IPersistor {
       if (prefix !== undefined) {
         const prefixWithSep = `${prefix}${SEPARATOR}`;
         rows = rows.filter(
-          (row) =>
-            row.key > prefixWithSep &&
-            row.key < `${prefixWithSep}~`, // ~ is ASCII 126, higher than most key characters
+          (row) => row.key > prefixWithSep && row.key < `${prefixWithSep}~`, // ~ is ASCII 126, higher than most key characters
         );
       }
 

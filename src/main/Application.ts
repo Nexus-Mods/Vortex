@@ -1052,10 +1052,7 @@ class Application {
           reducer(this.mExtensions.getReducers(), querySanitize),
         );
         return PromiseBB.mapSeries(allHives(this.mExtensions), (hive) =>
-          insertPersistor(
-            hive,
-            new SubPersistor(last(this.mPersistors), hive),
-          ),
+          insertPersistor(hive, new SubPersistor(last(this.mPersistors), hive)),
         );
       })
       .then(() => {
