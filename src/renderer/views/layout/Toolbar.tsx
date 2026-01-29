@@ -6,12 +6,12 @@ import * as semver from "semver";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 
-import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
 import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import IconBar from "../../controls/IconBar";
+import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
 import { NotificationButton } from "../NotificationButton";
 import { QuickLauncher } from "../QuickLauncher";
 

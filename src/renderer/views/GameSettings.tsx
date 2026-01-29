@@ -48,7 +48,7 @@ function registerSettings(
   return { title, component, props, visible, priority: priority || 100 };
 }
 
-export const Settings: React.FC = () => {
+export const GameSettings: React.FC = () => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 
@@ -98,10 +98,14 @@ export const Settings: React.FC = () => {
     );
   };
 
+  // Check if a setting is per-game (has a visibility condition and is currently visible)
+  const isPerGameSetting = (ele: ISettingsPage): boolean =>
+    ele.visible !== undefined && ele.visible();
+
   const renderTab = (page: ICombinedSettingsPage): JSX.Element => {
-    // Show both global settings and game-specific settings that are currently visible
+    // Only show per-game settings (has visibility condition AND currently visible)
     const elements = page.elements
-      .filter((ele) => ele.visible === undefined || ele.visible())
+      .filter(isPerGameSetting)
       .sort((lhs, rhs) => lhs.priority - rhs.priority);
 
     const content =
@@ -109,8 +113,9 @@ export const Settings: React.FC = () => {
         <div>{elements.map(renderTabElement)}</div>
       ) : (
         <EmptyPlaceholder
+          fill={true}
           icon="settings"
-          subtext={t("Other games may require settings here.")}
+          subtext={t("This game has no specific settings in this category.")}
           text={t("Nothing to configure.")}
         />
       );
@@ -122,6 +127,11 @@ export const Settings: React.FC = () => {
     );
   };
 
+  // Filter out tabs that have no per-game settings for the current game
+  const tabsWithPerGameSettings = (tabs: ICombinedSettingsPage[]) =>
+    tabs.filter((tab) => tab.elements.some(isPerGameSetting));
+
+  // Combine all settings by title
   const combined = objects.reduce(
     (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
       const result = prev.slice();
@@ -148,20 +158,38 @@ export const Settings: React.FC = () => {
     [],
   );
 
+  // Only show tabs that have at least one per-game setting for the current game
+  const visibleTabs = tabsWithPerGameSettings(combined).sort(sortByPriority);
+
+  if (visibleTabs.length === 0) {
+    return (
+      <MainPage>
+        <MainPage.Body>
+          <EmptyPlaceholder
+            fill={true}
+            icon="settings"
+            subtext={t("No game-specific settings available.")}
+            text={t("Nothing to configure.")}
+          />
+        </MainPage.Body>
+      </MainPage>
+    );
+  }
+
   const page =
-    combined.find((iter) => iter.title === settingsPage) !== undefined
+    visibleTabs.find((iter) => iter.title === settingsPage) !== undefined
       ? settingsPage
-      : combined[0].title;
+      : visibleTabs[0].title;
 
   return (
     <MainPage>
       <MainPage.Body>
-        <Tabs activeKey={page} id="settings-tab" onSelect={setCurrentPage}>
-          {combined.sort(sortByPriority).map(renderTab)}
+        <Tabs activeKey={page} id="game-settings-tab" onSelect={setCurrentPage}>
+          {visibleTabs.map(renderTab)}
         </Tabs>
       </MainPage.Body>
     </MainPage>
   );
 };
 
-export default Settings;
+export default GameSettings;

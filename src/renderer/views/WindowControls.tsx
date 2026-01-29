@@ -1,12 +1,12 @@
 import React from "react";
 
+import { IconButton } from "../controls/TooltipControls";
 import {
   close,
   minimize,
   toggleMaximize,
   useIsMaximized,
 } from "../utils/windowManipulation";
-import { IconButton } from "../controls/TooltipControls";
 
 export function WindowControls(): JSX.Element {
   const isMaximized = useIsMaximized();

@@ -2,8 +2,8 @@ import React from "react";
 
 import type { IMainPage } from "../../../types/IMainPage";
 
+import { gameSettingsPage, settingsPage, usePageRendering } from "../../utils";
 import { DNDContainer } from "../DNDContainer";
-import { settingsPage, usePageRendering } from "../layout";
 
 export interface IModernContentPaneProps {
   objects: IMainPage[];
@@ -27,6 +27,8 @@ export const ModernContentPane = ({
         {objects.map(renderPage)}
 
         {renderPage(settingsPage)}
+
+        {renderPage(gameSettingsPage)}
       </DNDContainer>
     </div>
   );

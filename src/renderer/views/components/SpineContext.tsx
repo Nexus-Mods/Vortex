@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useContext,
   useMemo,
-  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -33,21 +32,30 @@ interface ISpineContext {
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
 
 export const SpineProvider = ({ children }: { children: ReactNode }) => {
-  const [selection, setSelection] = useState<SpineSelection>({
-    type: "home",
-  });
   const { api } = useContext(MainContext);
   const dispatch = useDispatch();
+
+  const profiles = useSelector((state: IState) => state.persistent.profiles);
   const lastActiveProfile = useSelector(
     (state: IState) => state.settings.profiles.lastActiveProfile,
   );
-
   const activeProfileId = useSelector(
     (state: IState) => state.settings.profiles.activeProfileId,
   );
 
+  // Derive selection from active profile - this automatically syncs with any profile changes
+  const selection = useMemo<SpineSelection>(() => {
+    if (activeProfileId === undefined) {
+      return { type: "home" };
+    }
+    const profile = profiles[activeProfileId];
+    if (profile?.gameId !== undefined) {
+      return { type: "game", gameId: profile.gameId };
+    }
+    return { type: "home" };
+  }, [activeProfileId, profiles]);
+
   const selectHome = useCallback(() => {
-    setSelection({ type: "home" });
     // Navigate to Dashboard first to hide game-specific pages before deactivating profile
     dispatch(setOpenMainPage(DEFAULT_HOME_PAGE, false));
     // Then deactivate any active profile
@@ -64,17 +72,12 @@ export const SpineProvider = ({ children }: { children: ReactNode }) => {
       // Activate the game's last active profile
       const profileId = lastActiveProfile[gameId];
       if (profileId !== undefined && profileId !== activeProfileId) {
-        // Profile needs to change - wait for activation before changing selection
+        // Profile needs to change
         dispatch(setNextProfile(profileId));
-        api?.events.once("profile-did-change", () => {
-          setSelection({ type: "game", gameId });
-        });
-      } else {
-        // Profile is already active or no profile needed
-        setSelection({ type: "game", gameId });
       }
+      // Selection will automatically update when profile state changes
     },
-    [lastActiveProfile, activeProfileId, dispatch, api],
+    [lastActiveProfile, activeProfileId, dispatch],
   );
 
   const selectGameAsync = useCallback(
@@ -85,13 +88,13 @@ export const SpineProvider = ({ children }: { children: ReactNode }) => {
       // Activate the game's last active profile
       const profileId = lastActiveProfile[gameId];
       if (profileId !== undefined && profileId !== activeProfileId) {
-        // Profile needs to change - wait for activation before changing selection
+        // Profile needs to change - wait for activation
         dispatch(setNextProfile(profileId));
         await new Promise<void>((resolve) => {
           api?.events.once("profile-did-change", () => resolve());
         });
       }
-      setSelection({ type: "game", gameId });
+      // Selection will automatically update when profile state changes
     },
     [lastActiveProfile, activeProfileId, dispatch, api],
   );

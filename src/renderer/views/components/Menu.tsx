@@ -19,7 +19,7 @@ import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../util/WindowContext";
-import { settingsPage } from "../../utils/usePageRendering";
+import { gameSettingsPage, settingsPage } from "../../utils/usePageRendering";
 import { useSpineContext } from "./SpineContext";
 
 // Map legacy icon names to MDI paths
@@ -114,8 +114,10 @@ export const Menu = ({ objects }: IMenuProps) => {
         return false;
       }
     });
-    // Always add settings page at the end
-    return [...pages, settingsPage];
+    // Add appropriate settings page at the end based on selection
+    const currentSettingsPage =
+      selection.type === "home" ? settingsPage : gameSettingsPage;
+    return [...pages, currentSettingsPage];
   }, [objects, selection]);
 
   return (
