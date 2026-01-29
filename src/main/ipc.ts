@@ -8,6 +8,8 @@ import type {
 
 import { ipcMain, type WebContents } from "electron";
 
+import { log } from "./logging";
+
 export const betterIpcMain = {
   on: mainOn,
   handle: mainHandle,
@@ -16,7 +18,7 @@ export const betterIpcMain = {
 
 export type LogOptions = boolean | { includeArgs: boolean };
 
-function log(
+function ipcLogger(
   options: LogOptions,
   channel: string,
   event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent,
@@ -27,16 +29,16 @@ function log(
   const { senderFrame } = event;
   const url = senderFrame?.url ?? event.sender.mainFrame.url;
 
+  let jsonArgs: string | undefined = undefined;
   if (typeof options === "object" && options.includeArgs) {
-    const jsonArgs = JSON.stringify(args);
-    console.debug(
-      `IPC main event on channel '${channel}' with args '${jsonArgs}' from sender '${url}'`,
-    );
-  } else {
-    console.debug(
-      `IPC main event on channel '${channel}' from sender '${url}'`,
-    );
+    jsonArgs = JSON.stringify(args);
   }
+
+  log("debug", "IPC main event", {
+    channel: channel,
+    sender: url,
+    args: jsonArgs,
+  });
 }
 
 function mainOn<C extends keyof RendererChannels>(
@@ -50,7 +52,7 @@ function mainOn<C extends keyof RendererChannels>(
   ipcMain.on(
     channel,
     (event, ...args: SerializableArgs<Parameters<RendererChannels[C]>>) => {
-      log(logOptions, channel, event, args);
+      ipcLogger(logOptions, channel, event, args);
       assertTrustedSender(event);
       listener(event, ...args);
     },
@@ -70,7 +72,7 @@ function mainHandle<C extends keyof InvokeChannels>(
   ipcMain.handle(
     channel,
     (event, ...args: SerializableArgs<Parameters<InvokeChannels[C]>>) => {
-      log(logOptions, channel, event, args);
+      ipcLogger(logOptions, channel, event, args);
       assertTrustedSender(event);
       return listener(event, ...args);
     },

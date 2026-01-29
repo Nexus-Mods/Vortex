@@ -1,14 +1,33 @@
-import makeRemoteCall from "./electronRemote";
-import { setdefault } from "./util";
-
 import type { BrowserView } from "electron";
+
 import { BrowserWindow } from "electron";
 import { generate as shortid } from "shortid";
-import { valueReplacer } from "./log";
+
+import makeRemoteCall from "./electronRemote";
+import { setdefault } from "./util";
 
 const extraWebViews: {
   [contentId: number]: { [viewId: string]: BrowserView };
 } = {};
+
+function valueReplacer() {
+  const known = new Map();
+
+  return (key: string, value: any) => {
+    if (typeof value === "object") {
+      if (known.has(value)) {
+        return "<Circular>";
+      }
+
+      known.set(value, true);
+    } else if (typeof value === "bigint") {
+      // BigInt values are not serialized in JSON by default.
+      return value.toString();
+    }
+
+    return value;
+  };
+}
 
 export const makeBrowserView = makeRemoteCall(
   "make-browser-view",
