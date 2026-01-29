@@ -1401,6 +1401,6 @@ class Application {
   }
 }
 
-betterIpcMain.handle("example:ping", () => "pong");
+betterIpcMain.handle("example:ping", () => "pong", { includeArgs: true });
 
 export default Application;
