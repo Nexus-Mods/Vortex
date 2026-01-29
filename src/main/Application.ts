@@ -1,3 +1,30 @@
+import type * as msgpackT from "@msgpack/msgpack";
+import type crashDumpT from "crash-dump";
+import type { crashReporter as crashReporterT } from "electron";
+import type * as permissionsT from "permissions";
+import type * as uuidT from "uuid";
+import type * as winapiT from "winapi-bindings";
+
+import PromiseBB from "bluebird";
+import { app, dialog, ipcMain, protocol, shell } from "electron";
+import contextMenu from "electron-context-menu";
+import isAdmin from "is-admin";
+import * as _ from "lodash";
+import * as path from "path";
+import * as semver from "semver";
+
+import type { StateError } from "../store/reduxSanity";
+import type { ThunkStore } from "../types/IExtensionContext";
+import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
+import type { IState } from "../types/IState";
+import type { IParameters, ISetItem } from "../util/commandLine";
+import type * as develT from "../util/devel";
+import type ExtensionManagerT from "../util/ExtensionManager";
+import type MainWindowT from "./MainWindow";
+import type SplashScreenT from "./SplashScreen";
+import type TrayIconT from "./TrayIcon";
+
+import { addNotification, setCommandLine, showDialog } from "../actions";
 import {
   setApplicationVersion,
   setInstallType,
@@ -6,40 +33,12 @@ import {
 } from "../actions/app";
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { STATE_BACKUP_PATH } from "../reducers/index";
-import type { ThunkStore } from "../types/IExtensionContext";
-import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
-import type { IState } from "../types/IState";
-import { getApplication } from "../util/application";
-import type { IParameters, ISetItem } from "../util/commandLine";
-import commandLine, { relaunch } from "../util/commandLine";
 import {
-  DataInvalid,
-  DocumentsPathMissing,
-  ProcessCanceled,
-  UserCanceled,
-} from "../util/CustomErrors";
-import type * as develT from "../util/devel";
-import {
-  didIgnoreError,
-  disableErrorReport,
-  getVisibleWindow,
-  setOutdated,
-  setWindow,
-  terminate,
-  toError,
-} from "../util/errorHandling";
-import type ExtensionManagerT from "../util/ExtensionManager";
-import { validateFiles } from "../util/fileValidation";
-import * as fs from "../util/fs";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import lazyRequire from "../util/lazyRequire";
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../shared/errors";
 import LevelPersist, { DatabaseLocked } from "../store/LevelPersist";
-import { log, setLogPath, setupLogging } from "../util/log";
-import { prettifyNodeErrorMessage, showError } from "../util/message";
-import migrate from "../util/migrate";
-import presetManager from "../util/PresetManager";
-import type { StateError } from "../store/reduxSanity";
-import startupSettings from "../util/startupSettings";
 import {
   allHives,
   createFullStateBackup,
@@ -52,42 +51,41 @@ import {
   markImported,
   querySanitize,
 } from "../store/store";
-import {} from "../util/storeHelper";
 import SubPersistor from "../store/SubPersistor";
+import { getApplication } from "../util/application";
+import commandLine, { relaunch } from "../util/commandLine";
+import {
+  DataInvalid,
+  DocumentsPathMissing,
+  ProcessCanceled,
+  UserCanceled,
+} from "../util/CustomErrors";
+import {
+  didIgnoreError,
+  disableErrorReport,
+  getVisibleWindow,
+  setOutdated,
+  setWindow,
+  terminate,
+  toError,
+} from "../util/errorHandling";
+import { validateFiles } from "../util/fileValidation";
+import * as fs from "../util/fs";
+import getVortexPath, { setVortexPath } from "../util/getVortexPath";
+import lazyRequire from "../util/lazyRequire";
+import { prettifyNodeErrorMessage, showError } from "../util/message";
+import migrate from "../util/migrate";
+import presetManager from "../util/PresetManager";
+import startupSettings from "../util/startupSettings";
+import {} from "../util/storeHelper";
 import {
   isMajorDowngrade,
   replaceRecursive,
   spawnSelf,
   timeout,
 } from "../util/util";
-
-import { addNotification, setCommandLine, showDialog } from "../actions";
-
-import type MainWindowT from "./MainWindow";
-import type SplashScreenT from "./SplashScreen";
-import type TrayIconT from "./TrayIcon";
-
-import type * as msgpackT from "@msgpack/msgpack";
-import PromiseBB from "bluebird";
-import type crashDumpT from "crash-dump";
-import type { crashReporter as crashReporterT } from "electron";
-import { app, dialog, ipcMain, protocol, shell } from "electron";
-import contextMenu from "electron-context-menu";
-import isAdmin from "is-admin";
-import * as _ from "lodash";
-import * as os from "os";
-import * as path from "path";
-import type * as permissionsT from "permissions";
-import * as semver from "semver";
-import type * as uuidT from "uuid";
-
-import type * as winapiT from "winapi-bindings";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../shared/errors";
 import { betterIpcMain } from "./ipc";
+import { log, setupLogging, changeLogPath } from "./logging";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
@@ -1000,7 +998,7 @@ class Application {
             "all further logging will happen in",
             path.join(dataPath, "vortex.log"),
           );
-          setLogPath(dataPath);
+          changeLogPath(dataPath);
           log("info", "--------------------------");
           log("info", "Vortex Version", getApplication().version);
           return LevelPersist.create(
@@ -1374,7 +1372,7 @@ class Application {
         if (this.mMainWindow !== undefined) {
           if (args.download || args.install) {
             this.mMainWindow.sendExternalURL(
-              args.download! || args.install!,
+              args.download || args.install,
               args.install !== undefined,
             );
           }
@@ -1402,6 +1400,6 @@ class Application {
   }
 }
 
-betterIpcMain.handle("example:ping", () => Promise.resolve("pong"));
+betterIpcMain.handle("example:ping", () => "pong", { includeArgs: true });
 
 export default Application;
