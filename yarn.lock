@@ -1327,7 +1327,7 @@
   resolved "https://registry.yarnpkg.com/@electric-sql/pglite-react/-/pglite-react-0.2.33.tgz#737ceb31ae6bed6ec8c59ce0c2b9491e544b7661"
   integrity sha512-HNBSdKsq+3BmMCVCcZjkwyoZLCZVo7YmmOnq3NVdHdLDDtTP9FPekW8AZQnbV8nnyAgX778/BV1Asfy/wi+Q7A==
 
-"@electric-sql/pglite-repl@^0.2.17":
+"@electric-sql/pglite-repl@^0.2.33":
   version "0.2.33"
   resolved "https://registry.yarnpkg.com/@electric-sql/pglite-repl/-/pglite-repl-0.2.33.tgz#952d4b0f0b635f0d6a9eb65ad9a2d230b7d6f872"
   integrity sha512-FFzJW8Gxu8LBOYk/G/5WN0ZOE0wWfTVUBAmUAPJitxMqN4Vp8GCoLSFLjzoVQPRi6iWjZB5Pq2g00BDAVgYE+w==
@@ -1346,10 +1346,10 @@
     react "^19.0.0"
     react-dom "^19.0.0"
 
-"@electric-sql/pglite@^0.2.17":
-  version "0.2.17"
-  resolved "https://registry.yarnpkg.com/@electric-sql/pglite/-/pglite-0.2.17.tgz#23d53a9b7ddd1590d59d7c701aba23b037f08108"
-  integrity sha512-qEpKRT2oUaWDH6tjRxLHjdzMqRUGYDnGZlKrnL4dJ77JVMcP2Hpo3NYnOSPKdZdeec57B6QPprCUFg0picx5Pw==
+"@electric-sql/pglite@^0.3.15":
+  version "0.3.15"
+  resolved "https://registry.yarnpkg.com/@electric-sql/pglite/-/pglite-0.3.15.tgz#073409dc9a6b0c2af2626d02af8c226293c6b059"
+  integrity sha512-Cj++n1Mekf9ETfdc16TlDi+cDDQF0W7EcbyRHYOAeZdsAe8M/FJg18itDTSwyHfar2WIezawM9o0EKaRGVKygQ==
 
 "@electron/asar@^3.2.1":
   version "3.4.1"
