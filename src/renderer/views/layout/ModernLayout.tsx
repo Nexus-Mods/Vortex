@@ -4,7 +4,7 @@ import type { IMainPage } from "../../../types/IMainPage";
 
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import startupSettings from "../../../util/startupSettings";
-import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
+import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
 import { useWindowContext } from "../../../util/WindowContext";
 import { ModernContentPane } from "../components/ContentPane";
 import { Header } from "../components/Header";

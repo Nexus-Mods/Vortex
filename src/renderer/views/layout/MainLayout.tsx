@@ -7,7 +7,7 @@ import { setOpenMainPage } from "../../../actions/session";
 import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
 import { ContentPane, Sidebar } from "./index";
-import { settingsPage, usePageRendering } from "./usePageRendering";
+import { settingsPage, usePageRendering } from "../../utils/usePageRendering";
 
 export interface IMainLayoutProps {
   objects: IMainPage[];

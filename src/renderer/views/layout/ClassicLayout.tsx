@@ -3,7 +3,7 @@ import * as React from "react";
 import type { IMainPage } from "../../../types/IMainPage";
 
 import startupSettings from "../../../util/startupSettings";
-import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
+import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
 import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
 import { WindowControls } from "../WindowControls";

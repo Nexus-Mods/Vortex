@@ -1,4 +1,11 @@
-import React from "react";
+import React, {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IState } from "../../../types/IState";
@@ -23,13 +30,13 @@ interface ISpineContext {
   selectGameAsync: (gameId: string) => Promise<void>;
 }
 
-const SpineContext = React.createContext<ISpineContext | undefined>(undefined);
+const SpineContext = createContext<ISpineContext | undefined>(undefined);
 
-export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
-  const [selection, setSelection] = React.useState<SpineSelection>({
+export const SpineProvider = ({ children }: { children: ReactNode }) => {
+  const [selection, setSelection] = useState<SpineSelection>({
     type: "home",
   });
-  const { api } = React.useContext(MainContext);
+  const { api } = useContext(MainContext);
   const dispatch = useDispatch();
   const lastActiveProfile = useSelector(
     (state: IState) => state.settings.profiles.lastActiveProfile,
@@ -39,7 +46,7 @@ export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
     (state: IState) => state.settings.profiles.activeProfileId,
   );
 
-  const selectHome = React.useCallback(() => {
+  const selectHome = useCallback(() => {
     setSelection({ type: "home" });
     // Navigate to Dashboard first to hide game-specific pages before deactivating profile
     dispatch(setOpenMainPage(DEFAULT_HOME_PAGE, false));
@@ -49,7 +56,7 @@ export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [activeProfileId, dispatch]);
 
-  const selectGame = React.useCallback(
+  const selectGame = useCallback(
     (gameId: string) => {
       // Always navigate to Mods first to hide any game-specific pages before switching profiles
       dispatch(setOpenMainPage(DEFAULT_GAME_PAGE, false));
@@ -70,7 +77,7 @@ export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
     [lastActiveProfile, activeProfileId, dispatch, api],
   );
 
-  const selectGameAsync = React.useCallback(
+  const selectGameAsync = useCallback(
     async (gameId: string): Promise<void> => {
       // Always navigate to Mods first to hide any game-specific pages before switching profiles
       dispatch(setOpenMainPage(DEFAULT_GAME_PAGE, false));
@@ -89,7 +96,7 @@ export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
     [lastActiveProfile, activeProfileId, dispatch, api],
   );
 
-  const value = React.useMemo(
+  const value = useMemo(
     () => ({ selection, selectHome, selectGame, selectGameAsync }),
     [selection, selectHome, selectGame, selectGameAsync],
   );
@@ -100,7 +107,7 @@ export const SpineProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useSpineContext = () => {
-  const context = React.useContext(SpineContext);
+  const context = useContext(SpineContext);
   if (context === undefined) {
     throw new Error("useSpineContext must be used within a SpineProvider");
   }

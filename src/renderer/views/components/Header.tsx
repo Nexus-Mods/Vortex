@@ -29,7 +29,7 @@ import {
   minimize,
   toggleMaximize,
   useIsMaximized,
-} from "../../../util/windowManipulation";
+} from "../../utils/windowManipulation";
 import { useSpineContext } from "./SpineContext";
 
 const IconButton = ({

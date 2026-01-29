@@ -5,7 +5,7 @@ import {
   minimize,
   toggleMaximize,
   useIsMaximized,
-} from "../../util/windowManipulation";
+} from "../utils/windowManipulation";
 import { IconButton } from "../controls/TooltipControls";
 
 export function WindowControls(): JSX.Element {

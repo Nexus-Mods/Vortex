@@ -6,7 +6,7 @@ import * as semver from "semver";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 
-import { useSwitchingProfile } from "../../../util/useSwitchingProfile";
+import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
 import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";

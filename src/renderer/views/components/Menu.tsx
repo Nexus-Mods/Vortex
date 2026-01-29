@@ -7,7 +7,7 @@ import {
   mdiShapeOutline,
   mdiViewDashboard,
 } from "@mdi/js";
-import React, { type ButtonHTMLAttributes } from "react";
+import React, { useCallback, useMemo, type ButtonHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -19,7 +19,7 @@ import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../util/WindowContext";
-import { settingsPage } from "../layout/usePageRendering";
+import { settingsPage } from "../../utils/usePageRendering";
 import { useSpineContext } from "./SpineContext";
 
 // Map legacy icon names to MDI paths
@@ -86,7 +86,7 @@ export const Menu = ({ objects }: IMenuProps) => {
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
 
-  const handleClickPage = React.useCallback(
+  const handleClickPage = useCallback(
     (pageId: string) => {
       dispatch(setOpenMainPage(pageId, false));
     },
@@ -94,7 +94,7 @@ export const Menu = ({ objects }: IMenuProps) => {
   );
 
   // Filter visible pages based on Spine selection
-  const visiblePages = React.useMemo(() => {
+  const visiblePages = useMemo(() => {
     const pages = objects.filter((page) => {
       // When Home is selected, show global pages (not per-game)
       // When a game is selected, show per-game pages + Downloads

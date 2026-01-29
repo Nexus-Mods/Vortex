@@ -10,4 +10,4 @@ export * from "./Sidebar";
 export * from "./ToastContainer";
 export * from "./Toolbar";
 export * from "./UIBlocker";
-export * from "./usePageRendering";
+export * from "../../utils/usePageRendering";

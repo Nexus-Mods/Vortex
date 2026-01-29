@@ -3,7 +3,7 @@ import type { BrowserWindow } from "electron";
 
 import { useEffect, useState } from "react";
 
-import lazyRequire from "./lazyRequire";
+import lazyRequire from "../../util/lazyRequire";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);

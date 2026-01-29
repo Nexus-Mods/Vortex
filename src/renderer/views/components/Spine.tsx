@@ -1,6 +1,6 @@
 import { mdiDownload, mdiHome, mdiPlus, mdiPuzzle } from "@mdi/js";
 import * as path from "path";
-import React, { type ButtonHTMLAttributes } from "react";
+import React, { useCallback, useMemo, type ButtonHTMLAttributes } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as url from "url";
 
@@ -104,7 +104,7 @@ export const Spine = () => {
   );
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
 
-  const handleGlobalPageClick = React.useCallback(
+  const handleGlobalPageClick = useCallback(
     (pageId: string) => {
       // Global pages need Home to be selected first
       selectHome();
@@ -115,7 +115,7 @@ export const Spine = () => {
   );
 
   // Filter to only managed games (have a profile and are discovered)
-  const managedGames = React.useMemo(() => {
+  const managedGames = useMemo(() => {
     return knownGames.filter((game) => {
       const discovery = discoveredGames[game.id];
       const hasProfile = lastActiveProfile[game.id] !== undefined;
