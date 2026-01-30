@@ -46,6 +46,7 @@ import {
 import { contextify, setApiKey, setOauthToken } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { RateLimitExceeded } from "../../util/github";
 import { log } from "../../util/log";
 import { calcDuration, showError } from "../../util/message";
@@ -153,17 +154,18 @@ export async function bringToFront() {
   // This will cause a short "flicker" if the window was snapped and it will
   // still unsnap the window as far as windows is concerned.
 
-  const windowId = window.windowId;
-  const [x, y] = await window.api.window.getPosition(windowId);
-  const [w, h] = await window.api.window.getSize(windowId);
+  const windowId = getWindowId();
+  const api = getPreloadApi();
+  const [x, y] = await api.window.getPosition(windowId);
+  const [w, h] = await api.window.getSize(windowId);
 
-  await window.api.window.setAlwaysOnTop(windowId, true);
-  await window.api.window.show(windowId);
-  await window.api.window.setAlwaysOnTop(windowId, false);
+  await api.window.setAlwaysOnTop(windowId, true);
+  await api.window.show(windowId);
+  await api.window.setAlwaysOnTop(windowId, false);
 
   setTimeout(() => {
-    void window.api.window.setPosition(windowId, x, y);
-    void window.api.window.setSize(windowId, w, h);
+    void api.window.setPosition(windowId, x, y);
+    void api.window.setSize(windowId, w, h);
   }, 100);
 }
 

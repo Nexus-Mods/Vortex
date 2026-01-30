@@ -13,6 +13,7 @@ import { fallbackTFunc } from "./i18n";
 import { log } from "./log";
 import { bundleAttachment } from "./message";
 import opn from "./opn";
+import { getPreloadApi } from "./preloadAccess";
 import { getSafe } from "./storeHelper";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
@@ -40,7 +41,7 @@ const showMessageBox = async (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
   if (process.type === "renderer") {
-    return window.api.dialog.showMessageBox(options);
+    return getPreloadApi().dialog.showMessageBox(options);
   } else {
     const win = getVisibleWindow();
     return dialogIn.showMessageBox(win, options);
@@ -49,7 +50,7 @@ const showMessageBox = async (
 
 const showErrorBox = async (title: string, content: string): Promise<void> => {
   if (process.type === "renderer") {
-    return window.api.dialog.showErrorBox(title, content);
+    return getPreloadApi().dialog.showErrorBox(title, content);
   } else {
     dialogIn.showErrorBox(title, content);
   }

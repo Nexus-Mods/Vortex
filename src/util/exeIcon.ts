@@ -1,3 +1,5 @@
+import { getPreloadApi } from "./preloadAccess";
+
 function extractExeIcon(exePath: string, destPath: string): Promise<void> {
   // app.getFileIcon generated broken output on windows as of electron 11.0.4
   // (see https://github.com/electron/electron/issues/26918)
@@ -18,7 +20,7 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void> {
     });
   } else {
   */
-  return window.api.app.extractFileIcon(exePath, destPath);
+  return getPreloadApi().app.extractFileIcon(exePath, destPath);
   // }
 }
 

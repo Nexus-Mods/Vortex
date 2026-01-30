@@ -20,6 +20,7 @@ import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import type { TFunction } from "../../util/i18n";
 import { MutexWrapper } from "../../util/MutexContext";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 
 import update from "immutability-helper";
 import * as React from "react";
@@ -124,14 +125,15 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         this.setState(newState);
 
         // Bring window to focus when a new dialog appears
-        const winId = window.windowId;
-        void window.api.window.isMinimized(winId).then((minimized: boolean) => {
+        const winId = getWindowId();
+        const api = getPreloadApi();
+        void api.window.isMinimized(winId).then((minimized: boolean) => {
           if (minimized) {
-            void window.api.window.restore(winId);
+            void api.window.restore(winId);
           }
-          void window.api.window.setAlwaysOnTop(winId, true);
-          void window.api.window.show(winId);
-          void window.api.window.setAlwaysOnTop(winId, false);
+          void api.window.setAlwaysOnTop(winId, true);
+          void api.window.show(winId);
+          void api.window.setAlwaysOnTop(winId, false);
         });
       } else if (
         this.props.dialogs[0]?.content !== newProps.dialogs[0]?.content

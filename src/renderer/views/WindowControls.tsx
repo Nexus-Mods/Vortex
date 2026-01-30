@@ -1,5 +1,6 @@
 import * as React from "react";
 import { IconButton } from "../controls/TooltipControls";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 
 class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   private mClosed: boolean = false;
@@ -16,19 +17,18 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   }
 
   public componentDidMount() {
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+
     // Fetch initial maximized state
-    window.api.window
-      .isMaximized(window.windowId)
-      .then((maximized: boolean) => {
-        this.setState({ isMaximized: maximized });
-      });
+    api.window.isMaximized(windowId).then((maximized: boolean) => {
+      this.setState({ isMaximized: maximized });
+    });
 
     // Subscribe to window events
-    this.mUnsubscribeMaximize = window.api.window.onMaximize(this.onMaximize);
-    this.mUnsubscribeUnmaximize = window.api.window.onUnmaximize(
-      this.onUnMaximize,
-    );
-    this.mUnsubscribeClose = window.api.window.onClose(this.onClose);
+    this.mUnsubscribeMaximize = api.window.onMaximize(this.onMaximize);
+    this.mUnsubscribeUnmaximize = api.window.onUnmaximize(this.onUnMaximize);
+    this.mUnsubscribeClose = api.window.onClose(this.onClose);
   }
 
   public componentWillUnmount() {
@@ -70,7 +70,9 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   }
 
   private minimize = () => {
-    void window.api.window.minimize(window.windowId);
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+    void api.window.minimize(windowId);
   };
 
   private onMaximize = () => {
@@ -88,16 +90,20 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   };
 
   private toggleMaximize = () => {
+    const api = getPreloadApi();
+    const windowId = getWindowId();
     const { isMaximized } = this.state;
     if (isMaximized) {
-      void window.api.window.unmaximize(window.windowId);
+      void api.window.unmaximize(windowId);
     } else {
-      void window.api.window.maximize(window.windowId);
+      void api.window.maximize(windowId);
     }
   };
 
   private close = () => {
-    void window.api.window.close(window.windowId);
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+    void api.window.close(windowId);
   };
 }
 

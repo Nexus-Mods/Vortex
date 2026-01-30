@@ -3,6 +3,7 @@ import { getVisibleWindow } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { makeQueue } from "../../util/util";
+import { getPreloadApi } from "../../util/preloadAccess";
 
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
@@ -13,7 +14,7 @@ const showMessageBox = async (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
   if (process.type === "renderer") {
-    return window.api.dialog.showMessageBox(options);
+    return getPreloadApi().dialog.showMessageBox(options);
   } else {
     const win = getVisibleWindow();
     return dialogIn.showMessageBox(win, options);

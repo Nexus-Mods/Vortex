@@ -37,11 +37,12 @@ import type { IExtensionApi } from "../../types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
+import { getPreloadApi } from "../../util/preloadAccess";
 
 function getCookies(
   filter: Electron.CookiesGetFilter,
 ): Promise<Electron.Cookie[]> {
-  return window.api.session.getCookies(filter);
+  return getPreloadApi().session.getCookies(filter);
 }
 
 // assume urls are valid for at least 5 minutes
