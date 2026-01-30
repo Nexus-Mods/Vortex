@@ -42,6 +42,9 @@ try {
   expose("vortexPaths", vortexPaths);
 
   expose("api", {
+    log: (level, message, metadata) =>
+      betterIpcRenderer.send("logging:log", level, message, metadata),
+
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },

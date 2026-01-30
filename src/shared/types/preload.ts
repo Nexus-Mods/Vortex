@@ -1,6 +1,7 @@
 import type * as Electron from "electron";
 
 import type { VortexPaths } from "./ipc";
+import type { Level } from "./logging";
 
 /** Globals exposed by the preload script to the renderer */
 export interface PreloadWindow {
@@ -24,6 +25,9 @@ export interface PreloadWindow {
 
 /** All API methods available to the renderer */
 export interface Api {
+  /** Sends a log message to the main process */
+  log(level: Level, message: string, metadata?: string): void;
+
   /** Example APIs */
   example: Example;
 

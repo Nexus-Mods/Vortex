@@ -90,6 +90,7 @@ import {
   setupNotificationSuppression,
 } from "./actions/notifications";
 import reducer, { Decision } from "./reducers/index";
+import { log } from "./renderer/logging";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
@@ -108,7 +109,7 @@ import getI18n, {
   fallbackTFunc,
   type TFunction,
 } from "./util/i18n";
-import { log } from "./util/log";
+
 import { initApplicationMenu } from "./renderer/menu";
 import { showError } from "./util/message";
 import presetManager from "./util/PresetManager";

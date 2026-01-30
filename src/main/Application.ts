@@ -31,7 +31,6 @@ import {
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
-import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 
@@ -97,7 +96,6 @@ import type { AppPath } from "../util/getVortexPath";
 
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
-import { log, setLogPath, setupLogging } from "../util/log";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
@@ -110,6 +108,7 @@ import {
   timeout,
 } from "../util/util";
 import { betterIpcMain } from "./ipc";
+import { log, setupLogging, changeLogPath } from "./logging";
 
 // Type-safe interface for global Redux state accessors
 interface GlobalWithRedux {
@@ -1019,7 +1018,7 @@ class Application {
             "all further logging will happen in",
             path.join(dataPath, "vortex.log"),
           );
-          setLogPath(dataPath);
+          changeLogPath(dataPath);
           log("info", "--------------------------");
           log("info", "Vortex Version", getApplication().version);
           return LevelPersist.create(
