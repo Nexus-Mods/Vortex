@@ -6,28 +6,36 @@ import { setApplication } from "./application";
 class ElectronApplication implements IApplication {
   private mName: string;
   private mVersion: string;
-  private mFocused: () => boolean;
-  private mWindow: BrowserWindow;
-  private mApp: Electron.App;
+  private mFocused: boolean;
 
   constructor() {
-    const remote =
-      process.type === "browser" ? undefined : require("@electron/remote");
-    this.mApp = remote?.app ?? appIn;
+    if (process.type === "browser") {
+      // Main process - use electron app directly
+      this.mName = appIn.name;
+      this.mVersion = appIn.getVersion();
+      // In main process, check if any Vortex window is focused
+      this.mFocused =
+        BrowserWindow.getAllWindows().find((win) => win.isFocused()) !==
+        undefined;
+    } else {
+      // Renderer process - use preload values
+      this.mName = window.appName;
+      this.mVersion = window.appVersion;
+      // Track focus state via window events
+      this.mFocused = true; // Assume focused initially
 
-    this.mName = this.mApp.name;
-    this.mVersion = this.mApp.getVersion();
-    if (remote !== undefined) {
-      this.mWindow = remote.getCurrentWindow();
+      // Register listeners to track focus state
+      if (window.api?.window?.onFocus) {
+        window.api.window.onFocus(() => {
+          this.mFocused = true;
+        });
+      }
+      if (window.api?.window?.onBlur) {
+        window.api.window.onBlur(() => {
+          this.mFocused = false;
+        });
+      }
     }
-    // if called from renderer process, this will determine if this window is focused,
-    // if called from browser process, it will determine if _any_ Vortex window is focused
-    this.mFocused =
-      remote !== undefined
-        ? () => remote.getCurrentWindow().isFocused()
-        : () =>
-            BrowserWindow.getAllWindows().find((win) => win.isFocused()) !==
-            undefined;
   }
 
   public get name() {
@@ -38,8 +46,14 @@ class ElectronApplication implements IApplication {
     return this.mVersion;
   }
 
-  public get window(): BrowserWindow {
-    return this.mWindow;
+  public get window(): BrowserWindow | null {
+    // In renderer process, we can't return the actual BrowserWindow object
+    // This property is not used anywhere in the codebase
+    if (process.type === "browser") {
+      // In main process, return the first visible window
+      return BrowserWindow.getAllWindows()[0] ?? null;
+    }
+    return null;
   }
 
   public get memory(): { total: number } {
@@ -58,11 +72,24 @@ class ElectronApplication implements IApplication {
    * returns whether the window is in focus
    */
   public get isFocused(): boolean {
-    return this.mFocused();
+    if (process.type === "browser") {
+      // In main process, check if any window is focused
+      return (
+        BrowserWindow.getAllWindows().find((win) => win.isFocused()) !==
+        undefined
+      );
+    }
+    // In renderer, return cached focus state (updated via events)
+    return this.mFocused;
   }
 
   public quit(exitCode?: number): void {
-    this.mApp.exit(exitCode);
+    if (process.type === "browser") {
+      appIn.exit(exitCode);
+    } else {
+      // In renderer, use the preload API
+      void window.api.app.exit(exitCode);
+    }
   }
 }
 

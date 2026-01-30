@@ -9,7 +9,8 @@ interface IFont {
   family: string;
 }
 
-const getAvailableFontImpl = () => {
+// Get available system fonts - runs directly in renderer process
+export function getAvailableFonts(): Promise<string[]> {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const fontScanner = require('font-scanner');
   return fontScanner.getAvailableFonts()
@@ -21,9 +22,4 @@ const getAvailableFontImpl = () => {
         'BebasNeue',
         ...(fonts || []).map(font => font.family).sort(),
       ])));
-};
-
-const getAvailableFonts: () => Promise<string[]> =
-  util.makeRemoteCall('get-available-fonts', getAvailableFontImpl);
-
-export { getAvailableFonts };
+}

@@ -2,6 +2,7 @@ import type {
   RendererChannels,
   MainChannels,
   InvokeChannels,
+  SyncChannels,
   SerializableArgs,
   AssertSerializable,
 } from "@shared/types/ipc.js";
@@ -11,6 +12,7 @@ import { ipcMain, type WebContents } from "electron";
 export const betterIpcMain = {
   on: mainOn,
   handle: mainHandle,
+  handleSync: mainHandleSync,
   send: mainSend,
 };
 
@@ -73,6 +75,22 @@ function mainHandle<C extends keyof InvokeChannels>(
       log(logOptions, channel, event, args);
       assertTrustedSender(event);
       return listener(event, ...args);
+    },
+  );
+}
+
+function mainHandleSync<C extends keyof SyncChannels>(
+  channel: C,
+  listener: (
+    event: Electron.IpcMainEvent,
+    ...args: SerializableArgs<Parameters<SyncChannels[C]>>
+  ) => AssertSerializable<ReturnType<SyncChannels[C]>>,
+): void {
+  ipcMain.on(
+    channel,
+    (event, ...args: SerializableArgs<Parameters<SyncChannels[C]>>) => {
+      assertTrustedSender(event);
+      event.returnValue = listener(event, ...args);
     },
   );
 }

@@ -1,3 +1,5 @@
+// Preload types are declared in renderer/preload.d.ts
+
 if (process.env.DEBUG_REACT_RENDERS === "true") {
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
   whyDidYouRender?.(require("react"), {
@@ -6,11 +8,20 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
   });
 }
 
-const earlyErrHandler = (evt) => {
-  const { error } = evt;
-  const remote = require("@electron/remote");
-  remote.dialog.showErrorBox("Unhandled error", error.stack);
-  remote.app.exit(1);
+// Set up requireRemap first, BEFORE any other requires
+// IMPORTANT: Use require() not import, because imports are hoisted to the top
+// tslint:disable-next-line:no-var-requires
+const requireRemap = require("./util/requireRemap").default;
+requireRemap();
+
+const earlyErrHandler = (evt: ErrorEvent) => {
+  const error = evt.error as Error | undefined;
+  // Use preload API for dialog and app access
+  void window.api.dialog.showErrorBox(
+    "Unhandled error",
+    error?.stack ?? String(evt.error),
+  );
+  void window.api.app.exit(1);
 };
 
 // turn all error logs into a single parameter. The reason is that (at least in production)
@@ -23,9 +34,6 @@ console.error = (...args) => {
 
 window.addEventListener("error", earlyErrHandler);
 window.addEventListener("unhandledrejection", earlyErrHandler);
-
-import requireRemap from "./util/requireRemap";
-requireRemap();
 
 if (process.env.NODE_ENV === "development") {
   const rebuildRequire = require("./util/requireRebuild").default;
@@ -55,7 +63,6 @@ import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
 import "./util/application.electron";
-import * as remote from "@electron/remote";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -93,7 +100,6 @@ import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
 import ExtensionManager from "./util/ExtensionManager";
 import { ExtensionContext } from "./util/ExtensionProvider";
-import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import GlobalNotifications from "./util/GlobalNotifications";
@@ -103,7 +109,7 @@ import getI18n, {
   type TFunction,
 } from "./util/i18n";
 import { log } from "./util/log";
-import { initApplicationMenu } from "./util/menu";
+import { initApplicationMenu } from "./renderer/menu";
 import { showError } from "./util/message";
 import presetManager from "./util/PresetManager";
 import safeForwardToMain from "./util/safeForwardToMain";
@@ -121,16 +127,15 @@ function fetchReduxState(): IState {
   return ipcRenderer.sendSync("get-redux-state");
 }
 
-function initialState(): IState {
+async function initialState(): Promise<IState> {
   try {
     return fetchReduxState();
   } catch (err) {
     if (err instanceof SyntaxError) {
-      const dumpPath = path.join(
-        remote.app.getPath("temp"),
-        "invalid_state.json",
-      );
-      writeFileSync(dumpPath, remote.getGlobal("getReduxState")());
+      const tempPath = await window.api.app.getPath("temp");
+      const dumpPath = path.join(tempPath, "invalid_state.json");
+      const reduxState = await window.api.redux.getState();
+      writeFileSync(dumpPath, JSON.stringify(reduxState));
       log(
         "error",
         "Failed to transfer application state. This indicates an issue with a " +
@@ -147,11 +152,11 @@ function initialState(): IState {
       //   everything that had been serialized had the undefined values dropped anyway.
       let stateSerialized: Buffer = Buffer.alloc(0);
 
-      const getReduxStateMsgpack = remote.getGlobal("getReduxStateMsgpack");
-
       let idx = 0;
       while (true) {
-        const newData: string = getReduxStateMsgpack(idx++);
+        const newData: string = (await window.api.redux.getStateMsgpack(
+          idx++,
+        )) as string;
         if (newData === "") {
           break;
         }
@@ -177,14 +182,12 @@ setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 let deinitCrashDump: () => void;
 
 if (process.env.CRASH_REPORTING === "vortex") {
-  const crashDump: typeof crashDumpT = require("crash-dump").default;
-  deinitCrashDump = crashDump(
-    path.join(
-      remote.app.getPath("temp"),
-      "dumps",
-      `crash-renderer-${Date.now()}.dmp`,
-    ),
-  );
+  void window.api.app.getPath("temp").then((tempPath: string) => {
+    const crashDump: typeof crashDumpT = require("crash-dump").default;
+    deinitCrashDump = crashDump(
+      path.join(tempPath, "dumps", `crash-renderer-${Date.now()}.dmp`),
+    );
+  });
 }
 
 // on windows, inject the native error code into "unknown" errors to help track those down
@@ -498,7 +501,7 @@ async function init(): Promise<ExtensionManager | null> {
   // store.replaceReducer(reducer(extReducers));
   store = createStore(
     reducer(extReducers, () => Decision.QUIT, reportReducerError),
-    initialState(),
+    await initialState(),
     enhancer,
   );
   safeReplayActionRenderer(store); // Safe IPC replay without double dispatch

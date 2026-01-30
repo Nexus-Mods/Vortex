@@ -8,7 +8,6 @@ import { currentGame, currentGameDiscovery } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { setdefault } from "../../../util/util";
 
-import type { BrowserWindow } from "electron";
 import * as path from "path";
 import type * as Redux from "redux";
 import type { IProcessInfo, IProcessProvider } from "./processProvider";
@@ -87,7 +86,9 @@ import { defaultProcessProvider } from "./processProvider";
 class ProcessMonitor {
   private mTimer: NodeJS.Timeout;
   private mStore: Redux.Store<IState>;
-  private mWindow: BrowserWindow;
+  private mIsFocused: boolean = true;
+  private mUnsubscribeFocus: (() => void) | null = null;
+  private mUnsubscribeBlur: (() => void) | null = null;
   private mActive: boolean = false;
   private mProcessProvider: IProcessProvider;
 
@@ -126,8 +127,15 @@ class ProcessMonitor {
       clearTimeout(this.mTimer);
     }
 
-    if (process.type === "renderer") {
-      this.mWindow = require("@electron/remote").getCurrentWindow();
+    // Track focus state via preload events in renderer process
+    if (process.type === "renderer" && window?.api?.window) {
+      this.mIsFocused = true; // Assume focused initially
+      this.mUnsubscribeFocus = window.api.window.onFocus(() => {
+        this.mIsFocused = true;
+      });
+      this.mUnsubscribeBlur = window.api.window.onBlur(() => {
+        this.mIsFocused = false;
+      });
     }
 
     log("debug", "start process monitor");
@@ -147,8 +155,7 @@ class ProcessMonitor {
       return;
     }
 
-    const isFocused = this.mWindow === undefined || this.mWindow.isFocused();
-    const delay = isFocused ? 2000 : 5000;
+    const delay = this.mIsFocused ? 2000 : 5000;
     const startedAt = Date.now();
 
     void this.doCheck()
@@ -313,7 +320,8 @@ class ProcessMonitor {
       visited.add(proc.ppid);
       // Success if direct child of Vortex, otherwise recurse up the tree
       return (
-        proc.ppid === vortexPid || isChildProcessOfVortex(byPid[proc.ppid], visited)
+        proc.ppid === vortexPid ||
+        isChildProcessOfVortex(byPid[proc.ppid], visited)
       );
     };
 
@@ -353,7 +361,10 @@ class ProcessMonitor {
           // Step 6c-i: Process with cached PID still exists - but is it still "ours"?
           // For games (considerDetached=true): any process is valid, we're done
           // For tools (considerDetached=false): must still be a Vortex child process
-          if (considerDetached || isChildProcessOfVortex(knownProc, new Set())) {
+          if (
+            considerDetached ||
+            isChildProcessOfVortex(knownProc, new Set())
+          ) {
             return; // Still valid, no state change needed
           }
           // Step 6c-ii: Process exists but is no longer a child - fall through to re-match
@@ -464,6 +475,13 @@ class ProcessMonitor {
     clearTimeout(this.mTimer);
     this.mTimer = undefined;
     this.mActive = false;
+
+    // Unsubscribe from focus events
+    this.mUnsubscribeFocus?.();
+    this.mUnsubscribeBlur?.();
+    this.mUnsubscribeFocus = null;
+    this.mUnsubscribeBlur = null;
+
     log("debug", "stop process monitor");
   }
 }

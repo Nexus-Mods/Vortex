@@ -9,7 +9,6 @@ import {
   translate,
 } from "../../../renderer/controls/ComponentEx";
 import Debouncer from "../../../util/Debouncer";
-import lazyRequire from "../../../util/lazyRequire";
 import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
@@ -26,14 +25,11 @@ import PackeryGrid from "./PackeryGrid";
 import type { IPackeryItemProps } from "./PackeryItem";
 import PackeryItem from "./PackeryItem";
 
-import type * as remoteT from "@electron/remote";
 import * as _ from "lodash";
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-
-const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 
 const UPDATE_FREQUENCY_MS = 1000;
 
@@ -78,6 +74,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   private mUpdateTimer: NodeJS.Timeout;
   private mLayoutDebouncer: Debouncer;
   private mWindowFocused: boolean = true;
+  private mUnsubscribeFocus: (() => void) | undefined;
+  private mUnsubscribeBlur: (() => void) | undefined;
 
   constructor(props: IProps) {
     super(props);
@@ -93,27 +91,24 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       }
       return null;
     }, 500);
-    // assuming this doesn't change?
-    const window = remote.getCurrentWindow();
-    this.mWindowFocused = window.isFocused();
   }
 
   public componentDidMount() {
     this.startUpdateCycle();
-    const win = remote.getCurrentWindow();
-    win.on("focus", this.onFocus);
-    win.on("blur", this.onBlur);
-    window.addEventListener("beforeunload", () => {
-      win.removeListener("focus", this.onFocus);
-      win.removeListener("blur", this.onBlur);
+    // Check initial focus state
+    window.api.window.isFocused(window.windowId).then((focused) => {
+      this.mWindowFocused = focused;
     });
+    // Subscribe to focus/blur events via preload API
+    this.mUnsubscribeFocus = window.api.window.onFocus(this.onFocus);
+    this.mUnsubscribeBlur = window.api.window.onBlur(this.onBlur);
   }
 
   public componentWillUnmount() {
     clearTimeout(this.mUpdateTimer);
-    const win = remote.getCurrentWindow();
-    win.removeListener("focus", this.onFocus);
-    win.removeListener("blur", this.onBlur);
+    // Unsubscribe from focus/blur events
+    this.mUnsubscribeFocus?.();
+    this.mUnsubscribeBlur?.();
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {

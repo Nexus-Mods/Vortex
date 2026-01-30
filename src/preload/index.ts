@@ -1,13 +1,14 @@
-import { contextBridge, ipcRenderer } from "electron";
-import type { PreloadWindow } from "@shared/types/preload";
 import type {
   RendererChannels,
   InvokeChannels,
   MainChannels,
   SerializableArgs,
   AssertSerializable,
+  VortexPaths,
 } from "@shared/types/ipc";
+import type { PreloadWindow } from "@shared/types/preload";
 
+import { contextBridge, ipcRenderer } from "electron";
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.
 // 2) Use betterIpcRenderer defined below instead of raw ipcRenderer.
@@ -25,9 +26,195 @@ try {
     node: process.versions.node,
   });
 
+  // Get the current window ID synchronously during preload initialization
+  // This is safe because the BrowserWindow is already created before preload runs
+  const currentWindowId: number = ipcRenderer.sendSync("window:getIdSync");
+  expose("windowId", currentWindowId);
+
+  // Get app name and version synchronously for application.electron.ts
+  const appName: string = ipcRenderer.sendSync("app:getNameSync");
+  const appVersion: string = ipcRenderer.sendSync("app:getVersionSync");
+  expose("appName", appName);
+  expose("appVersion", appVersion);
+
+  // Get all Vortex paths synchronously for getVortexPath
+  const vortexPaths: VortexPaths = ipcRenderer.sendSync("vortex:getPathsSync");
+  expose("vortexPaths", vortexPaths);
+
   expose("api", {
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
+    },
+    dialog: {
+      showOpen: (options) =>
+        betterIpcRenderer.invoke(
+          "dialog:showOpen",
+          options,
+        ) as Promise<Electron.OpenDialogReturnValue>,
+      showSave: (options) =>
+        betterIpcRenderer.invoke(
+          "dialog:showSave",
+          options,
+        ) as Promise<Electron.SaveDialogReturnValue>,
+      showMessageBox: (options) =>
+        betterIpcRenderer.invoke(
+          "dialog:showMessageBox",
+          options,
+        ) as Promise<Electron.MessageBoxReturnValue>,
+      showErrorBox: (title, content) =>
+        betterIpcRenderer.invoke("dialog:showErrorBox", title, content),
+    },
+    app: {
+      setProtocolClient: (protocol: string, udPath: string) =>
+        betterIpcRenderer.invoke("app:setProtocolClient", protocol, udPath),
+      isProtocolClient: (protocol: string, udPath: string) =>
+        betterIpcRenderer.invoke("app:isProtocolClient", protocol, udPath),
+      removeProtocolClient: (protocol: string, udPath: string) =>
+        betterIpcRenderer.invoke("app:removeProtocolClient", protocol, udPath),
+      exit: (exitCode: number) =>
+        betterIpcRenderer.invoke("app:exit", exitCode),
+      getName: () => betterIpcRenderer.invoke("app:getName"),
+      getPath: (name: string) => betterIpcRenderer.invoke("app:getPath", name),
+      setPath: (name: string, value: string) =>
+        betterIpcRenderer.invoke("app:setPath", name, value),
+      extractFileIcon: (exePath: string, iconPath: string) =>
+        betterIpcRenderer.invoke("app:extractFileIcon", exePath, iconPath),
+      setJumpList: (categories) =>
+        betterIpcRenderer.invoke("app:setJumpList", categories),
+      setLoginItemSettings: (settings) =>
+        betterIpcRenderer.invoke("app:setLoginItemSettings", settings),
+      getLoginItemSettings: () =>
+        betterIpcRenderer.invoke("app:getLoginItemSettings"),
+      getAppPath: () => betterIpcRenderer.invoke("app:getAppPath"),
+    },
+    browserView: {
+      create: (src: string, partition: string, isNexus: boolean) =>
+        betterIpcRenderer.invoke("browserView:create", src, partition, isNexus),
+      createWithEvents: (
+        src: string,
+        forwardEvents: string[],
+        options: unknown,
+      ) =>
+        betterIpcRenderer.invoke(
+          "browserView:createWithEvents",
+          src,
+          forwardEvents,
+          options,
+        ),
+      close: (viewId: string) =>
+        betterIpcRenderer.invoke("browserView:close", viewId),
+      position: (viewId: string, rect: Electron.Rectangle) =>
+        betterIpcRenderer.invoke("browserView:position", viewId, rect),
+      updateURL: (viewId: string, newURL: string) =>
+        betterIpcRenderer.invoke("browserView:updateURL", viewId, newURL),
+    },
+    session: {
+      getCookies: (filter: Electron.CookiesGetFilter) =>
+        betterIpcRenderer.invoke("session:getCookies", filter),
+    },
+    window: {
+      minimize: (windowId: number) =>
+        betterIpcRenderer.invoke("window:minimize", windowId),
+      maximize: (windowId: number) =>
+        betterIpcRenderer.invoke("window:maximize", windowId),
+      unmaximize: (windowId: number) =>
+        betterIpcRenderer.invoke("window:unmaximize", windowId),
+      restore: (windowId: number) =>
+        betterIpcRenderer.invoke("window:restore", windowId),
+      close: (windowId: number) =>
+        betterIpcRenderer.invoke("window:close", windowId),
+      focus: (windowId: number) =>
+        betterIpcRenderer.invoke("window:focus", windowId),
+      show: (windowId: number) =>
+        betterIpcRenderer.invoke("window:show", windowId),
+      hide: (windowId: number) =>
+        betterIpcRenderer.invoke("window:hide", windowId),
+      isMaximized: (windowId: number) =>
+        betterIpcRenderer.invoke("window:isMaximized", windowId),
+      isMinimized: (windowId: number) =>
+        betterIpcRenderer.invoke("window:isMinimized", windowId),
+      isFocused: (windowId: number) =>
+        betterIpcRenderer.invoke("window:isFocused", windowId),
+      setAlwaysOnTop: (windowId: number, flag: boolean) =>
+        betterIpcRenderer.invoke("window:setAlwaysOnTop", windowId, flag),
+      moveTop: (windowId: number) =>
+        betterIpcRenderer.invoke("window:moveTop", windowId),
+      onMaximize: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on("window:event:maximize", listener);
+        return () =>
+          ipcRenderer.removeListener("window:event:maximize", listener);
+      },
+      onUnmaximize: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on("window:event:unmaximize", listener);
+        return () =>
+          ipcRenderer.removeListener("window:event:unmaximize", listener);
+      },
+      onClose: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on("window:event:close", listener);
+        return () => ipcRenderer.removeListener("window:event:close", listener);
+      },
+      onFocus: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on("window:event:focus", listener);
+        return () => ipcRenderer.removeListener("window:event:focus", listener);
+      },
+      onBlur: (callback) => {
+        const listener = () => callback();
+        ipcRenderer.on("window:event:blur", listener);
+        return () => ipcRenderer.removeListener("window:event:blur", listener);
+      },
+      getPosition: (windowId: number) =>
+        betterIpcRenderer.invoke("window:getPosition", windowId),
+      setPosition: (windowId: number, x: number, y: number) =>
+        betterIpcRenderer.invoke("window:setPosition", windowId, x, y),
+      getSize: (windowId: number) =>
+        betterIpcRenderer.invoke("window:getSize", windowId),
+      setSize: (windowId: number, width: number, height: number) =>
+        betterIpcRenderer.invoke("window:setSize", windowId, width, height),
+      isVisible: (windowId: number) =>
+        betterIpcRenderer.invoke("window:isVisible", windowId),
+      toggleDevTools: (windowId: number) =>
+        betterIpcRenderer.invoke("window:toggleDevTools", windowId),
+    },
+    menu: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setApplicationMenu: (template: any) =>
+        betterIpcRenderer.invoke("menu:setApplicationMenu", template),
+      onMenuClick: (callback: (menuItemId: string) => void) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          menuItemId: string,
+        ) => callback(menuItemId);
+        ipcRenderer.on("menu:click", listener);
+        return () => ipcRenderer.removeListener("menu:click", listener);
+      },
+    },
+    contentTracing: {
+      startRecording: (options) =>
+        betterIpcRenderer.invoke("contentTracing:startRecording", options),
+      stopRecording: (resultPath) =>
+        betterIpcRenderer.invoke("contentTracing:stopRecording", resultPath),
+    },
+    redux: {
+      getState: () => betterIpcRenderer.invoke("redux:getState"),
+      getStateMsgpack: (idx?: number) =>
+        betterIpcRenderer.invoke("redux:getStateMsgpack", idx),
+    },
+    clipboard: {
+      writeText: (text: string) =>
+        betterIpcRenderer.invoke("clipboard:writeText", text),
+      readText: () => betterIpcRenderer.invoke("clipboard:readText"),
+    },
+    powerSaveBlocker: {
+      start: (type: "prevent-app-suspension" | "prevent-display-sleep") =>
+        betterIpcRenderer.invoke("powerSaveBlocker:start", type),
+      stop: (id: number) =>
+        betterIpcRenderer.invoke("powerSaveBlocker:stop", id),
+      isStarted: (id: number) =>
+        betterIpcRenderer.invoke("powerSaveBlocker:isStarted", id),
     },
   });
 } catch (err) {

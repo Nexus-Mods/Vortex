@@ -19,10 +19,8 @@ import type { IState } from "../../types/IState";
 import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import type { TFunction } from "../../util/i18n";
-import lazyRequire from "../../util/lazyRequire";
 import { MutexWrapper } from "../../util/MutexContext";
 
-import type * as RemoteT from "@electron/remote";
 import update from "immutability-helper";
 import * as React from "react";
 import {
@@ -38,8 +36,6 @@ import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 const nop = () => undefined;
 
@@ -127,13 +123,16 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
         this.setState(newState);
 
-        const window = remote.getCurrentWindow();
-        if (window.isMinimized()) {
-          window.restore();
-        }
-        window.setAlwaysOnTop(true);
-        window.show();
-        window.setAlwaysOnTop(false);
+        // Bring window to focus when a new dialog appears
+        const winId = window.windowId;
+        void window.api.window.isMinimized(winId).then((minimized: boolean) => {
+          if (minimized) {
+            void window.api.window.restore(winId);
+          }
+          void window.api.window.setAlwaysOnTop(winId, true);
+          void window.api.window.show(winId);
+          void window.api.window.setAlwaysOnTop(winId, false);
+        });
       } else if (
         this.props.dialogs[0]?.content !== newProps.dialogs[0]?.content
       ) {

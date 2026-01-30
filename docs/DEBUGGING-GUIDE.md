@@ -225,7 +225,6 @@ log("error", "download failed", {
 **During Development:**
 
 - Press **F12** or **Ctrl+Shift+I** in the running Vortex window
-- Or add to your code: `require('@electron/remote').getCurrentWindow().webContents.openDevTools()`
 
 **From Command Line:**
 
@@ -287,9 +286,6 @@ Vortex uses Electron, which provides Chrome DevTools for debugging.
 // In main process
 import { BrowserWindow } from "electron";
 BrowserWindow.getFocusedWindow()?.webContents.openDevTools();
-
-// In renderer process
-require("@electron/remote").getCurrentWindow().webContents.openDevTools();
 ```
 
 ### Network Tab

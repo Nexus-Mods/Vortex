@@ -16,7 +16,6 @@ import opn from "./opn";
 import { getSafe } from "./storeHelper";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
-import type * as RemoteT from "@electron/remote";
 import type {
   IFeedbackResponse,
   IOAuthCredentials,
@@ -33,11 +32,28 @@ import * as semver from "semver";
 import { inspect } from "util";
 import {} from "uuid";
 import { getApplication } from "./application";
-import lazyRequire from "./lazyRequire";
 import { getCPUArch } from "./nativeArch";
 import { getErrorMessageOrDefault } from "../shared/errors";
 
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+// Async dialog helpers for cross-process compatibility
+const showMessageBox = async (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  if (process.type === "renderer") {
+    return window.api.dialog.showMessageBox(options);
+  } else {
+    const win = getVisibleWindow();
+    return dialogIn.showMessageBox(win, options);
+  }
+};
+
+const showErrorBox = async (title: string, content: string): Promise<void> => {
+  if (process.type === "renderer") {
+    return window.api.dialog.showErrorBox(title, content);
+  } else {
+    dialogIn.showErrorBox(title, content);
+  }
+};
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -328,30 +344,30 @@ export function sendReport(
   sourceProcess: string | undefined,
   attachment: string | undefined,
 ): PromiseBB<IFeedbackResponse | undefined> {
-  const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
   const hash = genHash(error);
   if (process.env.NODE_ENV === "development") {
     const fullMessage =
       error.title !== undefined
         ? error.message + `\n(${error.title})`
         : error.message;
-    dialog.showErrorBox(
-      fullMessage,
-      JSON.stringify(
-        {
-          type,
-          error,
-          labels,
-          context,
-          reporterProcess,
-          sourceProcess,
-          attachment,
-        },
-        undefined,
-        2,
+    return PromiseBB.resolve(
+      showErrorBox(
+        fullMessage,
+        JSON.stringify(
+          {
+            type,
+            error,
+            labels,
+            context,
+            reporterProcess,
+            sourceProcess,
+            attachment,
+          },
+          undefined,
+          2,
+        ),
       ),
-    );
-    return PromiseBB.resolve(undefined);
+    ).then(() => undefined);
   } else {
     return nexusReport(
       hash,
@@ -379,12 +395,12 @@ export function getWindow(): BrowserWindow | null {
 
 let currentWindow: BrowserWindow | null = null;
 
-function getCurrentWindow() {
-  if (currentWindow === undefined) {
-    currentWindow =
-      process.type === "renderer" ? remote.getCurrentWindow() : null;
+function getCurrentWindow(): BrowserWindow | null {
+  // In renderer process, we can't access BrowserWindow directly
+  // The preload API handles window references internally via windowId
+  if (process.type === "renderer") {
+    return null;
   }
-
   return currentWindow;
 }
 
@@ -398,14 +414,13 @@ export function getVisibleWindow(
   return win !== null && !win.isDestroyed() && win.isVisible() ? win : null;
 }
 
-function showTerminateError(
+async function showTerminateError(
   error: IError,
   state: any,
   source: string | undefined,
   allowReport: boolean | undefined,
   withDetails: boolean,
-): boolean {
-  const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
+): Promise<boolean> {
   const buttons = ["Ignore", "Quit"];
   if (!withDetails) {
     buttons.unshift("Show Details");
@@ -430,7 +445,7 @@ function showTerminateError(
     }
   }
 
-  let action = dialog.showMessageBoxSync(getVisibleWindow(), {
+  let result = await showMessageBox({
     type: "error",
     buttons,
     defaultId: buttons.length - 1,
@@ -440,7 +455,7 @@ function showTerminateError(
     noLink: true,
   });
 
-  if (buttons[action] === "Report and Quit") {
+  if (buttons[result.response] === "Report and Quit") {
     // Report
     createErrorReport(
       "Crash",
@@ -450,9 +465,9 @@ function showTerminateError(
       state,
       source,
     );
-  } else if (buttons[action] === "Ignore") {
+  } else if (buttons[result.response] === "Ignore") {
     // Ignore
-    action = dialog.showMessageBoxSync(getVisibleWindow(), {
+    result = await showMessageBox({
       type: "error",
       buttons: ["Quit", "I understand"],
       title: "Are you sure?",
@@ -461,12 +476,12 @@ function showTerminateError(
         "Continue at your own risk. Please do not report any issues that arise from here on out, as they are very likely to be caused by the unhandled error. ",
       noLink: true,
     });
-    if (action === 1) {
+    if (result.response === 1) {
       log("info", "user ignored error, disabling reporting");
       errorIgnored = true;
       return true;
     }
-  } else if (buttons[action] === "Show Details") {
+  } else if (buttons[result.response] === "Show Details") {
     return showTerminateError(error, state, source, allowReport, true);
   }
   return false;
@@ -487,13 +502,6 @@ export function terminate(
   allowReport?: boolean,
   source?: string,
 ) {
-  const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
-  let win =
-    process.type === "renderer" ? remote.getCurrentWindow() : defaultWindow;
-  if (win && (win.isDestroyed() || !win.isVisible())) {
-    win = null;
-  }
-
   if (allowReport === undefined && error.allowReport === false) {
     allowReport = false;
   }
@@ -504,51 +512,56 @@ export function terminate(
 
   log("error", "unrecoverable error", { error, process: process.type });
 
-  try {
-    if (showTerminateError(error, state, source, allowReport, false)) {
-      // ignored
-      return;
-    }
-
-    if (error.extension !== undefined) {
-      const action = dialog.showMessageBoxSync(getVisibleWindow(), {
-        type: "error",
-        buttons: ["Disable", "Keep"],
-        title: "Extension crashed",
-        message:
-          `This crash was caused by an extension (${error.extension}). ` +
-          "Do you want to disable this extension? All functionality provided " +
-          "by the extension will be removed from Vortex!",
-        noLink: true,
-      });
-      if (action === 0) {
-        log("warn", "extension will be disabled after causing a crash", {
-          extId: error.extension,
-          error: error.message,
-          stack: error.stack,
-        });
-        // can't access the store at this point because we won't be waiting for the store
-        // to be persisted
-        fs.writeFileSync(
-          path.join(getVortexPath("temp"), "__disable_" + error.extension),
-          "",
-        );
+  // Use an async IIFE to handle the async dialog calls
+  void (async () => {
+    try {
+      if (await showTerminateError(error, state, source, allowReport, false)) {
+        // ignored
+        return;
       }
-    }
-  } catch (err) {
-    // if the crash occurs before the application is ready, the dialog module can't be
-    // used (except for this function)
-    dialog.showErrorBox(
-      "An unrecoverable error occurred",
-      error.message +
-        "\n" +
-        error.details +
-        "\nIf you think this is a bug, please report it to the " +
-        "issue tracker (github)",
-    );
-  }
 
-  getApplication().quit(1);
+      if (error.extension !== undefined) {
+        const result = await showMessageBox({
+          type: "error",
+          buttons: ["Disable", "Keep"],
+          title: "Extension crashed",
+          message:
+            `This crash was caused by an extension (${error.extension}). ` +
+            "Do you want to disable this extension? All functionality provided " +
+            "by the extension will be removed from Vortex!",
+          noLink: true,
+        });
+        if (result.response === 0) {
+          log("warn", "extension will be disabled after causing a crash", {
+            extId: error.extension,
+            error: error.message,
+            stack: error.stack,
+          });
+          // can't access the store at this point because we won't be waiting for the store
+          // to be persisted
+          fs.writeFileSync(
+            path.join(getVortexPath("temp"), "__disable_" + error.extension),
+            "",
+          );
+        }
+      }
+    } catch (err) {
+      // if the crash occurs before the application is ready, the dialog module can't be
+      // used (except for this function)
+      await showErrorBox(
+        "An unrecoverable error occurred",
+        error.message +
+          "\n" +
+          error.details +
+          "\nIf you think this is a bug, please report it to the " +
+          "issue tracker (github)",
+      );
+    }
+
+    getApplication().quit(1);
+  })();
+
+  // Throw immediately to stop execution in the calling code
   throw new UserCanceled();
 }
 

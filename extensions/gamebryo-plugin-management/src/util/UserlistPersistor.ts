@@ -2,15 +2,12 @@ import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 
 import {gameSupported} from './gameSupport';
 
-import * as RemoteT from '@electron/remote';
 import Promise from 'bluebird';
 import { dialog as dialogIn } from 'electron';
 import { dump, load } from 'js-yaml';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { fs, types, util } from 'vortex-api';
-
-const remote = util.lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -148,14 +145,20 @@ class UserlistPersistor implements types.IPersistor {
       });
   }
 
-  private handleInvalidList() {
-    const dialog = process.type === 'renderer'
-      ? remote.dialog
-      : dialogIn;
+  private async handleInvalidList() {
+    const showMessageBox = async (options: Electron.MessageBoxOptions) => {
+      if (process.type === 'renderer') {
+        const result = await (window as any).api.dialog.showMessageBox(options);
+        return result.response;
+      } else {
+        const result = await dialogIn.showMessageBox(null, options);
+        return result.response;
+      }
+    };
 
     let res = 0;
     if (this.mMode === 'masterlist') {
-      res = dialog.showMessageBoxSync(null, {
+      res = await showMessageBox({
         title: 'Masterlist invalid',
         message: `The masterlist "${this.mUserlistPath}" can\'t be read. `
                + '\n\n'
@@ -167,7 +170,7 @@ class UserlistPersistor implements types.IPersistor {
         ],
       });
     } else {
-      res = dialog.showMessageBoxSync(null, {
+      res = await showMessageBox({
         title: 'Userlist invalid',
         message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
                + '\n\n'
@@ -226,7 +229,7 @@ class UserlistPersistor implements types.IPersistor {
     let empty: boolean = false;
 
     return fs.readFileAsync(this.mUserlistPath)
-    .then((data: Buffer) => {
+    .then(async (data: Buffer) => {
       if (data.byteLength <= 5) {
         // the smallest non-empty file is actually around 20 bytes long and
         // the smallest useful file probably 30. This is really to catch
@@ -239,10 +242,10 @@ class UserlistPersistor implements types.IPersistor {
       try {
         newList = load(data.toString(), { json: true }) as any;
       } catch (err) {
-        this.handleInvalidList();
+        await this.handleInvalidList();
       }
       if (typeof (newList) !== 'object') {
-        this.handleInvalidList();
+        await this.handleInvalidList();
       }
 
       ['globals', 'plugins', 'groups'].forEach(key => {
