@@ -44,6 +44,7 @@ import {
   getErrorMessageOrDefault,
   isErrorWithSystemCode,
 } from "../shared/errors";
+import type { Api } from "../shared/types/preload";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
@@ -51,11 +52,21 @@ const permission: typeof permissionT = lazyRequire(() =>
 const vortexRun: typeof vortexRunT = lazyRequire(() => require("vortex-run"));
 const wholocks: typeof whoLocksT = lazyRequire(() => require("wholocks"));
 
-const dialog =
-  process.type === "renderer"
-    ? // tslint:disable-next-line:no-var-requires
-      require("@electron/remote").dialog
-    : dialogIn;
+// Helper to access preload API - only available in renderer process
+const getPreloadApi = (): Api => (window as unknown as { api: Api }).api;
+
+// For renderer process, we use the preload API for dialogs
+// For main process, we use the electron dialog module directly
+const showMessageBox = async (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  if (process.type === "renderer") {
+    return getPreloadApi().dialog.showMessageBox(options);
+  } else {
+    const win = getVisibleWindow();
+    return dialogIn.showMessageBox(win, options);
+  }
+};
 
 export { constants, Stats, WriteStream } from "fs";
 export type { FSWatcher } from "fs";
@@ -132,10 +143,6 @@ const simfail =
     : (func: () => PromiseBB<any>) => func();
 
 function nospcQuery(): PromiseBB<boolean> {
-  if (dialog === undefined) {
-    return PromiseBB.resolve(false);
-  }
-
   const options: Electron.MessageBoxOptions = {
     title: "Disk full",
     message:
@@ -147,17 +154,14 @@ function nospcQuery(): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
-  return choice === 0
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+  return PromiseBB.resolve(showMessageBox(options)).then((result) =>
+    result.response === 0
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.resolve(true),
+  );
 }
 
 function ioQuery(): PromiseBB<boolean> {
-  if (dialog === undefined) {
-    return PromiseBB.resolve(false);
-  }
-
   const options: Electron.MessageBoxOptions = {
     title: "I/O Error",
     message:
@@ -170,14 +174,15 @@ function ioQuery(): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
-  return choice === 0
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+  return PromiseBB.resolve(showMessageBox(options)).then((result) =>
+    result.response === 0
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.resolve(true),
+  );
 }
 
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined || !truthy(filePath)) {
+  if (!truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -218,10 +223,11 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
-  return choice === 0
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(choice === 2);
+  return PromiseBB.resolve(showMessageBox(options)).then((result) =>
+    result.response === 0
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.resolve(result.response === 2),
+  );
 }
 
 function unknownErrorRetry(
@@ -229,10 +235,6 @@ function unknownErrorRetry(
   err: Error,
   stackErr: Error,
 ): PromiseBB<boolean> {
-  if (dialog === undefined) {
-    return PromiseBB.resolve(false);
-  }
-
   if (filePath === undefined) {
     // unfortunately these error message don't necessarily contain the filename
     filePath = "<filename unknown>";
@@ -270,44 +272,42 @@ function unknownErrorRetry(
     options.buttons = ["Cancel", "Ignore", "Retry"];
   }
 
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
+  return PromiseBB.resolve(showMessageBox(options)).then((result) => {
+    const choice = result.response;
 
-  if (options.buttons[choice] === "Cancel and Report") {
-    // we're reporting this to collect a list of native errors and provide better error
-    // message
-    const nat = err["nativeCode"];
-    createErrorReport(
-      "Unknown error",
-      {
-        message: `Windows System Error (${nat})`,
-        stack: restackErr(err, stackErr).stack,
-        path: filePath,
-      },
-      {},
-      ["bug"],
-      {},
-    );
-    return PromiseBB.reject(new UserCanceled());
-  }
-
-  switch (options.buttons[choice]) {
-    case "Retry":
-      return PromiseBB.resolve(true);
-    case "Ignore": {
-      err["code"] = decoded?.rethrowAs ?? "UNKNOWN";
-      err["allowReport"] = false;
-      return PromiseBB.reject(err);
+    if (options.buttons[choice] === "Cancel and Report") {
+      // we're reporting this to collect a list of native errors and provide better error
+      // message
+      const nat = err["nativeCode"];
+      createErrorReport(
+        "Unknown error",
+        {
+          message: `Windows System Error (${nat})`,
+          stack: restackErr(err, stackErr).stack,
+          path: filePath,
+        },
+        {},
+        ["bug"],
+        {},
+      );
+      return PromiseBB.reject(new UserCanceled());
     }
-  }
 
-  return PromiseBB.reject(new UserCanceled());
+    switch (options.buttons[choice]) {
+      case "Retry":
+        return PromiseBB.resolve(true);
+      case "Ignore": {
+        err["code"] = decoded?.rethrowAs ?? "UNKNOWN";
+        err["allowReport"] = false;
+        return PromiseBB.reject(err);
+      }
+    }
+
+    return PromiseBB.reject(new UserCanceled());
+  });
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
-    return PromiseBB.resolve(false);
-  }
-
   if (filePath === undefined) {
     filePath = "<filename unknown>";
   }
@@ -337,10 +337,11 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
-  return choice === 0
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+  return PromiseBB.resolve(showMessageBox(options)).then((result) =>
+    result.response === 0
+      ? PromiseBB.reject(new UserCanceled())
+      : PromiseBB.resolve(true),
+  );
 }
 
 function errorRepeat(
@@ -1202,7 +1203,7 @@ function raiseUACDialog<T>(
   filePath: string,
 ): PromiseBB<T> {
   let fileToAccess = filePath !== undefined ? filePath : err.path;
-  const choice = dialog.showMessageBoxSync(getVisibleWindow(), {
+  const options: Electron.MessageBoxOptions = {
     title: "Access denied (2)",
     message: t(
       'Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n' +
@@ -1213,47 +1214,51 @@ function raiseUACDialog<T>(
     buttons: ["Cancel", "Retry", "Give permission"],
     noLink: true,
     type: "warning",
-  });
-  if (choice === 1) {
-    // Retry
-    return forcePerm(t, op, filePath);
-  } else if (choice === 2) {
-    // Give Permission
-    const userId = permission.getUserId();
-    return PromiseBB.resolve(fs.stat(fileToAccess))
-      .catch((statErr) => {
-        if (statErr.code === "ENOENT") {
-          fileToAccess = path.dirname(fileToAccess);
-        }
-        return PromiseBB.resolve();
-      })
-      .then(() =>
-        elevated(
-          (ipcPath, req: NodeRequire) => {
-            // tslint:disable-next-line:no-shadowed-variable
-            const { allow } = req("permissions");
-            return allow(fileToAccess, userId, "rwx");
-          },
-          { fileToAccess, userId },
-        ).catch((elevatedErr) => {
-          if (
-            elevatedErr instanceof UserCanceled ||
-            elevatedErr.message.indexOf(
-              "The operation was canceled by the user",
-            ) !== -1
-          ) {
-            return Promise.reject(new UserCanceled());
+  };
+
+  return PromiseBB.resolve(showMessageBox(options)).then((result) => {
+    const choice = result.response;
+    if (choice === 1) {
+      // Retry
+      return forcePerm(t, op, filePath);
+    } else if (choice === 2) {
+      // Give Permission
+      const userId = permission.getUserId();
+      return PromiseBB.resolve(fs.stat(fileToAccess))
+        .catch((statErr) => {
+          if (statErr.code === "ENOENT") {
+            fileToAccess = path.dirname(fileToAccess);
           }
-          // if elevation failed, return the original error because the one from
-          // elevate, while interesting as well, would make error handling too complicated
-          log("error", "failed to acquire permission", elevatedErr.message);
-          return Promise.reject(err);
-        }),
-      )
-      .then(() => forcePerm(t, op, filePath));
-  } else {
-    return PromiseBB.reject(new UserCanceled());
-  }
+          return PromiseBB.resolve();
+        })
+        .then(() =>
+          elevated(
+            (ipcPath, req: NodeRequire) => {
+              // tslint:disable-next-line:no-shadowed-variable
+              const { allow } = req("permissions");
+              return allow(fileToAccess, userId, "rwx");
+            },
+            { fileToAccess, userId },
+          ).catch((elevatedErr) => {
+            if (
+              elevatedErr instanceof UserCanceled ||
+              elevatedErr.message.indexOf(
+                "The operation was canceled by the user",
+              ) !== -1
+            ) {
+              return Promise.reject(new UserCanceled());
+            }
+            // if elevation failed, return the original error because the one from
+            // elevate, while interesting as well, would make error handling too complicated
+            log("error", "failed to acquire permission", elevatedErr.message);
+            return Promise.reject(err);
+          }),
+        )
+        .then(() => forcePerm(t, op, filePath));
+    } else {
+      return PromiseBB.reject(new UserCanceled());
+    }
+  });
 }
 
 export function forcePerm<T>(

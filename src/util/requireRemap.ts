@@ -47,9 +47,11 @@ function patchedLoad(orig) {
     ) {
       request = "original-fs";
     } else if (request === "electron") {
+      // Let the preload script get the real electron module
+      if (parent.filename.indexOf("preload") !== -1) {
+        return orig.apply(this, [request, parent, ...rest]);
+      }
       return electron;
-    } else if (request === "@electron/remote" && process.type !== "renderer") {
-      return undefined;
     }
 
     let res = orig.apply(this, [request, parent, ...rest]);

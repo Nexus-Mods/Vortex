@@ -3,17 +3,23 @@ import { getVisibleWindow } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { makeQueue } from "../../util/util";
+import { getPreloadApi } from "../../util/preloadAccess";
 
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
 import * as fsFast from "fs-extra";
 import * as path from "path";
 
-const dialog =
-  process.type === "renderer"
-    ? // tslint:disable-next-line:no-var-requires
-      require("@electron/remote").dialog
-    : dialogIn;
+const showMessageBox = async (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  if (process.type === "renderer") {
+    return getPreloadApi().dialog.showMessageBox(options);
+  } else {
+    const win = getVisibleWindow();
+    return dialogIn.showMessageBox(win, options);
+  }
+};
 
 /**
  * assembles a file received in chunks.
@@ -157,7 +163,7 @@ class FileAssembler {
               : PromiseBB.resolve(synced),
           )
           .catch({ code: "ENOSPC" }, () => {
-            dialog.showMessageBoxSync(getVisibleWindow(), {
+            return showMessageBox({
               type: "warning",
               title: "Disk is full",
               message:
@@ -166,9 +172,11 @@ class FileAssembler {
               buttons: ["Cancel", "Retry"],
               defaultId: 1,
               noLink: true,
-            }) === 1
-              ? this.addChunk(offset, data)
-              : PromiseBB.reject(new UserCanceled());
+            }).then((result) =>
+              result.response === 1
+                ? this.addChunk(offset, data)
+                : PromiseBB.reject(new UserCanceled()),
+            );
           }),
       false,
     );

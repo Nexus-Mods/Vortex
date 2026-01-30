@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { app, ipcMain, ipcRenderer } from "electron";
 import * as path from "path";
 import type { IExtensionApi } from "../types/IExtensionContext";
 
@@ -10,7 +10,6 @@ import type {
 } from "../types/IPreset";
 
 import { iPresetSchema, iPresetsStateSchema } from "../types/IPreset.gen";
-import { makeRemoteCallSync } from "./electronRemote";
 
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
@@ -21,9 +20,17 @@ import {
   getErrorMessageOrDefault,
 } from "../shared/errors";
 
-const getAppName = makeRemoteCallSync("get-application-name", (electron) =>
-  electron.app.getName(),
-);
+function getAppName(): string {
+  // In main process, use electron app directly
+  if (app !== undefined) {
+    return app.getName();
+  }
+  // In renderer process, use preload value
+  if (typeof window !== "undefined" && window.appName !== undefined) {
+    return window.appName;
+  }
+  throw new Error("getAppName is not available in this context");
+}
 
 type StepCB = (step: IPresetStep, data: unknown) => PromiseLike<void>;
 

@@ -72,7 +72,6 @@ import { modPathsForGame } from "../selectors";
 import { STAGING_DIR_TAG } from "../stagingDirectory";
 import getText from "../texts";
 
-import * as remote from "@electron/remote";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import * as React from "react";
@@ -140,6 +139,7 @@ interface IComponentState {
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
+  appPath: string;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -158,6 +158,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       currentActivator: props.currentActivator,
       installPath: props.installPath,
       changingActivator: false,
+      appPath: undefined,
     });
   }
 
@@ -174,6 +175,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       this.nextState.currentActivator =
         activators.length > 0 ? activators[0].id : undefined;
     }
+
+    // Load the app path for validation
+    window.api.app.getAppPath().then((appPath) => {
+      // In asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      if (path.basename(appPath) === "app.asar") {
+        appPath = path.dirname(path.dirname(appPath));
+      }
+      this.nextState.appPath = appPath;
+    });
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -921,12 +932,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     reason?: string;
   } {
     const { downloadsPath } = this.props;
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === "app.asar") {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
+    const { appPath } = this.state;
+
     if (downloadsPath !== undefined) {
       const downPath = path.dirname(downloadsPath);
       const normalizedDownloadsPath = path.normalize(downPath.toLowerCase());
@@ -950,7 +957,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       };
     }
 
-    if (isChildPath(input, vortexPath)) {
+    if (appPath !== undefined && isChildPath(input, appPath)) {
       return {
         state: "error",
         reason:
@@ -1083,7 +1090,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
     PromiseBB.join(
       fs.statAsync(modPaths[""]),
-      fs.statAsync(remote.app.getPath("userData")),
+      window.api.app
+        .getPath("userData")
+        .then((userDataPath) => fs.statAsync(userDataPath)),
     )
       .then((stats) => {
         let suggestion: string;

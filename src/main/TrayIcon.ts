@@ -1,5 +1,5 @@
 import type { IExtensionApi } from "../types/api";
-import getVortexPath from "../util/getVortexPath";
+import getVortexPath from "./getVortexPath";
 import { log } from "../util/log";
 
 import type { BrowserWindow } from "electron";

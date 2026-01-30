@@ -102,12 +102,9 @@ export async function blockExternalBrowserLaunch(mainWindow: Page): Promise<void
  * Extracts the OAuth URL from Vortex's Redux store
  */
 export async function extractOAuthUrl(mainWindow: Page): Promise<OAuthData | { error: string }> {
-  return await mainWindow.evaluate(() => {
+  return await mainWindow.evaluate(async () => {
     try {
-      const remote = (window as any).require('@electron/remote');
-      const getReduxState = remote.getGlobal('getReduxState');
-      const stateJson = getReduxState();
-      const state = JSON.parse(stateJson);
+      const state = await (window as any).api.redux.getState() as any;
       const oauthUrl = state?.session?.nexus?.oauthPending;
 
       if (oauthUrl) {

@@ -476,8 +476,8 @@ function genOnProfileChange(
         };
 
         // changes to profile files are only saved back to the profile at this point
-        queue = queue.then(() => refreshProfile(store, oldProfile, "import"));
         const oldProfile = state.persistent.profiles[prev];
+        queue = queue.then(() => refreshProfile(store, oldProfile, "import"));
 
         api.events.emit("profile-will-change", current, enqueue);
 

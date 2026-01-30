@@ -8,13 +8,13 @@ import type { ThunkStore } from "../types/IExtensionContext";
 import type { IState, IWindow } from "../types/IState";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
-import getVortexPath from "../util/getVortexPath";
+import getVortexPath from "./getVortexPath";
 import { log } from "../util/log";
 import opn from "../util/opn";
 import { downloadPath } from "../util/selectors";
 import type * as storeHelperT from "../util/storeHelper";
 import { parseBool } from "../util/util";
-import { closeAllViews } from "../util/webview";
+import { closeAllViews } from "./webview";
 
 import PromiseBB from "bluebird";
 import { ipcMain, screen, webContents } from "electron";
@@ -398,11 +398,11 @@ class MainWindow {
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
         preload: path.join(__dirname, "../preload/index.js"),
-        nodeIntegration: true, // Required for @electron/remote compatibility
+        nodeIntegration: true, // Required for extension compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,
         enableWebSQL: false,
-        contextIsolation: false, // Required for @electron/remote compatibility
+        contextIsolation: false, // Required for preload script compatibility
         backgroundThrottling: false,
       },
     };
@@ -417,13 +417,31 @@ class MainWindow {
       if (this.mWindow === null) {
         return;
       }
+      // Forward close event to renderer
+      this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
     });
-    this.mWindow.on("maximize", () => store.dispatch(setMaximized(true)));
-    this.mWindow.on("unmaximize", () => store.dispatch(setMaximized(false)));
+    this.mWindow.on("maximize", () => {
+      store.dispatch(setMaximized(true));
+      // Forward maximize event to renderer
+      this.mWindow?.webContents.send("window:event:maximize");
+    });
+    this.mWindow.on("unmaximize", () => {
+      store.dispatch(setMaximized(false));
+      // Forward unmaximize event to renderer
+      this.mWindow?.webContents.send("window:event:unmaximize");
+    });
+    this.mWindow.on("focus", () => {
+      // Forward focus event to renderer
+      this.mWindow?.webContents.send("window:event:focus");
+    });
+    this.mWindow.on("blur", () => {
+      // Forward blur event to renderer
+      this.mWindow?.webContents.send("window:event:blur");
+    });
     this.mWindow.on("resize", () => this.mResizeDebouncer.schedule());
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {

@@ -19,7 +19,7 @@ import {
   makeBrowserView,
   positionBrowserView,
   updateViewURL,
-} from "../../util/webview";
+} from "../webview";
 
 import { ipcRenderer } from "electron";
 import { omit } from "lodash";
@@ -117,6 +117,14 @@ function BrowserView(props: IBrowserViewProps) {
       viewId.current = await makeBrowserView(
         props.src,
         Object.keys(props.events),
+        {
+          webPreferences: {
+            // Use separate partition to isolate cookies from main window
+            // This prevents external site cookies (e.g., moddb.com) from being
+            // sent to CDN downloads that use signed URLs for authentication
+            partition: "persist:webview",
+          },
+        },
       );
 
       RESIZE_EVENTS.forEach((evtId) => {

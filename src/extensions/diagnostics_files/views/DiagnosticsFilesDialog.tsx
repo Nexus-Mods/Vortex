@@ -15,7 +15,6 @@ import { showError } from "../../../util/message";
 import type { ILog, ISession } from "../types/ISession";
 import { loadVortexLogs } from "../util/loadVortexLogs";
 
-import type * as RemoteT from "@electron/remote";
 import PromiseBB from "bluebird";
 import update from "immutability-helper";
 import * as os from "os";
@@ -31,10 +30,7 @@ import {
 } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import lazyRequire from "../../../util/lazyRequire";
 import { util } from "../../..";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 export interface IBaseProps {
   visible: boolean;
@@ -313,7 +309,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       .filter((line) => enabledLevels.has(line.type))
       .map((line) => `${line.time} - ${line.type}: ${line.text}`)
       .join(os.EOL);
-    remote.clipboard.writeText(filteredLog);
+    window.api.clipboard.writeText(filteredLog);
   };
 
   private openLogFolder = () => {

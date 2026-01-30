@@ -19,7 +19,6 @@ import {
   translate,
 } from "../../renderer/controls/ComponentEx";
 import getVortexPath from "../../util/getVortexPath";
-import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import { truthy } from "../../util/util";
 
@@ -50,9 +49,7 @@ import {
 import { nativeCountryName, nativeLanguageName } from "./languagemap";
 import getText from "./texts";
 
-import type * as remoteT from "@electron/remote";
 import PromiseBB from "bluebird";
-import { app } from "electron";
 import * as path from "path";
 import * as React from "react";
 import {
@@ -66,8 +63,6 @@ import {
 import { useSelector } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-
-const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
 
 interface ILanguage {
   key: string;
@@ -447,8 +442,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       //  bug reports.
       onSetStartMinimized(false);
     }
-    const uniApp = process.type === "renderer" ? remote.app : app;
-    uniApp.setLoginItemSettings({
+    window.api.app.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: startOnBoot ? (startMinimized ? ["--start-minimized"] : []) : [],
@@ -459,8 +453,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     const { autoStart, startMinimized, onSetStartMinimized } = this.props;
     const isMinimized = !startMinimized === true;
     onSetStartMinimized(isMinimized);
-    const uniApp = process.type === "renderer" ? remote.app : app;
-    uniApp.setLoginItemSettings({
+    window.api.app.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: isMinimized ? ["--start-minimized"] : [],

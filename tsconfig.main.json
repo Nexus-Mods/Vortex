@@ -5,7 +5,8 @@
     "src/main.ts",
     "src/main/**/*",
     "src/preload/**/*",
-    "src/shared/**/*"
+    "src/shared/**/*",
+    "src/renderer/preload.d.ts" // TODO: remove after renderer separation
   ],
   "compilerOptions": {
     "composite": true,

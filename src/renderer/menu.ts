@@ -1,18 +1,50 @@
 import type { IMainPageOptions } from "../types/IExtensionContext";
 
-import type ExtensionManager from "./ExtensionManager";
-import { debugTranslations, getMissingTranslations } from "./i18n";
-import { log } from "./log";
+import type ExtensionManager from "../util/ExtensionManager";
+import { debugTranslations, getMissingTranslations } from "../util/i18n";
+import { log } from "../util/log";
 
-import type * as RemoteT from "@electron/remote";
 import { webFrame } from "electron";
 import * as path from "path";
 import { setZoomFactor } from "../actions/window";
-import { getApplication } from "./application";
-import getVortexPath from "./getVortexPath";
-import lazyRequire from "./lazyRequire";
+import { getApplication } from "../util/application";
+import getVortexPath from "../util/getVortexPath";
 
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+// Map to store click handlers by menu item ID
+const menuClickHandlers: Map<string, () => void> = new Map();
+let menuIdCounter = 0;
+
+// Generate a unique menu item ID
+function generateMenuId(): string {
+  return `menu-item-${++menuIdCounter}`;
+}
+
+// Recursively process menu items to assign IDs and store click handlers
+function processMenuTemplate(
+  items: Electron.MenuItemConstructorOptions[],
+): Electron.MenuItemConstructorOptions[] {
+  return items.map((item) => {
+    const processed: Electron.MenuItemConstructorOptions = { ...item };
+
+    // If item has a click handler, assign an ID and store the handler
+    if (item.click) {
+      const id = generateMenuId();
+      processed.id = id;
+      menuClickHandlers.set(id, item.click as () => void);
+      // Remove the click handler - it can't be serialized over IPC
+      delete processed.click;
+    }
+
+    // Recursively process submenus
+    if (item.submenu && Array.isArray(item.submenu)) {
+      processed.submenu = processMenuTemplate(
+        item.submenu as Electron.MenuItemConstructorOptions[],
+      );
+    }
+
+    return processed;
+  });
+}
 
 /**
  * initializes the application menu and with it, hotkeys
@@ -21,6 +53,14 @@ const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
  * @param {ExtensionManager} extensions
  */
 export function initApplicationMenu(extensions: ExtensionManager) {
+  // Listen for menu click events from main process
+  window.api.menu.onMenuClick((menuItemId: string) => {
+    const handler = menuClickHandlers.get(menuItemId);
+    if (handler) {
+      handler();
+    }
+  });
+
   const changeZoomFactor = (factor: number) => {
     if (factor < 0.5 || factor > 1.5) {
       return;
@@ -51,8 +91,13 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     },
   ];
 
+  // Track translation recording state outside refresh so it persists
+  let recordTranslation = false;
+
   const refresh = () => {
-    let recordTranslation = false;
+    // Clear existing handlers on refresh
+    menuClickHandlers.clear();
+    menuIdCounter = 0;
 
     const viewMenu: Electron.MenuItemConstructorOptions[] = [];
 
@@ -88,7 +133,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
             label: title,
             visible: true,
             accelerator,
-            click(item, focusedWindow) {
+            click() {
               if (options.visible === undefined || options.visible()) {
                 extensions
                   .getApi()
@@ -103,7 +148,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     viewMenu.push({
       label: "Settings",
       accelerator: "CmdOrCtrl+Shift+S",
-      click(item, focusedWindow) {
+      click() {
         extensions
           .getApi()
           .events.emit("show-main-page", "application_settings");
@@ -117,52 +162,39 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         label: "Toggle Developer Tools",
         accelerator:
           process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
-        click(item, focusedWindow) {
-          if (focusedWindow && "webContents" in focusedWindow) {
-            (
-              focusedWindow as Electron.BrowserWindow
-            ).webContents.toggleDevTools();
-          } else {
-            extensions
-              .getApi()
-              .showErrorNotification?.(
-                "Failed to open developer tools",
-                "no focused window",
-              );
-          }
+        click() {
+          // Toggle dev tools via IPC
+          void window.api.window.toggleDevTools(window.windowId);
         },
       });
 
       viewMenu.push({
         label: "Reload",
         accelerator: "F5",
-        click(item, focusedWindow) {
-          if (focusedWindow && "webContents" in focusedWindow) {
-            (focusedWindow as Electron.BrowserWindow).webContents.reload();
-          }
+        click() {
+          // Reload must be triggered from main process
+          log("info", "Reload requested from menu");
         },
       });
       viewMenu.push({
         label: "Record missing translations",
-        click(item, focusedWindow) {
+        click() {
           recordTranslation = !recordTranslation;
           debugTranslations(recordTranslation);
-          const subMenu: Electron.Menu = (menu.items[1] as any)
-            .submenu as Electron.Menu;
-          subMenu.items[copyTranslationsIdx].enabled = recordTranslation;
+          // Refresh menu to update the enabled state of "Copy missing translations"
+          refresh();
         },
       });
 
-      const copyTranslationsIdx = viewMenu.length;
       viewMenu.push({
         label: "Copy missing translations to clipboard",
-        click(item, focusedWindow) {
-          remote.clipboard.writeText(
+        enabled: recordTranslation,
+        click() {
+          window.api.clipboard.writeText(
             JSON.stringify(getMissingTranslations(), undefined, 2),
           );
         },
       });
-      viewMenu[copyTranslationsIdx].enabled = false;
     }
 
     viewMenu.push(
@@ -170,7 +202,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         {
           label: "Zoom In",
           accelerator: "CmdOrCtrl+Shift+Plus",
-          click(item, focusedWindow) {
+          click() {
             changeZoomFactor(webFrame.getZoomFactor() + 0.1);
           },
         },
@@ -179,14 +211,14 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           accelerator: "CmdOrCtrl+Shift+numadd",
           visible: false,
           acceleratorWorksWhenHidden: true,
-          click(item, focusedWindow) {
+          click() {
             changeZoomFactor(webFrame.getZoomFactor() + 0.1);
           },
         },
         {
           label: "Zoom Out",
           accelerator: "CmdOrCtrl+Shift+-",
-          click(item, focusedWindow) {
+          click() {
             changeZoomFactor(webFrame.getZoomFactor() - 0.1);
           },
         },
@@ -195,7 +227,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           accelerator: "CmdOrCtrl+Shift+numsub",
           visible: false,
           acceleratorWorksWhenHidden: true,
-          click(item, focusedWindow) {
+          click() {
             changeZoomFactor(webFrame.getZoomFactor() - 0.1);
           },
         },
@@ -221,7 +253,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     let profiling: boolean = false;
     const stopProfiling = () => {
       const outPath = path.join(getVortexPath("temp"), "profile.dat");
-      remote.contentTracing
+      window.api.contentTracing
         .stopRecording(outPath)
         .then(() => {
           extensions.getApi().sendNotification?.({
@@ -259,7 +291,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
               options: "sampling-frequency=10000",
             };
 
-            remote.contentTracing.startRecording(options).then(() => {
+            window.api.contentTracing.startRecording(options).then(() => {
               console.log("Tracing started");
               extensions.getApi().sendNotification?.({
                 id: "profiling",
@@ -284,12 +316,15 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       },
     ];
 
-    const menu = remote.Menu.buildFromTemplate([
+    // Process the template to assign IDs and store handlers
+    const template = processMenuTemplate([
       { label: "File", submenu: fileMenu },
       { label: "View", submenu: viewMenu },
       { label: "Performance", submenu: performanceMenu },
     ]);
-    remote.Menu.setApplicationMenu(menu);
+
+    // Send the processed template (without click handlers) to main process
+    void window.api.menu.setApplicationMenu(template);
   };
   refresh();
   return refresh;

@@ -5,3 +5,5 @@ declare global {
     readonly __preload: true;
   }
 }
+
+export {};

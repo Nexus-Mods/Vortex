@@ -1,4 +1,3 @@
-import type * as RemoteT from "@electron/remote";
 import type {
   EndorsedStatus,
   ICollectionQuery,
@@ -47,8 +46,8 @@ import {
 import { contextify, setApiKey, setOauthToken } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { RateLimitExceeded } from "../../util/github";
-import lazyRequire from "../../util/lazyRequire";
 import { log } from "../../util/log";
 import { calcDuration, showError } from "../../util/message";
 import { jsonRequest } from "../../util/network";
@@ -93,8 +92,6 @@ import OAuth from "./util/oauth";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import { IAccountStatus } from "./types/IValidateKeyData";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -149,7 +146,7 @@ export function onCancelLoginImpl(api: IExtensionApi) {
   api.events.emit("did-login", new UserCanceled());
 }
 
-export function bringToFront() {
+export async function bringToFront() {
   // if window is snapped in windows (aero snap), bringing the window to front
   // will unsnap it and it will be moved/resized to where it was before snapping.
   // This is quite irritating so this will store the (snapped) window position
@@ -157,17 +154,18 @@ export function bringToFront() {
   // This will cause a short "flicker" if the window was snapped and it will
   // still unsnap the window as far as windows is concerned.
 
-  const window = remote.getCurrentWindow();
-  const [x, y] = window.getPosition();
-  const [w, h] = window.getSize();
+  const windowId = getWindowId();
+  const api = getPreloadApi();
+  const [x, y] = await api.window.getPosition(windowId);
+  const [w, h] = await api.window.getSize(windowId);
 
-  window.setAlwaysOnTop(true);
-  window.show();
-  window.setAlwaysOnTop(false);
+  await api.window.setAlwaysOnTop(windowId, true);
+  await api.window.show(windowId);
+  await api.window.setAlwaysOnTop(windowId, false);
 
   setTimeout(() => {
-    window.setPosition(x, y);
-    window.setSize(w, h);
+    void api.window.setPosition(windowId, x, y);
+    void api.window.setSize(windowId, w, h);
   }, 100);
 }
 
@@ -317,7 +315,7 @@ export function requestLogin(
       async (err: Error, token: ITokenReply) => {
         // received reply from site for this state
 
-        bringToFront();
+        void bringToFront();
         api.store.dispatch(setLoginId(undefined));
         // set state to undefined so that we can close the modal?
         api.store.dispatch(setDialogVisible(undefined));
