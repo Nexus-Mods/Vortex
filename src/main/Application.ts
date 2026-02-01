@@ -239,38 +239,36 @@ class Application {
     });
   }
 
-  private startUi(): PromiseBB<void> {
+  private async startUi(): Promise<void> {
     const MainWindow = require("./MainWindow").default;
     this.mMainWindow = new MainWindow(this.mStore, this.mArgs.inspector);
     log("debug", "creating main window");
-    return this.mMainWindow.create(this.mStore).then((webContents) => {
-      if (!webContents) {
-        return PromiseBB.reject(new Error("no web contents from main window"));
-      }
-      log("debug", "window created");
-      this.mExtensions.setupApiMain(this.mStore, webContents);
-      setOutdated(this.mExtensions.getApi());
-      // in the past we would process some command line arguments the same as we do when
-      // they get passed in from a second instance but that was inconsistent
-      // because we don't use most arguments from secondary instances and the
-      // rest get handled by the extension they are intended for.
-      // so now "applyArguments()" is only intended for forwarding messages from
-      // secondary instances
+    const webContents = await this.mMainWindow.create(this.mStore);
+    if (!webContents) {
+      throw new Error("no web contents from main window");
+    }
+    log("debug", "window created");
+    this.mExtensions.setupApiMain(this.mStore, webContents);
+    setOutdated(this.mExtensions.getApi());
+    // in the past we would process some command line arguments the same as we do when
+    // they get passed in from a second instance but that was inconsistent
+    // because we don't use most arguments from secondary instances and the
+    // rest get handled by the extension they are intended for.
+    // so now "applyArguments()" is only intended for forwarding messages from
+    // secondary instances
 
-      if (didIgnoreError()) {
-        webContents.send("did-ignore-error", true);
-      }
-      return PromiseBB.resolve();
-    });
+    if (didIgnoreError()) {
+      webContents.send("did-ignore-error", true);
+    }
+    return PromiseBB.resolve();
   }
 
-  private startSplash(): PromiseBB<SplashScreenT> {
+  private async startSplash(): Promise<SplashScreenT> {
     const SplashScreen = require("./SplashScreen").default;
     const splash: SplashScreenT = new SplashScreen();
-    return splash.create(this.mArgs.disableGPU).then(() => {
-      setWindow(splash.getHandle());
-      return splash;
-    });
+    await splash.create(this.mArgs.disableGPU);
+    setWindow(splash.getHandle());
+    return PromiseBB.resolve(splash);
   }
 
   private setupAppEvents(args: IParameters) {
@@ -324,7 +322,7 @@ class Application {
         this.applyArguments(cfgFile);
       });
 
-      let startupMode: PromiseBB<void> | undefined = undefined;
+      let startupMode: Promise<void> | undefined = undefined;
       if (args.get) {
         startupMode = this.handleGet(args.get, userData);
       } else if (args.set) {
@@ -386,184 +384,187 @@ class Application {
     };
   }
 
-  private regularStart(args: IParameters): PromiseBB<void> {
+  private async regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT | undefined;
-    return (
-      fs
-        .writeFileAsync(this.mStartupLogPath, new Date().toUTCString())
-        .catch(() => null)
-        .tap(() => {
-          log("info", "--------------------------");
-          log("info", "Vortex Version", getApplication().version);
-          log("info", "Parameters", process.argv.join(" "));
-        })
-        .then(() => this.testUserEnvironment())
-        .then(() => this.validateFiles())
-        .then(() =>
-          args?.startMinimized === true
-            ? PromiseBB.resolve(undefined)
-            : this.startSplash(),
-        )
-        // start initialization
-        .tap((splashIn) =>
-          splashIn !== undefined
-            ? log("debug", "showing splash screen")
-            : log("debug", "starting without splash screen"),
-        )
-        .then((splashIn) => {
-          splash = splashIn;
-          return this.createStore(args.restore, args.merge).catch(
-            DataInvalid,
-            (err) => {
-              log("error", "store data invalid", getErrorMessageOrDefault(err));
-              dialog
-                .showMessageBox(getVisibleWindow(), {
-                  type: "error",
-                  buttons: ["Continue"],
-                  title: "Error",
-                  message: "Data corrupted",
-                  detail:
-                    "The application state which contains things like your Vortex " +
-                    "settings, meta data about mods and other important data is " +
-                    "corrupted and can't be read. This could be a result of " +
-                    "hard disk corruption, a power outage or something similar. " +
-                    "Vortex will now try to repair the database, usually this " +
-                    "should work fine but please check that settings, mod list and so " +
-                    "on are ok before you deploy anything. " +
-                    "If not, you can go to settings->workarounds and restore a backup " +
-                    "which shouldn't lose you more than an hour of progress.",
-                })
-                .then(() => this.createStore(args.restore, args.merge, true));
-            },
+    try {
+      try {
+        await fs.writeFileAsync(this.mStartupLogPath, new Date().toUTCString());
+      } catch {
+        // ignore startup log write errors
+      }
+      log("info", "--------------------------");
+      log("info", "Vortex Version", getApplication().version);
+      log("info", "Parameters", process.argv.join(" "));
+
+      await this.testUserEnvironment();
+      await this.validateFiles();
+
+      // start initialization
+      if (args?.startMinimized === true) {
+        log("debug", "starting without splash screen");
+      } else {
+        splash = await this.startSplash();
+        log("debug", "showing splash screen");
+      }
+
+      try {
+        await this.createStore(args.restore, args.merge);
+      } catch (err) {
+        if (err instanceof DataInvalid) {
+          log("error", "store data invalid", getErrorMessageOrDefault(err));
+          await dialog.showMessageBox(getVisibleWindow(), {
+            type: "error",
+            buttons: ["Continue"],
+            title: "Error",
+            message: "Data corrupted",
+            detail:
+              "The application state which contains things like your Vortex " +
+              "settings, meta data about mods and other important data is " +
+              "corrupted and can't be read. This could be a result of " +
+              "hard disk corruption, a power outage or something similar. " +
+              "Vortex will now try to repair the database, usually this " +
+              "should work fine but please check that settings, mod list and so " +
+              "on are ok before you deploy anything. " +
+              "If not, you can go to settings->workarounds and restore a backup " +
+              "which shouldn't lose you more than an hour of progress.",
+          });
+          await this.createStore(args.restore, args.merge, true);
+        } else {
+          throw err;
+        }
+      }
+
+      log("debug", "checking admin rights");
+      await this.warnAdmin();
+
+      log("debug", "checking how Vortex was installed");
+      await this.identifyInstallType();
+
+      log("debug", "checking if migration is required");
+      await this.checkUpgrade();
+
+      log("debug", "setting up error handlers");
+      // as soon as we have a store, install an extended error handler that has
+      // access to application state
+      const handleError = this.genHandleError();
+      process.removeAllListeners("uncaughtException");
+      process.removeAllListeners("unhandledRejection");
+      process.on("uncaughtException", handleError);
+      process.on("unhandledRejection", handleError);
+
+      this.mStore.dispatch(setCommandLine(args));
+
+      await this.initDevel();
+
+      log("debug", "starting user interface");
+      this.setupContextMenu();
+      await this.startUi();
+
+      log("debug", "setting up tray icon");
+      await this.createTray();
+
+      // end initialization
+      if (splash !== undefined) {
+        log("debug", "removing splash screen");
+      }
+      this.connectTrayAndWindow();
+      if (splash !== undefined) {
+        await splash.fadeOut();
+      }
+    } catch (err) {
+      log("debug", "quitting with exception", getErrorMessageOrDefault(err));
+
+      if (err instanceof UserCanceled) {
+        app.exit();
+        return PromiseBB.resolve();
+      }
+      if (err instanceof ProcessCanceled) {
+        app.quit();
+        return PromiseBB.resolve();
+      }
+      if (err instanceof DocumentsPathMissing) {
+        const response = await dialog.showMessageBox(getVisibleWindow(), {
+          type: "error",
+          buttons: ["Close", "More info"],
+          defaultId: 1,
+          title: "Error",
+          message: "Startup failed",
+          detail:
+            'Your "My Documents" folder is missing or is ' +
+            "misconfigured. Please ensure that the folder is properly " +
+            "configured and accessible, then try again.",
+        });
+        if (response.response === 1) {
+          shell.openExternal(
+            `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
           );
-        })
-        .tap(() => log("debug", "checking admin rights"))
-        .then(() => this.warnAdmin())
-        .tap(() => log("debug", "checking how Vortex was installed"))
-        .then(() => this.identifyInstallType())
-        .tap(() => log("debug", "checking if migration is required"))
-        .then(() => this.checkUpgrade())
-        .tap(() => log("debug", "setting up error handlers"))
-        .then(() => {
-          // as soon as we have a store, install an extended error handler that has
-          // access to application state
-          const handleError = this.genHandleError();
-          process.removeAllListeners("uncaughtException");
-          process.removeAllListeners("unhandledRejection");
-          process.on("uncaughtException", handleError);
-          process.on("unhandledRejection", handleError);
-        })
-        .then(() => {
-          this.mStore.dispatch(setCommandLine(args));
-        })
-        .then(() => this.initDevel())
-        .tap(() => log("debug", "starting user interface"))
-        .then(() => {
-          this.setupContextMenu();
-          return PromiseBB.resolve();
-        })
-        .then(() => this.startUi())
-        .tap(() => log("debug", "setting up tray icon"))
-        .then(() => this.createTray())
-        // end initialization
-        .tap(() => {
-          if (splash !== undefined) {
-            log("debug", "removing splash screen");
-          }
-        })
-        .then(() => {
-          this.connectTrayAndWindow();
-          return splash !== undefined ? splash.fadeOut() : PromiseBB.resolve();
-        })
-        .tapCatch((err) =>
-          log(
-            "debug",
-            "quitting with exception",
-            getErrorMessageOrDefault(err),
-          ),
-        )
-        .catch(UserCanceled, () => app.exit())
-        .catch(ProcessCanceled, () => {
-          app.quit();
-        })
-        .catch(DocumentsPathMissing, () =>
-          dialog
-            .showMessageBox(getVisibleWindow(), {
-              type: "error",
-              buttons: ["Close", "More info"],
-              defaultId: 1,
-              title: "Error",
+        }
+        app.quit();
+        return PromiseBB.resolve();
+      }
+      if (err instanceof DatabaseLocked) {
+        dialog.showErrorBox(
+          "Startup failed",
+          "Vortex seems to be running already. " +
+            "If you can't see it, please check the task manager.",
+        );
+        app.quit();
+        return PromiseBB.resolve();
+      }
+      if ((err as NodeJS.ErrnoException)?.code === "ENOSPC") {
+        dialog.showErrorBox(
+          "Startup failed",
+          "Your system drive is full. " +
+            "You should always ensure your system drive has some space free (ideally " +
+            "at least 10% of the total capacity, especially on SSDs). " +
+            "Vortex can't start until you have freed up some space.",
+        );
+        app.quit();
+        return PromiseBB.resolve();
+      }
+      // Unknown error
+      try {
+        if (err instanceof Error) {
+          const pretty = prettifyNodeErrorMessage(err);
+          const details = pretty.message.replace(
+            /{{ *([a-zA-Z]+) *}}/g,
+            (m, key) => pretty.replace?.[key] || key,
+          );
+          terminate(
+            {
               message: "Startup failed",
-              detail:
-                'Your "My Documents" folder is missing or is ' +
-                "misconfigured. Please ensure that the folder is properly " +
-                "configured and accessible, then try again.",
-            })
-            .then((response) => {
-              if (response.response === 1) {
-                shell.openExternal(
-                  `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
-                );
-              }
-              app.quit();
-            }),
-        )
-        .catch(DatabaseLocked, () => {
-          dialog.showErrorBox(
-            "Startup failed",
-            "Vortex seems to be running already. " +
-              "If you can't see it, please check the task manager.",
+              details,
+              code: pretty.code,
+              stack: err.stack,
+            },
+            this.mStore !== undefined ? this.mStore.getState() : {},
+            pretty.allowReport,
           );
-          app.quit();
-        })
-        .catch({ code: "ENOSPC" }, () => {
-          dialog.showErrorBox(
-            "Startup failed",
-            "Your system drive is full. " +
-              "You should always ensure your system drive has some space free (ideally " +
-              "at least 10% of the total capacity, especially on SSDs). " +
-              "Vortex can't start until you have freed up some space.",
+        } else {
+          const unknownErr = unknownToError(err);
+          terminate(
+            {
+              message: "Startup failed",
+              details: unknownErr.message,
+              stack: unknownErr.stack,
+            },
+            this.mStore !== undefined ? this.mStore.getState() : {},
           );
-          app.quit();
-        })
-        .catch((unknownError) => {
-          try {
-            if (unknownError instanceof Error) {
-              const pretty = prettifyNodeErrorMessage(unknownError);
-              const details = pretty.message.replace(
-                /{{ *([a-zA-Z]+) *}}/g,
-                (m, key) => pretty.replace?.[key] || key,
-              );
-              terminate(
-                {
-                  message: "Startup failed",
-                  details,
-                  code: pretty.code,
-                  stack: unknownError.stack,
-                },
-                this.mStore !== undefined ? this.mStore.getState() : {},
-                pretty.allowReport,
-              );
-            } else {
-              const err = unknownToError(unknownError);
-              terminate(
-                {
-                  message: "Startup failed",
-                  details: err.message,
-                  stack: err.stack,
-                },
-                this.mStore !== undefined ? this.mStore.getState() : {},
-              );
-            }
-          } catch (err) {
-            // nop
-          }
-        })
-        .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null))
-    );
+        }
+      } catch {
+        // nop
+      }
+    } finally {
+      try {
+        await fs.removeAsync(this.mStartupLogPath);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+    return PromiseBB.resolve();
   }
 
-  private isUACEnabled(): PromiseBB<boolean> {
+  private async isUACEnabled(): Promise<boolean> {
     if (process.platform !== "win32") {
       return PromiseBB.resolve(true);
     }
@@ -575,42 +576,38 @@ class Application {
           "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
           key,
         );
-        return PromiseBB.resolve({ key, type: res.type, value: res.value });
+        return { key, type: res.type, value: res.value };
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
         //  as the user might have a version of Windows that does not use
         //  the key we're looking for.
         log("debug", "failed to check UAC settings", err);
-        return PromiseBB.resolve(undefined);
+        return undefined;
       }
     };
 
-    return (
-      PromiseBB.all([
+    try {
+      const res = [
         getSystemPolicyValue("ConsentPromptBehaviorAdmin"),
         getSystemPolicyValue("ConsentPromptBehaviorUser"),
-      ])
-        .then((res) => {
-          res.forEach((value) => {
-            if (value !== undefined) {
-              log(
-                "debug",
-                "UAC settings found",
-                `${value.key}: ${value.value}`,
-              );
-            }
-          });
-          const adminConsent = res[0];
-          return adminConsent?.type === "REG_DWORD" && adminConsent?.value === 0
-            ? PromiseBB.resolve(false)
-            : PromiseBB.resolve(true);
-        })
-        // Perfectly ok not to have the registry keys.
-        .catch((err) => PromiseBB.resolve(true))
-    );
+      ];
+      res.forEach((value) => {
+        if (value !== undefined) {
+          log("debug", "UAC settings found", `${value.key}: ${value.value}`);
+        }
+      });
+      const adminConsent = res[0];
+      const uacEnabled = !(
+        adminConsent?.type === "REG_DWORD" && adminConsent?.value === 0
+      );
+      return PromiseBB.resolve(uacEnabled);
+    } catch {
+      // Perfectly ok not to have the registry keys.
+      return PromiseBB.resolve(true);
+    }
   }
 
-  private identifyInstallType(): PromiseBB<void> {
+  private async identifyInstallType(): Promise<void> {
     /**
      * we are checking to see if an uninstaller exists as if it does, it means it was installed via our installer.
      * if it doesn't, then something else installed it. Maybe GOG, or EPIC, or something.
@@ -631,65 +628,58 @@ class Application {
      *
      */
 
-    return fs
-      .statAsync(
+    try {
+      await fs.statAsync(
         path.join(getVortexPath("application"), "Uninstall Vortex.exe"),
-      )
-      .then(() => {
-        this.mStore.dispatch(setInstallType("regular"));
-      })
-      .catch(() => {
-        this.mStore.dispatch(setInstallType("managed"));
-      });
-  }
-
-  private warnAdmin(): PromiseBB<void> {
-    const state: IState = this.mStore.getState();
-    return timeout(PromiseBB.resolve(isAdmin()), 1000).then((admin) => {
-      if (admin === undefined || !admin) {
-        return PromiseBB.resolve();
-      }
-      log("warn", "running as administrator");
-      if (state.app.warnedAdmin > 0) {
-        return PromiseBB.resolve();
-      }
-      return this.isUACEnabled().then((uacEnabled) =>
-        dialog
-          .showMessageBox(getVisibleWindow(), {
-            title: "Admin rights detected",
-            message:
-              `Vortex has detected that it is being run with administrator rights. It is strongly 
-              advised to not run any application with admin rights as adverse effects may include 
-              permission issues or even security risks. Continue at your own risk` +
-              (!uacEnabled
-                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
-                  operating system.  We strongly recommend you re-enable these to avoid file permissions 
-                  issues and potential security risks.`
-                : ""),
-            buttons: ["Quit", "Ignore"],
-            noLink: true,
-          })
-          .then((result) => {
-            if (result.response === 0) {
-              app.quit();
-            } else {
-              this.mStore.dispatch(setWarnedAdmin(1));
-              return PromiseBB.resolve();
-            }
-          }),
       );
-    });
+      this.mStore.dispatch(setInstallType("regular"));
+    } catch {
+      this.mStore.dispatch(setInstallType("managed"));
+    }
+    return PromiseBB.resolve();
   }
 
-  private checkUpgrade(): PromiseBB<void> {
-    const currentVersion = getApplication().version;
-    return this.migrateIfNecessary(currentVersion).then(() => {
-      this.mStore.dispatch(setApplicationVersion(currentVersion));
+  private async warnAdmin(): Promise<void> {
+    const state: IState = this.mStore.getState();
+    const admin = await timeout(PromiseBB.resolve(isAdmin()), 1000);
+    if (admin === undefined || !admin) {
       return PromiseBB.resolve();
+    }
+    log("warn", "running as administrator");
+    if (state.app.warnedAdmin > 0) {
+      return PromiseBB.resolve();
+    }
+    const uacEnabled = await this.isUACEnabled();
+    const result = await dialog.showMessageBox(getVisibleWindow(), {
+      title: "Admin rights detected",
+      message:
+        `Vortex has detected that it is being run with administrator rights. It is strongly
+        advised to not run any application with admin rights as adverse effects may include
+        permission issues or even security risks. Continue at your own risk` +
+        (!uacEnabled
+          ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your
+            operating system.  We strongly recommend you re-enable these to avoid file permissions
+            issues and potential security risks.`
+          : ""),
+      buttons: ["Quit", "Ignore"],
+      noLink: true,
     });
+    if (result.response === 0) {
+      app.quit();
+    } else {
+      this.mStore.dispatch(setWarnedAdmin(1));
+    }
+    return PromiseBB.resolve();
   }
 
-  private migrateIfNecessary(currentVersion: string): PromiseBB<void> {
+  private async checkUpgrade(): Promise<void> {
+    const currentVersion = getApplication().version;
+    await this.migrateIfNecessary(currentVersion);
+    this.mStore.dispatch(setApplicationVersion(currentVersion));
+    return PromiseBB.resolve();
+  }
+
+  private async migrateIfNecessary(currentVersion: string): Promise<void> {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || "0.0.0";
 
@@ -703,35 +693,32 @@ class Application {
         dialog.showMessageBoxSync(getVisibleWindow(), {
           type: "warning",
           title: "Downgrade detected",
-          message: `You're using a version of Vortex that is older than the version you ran previously. 
-        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this 
+          message: `You're using a version of Vortex that is older than the version you ran previously.
+        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this
         older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
           buttons: ["Quit", "Continue at your own risk"],
           noLink: true,
         }) === 0
       ) {
         app.quit();
-        return PromiseBB.reject(new UserCanceled());
+        throw new UserCanceled();
       }
     } else if (semver.gt(currentVersion, lastVersion)) {
       log("info", "Vortex was updated, checking for necessary migrations");
-      return migrate(this.mStore, getVisibleWindow())
-        .then(() => {
-          return PromiseBB.resolve();
-        })
-        .catch(
-          (err) =>
-            !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled),
-          (err: Error) => {
-            dialog.showErrorBox(
-              "Migration failed",
-              "The migration from the previous Vortex release failed. " +
-                "Please resolve the errors you got, then try again.",
-            );
-            app.exit(1);
-            return PromiseBB.reject(new ProcessCanceled("Migration failed"));
-          },
+      try {
+        await migrate(this.mStore, getVisibleWindow());
+      } catch (err) {
+        if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
+          throw err;
+        }
+        dialog.showErrorBox(
+          "Migration failed",
+          "The migration from the previous Vortex release failed. " +
+            "Please resolve the errors you got, then try again.",
         );
+        app.exit(1);
+        throw new ProcessCanceled("Migration failed");
+      }
     }
     return PromiseBB.resolve();
   }
@@ -744,135 +731,120 @@ class Application {
     );
   }
 
-  private handleGet(
+  private async handleGet(
     getPaths: string[] | boolean,
     dbpath: string,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     if (typeof getPaths === "boolean") {
       fs.writeSync(1, "Usage: vortex --get <path>\n");
       return PromiseBB.resolve();
     }
 
-    let persist: LevelPersist;
+    let persist: LevelPersist | undefined;
 
-    return LevelPersist.create(dbpath)
-      .then((persistIn) => {
-        persist = persistIn;
-        return persist.getAllKeys();
-      })
-      .then((keys) => {
-        return PromiseBB.all(
-          getPaths.map((getPath) => {
-            const pathArray = this.splitPath(getPath);
-            const matches = keys.filter((key) =>
-              _.isEqual(key.slice(0, pathArray.length), pathArray),
-            );
-            return PromiseBB.all(
-              matches.map((match) =>
-                persist
-                  .getItem(match)
-                  .then((value) => `${match.join(".")} = ${value}`),
-              ),
-            )
-              .then((output) => {
-                process.stdout.write(output.join("\n") + "\n");
-              })
-              .catch((err) => {
-                process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-              });
-          }),
-        ).then(() => {});
-      })
-      .catch((err) => {
-        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-      })
-      .finally(() => {
+    try {
+      persist = await LevelPersist.create(dbpath);
+      const keys = await persist.getAllKeys();
+
+      for (const getPath of getPaths) {
+        const pathArray = this.splitPath(getPath);
+        const matches = keys.filter((key) =>
+          _.isEqual(key.slice(0, pathArray.length), pathArray),
+        );
+        try {
+          const output: string[] = [];
+          for (const match of matches) {
+            const value = await persist.getItem(match);
+            output.push(`${match.join(".")} = ${value}`);
+          }
+          process.stdout.write(output.join("\n") + "\n");
+        } catch (err) {
+          process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+        }
+      }
+    } catch (err) {
+      process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+    } finally {
+      if (persist) {
         persist.close();
-      });
+      }
+    }
+    return PromiseBB.resolve();
   }
 
-  private handleSet(
+  private async handleSet(
     setParameters: ISetItem[],
     dbpath: string,
-  ): PromiseBB<void> {
-    let persist: LevelPersist;
+  ): Promise<void> {
+    let persist: LevelPersist | undefined;
 
-    return LevelPersist.create(dbpath)
-      .then((persistIn) => {
-        persist = persistIn;
+    try {
+      persist = await LevelPersist.create(dbpath);
 
-        return PromiseBB.all(
-          setParameters.map((setParameter: ISetItem) => {
-            const pathArray = this.splitPath(setParameter.key);
+      for (const setParameter of setParameters) {
+        const pathArray = this.splitPath(setParameter.key);
 
-            return persist
-              .getItem(pathArray)
-              .catch(() => undefined)
-              .then((oldValue) => {
-                const newValue =
-                  setParameter.value.length === 0
-                    ? undefined
-                    : oldValue === undefined || typeof oldValue === "object"
-                      ? JSON.parse(setParameter.value)
-                      : oldValue.constructor(setParameter.value);
-                return persist.setItem(pathArray, newValue);
-              })
-              .then(() => {
-                process.stdout.write("changed\n");
-              })
-              .catch((err) => {
-                process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-              });
-          }),
-        ).then(() => {});
-      })
-      .catch((err) => {
-        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-      })
-      .finally(() => {
+        try {
+          let oldValue: any;
+          try {
+            oldValue = await persist.getItem(pathArray);
+          } catch {
+            oldValue = undefined;
+          }
+          const newValue =
+            setParameter.value.length === 0
+              ? undefined
+              : oldValue === undefined || typeof oldValue === "object"
+                ? JSON.parse(setParameter.value)
+                : oldValue.constructor(setParameter.value);
+          await persist.setItem(pathArray, newValue);
+          process.stdout.write("changed\n");
+        } catch (err) {
+          process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+        }
+      }
+    } catch (err) {
+      process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+    } finally {
+      if (persist) {
         persist.close();
-      });
+      }
+    }
+    return PromiseBB.resolve();
   }
 
-  private handleDel(delPaths: string[], dbpath: string): PromiseBB<void> {
-    let persist: LevelPersist;
+  private async handleDel(delPaths: string[], dbpath: string): Promise<void> {
+    let persist: LevelPersist | undefined;
 
-    return LevelPersist.create(dbpath)
-      .then((persistIn) => {
-        persist = persistIn;
-        return persist.getAllKeys();
-      })
-      .then((keys) => {
-        return PromiseBB.all(
-          delPaths.map((delPath) => {
-            const pathArray = this.splitPath(delPath);
-            const matches = keys.filter((key) =>
-              _.isEqual(key.slice(0, pathArray.length), pathArray),
-            );
-            return PromiseBB.all(
-              matches.map((match) =>
-                persist
-                  .removeItem(match)
-                  .then(() =>
-                    process.stdout.write(`removed ${match.join(".")}\n`),
-                  )
-                  .catch((err) => {
-                    process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-                  }),
-              ),
-            );
-          }),
-        ).then(() => {});
-      })
-      .catch((err) => {
-        process.stderr.write(getErrorMessageOrDefault(err) + "\n");
-      })
-      .finally(() => {
+    try {
+      persist = await LevelPersist.create(dbpath);
+      const keys = await persist.getAllKeys();
+
+      for (const delPath of delPaths) {
+        const pathArray = this.splitPath(delPath);
+        const matches = keys.filter((key) =>
+          _.isEqual(key.slice(0, pathArray.length), pathArray),
+        );
+        for (const match of matches) {
+          try {
+            await persist.removeItem(match);
+            process.stdout.write(`removed ${match.join(".")}\n`);
+          } catch (err) {
+            process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+          }
+        }
+      }
+    } catch (err) {
+      process.stderr.write(getErrorMessageOrDefault(err) + "\n");
+    } finally {
+      if (persist) {
         persist.close();
-      });
+      }
+    }
+    return PromiseBB.resolve();
   }
 
-  private createTray(): PromiseBB<void> {
+  private async createTray(): Promise<void> {
     const TrayIcon = require("./TrayIcon").default;
     this.mTray = new TrayIcon(this.mExtensions.getApi());
     return PromiseBB.resolve();
@@ -907,37 +879,38 @@ class Application {
     }
   }
 
-  private createStore(
+  private async createStore(
     restoreBackup?: string,
     mergeBackup?: string,
     repair?: boolean,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath("temp"), STATE_BACKUP_PATH);
     let backups: string[];
 
-    const updateBackups = () =>
-      fs
-        .ensureDirAsync(backupPath)
-        .then(() => fs.readdirAsync(backupPath))
-        .filter(
+    const updateBackups = async () => {
+      try {
+        await fs.ensureDirAsync(backupPath);
+        const files = await fs.readdirAsync(backupPath);
+        backups = files.filter(
           (fileName: string) =>
             fileName.startsWith("backup") && path.extname(fileName) === ".json",
-        )
-        .then((backupsIn) => {
-          backups = backupsIn;
-        })
-        .catch((err) => {
-          log("error", "failed to read backups", getErrorMessageOrDefault(err));
-          backups = [];
-        });
+        );
+      } catch (err) {
+        log("error", "failed to read backups", getErrorMessageOrDefault(err));
+        backups = [];
+      }
+    };
 
-    const deleteBackups = () =>
-      PromiseBB.map(backups, (backupName) =>
-        fs
-          .removeAsync(path.join(backupPath, backupName))
-          .catch(() => undefined),
-      ).then(() => null);
+    const deleteBackups = async () => {
+      for (const backupName of backups) {
+        try {
+          await fs.removeAsync(path.join(backupPath, backupName));
+        } catch {
+          // ignore deletion errors
+        }
+      }
+    };
 
     // storing the last version that ran in the startup.json settings file.
     // We have that same information in the leveldb store but what if we need
@@ -950,316 +923,303 @@ class Application {
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
-    return LevelPersist.create(
-      path.join(this.mBasePath, currentStatePath),
-      undefined,
-      repair ?? false,
-    )
-      .then((levelPersistor) => {
-        this.mLevelPersistors.push(levelPersistor);
-        return insertPersistor(
-          "user",
-          new SubPersistor(levelPersistor, "user"),
-        );
-      })
-      .catch(DataInvalid, (err) => {
+    try {
+      const levelPersistor = await LevelPersist.create(
+        path.join(this.mBasePath, currentStatePath),
+        undefined,
+        repair ?? false,
+      );
+      this.mLevelPersistors.push(levelPersistor);
+      await insertPersistor("user", new SubPersistor(levelPersistor, "user"));
+    } catch (err) {
+      if (err instanceof DataInvalid) {
         const failedPersistor = this.mLevelPersistors.pop();
-        if (!failedPersistor) {
-          return PromiseBB.reject(err);
+        if (failedPersistor) {
+          await failedPersistor.close();
         }
-        return failedPersistor.close().then(() => PromiseBB.reject(err));
-      })
-      .then(() => {
-        let dataPath = app.getPath("userData");
-        const { multiUser } = newStore.getState().user;
-        if (this.mArgs.userData !== undefined) {
-          dataPath = this.mArgs.userData;
-        } else if (multiUser) {
-          dataPath = this.multiUserPath();
-        }
-        setVortexPath("userData", dataPath);
-        this.mBasePath = dataPath;
-        let created = false;
-        try {
-          fs.statSync(dataPath);
-        } catch (err) {
-          fs.ensureDirSync(dataPath);
-          created = true;
-        }
-        if (multiUser && created) {
-          permissions.allow(dataPath, "group", "rwx");
-        }
-        fs.ensureDirSync(path.join(dataPath, "temp"));
+        throw err;
+      }
+      throw err;
+    }
 
-        log("info", `using ${dataPath} as the storage directory`);
-        if (multiUser || this.mArgs.userData !== undefined) {
-          log(
-            "info",
-            "all further logging will happen in",
-            path.join(dataPath, "vortex.log"),
-          );
-          changeLogPath(dataPath);
-          log("info", "--------------------------");
-          log("info", "Vortex Version", getApplication().version);
-          return LevelPersist.create(
-            path.join(dataPath, currentStatePath),
-            undefined,
-            repair ?? false,
-          ).then((levelPersistor) => {
-            this.mLevelPersistors.push(levelPersistor);
-          });
-        } else {
-          return PromiseBB.resolve();
-        }
-      })
-      .then(() => {
-        log("debug", "reading app state");
-        return insertPersistor(
-          "app",
-          new SubPersistor(last(this.mLevelPersistors), "app"),
-        );
-      })
-      .then(() => {
-        if (newStore.getState().app.instanceId === undefined) {
-          this.mFirstStart = true;
-          const newId = uuid.v4();
-          log("debug", "first startup, generated instance id", {
-            instanceId: newId,
-          });
-          newStore.dispatch(setInstanceId(newId));
-        } else {
-          log("debug", "startup instance", {
-            instanceId: newStore.getState().app.instanceId,
-          });
-        }
-        const ExtensionManager = require("../util/ExtensionManager").default;
-        this.mExtensions = new ExtensionManager(newStore);
-        if (this.mExtensions.hasOutdatedExtensions) {
-          log("debug", "relaunching to remove outdated extensions");
-          finalizeStoreWrite().then(() => relaunch());
+    let dataPath = app.getPath("userData");
+    const { multiUser } = newStore.getState().user;
+    if (this.mArgs.userData !== undefined) {
+      dataPath = this.mArgs.userData;
+    } else if (multiUser) {
+      dataPath = this.multiUserPath();
+    }
+    setVortexPath("userData", dataPath);
+    this.mBasePath = dataPath;
+    let created = false;
+    try {
+      fs.statSync(dataPath);
+    } catch {
+      fs.ensureDirSync(dataPath);
+      created = true;
+    }
+    if (multiUser && created) {
+      permissions.allow(dataPath, "group", "rwx");
+    }
+    fs.ensureDirSync(path.join(dataPath, "temp"));
 
-          // relaunching the process happens asynchronously but we don't want to any further work
-          // before that
-          return new PromiseBB(() => null);
+    log("info", `using ${dataPath} as the storage directory`);
+    if (multiUser || this.mArgs.userData !== undefined) {
+      log(
+        "info",
+        "all further logging will happen in",
+        path.join(dataPath, "vortex.log"),
+      );
+      changeLogPath(dataPath);
+      log("info", "--------------------------");
+      log("info", "Vortex Version", getApplication().version);
+      const levelPersistor = await LevelPersist.create(
+        path.join(dataPath, currentStatePath),
+        undefined,
+        repair ?? false,
+      );
+      this.mLevelPersistors.push(levelPersistor);
+    }
+
+    log("debug", "reading app state");
+    await insertPersistor(
+      "app",
+      new SubPersistor(last(this.mLevelPersistors), "app"),
+    );
+
+    if (newStore.getState().app.instanceId === undefined) {
+      this.mFirstStart = true;
+      const newId = uuid.v4();
+      log("debug", "first startup, generated instance id", {
+        instanceId: newId,
+      });
+      newStore.dispatch(setInstanceId(newId));
+    } else {
+      log("debug", "startup instance", {
+        instanceId: newStore.getState().app.instanceId,
+      });
+    }
+    const ExtensionManager = require("../util/ExtensionManager").default;
+    this.mExtensions = new ExtensionManager(newStore);
+    if (this.mExtensions.hasOutdatedExtensions) {
+      log("debug", "relaunching to remove outdated extensions");
+      await finalizeStoreWrite();
+      relaunch();
+
+      // relaunching the process happens asynchronously but we don't want to do any further work
+      // before that - this promise never resolves, halting execution until process exits
+      await new Promise(() => {});
+      return PromiseBB.resolve();
+    }
+    const reducer = require("../reducers/index").default;
+    newStore.replaceReducer(
+      reducer(this.mExtensions.getReducers(), querySanitize),
+    );
+
+    // Insert persistors for all hives sequentially
+    for (const hive of allHives(this.mExtensions)) {
+      await insertPersistor(
+        hive,
+        new SubPersistor(last(this.mLevelPersistors), hive),
+      );
+    }
+
+    log("debug", "checking if state db needs to be upgraded");
+    const oldState = await importState(this.mBasePath);
+
+    // mark as imported first, otherwise we risk importing again, overwriting data.
+    // this way we risk not importing but since the old state is still there, that
+    // can be repaired
+    if (oldState !== undefined) {
+      await markImported(this.mBasePath);
+      newStore.dispatch({
+        type: "__hydrate",
+        payload: oldState,
+      });
+    }
+
+    log("debug", "updating state backups");
+    await updateBackups();
+
+    if (restoreBackup !== undefined) {
+      log("info", "restoring state backup", restoreBackup);
+      try {
+        const backupState = await fs.readFileAsync(restoreBackup, {
+          encoding: "utf-8",
+        });
+        newStore.dispatch({
+          type: "__hydrate_replace",
+          payload: JSON.parse(backupState),
+        });
+        await deleteBackups();
+        await updateBackups();
+      } catch (err) {
+        if (err instanceof UserCanceled) {
+          throw err;
         }
-        const reducer = require("../reducers/index").default;
-        newStore.replaceReducer(
-          reducer(this.mExtensions.getReducers(), querySanitize),
+        terminate(
+          {
+            message: "Failed to restore backup",
+            details:
+              getErrorCode(err) !== "ENOENT"
+                ? getErrorMessageOrDefault(err)
+                : "Specified backup file doesn't exist",
+            path: restoreBackup,
+          },
+          {},
+          false,
         );
-        return PromiseBB.mapSeries(allHives(this.mExtensions), (hive) =>
-          insertPersistor(
-            hive,
-            new SubPersistor(last(this.mLevelPersistors), hive),
+      }
+    } else if (mergeBackup !== undefined) {
+      log("info", "merging state backup", mergeBackup);
+      try {
+        const backupState = await fs.readFileAsync(mergeBackup, {
+          encoding: "utf-8",
+        });
+        newStore.dispatch({
+          type: "__hydrate",
+          payload: JSON.parse(backupState),
+        });
+      } catch (err) {
+        if (err instanceof UserCanceled) {
+          throw err;
+        }
+        terminate(
+          {
+            message: "Failed to merge backup",
+            details:
+              getErrorCode(err) !== "ENOENT"
+                ? getErrorMessageOrDefault(err)
+                : "Specified backup file doesn't exist",
+            path: mergeBackup,
+          },
+          {},
+          false,
+        );
+      }
+    }
+
+    const hydrateHandler = (stepIn: IPresetStep): PromiseBB<void> => {
+      newStore.dispatch({
+        type: "__hydrate",
+        payload: (stepIn as IPresetStepHydrateState).state,
+      });
+
+      return PromiseBB.resolve();
+    };
+    presetManager.on("hydrate", hydrateHandler);
+    presetManager.now("hydrate", hydrateHandler);
+
+    this.mStore = newStore;
+
+    let sendState: Buffer;
+
+    (global as any).getReduxStateMsgpack = (idx: number) => {
+      const msgpack: typeof msgpackT = require("@msgpack/msgpack");
+      if (sendState === undefined || idx === 0) {
+        sendState = Buffer.from(
+          msgpack.encode(
+            replaceRecursive(
+              this.mStore.getState(),
+              undefined,
+              "__UNDEFINED__",
+            ),
           ),
         );
-      })
-      .then(() => {
-        log("debug", "checking if state db needs to be upgraded");
-        return importState(this.mBasePath);
-      })
-      .then((oldState) => {
-        // mark as imported first, otherwise we risk importing again, overwriting data.
-        // this way we risk not importing but since the old state is still there, that
-        // can be repaired
-        return oldState !== undefined
-          ? markImported(this.mBasePath).then(() => {
-              newStore.dispatch({
-                type: "__hydrate",
-                payload: oldState,
-              });
-            })
-          : PromiseBB.resolve();
-      })
-      .then(() => {
-        log("debug", "updating state backups");
-        return updateBackups();
-      })
-      .then(() => {
-        if (restoreBackup !== undefined) {
-          log("info", "restoring state backup", restoreBackup);
-          return fs
-            .readFileAsync(restoreBackup, { encoding: "utf-8" })
-            .then((backupState) => {
-              newStore.dispatch({
-                type: "__hydrate_replace",
-                payload: JSON.parse(backupState),
-              });
-            })
-            .then(() => deleteBackups())
-            .then(() => updateBackups())
-            .catch((err) => {
-              if (err instanceof UserCanceled) {
-                return PromiseBB.reject(err);
-              }
-              terminate(
-                {
-                  message: "Failed to restore backup",
-                  details:
-                    getErrorCode(err) !== "ENOENT"
-                      ? getErrorMessageOrDefault(err)
-                      : "Specified backup file doesn't exist",
-                  path: restoreBackup,
-                },
-                {},
-                false,
-              );
-            });
-        } else if (mergeBackup !== undefined) {
-          log("info", "merging state backup", mergeBackup);
-          return fs
-            .readFileAsync(mergeBackup, { encoding: "utf-8" })
-            .then((backupState) => {
-              newStore.dispatch({
-                type: "__hydrate",
-                payload: JSON.parse(backupState),
-              });
-            })
-            .catch((err) => {
-              if (err instanceof UserCanceled) {
-                return PromiseBB.reject(err);
-              }
-              terminate(
-                {
-                  message: "Failed to merge backup",
-                  details:
-                    getErrorCode(err) !== "ENOENT"
-                      ? getErrorMessageOrDefault(err)
-                      : "Specified backup file doesn't exist",
-                  path: mergeBackup,
-                },
-                {},
-                false,
-              );
-            });
-        } else {
-          return PromiseBB.resolve();
-        }
-      })
-      .then(() => {
-        const hydrateHandler = (stepIn: IPresetStep): PromiseBB<void> => {
-          newStore.dispatch({
-            type: "__hydrate",
-            payload: (stepIn as IPresetStepHydrateState).state,
-          });
+      }
+      const res = sendState.slice(
+        idx * STATE_CHUNK_SIZE,
+        (idx + 1) * STATE_CHUNK_SIZE,
+      );
+      return res.toString("base64");
+    };
 
-          return PromiseBB.resolve();
-        };
-        presetManager.on("hydrate", hydrateHandler);
-        presetManager.now("hydrate", hydrateHandler);
-      })
-      .then(() => {
-        this.mStore = newStore;
+    this.mExtensions.setStore(newStore);
+    log("debug", "setting up extended store");
+    await extendStore(newStore, this.mExtensions);
 
-        let sendState: Buffer;
-
-        (global as any).getReduxStateMsgpack = (idx: number) => {
-          const msgpack: typeof msgpackT = require("@msgpack/msgpack");
-          if (sendState === undefined || idx === 0) {
-            sendState = Buffer.from(
-              msgpack.encode(
-                replaceRecursive(
-                  this.mStore.getState(),
-                  undefined,
-                  "__UNDEFINED__",
-                ),
-              ),
-            );
-          }
-          const res = sendState.slice(
-            idx * STATE_CHUNK_SIZE,
-            (idx + 1) * STATE_CHUNK_SIZE,
-          );
-          return res.toString("base64");
-        };
-
-        this.mExtensions.setStore(newStore);
-        log("debug", "setting up extended store");
-        return extendStore(newStore, this.mExtensions);
-      })
-      .then(() => {
-        if (backups.length > 0) {
-          const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
-          const mostRecent = sorted[0];
-          const timestamp = path
-            .basename(mostRecent, ".json")
-            .replace("backup_", "");
-          const date = new Date(+timestamp);
-          const dateString =
-            `${date.toDateString()} ` +
-            `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-          const replace = { date: dateString };
-          this.mStore.dispatch(
-            addNotification({
-              type: "info",
-              message:
-                "Found an application state backup. Created on: {{date}}",
-              actions: [
-                {
-                  title: "Restore",
-                  action: () => {
-                    this.mStore.dispatch(
-                      showDialog(
-                        "question",
-                        "Restoring Application State",
-                        {
-                          bbcode:
-                            "You are attempting to restore an application state backup which will revert any " +
-                            "state changes you have made since the backup was created.[br][/br][br][/br]" +
-                            "Please note that this operation will NOT uninstall/remove any mods you " +
-                            "may have downloaded/installed since the backup was created, however Vortex " +
-                            'may "forget" some changes:[list]' +
-                            "[*] Which download archive belongs to which mod installation, exhibiting " +
-                            'itself as "duplicate" entries of the same mod (archive entry and installed mod entry).' +
-                            "[*] The state of an installed mod - reverting it to a disabled state." +
-                            "[*] Any conflict rules you had defined after the state backup." +
-                            "[*] Any other configuration changes you may have made." +
-                            "[/list][br][/br]" +
-                            "Are you sure you wish to restore the backed up state ?",
+    if (backups.length > 0) {
+      const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
+      const mostRecent = sorted[0];
+      const timestamp = path
+        .basename(mostRecent, ".json")
+        .replace("backup_", "");
+      const date = new Date(+timestamp);
+      const dateString =
+        `${date.toDateString()} ` +
+        `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      const replace = { date: dateString };
+      this.mStore.dispatch(
+        addNotification({
+          type: "info",
+          message: "Found an application state backup. Created on: {{date}}",
+          actions: [
+            {
+              title: "Restore",
+              action: () => {
+                this.mStore.dispatch(
+                  showDialog(
+                    "question",
+                    "Restoring Application State",
+                    {
+                      bbcode:
+                        "You are attempting to restore an application state backup which will revert any " +
+                        "state changes you have made since the backup was created.[br][/br][br][/br]" +
+                        "Please note that this operation will NOT uninstall/remove any mods you " +
+                        "may have downloaded/installed since the backup was created, however Vortex " +
+                        'may "forget" some changes:[list]' +
+                        "[*] Which download archive belongs to which mod installation, exhibiting " +
+                        'itself as "duplicate" entries of the same mod (archive entry and installed mod entry).' +
+                        "[*] The state of an installed mod - reverting it to a disabled state." +
+                        "[*] Any conflict rules you had defined after the state backup." +
+                        "[*] Any other configuration changes you may have made." +
+                        "[/list][br][/br]" +
+                        "Are you sure you wish to restore the backed up state ?",
+                    },
+                    [
+                      { label: "Cancel" },
+                      {
+                        label: "Restore",
+                        action: () => {
+                          log("info", "sorted backups", sorted);
+                          spawnSelf([
+                            "--restore",
+                            path.join(backupPath, mostRecent),
+                          ]);
+                          app.exit();
                         },
-                        [
-                          { label: "Cancel" },
-                          {
-                            label: "Restore",
-                            action: () => {
-                              log("info", "sorted backups", sorted);
-                              spawnSelf([
-                                "--restore",
-                                path.join(backupPath, mostRecent),
-                              ]);
-                              app.exit();
-                            },
-                          },
-                        ],
-                      ),
-                    );
-                  },
-                },
-                {
-                  title: "Delete",
-                  action: (dismiss) => {
-                    deleteBackups();
-                    dismiss();
-                  },
-                },
-              ],
-              replace,
-            }),
-          );
-        } else if (!repair) {
-          // we started without any problems, save this application state
-          return createFullStateBackup("startup", this.mStore)
-            .then(() => PromiseBB.resolve())
-            .catch((err) =>
-              log(
-                "error",
-                "Failed to create startup state backup",
-                getErrorMessageOrDefault(err),
-              ),
-            );
-        }
-        return PromiseBB.resolve();
-      })
-      .then(() => this.mExtensions.doOnce());
+                      },
+                    ],
+                  ),
+                );
+              },
+            },
+            {
+              title: "Delete",
+              action: (dismiss) => {
+                deleteBackups();
+                dismiss();
+              },
+            },
+          ],
+          replace,
+        }),
+      );
+    } else if (!repair) {
+      // we started without any problems, save this application state
+      try {
+        await createFullStateBackup("startup", this.mStore);
+      } catch (err) {
+        log(
+          "error",
+          "Failed to create startup state backup",
+          getErrorMessageOrDefault(err),
+        );
+      }
+    }
+
+    await this.mExtensions.doOnce();
+    return PromiseBB.resolve();
   }
 
   private sanityCheckCB = (err: StateError) => {
@@ -1271,14 +1231,13 @@ class Application {
     );
   };
 
-  private initDevel(): PromiseBB<void> {
+  private async initDevel(): Promise<void> {
     if (process.env.NODE_ENV === "development") {
       const { installDevelExtensions } =
         require("../util/devel") as typeof develT;
-      return installDevelExtensions();
-    } else {
-      return PromiseBB.resolve();
+      await installDevelExtensions();
     }
+    return PromiseBB.resolve();
   }
 
   private showMainWindow(startMinimized?: boolean) {
@@ -1307,7 +1266,7 @@ class Application {
     setWindow(this.mMainWindow.getHandle());
   }
 
-  private testUserEnvironment(): PromiseBB<void> {
+  private async testUserEnvironment(): Promise<void> {
     // Should be used to test the user's environment for known
     //  issues before starting up Vortex.
     // On Windows:
@@ -1315,49 +1274,40 @@ class Application {
     if (process.platform === "win32") {
       try {
         const documentsFolder = app.getPath("documents");
-        return documentsFolder !== ""
-          ? PromiseBB.resolve()
-          : PromiseBB.reject(new DocumentsPathMissing());
+        if (documentsFolder === "") {
+          throw new DocumentsPathMissing();
+        }
       } catch (err) {
-        return PromiseBB.reject(new DocumentsPathMissing());
+        throw new DocumentsPathMissing();
       }
-    } else {
-      // No tests needed.
-      return PromiseBB.resolve();
     }
+    // No tests needed for non-Windows platforms.
+    return PromiseBB.resolve();
   }
 
-  private validateFiles(): PromiseBB<void> {
-    return PromiseBB.resolve(
-      validateFiles(getVortexPath("assets_unpacked")),
-    ).then((validation) => {
-      if (validation.changed.length > 0 || validation.missing.length > 0) {
-        log("info", "Files were manipulated", validation);
-        return dialog
-          .showMessageBox(null, {
-            type: "error",
-            title: "Installation corrupted",
-            message:
-              "Your Vortex installation has been corrupted. " +
-              "This could be the result of a virus or manual manipulation. " +
-              "Vortex might still appear to work (partially) but we suggest " +
-              "you reinstall it. For more information please refer to Vortex's log files.",
-            noLink: true,
-            buttons: ["Quit", "Ignore"],
-          })
-          .then((dialogReturn) => {
-            const { response } = dialogReturn;
-            if (response === 0) {
-              app.quit();
-            } else {
-              disableErrorReport();
-              return PromiseBB.resolve();
-            }
-          });
+  private async validateFiles(): Promise<void> {
+    const validation = await validateFiles(getVortexPath("assets_unpacked"));
+    if (validation.changed.length > 0 || validation.missing.length > 0) {
+      log("info", "Files were manipulated", validation);
+      const dialogReturn = await dialog.showMessageBox(null, {
+        type: "error",
+        title: "Installation corrupted",
+        message:
+          "Your Vortex installation has been corrupted. " +
+          "This could be the result of a virus or manual manipulation. " +
+          "Vortex might still appear to work (partially) but we suggest " +
+          "you reinstall it. For more information please refer to Vortex's log files.",
+        noLink: true,
+        buttons: ["Quit", "Ignore"],
+      });
+      const { response } = dialogReturn;
+      if (response === 0) {
+        app.quit();
       } else {
-        return PromiseBB.resolve();
+        disableErrorReport();
       }
-    });
+    }
+    return PromiseBB.resolve();
   }
 
   private applyArguments(args: IParameters) {
