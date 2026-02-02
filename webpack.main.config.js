@@ -27,13 +27,16 @@ if (
 }
 
 module.exports = {
-  entry: "./src/main.ts",
+  entry: {
+    main: "./src/main.ts",
+    preload: "./src/preload/index.ts",
+  },
   target: "electron-main",
   node: { __filename: false, __dirname: false },
   mode,
   output: {
     libraryTarget: "commonjs2",
-    filename: "../app/main.js",
+    filename: "../app/[name].js",
   },
   module: {
     rules: [
@@ -42,7 +45,7 @@ module.exports = {
         loader: "ts-loader",
         exclude: /node_modules/,
         options: {
-          configFile: "tsconfig.main.json",
+          configFile: "tsconfig.webpack.json",
           transpileOnly,
           compilerOptions: {
             sourceMap: true,
@@ -57,6 +60,7 @@ module.exports = {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
     alias: {
       "@shared": path.resolve(__dirname, "src/shared/"),
+      "@renderer": path.resolve(__dirname, "src/renderer/"),
     },
   },
   plugins,
