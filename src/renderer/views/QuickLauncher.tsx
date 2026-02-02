@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,8 +11,8 @@ import type { IState } from "../../types/IState";
 import { makeExeId } from "../../reducers/session";
 import { unknownToError } from "../../shared/errors";
 import Debouncer from "../../util/Debouncer";
-import { ExtensionContext } from "../../util/ExtensionProvider";
 import { log } from "../../util/log";
+import { useExtensionContext } from "../../util/ExtensionProvider";
 import { showError } from "../../util/message";
 import {
   activeGameId,
@@ -31,7 +31,7 @@ type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 
 export const QuickLauncher: React.FC = () => {
   const dispatch = useDispatch();
-  const extensions = React.useContext(ExtensionContext);
+  const extensions = useExtensionContext();
   const api = extensions.getApi();
 
   const { t } = useTranslation(["common"]);

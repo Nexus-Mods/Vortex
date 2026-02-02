@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useEffect, useMemo, useReducer, type FC } from "react";
 import { Badge } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
@@ -13,16 +13,16 @@ interface IPageButtonProps {
   namespace: string;
 }
 
-export function PageButton(props: IPageButtonProps): React.JSX.Element {
+export const PageButton: FC<IPageButtonProps> = (props) => {
   const { namespace, page } = props;
-  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
   const { t } = useTranslation();
 
   // Create a stable object to pass to attach/detach that triggers re-renders
-  const updateHandle: IUpdateable = React.useMemo(() => ({ forceUpdate }), []);
+  const updateHandle: IUpdateable = useMemo(() => ({ forceUpdate }), []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (page.badge) {
       page.badge.attach(updateHandle);
     }
@@ -65,6 +65,6 @@ export function PageButton(props: IPageButtonProps): React.JSX.Element {
       {renderActivity()}
     </div>
   );
-}
+};
 
 export default PageButton;

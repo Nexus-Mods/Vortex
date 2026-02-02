@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import * as semver from "semver";
@@ -11,7 +11,7 @@ import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import IconBar from "../../controls/IconBar";
-import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
+import { useSwitchingProfile } from "../../hooks";
 import { NotificationButton } from "../NotificationButton";
 import { QuickLauncher } from "../QuickLauncher";
 
@@ -20,7 +20,7 @@ import { QuickLauncher } from "../QuickLauncher";
 const applicationButtons: IActionDefinition[] = [];
 const globalButtons: IActionDefinition[] = [];
 
-export const Toolbar = (): JSX.Element | null => {
+export const Toolbar: FC = () => {
   const { t } = useTranslation();
   const customTitlebar = useSelector(
     (state: IState) => state.settings.window.customTitlebar,

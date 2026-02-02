@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback, useRef, type FC } from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -37,35 +37,35 @@ interface ICombinedSettingsPage {
 
 type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
 
-function registerSettings(
+const registerSettings = (
   _instanceGroup: undefined,
   title: string,
   component: React.ComponentType<IBaseProps>,
   props: PropsCallbackTyped<IBaseProps>,
   visible: () => boolean,
   priority?: number,
-): ISettingsPage {
+): ISettingsPage => {
   return { title, component, props, visible, priority: priority || 100 };
-}
+};
 
-export const GameSettings: React.FC = () => {
+export const GameSettings: FC = () => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 
   // Get extension objects using the hook instead of HOC
-  const objects = useExtensionObjects<ISettingsPage>(registerSettings);
+  const settingsPages = useExtensionObjects<ISettingsPage>(registerSettings);
 
   const settingsPage = useSelector(
     (state: IState) => state.session.base.settingsPage || undefined,
   );
 
-  const startupSettingsRef = React.useRef(makeReactive(startupSettings));
+  const startupSettingsRef = useRef(makeReactive(startupSettings));
 
-  const changeStartup = React.useCallback((key: string, value: unknown) => {
+  const changeStartup = useCallback((key: string, value: unknown) => {
     startupSettingsRef.current[key] = value;
   }, []);
 
-  const setCurrentPage: TabSelectHandler = React.useCallback(
+  const setCurrentPage: TabSelectHandler = useCallback(
     (eventKey) => {
       if (typeof eventKey === "string") {
         dispatch(setSettingsPage(eventKey));
@@ -132,7 +132,7 @@ export const GameSettings: React.FC = () => {
     tabs.filter((tab) => tab.elements.some(isPerGameSetting));
 
   // Combine all settings by title
-  const combined = objects.reduce(
+  const combined = settingsPages.reduce(
     (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
       const result = prev.slice();
       const existingPage = prev.find(

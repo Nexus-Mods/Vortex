@@ -1,7 +1,7 @@
 import type * as RemoteT from "@electron/remote";
 import type { BrowserWindow } from "electron";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import lazyRequire from "../../util/lazyRequire";
 

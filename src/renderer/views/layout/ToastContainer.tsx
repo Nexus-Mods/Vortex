@@ -1,7 +1,11 @@
-import * as React from "react";
+import React, { memo, type FC } from "react";
 import { Toaster } from "react-hot-toast";
 
-export const ToastContainer: React.FC = React.memo(() => (
+/**
+ * Provides a toast container component.
+ * For both layouts.
+ */
+export const ToastContainer: FC = memo(() => (
   <Toaster
     position="bottom-center"
     reverseOrder={false}

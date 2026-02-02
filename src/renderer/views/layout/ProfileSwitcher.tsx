@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -21,7 +21,11 @@ type IProfileDeploying = {
   text: string;
 };
 
-export const ProfileSwitcher = (): JSX.Element => {
+/**
+ * Provides a profile switcher component.
+ * For both layouts.
+ */
+export const ProfileSwitcher: FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -40,7 +44,7 @@ export const ProfileSwitcher = (): JSX.Element => {
     (state: IState) => state.session.base.visibleDialog || undefined,
   );
 
-  const onHideDialog = React.useCallback(() => {
+  const onHideDialog = useCallback(() => {
     dispatch(setDialogVisible(undefined));
   }, [dispatch]);
 

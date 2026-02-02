@@ -1,3 +1,5 @@
+import React, { type FC } from "react";
+
 import {
   mdiMenuOpen,
   mdiMenuClose,
@@ -9,7 +11,7 @@ import {
   mdiWindowRestore,
   mdiAccountCircle,
 } from "@mdi/js";
-import React, {
+import {
   type ButtonHTMLAttributes,
   type CSSProperties,
   useCallback,
@@ -23,26 +25,23 @@ import type { IState } from "../../../types/IState";
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
-import { useWindowContext } from "../../../util/WindowContext";
-import {
-  close,
-  minimize,
-  toggleMaximize,
-  useIsMaximized,
-} from "../../utils/windowManipulation";
+import { useWindowContext } from "../../contexts";
+import { close, minimize, toggleMaximize, useIsMaximized } from "../../hooks";
 import { useSpineContext } from "./SpineContext";
 
-const IconButton = ({
+interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+  iconPath: string;
+  imageSrc?: string;
+  isAvatar?: boolean;
+}
+
+const IconButton: FC<IconButtonProps> = ({
   className,
   iconPath,
   imageSrc,
   isAvatar,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  className?: string;
-  iconPath: string;
-  imageSrc?: string;
-  isAvatar?: boolean;
 }) => {
   const hasImage = !!imageSrc;
 
@@ -70,13 +69,15 @@ const IconButton = ({
   );
 };
 
-const WindowControl = ({
+interface WindowControlProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+  iconPath: string;
+}
+
+const WindowControl: FC<WindowControlProps> = ({
   className,
   iconPath,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  className?: string;
-  iconPath: string;
 }) => (
   <button
     className={joinClasses([
@@ -89,7 +90,7 @@ const WindowControl = ({
   </button>
 );
 
-export const Header = () => {
+export const Header: FC = () => {
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
   const { t } = useTranslation();
   const { selection } = useSpineContext();

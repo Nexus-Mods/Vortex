@@ -72,6 +72,16 @@ export const ExtensionContext = React.createContext<ExtensionManager | null>(
   null,
 );
 
+export const useExtensionContext = (): ExtensionManager => {
+  const context = React.useContext(ExtensionContext);
+  if (context === null) {
+    throw new Error(
+      "useExtensionContext must be used within an ExtensionProvider",
+    );
+  }
+  return context;
+};
+
 export interface IExtensionProps {
   extensions: ExtensionManager;
 }

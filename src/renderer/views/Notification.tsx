@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback, useRef, useState, type FC, type JSX } from "react";
 import { Button, MenuItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
@@ -21,12 +21,12 @@ interface IActionProps {
   onTrigger: (actionTitle: string) => void;
 }
 
-function Action(props: IActionProps): React.JSX.Element {
+const Action: FC<IActionProps> = (props) => {
   const { count, icon, title, onTrigger } = props;
 
   const { t } = useTranslation(["common"]);
 
-  const trigger = React.useCallback(() => {
+  const trigger = useCallback(() => {
     onTrigger(title);
   }, [onTrigger, title]);
 
@@ -37,7 +37,7 @@ function Action(props: IActionProps): React.JSX.Element {
   } else {
     return <Button onClick={trigger}>{t(title, { count })}</Button>;
   }
-}
+};
 
 export interface IProps {
   collapsed: number;
@@ -48,7 +48,7 @@ export interface IProps {
   onSuppress?: (id: string) => void;
 }
 
-function typeToStyle(type: NotificationType): string {
+const typeToStyle = (type: NotificationType): string => {
   switch (type) {
     case "success":
       return "success";
@@ -63,9 +63,9 @@ function typeToStyle(type: NotificationType): string {
     default:
       return "warning";
   }
-}
+};
 
-function typeToIcon(type: NotificationType): React.JSX.Element {
+const typeToIcon = (type: NotificationType): JSX.Element | null => {
   switch (type) {
     case "activity":
       return <Spinner />;
@@ -80,9 +80,9 @@ function typeToIcon(type: NotificationType): React.JSX.Element {
     default:
       return null;
   }
-}
+};
 
-export function Notification(props: IProps): React.JSX.Element {
+export const Notification: FC<IProps> = (props) => {
   const {
     collapsed,
     onDismiss,
@@ -95,33 +95,33 @@ export function Notification(props: IProps): React.JSX.Element {
 
   const { t } = useTranslation(["common"]);
 
-  const [open, setOpen] = React.useState(false);
-  const menuRef = React.useRef<InstanceType<typeof Dropdown>>(null);
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<InstanceType<typeof Dropdown>>(null);
 
-  const handleOpen = React.useCallback(() => {
+  const handleOpen = useCallback(() => {
     setOpen(true);
   }, []);
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = useCallback(() => {
     setOpen(false);
   }, []);
 
-  const suppressNotification = React.useCallback(() => {
+  const suppressNotification = useCallback(() => {
     onSuppress?.(params.id);
   }, [onSuppress, params.id]);
 
-  const trigger = React.useCallback(
+  const trigger = useCallback(
     (actionTitle: string) => {
       onTriggerAction?.(params.id, actionTitle);
     },
     [onTriggerAction, params.id],
   );
 
-  const expand = React.useCallback(() => {
+  const expand = useCallback(() => {
     onExpand?.(params.group);
   }, [onExpand, params.group]);
 
-  const dismiss = React.useCallback(() => {
+  const dismiss = useCallback(() => {
     onDismiss?.(params.id);
   }, [onDismiss, params.id]);
 
@@ -236,6 +236,6 @@ export function Notification(props: IProps): React.JSX.Element {
       </div>
     </div>
   );
-}
+};
 
 export default Notification;

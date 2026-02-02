@@ -1,4 +1,12 @@
-import * as React from "react";
+import React, {
+  Component,
+  type FC,
+  useCallback,
+  type ReactNode,
+  useState,
+  useMemo,
+  type JSX,
+} from "react";
 import { Alert, Button, Jumbotron } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
@@ -8,9 +16,17 @@ import { getApplication } from "../../util/application";
 import { didIgnoreError, isOutdated } from "../../util/errorHandling";
 import { genHash } from "../../util/genHash";
 import { log } from "../../util/log";
+import { useMainContext } from "../contexts";
+import {
+  PageHeaderProvider,
+  type IPageHeaderContext,
+  PageHeaderContext,
+} from "../contexts/MainPageHeaderContext";
 import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
-import { MainContext } from "./MainWindow";
+
+// Backward compatibility export
+export { type IPageHeaderContext, PageHeaderContext };
 
 export interface IBaseProps {
   page: IMainPage;
@@ -22,20 +38,10 @@ export interface IMainPageContext {
   globalOverlay: JSX.Element;
 }
 
-export interface IPageHeaderContext {
-  headerPortal: () => HTMLElement;
-  page: string;
-}
-
-export const PageHeaderContext = React.createContext<IPageHeaderContext>({
-  headerPortal: () => null,
-  page: "",
-});
-
 interface IErrorBoundaryProps {
   pageId: string;
   classes: string[];
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface IErrorBoundaryState {
@@ -44,7 +50,7 @@ interface IErrorBoundaryState {
 }
 
 // Error boundaries must be class components - no hook equivalent exists
-class PageErrorBoundary extends React.Component<
+class PageErrorBoundary extends Component<
   IErrorBoundaryProps,
   IErrorBoundaryState
 > {
@@ -87,7 +93,7 @@ interface IErrorFallbackProps {
   onRetry: () => void;
 }
 
-const ErrorFallback: React.FC<IErrorFallbackProps> = ({
+const ErrorFallback: FC<IErrorFallbackProps> = ({
   pageId,
   classes,
   error,
@@ -95,9 +101,9 @@ const ErrorFallback: React.FC<IErrorFallbackProps> = ({
   onRetry,
 }) => {
   const { t } = useTranslation(["common"]);
-  const context = React.useContext(MainContext);
+  const context = useMainContext();
 
-  const report = React.useCallback(() => {
+  const report = useCallback(() => {
     context.api.events.emit(
       "report-feedback",
       error.stack.split("\n")[0],
@@ -140,9 +146,9 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
   secondary,
 }) => {
   const { t } = useTranslation(["common"]);
-  const [headerRef, setHeaderRef] = React.useState<HTMLElement | null>(null);
+  const [headerRef, setHeaderRef] = useState<HTMLElement | null>(null);
 
-  const classes = React.useMemo(() => {
+  const classes = useMemo(() => {
     const result = ["main-page"];
     result.push(active ? "page-active" : "page-hidden");
     if (secondary) {
@@ -151,7 +157,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
     return result;
   }, [active, secondary]);
 
-  const headerContextValue = React.useMemo<IPageHeaderContext>(
+  const headerContextValue = useMemo<IPageHeaderContext>(
     () => ({
       headerPortal: () => headerRef,
       page: page.id,
@@ -159,7 +165,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
     [headerRef, page.id],
   );
 
-  const handleHeaderRef = React.useCallback((ref: HTMLElement | null) => {
+  const handleHeaderRef = useCallback((ref: HTMLElement | null) => {
     setHeaderRef(ref);
   }, []);
 
@@ -168,7 +174,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
   try {
     const props = page.propsFunc();
     content = (
-      <PageHeaderContext.Provider value={headerContextValue}>
+      <PageHeaderProvider value={headerContextValue}>
         <div className={classes.join(" ")} id={`page-${page.id}`}>
           <div className="mainpage-header-container" ref={handleHeaderRef} />
 
@@ -182,7 +188,7 @@ export const MainPageContainer: React.FC<IBaseProps> = ({
             </ExtensionGate>
           </div>
         </div>
-      </PageHeaderContext.Provider>
+      </PageHeaderProvider>
     );
   } catch (err) {
     log("warn", "error rendering extension main page", err);

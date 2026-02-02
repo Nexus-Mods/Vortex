@@ -1,29 +1,19 @@
-import * as _ from "lodash";
-import PropTypes from "prop-types";
-import * as React from "react";
+import React, { type FC, Suspense } from "react";
 import { Button as ReactButton } from "react-bootstrap";
 import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IComponentContext } from "../../types/IComponentContext";
-import type {
-  IExtensionApi,
-  IMainPageOptions,
-} from "../../types/IExtensionContext";
-import type { IMainPage } from "../../types/IMainPage";
-import type { IModifiers } from "../../types/IModifiers";
 import type { IState } from "../../types/IState";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
 
-import { setOpenMainPage } from "../../actions/session";
-import { setTabsMinimized, setUseModernLayout } from "../../actions/window";
+import { setUseModernLayout } from "../../actions/window";
 import { Button } from "../../tailwind/components/next/button";
+import { MutexProvider } from "../../util/MutexContext";
 import {
-  ExtensionContext,
-  useExtensionObjects,
-} from "../../util/ExtensionProvider";
-import { createQueue, MutexProvider } from "../../util/MutexContext";
-import { type IWindowContext, WindowProvider } from "../../util/WindowContext";
+  MainProvider,
+  MenuLayerProvider,
+  PagesProvider,
+  WindowProvider,
+} from "../contexts";
 import Spinner from "../controls/Spinner";
 import { ClassicLayout, ModernLayout } from "./layout";
 
@@ -33,309 +23,48 @@ addStyle(ReactButton, "ghost");
 addStyle(ReactButton, "link");
 addStyle(ReactButton, "inverted");
 
+const LayoutSwitcher = () => {
+  const dispatch = useDispatch();
+  const useModernLayout = useSelector(
+    (state: IState) => state.settings.window.useModernLayout,
+  );
+
+  return (
+    <Button
+      buttonType="primary"
+      className="fixed right-4 bottom-4 z-toast"
+      size="sm"
+      onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
+    >
+      {useModernLayout ? "Switch to Classic" : "Switch to Modern"}
+    </Button>
+  );
+};
+
 export interface IBaseProps {
   className?: string;
 }
 
-export const MainContext = React.createContext<IComponentContext>({
-  api: undefined,
-  getModifiers: undefined,
-  menuLayer: undefined,
-});
-
-const mutexQueue = createQueue();
-
-interface ILegacyContextProviderProps {
-  api: IExtensionApi;
-  menuLayer: HTMLDivElement | null;
-  getModifiers: () => IModifiers;
-  children: React.ReactNode;
-}
-
-// This class component provides the legacy React context API (childContextTypes/getChildContext)
-// required by child components using ComponentEx with contextTypes. Cannot be replaced with a
-// functional component as the legacy context API is only available in class components.
-// eslint-disable-next-line @eslint-react/no-class-component
-class LegacyContextProvider extends React.Component<ILegacyContextProviderProps> {
-  public static childContextTypes: React.ValidationMap<unknown> = {
-    api: PropTypes.object.isRequired,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
-
-  // eslint-disable-next-line @eslint-react/no-unused-class-component-members
-  public getChildContext(): IComponentContext {
-    const { api, menuLayer, getModifiers } = this.props;
-    return { api, menuLayer, getModifiers };
-  }
-
-  public render() {
-    return this.props.children;
-  }
-}
-
-function trueFunc() {
-  return true;
-}
-
-function emptyFunc() {
-  return {};
-}
-
-function registerMainPage(
-  _instanceGroup: undefined,
-  extInfo: Partial<IRegisteredExtension>,
-  icon: string,
-  title: string,
-  component: React.ComponentClass | React.StatelessComponent,
-  options: IMainPageOptions,
-): IMainPage {
-  return {
-    id: options.id || title,
-    icon,
-    title,
-    component,
-    propsFunc: options.props || emptyFunc,
-    visible: options.visible || trueFunc,
-    group: options.group,
-    badge: options.badge,
-    activity: options.activity,
-    priority: options.priority !== undefined ? options.priority : 100,
-    onReset: options.onReset,
-    namespace: extInfo.namespace,
-  };
-}
-
-export const AppLayout: React.FC<IBaseProps> = () => {
-  const objects = useExtensionObjects<IMainPage>(
-    registerMainPage,
-    undefined,
-    undefined,
-    true,
-  );
-
-  const dispatch = useDispatch();
-
-  const extensions = React.useContext(ExtensionContext);
-  const api = extensions.getApi();
-
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const customTitlebar = useSelector(
-    (state: IState) => state.settings.window.customTitlebar,
-  );
+export const AppLayout: FC<IBaseProps> = () => {
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,
   );
-  const tabsMinimized = useSelector(
-    (state: IState) => state.settings.window.tabsMinimized,
-  );
-
-  const onSetOpenMainPage = React.useCallback(
-    (page: string, secondary: boolean) => {
-      dispatch(setOpenMainPage(page, secondary));
-    },
-    [dispatch],
-  );
-
-  const [hidpi, setHidpi] = React.useState(
-    () => (global.screen?.width ?? 0) > 1920,
-  );
-  const [focused, setFocused] = React.useState(true);
-  const [menuLayerOpen, setMenuLayerOpen] = React.useState(false);
-
-  const menuLayerRef = React.useRef<HTMLDivElement | null>(null);
-  const menuObserverRef = React.useRef<MutationObserver | undefined>(undefined);
-  const modifiersRef = React.useRef<IModifiers>({
-    alt: false,
-    ctrl: false,
-    shift: false,
-  });
-  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
-
-  const getModifiers = React.useCallback(() => modifiersRef.current, []);
-
-  const updateModifiers = React.useCallback((event: KeyboardEvent) => {
-    const newModifiers = {
-      alt: event.altKey,
-      ctrl: event.ctrlKey,
-      shift: event.shiftKey,
-    };
-    if (!_.isEqual(newModifiers, modifiersRef.current)) {
-      modifiersRef.current = newModifiers;
-    }
-  }, []);
-
-  const updateSize = React.useCallback(() => {
-    const isHidpi = (global.screen?.width ?? 0) > 1920;
-    setHidpi((prev) => (prev !== isHidpi ? isHidpi : prev));
-  }, []);
-
-  const handleFocus = React.useCallback(() => {
-    if (process.env.DEBUG_REACT_RENDERS !== "true") {
-      setFocused(true);
-    }
-  }, []);
-
-  const handleBlur = React.useCallback(() => {
-    if (process.env.DEBUG_REACT_RENDERS !== "true") {
-      setFocused(false);
-    }
-  }, []);
-
-  const setMenuLayer = React.useCallback((ref: HTMLDivElement | null) => {
-    menuLayerRef.current = ref;
-
-    if (menuObserverRef.current !== undefined) {
-      menuObserverRef.current.disconnect();
-      menuObserverRef.current = undefined;
-    }
-
-    if (ref !== null) {
-      let hasChildren = ref.children.length > 0;
-      menuObserverRef.current = new MutationObserver(() => {
-        if (menuLayerRef.current === null) {
-          return;
-        }
-        const newHasChildren = menuLayerRef.current.children.length > 0;
-        if (newHasChildren !== hasChildren) {
-          hasChildren = newHasChildren;
-          setMenuLayerOpen(hasChildren);
-        }
-      });
-
-      menuObserverRef.current.observe(ref, { childList: true });
-    }
-  }, []);
-
-  // Set up event listeners for api events
-  React.useEffect(() => {
-    const showMainPageHandler = (pageId: string) => {
-      onSetOpenMainPage(pageId, false);
-    };
-
-    const refreshMainPageHandler = () => {
-      forceUpdate();
-    };
-
-    api.events.on("show-main-page", showMainPageHandler);
-    api.events.on("refresh-main-page", refreshMainPageHandler);
-
-    return () => {
-      api.events.removeListener("show-main-page", showMainPageHandler);
-      api.events.removeListener("refresh-main-page", refreshMainPageHandler);
-    };
-  }, [api, onSetOpenMainPage]);
-
-  // Set initial page on mount
-  const initializedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (initializedRef.current) {
-      return;
-    }
-    initializedRef.current = true;
-
-    if (objects.length > 0) {
-      const def = [...objects].sort(
-        (lhs, rhs) => lhs.priority - rhs.priority,
-      )[0];
-      onSetOpenMainPage(def.title, false);
-    }
-
-    if (customTitlebar) {
-      document.body.classList.add("custom-titlebar-body");
-    }
-  }, [objects, onSetOpenMainPage, customTitlebar]);
-
-  // Set up window event listeners
-  React.useEffect(() => {
-    window.addEventListener("resize", updateSize);
-    window.addEventListener("keydown", updateModifiers);
-    window.addEventListener("keyup", updateModifiers);
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-
-    return () => {
-      window.removeEventListener("resize", updateSize);
-      window.removeEventListener("keydown", updateModifiers);
-      window.removeEventListener("keyup", updateModifiers);
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, [updateSize, updateModifiers, handleFocus, handleBlur]);
-
-  // Handle page visibility changes
-  React.useEffect(() => {
-    const page = objects.find((iter) => iter.id === mainPage);
-    if (page !== undefined && !page.visible()) {
-      onSetOpenMainPage("Dashboard", false);
-    }
-  }, [mainPage, objects, onSetOpenMainPage]);
-
-  const contextValue: IComponentContext = React.useMemo(
-    () => ({
-      api,
-      menuLayer: menuLayerRef.current,
-      getModifiers,
-    }),
-    [api, getModifiers],
-  );
-
-  const handleSetMenuIsCollapsed = React.useCallback(
-    (value: boolean | ((prev: boolean) => boolean)) => {
-      const newValue =
-        typeof value === "function" ? value(tabsMinimized) : value;
-      dispatch(setTabsMinimized(newValue));
-    },
-    [tabsMinimized, dispatch],
-  );
-
-  const windowContextValue: IWindowContext = React.useMemo(
-    () => ({
-      isFocused: focused,
-      menuIsCollapsed: tabsMinimized,
-      menuLayerOpen,
-      isHidpi: hidpi,
-      setMenuIsCollapsed: handleSetMenuIsCollapsed,
-    }),
-    [focused, tabsMinimized, menuLayerOpen, hidpi, handleSetMenuIsCollapsed],
-  );
 
   return (
-    <React.Suspense fallback={<Spinner className="suspense-spinner" />}>
-      <WindowProvider value={windowContextValue}>
-        <MainContext.Provider value={contextValue}>
-          <LegacyContextProvider
-            api={api}
-            getModifiers={getModifiers}
-            menuLayer={menuLayerRef.current}
-          >
-            <MutexProvider value={mutexQueue}>
-              {useModernLayout ? (
-                <ModernLayout
-                  customTitlebar={customTitlebar}
-                  objects={objects}
-                  setMenuLayer={setMenuLayer}
-                />
-              ) : (
-                <ClassicLayout
-                  customTitlebar={customTitlebar}
-                  objects={objects}
-                  setMenuLayer={setMenuLayer}
-                />
-              )}
-            </MutexProvider>
+    <Suspense fallback={<Spinner className="suspense-spinner" />}>
+      <WindowProvider>
+        <MenuLayerProvider>
+          <MainProvider>
+            <PagesProvider>
+              <MutexProvider>
+                {useModernLayout ? <ModernLayout /> : <ClassicLayout />}
+              </MutexProvider>
 
-            <Button
-              buttonType="primary"
-              className="fixed right-4 bottom-4 z-toast"
-              size="sm"
-              onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
-            >
-              {useModernLayout ? "Switch to Classic" : "Switch to Modern"}
-            </Button>
-          </LegacyContextProvider>
-        </MainContext.Provider>
+              <LayoutSwitcher />
+            </PagesProvider>
+          </MainProvider>
+        </MenuLayerProvider>
       </WindowProvider>
-    </React.Suspense>
+    </Suspense>
   );
 };

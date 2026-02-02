@@ -1,17 +1,16 @@
-import React from "react";
+import React, { type FC } from "react";
 
-import type { IMainPage } from "../../../types/IMainPage";
-
-import { gameSettingsPage, settingsPage, usePageRendering } from "../../utils";
+import {
+  gameSettingsPage,
+  settingsPage,
+  usePageRendering,
+  useMainPages,
+} from "../../hooks";
 import { DNDContainer } from "../DNDContainer";
 
-export interface IModernContentPaneProps {
-  objects: IMainPage[];
-}
+export const ModernContentPane: FC = () => {
+  const mainPages = useMainPages();
 
-export const ModernContentPane = ({
-  objects,
-}: IModernContentPaneProps): JSX.Element => {
   const { renderPage } = usePageRendering();
 
   return (
@@ -24,7 +23,7 @@ export const ModernContentPane = ({
           position: "relative",
         }}
       >
-        {objects.map(renderPage)}
+        {mainPages.map(renderPage)}
 
         {renderPage(settingsPage)}
 

@@ -1,6 +1,11 @@
 import { mdiDownload, mdiHome, mdiPlus, mdiPuzzle } from "@mdi/js";
 import * as path from "path";
-import React, { useCallback, useMemo, type ButtonHTMLAttributes } from "react";
+import React, {
+  type FC,
+  useCallback,
+  useMemo,
+  type ButtonHTMLAttributes,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as url from "url";
 
@@ -13,15 +18,17 @@ import { Icon } from "../../../tailwind/components/next/icon";
 import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useSpineContext } from "./SpineContext";
 
-const Button = ({
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+  iconPath: string;
+  isActive?: boolean;
+}
+
+const Button: FC<ButtonProps> = ({
   className,
   iconPath,
   isActive,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  className?: string;
-  iconPath: string;
-  isActive?: boolean;
 }) => (
   <button
     className={joinClasses([
@@ -38,14 +45,12 @@ const Button = ({
   </button>
 );
 
-const GameButton = ({
-  imageSrc,
-  isActive,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   imageSrc: string;
   isActive?: boolean;
-}) => (
+}
+
+const GameButton: FC<GameButtonProps> = ({ imageSrc, isActive, ...props }) => (
   <button
     className="group relative size-12 overflow-hidden rounded-lg"
     {...props}
@@ -88,7 +93,7 @@ const getGameImageUrl = (
   return undefined;
 };
 
-export const Spine = () => {
+export const Spine: FC = () => {
   const { selection, selectHome, selectGame } = useSpineContext();
 
   const dispatch = useDispatch();

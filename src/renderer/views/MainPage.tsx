@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { forwardRef, useCallback } from "react";
 
 import { MainPageBody } from "./MainPageBody";
 import { MainPageHeader } from "./MainPageHeader";
@@ -12,10 +12,10 @@ export interface IBaseProps {
   children?: React.ReactNode;
 }
 
-const MainPageInner = React.forwardRef<HTMLDivElement, IBaseProps>(
+const MainPageInner = forwardRef<HTMLDivElement, IBaseProps>(
   ({ children, className, domRef, id }, ref) => {
     // Support both ref (forwardRef) and domRef (legacy callback ref)
-    const setRef = React.useCallback(
+    const setRef = useCallback(
       (element: HTMLDivElement | null) => {
         // Handle forwardRef
         if (typeof ref === "function") {

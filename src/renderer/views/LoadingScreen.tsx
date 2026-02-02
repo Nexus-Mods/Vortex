@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useEffect, useMemo, useState, type FC } from "react";
 
 import type ExtensionManager from "../../util/ExtensionManager";
 
@@ -8,7 +8,7 @@ export interface ILoadingScreenProps {
   extensions: ExtensionManager;
 }
 
-function readable(input: string): string {
+const readable = (input: string): string => {
   if (input === undefined) {
     return "Done";
   }
@@ -16,16 +16,16 @@ function readable(input: string): string {
     .split(/[_-]/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-}
+};
 
-export function LoadingScreen(props: ILoadingScreenProps): React.JSX.Element {
+export const LoadingScreen: FC<ILoadingScreenProps> = (props) => {
   const { extensions } = props;
 
-  const [currentlyLoading, setCurrentlyLoading] = React.useState("");
-  const [loaded, setLoaded] = React.useState(0);
-  const totalExtensions = React.useMemo(() => extensions.numOnce, [extensions]);
+  const [currentlyLoading, setCurrentlyLoading] = useState("");
+  const [loaded, setLoaded] = useState(0);
+  const totalExtensions = useMemo(() => extensions.numOnce, [extensions]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     extensions.onLoadingExtension((name: string, idx: number) => {
       setCurrentlyLoading(name);
       setLoaded(idx);
@@ -42,6 +42,6 @@ export function LoadingScreen(props: ILoadingScreenProps): React.JSX.Element {
       />
     </div>
   );
-}
+};
 
 export default LoadingScreen;

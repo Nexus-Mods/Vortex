@@ -5,7 +5,7 @@
 import type * as RemoteT from "@electron/remote";
 
 import update from "immutability-helper";
-import * as React from "react";
+import React from "react";
 import {
   Button,
   Checkbox,
@@ -57,7 +57,7 @@ interface IActionProps {
   isDisabled: boolean;
 }
 
-function Action(props: IActionProps): React.JSX.Element {
+const Action: React.FC<IActionProps> = (props) => {
   const { action, isDefault, isDisabled, onDismiss } = props;
 
   const { t } = useTranslation(["common"]);
@@ -77,7 +77,7 @@ function Action(props: IActionProps): React.JSX.Element {
       {t(action)}
     </Button>
   );
-}
+};
 
 export const Dialog: React.FC = () => {
   const { t } = useTranslation(["common"]);

@@ -1,4 +1,5 @@
 import type { IExtensionApi } from "../types/IExtensionContext";
+
 import { getSafe } from "../util/storeHelper";
 
 /**
@@ -12,12 +13,12 @@ export interface IUpdateable {
 
 class ReduxProp<T> {
   private mInputs: string[][];
-  private mFunc: (...args) => T;
+  private mFunc: (...args: unknown[]) => T;
   private mApi: IExtensionApi;
   private mSubscribers: IUpdateable[];
   private mUnsubscribe: () => void;
 
-  constructor(api: IExtensionApi, inputs: string[][], func: (...args) => T) {
+  constructor(api: IExtensionApi, inputs: string[][], func: (...args: unknown[]) => T) {
     this.mInputs = inputs;
     this.mFunc = func;
     this.mApi = api;
@@ -39,29 +40,29 @@ class ReduxProp<T> {
     }
   }
 
-  public calculate(): T {
-    if (this.mApi === undefined) {
+  public calculate(): T | undefined {
+    if (!this.mApi) {
       return undefined;
     }
     const values = this.mInputs.map((valPath) =>
-      getSafe(this.mApi.store.getState(), valPath, undefined),
+      getSafe<unknown>(this.mApi.getState(), valPath, undefined),
     );
     return this.mFunc(...values);
   }
 
   private subscribe() {
-    if (this.mApi === undefined) {
+    if (!this.mApi) {
       return;
     }
-    let oldState = this.mApi.store.getState();
+    let oldState = this.mApi.getState();
     this.mUnsubscribe = this.mApi.store.subscribe(() => {
       const changed = this.mInputs.find(
         (valPath) =>
           getSafe(oldState, valPath, undefined) !==
-          getSafe(this.mApi.store.getState(), valPath, undefined),
+          getSafe(this.mApi.getState(), valPath, undefined),
       );
 
-      oldState = this.mApi.store.getState();
+      oldState = this.mApi.getState();
       if (changed !== undefined) {
         this.mSubscribers.forEach((sub) => sub.forceUpdate());
       }

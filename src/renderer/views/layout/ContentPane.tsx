@@ -1,13 +1,13 @@
-import * as React from "react";
+import React, { type FC } from "react";
 
 import FlexLayout from "../../controls/FlexLayout";
 import { DNDContainer } from "../DNDContainer";
 
-export interface IContentPaneProps {
-  children: React.ReactNode;
-}
-
-export const ContentPane = ({ children }: IContentPaneProps): JSX.Element => {
+/**
+ * Content pane component.
+ * For Classic layout.
+ */
+export const ContentPane: FC = ({ children }) => {
   return (
     <FlexLayout.Flex fill={true} id="main-window-pane">
       <DNDContainer

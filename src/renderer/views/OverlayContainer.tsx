@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { type FC } from "react";
 
 import type { PropsCallback } from "../../types/IExtensionContext";
 
@@ -12,16 +12,16 @@ interface IExtOverlay {
   props?: PropsCallback;
 }
 
-function registerOverlay(
+const registerOverlay = (
   _instanceGroup: undefined,
   id: string,
   component: React.ComponentType,
   props?: PropsCallback,
-): IExtOverlay {
+): IExtOverlay => {
   return { id, component, props };
-}
+};
 
-function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
+const renderOverlay: FC<IExtOverlay> = (overlay) => {
   const props = overlay.props ? overlay.props() : {};
   return (
     <ErrorBoundary className="errorboundary-overlay" key={overlay.id}>
@@ -30,12 +30,12 @@ function renderOverlay(overlay: IExtOverlay): React.JSX.Element {
       </ExtensionGate>
     </ErrorBoundary>
   );
-}
+};
 
-export const OverlayContainer: React.FC = () => {
-  const objects = useExtensionObjects<IExtOverlay>(registerOverlay);
+export const OverlayContainer: FC = () => {
+  const overlays = useExtensionObjects<IExtOverlay>(registerOverlay);
 
-  return <div>{objects.map((overlay) => renderOverlay(overlay))}</div>;
+  return <div>{overlays.map((overlay) => renderOverlay(overlay))}</div>;
 };
 
 export default OverlayContainer;

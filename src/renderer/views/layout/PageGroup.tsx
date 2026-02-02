@@ -1,12 +1,12 @@
-import * as React from "react";
+import React, { memo, useMemo, type FC } from "react";
 import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
 import type { IMainPage } from "../../../types/IMainPage";
 
 import { getErrorMessageOrDefault } from "../../../shared/errors";
-import { log } from "../../../util/log";
 import { NavItem } from "../../controls/TooltipControls";
+import { log } from "../../logging";
 import { PageButton } from "../PageButton";
 
 export interface IPageGroupProps {
@@ -19,7 +19,11 @@ export interface IPageGroupProps {
   onClickPage: (pageId: string, ctrlKey: boolean) => void;
 }
 
-export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
+/**
+ * Provides a page group in the sidebar.
+ * For Classic layout.
+ */
+export const PageGroup: FC<IPageGroupProps> = memo((props) => {
   const {
     title,
     groupKey,
@@ -32,7 +36,7 @@ export const PageGroup: React.FC<IPageGroupProps> = React.memo((props) => {
 
   const { t } = useTranslation();
 
-  const visiblePages = React.useMemo(() => {
+  const visiblePages = useMemo(() => {
     return pages.filter((page) => {
       try {
         return page.visible();

@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback, useMemo, type FC } from "react";
 import { Button as ReactButton } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,26 +6,32 @@ import { useDispatch, useSelector } from "react-redux";
 import type { IState } from "../../../types/IState";
 
 import { clearUIBlocker } from "../../../actions/session";
+import { useMainContext } from "../../contexts";
 import Icon from "../../controls/Icon";
-import { MainContext } from "../AppLayout";
 
-export const UIBlocker = (): JSX.Element | null => {
+/**
+ * Modal overlay that blocks user interaction during certain operations.
+ * Displays an icon, description text, and optionally a cancel button.
+ * Used during profile switching, game discovery, or other long-running tasks.
+ * For both layouts.
+ */
+export const UIBlocker: FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { api } = React.useContext(MainContext);
+  const { api } = useMainContext();
 
   const uiBlockers = useSelector(
     (state: IState) => state.session.base.uiBlockers,
   );
 
-  const uiBlockerId = React.useMemo(() => {
+  const uiBlockerId = useMemo(() => {
     return uiBlockers ? Object.keys(uiBlockers)[0] : undefined;
   }, [uiBlockers]);
 
   const blocker =
     uiBlockerId !== undefined ? uiBlockers[uiBlockerId] : undefined;
 
-  const onUnblock = React.useCallback(
+  const onUnblock = useCallback(
     (id: string) => {
       api?.events.emit(`force-unblock-${id}`);
       dispatch(clearUIBlocker(id));

@@ -1,15 +1,8 @@
 import { withInfo } from "@storybook/addon-info";
 import { withKnobs, boolean, number, select } from "@storybook/addon-knobs";
 import React from "react";
-import Icon from "./Icon.base";
 
-const sets = {
-  icons: new Set(["sample", "spinner"]),
-};
-
-function getSet(set) {
-  return Promise.resolve(sets[set]);
-}
+import Icon from "./Icon";
 
 export default {
   title: "Icon",
@@ -24,7 +17,6 @@ export default {
 
 export const simple = () => (
   <Icon
-    getSet={getSet}
     rotate={number("rotate", 0, { min: 0, max: 360 })}
     spin={boolean("spin", false)}
     pulse={boolean("pulse", false)}

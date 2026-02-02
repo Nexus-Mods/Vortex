@@ -1,19 +1,39 @@
-import { log } from "../../util/log";
-import IconBase from "./Icon.base";
-
-import PromiseBB from "bluebird";
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
-import * as fs from "fs";
-import update from "immutability-helper";
+import * as fs from "fs/promises";
 import * as path from "path";
-import * as React from "react";
+import React, {
+  type CSSProperties,
+  type FC,
+  type MouseEventHandler,
+} from "react";
+
 import getVortexPath from "../../util/getVortexPath";
+import { log } from "../../util/log";
+
+// Use window-scoped map so all code bundles (including extensions) share it.
+// This prevents race conditions where one bundle starts loading an icon set
+// and another bundle sees the DOM element but not the loaded symbols.
+declare global {
+  interface Window {
+    __iconSetPromises?: Map<string, Promise<Set<string>>>;
+  }
+}
+
+const getIconSetPromises = (): Map<string, Promise<Set<string>>> => {
+  if (!window.__iconSetPromises) {
+    window.__iconSetPromises = new Map();
+  }
+  return window.__iconSetPromises;
+};
+
+const debugMissingIcons = process.env.NODE_ENV === "development";
+const debugReported = new Set<string>();
 
 export interface IIconProps {
   id?: string;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   set?: string;
   name: string;
   spin?: boolean;
@@ -23,121 +43,140 @@ export interface IIconProps {
   border?: boolean;
   flip?: "horizontal" | "vertical";
   rotate?: number;
-  rotateId?: string;
-  // avoid using this! These styles may affect other instances of this icon
   svgStyle?: string;
-  onContextMenu?: React.MouseEventHandler<Icon>;
+  onContextMenu?: MouseEventHandler<SVGSVGElement>;
 }
 
-export function installIconSet(
+/**
+ * Install a custom icon set from a given path (for extensions).
+ */
+export const installIconSet = (
   set: string,
   setPath: string,
-): PromiseBB<Set<string>> {
-  const newset = document.createElement("div");
-  newset.id = "iconset-" + set;
-  document.getElementById("icon-sets").appendChild(newset);
-  log("info", "read font", setPath);
-  return new PromiseBB((resolve, reject) => {
-    fs.readFile(setPath, {}, (err, data) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve(data);
-    });
-  }).then((data) => {
-    newset.innerHTML = data.toString();
-    const newSymbols = newset.querySelectorAll("symbol");
-    const newSet = new Set<string>();
-    newSymbols.forEach((ele) => {
-      newSet.add(ele.id);
-    });
-    return newSet;
+): Promise<Set<string>> => {
+  const promises = getIconSetPromises();
+
+  if (promises.has(set)) {
+    return promises.get(set);
+  }
+
+  // Create and store the promise BEFORE starting the async operation.
+  // This prevents race conditions where another icon sees the DOM element
+  // but the promise isn't in the map yet.
+  const promise = (async () => {
+    const container = document.createElement("div");
+    container.id = "iconset-" + set;
+    document.getElementById("icon-sets").appendChild(container);
+    log("info", "read font", setPath);
+
+    const data = await fs.readFile(setPath);
+    container.innerHTML = data.toString();
+
+    const symbols = new Set<string>();
+    container.querySelectorAll("symbol").forEach((el) => symbols.add(el.id));
+    return symbols;
+  })();
+
+  promises.set(set, promise);
+
+  return promise;
+};
+
+const getOrLoadIconSet = (set: string): Promise<Set<string>> => {
+  const promises = getIconSetPromises();
+
+  if (promises.has(set)) {
+    return promises.get(set);
+  }
+
+  // Check for DOM element loaded by legacy code (before promise map existed)
+  const existing = document.getElementById("iconset-" + set);
+  if (existing !== null) {
+    const symbols = new Set<string>();
+    existing.querySelectorAll("symbol").forEach((el) => symbols.add(el.id));
+    const resolved = Promise.resolve(symbols);
+    promises.set(set, resolved);
+    return resolved;
+  }
+
+  const fontPath = path.resolve(getVortexPath("assets"), "fonts", set + ".svg");
+  return installIconSet(set, fontPath);
+};
+
+const checkMissingIcon = (set: string, name: string): void => {
+  if (!debugMissingIcons || debugReported.has(name)) return;
+  void getOrLoadIconSet(set).then((symbols) => {
+    if (symbols !== null && !symbols.has("icon-" + name)) {
+      console.trace("icon missing", name);
+      debugReported.add(name);
+    }
   });
-}
+};
 
-const loadingIconSets = new Set<string>();
+export const Icon: FC<IIconProps> = ({
+  id,
+  className,
+  style,
+  set = "icons",
+  name,
+  spin,
+  pulse,
+  stroke,
+  hollow,
+  border,
+  flip,
+  rotate,
+  svgStyle,
+  onContextMenu,
+}) => {
+  // Ensure icon set is loaded (idempotent due to promise caching)
+  void getOrLoadIconSet(set);
+  checkMissingIcon(set, name);
 
-class Icon extends React.Component<
-  IIconProps,
-  { sets: { [setId: string]: Set<string> } }
-> {
-  private mLoadPromise: PromiseBB<any>;
-  private mMounted: boolean = false;
+  const classes = [
+    "icon",
+    `icon-${name}`,
+    (spin || name === "spinner") && "icon-spin",
+    pulse && "icon-pulse",
+    border && "icon-border",
+    stroke && "icon-stroke",
+    hollow && "icon-hollow",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  constructor(props: IIconProps) {
-    super(props);
-
-    this.state = {
-      sets: {},
-    };
-  }
-
-  public componentDidMount() {
-    this.mMounted = true;
-  }
-
-  public componentWillUnmount() {
-    this.mMounted = false;
-    if (this.mLoadPromise !== undefined) {
-      this.mLoadPromise.cancel();
-    }
-  }
-
-  public render(): JSX.Element {
-    return <IconBase {...this.props} getSet={this.loadSet} />;
-  }
-
-  private loadSet = (set: string): PromiseBB<Set<string>> => {
-    const { sets } = this.state;
-    if (sets[set] === undefined && !loadingIconSets.has(set)) {
-      {
-        // mark the set as being loaded
-        const copy = { ...sets };
-        copy[set] = null;
-
-        loadingIconSets.add(set);
-        if (this.mMounted) {
-          this.setState(update(this.state, { sets: { $set: copy } }));
-        }
+  return (
+    <svg
+      className={classes}
+      id={id}
+      preserveAspectRatio="xMidYMid meet"
+      style={
+        rotate
+          ? {
+              ...style,
+              transform: `rotateZ(${rotate}deg)`,
+              transformStyle: "preserve-3d",
+            }
+          : style
       }
+      onContextMenu={onContextMenu}
+    >
+      {svgStyle ? <style type="text/css">{svgStyle}</style> : null}
 
-      // different extensions don't share the sets global so check in the dom
-      // to see if the iconset is already loaded after all
-      const existing = document.getElementById("iconset-" + set);
-
-      if (existing !== null) {
-        const newSymbols = existing.querySelectorAll("symbol");
-        const newSet = new Set<string>();
-        newSymbols.forEach((ele) => {
-          newSet.add(ele.id);
-        });
-        this.mLoadPromise = PromiseBB.resolve(newSet);
-      } else {
-        // make sure that no other icon instance tries to render this icon
-        const fontPath = path.resolve(
-          getVortexPath("assets"),
-          "fonts",
-          set + ".svg",
-        );
-        this.mLoadPromise = installIconSet(set, fontPath);
-      }
-
-      return this.mLoadPromise.then((newSet: Set<string>) => {
-        this.mLoadPromise = undefined;
-        // need to copy the _current_ sets because for all we know another load might have completed
-        // in the meantime
-        const copy = { ...this.state.sets };
-        copy[set] = newSet;
-        loadingIconSets.delete(set);
-        if (this.mMounted) {
-          this.setState(update(this.state, { sets: { $set: copy } }));
+      <use
+        className="svg-use"
+        transform={
+          flip === "horizontal"
+            ? "scale(-1, 1)"
+            : flip === "vertical"
+              ? "scale(1, -1)"
+              : undefined
         }
-        return newSet;
-      });
-    } else {
-      return PromiseBB.resolve(sets[set] || null);
-    }
-  };
-}
+        xlinkHref={`#icon-${name}`}
+      />
+    </svg>
+  );
+};
 
 export default Icon;

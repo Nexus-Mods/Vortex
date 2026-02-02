@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback, type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IState } from "../../../types/IState";
@@ -8,14 +8,18 @@ import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
 import { OverlayContainer } from "../OverlayContainer";
 
-export const DialogLayer = (): JSX.Element => {
+/**
+ * Provides a dialog system layer.
+ * For both layouts.
+ */
+export const DialogLayer: FC = (): JSX.Element => {
   const dispatch = useDispatch();
 
   const visibleDialog = useSelector(
     (state: IState) => state.session.base.visibleDialog || undefined,
   );
 
-  const onHideDialog = React.useCallback(() => {
+  const onHideDialog = useCallback(() => {
     dispatch(setDialogVisible(undefined));
   }, [dispatch]);
 

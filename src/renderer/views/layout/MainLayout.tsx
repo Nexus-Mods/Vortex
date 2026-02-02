@@ -1,20 +1,19 @@
-import * as React from "react";
+import React, { type FC, useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-import type { IMainPage } from "../../../types/IMainPage";
-
 import { setOpenMainPage } from "../../../actions/session";
-import { useWindowContext } from "../../../util/WindowContext";
+import { useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
-import { settingsPage, usePageRendering } from "../../utils/usePageRendering";
+import { settingsPage, usePageRendering, useMainPages } from "../../hooks";
 import { ContentPane, Sidebar } from "./index";
 
-export interface IMainLayoutProps {
-  objects: IMainPage[];
-}
+/**
+ * Provides main layout with a Sidebar and ContentPane.
+ * For Classic layout.
+ */
+export const MainLayout: FC = () => {
+  const mainPages = useMainPages();
 
-export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
-  const { objects } = props;
   const dispatch = useDispatch();
 
   const { mainPage, secondaryPage, setLoadedPages, renderPage } =
@@ -22,10 +21,26 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
 
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
 
-  const sidebarRef = React.useRef<HTMLElement | null>(null);
-  const sidebarTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const sidebarTimer = useRef<NodeJS.Timeout | undefined>(undefined);
+  const initializedRef = useRef(false);
 
-  const setMainPage = React.useCallback(
+  // Set initial page on mount (lowest priority page)
+  useEffect(() => {
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+
+    if (mainPages.length > 0) {
+      const defaultPage = [...mainPages].sort(
+        (lhs, rhs) => lhs.priority - rhs.priority,
+      )[0];
+      dispatch(setOpenMainPage(defaultPage.title, false));
+    }
+  }, [mainPages, dispatch]);
+
+  const setMainPage = useCallback(
     (pageId: string, secondary: boolean) => {
       setLoadedPages(pageId);
       setImmediate(() => {
@@ -39,19 +54,19 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
     [secondaryPage, dispatch],
   );
 
-  const handleClickPage = React.useCallback(
+  const handleClickPage = useCallback(
     (pageId: string, ctrlKey: boolean) => {
       if (mainPage !== pageId) {
         setMainPage(pageId, ctrlKey);
       } else {
-        const page = objects.find((iter) => iter.id === mainPage);
+        const page = mainPages.find((iter) => iter.id === mainPage);
         page?.onReset?.();
       }
     },
-    [mainPage, objects, setMainPage],
+    [mainPage, mainPages, setMainPage],
   );
 
-  const handleSidebarRef = React.useCallback((ref: HTMLElement | null) => {
+  const handleSidebarRef = useCallback((ref: HTMLElement | null) => {
     sidebarRef.current = ref;
     if (ref !== null) {
       ref.setAttribute(
@@ -61,7 +76,7 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
     }
   }, []);
 
-  const handleToggleMenu = React.useCallback(() => {
+  const handleToggleMenu = useCallback(() => {
     const newMinimized = !menuIsCollapsed;
     setMenuIsCollapsed(newMinimized);
     if (sidebarTimer.current !== undefined) {
@@ -89,7 +104,7 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
     <FlexLayout.Flex>
       <FlexLayout style={{ overflow: "hidden" }} type="row">
         <Sidebar
-          objects={objects}
+          objects={mainPages}
           settingsPage={settingsPage}
           onClickPage={handleClickPage}
           onSidebarRef={handleSidebarRef}
@@ -97,7 +112,7 @@ export const MainLayout = (props: IMainLayoutProps): JSX.Element => {
         />
 
         <ContentPane>
-          {objects.map(renderPage)}
+          {mainPages.map(renderPage)}
 
           {renderPage(settingsPage)}
         </ContentPane>

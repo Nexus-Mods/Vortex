@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useMemo, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -7,7 +7,7 @@ import type { IState } from "../../../types/IState";
 
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import { profileById } from "../../../util/selectors";
-import { useWindowContext } from "../../../util/WindowContext";
+import { useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import { Button } from "../../controls/TooltipControls";
@@ -22,7 +22,11 @@ export interface ISidebarProps {
   onSidebarRef: (ref: HTMLElement | null) => void;
 }
 
-export const Sidebar = (props: ISidebarProps): JSX.Element => {
+/**
+ * Provides the sidebar component.
+ * For Classic layout.
+ */
+export const Sidebar: FC<ISidebarProps> = (props) => {
   const { objects, settingsPage, onClickPage, onToggleMenu, onSidebarRef } =
     props;
 
@@ -37,7 +41,7 @@ export const Sidebar = (props: ISidebarProps): JSX.Element => {
     profileById(state, state.settings.profiles.activeProfileId),
   );
 
-  const pageGroups = React.useMemo(() => {
+  const pageGroups = useMemo(() => {
     const game = profile !== undefined ? getGame(profile.gameId) : undefined;
     const gameName = game?.shortName || game?.name || "Mods";
 

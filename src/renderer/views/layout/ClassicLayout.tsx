@@ -1,61 +1,34 @@
-import * as React from "react";
+import React, { type FC } from "react";
+import { useSelector } from "react-redux";
 
-import type { IMainPage } from "../../../types/IMainPage";
+import type { IState } from "../../../types/IState";
 
-import startupSettings from "../../../util/startupSettings";
-import { useWindowContext } from "../../../util/WindowContext";
 import FlexLayout from "../../controls/FlexLayout";
-import { useSwitchingProfile } from "../../utils/useSwitchingProfile";
+import { useSwitchingProfile } from "../../hooks";
 import { WindowControls } from "../WindowControls";
 import { DialogLayer } from "./DialogLayer";
+import { LayoutContainer } from "./LayoutContainer";
 import { MainLayout } from "./MainLayout";
 import { ProfileSwitcher } from "./ProfileSwitcher";
 import { ToastContainer } from "./ToastContainer";
 import { Toolbar } from "./Toolbar";
 import { UIBlocker } from "./UIBlocker";
 
-export interface IClassicLayoutProps {
-  objects: IMainPage[];
-  customTitlebar: boolean;
-  setMenuLayer: (ref: HTMLDivElement | null) => void;
-}
-
-export const ClassicLayout: React.FC<IClassicLayoutProps> = ({
-  objects,
-  customTitlebar,
-  setMenuLayer,
-}) => {
-  const { isFocused, menuLayerOpen, isHidpi } = useWindowContext();
+export const ClassicLayout: FC = () => {
+  const customTitlebar = useSelector(
+    (state: IState) => state.settings.window.customTitlebar,
+  );
   const switchingProfile = useSwitchingProfile();
-
-  const classes: string[] = [];
-  classes.push(isHidpi ? "hidpi" : "lodpi");
-  classes.push(isFocused ? "window-focused" : "window-unfocused");
-  if (customTitlebar) {
-    classes.push("window-frame");
-  }
-  if (menuLayerOpen) {
-    classes.push("menu-open");
-  }
-  if (startupSettings.disableGPU) {
-    classes.push("no-gpu-acceleration");
-  }
 
   return (
     <>
-      <div className={classes.join(" ")} key="main">
-        <div className="menu-layer" ref={setMenuLayer} />
-
+      <LayoutContainer>
         <FlexLayout id="main-window-content" type="column">
           <Toolbar />
 
           {customTitlebar ? <div className="dragbar" /> : null}
 
-          {switchingProfile ? (
-            <ProfileSwitcher />
-          ) : (
-            <MainLayout objects={objects} />
-          )}
+          {switchingProfile ? <ProfileSwitcher /> : <MainLayout />}
         </FlexLayout>
 
         <DialogLayer />
@@ -63,7 +36,7 @@ export const ClassicLayout: React.FC<IClassicLayoutProps> = ({
         <ToastContainer />
 
         {customTitlebar ? <WindowControls /> : null}
-      </div>
+      </LayoutContainer>
 
       <UIBlocker />
     </>

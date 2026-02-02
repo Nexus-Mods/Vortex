@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { type FC } from "react";
 
 import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 
@@ -19,20 +19,26 @@ interface IExtDialog {
   props: PropsCallbackTyped<IErrorBoundaryProps>;
 }
 
-function registerDialog(
+const registerDialog = (
   _instanceGroup: undefined,
   id: string,
   component: React.ComponentType<IErrorBoundaryProps>,
   props?: PropsCallbackTyped<IErrorBoundaryProps>,
-): IExtDialog {
+): IExtDialog => {
   return { id, component, props };
+};
+
+interface IRenderDialogProps {
+  dialog: IExtDialog;
+  visibleDialog: string;
+  onHideDialog: () => void;
 }
 
-function renderDialog(
-  dialog: IExtDialog,
-  visibleDialog: string,
-  onHideDialog: () => void,
-): React.JSX.Element {
+const RenderDialog: FC<IRenderDialogProps> = ({
+  dialog,
+  visibleDialog,
+  onHideDialog,
+}): React.JSX.Element => {
   const props = dialog.props !== undefined ? dialog.props() : {};
   return (
     <ErrorBoundary
@@ -51,18 +57,18 @@ function renderDialog(
       </ExtensionGate>
     </ErrorBoundary>
   );
-}
+};
 
 export const DialogContainer: React.FC<IBaseProps> = ({
   visibleDialog,
   onHideDialog,
 }) => {
-  const objects = useExtensionObjects<IExtDialog>(registerDialog);
+  const dialogs = useExtensionObjects<IExtDialog>(registerDialog);
 
   return (
     <div id="dialog-container">
-      {objects.map((dialog) =>
-        renderDialog(dialog, visibleDialog, onHideDialog),
+      {dialogs.map((dialog) =>
+        RenderDialog({ dialog, visibleDialog, onHideDialog }),
       )}
     </div>
   );

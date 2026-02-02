@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -37,23 +37,23 @@ interface ICombinedSettingsPage {
 
 type TabSelectHandler = React.ComponentProps<typeof Tabs>["onSelect"];
 
-function registerSettings(
+const registerSettings = (
   _instanceGroup: undefined,
   title: string,
   component: React.ComponentType<IBaseProps>,
   props: PropsCallbackTyped<IBaseProps>,
   visible: () => boolean,
   priority?: number,
-): ISettingsPage {
+): ISettingsPage => {
   return { title, component, props, visible, priority: priority || 100 };
-}
+};
 
 export const Settings: React.FC = () => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
 
   // Get extension objects using the hook instead of HOC
-  const objects = useExtensionObjects<ISettingsPage>(registerSettings);
+  const settingPages = useExtensionObjects<ISettingsPage>(registerSettings);
 
   const settingsPage = useSelector(
     (state: IState) => state.session.base.settingsPage || undefined,
@@ -122,7 +122,7 @@ export const Settings: React.FC = () => {
     );
   };
 
-  const combined = objects.reduce(
+  const combined = settingPages.reduce(
     (prev: ICombinedSettingsPage[], current: ISettingsPage) => {
       const result = prev.slice();
       const existingPage = prev.find(

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type FC } from "react";
 
 import { IconButton } from "../controls/TooltipControls";
 import {
@@ -6,9 +6,9 @@ import {
   minimize,
   toggleMaximize,
   useIsMaximized,
-} from "../utils/windowManipulation";
+} from "../hooks/windowControls";
 
-export function WindowControls(): JSX.Element {
+export const WindowControls: FC = () => {
   const isMaximized = useIsMaximized();
 
   return (
@@ -38,6 +38,6 @@ export function WindowControls(): JSX.Element {
       />
     </div>
   );
-}
+};
 
 export default WindowControls;

@@ -39,7 +39,23 @@ export function createQueue() {
   return new MutexContextValue();
 }
 
-export const MutexProvider = MutexContext.Provider;
+export interface IMutexProviderProps {
+  children: React.ReactNode;
+}
+
+export const MutexProvider: React.FC<IMutexProviderProps> = ({ children }) => {
+  const queueRef = React.useRef<MutexContextValue>();
+  if (queueRef.current === undefined) {
+    queueRef.current = new MutexContextValue();
+  }
+
+  return React.createElement(
+    MutexContext.Provider,
+    { value: queueRef.current },
+    children,
+  );
+};
+
 export const MutexConsumer = MutexContext.Consumer;
 
 export function useMutex(show: boolean) {

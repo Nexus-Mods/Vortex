@@ -169,7 +169,7 @@ export interface IMainPageOptions {
   visible?: () => boolean;
   group: "dashboard" | "global" | "per-game" | "support" | "hidden";
   priority?: number;
-  props?: () => any;
+  props?: PropsCallback;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
   onReset?: () => void;

@@ -3,7 +3,7 @@
 // in effects based on notification changes and timers.
 
 import * as _ from "lodash";
-import * as React from "react";
+import React from "react";
 import { Badge, Button, Overlay, Popover } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,7 +21,7 @@ import {
 } from "../../actions/notifications";
 import { suppressNotification } from "../../actions/notificationSettings";
 import Debouncer from "../../util/Debouncer";
-import { ExtensionContext } from "../../util/ExtensionProvider";
+import { useExtensionContext } from "../../util/ExtensionProvider";
 import Icon from "../controls/Icon";
 import RadialProgress from "../controls/RadialProgress";
 import { Notification } from "./Notification";
@@ -32,17 +32,17 @@ export interface IBaseProps {
   hide: boolean;
 }
 
-function sortValue(noti: INotification): number {
+const sortValue = (noti: INotification): number => {
   let value = noti.createdTime;
   if (noti.progress !== undefined || noti.type === "activity") {
     value /= 10;
   }
   return value;
-}
+};
 
-function inverseSort(lhs: INotification, rhs: INotification) {
+const inverseSort = (lhs: INotification, rhs: INotification) => {
   return sortValue(lhs) - sortValue(rhs);
-}
+};
 
 const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
   warning: 10000,
@@ -52,18 +52,18 @@ const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
   activity: null,
 };
 
-function displayTime(item: INotification): number | null {
+const displayTime = (item: INotification): number | null => {
   if (item.displayMS !== undefined) {
     return item.displayMS;
   }
 
   return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
-}
+};
 
 export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
-  const extensions = React.useContext(ExtensionContext);
+  const extensions = useExtensionContext();
   const api = extensions.getApi();
 
   // Redux state

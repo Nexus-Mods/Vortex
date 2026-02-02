@@ -1,6 +1,7 @@
 export * from "./ClassicLayout";
 export * from "./ContentPane";
 export * from "./DialogLayer";
+export * from "./LayoutContainer";
 export * from "./MainLayout";
 export * from "./ModernLayout";
 export * from "./PageGroup";

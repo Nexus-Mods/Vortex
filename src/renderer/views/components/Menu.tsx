@@ -7,19 +7,18 @@ import {
   mdiShapeOutline,
   mdiViewDashboard,
 } from "@mdi/js";
-import React, { useCallback, useMemo, type ButtonHTMLAttributes } from "react";
+import React, { type FC, useMemo, type ButtonHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IMainPage } from "../../../types/IMainPage";
 import type { IState } from "../../../types/IState";
 
 import { setOpenMainPage } from "../../../actions/session";
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
-import { useWindowContext } from "../../../util/WindowContext";
-import { gameSettingsPage, settingsPage } from "../../utils/usePageRendering";
+import { useWindowContext } from "../../contexts";
+import { useMainPages, gameSettingsPage, settingsPage } from "../../hooks";
 import { useSpineContext } from "./SpineContext";
 
 // Map legacy icon names to MDI paths
@@ -36,14 +35,16 @@ const getIconPath = (iconName: string): string => {
   return iconMap[iconName] ?? mdiShapeOutline;
 };
 
-const MenuButton = ({
+interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  iconPath: string;
+  isActive?: boolean;
+}
+
+const MenuButton: FC<MenuButtonProps> = ({
   children,
   iconPath,
   isActive,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  iconPath: string;
-  isActive?: boolean;
 }) => {
   const { menuIsCollapsed } = useWindowContext();
 
@@ -74,51 +75,31 @@ const MenuButton = ({
   );
 };
 
-export interface IMenuProps {
-  objects: IMainPage[];
-}
-
-export const Menu = ({ objects }: IMenuProps) => {
+export const Menu: FC = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const { selection } = useSpineContext();
   const dispatch = useDispatch();
 
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPages = useMainPages();
 
-  const handleClickPage = useCallback(
-    (pageId: string) => {
-      dispatch(setOpenMainPage(pageId, false));
-    },
-    [dispatch],
-  );
+  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
 
   // Filter visible pages based on Spine selection
   const visiblePages = useMemo(() => {
-    const pages = objects.filter((page) => {
-      // When Home is selected, show global pages (not per-game)
-      // When a game is selected, show per-game pages + Downloads
-      if (selection.type === "home") {
-        if (page.group === "per-game") {
-          return false;
-        }
-      } else {
-        // Game selected - show per-game pages and Downloads
-        if (page.group !== "per-game" && page.id !== "Downloads") {
-          return false;
-        }
-      }
+    const isHome = selection.type === "home";
+    const pages = mainPages.filter((page) => {
+      const passesGroupFilter = isHome
+        ? page.group !== "per-game"
+        : page.group === "per-game" || page.id === "Downloads";
       try {
-        return page.visible();
+        return passesGroupFilter && page.visible();
       } catch {
         return false;
       }
     });
-    // Add appropriate settings page at the end based on selection
-    const currentSettingsPage =
-      selection.type === "home" ? settingsPage : gameSettingsPage;
-    return [...pages, currentSettingsPage];
-  }, [objects, selection]);
+    return [...pages, isHome ? settingsPage : gameSettingsPage];
+  }, [mainPages, selection]);
 
   return (
     <div
@@ -132,7 +113,7 @@ export const Menu = ({ objects }: IMenuProps) => {
           iconPath={getIconPath(page.icon)}
           isActive={mainPage === page.id}
           key={page.id}
-          onClick={() => handleClickPage(page.id)}
+          onClick={() => dispatch(setOpenMainPage(page.id, false))}
         >
           {t(page.title, { ns: page.namespace })}
         </MenuButton>

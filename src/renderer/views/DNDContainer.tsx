@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { type FC } from "react";
 
 interface IDNDContainerProps {
   style?: React.CSSProperties;
@@ -10,7 +10,7 @@ interface IDNDContainerProps {
  * up to the parent, but I'll have to admit I don't understand 100% how "context" and
  * "manager" work in react-dnd and what changed in its api since we needed this.
  */
-export function DNDContainer(props: IDNDContainerProps): React.JSX.Element {
+export const DNDContainer: FC<IDNDContainerProps> = (props) => {
   const { children, style } = props;
 
   // Return null if no children provided
@@ -19,6 +19,6 @@ export function DNDContainer(props: IDNDContainerProps): React.JSX.Element {
   }
 
   return <div style={style}>{children}</div>;
-}
+};
 
 export default DNDContainer;
