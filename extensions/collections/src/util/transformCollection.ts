@@ -918,6 +918,8 @@ function deduceCollectionAttributes(
   mods: { [modId: string]: types.IMod },
 ): ICollectionAttributes {
   const res: ICollectionAttributes = {
+    collectionConfig: collection['collectionConfig'],
+    installInstructions: collection.info?.installInstructions,
     installMode: {},
     instructions: {},
     source: {},
