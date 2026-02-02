@@ -1,152 +1,152 @@
 .feedback-page {
-  padding-right: $gutter-width / 2;
+    padding-right: $gutter-width / 2;
 }
 
 .feedback-form h4 {
-  margin: 0;
+    margin: 0;
 }
 
 .feedback-system-info {
-  white-space: pre-wrap;
-  margin-bottom: $half-gutter;
+    white-space: pre-wrap;
+    margin-bottom: $half-gutter;
 }
 
 .feedback-instructions-notype {
-  font-size: large;
-  text-align: center;
-  margin-top: 10%;
+    font-size: large;
+    text-align: center;
+    margin-top: 10%;
 }
 
 .textarea-feedback {
-  width: 100%;
-  resize: none;
-  height: 100% !important;
-  // position: absolute;
-  // top: 0;
-  // bottom: 0;
+    width: 100%;
+    resize: none;
+    height: 100% !important;
+    // position: absolute;
+    // top: 0;
+    // bottom: 0;
 }
 
 .dropzone-feedback {
-  height: 100px;
-  width: 30%;
-  display: table-cell;
-  margin: 10px;
-  padding: 20px;
-  border-radius: 5px;
-  border-style: dashed;
-  border-width: 2px;
-  border-color: $gray;
+    height: 100px;
+    width: 30%;
+    display: table-cell;
+    margin: 10px;
+    padding: 20px;
+    border-radius: 5px;
+    border-style: dashed;
+    border-width: 2px;
+    border-color: $gray;
 }
 
 .dropzone-feedback.hover-click {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $link-color;
+    border-style: solid;
+    border-width: 2px;
+    border-color: $link-color;
 }
 
 .dropzone-feedback.hover-valid {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $brand-success;
+    border-style: solid;
+    border-width: 2px;
+    border-color: $brand-success;
 }
 
 .dropzone-feedback.hover-invalid {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $brand-warning;
+    border-style: solid;
+    border-width: 2px;
+    border-color: $brand-warning;
 }
 
 .feedback-instructions {
-  margin-bottom: $half-gutter;
+    margin-bottom: $half-gutter;
 }
 
 @media (max-height: 899px) {
-  .usage-instructions-content {
-    max-height: 15vh;
-    overflow-y: auto;
-    align-items: initial !important;
-  }
-  .hide-when-small {
-    display: none;
-  }
+    .usage-instructions-content {
+        max-height: 15vh;
+        overflow-y: auto;
+        align-items: initial !important;
+    }
+    .hide-when-small {
+        display: none;
+    }
 }
 
 .feedback-controls {
-  justify-content: space-between;
+    justify-content: space-between;
 
-  >* {
-    .toggle-container {
-      margin-top: 4px;
+    > * {
+        .toggle-container {
+            margin-top: 4px;
+        }
     }
-  }
 }
 
 #btn-attach-feedback {
-  margin-left: 8px;
+    margin-left: 8px;
 }
 
 .feedback-files {
-  display: flex;
-  flex-wrap: wrap;
-  max-height: 9em;
-  overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 9em;
+    overflow-y: auto;
 
-  .list-group-item {
-    width: 33%;
-  }
+    .list-group-item {
+        width: 33%;
+    }
 }
 
 .feedback-form {
-  overflow-y: auto;
+    overflow-y: auto;
 }
 
 .feedback-file-drop-flex-outer {
-  max-height: 100px;
+    max-height: 100px;
 
-  .dropzone {
-    height: calc(100% - 20px) !important;
-  }
+    .dropzone {
+        height: calc(100% - 20px) !important;
+    }
 }
 
 .feedback-outdated {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 #feedback-topic-dropdown {
-  margin-right: $gutter-width;
+    margin-right: $gutter-width;
 }
 
 .feedback-type-selection {
-  justify-content: center;
-  align-items: center;
-  .icon-button {
-    width: 110px;
-    height: 110px;
-    margin: $half-gutter;
-    justify-content: space-evenly;
-    svg {
-      width: 2em;
-      height: 2em;
+    justify-content: center;
+    align-items: center;
+    .icon-button {
+        width: 110px;
+        height: 110px;
+        margin: $half-gutter;
+        justify-content: space-evenly;
+        svg {
+            width: 2em;
+            height: 2em;
+        }
     }
-  }
 }
 
 .feedback-search-result {
-  position: absolute;
-  z-index: 1;
-  background-color: $brand-menu;
-  border: $border-width solid $border-color;
-  padding: 8px;
-  max-height: 10em;
-  overflow-y: auto;
+    position: absolute;
+    z-index: 1;
+    background-color: $brand-menu;
+    border: $border-width solid $border-color;
+    padding: 8px;
+    max-height: 10em;
+    overflow-y: auto;
 }
 
 .feedback-result-tag {
-  font-size: small;
-  background-color: rgba($gray-light, 0.3);
-  border: $border-width solid $border-color;
-  display: inline;
-  padding: 2px 4px;
+    font-size: small;
+    background-color: rgba($gray-light, 0.3);
+    border: $border-width solid $border-color;
+    display: inline;
+    padding: 2px 4px;
 }

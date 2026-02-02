@@ -1,3 +1,32 @@
 # Ignore HTML files with CSP hashes (formatting changes the hash)
 src/index.html
 src/index.dev.html
+
+# Formatting is opt-in via package.json scripts (explicit globs)
+# This file only contains exclusions for those commands
+
+# API submodule (managed separately)
+api/
+
+# Extension submodules (managed separately)
+extensions/fomod-installer/
+extensions/games/
+
+# Generated declaration output
+src/util/vortex-run/lib/**/*.d.ts
+
+# Build outputs
+out/
+dist/
+app/
+
+# Dependencies
+node_modules/
+
+# Git and coverage
+.git/
+coverage/
+
+# Test mocks and temporary files
+__tests__/
+__mocks__/

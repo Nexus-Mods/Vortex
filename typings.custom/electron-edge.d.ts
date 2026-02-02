@@ -1,3 +1,3 @@
-declare module 'electron-edge' {
+declare module "electron-edge" {
   export function func(parameter: any);
 }

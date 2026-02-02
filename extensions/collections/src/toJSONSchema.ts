@@ -1,1 +1,1 @@
-export { ICollection } from './types/ICollection';
+export { ICollection } from "./types/ICollection";

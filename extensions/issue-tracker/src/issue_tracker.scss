@@ -1,205 +1,205 @@
 .list-issues {
-  display: table;
-  width: 100%;
+    display: table;
+    width: 100%;
 }
 
 .issue-item {
-  display: table-row;
+    display: table-row;
 }
 
 .issue-item-number,
 .issue-item-state,
 .issue-item-labels,
 .issue-item-comments {
-  display: table-cell;
-  white-space: nowrap;
+    display: table-cell;
+    white-space: nowrap;
 }
 
 .issue-item-state,
 .issue-item-state {
-  padding: 0 $half-gutter;
+    padding: 0 $half-gutter;
 }
 
 .issue-item-number {
-  padding: 0 4px;
+    padding: 0 4px;
 }
 
 .issue-item-title {
-  display: table-cell;
-  width: 99%;
+    display: table-cell;
+    width: 99%;
 }
 
 .issues-responder {
-  @extend .btn-embed;
-  position: absolute;
-  top: $half-gutter;
-  right: calc(#{$half-gutter} + 2em);
+    @extend .btn-embed;
+    position: absolute;
+    top: $half-gutter;
+    right: calc(#{$half-gutter} + 2em);
 }
 
 .issues-refresh {
-  @extend .btn-embed;
-  position: absolute;
-  top: $half-gutter;
-  right: $half-gutter;
+    @extend .btn-embed;
+    position: absolute;
+    top: $half-gutter;
+    right: $half-gutter;
 }
 
 .issue-milestone-button {
-  @extend .btn-embed;
+    @extend .btn-embed;
 }
 
 .dashlet-issues {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 
-  .placeholder {
-    padding: 0;
-  }
+    .placeholder {
+        padding: 0;
+    }
 }
 
 .list-issues-container {
-  height: 100%;
-  overflow-y: auto;
+    height: 100%;
+    overflow-y: auto;
 }
 
 #feedback-responder-dialog {
-  .modal-body {
-    height: 50vh;
+    .modal-body {
+        height: 50vh;
 
-    .responder-comment-container {
-      margin: $gutter-width;
-      height: 100%;
+        .responder-comment-container {
+            margin: $gutter-width;
+            height: 100%;
+        }
+
+        .responder-developer-comment,
+        .textarea-feedback-responder {
+            min-height: 8em;
+            width: 100%;
+            overflow: auto;
+            resize: none;
+
+            p {
+                white-space: pre-wrap;
+            }
+        }
+
+        .responder-place-holder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
     }
 
-    .responder-developer-comment,
-    .textarea-feedback-responder {
-      min-height: 8em;
-      width: 100%;
-      overflow: auto;
-      resize: none;
+    .modal-footer {
+        .feedback-files {
+            display: flex;
+            flex-wrap: wrap;
+            max-height: 9em;
+            overflow-y: auto;
+            width: 100%;
 
-      p {
-        white-space: pre-wrap;
-      }
+            .list-group-item {
+                display: flex;
+                padding: 0px 0px !important;
+                width: 100%;
+            }
+        }
     }
-
-    .responder-place-holder {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-    }
-  }
-
-  .modal-footer {
-    .feedback-files {
-      display: flex;
-      flex-wrap: wrap;
-      max-height: 9em;
-      overflow-y: auto;
-      width: 100%;
-
-      .list-group-item {
-        display: flex;
-        padding: 0px 0px !important;
-        width: 100%;
-      }
-    }
-  }
 }
 
 .outstanding-issue-list {
-  width: 30%;
-  margin-right: 4px;
-  border-right: $border-width solid $border-color;
-  overflow: auto;
+    width: 30%;
+    margin-right: 4px;
+    border-right: $border-width solid $border-color;
+    overflow: auto;
 
-  .list-group {
-    overflow-y: auto;
-  }
+    .list-group {
+        overflow-y: auto;
+    }
 }
 
 .responder-issue-text {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .responder-github-issue {
-  border-bottom: $border-width solid $border-color;
+    border-bottom: $border-width solid $border-color;
 
-  &.selected {
-    background-color: $table-bg-active;
-  }
-
-  .issue-header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: nowrap;
-    overflow: hidden;
-    flex: 1 1 0;
-
-    .issue-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-right: 1em;
+    &.selected {
+        background-color: $table-bg-active;
     }
-  }
+
+    .issue-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        flex: 1 1 0;
+
+        .issue-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 1em;
+        }
+    }
 }
 
 // Massimo's Fixes
 // Im putting most of my fixes in the bottom
 
 #feedback-responder-dialog {
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
 
-  .modal-dialog {
-    width: auto;
-  }
+    .modal-dialog {
+        width: auto;
+    }
 
-  .textarea-feedback-responder {
-    display: flex;
-    margin-right: 0 !important;
-    resize: none;
-  }
+    .textarea-feedback-responder {
+        display: flex;
+        margin-right: 0 !important;
+        resize: none;
+    }
 
-  .responder-developer-comment p {
-    padding: 0.2em 0.5em;
-  }
+    .responder-developer-comment p {
+        padding: 0.2em 0.5em;
+    }
 
-  #btn-attach-feedback {
-    margin-bottom: 10px;
-  }
+    #btn-attach-feedback {
+        margin-bottom: 10px;
+    }
 
-  .feedback-files.list-group {
-    flex-direction: column;
-    text-align: left;
-  }
+    .feedback-files.list-group {
+        flex-direction: column;
+        text-align: left;
+    }
 
-  .btn-delete-file {
-    margin-left: 5px;
-  }
+    .btn-delete-file {
+        margin-left: 5px;
+    }
 
-  svg.icon.icon-delete {
-    height: 15px;
-    width: 15px;
-    shape-rendering: crispedges;
-  }
+    svg.icon.icon-delete {
+        height: 15px;
+        width: 15px;
+        shape-rendering: crispedges;
+    }
 
-  .error-message {
-    color: red;
-    margin: 0;
-    margin-top: -10px;
-  }
+    .error-message {
+        color: red;
+        margin: 0;
+        margin-top: -10px;
+    }
 }
 
 .issue-description {
-  img {
-    max-width: 100%;
-  }
+    img {
+        max-width: 100%;
+    }
 
-  overflow: auto;
+    overflow: auto;
 }
