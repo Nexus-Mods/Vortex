@@ -1,0 +1,27 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "rootDir": "./src",
+    "outDir": "./out",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@renderer/*": ["src/renderer/*"]
+    }
+  },
+  "files": [
+    "./typings.custom/index.d.ts",
+    "./src/main.ts",
+    "./src/preload/index.ts",
+    "./src/index.ts",
+    "./src/renderer.tsx",
+    "./src/renderer/preload.d.ts",
+    "./src/splash.ts",
+    "./src/extensions/index.ts"
+  ]
+}
