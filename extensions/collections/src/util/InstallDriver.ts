@@ -1013,10 +1013,14 @@ class InstallDriver {
         // Download complete - use full file size
         this.updateModTracking(mod.collectionRule, 'downloaded');
         size += mod.attributes?.fileSize || 0;
-      } else if ((mod.state === 'downloading') || (mod.state == null)) {
+      } else if (mod.state === "downloading" || mod.state == null) {
+        const downloadExists = Object.values(downloads).some((d) => {
+          const lookup = util.lookupFromDownload(d);
+          return util.testModReference(lookup, mod.collectionRule.reference);
+        });
         // Download in progress - use received bytes or total size
-        if (isBundled) {
-          this.updateModTracking(mod.collectionRule, 'downloaded');
+        if (isBundled || downloadExists) {
+          this.updateModTracking(mod.collectionRule, "downloaded");
         } else {
           this.updateModTracking(mod.collectionRule, 'downloading');
         }
