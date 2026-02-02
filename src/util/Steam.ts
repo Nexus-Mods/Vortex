@@ -382,10 +382,10 @@ class Steam implements IGameStore {
                   entry.usesProton = protonInfo.usesProton;
                   entry.compatDataPath = protonInfo.compatDataPath;
                   entry.protonPath = protonInfo.protonPath;
-                } catch (err: any) {
+                } catch (err) {
                   log("debug", "Could not get Proton info for game", {
                     appid: entry.appid,
-                    error: err?.message,
+                    error: getErrorMessageOrDefault(err),
                   });
                 }
                 return entry;
