@@ -1,5 +1,4 @@
-import React, { type FC } from "react";
-
+import { Menu } from "@headlessui/react";
 import {
   mdiMenuOpen,
   mdiMenuClose,
@@ -10,7 +9,11 @@ import {
   mdiHelpCircleOutline,
   mdiWindowRestore,
   mdiAccountCircle,
+  mdiRefresh,
+  mdiMessageReplyText,
+  mdiLogout,
 } from "@mdi/js";
+import React, { type FC } from "react";
 import {
   type ButtonHTMLAttributes,
   type CSSProperties,
@@ -22,6 +25,12 @@ import { useSelector } from "react-redux";
 
 import type { IState } from "../../../types/IState";
 
+import {
+  Dropdown,
+  DropdownDivider,
+  DropdownItem,
+  DropdownItems,
+} from "../../../tailwind/components/dropdown";
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
@@ -32,42 +41,19 @@ import { useSpineContext } from "./SpineContext";
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   iconPath: string;
-  imageSrc?: string;
-  isAvatar?: boolean;
 }
 
-const IconButton: FC<IconButtonProps> = ({
-  className,
-  iconPath,
-  imageSrc,
-  isAvatar,
-  ...props
-}) => {
-  const hasImage = !!imageSrc;
-
-  return (
-    <button
-      className={joinClasses([
-        "flex size-7 items-center justify-center",
-        hasImage || isAvatar
-          ? "hover-overlay relative overflow-hidden rounded-full"
-          : "rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong",
-        className,
-      ])}
-      {...props}
-    >
-      {hasImage ? (
-        <img alt="" className="size-6 rounded-full" src={imageSrc} />
-      ) : (
-        <Icon
-          className={isAvatar ? "size-6" : "size-5"}
-          path={iconPath}
-          size="none"
-        />
-      )}
-    </button>
-  );
-};
+const IconButton: FC<IconButtonProps> = ({ className, iconPath, ...props }) => (
+  <button
+    className={joinClasses([
+      "flex size-7 items-center justify-center rounded-sm text-neutral-moderate transition-colors hover:bg-surface-translucent-mid hover:text-neutral-strong",
+      className,
+    ])}
+    {...props}
+  >
+    <Icon className="size-5" path={iconPath} size="none" />
+  </button>
+);
 
 interface WindowControlProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
@@ -150,12 +136,46 @@ export const Header: FC = () => {
 
           <IconButton iconPath={mdiHelpCircleOutline} title="Help" />
 
-          <IconButton
-            iconPath={mdiAccountCircle}
-            imageSrc="https://avatars.nexusmods.com/138908768/100"
-            isAvatar={true}
-            title="Profile"
-          />
+          <Dropdown>
+            <Menu.Button
+              className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+              title="Profile"
+            >
+              {/* todo if profile image */}
+              <img
+                alt=""
+                className="size-6 rounded-full"
+                src="https://avatars.nexusmods.com/138908768/100"
+              />
+
+              {/* todo if no profile image */}
+              {/*<Icon*/}
+              {/*  className="size-6"*/}
+              {/*  path={mdiAccountCircle}*/}
+              {/*  size="none"*/}
+              {/*/>*/}
+            </Menu.Button>
+
+            <DropdownItems>
+              <DropdownItem leftIconPath={mdiAccountCircle}>
+                View profile on web
+              </DropdownItem>
+
+              <DropdownDivider />
+
+              <DropdownItem leftIconPath={mdiRefresh}>
+                Refresh user info
+              </DropdownItem>
+
+              <DropdownItem leftIconPath={mdiMessageReplyText}>
+                Send feedback
+              </DropdownItem>
+
+              <DropdownDivider />
+
+              <DropdownItem leftIconPath={mdiLogout}>Logout</DropdownItem>
+            </DropdownItems>
+          </Dropdown>
         </div>
 
         <div className="h-6 w-px bg-stroke-weak" />
