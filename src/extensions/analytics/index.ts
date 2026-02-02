@@ -5,7 +5,6 @@ import { getCPUArch } from "./../../util/nativeArch";
 import { setAnalytics } from "./actions/analytics.action";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import {
-  AppCrashedEvent,
   AppLaunchedEvent,
   MixpanelEvent,
   ModsInstallationCompletedEvent,
@@ -21,56 +20,6 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings("Vortex", SettingsAnalytics);
 
   context.once(() => {
-    // Capture uncaught exceptions
-    process.on("uncaughtException", (err: any) => {
-      try {
-        if (enabled() && AnalyticsMixpanel.isUserSet()) {
-          AnalyticsMixpanel.trackEvent(
-            new AppCrashedEvent(
-              process.platform,
-              err.code || "unknown",
-              err.message || "Unknown uncaught exception",
-            ),
-          );
-        }
-        analyticsLog("error", "Uncaught exception", {
-          error: err.message,
-          code: err.code,
-          stack: err.stack,
-        });
-      } catch (trackingError) {
-        // Don't let analytics tracking cause additional crashes
-        console.error("Failed to track crash event:", trackingError);
-      }
-      // Note: Process will still terminate unless you handle it differently
-    });
-
-    // Capture unhandled rejections
-    process.on("unhandledRejection", (err: any) => {
-      try {
-        if (enabled() && AnalyticsMixpanel.isUserSet()) {
-          AnalyticsMixpanel.trackEvent(
-            new AppCrashedEvent(
-              process.platform,
-              err.code || "unknown",
-              err.message || "Unknown unhandled rejection",
-            ),
-          );
-        }
-        analyticsLog("error", "Unhandled rejection", {
-          error: err.message,
-          code: err.code,
-          stack: err.stack,
-        });
-      } catch (trackingError) {
-        // Don't let analytics tracking cause additional crashes
-        console.error("Failed to track crash event:", trackingError);
-      }
-      // Note: Process will still terminate unless you handle it differently
-    });
-
-    const instanceId = context.api.store.getState().app.instanceId;
-    const updateChannel = context.api.store.getState().settings.update.channel;
     const enabled = () =>
       context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () =>

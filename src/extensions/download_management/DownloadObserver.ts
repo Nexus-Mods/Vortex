@@ -51,6 +51,7 @@ import { generate as shortid } from "shortid";
 import { getGames } from "../gamemode_management/util/getGame";
 import { util } from "../..";
 import {
+  ModsDownloadStartedClientEvent,
   ModsDownloadCompletedEvent,
   ModsDownloadFailedEvent,
   ModsDownloadCancelledEvent,
@@ -664,6 +665,7 @@ export class DownloadObserver {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
     let pendingUpdate = false;
+    let startEventEmitted = false;
     return (
       received: number,
       total: number,
@@ -672,6 +674,42 @@ export class DownloadObserver {
       urls?: string[],
       filePath?: string,
     ) => {
+      // Emit download started event on first progress callback for new downloads
+      // Check state first to see if this is a brand new download (received === 0 in state)
+      if (!startEventEmitted) {
+        const state = this.mApi.getState();
+        const download = state.persistent.downloads.files[id];
+        // Only emit for new downloads that haven't received any data yet
+        if (download && download.received === 0 && received > 0) {
+          const nexusIds = nexusIdsFromDownloadId(state, id);
+          if (
+            nexusIds?.numericGameId !== undefined &&
+            nexusIds?.modId !== undefined &&
+            nexusIds?.fileId !== undefined
+          ) {
+            const { modUID, fileUID } = makeModAndFileUIDs(
+              nexusIds.numericGameId.toString(),
+              nexusIds.modId,
+              nexusIds.fileId,
+            );
+            this.mApi.events.emit(
+              "analytics-track-mixpanel-event",
+              new ModsDownloadStartedClientEvent(
+                nexusIds.modId,
+                nexusIds.fileId,
+                nexusIds.numericGameId,
+                modUID,
+                fileUID,
+              ),
+            );
+          }
+        }
+        // Always mark as checked after first callback to avoid repeated state lookups
+        if (received > 0) {
+          startEventEmitted = true;
+        }
+      }
+
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
       const newPerc = total > 0 ? Math.floor((received * 100) / total) : 0;
