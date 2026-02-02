@@ -12,6 +12,7 @@ import {
   mdiRefresh,
   mdiMessageReplyText,
   mdiLogout,
+  mdiDiamondStone,
 } from "@mdi/js";
 import React, { type FC } from "react";
 import {
@@ -31,6 +32,7 @@ import {
   DropdownItem,
   DropdownItems,
 } from "../../../tailwind/components/dropdown";
+import { Button } from "../../../tailwind/components/next/button";
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
@@ -122,14 +124,19 @@ export const Header: FC = () => {
         className="flex items-center gap-x-4"
         style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
       >
+        {/* todo show if user is not premium */}
+        <Button buttonType="premium" leftIconPath={mdiDiamondStone} size="sm">
+          Go premium
+        </Button>
+
         {/* todo show if user is premium */}
-        <Typography
-          appearance="moderate"
-          className="leading-5"
-          typographyType="title-sm"
-        >
-          Premium
-        </Typography>
+        {/*<Typography*/}
+        {/*  appearance="moderate"*/}
+        {/*  className="leading-5"*/}
+        {/*  typographyType="title-sm"*/}
+        {/*>*/}
+        {/*  Premium*/}
+        {/*</Typography>*/}
 
         <div className="flex gap-x-2">
           <IconButton iconPath={mdiBell} title="Notifications" />
