@@ -269,50 +269,52 @@ class Application {
       );
     });
 
+    const onReady = () => {
+      const vortexPath =
+        process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
+
+      // if userData specified, use it
+      let userData =
+        args.userData ??
+        // (only on windows) use ProgramData from environment
+        (args.shared &&
+        process.platform === "win32" &&
+        process.env.ProgramData !== undefined
+          ? path.join(process.env.ProgramData, "vortex")
+          : // this allows the development build to access data from the
+            // production version and vice versa
+            path.resolve(app.getPath("userData"), "..", vortexPath));
+      userData = path.join(userData, currentStatePath);
+
+      // handle nxm:// internally
+      protocol.registerHttpProtocol("nxm", (request) => {
+        const cfgFile: IParameters = { download: request.url };
+        this.applyArguments(cfgFile).catch((err: unknown) =>
+          log("error", "error applying arguments", err),
+        );
+      });
+
+      let startupMode: Promise<void> | undefined = undefined;
+      if (args.get) {
+        startupMode = this.handleGet(args.get, userData);
+      } else if (args.set) {
+        startupMode = this.handleSet(args.set, userData);
+      } else if (args.del) {
+        startupMode = this.handleDel(args.del, userData);
+      }
+
+      if (startupMode !== undefined) {
+        startupMode
+          .then(() => app.quit())
+          .catch((err: unknown) => console.error(err));
+      } else {
+        this.regularStart(args).catch((err: unknown) => console.error(err));
+      }
+    };
+
     app
       .whenReady()
-      .then(() => {
-        const vortexPath =
-          process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
-
-        // if userData specified, use it
-        let userData =
-          args.userData ??
-          // (only on windows) use ProgramData from environment
-          (args.shared &&
-          process.platform === "win32" &&
-          process.env.ProgramData !== undefined
-            ? path.join(process.env.ProgramData, "vortex")
-            : // this allows the development build to access data from the
-              // production version and vice versa
-              path.resolve(app.getPath("userData"), "..", vortexPath));
-        userData = path.join(userData, currentStatePath);
-
-        // handle nxm:// internally
-        protocol.registerHttpProtocol("nxm", (request) => {
-          const cfgFile: IParameters = { download: request.url };
-          this.applyArguments(cfgFile).catch((err: unknown) =>
-            log("error", "error applying arguments", err),
-          );
-        });
-
-        let startupMode: Promise<void> | undefined = undefined;
-        if (args.get) {
-          startupMode = this.handleGet(args.get, userData);
-        } else if (args.set) {
-          startupMode = this.handleSet(args.set, userData);
-        } else if (args.del) {
-          startupMode = this.handleDel(args.del, userData);
-        }
-
-        if (startupMode !== undefined) {
-          startupMode
-            .then(() => app.quit())
-            .catch((err: unknown) => console.error(err));
-        } else {
-          this.regularStart(args).catch((err: unknown) => console.error(err));
-        }
-      })
+      .then(onReady)
       .catch((err: unknown) => log("error", "error starting application", err));
 
     app.on(
