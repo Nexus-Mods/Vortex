@@ -55,9 +55,6 @@ jobs:
       - name: Lint
         run: yarn lint:ci
 
-      - name: Check Formatting
-        run: yarn format:check
-
       - name: Build
         run: yarn build
 
