@@ -213,6 +213,11 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "window:isVisible": (windowId: number) => Promise<boolean>;
   "window:toggleDevTools": (windowId: number) => Promise<void>;
+
+  // Menu operations
+  // Note: Menu template is complex with nested submenus (can be recursive), so we use unknown[]
+  // to avoid circular type references - the actual expected type is SerializableMenuItem[]
+  "menu:setApplicationMenu": (template: unknown[]) => Promise<void>;
 }
 
 /** Represents all IPC-safe typed arrays */

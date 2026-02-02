@@ -1,4 +1,5 @@
 import type { IMainPageOptions } from "../types/IExtensionContext";
+import type { SerializableMenuItem } from "../shared/types/preload";
 
 import type ExtensionManager from "../util/ExtensionManager";
 import { debugTranslations, getMissingTranslations } from "../util/i18n";
@@ -22,9 +23,11 @@ function generateMenuId(): string {
 // Recursively process menu items to assign IDs and store click handlers
 function processMenuTemplate(
   items: Electron.MenuItemConstructorOptions[],
-): Electron.MenuItemConstructorOptions[] {
-  return items.map((item) => {
-    const processed: Electron.MenuItemConstructorOptions = { ...item };
+): SerializableMenuItem[] {
+  return items.map((item): SerializableMenuItem => {
+    const processed: Omit<Electron.MenuItemConstructorOptions, "click"> = {
+      ...item,
+    };
 
     // If item has a click handler, assign an ID and store the handler
     if (item.click) {
@@ -32,7 +35,7 @@ function processMenuTemplate(
       processed.id = id;
       menuClickHandlers.set(id, item.click as () => void);
       // Remove the click handler - it can't be serialized over IPC
-      delete processed.click;
+      delete (processed as Electron.MenuItemConstructorOptions).click;
     }
 
     // Recursively process submenus
@@ -42,7 +45,7 @@ function processMenuTemplate(
       );
     }
 
-    return processed;
+    return processed as SerializableMenuItem;
   });
 }
 

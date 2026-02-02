@@ -11,6 +11,7 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "electron";
+import type { SerializableMenuItem } from "../shared/types/preload";
 import type * as permissionsT from "permissions";
 import type * as uuidT from "uuid";
 import type * as winapiT from "winapi-bindings";
@@ -1933,6 +1934,41 @@ betterIpcMain.handle(
 betterIpcMain.handle("clipboard:readText", () => {
   return clipboard.readText();
 });
+
+// Menu operations
+betterIpcMain.handle(
+  "menu:setApplicationMenu",
+  (event: IpcMainInvokeEvent, template: SerializableMenuItem[]) => {
+    const processTemplate = (
+      items: SerializableMenuItem[],
+    ): Electron.MenuItemConstructorOptions[] => {
+      return items.map((item): Electron.MenuItemConstructorOptions => {
+        const processed: Electron.MenuItemConstructorOptions = { ...item };
+
+        // If item has an ID (from renderer's processMenuTemplate), add a click handler
+        if (item.id) {
+          processed.click = () => {
+            // Send click event back to the renderer that requested the menu
+            event.sender.send("menu:click", item.id);
+          };
+        }
+
+        // Recursively process submenus
+        if (item.submenu && Array.isArray(item.submenu)) {
+          processed.submenu = processTemplate(item.submenu);
+        }
+
+        return processed;
+      });
+    };
+
+    const processedTemplate = processTemplate(template);
+    const menu = Menu.buildFromTemplate(processedTemplate);
+
+    // This isn't even used anywhere - why do I bother?
+    Menu.setApplicationMenu(menu);
+  },
+);
 
 // Power save blocker operations
 import { powerSaveBlocker } from "electron";

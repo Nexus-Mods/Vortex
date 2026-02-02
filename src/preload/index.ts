@@ -178,6 +178,8 @@ try {
         ipcRenderer.on("menu:click", listener);
         return () => ipcRenderer.removeListener("menu:click", listener);
       },
+      setApplicationMenu: (template) =>
+        betterIpcRenderer.invoke("menu:setApplicationMenu", template),
     },
     contentTracing: {
       startRecording: (options) =>

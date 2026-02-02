@@ -228,9 +228,20 @@ export interface WindowAPI {
   toggleDevTools(windowId: number): Promise<void>;
 }
 
+/** Serializable menu item (without click handler function) */
+export type SerializableMenuItem = Omit<
+  Electron.MenuItemConstructorOptions,
+  "click"
+> & {
+  submenu?: SerializableMenuItem[];
+};
+
 export interface Menu {
   /** Register listener for menu item clicks. Returns unsubscribe function. */
   onMenuClick(callback: (menuItemId: string) => void): () => void;
+
+  /** Set the application menu (template should have click handlers removed and replaced with IDs) */
+  setApplicationMenu(template: SerializableMenuItem[]): Promise<void>;
 }
 
 export interface ContentTracing {
