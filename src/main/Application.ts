@@ -76,7 +76,7 @@ import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
 import startupSettings from "../util/startupSettings";
-import { } from "../util/storeHelper";
+import {} from "../util/storeHelper";
 import {
   isMajorDowngrade,
   replaceRecursive,
@@ -299,12 +299,12 @@ class Application {
           args.userData ??
           // (only on windows) use ProgramData from environment
           (args.shared &&
-            process.platform === "win32" &&
-            process.env.ProgramData !== undefined
+          process.platform === "win32" &&
+          process.env.ProgramData !== undefined
             ? path.join(process.env.ProgramData, "vortex")
             : // this allows the development build to access data from the
-            // production version and vice versa
-            path.resolve(app.getPath("userData"), "..", vortexPath));
+              // production version and vice versa
+              path.resolve(app.getPath("userData"), "..", vortexPath));
         userData = path.join(userData, currentStatePath);
 
         // handle nxm:// internally
@@ -418,7 +418,7 @@ class Application {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
-          "If you can't see it, please check the task manager.",
+            "If you can't see it, please check the task manager.",
         );
 
         app.quit();
@@ -428,9 +428,9 @@ class Application {
           dialog.showErrorBox(
             "Startup failed",
             "Your system drive is full. " +
-            "You should always ensure your system drive has some space free (ideally " +
-            "at least 10% of the total capacity, especially on SSDs). " +
-            "Vortex can't start until you have freed up some space.",
+              "You should always ensure your system drive has some space free (ideally " +
+              "at least 10% of the total capacity, especially on SSDs). " +
+              "Vortex can't start until you have freed up some space.",
           );
           app.quit();
           return;
@@ -692,7 +692,7 @@ class Application {
         dialog.showErrorBox(
           "Migration failed",
           "The migration from the previous Vortex release failed. " +
-          "Please resolve the errors you got, then try again.",
+            "Please resolve the errors you got, then try again.",
         );
         app.exit(1);
         throw new ProcessCanceled("Migration failed");
@@ -991,11 +991,11 @@ class Application {
         // can be repaired
         return oldState !== undefined
           ? markImported(this.mBasePath).then(() => {
-            newStore.dispatch({
-              type: "__hydrate",
-              payload: oldState,
-            });
-          })
+              newStore.dispatch({
+                type: "__hydrate",
+                payload: oldState,
+              });
+            })
           : PromiseBB.resolve();
       })
       .then(() => {
@@ -1284,8 +1284,8 @@ class Application {
     const delay = this.mMainWindow
       ? Promise.resolve()
       : new Promise<void>((resolve) => {
-        setTimeout(() => resolve(), 2000);
-      });
+          setTimeout(() => resolve(), 2000);
+        });
 
     await delay;
     if (!this.mMainWindow) {
