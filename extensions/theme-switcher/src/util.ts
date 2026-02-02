@@ -1,8 +1,8 @@
-import * as path from 'path';
-import { util } from 'vortex-api';
+import * as path from "path";
+import { util } from "vortex-api";
 
 export function themesPath(): string {
-  return path.join(util.getVortexPath('userData'), 'themes');
+  return path.join(util.getVortexPath("userData"), "themes");
 }
 
 interface IFont {

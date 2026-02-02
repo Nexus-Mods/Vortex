@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { tooltip, types } from 'vortex-api';
-import Timer from './Timer';
+import * as React from "react";
+import { tooltip, types } from "vortex-api";
+import Timer from "./Timer";
 
 export interface ISlideshowControlsProps {
   t: types.TFunction;
@@ -20,7 +20,9 @@ function SlideshowControls(props: ISlideshowControlsProps) {
 
   React.useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   // the callbacks support wrap-around even though the ui does not
@@ -31,7 +33,7 @@ function SlideshowControls(props: ISlideshowControlsProps) {
     }
 
     let value: number;
-    setIdx(oldValue => {
+    setIdx((oldValue) => {
       value = (oldValue + 1) % numItems;
       return value;
     });
@@ -41,8 +43,8 @@ function SlideshowControls(props: ISlideshowControlsProps) {
 
   const prev = React.useCallback(() => {
     let value: number;
-    setIdx(oldValue => {
-      value = oldValue > 0 ? (oldValue - 1) : (numItems - 1);
+    setIdx((oldValue) => {
+      value = oldValue > 0 ? oldValue - 1 : numItems - 1;
       return value;
     });
     setLastChange(Date.now());
@@ -50,36 +52,37 @@ function SlideshowControls(props: ISlideshowControlsProps) {
   }, [numItems, onChangeItem, setIdx, setLastChange]);
 
   const togglePause = React.useCallback(() => {
-    setPaused(old => !old);
+    setPaused((old) => !old);
     // setLastChange(Date.now());
   }, [setPaused]);
 
   return (
-    <div className='slideshow-controls'>
+    <div className="slideshow-controls">
       <tooltip.IconButton
-        icon='collection-previous'
-        tooltip={t('Show previous mod')}
+        icon="collection-previous"
+        tooltip={t("Show previous mod")}
         disabled={idx === 0}
         onClick={prev}
       />
-      {t('{{pos}} of {{count}}',
-        { replace: { pos: idx + 1, count: numItems } })}
+      {t("{{pos}} of {{count}}", {
+        replace: { pos: idx + 1, count: numItems },
+      })}
       <tooltip.IconButton
-        icon='collection-next'
-        tooltip={t('Show next mod')}
+        icon="collection-next"
+        tooltip={t("Show next mod")}
         disabled={idx === numItems - 1}
         onClick={next}
       />
 
-      {(autoProgressTimeMS !== undefined) ? (
+      {autoProgressTimeMS !== undefined ? (
         <tooltip.IconButton
-          className='button-with-timer'
-          icon={paused ? 'resume' : 'pause'}
-          tooltip={t('Start/Pause automatic advancement')}
+          className="button-with-timer"
+          icon={paused ? "resume" : "pause"}
+          tooltip={t("Start/Pause automatic advancement")}
           onClick={togglePause}
         >
           <Timer
-            className='slideshow-timer'
+            className="slideshow-timer"
             started={lastChange}
             paused={paused}
             duration={autoProgressTimeMS}

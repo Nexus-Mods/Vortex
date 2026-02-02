@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 interface ICoord {
   x: number;
@@ -23,25 +23,23 @@ const Line = (props: ILineProps) => {
   const boxHeight = Math.abs(target.y - source.y) + 4;
 
   const path = curved
-   ? `M ${source.x - left} ${source.y - top}
+    ? `M ${source.x - left} ${source.y - top}
   Q ${boxWidth} ${boxHeight / 2} ${target.x - left} ${target.y - top}`
-   : `M ${source.x - left} ${source.y - top} L ${target.x - left} ${target.y - top}`;
+    : `M ${source.x - left} ${source.y - top} L ${target.x - left} ${target.y - top}`;
 
   return (
     <svg
-      className='plugin-dependency-connector'
+      className="plugin-dependency-connector"
       width={boxWidth}
       height={boxHeight}
-      style={{ position: 'fixed', top, left, pointerEvents: 'none' }}
+      style={{ position: "fixed", top, left, pointerEvents: "none" }}
     >
-      <path id='connector-line' className={className} d={path} fill='none' />
+      <path id="connector-line" className={className} d={path} fill="none" />
       {text !== undefined ? (
-        <text x='50%'>
-          <textPath xlinkHref='#connector-line'>
-            {text}
-          </textPath>
+        <text x="50%">
+          <textPath xlinkHref="#connector-line">{text}</textPath>
         </text>
-       ) : null}
+      ) : null}
     </svg>
   );
 };

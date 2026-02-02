@@ -2,17 +2,17 @@
 
 /**
  * Git Repository Conversion Script
- * 
+ *
  * This script converts npm/yarn installed packages to proper Git repositories
  * so they can be managed with the repository management system.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
 
 // Import the module configuration
-const ModuleManager = require('./manage-node-modules.js');
+const ModuleManager = require("./manage-node-modules.js");
 
 class RepositoryConverter {
   constructor() {
@@ -26,13 +26,13 @@ class RepositoryConverter {
   execInDir(dir, command, options = {}) {
     const fullPath = path.join(this.rootDir, dir);
     console.log(`[${path.basename(dir)}] Running: ${command}`);
-    
+
     try {
       const result = execSync(command, {
         cwd: fullPath,
-        encoding: 'utf8',
-        stdio: options.silent ? 'pipe' : 'inherit',
-        ...options
+        encoding: "utf8",
+        stdio: options.silent ? "pipe" : "inherit",
+        ...options,
       });
       return result;
     } catch (error) {
@@ -56,7 +56,9 @@ class RepositoryConverter {
    */
   isGitRepo(dirPath) {
     const fullPath = path.join(this.rootDir, dirPath);
-    return fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, '.git'));
+    return (
+      fs.existsSync(fullPath) && fs.existsSync(path.join(fullPath, ".git"))
+    );
   }
 
   /**
@@ -65,9 +67,11 @@ class RepositoryConverter {
   backupDirectory(dirPath) {
     const backupPath = `${dirPath}.backup.${Date.now()}`;
     console.log(`📦 Creating backup: ${backupPath}`);
-    
+
     try {
-      this.execInDir('.', `cp -r "${dirPath}" "${backupPath}"`, { ignoreErrors: true });
+      this.execInDir(".", `cp -r "${dirPath}" "${backupPath}"`, {
+        ignoreErrors: true,
+      });
       return backupPath;
     } catch (error) {
       console.warn(`⚠️  Failed to create backup: ${error.message}`);
@@ -83,17 +87,17 @@ class RepositoryConverter {
 
     if (!config.repository) {
       console.log(`📍 ${moduleName}: Local project, skipping conversion`);
-      return { success: false, reason: 'local' };
+      return { success: false, reason: "local" };
     }
 
     if (!this.directoryExists(config.path)) {
       console.log(`❌ ${moduleName}: Directory not found at ${config.path}`);
-      return { success: false, reason: 'not-found' };
+      return { success: false, reason: "not-found" };
     }
 
     if (this.isGitRepo(config.path)) {
       console.log(`✅ ${moduleName}: Already a Git repository`);
-      return { success: true, reason: 'already-git' };
+      return { success: true, reason: "already-git" };
     }
 
     try {
@@ -102,7 +106,7 @@ class RepositoryConverter {
 
       // Remove the existing directory
       console.log(`🗑️  Removing npm-installed version...`);
-      this.execInDir('.', `rm -rf "${config.path}"`, { ignoreErrors: true });
+      this.execInDir(".", `rm -rf "${config.path}"`, { ignoreErrors: true });
 
       // Create parent directory if it doesn't exist
       const parentDir = path.dirname(config.path);
@@ -117,94 +121,109 @@ class RepositoryConverter {
       this.execInDir(parentDir, cloneCommand);
 
       // If there's a specific branch, check it out
-      if (config.branch && config.branch !== 'master') {
+      if (config.branch && config.branch !== "master") {
         console.log(`🌿 Checking out branch: ${config.branch}`);
-        this.execInDir(config.path, `git checkout ${config.branch}`, { ignoreErrors: true });
+        this.execInDir(config.path, `git checkout ${config.branch}`, {
+          ignoreErrors: true,
+        });
       }
 
       // Install dependencies if package.json exists
-      const packageJsonPath = path.join(this.rootDir, config.path, 'package.json');
+      const packageJsonPath = path.join(
+        this.rootDir,
+        config.path,
+        "package.json",
+      );
       if (fs.existsSync(packageJsonPath)) {
         console.log(`📦 Installing dependencies...`);
-        this.execInDir(config.path, 'yarn install', { ignoreErrors: true });
+        this.execInDir(config.path, "yarn install", { ignoreErrors: true });
       }
 
       // If there's a build process, run it
-      const hasBinding = fs.existsSync(path.join(this.rootDir, config.path, 'binding.gyp'));
-      if (hasBinding && config.type === 'cpp') {
+      const hasBinding = fs.existsSync(
+        path.join(this.rootDir, config.path, "binding.gyp"),
+      );
+      if (hasBinding && config.type === "cpp") {
         console.log(`🔨 Building native module...`);
-        this.execInDir(config.path, 'yarn rebuild || yarn run prebuild || node-gyp rebuild', { ignoreErrors: true });
+        this.execInDir(
+          config.path,
+          "yarn rebuild || yarn run prebuild || node-gyp rebuild",
+          { ignoreErrors: true },
+        );
       }
 
       console.log(`✅ ${moduleName}: Successfully converted to Git repository`);
-      
+
       // Clean up backup if conversion was successful
       if (backupPath) {
-        this.execInDir('.', `rm -rf "${backupPath}"`, { ignoreErrors: true });
+        this.execInDir(".", `rm -rf "${backupPath}"`, { ignoreErrors: true });
       }
 
-      return { success: true, reason: 'converted' };
-
+      return { success: true, reason: "converted" };
     } catch (error) {
       console.error(`❌ ${moduleName}: Conversion failed - ${error.message}`);
-      return { success: false, reason: 'failed', error: error.message };
+      return { success: false, reason: "failed", error: error.message };
     }
   }
 
   /**
    * Convert all modules to Git repositories
    */
-  async convertAllModules(filter = 'git') {
-    console.log('🔄 Converting npm packages to Git repositories...\n');
+  async convertAllModules(filter = "git") {
+    console.log("🔄 Converting npm packages to Git repositories...\n");
 
     const modules = this.manager.getFilteredModules(filter);
     const results = {
       converted: [],
       alreadyGit: [],
       failed: [],
-      skipped: []
+      skipped: [],
     };
 
     for (const [moduleName, config] of modules) {
       const result = await this.convertModule(moduleName, config);
-      
+
       switch (result.reason) {
-        case 'converted':
+        case "converted":
           results.converted.push(moduleName);
           break;
-        case 'already-git':
+        case "already-git":
           results.alreadyGit.push(moduleName);
           break;
-        case 'failed':
+        case "failed":
           results.failed.push({ name: moduleName, error: result.error });
           break;
-        case 'local':
-        case 'not-found':
+        case "local":
+        case "not-found":
           results.skipped.push({ name: moduleName, reason: result.reason });
           break;
       }
     }
 
     // Print summary
-    console.log('\n📊 Conversion Summary:');
+    console.log("\n📊 Conversion Summary:");
     console.log(`✅ Converted: ${results.converted.length}`);
     if (results.converted.length > 0) {
-      results.converted.forEach(name => console.log(`   • ${name}`));
+      results.converted.forEach((name) => console.log(`   • ${name}`));
     }
 
     console.log(`📂 Already Git repos: ${results.alreadyGit.length}`);
     if (results.alreadyGit.length > 0) {
-      results.alreadyGit.forEach(name => console.log(`   • ${name}`));
+      results.alreadyGit.forEach((name) => console.log(`   • ${name}`));
     }
 
     console.log(`⚠️  Skipped: ${results.skipped.length}`);
     if (results.skipped.length > 0) {
-      results.skipped.forEach(item => console.log(`   • ${item.name} (${item.reason})`));
+      results.skipped.forEach((item) =>
+        console.log(`   • ${item.name} (${item.reason})`),
+      );
     }
 
     console.log(`❌ Failed: ${results.failed.length}`);
     if (results.failed.length > 0) {
-      results.failed.forEach(item => console.log(`   • ${item.name}: ${item.error}`));
+      results.failed.forEach((item) =>
+        console.log(`   • ${item.name}: ${item.error}`),
+      );
     }
 
     return results;
@@ -213,8 +232,8 @@ class RepositoryConverter {
   /**
    * Show what would be converted without actually doing it
    */
-  async dryRun(filter = 'git') {
-    console.log('🔍 Dry run - showing what would be converted...\n');
+  async dryRun(filter = "git") {
+    console.log("🔍 Dry run - showing what would be converted...\n");
 
     const modules = this.manager.getFilteredModules(filter);
 
@@ -234,7 +253,9 @@ class RepositoryConverter {
         continue;
       }
 
-      console.log(`🔄 ${moduleName}: Would convert from npm package to Git repo`);
+      console.log(
+        `🔄 ${moduleName}: Would convert from npm package to Git repo`,
+      );
       console.log(`   Path: ${config.path}`);
       console.log(`   Repository: ${config.repository}`);
       if (config.branch) {
@@ -306,20 +327,20 @@ async function main() {
   const converter = new RepositoryConverter();
 
   switch (command) {
-    case 'convert':
-      await converter.convertAllModules(filter || 'git');
+    case "convert":
+      await converter.convertAllModules(filter || "git");
       break;
-      
-    case 'dry-run':
-      await converter.dryRun(filter || 'git');
+
+    case "dry-run":
+      await converter.dryRun(filter || "git");
       break;
-      
-    case 'help':
-    case '--help':
-    case '-h':
+
+    case "help":
+    case "--help":
+    case "-h":
       converter.showHelp();
       break;
-      
+
     default:
       console.error('❌ Unknown command. Use "help" for usage information.');
       process.exit(1);

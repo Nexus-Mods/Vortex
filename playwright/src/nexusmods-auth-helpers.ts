@@ -1,13 +1,13 @@
 /* eslint-disable max-lines-per-function */
-import type { Page, BrowserContext } from '@playwright/test';
-import { chromium } from '@playwright/test';
-import path from 'path';
-import dotenv from 'dotenv';
-import type { ChromeBrowserInstance } from './chrome-browser-helpers';
-import { launchRealChrome, closeRealChrome } from './chrome-browser-helpers';
+import type { Page, BrowserContext } from "@playwright/test";
+import { chromium } from "@playwright/test";
+import path from "path";
+import dotenv from "dotenv";
+import type { ChromeBrowserInstance } from "./chrome-browser-helpers";
+import { launchRealChrome, closeRealChrome } from "./chrome-browser-helpers";
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
 
 /**
  * Builds a Nexus Mods download URL from game/mod/file IDs
@@ -17,7 +17,11 @@ dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
  * @param fileId - File ID number
  * @returns Full URL to the mod download page
  */
-export function buildModDownloadUrl(gameId: string, modId: number, fileId: number): string {
+export function buildModDownloadUrl(
+  gameId: string,
+  modId: number,
+  fileId: number,
+): string {
   return `https://www.nexusmods.com/${gameId}/mods/${modId}?tab=files&file_id=${fileId}`;
 }
 
@@ -29,13 +33,16 @@ export function buildModDownloadUrl(gameId: string, modId: number, fileId: numbe
  * @param fileId - File ID number
  * @returns Full URL to the download popup
  */
-export function buildModDownloadPopupUrl(fileId: number, gameId: string): string {
+export function buildModDownloadPopupUrl(
+  fileId: number,
+  gameId: string,
+): string {
   // Game ID mapping (this is the internal Nexus game ID, not the domain)
   const gameIdMap: Record<string, number> = {
-    'stardewvalley': 1303,
-    'skyrimspecialedition': 1704,
-    'skyrim': 110,
-    'fallout4': 1151,
+    stardewvalley: 1303,
+    skyrimspecialedition: 1704,
+    skyrim: 110,
+    fallout4: 1151,
   };
 
   const nexusGameId = gameIdMap[gameId] || 1303; // Default to Stardew Valley
@@ -63,22 +70,24 @@ interface LoginResult {
  * Blocks Vortex from opening external browser for OAuth flow
  * This prevents the system default browser from interfering with Playwright tests
  */
-export async function blockExternalBrowserLaunch(mainWindow: Page): Promise<void> {
+export async function blockExternalBrowserLaunch(
+  mainWindow: Page,
+): Promise<void> {
   await mainWindow.evaluate(() => {
     // Block all methods that Vortex uses to open external URLs
-    const { shell, ipcRenderer } = (window as any).require('electron');
+    const { shell, ipcRenderer } = (window as any).require("electron");
 
     // Override shell.openExternal
     shell.openExternal = (url: string) => {
-      console.log('Blocked shell.openExternal:', url);
+      console.log("Blocked shell.openExternal:", url);
       return Promise.resolve();
     };
 
     // Block IPC calls to open external URLs
     const originalSend = ipcRenderer.send.bind(ipcRenderer);
     ipcRenderer.send = (channel: string, ...args: any[]) => {
-      if (channel === '__opn_win32') {
-        console.log('Blocked __opn_win32 IPC:', args[0]);
+      if (channel === "__opn_win32") {
+        console.log("Blocked __opn_win32 IPC:", args[0]);
         return;
       }
       return originalSend(channel, ...args);
@@ -86,10 +95,10 @@ export async function blockExternalBrowserLaunch(mainWindow: Page): Promise<void
 
     // Block winapi ShellExecuteEx if available
     try {
-      const winapi = (window as any).require('winapi-bindings');
+      const winapi = (window as any).require("winapi-bindings");
       if (winapi && winapi.ShellExecuteEx) {
         winapi.ShellExecuteEx = (options: any) => {
-          console.log('Blocked winapi.ShellExecuteEx:', options);
+          console.log("Blocked winapi.ShellExecuteEx:", options);
         };
       }
     } catch (err) {
@@ -112,17 +121,19 @@ export async function extractOAuthUrl(mainWindow: Page): Promise<OAuthData | { e
         return {
           url: oauthUrl,
           host: url.host,
-          client_id: url.searchParams.get('client_id'),
-          redirect_uri: url.searchParams.get('redirect_uri'),
-          state: url.searchParams.get('state'),
-          code_challenge: url.searchParams.get('code_challenge'),
-          code_challenge_method: url.searchParams.get('code_challenge_method')
+          client_id: url.searchParams.get("client_id"),
+          redirect_uri: url.searchParams.get("redirect_uri"),
+          state: url.searchParams.get("state"),
+          code_challenge: url.searchParams.get("code_challenge"),
+          code_challenge_method: url.searchParams.get("code_challenge_method"),
         };
       }
 
-      return { error: 'No OAuth URL found in Redux state' };
+      return { error: "No OAuth URL found in Redux state" };
     } catch (err) {
-      return { error: `Error accessing Redux store: ${(err as Error).message}` };
+      return {
+        error: `Error accessing Redux store: ${(err as Error).message}`,
+      };
     }
   });
 }
@@ -138,7 +149,7 @@ export async function extractOAuthUrl(mainWindow: Page): Promise<OAuthData | { e
 export async function downloadModFromNexus(
   browserContext: any,
   popupUrl: string,
-  testRunDir?: string
+  testRunDir?: string,
 ): Promise<boolean> {
   try {
     console.log(`\n=== Starting Mod Download ===`);
@@ -146,51 +157,58 @@ export async function downloadModFromNexus(
 
     // Create a new page in the authenticated context
     const page = await browserContext.newPage();
-    console.log('✓ New page created');
+    console.log("✓ New page created");
 
     // Set up request/response logging to capture NXM protocol links
-    page.on('request', (request: any) => {
+    page.on("request", (request: any) => {
       const url = request.url();
-      if (url.startsWith('nxm://')) {
-        console.log('🔗 NXM Protocol Link Detected:', url);
+      if (url.startsWith("nxm://")) {
+        console.log("🔗 NXM Protocol Link Detected:", url);
       }
     });
 
     // Navigate to the popup URL (it will redirect to files page with &nmm=1)
-    console.log('Navigating to popup URL (will redirect)...');
-    await page.goto(popupUrl, { waitUntil: 'networkidle' });
-    console.log('✓ Page loaded after redirect');
+    console.log("Navigating to popup URL (will redirect)...");
+    await page.goto(popupUrl, { waitUntil: "networkidle" });
+    console.log("✓ Page loaded after redirect");
     console.log(`  Current URL: ${page.url()}`);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'after-redirect.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "after-redirect.png"),
+      });
     }
 
     // Wait for page to fully load
-    console.log('Waiting for page to fully load...');
+    console.log("Waiting for page to fully load...");
     await page.waitForTimeout(3000);
 
     // Look for the "Start download" button
-    console.log('Looking for Start Download button...');
-    const startDownloadButton = page.locator('button#startDownloadButton');
-    const isVisible = await startDownloadButton.isVisible({ timeout: 5000 }).catch(() => false);
+    console.log("Looking for Start Download button...");
+    const startDownloadButton = page.locator("button#startDownloadButton");
+    const isVisible = await startDownloadButton
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
 
     if (isVisible) {
       const buttonText = await startDownloadButton.textContent();
-      const dataDownloadUrl = await startDownloadButton.getAttribute('data-download-url');
+      const dataDownloadUrl =
+        await startDownloadButton.getAttribute("data-download-url");
       console.log(`✓ Found Start Download button`);
       console.log(`  Button text: "${buttonText?.trim()}"`);
       console.log(`  NXM URL: ${dataDownloadUrl}`);
-      console.log('Clicking Start Download button...');
+      console.log("Clicking Start Download button...");
 
       await startDownloadButton.click();
-      console.log('✓ Start Download button clicked');
+      console.log("✓ Start Download button clicked");
 
       // Wait for NXM link to be triggered
       await page.waitForTimeout(3000);
 
       if (testRunDir) {
-        await page.screenshot({ path: path.join(testRunDir, 'download-initiated.png') });
+        await page.screenshot({
+          path: path.join(testRunDir, "download-initiated.png"),
+        });
       }
 
       // Log current page state
@@ -200,29 +218,33 @@ export async function downloadModFromNexus(
       console.log(`  URL: ${currentUrl}`);
       console.log(`  Title: ${pageTitle}`);
 
-      console.log('✓ Download initiated - Vortex should receive NXM link');
-      console.log('=== Mod Download Complete ===\n');
+      console.log("✓ Download initiated - Vortex should receive NXM link");
+      console.log("=== Mod Download Complete ===\n");
 
       await page.close();
       return true;
     } else {
-      console.error('❌ Could not find Start Download button (button#startDownloadButton)');
+      console.error(
+        "❌ Could not find Start Download button (button#startDownloadButton)",
+      );
 
       // Log what we can find
-      const allButtons = await page.locator('button').allTextContents();
-      console.log('Available buttons on page:', allButtons.slice(0, 20));
+      const allButtons = await page.locator("button").allTextContents();
+      console.log("Available buttons on page:", allButtons.slice(0, 20));
 
-      const pageContent = await page.textContent('body');
-      console.log('Page content preview:', pageContent?.substring(0, 300));
+      const pageContent = await page.textContent("body");
+      console.log("Page content preview:", pageContent?.substring(0, 300));
 
       if (testRunDir) {
-        await page.screenshot({ path: path.join(testRunDir, 'no-download-button.png') });
+        await page.screenshot({
+          path: path.join(testRunDir, "no-download-button.png"),
+        });
       }
       await page.close();
       return false;
     }
   } catch (err) {
-    console.error('❌ Error downloading mod:', err);
+    console.error("❌ Error downloading mod:", err);
     return false;
   }
 }
@@ -230,14 +252,22 @@ export async function downloadModFromNexus(
 /**
  * Logs out from Nexus Mods if currently logged in
  */
-export async function logoutFromNexusMods(mainWindow: Page, testRunDir?: string): Promise<void> {
-  const logoutLink = mainWindow.locator('div.logout-button').locator('a').filter({ hasText: 'Log out' });
+export async function logoutFromNexusMods(
+  mainWindow: Page,
+  testRunDir?: string,
+): Promise<void> {
+  const logoutLink = mainWindow
+    .locator("div.logout-button")
+    .locator("a")
+    .filter({ hasText: "Log out" });
 
   if (await logoutLink.isVisible({ timeout: 2000 })) {
-    console.log('Logging out from Nexus Mods...');
+    console.log("Logging out from Nexus Mods...");
     await logoutLink.click();
     if (testRunDir) {
-      await mainWindow.screenshot({ path: path.join(testRunDir, '01-logged-out.png') });
+      await mainWindow.screenshot({
+        path: path.join(testRunDir, "01-logged-out.png"),
+      });
     }
   }
 }
@@ -269,7 +299,7 @@ async function performOAuthLoginWithRealChrome(
   chromeInstance: ChromeBrowserInstance,
   username: string,
   password: string,
-  testRunDir?: string
+  testRunDir?: string,
 ): Promise<LoginResult> {
   try {
     // Connect Playwright to the running Chrome instance via CDP
@@ -279,103 +309,126 @@ async function performOAuthLoginWithRealChrome(
     const page = pages.length > 0 ? pages[0] : await context.newPage();
 
     // Navigate to OAuth URL (it will redirect to login page if not logged in)
-    console.log('Navigating to OAuth URL (will redirect to login)...');
+    console.log("Navigating to OAuth URL (will redirect to login)...");
     await page.goto(oauthUrl);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-oauth-redirected-to-login.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-oauth-redirected-to-login.png"),
+      });
     }
 
     // Wait for login page
-    await page.waitForSelector('#user_login', { state: 'visible' });
+    await page.waitForSelector("#user_login", { state: "visible" });
 
     // Fill in login credentials
-    console.log('Filling in login credentials...');
-    await page.fill('#user_login', username);
-    await page.fill('#password', password);
+    console.log("Filling in login credentials...");
+    await page.fill("#user_login", username);
+    await page.fill("#password", password);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-login-filled.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-login-filled.png"),
+      });
     }
 
     // Wait for Cloudflare Turnstile captcha to be solved (manually by user)
-    console.log('Waiting for Cloudflare captcha to be solved (please solve it manually)...');
-    await page.waitForFunction(() => {
-      const input = document.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement;
-      return input && input.value && input.value.length > 0;
-    }, { timeout: 60000 });
+    console.log(
+      "Waiting for Cloudflare captcha to be solved (please solve it manually)...",
+    );
+    await page.waitForFunction(
+      () => {
+        const input = document.querySelector(
+          'input[name="cf-turnstile-response"]',
+        ) as HTMLInputElement;
+        return input && input.value && input.value.length > 0;
+      },
+      { timeout: 60000 },
+    );
 
-    console.log('Captcha solved, submitting login form...');
+    console.log("Captcha solved, submitting login form...");
 
     // Submit the login form
     await page.click('input[type="submit"][name="commit"]');
     await page.waitForTimeout(2000);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-login-submitted.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-login-submitted.png"),
+      });
     }
 
-    console.log('✓ Login completed, now handling OAuth flow...');
+    console.log("✓ Login completed, now handling OAuth flow...");
 
     // Navigate to OAuth URL again (now logged in, should show authorize page)
-    console.log('Navigating to OAuth URL again...');
+    console.log("Navigating to OAuth URL again...");
     await page.goto(oauthUrl);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-oauth-authorize-page.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-oauth-authorize-page.png"),
+      });
     }
 
     // Check for errors
-    const pageContent = await page.textContent('body');
-    if (pageContent?.includes('invalid') || pageContent?.includes('error')) {
-      console.log('Error detected on OAuth page:', pageContent.substring(0, 500));
-      return { success: false, error: 'OAuth page returned an error' };
+    const pageContent = await page.textContent("body");
+    if (pageContent?.includes("invalid") || pageContent?.includes("error")) {
+      console.log(
+        "Error detected on OAuth page:",
+        pageContent.substring(0, 500),
+      );
+      return { success: false, error: "OAuth page returned an error" };
     }
 
     // Click the Authorize button
-    console.log('Clicking Authorize button...');
+    console.log("Clicking Authorize button...");
     await page.locator('input[type="submit"][value="Authorise"]').click();
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-oauth-authorized.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-oauth-authorized.png"),
+      });
     }
 
     // Wait for success page and get the redirect link
-    await page.waitForURL('**/oauth/success**', { timeout: 10000 });
-    console.log('OAuth authorization completed');
+    await page.waitForURL("**/oauth/success**", { timeout: 10000 });
+    console.log("OAuth authorization completed");
 
-    const redirectLink = await page.locator('a#redirect').getAttribute('href');
+    const redirectLink = await page.locator("a#redirect").getAttribute("href");
 
     if (!redirectLink) {
-      return { success: false, error: 'OAuth redirect link not found' };
+      return { success: false, error: "OAuth redirect link not found" };
     }
 
-    console.log('OAuth redirect URL received');
+    console.log("OAuth redirect URL received");
 
     // Navigate to the loopback URL to complete the OAuth flow
-    console.log('Navigating to loopback URL...');
+    console.log("Navigating to loopback URL...");
     await page.goto(redirectLink);
 
     if (testRunDir) {
-      await page.screenshot({ path: path.join(testRunDir, 'chrome-oauth-callback.png') });
+      await page.screenshot({
+        path: path.join(testRunDir, "chrome-oauth-callback.png"),
+      });
     }
 
     // Wait for Vortex to process the OAuth callback
     await mainWindow.waitForTimeout(2000);
 
     if (testRunDir) {
-      await mainWindow.screenshot({ path: path.join(testRunDir, 'vortex-logged-in.png') });
+      await mainWindow.screenshot({
+        path: path.join(testRunDir, "vortex-logged-in.png"),
+      });
     }
 
-    console.log('✓ OAuth flow completed - Vortex is now logged in');
+    console.log("✓ OAuth flow completed - Vortex is now logged in");
 
     // Leave the page open (don't close it, we'll reuse the browser for downloads)
     // Return the browser context AND browser object so they can be reused
     // IMPORTANT: We must return the browser object to keep the CDP connection alive
     return { success: true, browserContext: context, browser };
-
   } catch (err) {
-    console.error('Error during OAuth login with real Chrome:', err);
+    console.error("Error during OAuth login with real Chrome:", err);
     return { success: false, error: (err as Error).message };
   }
 }
@@ -401,7 +454,7 @@ async function performOAuthLoginWithRealChrome(
  */
 export async function loginToNexusModsWithRealChrome(
   mainWindow: Page,
-  testRunDir?: string
+  testRunDir?: string,
 ): Promise<RealChromeLoginResult> {
   let chromeInstance: ChromeBrowserInstance | undefined;
 
@@ -413,7 +466,8 @@ export async function loginToNexusModsWithRealChrome(
     if (!username || !password) {
       return {
         success: false,
-        error: 'PLAYWRIGHT_NEXUS_USERNAME and PLAYWRIGHT_NEXUS_PASSWORD must be set in .env file'
+        error:
+          "PLAYWRIGHT_NEXUS_USERNAME and PLAYWRIGHT_NEXUS_PASSWORD must be set in .env file",
       };
     }
 
@@ -421,11 +475,13 @@ export async function loginToNexusModsWithRealChrome(
     await blockExternalBrowserLaunch(mainWindow);
 
     // Click login button in Vortex to trigger OAuth flow
-    console.log('Clicking login button in Vortex...');
-    const loginButton = mainWindow.locator('button#btn-login');
+    console.log("Clicking login button in Vortex...");
+    const loginButton = mainWindow.locator("button#btn-login");
     await loginButton.click();
     if (testRunDir) {
-      await mainWindow.screenshot({ path: path.join(testRunDir, 'vortex-login-clicked.png') });
+      await mainWindow.screenshot({
+        path: path.join(testRunDir, "vortex-login-clicked.png"),
+      });
     }
 
     // Wait for OAuth URL to be generated
@@ -434,18 +490,20 @@ export async function loginToNexusModsWithRealChrome(
     // Extract OAuth URL from Vortex Redux store
     const oauthData = await extractOAuthUrl(mainWindow);
 
-    if (!oauthData || !('url' in oauthData)) {
+    if (!oauthData || !("url" in oauthData)) {
       return {
         success: false,
-        error: 'Could not extract OAuth URL from Vortex: ' + (oauthData as { error: string }).error
+        error:
+          "Could not extract OAuth URL from Vortex: " +
+          (oauthData as { error: string }).error,
       };
     }
 
     const oauthUrl = oauthData.url;
-    console.log('OAuth URL extracted from Vortex');
+    console.log("OAuth URL extracted from Vortex");
 
     // Launch real Chrome with remote debugging
-    console.log('Launching Chrome browser...');
+    console.log("Launching Chrome browser...");
     chromeInstance = await launchRealChrome();
 
     // Perform OAuth login using real Chrome (handles login + captcha + OAuth flow)
@@ -455,7 +513,7 @@ export async function loginToNexusModsWithRealChrome(
       chromeInstance,
       username,
       password,
-      testRunDir
+      testRunDir,
     );
 
     if (!loginResult.success) {
@@ -474,20 +532,23 @@ export async function loginToNexusModsWithRealChrome(
       success: true,
       browserContext: loginResult.browserContext,
       browser: loginResult.browser,
-      chromeInstance
+      chromeInstance,
     };
-
   } catch (err) {
-    console.error('Error during Chrome login:', err);
+    console.error("Error during Chrome login:", err);
 
     // Clean up on error
     if (chromeInstance) {
-      try { await closeRealChrome(chromeInstance); } catch (e) { /* ignore */ }
+      try {
+        await closeRealChrome(chromeInstance);
+      } catch (e) {
+        /* ignore */
+      }
     }
 
     return {
       success: false,
-      error: (err as Error).message
+      error: (err as Error).message,
     };
   }
 }

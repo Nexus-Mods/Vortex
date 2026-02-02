@@ -1,10 +1,10 @@
-import crypto from 'crypto';
-import https from 'https';
-import url from 'url';
-import { IHashEntry, IHashMap } from './types/types';
+import crypto from "crypto";
+import https from "https";
+import url from "url";
+import { IHashEntry, IHashMap } from "./types/types";
 
-import { fs, selectors, types, util } from 'vortex-api';
-import { DEBUG_MODE, HASHMAP_LINK, HASHMAP_LOCAL_PATH } from './constants';
+import { fs, selectors, types, util } from "vortex-api";
+import { DEBUG_MODE, HASHMAP_LINK, HASHMAP_LOCAL_PATH } from "./constants";
 
 export class HashMapper {
   private mApi: types.IExtensionApi;
@@ -31,9 +31,7 @@ export class HashMapper {
       gameHashMap = await this.updateHashMap(gameId);
     }
     const hashEntry: IHashEntry = gameHashMap?.[hash];
-    return (hashEntry)
-      ? hashEntry.userFacingVersion
-      : hash;
+    return hashEntry ? hashEntry.userFacingVersion : hash;
   }
 
   public async generateCacheKey(filePaths: string[]) {
@@ -43,10 +41,9 @@ export class HashMapper {
       key.push(mtime);
     }
     key.sort((lhs, rhs) => lhs - rhs);
-    const hash = crypto.createHash('md5');
-    const buf = hash.update(key.map(k => k.toString()).join(''))
-                    .digest();
-    return buf.toString('hex');
+    const hash = crypto.createHash("md5");
+    const buf = hash.update(key.map((k) => k.toString()).join("")).digest();
+    return buf.toString("hex");
   }
 
   public insertToCache(key: string, value: string) {
@@ -65,28 +62,31 @@ export class HashMapper {
       return Promise.reject(new Error(`Invalid URL: ${link}`));
     }
     return new Promise((resolve, reject) => {
-      https.get(sanitizedURL.href, res => {
-        res.setEncoding('utf-8');
-        let output = '';
-        res
-          .on('data', (data) => output += data)
-          .on('end', () => {
-            try {
-              const parsed: IHashMap = JSON.parse(output);
-              return resolve(parsed);
-            } catch (err) {
-              return reject(err);
-            }
-        });
-      }).on('error', (e) => {
-        return reject(e);
-      }).end();
+      https
+        .get(sanitizedURL.href, (res) => {
+          res.setEncoding("utf-8");
+          let output = "";
+          res
+            .on("data", (data) => (output += data))
+            .on("end", () => {
+              try {
+                const parsed: IHashMap = JSON.parse(output);
+                return resolve(parsed);
+              } catch (err) {
+                return reject(err);
+              }
+            });
+        })
+        .on("error", (e) => {
+          return reject(e);
+        })
+        .end();
     });
   }
 
   private async updateHashMap(gameId: string) {
     try {
-      this.mHashMap = (DEBUG_MODE)
+      this.mHashMap = DEBUG_MODE
         ? await this.hashMapFromFile()
         : await this.getHTTPData(HASHMAP_LINK);
       const data: { [hash: string]: IHashEntry } = this.mHashMap[gameId];
