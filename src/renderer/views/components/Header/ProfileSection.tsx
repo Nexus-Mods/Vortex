@@ -5,7 +5,12 @@ import {
   mdiMessageReplyText,
   mdiRefresh,
 } from "@mdi/js";
-import React, { type ButtonHTMLAttributes, type FC, useCallback } from "react";
+import React, {
+  forwardRef,
+  type ButtonHTMLAttributes,
+  type FC,
+  useCallback,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -37,21 +42,24 @@ interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   username?: string;
 }
 
-const ActionButton = ({ imageSrc, username, ...props }: ActionButtonProps) => (
-  <button
-    className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
-    {...props}
-  >
-    {imageSrc ? (
-      <img alt={username} className="size-6 rounded-full" src={imageSrc} />
-    ) : (
-      <Icon
-        className="size-6 text-neutral-moderate"
-        path={mdiAccountCircle}
-        size="none"
-      />
-    )}
-  </button>
+const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(
+  ({ imageSrc, username, ...props }, ref) => (
+    <button
+      className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+      ref={ref}
+      {...props}
+    >
+      {imageSrc ? (
+        <img alt={username} className="size-6 rounded-full" src={imageSrc} />
+      ) : (
+        <Icon
+          className="size-6 text-neutral-moderate"
+          path={mdiAccountCircle}
+          size="none"
+        />
+      )}
+    </button>
+  ),
 );
 
 export const ProfileSection: FC = () => {
