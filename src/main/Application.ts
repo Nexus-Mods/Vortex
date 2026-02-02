@@ -21,7 +21,6 @@ import type { IState } from "../types/IState";
 import type { IParameters, ISetItem } from "../util/commandLine";
 import type ExtensionManagerT from "../util/ExtensionManager";
 import type MainWindowT from "./MainWindow";
-import type SplashScreenT from "./SplashScreen";
 import type TrayIconT from "./TrayIcon";
 
 import { addNotification, setCommandLine, showDialog } from "../actions";
@@ -77,7 +76,7 @@ import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
 import startupSettings from "../util/startupSettings";
-import { } from "../util/storeHelper";
+import {} from "../util/storeHelper";
 import {
   isMajorDowngrade,
   replaceRecursive,
@@ -87,6 +86,7 @@ import {
 import { installDevelExtensions } from "./devel";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
+import SplashScreen from "./SplashScreen";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
@@ -253,11 +253,9 @@ class Application {
     }
   }
 
-  private async startSplash(): Promise<SplashScreenT> {
-    const SplashScreen = (await import("./SplashScreen")).default;
+  private async startSplash(): Promise<SplashScreen> {
     const splash = new SplashScreen();
-
-    await Promise.resolve(splash.create(this.mArgs.disableGPU));
+    await splash.create(this.mArgs.disableGPU);
     setWindow(splash.getHandle());
     return splash;
   }
@@ -287,49 +285,56 @@ class Application {
 
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
-      this.applyArguments(commandLine(secondaryArgv, true)).catch((err: unknown) => log("error", "error applying arguments", err));;
+      this.applyArguments(commandLine(secondaryArgv, true)).catch(
+        (err: unknown) => log("error", "error applying arguments", err),
+      );
     });
 
-    app.whenReady().then(() => {
-      const vortexPath =
-        process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
+    app
+      .whenReady()
+      .then(() => {
+        const vortexPath =
+          process.env.NODE_ENV === "development" ? "vortex_devel" : "vortex";
 
-      // if userData specified, use it
-      let userData =
-        args.userData ??
-        // (only on windows) use ProgramData from environment
-        (args.shared &&
+        // if userData specified, use it
+        let userData =
+          args.userData ??
+          // (only on windows) use ProgramData from environment
+          (args.shared &&
           process.platform === "win32" &&
           process.env.ProgramData !== undefined
-          ? path.join(process.env.ProgramData, "vortex")
-          : // this allows the development build to access data from the
-          // production version and vice versa
-          path.resolve(app.getPath("userData"), "..", vortexPath));
-      userData = path.join(userData, currentStatePath);
+            ? path.join(process.env.ProgramData, "vortex")
+            : // this allows the development build to access data from the
+              // production version and vice versa
+              path.resolve(app.getPath("userData"), "..", vortexPath));
+        userData = path.join(userData, currentStatePath);
 
-      // handle nxm:// internally
-      protocol.registerHttpProtocol("nxm", (request) => {
-        const cfgFile: IParameters = { download: request.url };
-        this.applyArguments(cfgFile).catch((err: unknown) => log("error", "error applying arguments", err));
-      });
+        // handle nxm:// internally
+        protocol.registerHttpProtocol("nxm", (request) => {
+          const cfgFile: IParameters = { download: request.url };
+          this.applyArguments(cfgFile).catch((err: unknown) =>
+            log("error", "error applying arguments", err),
+          );
+        });
 
-      let startupMode: Promise<void> | undefined = undefined;
-      if (args.get) {
-        startupMode = this.handleGet(args.get, userData);
-      } else if (args.set) {
-        startupMode = this.handleSet(args.set, userData);
-      } else if (args.del) {
-        startupMode = this.handleDel(args.del, userData);
-      }
+        let startupMode: Promise<void> | undefined = undefined;
+        if (args.get) {
+          startupMode = this.handleGet(args.get, userData);
+        } else if (args.set) {
+          startupMode = this.handleSet(args.set, userData);
+        } else if (args.del) {
+          startupMode = this.handleDel(args.del, userData);
+        }
 
-      if (startupMode !== undefined) {
-        startupMode
-          .then(() => app.quit())
-          .catch((err: unknown) => console.error(err));
-      } else {
-        this.regularStart(args).catch((err: unknown) => console.error(err));
-      }
-    }).catch((err: unknown) => log("error", "error starting application", err));;
+        if (startupMode !== undefined) {
+          startupMode
+            .then(() => app.quit())
+            .catch((err: unknown) => console.error(err));
+        } else {
+          this.regularStart(args).catch((err: unknown) => console.error(err));
+        }
+      })
+      .catch((err: unknown) => log("error", "error starting application", err));
 
     app.on(
       "web-contents-created",
@@ -415,7 +420,7 @@ class Application {
         dialog.showErrorBox(
           "Startup failed",
           "Vortex seems to be running already. " +
-          "If you can't see it, please check the task manager.",
+            "If you can't see it, please check the task manager.",
         );
 
         app.quit();
@@ -425,9 +430,9 @@ class Application {
           dialog.showErrorBox(
             "Startup failed",
             "Your system drive is full. " +
-            "You should always ensure your system drive has some space free (ideally " +
-            "at least 10% of the total capacity, especially on SSDs). " +
-            "Vortex can't start until you have freed up some space.",
+              "You should always ensure your system drive has some space free (ideally " +
+              "at least 10% of the total capacity, especially on SSDs). " +
+              "Vortex can't start until you have freed up some space.",
           );
           app.quit();
           return;
@@ -468,7 +473,7 @@ class Application {
     this.testUserEnvironment();
     await this.validateFiles();
 
-    let splash: SplashScreenT | undefined = undefined;
+    let splash: SplashScreen | undefined = undefined;
 
     if (!args.startMinimized) {
       log("debug", "showing splash screen");
@@ -536,7 +541,7 @@ class Application {
 
     if (splash) {
       log("debug", "removing splash screen");
-      splash.fadeOut();
+      await splash.fadeOut();
     }
 
     this.connectTrayAndWindow();
@@ -689,7 +694,7 @@ class Application {
         dialog.showErrorBox(
           "Migration failed",
           "The migration from the previous Vortex release failed. " +
-          "Please resolve the errors you got, then try again.",
+            "Please resolve the errors you got, then try again.",
         );
         app.exit(1);
         throw new ProcessCanceled("Migration failed");
@@ -988,11 +993,11 @@ class Application {
         // can be repaired
         return oldState !== undefined
           ? markImported(this.mBasePath).then(() => {
-            newStore.dispatch({
-              type: "__hydrate",
-              payload: oldState,
-            });
-          })
+              newStore.dispatch({
+                type: "__hydrate",
+                payload: oldState,
+              });
+            })
           : PromiseBB.resolve();
       })
       .then(() => {
@@ -1278,9 +1283,11 @@ class Application {
       return;
     }
 
-    const delay = this.mMainWindow ? Promise.resolve() : new Promise<void>(resolve => {
-      setTimeout(() => resolve(), 2000);
-    });
+    const delay = this.mMainWindow
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          setTimeout(() => resolve(), 2000);
+        });
 
     await delay;
     if (!this.mMainWindow) {
