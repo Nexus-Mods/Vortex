@@ -1,0 +1,31 @@
+import React, { type ButtonHTMLAttributes, type FC } from "react";
+
+import { Icon } from "../../../../tailwind/components/next/icon";
+import { joinClasses } from "../../../../tailwind/components/next/utils";
+
+interface SpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+  iconPath: string;
+  isActive?: boolean;
+}
+
+export const SpineButton: FC<SpineButtonProps> = ({
+  className,
+  iconPath,
+  isActive,
+  ...props
+}) => (
+  <button
+    className={joinClasses([
+      className,
+      "flex size-12 items-center justify-center transition-colors",
+      "hover:border-neutral-strong hover:bg-surface-translucent-low hover:text-neutral-strong",
+      isActive
+        ? "border-neutral-strong bg-surface-translucent-low text-neutral-strong"
+        : "border-stroke-weak",
+    ])}
+    {...props}
+  >
+    <Icon className="transition-colors" path={iconPath} size="lg" />
+  </button>
+);
