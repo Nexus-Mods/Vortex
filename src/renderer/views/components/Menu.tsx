@@ -36,6 +36,7 @@ const getIconPath = (iconName: string): string => {
 };
 
 interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: string;
   iconPath: string;
   isActive?: boolean;
 }
@@ -51,26 +52,24 @@ const MenuButton: FC<MenuButtonProps> = ({
   return (
     <button
       className={joinClasses([
-        "flex h-10 items-center gap-x-3 rounded-lg transition-colors hover:bg-surface-low hover:text-neutral-moderate",
+        "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-low hover:text-neutral-moderate",
         isActive
           ? "bg-surface-low text-neutral-moderate"
           : "text-neutral-subdued",
-        menuIsCollapsed ? "w-10 justify-center" : "px-3",
       ])}
+      {...(menuIsCollapsed ? { title: children } : {})}
       {...props}
     >
       <Icon className="shrink-0" path={iconPath} size="sm" />
 
-      {!menuIsCollapsed && (
-        <Typography
-          appearance="none"
-          as="span"
-          className="truncate font-semibold"
-          typographyType="body-sm"
-        >
-          {children}
-        </Typography>
-      )}
+      <Typography
+        appearance="none"
+        as="span"
+        className="truncate font-semibold"
+        typographyType="body-sm"
+      >
+        {children}
+      </Typography>
     </button>
   );
 };
@@ -104,7 +103,7 @@ export const Menu: FC = () => {
   return (
     <div
       className={joinClasses([
-        "flex shrink-0 flex-col gap-y-0.5 px-3",
+        "flex shrink-0 flex-col gap-y-0.5 overflow-hidden px-3 transition-[width]",
         menuIsCollapsed ? "w-16" : "w-56",
       ])}
     >
