@@ -1,18 +1,18 @@
 import type * as msgpackT from "@msgpack/msgpack";
-import type crashDumpT from "crash-dump";
 import type { crashReporter as crashReporterT } from "electron";
-import type * as permissionsT from "permissions";
-import type * as uuidT from "uuid";
-import type * as winapiT from "winapi-bindings";
 
 import PromiseBB from "bluebird";
+import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
 import { writeFile, rm, stat } from "node:fs/promises";
 import * as path from "path";
+import permissions from "permissions";
 import * as semver from "semver";
+import { v4 as uuidv4 } from "uuid";
+import winapi from "winapi-bindings";
 
 import type { StateError } from "../store/reduxSanity";
 import type { ThunkStore } from "../types/IExtensionContext";
@@ -71,7 +71,6 @@ import {
 import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import lazyRequire from "../util/lazyRequire";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
@@ -87,12 +86,6 @@ import { installDevelExtensions } from "./devel";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
 import SplashScreen from "./SplashScreen";
-
-const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
-const permissions = lazyRequire<typeof permissionsT>(() =>
-  require("permissions"),
-);
-const winapi = lazyRequire<typeof winapiT>(() => require("winapi-bindings"));
 
 const STATE_CHUNK_SIZE = 128 * 1024;
 
@@ -193,21 +186,9 @@ class Application {
       // nop, this is the expected case
     }
 
-    if (process.env.CRASH_REPORTING === "electron") {
-      const crashReporter: typeof crashReporterT =
-        require("electron").crashReporter;
-      crashReporter.start({
-        productName: "Vortex",
-        uploadToServer: false,
-        submitURL: "",
-      });
-      app.setPath("crashDumps", path.join(tempPath, "dumps"));
-    } else if (process.env.CRASH_REPORTING === "vortex") {
-      const crashDump: typeof crashDumpT = require("crash-dump").default;
-      this.mDeinitCrashDump = crashDump(
-        path.join(tempPath, "dumps", `crash-main-${Date.now()}.dmp`),
-      );
-    }
+    this.mDeinitCrashDump = crashDump(
+      path.join(tempPath, "dumps", `crash-main-${Date.now()}.dmp`),
+    );
 
     setupLogging(
       app.getPath("userData"),
@@ -337,8 +318,14 @@ class Application {
     app.on(
       "web-contents-created",
       (_event: Electron.Event, contents: Electron.WebContents) => {
-        require("@electron/remote/main").enable(contents);
-        contents.on("will-attach-webview", this.attachWebView);
+        const promise = async () => {
+          (await import("@electron/remote/main")).enable(contents);
+          contents.on("will-attach-webview", this.attachWebView);
+        };
+
+        promise().catch((err: unknown) =>
+          log("error", "failed to enable electron remote", err),
+        );
       },
     );
 
@@ -947,7 +934,7 @@ class Application {
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           this.mFirstStart = true;
-          const newId = uuid.v4();
+          const newId = uuidv4();
           log("debug", "first startup, generated instance id", {
             instanceId: newId,
           });
