@@ -41,6 +41,7 @@ import type { IState } from "../types/IState";
 import type { IParameters, ISetItem } from "../util/commandLine";
 import type * as develT from "../util/devel";
 import type ExtensionManagerT from "../util/ExtensionManager";
+import type { AppPath } from "../util/getVortexPath";
 import type MainWindowT from "./MainWindow";
 import type SplashScreenT from "./SplashScreen";
 import type TrayIconT from "./TrayIcon";
@@ -92,8 +93,6 @@ import {
 } from "../util/errorHandling";
 import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
-import type { AppPath } from "../util/getVortexPath";
-
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
@@ -1673,7 +1672,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "browserView:close",
-  async (event: IpcMainInvokeEvent, viewId) => {
+  (event: IpcMainInvokeEvent, viewId) => {
     const contentsId = event.sender.id;
     if (extraWebViews[contentsId]?.[viewId] !== undefined) {
       const window = BrowserWindow.fromWebContents(event.sender);
@@ -1685,7 +1684,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "browserView:position",
-  async (event: IpcMainInvokeEvent, viewId, rect) => {
+  (event: IpcMainInvokeEvent, viewId, rect) => {
     const contentsId = event.sender.id;
     extraWebViews[contentsId]?.[viewId]?.setBounds?.(rect);
   },
@@ -1693,7 +1692,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "browserView:updateURL",
-  async (event: IpcMainInvokeEvent, viewId, newURL) => {
+  (event: IpcMainInvokeEvent, viewId, newURL) => {
     const contentsId = event.sender.id;
     void extraWebViews[contentsId]?.[viewId]?.webContents.loadURL(newURL);
   },
@@ -1702,7 +1701,7 @@ betterIpcMain.handle(
 // Jump list (Windows)
 betterIpcMain.handle(
   "app:setJumpList",
-  async (_event: IpcMainInvokeEvent, categories: JumpListCategory[]) => {
+  (_event: IpcMainInvokeEvent, categories: JumpListCategory[]) => {
     try {
       app.setJumpList(categories);
     } catch (_err) {
@@ -1763,14 +1762,14 @@ betterIpcMain.handleSync("vortex:getPathsSync", () => {
   };
 });
 
-betterIpcMain.handle("window:getId", async (event: IpcMainInvokeEvent) => {
+betterIpcMain.handle("window:getId", (event: IpcMainInvokeEvent) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   return window?.id ?? -1;
 });
 
 betterIpcMain.handle(
   "window:minimize",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.minimize();
   },
@@ -1778,7 +1777,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:maximize",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.maximize();
   },
@@ -1786,7 +1785,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:unmaximize",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.unmaximize();
   },
@@ -1794,7 +1793,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:restore",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.restore();
   },
@@ -1802,7 +1801,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:close",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.close();
   },
@@ -1810,7 +1809,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:focus",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.focus();
   },
@@ -1818,7 +1817,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:show",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.show();
   },
@@ -1826,7 +1825,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:hide",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.hide();
   },
@@ -1834,7 +1833,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:isMaximized",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     return window?.isMaximized() ?? false;
   },
@@ -1842,7 +1841,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:isMinimized",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     return window?.isMinimized() ?? false;
   },
@@ -1850,7 +1849,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:isFocused",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     return window?.isFocused() ?? false;
   },
@@ -1858,7 +1857,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:setAlwaysOnTop",
-  async (_event: IpcMainInvokeEvent, windowId: number, flag: boolean) => {
+  (_event: IpcMainInvokeEvent, windowId: number, flag: boolean) => {
     const window = BrowserWindow.fromId(windowId);
     window?.setAlwaysOnTop(flag);
   },
@@ -1866,43 +1865,9 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:moveTop",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const window = BrowserWindow.fromId(windowId);
     window?.moveTop();
-  },
-);
-
-// Menu operations
-betterIpcMain.handle(
-  "menu:setApplicationMenu",
-  (
-    event: IpcMainInvokeEvent,
-    template: Electron.MenuItemConstructorOptions[],
-  ) => {
-    const sender = event.sender;
-
-    // Recursively add click handlers that send IPC events to renderer
-    type MenuItemWithId = Electron.MenuItemConstructorOptions & { id?: string };
-    const processTemplate = (items: MenuItemWithId[]): MenuItemWithId[] => {
-      return items.map((item: MenuItemWithId) => {
-        const processed = { ...item };
-        if (item.id) {
-          processed.click = () => {
-            if (!sender.isDestroyed()) {
-              sender.send("menu:click", item.id);
-            }
-          };
-        }
-        if (item.submenu && Array.isArray(item.submenu)) {
-          processed.submenu = processTemplate(item.submenu);
-        }
-        return processed;
-      });
-    };
-
-    const processedTemplate = processTemplate(template);
-    const menu = Menu.buildFromTemplate(processedTemplate);
-    Menu.setApplicationMenu(menu);
   },
 );
 
@@ -1925,17 +1890,17 @@ betterIpcMain.handle(
 );
 
 // Redux state transfer
-betterIpcMain.handle("redux:getState", async () => {
+betterIpcMain.handle("redux:getState", () => {
   const getReduxState = (global as GlobalWithRedux).getReduxState;
   if (typeof getReduxState === "function") {
-    return getReduxState();
+    return getReduxState() as {};
   }
   return undefined;
 });
 
 betterIpcMain.handle(
   "redux:getStateMsgpack",
-  async (_event: IpcMainInvokeEvent, idx: number) => {
+  (_event: IpcMainInvokeEvent, idx: number) => {
     const getReduxStateMsgpack = (global as GlobalWithRedux)
       .getReduxStateMsgpack;
     if (typeof getReduxStateMsgpack === "function") {
@@ -1948,24 +1913,24 @@ betterIpcMain.handle(
 // Login item settings
 betterIpcMain.handle(
   "app:setLoginItemSettings",
-  async (_event: IpcMainInvokeEvent, settings: Settings) => {
+  (_event: IpcMainInvokeEvent, settings: Settings) => {
     app.setLoginItemSettings(settings);
   },
 );
 
-betterIpcMain.handle("app:getLoginItemSettings", async () => {
+betterIpcMain.handle("app:getLoginItemSettings", () => {
   return app.getLoginItemSettings();
 });
 
 // Clipboard operations
 betterIpcMain.handle(
   "clipboard:writeText",
-  async (_event: IpcMainInvokeEvent, text: string) => {
+  (_event: IpcMainInvokeEvent, text: string) => {
     clipboard.writeText(text);
   },
 );
 
-betterIpcMain.handle("clipboard:readText", async () => {
+betterIpcMain.handle("clipboard:readText", () => {
   return clipboard.readText();
 });
 
@@ -1974,7 +1939,7 @@ import { powerSaveBlocker } from "electron";
 
 betterIpcMain.handle(
   "powerSaveBlocker:start",
-  async (
+  (
     _event: IpcMainInvokeEvent,
     type: "prevent-app-suspension" | "prevent-display-sleep",
   ) => {
@@ -1984,27 +1949,27 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "powerSaveBlocker:stop",
-  async (_event: IpcMainInvokeEvent, id: number) => {
+  (_event: IpcMainInvokeEvent, id: number) => {
     powerSaveBlocker.stop(id);
   },
 );
 
 betterIpcMain.handle(
   "powerSaveBlocker:isStarted",
-  async (_event: IpcMainInvokeEvent, id: number) => {
+  (_event: IpcMainInvokeEvent, id: number) => {
     return powerSaveBlocker.isStarted(id);
   },
 );
 
 // App path operations
-betterIpcMain.handle("app:getAppPath", async (_event: IpcMainInvokeEvent) => {
+betterIpcMain.handle("app:getAppPath", (_event: IpcMainInvokeEvent) => {
   return app.getAppPath();
 });
 
 // Additional window operations
 betterIpcMain.handle(
   "window:getPosition",
-  async (_event: IpcMainInvokeEvent, windowId): Promise<[number, number]> => {
+  (_event: IpcMainInvokeEvent, windowId) => {
     const win = BrowserWindow.fromId(windowId);
     return (win?.getPosition() ?? [0, 0]) as [number, number];
   },
@@ -2012,12 +1977,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:setPosition",
-  async (
-    _event: IpcMainInvokeEvent,
-    windowId: number,
-    x: number,
-    y: number,
-  ) => {
+  (_event: IpcMainInvokeEvent, windowId: number, x: number, y: number) => {
     const win = BrowserWindow.fromId(windowId);
     win?.setPosition(x, y);
   },
@@ -2025,7 +1985,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:getSize",
-  async (_event: IpcMainInvokeEvent, windowId): Promise<[number, number]> => {
+  (_event: IpcMainInvokeEvent, windowId) => {
     const win = BrowserWindow.fromId(windowId);
     return (win?.getSize() ?? [0, 0]) as [number, number];
   },
@@ -2033,7 +1993,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:setSize",
-  async (
+  (
     _event: IpcMainInvokeEvent,
     windowId: number,
     width: number,
@@ -2046,7 +2006,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:isVisible",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const win = BrowserWindow.fromId(windowId);
     return win?.isVisible() ?? false;
   },
@@ -2054,7 +2014,7 @@ betterIpcMain.handle(
 
 betterIpcMain.handle(
   "window:toggleDevTools",
-  async (_event: IpcMainInvokeEvent, windowId: number) => {
+  (_event: IpcMainInvokeEvent, windowId: number) => {
     const win = BrowserWindow.fromId(windowId);
     win?.webContents.toggleDevTools();
   },

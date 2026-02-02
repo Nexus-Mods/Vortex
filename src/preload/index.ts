@@ -50,20 +50,11 @@ try {
     },
     dialog: {
       showOpen: (options) =>
-        betterIpcRenderer.invoke(
-          "dialog:showOpen",
-          options,
-        ) as Promise<Electron.OpenDialogReturnValue>,
+        betterIpcRenderer.invoke("dialog:showOpen", options),
       showSave: (options) =>
-        betterIpcRenderer.invoke(
-          "dialog:showSave",
-          options,
-        ) as Promise<Electron.SaveDialogReturnValue>,
+        betterIpcRenderer.invoke("dialog:showSave", options),
       showMessageBox: (options) =>
-        betterIpcRenderer.invoke(
-          "dialog:showMessageBox",
-          options,
-        ) as Promise<Electron.MessageBoxReturnValue>,
+        betterIpcRenderer.invoke("dialog:showMessageBox", options),
       showErrorBox: (title, content) =>
         betterIpcRenderer.invoke("dialog:showErrorBox", title, content),
     },
@@ -93,11 +84,7 @@ try {
     browserView: {
       create: (src: string, partition: string, isNexus: boolean) =>
         betterIpcRenderer.invoke("browserView:create", src, partition, isNexus),
-      createWithEvents: (
-        src: string,
-        forwardEvents: string[],
-        options: unknown,
-      ) =>
+      createWithEvents: (src, forwardEvents, options) =>
         betterIpcRenderer.invoke(
           "browserView:createWithEvents",
           src,
@@ -112,7 +99,7 @@ try {
         betterIpcRenderer.invoke("browserView:updateURL", viewId, newURL),
     },
     session: {
-      getCookies: (filter: Electron.CookiesGetFilter) =>
+      getCookies: (filter) =>
         betterIpcRenderer.invoke("session:getCookies", filter),
     },
     window: {
@@ -183,9 +170,6 @@ try {
         betterIpcRenderer.invoke("window:toggleDevTools", windowId),
     },
     menu: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setApplicationMenu: (template: any) =>
-        betterIpcRenderer.invoke("menu:setApplicationMenu", template),
       onMenuClick: (callback: (menuItemId: string) => void) => {
         const listener = (
           _event: Electron.IpcRendererEvent,
@@ -212,8 +196,7 @@ try {
       readText: () => betterIpcRenderer.invoke("clipboard:readText"),
     },
     powerSaveBlocker: {
-      start: (type: "prevent-app-suspension" | "prevent-display-sleep") =>
-        betterIpcRenderer.invoke("powerSaveBlocker:start", type),
+      start: (type) => betterIpcRenderer.invoke("powerSaveBlocker:start", type),
       stop: (id: number) =>
         betterIpcRenderer.invoke("powerSaveBlocker:stop", id),
       isStarted: (id: number) =>

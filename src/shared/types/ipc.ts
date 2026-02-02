@@ -2,6 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type Electron from "electron";
+
 import type { Level } from "./logging";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
@@ -92,14 +94,15 @@ export interface InvokeChannels {
   "example:ping": () => Promise<string>;
 
   // Dialog channels
-  // NOTE: Electron types are marked as 'any' because they contain non-serializable properties
-  // that Electron's IPC handles internally. The actual data passed is serializable.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "dialog:showOpen": (options: any) => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "dialog:showSave": (options: any) => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "dialog:showMessageBox": (options: any) => Promise<any>;
+  "dialog:showOpen": (
+    options: Electron.OpenDialogOptions,
+  ) => Promise<Electron.OpenDialogReturnValue>;
+  "dialog:showSave": (
+    options: Electron.SaveDialogOptions,
+  ) => Promise<Electron.SaveDialogReturnValue>;
+  "dialog:showMessageBox": (
+    options: Electron.MessageBoxOptions,
+  ) => Promise<Electron.MessageBoxReturnValue>;
   "dialog:showErrorBox": (title: string, content: string) => Promise<void>;
 
   // App protocol client channels
@@ -131,8 +134,7 @@ export interface InvokeChannels {
   "browserView:createWithEvents": (
     src: string,
     forwardEvents: string[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options: any,
+    options?: Electron.BrowserViewConstructorOptions,
   ) => Promise<string>;
   "browserView:close": (viewId: string) => Promise<void>;
   "browserView:position": (
@@ -142,12 +144,12 @@ export interface InvokeChannels {
   "browserView:updateURL": (viewId: string, newURL: string) => Promise<void>;
 
   // Jump list (Windows)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "app:setJumpList": (categories: any) => Promise<void>;
+  "app:setJumpList": (categories: Electron.JumpListCategory[]) => Promise<void>;
 
   // Session cookies
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "session:getCookies": (filter: any) => Promise<any>;
+  "session:getCookies": (
+    filter: Electron.CookiesGetFilter,
+  ) => Promise<Electron.Cookie[]>;
 
   // Window operations
   "window:getId": () => Promise<number>;
@@ -165,31 +167,24 @@ export interface InvokeChannels {
   "window:setAlwaysOnTop": (windowId: number, flag: boolean) => Promise<void>;
   "window:moveTop": (windowId: number) => Promise<void>;
 
-  // Menu operations
-  // NOTE: Electron MenuItemConstructorOptions is marked as 'any' because it contains non-serializable
-  // properties (functions) that Electron's IPC strips during transmission. The main process
-  // reconstructs these functions (click handlers) before passing to Electron.Menu.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "menu:setApplicationMenu": (template: any) => Promise<void>;
-
   // Content tracing operations
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "contentTracing:startRecording": (options: any) => Promise<void>;
+  "contentTracing:startRecording": (
+    options: Electron.TraceConfig | Electron.TraceCategoriesAndOptions,
+  ) => Promise<void>;
   "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
 
   // Redux state transfer
-  // NOTE: Redux state is marked as 'any' because it's a complex nested object that is serializable
+  // NOTE: Redux state is a complex nested object that is serializable
   // but too complex to type precisely. The actual data is always serializable.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "redux:getState": () => Promise<any>;
+  "redux:getState": () => Promise<{}>;
   // Returns a base64-encoded msgpack chunk of the Redux state
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;
 
   // Login item settings
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "app:setLoginItemSettings": (settings: any) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "app:getLoginItemSettings": () => Promise<any>;
+  "app:setLoginItemSettings": (
+    settings: Electron.LoginItemSettings,
+  ) => Promise<void>;
+  "app:getLoginItemSettings": () => Promise<Electron.LoginItemSettings>;
 
   // Clipboard operations
   "clipboard:writeText": (text: string) => Promise<void>;
@@ -256,14 +251,6 @@ export type Serializable =
   | TypedArray;
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
-type IsUnknown<T> =
-  IsAny<T> extends true
-    ? false
-    : unknown extends T
-      ? T extends unknown
-        ? true
-        : false
-      : false;
 
 type HasError<T> = T extends { __error__: string }
   ? true
@@ -282,19 +269,16 @@ export type AssertSerializable<T> =
   // any
   IsAny<T> extends true
     ? { __error__: "any is not serializable for IPC" }
-    : // unknown
-      IsUnknown<T> extends true
-      ? { __error__: "unknown is not serializable for IPC" }
-      : // known serializables
-        T extends Serializable
-        ? T
-        : // objects
-          T extends object
-          ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
-            ? { __error__: "Type is not serializable for IPC" }
-            : T
-          : // everything else
-            { __error__: "Type is not serializable for IPC" };
+    : // known serializables
+      T extends Serializable
+      ? T
+      : // objects
+        T extends object
+        ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
+          ? { __error__: "Type is not serializable for IPC" }
+          : T
+        : // everything else
+          { __error__: "Type is not serializable for IPC" };
 
 /** Utility type to check all args are serializable */
 export type SerializableArgs<T extends readonly unknown[]> = {

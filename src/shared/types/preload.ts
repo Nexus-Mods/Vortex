@@ -116,7 +116,7 @@ export interface App {
   setJumpList(categories: Electron.JumpListCategory[]): Promise<void>;
 
   /** Set login item settings (auto-start) */
-  setLoginItemSettings(settings: Electron.Settings): Promise<void>;
+  setLoginItemSettings(settings: Electron.LoginItemSettings): Promise<void>;
 
   /** Get login item settings */
   getLoginItemSettings(): Promise<Electron.LoginItemSettings>;
@@ -229,11 +229,6 @@ export interface WindowAPI {
 }
 
 export interface Menu {
-  /** Set application menu from template */
-  setApplicationMenu(
-    template: Electron.MenuItemConstructorOptions[],
-  ): Promise<void>;
-
   /** Register listener for menu item clicks. Returns unsubscribe function. */
   onMenuClick(callback: (menuItemId: string) => void): () => void;
 }
