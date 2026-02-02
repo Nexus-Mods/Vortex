@@ -18,7 +18,11 @@ class ReduxProp<T> {
   private mSubscribers: IUpdateable[];
   private mUnsubscribe: () => void;
 
-  constructor(api: IExtensionApi, inputs: string[][], func: (...args: unknown[]) => T) {
+  constructor(
+    api: IExtensionApi,
+    inputs: string[][],
+    func: (...args: unknown[]) => T,
+  ) {
     this.mInputs = inputs;
     this.mFunc = func;
     this.mApi = api;
