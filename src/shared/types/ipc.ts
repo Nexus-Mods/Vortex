@@ -70,7 +70,7 @@ export type VortexPaths = {
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
 export interface SyncChannels {
-  // NOTE(erri120): These are synchronous IPC channels used during preload initialization.
+  // NOTE: These are synchronous IPC channels used during preload initialization.
   // Use sparingly as they block the renderer process.
 
   /** Get the current window ID */
