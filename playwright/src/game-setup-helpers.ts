@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 /**
  * Configuration for setting up a fake game installation
@@ -23,55 +23,51 @@ export interface GameConfig {
  * Pre-configured game setups for common games
  */
 export const GAME_CONFIGS: Record<string, GameConfig> = {
-  'stardewvalley': {
-    gameId: 'stardewvalley',
-    gameName: 'Stardew Valley',
-    executable: process.platform === 'win32' ? 'Stardew Valley.exe' : 'StardewValley',
+  stardewvalley: {
+    gameId: "stardewvalley",
+    gameName: "Stardew Valley",
+    executable:
+      process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
     requiredFiles: [
-      process.platform === 'win32' ? 'Stardew Valley.exe' : 'StardewValley',
-      'Stardew Valley.deps.json',
-      'Stardew Valley.dll',
-      'Stardew Valley.pdb',
-      'Stardew Valley.runtimeconfig.json',
+      process.platform === "win32" ? "Stardew Valley.exe" : "StardewValley",
+      "Stardew Valley.deps.json",
+      "Stardew Valley.dll",
+      "Stardew Valley.pdb",
+      "Stardew Valley.runtimeconfig.json",
     ],
     directories: [
-      'Content',
-      'Content/Characters',
-      'Content/Data',
-      'Content/Maps',
-      'Mods',  // Default mod folder
+      "Content",
+      "Content/Characters",
+      "Content/Data",
+      "Content/Maps",
+      "Mods", // Default mod folder
     ],
     optionalFiles: [
-      { path: 'steam_appid.txt', content: '413150' },
+      { path: "steam_appid.txt", content: "413150" },
       {
-        path: 'Content/XACT/FarmerSounds.xwb',
-        content: 'FAKE_AUDIO_FILE'  // Placeholder
+        path: "Content/XACT/FarmerSounds.xwb",
+        content: "FAKE_AUDIO_FILE", // Placeholder
       },
     ],
-    modFolderPath: 'Mods',
+    modFolderPath: "Mods",
   },
 
-  'skyrimse': {
-    gameId: 'skyrimse',
-    gameName: 'Skyrim Special Edition',
-    executable: 'SkyrimSE.exe',
+  skyrimse: {
+    gameId: "skyrimse",
+    gameName: "Skyrim Special Edition",
+    executable: "SkyrimSE.exe",
     requiredFiles: [
-      'SkyrimSE.exe',
-      'SkyrimSELauncher.exe',
-      'binkw64.dll',
-      'steam_api64.dll',
+      "SkyrimSE.exe",
+      "SkyrimSELauncher.exe",
+      "binkw64.dll",
+      "steam_api64.dll",
     ],
-    directories: [
-      'Data',
-      'Data/Scripts',
-      'Data/Meshes',
-      'Data/Textures',
-    ],
+    directories: ["Data", "Data/Scripts", "Data/Meshes", "Data/Textures"],
     optionalFiles: [
-      { path: 'steam_appid.txt', content: '489830' },
-      { path: 'Data/Skyrim.esm', content: 'TES4\x00\x00\x00\x00' }, // ESM header
+      { path: "steam_appid.txt", content: "489830" },
+      { path: "Data/Skyrim.esm", content: "TES4\x00\x00\x00\x00" }, // ESM header
     ],
-    modFolderPath: 'Data',
+    modFolderPath: "Data",
   },
 };
 
@@ -84,7 +80,7 @@ export const GAME_CONFIGS: Record<string, GameConfig> = {
  */
 export function createFakeGameInstallation(
   gameConfig: GameConfig,
-  basePath: string
+  basePath: string,
 ): string {
   const gamePath = path.join(basePath, gameConfig.gameName);
 
@@ -106,12 +102,12 @@ export function createFakeGameInstallation(
     const filePath = path.join(gamePath, file);
     if (!fs.existsSync(filePath)) {
       // Create fake executable with minimal PE header for .exe files
-      if (file.endsWith('.exe')) {
+      if (file.endsWith(".exe")) {
         const fakeExe = createFakeExecutable();
         fs.writeFileSync(filePath, fakeExe);
       } else {
         // Just create empty files for others
-        fs.writeFileSync(filePath, '');
+        fs.writeFileSync(filePath, "");
       }
     }
   }
@@ -128,7 +124,7 @@ export function createFakeGameInstallation(
       }
 
       if (!fs.existsSync(filePath)) {
-        fs.writeFileSync(filePath, optFile.content || '');
+        fs.writeFileSync(filePath, optFile.content || "");
       }
     }
   }
@@ -146,13 +142,13 @@ function createFakeExecutable(): Buffer {
   const buffer = Buffer.alloc(512);
 
   // DOS header magic number
-  buffer.write('MZ', 0);
+  buffer.write("MZ", 0);
 
   // Offset to PE header (at 0x40)
-  buffer.writeUInt32LE(0x40, 0x3C);
+  buffer.writeUInt32LE(0x40, 0x3c);
 
   // PE signature
-  buffer.write('PE\0\0', 0x40);
+  buffer.write("PE\0\0", 0x40);
 
   // Machine type (x64)
   buffer.writeUInt16LE(0x8664, 0x44);

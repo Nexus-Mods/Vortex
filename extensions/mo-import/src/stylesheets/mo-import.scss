@@ -1,109 +1,111 @@
 #import-dialog {
-  .modal-dialog {
-    width: 80%;
+    .modal-dialog {
+        width: 80%;
 
-    .modal-body {
-      height: 50vh;
-      display: flex;
-      flex-direction: column;
+        .modal-body {
+            height: 50vh;
+            display: flex;
+            flex-direction: column;
+        }
     }
-  }
 }
 
 #table-mo-mods-import {
-  position: relative;
+    position: relative;
 }
 
 .table-mo-mods-import.cell-local {
-  text-align: center;
+    text-align: center;
 }
 
 #dropdown-mo-mods-import-status {
-  padding: 2px 5px;
-  border: 0px;
-  border-left: 1px solid $gray-light;
-  min-width: 0px;
+    padding: 2px 5px;
+    border: 0px;
+    border-left: 1px solid $gray-light;
+    min-width: 0px;
 }
 
 .import-working-container {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: $gutter-width;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: $gutter-width;
 }
 
 .import-success {
-  @extend .h3;
-  text-align: center;
-  color: $brand-success;
-  svg {
-    width: 2em;
-    height: 2em;
-  }
+    @extend .h3;
+    text-align: center;
+    color: $brand-success;
+    svg {
+        width: 2em;
+        height: 2em;
+    }
 }
 
 .import-errors {
-  @extend .h3;
-  text-align: center;
-  color: $brand-danger;
+    @extend .h3;
+    text-align: center;
+    color: $brand-danger;
 }
 
 .import-review-text {
-  color: $text-color-disabled;
+    color: $text-color-disabled;
 }
 
-.btn-mo-mods-import-status-yes, .toggle-mo-mods-import-status-yes {
-  background-color: $brand-success;
+.btn-mo-mods-import-status-yes,
+.toggle-mo-mods-import-status-yes {
+    background-color: $brand-success;
 }
 
-.btn-mo-mods-import-status-no, .toggle-mo-mods-import-status-no {
-  background-color: $gray;
+.btn-mo-mods-import-status-no,
+.toggle-mo-mods-import-status-no {
+    background-color: $gray;
 }
 
 .import-wait-container {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: $gutter-width;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: $gutter-width;
 
-  .page-wait-spinner {
-    width: 2em;
-    height: 2em;
-  }
+    .page-wait-spinner {
+        width: 2em;
+        height: 2em;
+    }
 }
 
 .start-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
 }
 
 .start-pick-instance {
-  display: flex;
-  > * {
-    margin: 0 $half-gutter;
-  }
-
-  .form-group {
-    width: 500px;
-
-    .input-group {
-      width: 100%;
-
-      .input-group-btn {
-        width: initial;
-        &:last-child {
-          .btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-          }
-        }
-      }
+    display: flex;
+    > * {
+        margin: 0 $half-gutter;
     }
-  }
+
+    .form-group {
+        width: 500px;
+
+        .input-group {
+            width: 100%;
+
+            .input-group-btn {
+                width: initial;
+                &:last-child {
+                    .btn {
+                        position: absolute;
+                        top: 4px;
+                        right: 4px;
+                    }
+                }
+            }
+        }
+    }
 }

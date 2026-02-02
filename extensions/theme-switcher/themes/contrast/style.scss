@@ -1,130 +1,130 @@
 // reduce paddings
 .nav-tabs > li > a {
-  padding: 2px 16px;
+    padding: 2px 16px;
 }
 
 .xtable > .xtbody > .xtr > .xtd {
-  padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.75rem;
 }
 
 // show only icons on the toolbars unless the mouse cursor is hovered on them
 .mainpage-header {
-  height: 32px !important;
-  transition: height 250ms ease 500ms;
-  .menubar {
-    height: 100%;
-  }
+    height: 32px !important;
+    transition: height 250ms ease 500ms;
+    .menubar {
+        height: 100%;
+    }
 }
 
 .mainpage-header .btn {
-  .button-text {
-    opacity: 0;
-    transition: opacity 250ms ease;
+    .button-text {
+        opacity: 0;
+        transition: opacity 250ms ease;
 
-    position: absolute;
-    top: 32px;
-    z-index: 1;
-    background-color: $brand-bg;
-    border: $border-width solid $border-color;
-    padding: 8px;
-    font-size: 1em;
-    pointer-events: none;
-  }
+        position: absolute;
+        top: 32px;
+        z-index: 1;
+        background-color: $brand-bg;
+        border: $border-width solid $border-color;
+        padding: 8px;
+        font-size: 1em;
+        pointer-events: none;
+    }
 
-  &:hover .button-text {
-    opacity: 1;
-    transition: opacity 250ms ease 100ms;
-  }
+    &:hover .button-text {
+        opacity: 1;
+        transition: opacity 250ms ease 100ms;
+    }
 }
 
 // if the sidebar is collapsed, show the tab name when hovering
 // (this conflicts a bit with the tooltip which we can't disable from css)
 #main-nav-sidebar.sidebar-compact #main-nav-container {
-  overflow: visible;
-  z-index: 3;
+    overflow: visible;
+    z-index: 3;
 }
 
 .sidebar-compact .nav-pills > li > a {
-  overflow: visible;
+    overflow: visible;
 }
 
 .sidebar-compact .main-nav-group > li:hover a::after {
-  content: attr(title);
-  background-color: $brand-bg;
-  margin-left: 8px;
-  padding: 8px 8px;
-  border: $border-width solid $border-color;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 100%;
-  display: flex;
-  align-items: center;
+    content: attr(title);
+    background-color: $brand-bg;
+    margin-left: 8px;
+    padding: 8px 8px;
+    border: $border-width solid $border-color;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    display: flex;
+    align-items: center;
 }
 
 // category names can be very long and force a line break.
 // instead, limit the width and display ellipsis as necessary
 .xtd.table-mods.cell-category {
-  white-space: nowrap;
-  max-width: 20em;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 20em;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .toolbar-app-region .container-quicklaunch .tool-icon-container {
-  width: 200px;
-  height: 52px;
+    width: 200px;
+    height: 52px;
 }
 
 .container-quicklaunch .tool-icon-container {
-  height: 52px;
+    height: 52px;
 }
 
 #main-toolbar.toolbar-app-region {
-  height: unset;
+    height: unset;
 }
 
 #main-toolbar.toolbar-app-region .main-toolbar-right {
-  margin-bottom: auto;
-  margin-right: 146px;
-  border-right: $border-width solid $border-color;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  padding-left: 16px;
+    margin-bottom: auto;
+    margin-right: 146px;
+    border-right: $border-width solid $border-color;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 16px;
 
-  .toolbar-version {
-    position: static;
-    margin-right: 12px;
-  }
+    .toolbar-version {
+        position: static;
+        margin-right: 12px;
+    }
 }
 
 #main-toolbar .nexus-main-banner div {
-  font-size: xx-small;
+    font-size: xx-small;
 }
 
 #main-toolbar .nexus-main-banner div:first-child {
-  font-size: 1.4em;
-  margin-bottom: 0;
+    font-size: 1.4em;
+    margin-bottom: 0;
 }
 
 #main-toolbar .nexus-main-banner .right-center {
-  font-size: inherit;
+    font-size: inherit;
 }
 
 .table-hover > .xtbody > .xtr:hover {
-  background-color: #4c4c4c !important;
+    background-color: #4c4c4c !important;
 }
 
 .has-success .control-label {
-  filter: brightness(200%);
+    filter: brightness(200%);
 }
 
 .has-error .control-label {
-  filter: brightness(200%);
+    filter: brightness(200%);
 }
 
 #titlebar-starter {
-  grid-template-rows: repeat(1, auto);
+    grid-template-rows: repeat(1, auto);
 }

@@ -1,8 +1,8 @@
-import { ISavegame } from '../types/ISavegame';
+import { ISavegame } from "../types/ISavegame";
 
-import Promise from 'bluebird';
-import * as path from 'path';
-import { fs, types } from 'vortex-api';
+import Promise from "bluebird";
+import * as path from "path";
+import { fs, types } from "vortex-api";
 
 export class MissingPluginsError extends Error {
   private mFiles: string[];
@@ -10,8 +10,8 @@ export class MissingPluginsError extends Error {
   constructor(files: string[]) {
     super();
     Error.captureStackTrace(this, this.constructor);
-    this.name = 'MissingPluginsError';
-    this.message = 'Not all plugins are available';
+    this.name = "MissingPluginsError";
+    this.message = "Not all plugins are available";
     this.mFiles = files;
   }
 
@@ -33,25 +33,27 @@ function restoreSavegamePlugins(
   modPath: string,
   save: ISavegame,
 ): Promise<void> {
-  return fs.readdirAsync(modPath)
-    .then((files: string[]) => {
-      const plugins = new Set(files
-        .map(fileName => fileName.toLowerCase())
-        .filter(fileName => {
+  return fs.readdirAsync(modPath).then((files: string[]) => {
+    const plugins = new Set(
+      files
+        .map((fileName) => fileName.toLowerCase())
+        .filter((fileName) => {
           const ext = path.extname(fileName);
-          return ['.esp', '.esm', '.esl'].indexOf(ext) !== -1;
-        }));
+          return [".esp", ".esm", ".esl"].indexOf(ext) !== -1;
+        }),
+    );
 
-      const missing = save.attributes.plugins
-        .filter(plugin => !plugins.has(plugin.toLowerCase()));
+    const missing = save.attributes.plugins.filter(
+      (plugin) => !plugins.has(plugin.toLowerCase()),
+    );
 
-      if (missing.length > 0) {
-        return Promise.reject(new MissingPluginsError(missing));
-      } else {
-        api.events.emit('set-plugin-list', save.attributes.plugins);
-        return Promise.resolve();
-      }
-    });
+    if (missing.length > 0) {
+      return Promise.reject(new MissingPluginsError(missing));
+    } else {
+      api.events.emit("set-plugin-list", save.attributes.plugins);
+      return Promise.resolve();
+    }
+  });
 }
 
 export default restoreSavegamePlugins;

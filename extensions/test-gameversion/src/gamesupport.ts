@@ -1,42 +1,50 @@
-import { types, util } from 'vortex-api';
-export type UpdateInvalidate = 'never' | 'always' | 'some';
+import { types, util } from "vortex-api";
+export type UpdateInvalidate = "never" | "always" | "some";
 
 function gamebryoUpdate(seName: string) {
-  return `"${seName}" in particular and all plugins for it will need to be updated. `
-        + 'If this update was released only recently, you may have to wait for '
-        + `${seName} to be updated as well.`;
+  return (
+    `"${seName}" in particular and all plugins for it will need to be updated. ` +
+    "If this update was released only recently, you may have to wait for " +
+    `${seName} to be updated as well.`
+  );
 }
 
 const gameSupport = {
   oblivion: {
-    updateInvalidationText: gamebryoUpdate('obse'),
+    updateInvalidationText: gamebryoUpdate("obse"),
   },
   skyrim: {
-    updateInvalidationText: gamebryoUpdate('skse'),
+    updateInvalidationText: gamebryoUpdate("skse"),
   },
   skyrimse: {
-    updateInvalidationText: gamebryoUpdate('skse64'),
+    updateInvalidationText: gamebryoUpdate("skse64"),
   },
   fallout3: {
-    updateInvalidationText: gamebryoUpdate('fose'),
+    updateInvalidationText: gamebryoUpdate("fose"),
   },
   falloutnv: {
-    updateInvalidationText: gamebryoUpdate('nvse'),
+    updateInvalidationText: gamebryoUpdate("nvse"),
   },
   fallout4: {
-    updateInvalidationText: gamebryoUpdate('f4se'),
+    updateInvalidationText: gamebryoUpdate("f4se"),
   },
   starfield: {
-    updateInvalidationText: gamebryoUpdate('sfse'),
-  }
+    updateInvalidationText: gamebryoUpdate("sfse"),
+  },
 };
 
-export function getGameVersion(api: types.IExtensionApi, gameMode: string): Promise<string> {
+export function getGameVersion(
+  api: types.IExtensionApi,
+  gameMode: string,
+): Promise<string> {
   // allow games to have specific functions to get at the version
   // otherwise take the version stored in the executable
   const state: types.IState = api.store.getState();
-  const discovery: types.IDiscoveryResult =
-    util.getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
+  const discovery: types.IDiscoveryResult = util.getSafe(
+    state,
+    ["settings", "gameMode", "discovered", gameMode],
+    undefined,
+  );
   if (discovery?.path === undefined) {
     return Promise.resolve(undefined);
   }
@@ -46,8 +54,8 @@ export function getGameVersion(api: types.IExtensionApi, gameMode: string): Prom
 }
 
 function compareQuadVer(lhs: string, rhs: string) {
-  const lhsArr = lhs.split('.').map(iter => parseInt(iter, 10));
-  const rhsArr = rhs.split('.').map(iter => parseInt(iter, 10));
+  const lhsArr = lhs.split(".").map((iter) => parseInt(iter, 10));
+  const rhsArr = rhs.split(".").map((iter) => parseInt(iter, 10));
 
   // by default use the 4-integer version scheme that windows uses for its executables
   for (let i = 0; i < Math.min(lhsArr.length, rhsArr.length); ++i) {
@@ -59,10 +67,16 @@ function compareQuadVer(lhs: string, rhs: string) {
   return 0;
 }
 
-export function versionCompare(gameMode: string, lhs: string, rhs: string): number {
+export function versionCompare(
+  gameMode: string,
+  lhs: string,
+  rhs: string,
+): number {
   // allow games to have specific functions to compare versions
-  if ((gameSupport[gameMode] !== undefined)
-      && (gameSupport[gameMode].versionCompare !== undefined)) {
+  if (
+    gameSupport[gameMode] !== undefined &&
+    gameSupport[gameMode].versionCompare !== undefined
+  ) {
     return gameSupport[gameMode].versionCompare(lhs, rhs);
   }
 
@@ -70,14 +84,20 @@ export function versionCompare(gameMode: string, lhs: string, rhs: string): numb
 }
 
 export function updateInvalidatesMods(gameMode: string): UpdateInvalidate {
-  if ((gameSupport[gameMode] !== undefined)
-      && (gameSupport[gameMode].updateInvalidatesMods !== undefined)) {
+  if (
+    gameSupport[gameMode] !== undefined &&
+    gameSupport[gameMode].updateInvalidatesMods !== undefined
+  ) {
     return gameSupport[gameMode].updateInvalidatesMods;
   }
   // usually game updates invalidate some mods but not all
-  return 'some';
+  return "some";
 }
 
 export function updateInvalidationText(gameMode: string): string {
-  return util.getSafe(gameSupport, [gameMode, 'updateInvalidationText'], undefined);
+  return util.getSafe(
+    gameSupport,
+    [gameMode, "updateInvalidationText"],
+    undefined,
+  );
 }

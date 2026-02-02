@@ -1,45 +1,51 @@
 .highlight-base {
-  padding: 1px 5px;
-  border: 0px;
-  stroke: black;
-  stroke-width: 1.5px;
-  &:hover, &:active, &:focus {
-    color: $link-hover-color;
-  }
+    padding: 1px 5px;
+    border: 0px;
+    stroke: black;
+    stroke-width: 1.5px;
+    &:hover,
+    &:active,
+    &:focus {
+        color: $link-hover-color;
+    }
 }
 
 @each $hl in $highlight-list {
-  .highlight-#{nth($hl, 1)} {
-    background-color: nth($hl, 2);
-    &:hover, &:active, &:focus {
-      background-color: nth($hl, 2);
+    .highlight-#{nth($hl, 1)} {
+        background-color: nth($hl, 2);
+        &:hover,
+        &:active,
+        &:focus {
+            background-color: nth($hl, 2);
+        }
     }
-  }
 }
 
 .highlight-default {
-  background-color: transparent;
-  max-height: 100%;
-
-  &:hover, &:active, &:focus {
     background-color: transparent;
-  }
+    max-height: 100%;
+
+    &:hover,
+    &:active,
+    &:focus {
+        background-color: transparent;
+    }
 }
 
 .highlight-icons {
-  > .btn:not(:first-child) {
-    margin-left: 4px;
-  }
+    > .btn:not(:first-child) {
+        margin-left: 4px;
+    }
 }
 
 .textarea-notes {
-  width: 100%;
-  min-height: 100px;
-  resize: none;
+    width: 100%;
+    min-height: 100px;
+    resize: none;
 }
 
 .highlight-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
 }

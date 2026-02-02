@@ -1,16 +1,18 @@
-import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
+import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 
-import {gameSupported} from './gameSupport';
+import { gameSupported } from "./gameSupport";
 
-import * as RemoteT from '@electron/remote';
-import Promise from 'bluebird';
-import { dialog as dialogIn } from 'electron';
-import { dump, load } from 'js-yaml';
-import * as _ from 'lodash';
-import * as path from 'path';
-import { fs, types, util } from 'vortex-api';
+import * as RemoteT from "@electron/remote";
+import Promise from "bluebird";
+import { dialog as dialogIn } from "electron";
+import { dump, load } from "js-yaml";
+import * as _ from "lodash";
+import * as path from "path";
+import { fs, types, util } from "vortex-api";
 
-const remote = util.lazyRequire<typeof RemoteT>(() => require('@electron/remote'));
+const remote = util.lazyRequire<typeof RemoteT>(() =>
+  require("@electron/remote"),
+);
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -26,11 +28,17 @@ class UserlistPersistor implements types.IPersistor {
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
   private mLoadedPromise: Promise<void>;
-  private mMode: 'userlist' | 'masterlist';
-  private mOnError: (message: string, details: Error, options?: types.IErrorOptions) => void;
+  private mMode: "userlist" | "masterlist";
+  private mOnError: (
+    message: string,
+    details: Error,
+    options?: types.IErrorOptions,
+  ) => void;
 
-  constructor(mode: 'userlist' | 'masterlist',
-              onError: (message: string, details: Error) => void) {
+  constructor(
+    mode: "userlist" | "masterlist",
+    onError: (message: string, details: Error) => void,
+  ) {
     this.mUserlist = {
       globals: [],
       plugins: [],
@@ -41,38 +49,47 @@ class UserlistPersistor implements types.IPersistor {
     this.mLoadedPromise = new Promise((resolve, reject) => {
       this.mOnLoaded = resolve;
     });
-}
+  }
 
   public wait(): Promise<void> {
     return this.mLoadedPromise;
   }
 
   public disable(): Promise<void> {
-    return this.enqueue(() => new Promise<void>(resolve => {
-      this.mUserlist = {
-        globals: [],
-        plugins: [],
-        groups: [],
-      };
-      this.mUserlistPath = undefined;
-      this.mLoaded = false;
-      this.mLoadedPromise = new Promise((loadResolve, reject) => {
-        this.mOnLoaded = loadResolve;
-      });
-      if (this.mResetCallback) {
-        this.mResetCallback();
-      }
-      resolve();
-    }));
+    return this.enqueue(
+      () =>
+        new Promise<void>((resolve) => {
+          this.mUserlist = {
+            globals: [],
+            plugins: [],
+            groups: [],
+          };
+          this.mUserlistPath = undefined;
+          this.mLoaded = false;
+          this.mLoadedPromise = new Promise((loadResolve, reject) => {
+            this.mOnLoaded = loadResolve;
+          });
+          if (this.mResetCallback) {
+            this.mResetCallback();
+          }
+          resolve();
+        }),
+    );
   }
 
   public loadFiles(gameMode: string): Promise<void> {
     if (!gameSupported(gameMode)) {
       return Promise.resolve();
     }
-    this.mUserlistPath = (this.mMode === 'userlist')
-      ? path.join(util.getVortexPath('userData'), gameMode, 'userlist.yaml')
-      : path.join(util.getVortexPath('userData'), gameMode, 'masterlist', 'masterlist.yaml');
+    this.mUserlistPath =
+      this.mMode === "userlist"
+        ? path.join(util.getVortexPath("userData"), gameMode, "userlist.yaml")
+        : path.join(
+            util.getVortexPath("userData"),
+            gameMode,
+            "masterlist",
+            "masterlist.yaml",
+          );
 
     // read the files now and update the store
     return this.deserialize();
@@ -83,8 +100,8 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getItem(key: string[]): Promise<string> {
-    if ((key.length === 1) && (key[0] === '__isLoaded')) {
-      return Promise.resolve(this.mLoaded ? 'true' : 'false');
+    if (key.length === 1 && key[0] === "__isLoaded") {
+      return Promise.resolve(this.mLoaded ? "true" : "false");
     }
     return Promise.resolve(JSON.stringify(this.mUserlist[key[0]]));
   }
@@ -100,8 +117,11 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getAllKeys(): Promise<string[][]> {
-    return Promise.resolve([].concat(['__isLoaded'], Object.keys(this.mUserlist))
-                             .map(key => [key]));
+    return Promise.resolve(
+      []
+        .concat(["__isLoaded"], Object.keys(this.mUserlist))
+        .map((key) => [key]),
+    );
   }
 
   private mOnLoaded: () => void = () => null;
@@ -111,7 +131,11 @@ class UserlistPersistor implements types.IPersistor {
     return this.mSerializeQueue;
   }
 
-  private reportError(message: string, detail: Error, options?: types.IErrorOptions) {
+  private reportError(
+    message: string,
+    detail: Error,
+    options?: types.IErrorOptions,
+  ) {
     if (!this.mFailed) {
       this.mOnError(message, detail, options);
       this.mFailed = true;
@@ -130,59 +154,60 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   private doSerialize(): Promise<void> {
-    if ((this.mUserlist === undefined)
-        || (this.mUserlistPath === undefined)
-        || (this.mMode === 'masterlist')) {
+    if (
+      this.mUserlist === undefined ||
+      this.mUserlistPath === undefined ||
+      this.mMode === "masterlist"
+    ) {
       return;
     }
 
     const userlistPath = this.mUserlistPath;
 
-    return fs.writeFileAsync(userlistPath + '.tmp',
-                             dump(_.omit(this.mUserlist, ['__isLoaded'])))
-      .then(() => fs.renameAsync(userlistPath + '.tmp', userlistPath))
-      .then(() => { this.mFailed = false; })
+    return fs
+      .writeFileAsync(
+        userlistPath + ".tmp",
+        dump(_.omit(this.mUserlist, ["__isLoaded"])),
+      )
+      .then(() => fs.renameAsync(userlistPath + ".tmp", userlistPath))
+      .then(() => {
+        this.mFailed = false;
+      })
       .catch(util.UserCanceled, () => undefined)
-      .catch(err => {
-        this.reportError('Failed to write userlist', err);
+      .catch((err) => {
+        this.reportError("Failed to write userlist", err);
       });
   }
 
   private handleInvalidList() {
-    const dialog = process.type === 'renderer'
-      ? remote.dialog
-      : dialogIn;
+    const dialog = process.type === "renderer" ? remote.dialog : dialogIn;
 
     let res = 0;
-    if (this.mMode === 'masterlist') {
+    if (this.mMode === "masterlist") {
       res = dialog.showMessageBoxSync(null, {
-        title: 'Masterlist invalid',
-        message: `The masterlist "${this.mUserlistPath}" can\'t be read. `
-               + '\n\n'
-               + 'If you continue now, the masterlist will be reset.',
+        title: "Masterlist invalid",
+        message:
+          `The masterlist "${this.mUserlistPath}" can\'t be read. ` +
+          "\n\n" +
+          "If you continue now, the masterlist will be reset.",
 
-        buttons: [
-          'Reset Masterlist',
-          'Quit Vortex'
-        ],
+        buttons: ["Reset Masterlist", "Quit Vortex"],
       });
     } else {
       res = dialog.showMessageBoxSync(null, {
-        title: 'Userlist invalid',
-        message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
-               + '\n\n'
-               + 'You should quit Vortex now and repair the file.\n'
-               + 'If (and only if!) you\'re certain you didn\'t modify the file yourself, '
-               + 'please send in a bug report with that file attached.'
-               + '\n\n'
-               + 'If you continue now, the userlist will be reset and all your plugin '
-               + 'rules and group assignments will be lost.',
+        title: "Userlist invalid",
+        message:
+          `The LOOT userlist "${this.mUserlistPath}" can\'t be read. ` +
+          "\n\n" +
+          "You should quit Vortex now and repair the file.\n" +
+          "If (and only if!) you're certain you didn't modify the file yourself, " +
+          "please send in a bug report with that file attached." +
+          "\n\n" +
+          "If you continue now, the userlist will be reset and all your plugin " +
+          "rules and group assignments will be lost.",
         noLink: true,
         defaultId: 1,
-        buttons: [
-          'Reset Userlist',
-          'Quit Vortex',
-        ],
+        buttons: ["Reset Userlist", "Quit Vortex"],
       });
     }
 
@@ -225,69 +250,75 @@ class UserlistPersistor implements types.IPersistor {
 
     let empty: boolean = false;
 
-    return fs.readFileAsync(this.mUserlistPath)
-    .then((data: Buffer) => {
-      if (data.byteLength <= 5) {
-        // the smallest non-empty file is actually around 20 bytes long and
-        // the smallest useful file probably 30. This is really to catch
-        // cases where the file is not parseable because it's completely empty
-        // or contains only "null" or something silly like that
-        empty = true;
-      }
+    return fs
+      .readFileAsync(this.mUserlistPath)
+      .then((data: Buffer) => {
+        if (data.byteLength <= 5) {
+          // the smallest non-empty file is actually around 20 bytes long and
+          // the smallest useful file probably 30. This is really to catch
+          // cases where the file is not parseable because it's completely empty
+          // or contains only "null" or something silly like that
+          empty = true;
+        }
 
-      let newList: Partial<ILOOTList> = {};
-      try {
-        newList = load(data.toString(), { json: true }) as any;
-      } catch (err) {
-        this.handleInvalidList();
-      }
-      if (typeof (newList) !== 'object') {
-        this.handleInvalidList();
-      }
+        let newList: Partial<ILOOTList> = {};
+        try {
+          newList = load(data.toString(), { json: true }) as any;
+        } catch (err) {
+          this.handleInvalidList();
+        }
+        if (typeof newList !== "object") {
+          this.handleInvalidList();
+        }
 
-      ['globals', 'plugins', 'groups'].forEach(key => {
-        if ([null, undefined].indexOf(newList[key]) !== -1) {
-          newList[key] = [];
+        ["globals", "plugins", "groups"].forEach((key) => {
+          if ([null, undefined].indexOf(newList[key]) !== -1) {
+            newList[key] = [];
+          }
+        });
+
+        const newPlugins = this.makeCaseInsensitive(newList.plugins);
+        const didChange = newPlugins.length !== newList.plugins.length;
+        newList.plugins = newPlugins;
+
+        this.mUserlist = newList as ILOOTList;
+        if (this.mResetCallback) {
+          this.mResetCallback();
+          this.mLoaded = true;
+          this.mOnLoaded();
+        }
+        if (didChange) {
+          return this.serialize();
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .catch((err) => {
+        if (err.code === "ENOENT" || empty) {
+          this.mUserlist = {
+            globals: [],
+            plugins: [],
+            groups: [],
+          };
+          this.mLoaded = true;
+          this.mOnLoaded();
+          return this.serialize();
+        } else {
+          // if we can't read the file but the file is there,
+          // we would be destroying its content if we don't quit right now.
+          util.terminate(
+            {
+              message:
+                "Failed to read userlist file for this game. " +
+                "Repair or delete this file and then try to start Vortex again",
+              path: this.mUserlistPath,
+              details: `Error: ${err.message}`,
+            },
+            undefined,
+            false,
+          );
         }
       });
-
-      const newPlugins = this.makeCaseInsensitive(newList.plugins);
-      const didChange = (newPlugins.length !== newList.plugins.length);
-      newList.plugins = newPlugins;
-
-      this.mUserlist = newList as ILOOTList;
-      if (this.mResetCallback) {
-        this.mResetCallback();
-        this.mLoaded = true;
-        this.mOnLoaded();
-      }
-      if (didChange) {
-        return this.serialize();
-      } else {
-        return Promise.resolve();
-      }
-    })
-    .catch(err => {
-      if ((err.code === 'ENOENT') || empty) {
-        this.mUserlist = {
-          globals: [],
-          plugins: [],
-          groups: [],
-        };
-        this.mLoaded = true;
-        this.mOnLoaded();
-        return this.serialize();
-      } else {
-        // if we can't read the file but the file is there,
-        // we would be destroying its content if we don't quit right now.
-        util.terminate({
-          message: 'Failed to read userlist file for this game. '
-                 + 'Repair or delete this file and then try to start Vortex again',
-          path: this.mUserlistPath,
-          details: `Error: ${err.message}`,
-        }, undefined, false);
-      }
-    });
   }
 }
 

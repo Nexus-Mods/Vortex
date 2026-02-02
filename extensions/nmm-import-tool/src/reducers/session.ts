@@ -1,6 +1,6 @@
-import { types, util } from 'vortex-api';
+import { types, util } from "vortex-api";
 
-import * as actions from '../actions/session';
+import * as actions from "../actions/session";
 
 /**
  * reducer for changes to ephemeral session state
@@ -8,10 +8,10 @@ import * as actions from '../actions/session';
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
     [actions.setImportStep as any]: (state, payload) =>
-      util.setSafe(state, ['importStep'], payload),
+      util.setSafe(state, ["importStep"], payload),
     [actions.selectImportFolder as any]: (state, payload) => {
       const importFolder = payload;
-      return util.setSafe(state, ['selectFolder'], importFolder);
+      return util.setSafe(state, ["selectFolder"], importFolder);
     },
   },
   defaults: {
