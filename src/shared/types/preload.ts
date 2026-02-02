@@ -116,7 +116,7 @@ export interface App {
   setJumpList(categories: Electron.JumpListCategory[]): Promise<void>;
 
   /** Set login item settings (auto-start) */
-  setLoginItemSettings(settings: Electron.LoginItemSettings): Promise<void>;
+  setLoginItemSettings(settings: Electron.Settings): Promise<void>;
 
   /** Get login item settings */
   getLoginItemSettings(): Promise<Electron.LoginItemSettings>;

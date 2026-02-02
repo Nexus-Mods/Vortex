@@ -1913,7 +1913,7 @@ betterIpcMain.handle(
 // Login item settings
 betterIpcMain.handle(
   "app:setLoginItemSettings",
-  (_event: IpcMainInvokeEvent, settings: Settings) => {
+  (_event: IpcMainInvokeEvent, settings) => {
     app.setLoginItemSettings(settings);
   },
 );

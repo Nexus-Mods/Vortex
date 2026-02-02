@@ -181,9 +181,7 @@ export interface InvokeChannels {
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;
 
   // Login item settings
-  "app:setLoginItemSettings": (
-    settings: Electron.LoginItemSettings,
-  ) => Promise<void>;
+  "app:setLoginItemSettings": (settings: Electron.Settings) => Promise<void>;
   "app:getLoginItemSettings": () => Promise<Electron.LoginItemSettings>;
 
   // Clipboard operations
