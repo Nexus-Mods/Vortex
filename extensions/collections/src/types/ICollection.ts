@@ -1,5 +1,6 @@
 import { types } from 'vortex-api';
 import { ICollectionGamebryo } from '../util/gameSupport/gamebryo';
+import { ICollectionConfig } from './ICollectionConfig';
 
 export interface ICollectionInfo {
   author: string;
@@ -90,6 +91,8 @@ export interface ICollectionAttributes {
   installMode?: { [modId: string]: string };
   saveEdits?: { [modId: string]: boolean };
   fileOverrides?: { [modId: string]: boolean };
+  installInstructions?: string;
+  collectionConfig?: ICollectionConfig;
 }
 
 export interface ICollectionModRuleEx extends ICollectionModRule {
