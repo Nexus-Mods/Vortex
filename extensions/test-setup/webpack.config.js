@@ -1,4 +1,3 @@
-let webpack = require('vortex-api/bin/webpack').default;
+let webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('test-setup', __dirname, 5);
-
+module.exports = webpack("test-setup", __dirname, 5);

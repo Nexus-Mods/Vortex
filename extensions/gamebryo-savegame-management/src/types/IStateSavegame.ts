@@ -1,4 +1,4 @@
-import { ISavegame } from './iSavegame';
+import { ISavegame } from "./iSavegame";
 
 export interface IStateSavegame {
   saves: { [id: string]: ISavegame };

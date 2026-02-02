@@ -1,284 +1,289 @@
 #table-gamebryo-plugins {
-  // prevent word wrap
-  .table-header-cell {
-    white-space: nowrap;
-  }
-
-  .header-enabled {
-    min-width: 150px;
-  }
-
-  .header-flags {
-    // need a bit of space so the dropdown menu is readable
-    min-width: 150px;
-  }
-
-  .header-group {
-    min-width: 15em;
-  }
-
-  .header-name {
-    // use up remaining space
-    width: 100%;
-  }
-
-  .cell-category {
-    white-space: nowrap;
-  }
-
-  .cell-modName {
-    white-space: nowrap;
-    max-width: 40em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .cell-flags {
-    .icon-notifications {
-      fill: $brand-warning;
+    // prevent word wrap
+    .table-header-cell {
+        white-space: nowrap;
     }
-    .icon-incompatible {
-      fill: $brand-warning;
+
+    .header-enabled {
+        min-width: 150px;
     }
-  }
 
-  .cell-loadOrder, .header-loadOrder {
-    text-align: center;
-  }
+    .header-flags {
+        // need a bit of space so the dropdown menu is readable
+        min-width: 150px;
+    }
 
-  .cell-modIndex, .header-loadOrder {
-    text-align: center;
-  }
+    .header-group {
+        min-width: 15em;
+    }
 
-  .cell-group .header-group {
-    min-width: 150px;
-  }
+    .header-name {
+        // use up remaining space
+        width: 100%;
+    }
 
-  .cell-loot_messages_extra {
-    padding: 0;
-    border-top: 0;
-    > ul {
-      display: flex;
-      flex-wrap: wrap;
-      margin-bottom: 0;
-      .list-group-item {
-        padding-top: 0;
-        flex: 1 1 0;
-      }
-      .alert {
-        max-width: unset;
-        margin-top: 0;
-        > p {
-          margin-top: 0;
+    .cell-category {
+        white-space: nowrap;
+    }
+
+    .cell-modName {
+        white-space: nowrap;
+        max-width: 40em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cell-flags {
+        .icon-notifications {
+            fill: $brand-warning;
         }
-      }
+        .icon-incompatible {
+            fill: $brand-warning;
+        }
     }
-  }
 
-  .plugin-tags {
-    max-width: 20vw;
-    white-space: normal;
-    > div {
-      margin-left: 1em;
+    .cell-loadOrder,
+    .header-loadOrder {
+        text-align: center;
     }
-  }
+
+    .cell-modIndex,
+    .header-loadOrder {
+        text-align: center;
+    }
+
+    .cell-group .header-group {
+        min-width: 150px;
+    }
+
+    .cell-loot_messages_extra {
+        padding: 0;
+        border-top: 0;
+        > ul {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 0;
+            .list-group-item {
+                padding-top: 0;
+                flex: 1 1 0;
+            }
+            .alert {
+                max-width: unset;
+                margin-top: 0;
+                > p {
+                    margin-top: 0;
+                }
+            }
+        }
+    }
+
+    .plugin-tags {
+        max-width: 20vw;
+        white-space: normal;
+        > div {
+            margin-left: 1em;
+        }
+    }
 }
 
 #dropdown-gamebryo-plugins-enabled {
-  padding: 2px 5px;
-  border: 0px;
-  border-left: $border-width solid transparentize($white, 0.5);
-  min-width: 0px;
+    padding: 2px 5px;
+    border: 0px;
+    border-left: $border-width solid transparentize($white, 0.5);
+    min-width: 0px;
 }
 
-.btn-gamebryo-plugins-enabled-enabled, .toggle-gamebryo-plugins-enabled-enabled {
-  background-color: $brand-success;
+.btn-gamebryo-plugins-enabled-enabled,
+.toggle-gamebryo-plugins-enabled-enabled {
+    background-color: $brand-success;
 
-  &:hover, &:focus {
-    background: darken($brand-success, 10%);
-  }
+    &:hover,
+    &:focus {
+        background: darken($brand-success, 10%);
+    }
 }
 
-.btn-gamebryo-plugins-enabled-disabled, .toggle-gamebryo-plugins-enabled-disabled {
-  background-color: $gray;
+.btn-gamebryo-plugins-enabled-disabled,
+.toggle-gamebryo-plugins-enabled-disabled {
+    background-color: $gray;
 
-  &:hover, &:focus {
-    background: darken($gray, 10%);
-  }
+    &:hover,
+    &:focus {
+        background: darken($gray, 10%);
+    }
 }
-
 
 .rule-readonly {
-  font-style: italic;
+    font-style: italic;
 }
 
 #manage-plugin-rules-dialog {
-  .modal-dialog {
-    width: 60%;
-  }
-
-  .userlist-existing-rules {
-    overflow-y: auto;
-    max-height: 300px;
-    
-    .btn {
-      margin-left: 8px;
-    }
-  }
-
-  .userlist-add-controls {
-    display: flex;
-    justify-content: space-between;
-
-    > .Select {
-      width: 150px;
-      .Select-menu-outer {
-        width: 150%;
-      }
+    .modal-dialog {
+        width: 60%;
     }
 
-    .userlist-select-plugin {
-      flex: 1 1 0;
-      &.select-pull-right {
-        .Select-menu-outer {
-          left: initial;
-          right: 0;
+    .userlist-existing-rules {
+        overflow-y: auto;
+        max-height: 300px;
+
+        .btn {
+            margin-left: 8px;
         }
-      }
     }
 
-    .btn {
-      margin-left: 8px;
+    .userlist-add-controls {
+        display: flex;
+        justify-content: space-between;
+
+        > .Select {
+            width: 150px;
+            .Select-menu-outer {
+                width: 150%;
+            }
+        }
+
+        .userlist-select-plugin {
+            flex: 1 1 0;
+            &.select-pull-right {
+                .Select-menu-outer {
+                    left: initial;
+                    right: 0;
+                }
+            }
+        }
+
+        .btn {
+            margin-left: 8px;
+        }
     }
-  }
 }
 
 #table-gamebryo-plugins .alert {
-  max-width: 300px;
-  word-wrap: break-word;
-  a {
-    text-shadow: 1px 1px black;
-  }
+    max-width: 300px;
+    word-wrap: break-word;
+    a {
+        text-shadow: 1px 1px black;
+    }
 
-  &.alert-danger {
-    background-color: rgba($alert-danger-bg, 0.3);
-  }
+    &.alert-danger {
+        background-color: rgba($alert-danger-bg, 0.3);
+    }
 
-  &.alert-warning {
-    background-color: rgba($alert-warning-bg, 0.3);
-  }
+    &.alert-warning {
+        background-color: rgba($alert-warning-bg, 0.3);
+    }
 
-  &.alert-info {
-    background-color: rgba($alert-info-bg, 0.3);
-  }
+    &.alert-info {
+        background-color: rgba($alert-info-bg, 0.3);
+    }
 
-  &.alert-success {
-    background-color: rgba($alert-success-bg, 0.3);
-  }
+    &.alert-success {
+        background-color: rgba($alert-success-bg, 0.3);
+    }
 }
 
 .plugin-dependency-connector {
-  text {
-    fill: $text-color;
-  }
-  textPath {
-    fill: $text-color;
-  }
+    text {
+        fill: $text-color;
+    }
+    textPath {
+        fill: $text-color;
+    }
 }
 
 #plugin-group-editor {
-  .modal-dialog {
-    width: 60%;
-  }
+    .modal-dialog {
+        width: 60%;
+    }
 
-  .modal-content {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+    .modal-content {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
 
-  .modal-body {
-    flex: 1 0%;
-    display: flex;
-    padding: $half-gutter $gutter-width;
-  }
+    .modal-body {
+        flex: 1 0%;
+        display: flex;
+        padding: $half-gutter $gutter-width;
+    }
 
-  .group-editor-usage {
-    position: absolute;
-    bottom: $gutter-width;
-    left: $gutter-width;
-    z-index: 1;
-  }
+    .group-editor-usage {
+        position: absolute;
+        bottom: $gutter-width;
+        left: $gutter-width;
+        z-index: 1;
+    }
 
-  .group-graph {
-    width: 100%;
-    height: 500px;
-  }
+    .group-graph {
+        width: 100%;
+        height: 500px;
+    }
 }
 
 .plugin-list-loading {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  svg {
-    width: 64px;
-    height: 64px;
-  }
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    svg {
+        width: 64px;
+        height: 64px;
+    }
 }
 
 .plugin-list-loot-banner .usage-instructions {
-  border-width: 0 0 1px;
-  margin-left: -$half-gutter;
-  margin-right: -$half-gutter;
-  margin-top: -$half-gutter;
-  padding-left: $half-gutter;
-  .usage-instructions-content > div {
-    >a {
-      display: inline-flex;
-      align-items: center;
+    border-width: 0 0 1px;
+    margin-left: -$half-gutter;
+    margin-right: -$half-gutter;
+    margin-top: -$half-gutter;
+    padding-left: $half-gutter;
+    .usage-instructions-content > div {
+        > a {
+            display: inline-flex;
+            align-items: center;
 
-      img {
-        width: 24px;
-        height: 24px;
-      }
+            img {
+                width: 24px;
+                height: 24px;
+            }
+        }
     }
-  }
 }
 
 .plugin-group-default {
-  font-style: italic;
-  color: $text-color-disabled;
+    font-style: italic;
+    color: $text-color-disabled;
 }
 
 #page-gamebryo-plugins .mainpage-header .menubar {
-  width: 100%;
+    width: 100%;
 }
 
 @keyframes pulseWarningText {
-  0% {
-    color: $text-color;
-  }
-  50% {
-    color: $brand-warning;
-  }
-  100% {
-    color: $text-color;
-  }
+    0% {
+        color: $text-color;
+    }
+    50% {
+        color: $brand-warning;
+    }
+    100% {
+        color: $text-color;
+    }
 }
 
 .gamebryo-plugin-count {
-  flex: 1 1 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 
-  &.gamebryo-plugin-limit {
-    animation: pulseWarningText 4s infinite linear;
-  }
+    &.gamebryo-plugin-limit {
+        animation: pulseWarningText 4s infinite linear;
+    }
 }
 
 .loot-messages-warnings {
-  color: $brand-warning;
+    color: $brand-warning;
 }

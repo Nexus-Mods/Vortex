@@ -1,28 +1,28 @@
 const gameSupport = {
   skyrim: {
-    nexusSection: 'skyrim',
+    nexusSection: "skyrim",
     fnisModId: 11811,
-    patchListName: 'PatchList.txt',
+    patchListName: "PatchList.txt",
   },
   enderal: {
-    nexusSection: 'skyrim',
+    nexusSection: "skyrim",
     fnisModId: 11811,
-    patchListName: 'PatchList.txt',
+    patchListName: "PatchList.txt",
   },
   skyrimse: {
-    nexusSection: 'skyrimspecialedition',
+    nexusSection: "skyrimspecialedition",
     fnisModId: 3038,
-    patchListName: 'PatchListSE.txt',
+    patchListName: "PatchListSE.txt",
   },
   enderalspecialedition: {
-    nexusSection: 'skyrimspecialedition',
+    nexusSection: "skyrimspecialedition",
     fnisModId: 3038,
-    patchListName: 'PatchListSE.txt',
+    patchListName: "PatchListSE.txt",
   },
   skyrimvr: {
-    nexusSection: 'skyrimspecialedition',
+    nexusSection: "skyrimspecialedition",
     fnisModId: 3038,
-    patchListName: 'PatchListVR.txt',
+    patchListName: "PatchListVR.txt",
   },
 };
 

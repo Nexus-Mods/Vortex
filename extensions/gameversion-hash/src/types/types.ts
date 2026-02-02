@@ -1,11 +1,15 @@
-import { types } from 'vortex-api';
-import { HashMapper } from '../hashMapper';
+import { types } from "vortex-api";
+import { HashMapper } from "../hashMapper";
 export type HashFunc = (files: string[]) => Promise<string>;
-export type GameVersionProviderFunc = (hashMapper: HashMapper,
-                                       game: types.IGame,
-                                       discovery: types.IDiscoveryResult) => Promise<string>;
-export type GameVersionProviderTest =
-  (game: types.IGame, discovery: types.IDiscoveryResult) => Promise<boolean>;
+export type GameVersionProviderFunc = (
+  hashMapper: HashMapper,
+  game: types.IGame,
+  discovery: types.IDiscoveryResult,
+) => Promise<string>;
+export type GameVersionProviderTest = (
+  game: types.IGame,
+  discovery: types.IDiscoveryResult,
+) => Promise<boolean>;
 
 // This is the expected structure within a game registration's
 //  details object.
@@ -38,4 +42,6 @@ export interface IHashEntry {
   variant: string;
 }
 
-export interface IHashMap { [gameId: string]: { [hash: string]: IHashEntry }; }
+export interface IHashMap {
+  [gameId: string]: { [hash: string]: IHashEntry };
+}

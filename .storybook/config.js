@@ -1,35 +1,35 @@
-import { addParameters, configure } from '@storybook/react';
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import { addParameters, configure } from "@storybook/react";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
 
-import '../index.scss';
-import './repair.scss';
+import "../index.scss";
+import "./repair.scss";
 
 const viewports = {
   fullhd: {
-    name: 'FullHD',
+    name: "FullHD",
     styles: {
-      width: '1920px',
-      height: '1080px',
+      width: "1920px",
+      height: "1080px",
     },
-    type: 'desktop',
+    type: "desktop",
     default: true,
   },
   uhd: {
-    name: 'UHD',
+    name: "UHD",
     styles: {
-      width: '3840px',
-      height: '2160px',
+      width: "3840px",
+      height: "2160px",
     },
-    type: 'desktop',
+    type: "desktop",
   },
   minimal: {
-    name: 'Minimal',
+    name: "Minimal",
     styles: {
-      width: '1024px',
-      height: '700px',
+      width: "1024px",
+      height: "700px",
     },
-    type: 'desktop',
-  }
+    type: "desktop",
+  },
 };
 
 addParameters({
@@ -38,4 +38,4 @@ addParameters({
   },
 });
 
-configure(require.context('../src', true, /\.stories\.js$/), module);
+configure(require.context("../src", true, /\.stories\.js$/), module);

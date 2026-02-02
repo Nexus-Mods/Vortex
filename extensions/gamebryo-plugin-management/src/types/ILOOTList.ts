@@ -4,7 +4,7 @@ export interface ILocalizedMessage {
 }
 
 export interface IMessage {
-  type: 'say' | 'warn' | 'error';
+  type: "say" | "warn" | "error";
   content: string | ILocalizedMessage[];
   condition?: string;
   subs?: string[];

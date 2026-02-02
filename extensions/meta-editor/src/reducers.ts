@@ -1,6 +1,6 @@
-import { types, util } from 'vortex-api';
+import { types, util } from "vortex-api";
 
-import * as actions from './actions';
+import * as actions from "./actions";
 
 /**
  * reducer for changes to ephemeral session state
@@ -8,10 +8,10 @@ import * as actions from './actions';
 const sessionReducer: types.IReducerSpec = {
   reducers: {
     [actions.setShowMetaEditor as any]: (state, payload) =>
-      util.setSafe(state, ['showDialog'], payload),
+      util.setSafe(state, ["showDialog"], payload),
   },
   defaults: {
-  showDialog: false,
+    showDialog: false,
   },
 };
 

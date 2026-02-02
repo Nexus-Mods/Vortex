@@ -34,6 +34,6 @@ interface IWebView {
   guestinstance?: string;
 }
 
-declare module 'module' {
+declare module "module" {
   export var _initPaths: () => void;
 }

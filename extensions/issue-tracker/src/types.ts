@@ -1,4 +1,4 @@
-import { IGithubComment, IGithubIssue } from './IGithubIssue';
+import { IGithubComment, IGithubIssue } from "./IGithubIssue";
 
 export interface IOutstandingIssue {
   issue: IGithubIssue;

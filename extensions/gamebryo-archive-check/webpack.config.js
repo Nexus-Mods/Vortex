@@ -1,4 +1,3 @@
-const webpack = require('vortex-api/bin/webpack').default;
+const webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('gamebryo-archive-check', __dirname, 5);
-
+module.exports = webpack("gamebryo-archive-check", __dirname, 5);
