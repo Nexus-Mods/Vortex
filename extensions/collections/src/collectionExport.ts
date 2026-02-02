@@ -385,7 +385,6 @@ export async function doExportToAPI(
           properties: {
             collection_name: mod.attributes?.name ?? "Unknown",
             game_name: game.name,
-            user_id: userInfo.userId,
           },
         });
       }

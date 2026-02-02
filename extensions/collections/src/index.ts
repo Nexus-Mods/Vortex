@@ -275,7 +275,6 @@ async function createNewCollection(
       properties: {
         collection_name: name,
         game_name: game.name,
-        user_id: userInfo.userId,
         creation_method: "empty",
       },
     });

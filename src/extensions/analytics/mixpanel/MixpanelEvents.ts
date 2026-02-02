@@ -103,7 +103,6 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
  * Event sent when a collection draft is created in Vortex.
  * @param collection_name Name of the collection
  * @param game_name Name of the game
- * @param user_id Nexus Mods user ID
  * @param creation_method How the collection was created
  */
 export class CollectionsDraftedEvent implements MixpanelEvent {
@@ -113,13 +112,11 @@ export class CollectionsDraftedEvent implements MixpanelEvent {
   constructor(
     collection_name: string,
     game_name: string,
-    user_id: number,
     creation_method: "from_profile" | "quick_collection" | "empty",
   ) {
     this.properties = {
       collection_name,
       game_name,
-      user_id,
       creation_method,
     };
   }
@@ -129,17 +126,15 @@ export class CollectionsDraftedEvent implements MixpanelEvent {
  * Event sent when a new draft collection is uploaded.
  * @param collection_name Name of the collection
  * @param game_name Name of the game
- * @param user_id Nexus Mods user ID
  */
 export class CollectionsDraftUploadedEvent implements MixpanelEvent {
   readonly eventName = "collection_draft_uploaded";
   readonly properties: Record<string, any>;
 
-  constructor(collection_name: string, game_name: string, user_id: number) {
+  constructor(collection_name: string, game_name: string) {
     this.properties = {
       collection_name,
       game_name,
-      user_id,
     };
   }
 }
@@ -148,17 +143,15 @@ export class CollectionsDraftUploadedEvent implements MixpanelEvent {
  * Event sent when a draft collection update is uploaded.
  * @param collection_name Name of the collection
  * @param game_name Name of the game
- * @param user_id Nexus Mods user ID
  */
 export class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
   readonly eventName = "collection_draft_updated";
   readonly properties: Record<string, any>;
 
-  constructor(collection_name: string, game_name: string, user_id: number) {
+  constructor(collection_name: string, game_name: string) {
     this.properties = {
       collection_name,
       game_name,
-      user_id,
     };
   }
 }
