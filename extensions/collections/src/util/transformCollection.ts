@@ -1377,7 +1377,7 @@ export async function createCollectionFromProfile(
         ? "quick_collection"
         : "from_profile";
       api.events.emit("analytics-track-mixpanel-event", {
-        eventName: "Collections: Collection drafted in Vortex",
+        eventName: "collection_drafted",
         properties: {
           collection_name: name,
           game_name: game.name,
