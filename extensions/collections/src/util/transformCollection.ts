@@ -105,8 +105,7 @@ function deduceSource(mod: types.IMod,
   } else {
     if (versionMatcher === '*') {
       assign(res, 'updatePolicy', 'latest');
-    } else if ((versionMatcher === undefined)
-               || versionMatcher.endsWith('+prefer')) {
+    } else if ((versionMatcher !== undefined) && versionMatcher.endsWith('+prefer')) {
       assign(res, 'updatePolicy', 'prefer');
     } else {
       assign(res, 'updatePolicy', 'exact');
@@ -486,18 +485,18 @@ export function collectionModToRule(knownGames: types.IGameStored[],
 
   const coerced = util.coerceToSemver(mod.version);
 
-  let versionMatch = !!coerced
-    ? `>=${coerced ?? '0.0.0'}+prefer`
-    : util.coerceToSemver(mod.version);
-
   const { updatePolicy } = mod.source;
 
-  if ((updatePolicy === 'exact')
-      || (mod.source.type === 'bundle')
-      || (mod.hashes !== undefined)) {
-    versionMatch = !!coerced ? coerced : util.coerceToSemver(mod.version);
+  let versionMatch: string;
+  if (updatePolicy === 'prefer') {
+    versionMatch = !!coerced
+      ? `>=${coerced ?? '0.0.0'}+prefer`
+      : util.coerceToSemver(mod.version);
   } else if (updatePolicy === 'latest') {
     versionMatch = '*';
+  } else {
+    // Default to 'exact' for undefined or explicit 'exact' updatePolicy
+    versionMatch = !!coerced ? coerced : util.coerceToSemver(mod.version);
   }
 
   // we can't use the md5 hash for a bundled file because they are recompressed
