@@ -1,9 +1,4 @@
-import {
-  mdiMenuOpen,
-  mdiMenuClose,
-  mdiBell,
-  mdiHelpCircleOutline,
-} from "@mdi/js";
+import { mdiMenuOpen, mdiMenuClose, mdiHelpCircleOutline } from "@mdi/js";
 import React, {
   type CSSProperties,
   type FC,
@@ -19,6 +14,7 @@ import { Typography } from "../../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../contexts";
 import { useSpineContext } from "../SpineContext";
 import { IconButton } from "./IconButton";
+import { Notifications } from "./Notifications";
 import { PremiumIndicator } from "./PremiumIndicator";
 import { ProfileSection } from "./ProfileSection";
 import { WindowControls } from "./WindowControls";
@@ -70,7 +66,7 @@ export const Header: FC = () => {
         <PremiumIndicator />
 
         <div className="flex gap-x-2">
-          <IconButton iconPath={mdiBell} title="Notifications" />
+          <Notifications />
 
           <IconButton iconPath={mdiHelpCircleOutline} title="Help" />
 

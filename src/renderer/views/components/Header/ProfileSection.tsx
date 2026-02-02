@@ -5,7 +5,7 @@ import {
   mdiMessageReplyText,
   mdiRefresh,
 } from "@mdi/js";
-import React, { type FC, useCallback } from "react";
+import React, { type ButtonHTMLAttributes, type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -31,6 +31,28 @@ import {
 } from "../../../../util/nexusState";
 import opn from "../../../../util/opn";
 import { truthy } from "../../../../util/util";
+
+interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  imageSrc?: string;
+  username?: string;
+}
+
+const ActionButton = ({ imageSrc, username, ...props }: ActionButtonProps) => (
+  <button
+    className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+    {...props}
+  >
+    {imageSrc ? (
+      <img alt={username} className="size-6 rounded-full" src={imageSrc} />
+    ) : (
+      <Icon
+        className="size-6 text-neutral-moderate"
+        path={mdiAccountCircle}
+        size="none"
+      />
+    )}
+  </button>
+);
 
 export const ProfileSection: FC = () => {
   const dispatch = useDispatch();
@@ -80,41 +102,17 @@ export const ProfileSection: FC = () => {
   }, []);
 
   if (!loggedIn) {
-    return (
-      <button
-        className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
-        title={t("Log in")}
-        onClick={handleProfileClick}
-      >
-        <Icon
-          className="size-6 text-neutral-moderate"
-          path={mdiAccountCircle}
-          size="none"
-        />
-      </button>
-    );
+    return <ActionButton title={t("Log in")} onClick={handleProfileClick} />;
   }
 
   return (
     <Dropdown>
       <Menu.Button
-        className="hover-overlay relative flex size-7 items-center justify-center overflow-hidden rounded-full"
+        as={ActionButton}
+        imageSrc={userInfo.profileUrl}
         title={userInfo?.name ?? t("Profile")}
-      >
-        {userInfo?.profileUrl ? (
-          <img
-            alt={userInfo.name}
-            className="size-6 rounded-full"
-            src={userInfo.profileUrl}
-          />
-        ) : (
-          <Icon
-            className="size-6 text-neutral-moderate"
-            path={mdiAccountCircle}
-            size="none"
-          />
-        )}
-      </Menu.Button>
+        username={userInfo.name}
+      />
 
       <DropdownItems>
         <DropdownItem
