@@ -67,6 +67,7 @@ interface IConnectedProps {
   primaryTool: string;
   toolsRunning: { [exePath: string]: IRunningTool };
   mods: { [modId: string]: IMod };
+  deploymentCounter: number;
 }
 
 interface IWelcomeScreenState {
@@ -137,6 +138,7 @@ export default function Tools(props: IStarterProps) {
     toolsOrder,
     mods,
     primaryTool,
+    deploymentCounter,
   } = connectedProps;
   const closeEditDialog = () => {
     dispatch([
@@ -263,7 +265,7 @@ export default function Tools(props: IStarterProps) {
     };
     onStateUpdate();
     updateValidTools(state.tools);
-  }, [discoveredGames, gameMode, knownGames, toolsOrder, mods]);
+  }, [discoveredGames, gameMode, knownGames, toolsOrder, mods, deploymentCounter]);
 
   React.useEffect(() => {
     if (toolsOrder.length === 0 && state.tools.length > 0) {
@@ -521,6 +523,8 @@ function mapStateToProps(state: any): IConnectedProps {
     ),
     toolsRunning: state.session.base.toolsRunning,
     mods: getSafe(state, ["persistent", "mods", gameMode], emptyObj),
+    deploymentCounter:
+      state.persistent?.deployment?.deploymentCounter?.[gameMode] ?? 0,
   };
 
   const keys = Object.keys(res);
