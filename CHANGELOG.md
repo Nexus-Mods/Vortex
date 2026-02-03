@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.16.0-beta.5] - 2026-02-03
+
+- Fixed collection install hanging forever when installs are deferred ([#19477](https://github.com/Nexus-Mods/Vortex/issues/19477))
+- Fixed collection instructions data being lost on cloning ([#19476](https://github.com/Nexus-Mods/Vortex/issues/19476))
+- Fixed Collection Workshop visually defaulting to "Exact Only" but setting "Prefer Exact" ([#19469](https://github.com/Nexus-Mods/Vortex/issues/19469))
+- Improved tool comparison when installing collections ([#19370](https://github.com/Nexus-Mods/Vortex/issues/19370))
+- Fixed Dashboard Tools not refreshing on deployment ([#19479](https://github.com/Nexus-Mods/Vortex/issues/19479))
+- Fixed crash when path argument is null ([#17771](https://github.com/Nexus-Mods/Vortex/issues/17771))
+- Fixed spawn EFTYPE error on Linux ([#19127](https://github.com/Nexus-Mods/Vortex/issues/19127))
+- Removed error codes and messages from Mixpanel events ([#19437](https://github.com/Nexus-Mods/Vortex/issues/19437))
+
 ## [1.16.0-beta.4] - 2026-01-19
 
 - Fixed several issues causing collection installations to stall ([#19319](https://github.com/Nexus-Mods/Vortex/pull/19319))
@@ -1250,6 +1267,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.5
+[1.16.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.4
 [1.16.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.3
 [1.16.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.2
 [1.16.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.0-beta.1
