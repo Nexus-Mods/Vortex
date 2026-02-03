@@ -82,7 +82,7 @@ class SplashScreen {
       this.mWindow
         .loadURL(
           pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
-          `?disableGPU=${disableGPU ? 1 : 0}`,
+            `?disableGPU=${disableGPU ? 1 : 0}`,
         )
         .catch((err: unknown) =>
           log("error", "failed to load splash screen URL", err),
