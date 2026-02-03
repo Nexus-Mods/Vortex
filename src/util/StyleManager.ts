@@ -1,17 +1,19 @@
-import { getErrorMessageOrDefault } from "../shared/errors";
-import type { IExtensionApi } from "../types/IExtensionContext";
-import Debouncer from "./Debouncer";
-import * as fs from "./fs";
-import getVortexPath from "./getVortexPath";
-import { log } from "./log";
-import { sanitizeCSSId } from "./util";
+import type * as sassT from "sass";
 
 import PromiseBB from "bluebird";
 import { ipcMain, ipcRenderer } from "electron";
 import * as _ from "lodash";
 import * as path from "path";
-import type * as sassT from "sass";
 import { pathToFileURL } from "url";
+
+import type { IExtensionApi } from "../types/IExtensionContext";
+
+import { getErrorMessageOrDefault } from "../shared/errors";
+import Debouncer from "./Debouncer";
+import * as fs from "./fs";
+import getVortexPath from "./getVortexPath";
+import { log } from "./log";
+import { sanitizeCSSId } from "./util";
 
 function asarUnpacked(input: string): string {
   return input.replace("app.asar" + path.sep, "app.asar.unpacked" + path.sep);
@@ -320,7 +322,7 @@ class StyleManager {
     const stylesheets: string[] = this.mPartials
       .filter((partial) => partial.file !== undefined)
       .map((partial) => {
-        const file = partial.file!;
+        const file = partial.file;
         return path.isAbsolute(file) ? asarUnpacked(file) : file;
       });
 
@@ -340,7 +342,7 @@ class StyleManager {
     const head = document.getElementsByTagName("head")[0];
     let found = false;
     for (let i = 0; i < head.children.length && !found; ++i) {
-      const item = head.children.item(i)!;
+      const item = head.children.item(i);
       if (item.id === "theme") {
         head.replaceChild(style, item);
         found = true;
