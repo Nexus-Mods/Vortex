@@ -304,7 +304,7 @@ class StarterInfo implements IStarterInfo {
       // only works on Windows), so don't set tool as running to avoid stuck spinner
       const protonSpawned = () => {
         if (["hide", "hide_recover"].includes(info.onStart)) {
-          getCurrentWindow().hide();
+          hideWindow();
         } else if (info.onStart === "close") {
           getApplication().quit();
         }
