@@ -1,4 +1,4 @@
-import { mdiDownload, mdiHome, mdiPlus, mdiPuzzle } from "@mdi/js";
+import { mdiHome, mdiPlus, mdiPuzzle } from "@mdi/js";
 import React, { type FC, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -6,6 +6,7 @@ import type { IState } from "../../../../types/IState";
 
 import { setOpenMainPage } from "../../../../actions/session";
 import { useSpineContext } from "../SpineContext";
+import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
 import { getGameImageUrl } from "./utils";
@@ -64,6 +65,7 @@ export const Spine: FC = () => {
             imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
             isActive={selection.type === "game" && selection.gameId === game.id}
             key={game.id}
+            store={discoveredGames[game.id]?.store}
             title={game.name}
             onClick={() => selectGame(game.id)}
           />
@@ -87,13 +89,7 @@ export const Spine: FC = () => {
           onClick={() => handleGlobalPageClick("Extensions")}
         />
 
-        <SpineButton
-          className="rounded-full border-2 text-neutral-strong"
-          iconPath={mdiDownload}
-          isActive={mainPage === "Downloads"}
-          title="Downloads"
-          onClick={() => dispatch(setOpenMainPage("Downloads", false))}
-        />
+        <DownloadButton />
       </div>
     </div>
   );
