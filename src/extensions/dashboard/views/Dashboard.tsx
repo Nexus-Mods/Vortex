@@ -9,6 +9,7 @@ import {
   translate,
 } from "../../../renderer/controls/ComponentEx";
 import Debouncer from "../../../util/Debouncer";
+import { getWindowId } from "../../../util/preloadAccess";
 import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
@@ -96,7 +97,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.startUpdateCycle();
     // Check initial focus state
-    window.api.window.isFocused(window.windowId).then((focused) => {
+    window.api.window.isFocused(getWindowId()).then((focused) => {
       this.mWindowFocused = focused;
     });
     // Subscribe to focus/blur events via preload API

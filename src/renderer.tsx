@@ -476,6 +476,13 @@ const tFunc: TFunction = fallbackTFunc;
 let startupFinished: () => void;
 let extensions: ExtensionManager;
 
+async function initGlobals(): Promise<void> {
+  // Initialize application data asynchronously from main process cache
+  // This replaces synchronous IPC calls that were in the preload script
+  const { ApplicationData } = await import("./shared/applicationData");
+  await ApplicationData.init();
+}
+
 async function init(): Promise<ExtensionManager | null> {
   // extension manager initialized without store, the information about what
   // extensions are to be loaded has to be retrieved from the main process
@@ -819,6 +826,7 @@ function renderer(extensions: ExtensionManager | null) {
   );
 }
 
-init()
+initGlobals()
+  .then(() => init())
   .then((extensions) => renderer(extensions))
   .catch((err) => log("error", "error setting up renderer", err));

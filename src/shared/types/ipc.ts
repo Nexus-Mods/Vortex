@@ -72,18 +72,6 @@ export type VortexPaths = {
 export interface SyncChannels {
   // NOTE: These are synchronous IPC channels used during preload initialization.
   // Use sparingly as they block the renderer process.
-
-  /** Get the current window ID */
-  "window:getIdSync": () => number;
-
-  /** Get the application name */
-  "app:getNameSync": () => string;
-
-  /** Get the application version */
-  "app:getVersionSync": () => string;
-
-  /** Get all Vortex paths - computed in main process */
-  "vortex:getPathsSync": () => VortexPaths;
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
@@ -197,6 +185,12 @@ export interface InvokeChannels {
 
   // App path - getAppPath returns the current application directory
   "app:getAppPath": () => Promise<string>;
+
+  // App version - async alternative to app:getVersionSync
+  "app:getVersion": () => Promise<string>;
+
+  // Vortex paths - async alternative to vortex:getPathsSync
+  "app:getVortexPaths": () => Promise<VortexPaths>;
 
   // Additional window operations
   "window:getPosition": (windowId: number) => Promise<[number, number]>;

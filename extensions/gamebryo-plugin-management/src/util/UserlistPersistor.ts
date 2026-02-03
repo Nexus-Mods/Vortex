@@ -2,12 +2,12 @@ import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 
 import { gameSupported } from "./gameSupport";
 
-import Promise from 'bluebird';
-import { dialog as dialogIn } from 'electron';
-import { dump, load } from 'js-yaml';
-import * as _ from 'lodash';
-import * as path from 'path';
-import { fs, types, util } from 'vortex-api';
+import Promise from "bluebird";
+import { dialog as dialogIn } from "electron";
+import { dump, load } from "js-yaml";
+import * as _ from "lodash";
+import * as path from "path";
+import { fs, types, util } from "vortex-api";
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
@@ -176,7 +176,9 @@ class UserlistPersistor implements types.IPersistor {
 
   private async handleInvalidList() {
     const showMessageBox = async (options: Electron.MessageBoxOptions) => {
-      if (process.type === 'renderer') {
+      if (process.type === "renderer") {
+        // vortex-api needs to be updated to expose the preloadWindow type here
+        //  TODO: Fix this properly later
         const result = await (window as any).api.dialog.showMessageBox(options);
         return result.response;
       } else {
@@ -186,29 +188,28 @@ class UserlistPersistor implements types.IPersistor {
     };
 
     let res = 0;
-    if (this.mMode === 'masterlist') {
+    if (this.mMode === "masterlist") {
       res = await showMessageBox({
-        title: 'Masterlist invalid',
-        message: `The masterlist "${this.mUserlistPath}" can\'t be read. `
-               + '\n\n'
-               + 'If you continue now, the masterlist will be reset.',
+        title: "Masterlist invalid",
+        message:
+          `The masterlist "${this.mUserlistPath}" can\'t be read. ` +
+          "\n\n" +
+          "If you continue now, the masterlist will be reset.",
 
-        buttons: [
-          'Reset Masterlist',
-          'Quit Vortex'
-        ],
+        buttons: ["Reset Masterlist", "Quit Vortex"],
       });
     } else {
       res = await showMessageBox({
-        title: 'Userlist invalid',
-        message: `The LOOT userlist "${this.mUserlistPath}" can\'t be read. `
-               + '\n\n'
-               + 'You should quit Vortex now and repair the file.\n'
-               + 'If (and only if!) you\'re certain you didn\'t modify the file yourself, '
-               + 'please send in a bug report with that file attached.'
-               + '\n\n'
-               + 'If you continue now, the userlist will be reset and all your plugin '
-               + 'rules and group assignments will be lost.',
+        title: "Userlist invalid",
+        message:
+          `The LOOT userlist "${this.mUserlistPath}" can\'t be read. ` +
+          "\n\n" +
+          "You should quit Vortex now and repair the file.\n" +
+          "If (and only if!) you're certain you didn't modify the file yourself, " +
+          "please send in a bug report with that file attached." +
+          "\n\n" +
+          "If you continue now, the userlist will be reset and all your plugin " +
+          "rules and group assignments will be lost.",
         noLink: true,
         defaultId: 1,
         buttons: ["Reset Userlist", "Quit Vortex"],
@@ -254,25 +255,26 @@ class UserlistPersistor implements types.IPersistor {
 
     let empty: boolean = false;
 
-    return fs.readFileAsync(this.mUserlistPath)
-    .then(async (data: Buffer) => {
-      if (data.byteLength <= 5) {
-        // the smallest non-empty file is actually around 20 bytes long and
-        // the smallest useful file probably 30. This is really to catch
-        // cases where the file is not parseable because it's completely empty
-        // or contains only "null" or something silly like that
-        empty = true;
-      }
+    return fs
+      .readFileAsync(this.mUserlistPath)
+      .then(async (data: Buffer) => {
+        if (data.byteLength <= 5) {
+          // the smallest non-empty file is actually around 20 bytes long and
+          // the smallest useful file probably 30. This is really to catch
+          // cases where the file is not parseable because it's completely empty
+          // or contains only "null" or something silly like that
+          empty = true;
+        }
 
-      let newList: Partial<ILOOTList> = {};
-      try {
-        newList = load(data.toString(), { json: true }) as any;
-      } catch (err) {
-        await this.handleInvalidList();
-      }
-      if (typeof (newList) !== 'object') {
-        await this.handleInvalidList();
-      }
+        let newList: Partial<ILOOTList> = {};
+        try {
+          newList = load(data.toString(), { json: true }) as any;
+        } catch (err) {
+          await this.handleInvalidList();
+        }
+        if (typeof newList !== "object") {
+          await this.handleInvalidList();
+        }
 
         ["globals", "plugins", "groups"].forEach((key) => {
           if ([null, undefined].indexOf(newList[key]) !== -1) {

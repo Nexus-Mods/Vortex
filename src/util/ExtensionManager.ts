@@ -129,6 +129,7 @@ import {
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
+import { getPreloadApi } from "./preloadAccess";
 
 export function isExtSame(
   installed: IExtension,
@@ -146,10 +147,6 @@ const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 const ERROR_OUTPUT_CUTOFF = 3;
 
 // TODO: remove this when separation is complete
-import type { Api, PreloadWindow } from "../shared/types/preload";
-const getPreloadApi = (): Api =>
-  (window as unknown as PreloadWindow as { api: Api }).api;
-
 // Protocol client functions - now use window.api preload bridge
 const setSelfAsProtocolClient = (
   protocol: string,

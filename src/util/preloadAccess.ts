@@ -1,39 +1,73 @@
 /**
  * Helper module for accessing preload API with proper typing.
- * Use this in files that need to access window.api or window.windowId
+ * Use this in files that need to access window.api or application data
  * to ensure TypeScript recognizes these properties.
+ *
+ * NOTE: For windowId, appName, appVersion, and vortexPaths, you must ensure
+ * ApplicationData.init() has been called before accessing these values.
  */
 
 import type { Api, PreloadWindow } from "../shared/types/preload";
+
+import { ApplicationData } from "../shared/applicationData";
+
+/**
+ * Get the entire preload window object.
+ * This is only available in the renderer process.
+ */
+export function getPreloadWindow(): PreloadWindow {
+  return window as unknown as PreloadWindow;
+}
 
 /**
  * Get the preload API from the window object.
  * This is only available in the renderer process.
  */
 export function getPreloadApi(): Api {
-  return (window as unknown as PreloadWindow).api;
+  return getPreloadWindow().api;
 }
 
 /**
- * Get the current window ID from the window object.
- * This is only available in the renderer process.
+ * Get the current window ID from the ApplicationData cache.
+ * This is only available in the renderer process after ApplicationData.init() has been called.
+ * @throws Error if ApplicationData has not been initialized
  */
 export function getWindowId(): number {
-  return (window as unknown as PreloadWindow).windowId;
+  const windowId = ApplicationData.windowId;
+  if (windowId === undefined) {
+    throw new Error(
+      "ApplicationData not initialized. Call ApplicationData.init() first.",
+    );
+  }
+  return windowId;
 }
 
 /**
- * Get the app name from the window object.
- * This is only available in the renderer process.
+ * Get the app name from the ApplicationData cache.
+ * This is only available in the renderer process after ApplicationData.init() has been called.
+ * @throws Error if ApplicationData has not been initialized
  */
 export function getAppName(): string {
-  return (window as unknown as PreloadWindow).appName;
+  const name = ApplicationData.name;
+  if (name === undefined) {
+    throw new Error(
+      "ApplicationData not initialized. Call ApplicationData.init() first.",
+    );
+  }
+  return name;
 }
 
 /**
- * Get the app version from the window object.
- * This is only available in the renderer process.
+ * Get the app version from the ApplicationData cache.
+ * This is only available in the renderer process after ApplicationData.init() has been called.
+ * @throws Error if ApplicationData has not been initialized
  */
 export function getAppVersion(): string {
-  return (window as unknown as PreloadWindow).appVersion;
+  const version = ApplicationData.version;
+  if (version === undefined) {
+    throw new Error(
+      "ApplicationData not initialized. Call ApplicationData.init() first.",
+    );
+  }
+  return version;
 }

@@ -19,18 +19,7 @@ import {
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
-
-function getAppName(): string {
-  // In main process, use electron app directly
-  if (app !== undefined) {
-    return app.getName();
-  }
-  // In renderer process, use preload value
-  if (typeof window !== "undefined" && window.appName !== undefined) {
-    return window.appName;
-  }
-  throw new Error("getAppName is not available in this context");
-}
+import { getAppName } from "./preloadAccess";
 
 type StepCB = (step: IPresetStep, data: unknown) => PromiseLike<void>;
 
@@ -127,7 +116,7 @@ class PresetManager {
     // is loaded
     this.mStatePath = path.resolve(
       getVortexPath("appData"),
-      getAppName(),
+      app ? app.getName() : getAppName(),
       "presetState.json",
     );
     log("debug", "read preset state", { statePath: this.mStatePath });

@@ -4,7 +4,6 @@ import type {
   MainChannels,
   SerializableArgs,
   AssertSerializable,
-  VortexPaths,
 } from "@shared/types/ipc";
 import type { PreloadWindow } from "@shared/types/preload";
 
@@ -25,21 +24,6 @@ try {
     electron: process.versions.electron,
     node: process.versions.node,
   });
-
-  // Get the current window ID synchronously during preload initialization
-  // This is safe because the BrowserWindow is already created before preload runs
-  const currentWindowId: number = ipcRenderer.sendSync("window:getIdSync");
-  expose("windowId", currentWindowId);
-
-  // Get app name and version synchronously for application.electron.ts
-  const appName: string = ipcRenderer.sendSync("app:getNameSync");
-  const appVersion: string = ipcRenderer.sendSync("app:getVersionSync");
-  expose("appName", appName);
-  expose("appVersion", appVersion);
-
-  // Get all Vortex paths synchronously for getVortexPath
-  const vortexPaths: VortexPaths = ipcRenderer.sendSync("vortex:getPathsSync");
-  expose("vortexPaths", vortexPaths);
 
   expose("api", {
     log: (level, message, metadata) =>
@@ -80,6 +64,8 @@ try {
       getLoginItemSettings: () =>
         betterIpcRenderer.invoke("app:getLoginItemSettings"),
       getAppPath: () => betterIpcRenderer.invoke("app:getAppPath"),
+      getVersion: () => betterIpcRenderer.invoke("app:getVersion"),
+      getVortexPaths: () => betterIpcRenderer.invoke("app:getVortexPaths"),
     },
     browserView: {
       create: (src: string, partition: string, isNexus: boolean) =>
@@ -103,6 +89,7 @@ try {
         betterIpcRenderer.invoke("session:getCookies", filter),
     },
     window: {
+      getId: () => betterIpcRenderer.invoke("window:getId"),
       minimize: (windowId: number) =>
         betterIpcRenderer.invoke("window:minimize", windowId),
       maximize: (windowId: number) =>

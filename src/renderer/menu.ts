@@ -10,6 +10,7 @@ import * as path from "path";
 import { setZoomFactor } from "../actions/window";
 import { getApplication } from "../util/application";
 import getVortexPath from "../util/getVortexPath";
+import { getWindowId } from "../util/preloadAccess";
 
 // Map to store click handlers by menu item ID
 const menuClickHandlers: Map<string, () => void> = new Map();
@@ -167,7 +168,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           process.platform === "darwin" ? "Alt+Command+I" : "Ctrl+Shift+I",
         click() {
           // Toggle dev tools via IPC
-          void window.api.window.toggleDevTools(window.windowId);
+          void window.api.window.toggleDevTools(getWindowId());
         },
       });
 

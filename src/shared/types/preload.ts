@@ -9,18 +9,6 @@ export interface PreloadWindow {
 
   /** Environment version information */
   versions: Versions;
-
-  /** Current window ID for window operations */
-  windowId: number;
-
-  /** Application name (for application.electron.ts) */
-  appName: string;
-
-  /** Application version (for application.electron.ts) */
-  appVersion: string;
-
-  /** All Vortex application paths (for getVortexPath) */
-  vortexPaths: VortexPaths;
 }
 
 /** All API methods available to the renderer */
@@ -123,6 +111,12 @@ export interface App {
 
   /** Get the current application directory */
   getAppPath(): Promise<string>;
+
+  /** Get application version (async alternative to window.appVersion) */
+  getVersion(): Promise<string>;
+
+  /** Get all Vortex paths (async alternative to window.vortexPaths) */
+  getVortexPaths(): Promise<VortexPaths>;
 }
 
 export interface BrowserView {
@@ -155,6 +149,9 @@ export interface Session {
 }
 
 export interface WindowAPI {
+  /** Get the current window ID */
+  getId(): Promise<number>;
+
   /** Minimize window */
   minimize(windowId: number): Promise<void>;
 

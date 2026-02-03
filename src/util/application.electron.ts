@@ -1,37 +1,33 @@
 import { app as appIn, BrowserWindow } from "electron";
 import * as os from "os";
+
 import type { IApplication } from "./application";
+
+import { ApplicationData } from "../shared/applicationData";
 import { setApplication } from "./application";
+import { getPreloadWindow } from "./preloadAccess";
 
 class ElectronApplication implements IApplication {
-  private mName: string;
-  private mVersion: string;
   private mFocused: boolean;
 
   constructor() {
     if (process.type === "browser") {
-      // Main process - use electron app directly
-      this.mName = appIn.name;
-      this.mVersion = appIn.getVersion();
       // In main process, check if any Vortex window is focused
       this.mFocused =
         BrowserWindow.getAllWindows().find((win) => win.isFocused()) !==
         undefined;
     } else {
-      // Renderer process - use preload values
-      this.mName = window.appName;
-      this.mVersion = window.appVersion;
       // Track focus state via window events
       this.mFocused = true; // Assume focused initially
 
       // Register listeners to track focus state
-      if (window.api?.window?.onFocus) {
-        window.api.window.onFocus(() => {
+      if (getPreloadWindow().api.window?.onFocus) {
+        getPreloadWindow().api.window.onFocus(() => {
           this.mFocused = true;
         });
       }
-      if (window.api?.window?.onBlur) {
-        window.api.window.onBlur(() => {
+      if (getPreloadWindow().api.window?.onBlur) {
+        getPreloadWindow().api.window.onBlur(() => {
           this.mFocused = false;
         });
       }
@@ -39,11 +35,19 @@ class ElectronApplication implements IApplication {
   }
 
   public get name() {
-    return this.mName;
+    // Lazy getter: read from ApplicationData (renderer) or electron app (main)
+    if (process.type === "browser") {
+      return appIn.name;
+    }
+    return ApplicationData.name ?? "Vortex";
   }
 
   public get version() {
-    return this.mVersion;
+    // Lazy getter: read from ApplicationData (renderer) or electron app (main)
+    if (process.type === "browser") {
+      return appIn.getVersion();
+    }
+    return ApplicationData.version ?? "0.0.0";
   }
 
   public get window(): BrowserWindow | null {
@@ -88,7 +92,7 @@ class ElectronApplication implements IApplication {
       appIn.exit(exitCode);
     } else {
       // In renderer, use the preload API
-      void window.api.app.exit(exitCode);
+      void getPreloadWindow().api.app.exit(exitCode);
     }
   }
 }

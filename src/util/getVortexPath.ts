@@ -1,13 +1,9 @@
 import * as electron from "electron";
 import * as os from "os";
 import * as path from "path";
-import type { Api } from "../shared/types/preload";
-import type { VortexPaths } from "../shared/types/ipc";
 
-// Helper to access preload API and values - only available in renderer process
-const getPreloadApi = (): Api => (window as unknown as { api: Api }).api;
-const getPreloadVortexPaths = (): VortexPaths =>
-  (window as unknown as { vortexPaths: VortexPaths }).vortexPaths;
+import { ApplicationData } from "../shared/applicationData";
+import { getPreloadApi } from "./preloadAccess";
 
 // If running as a forked child process, read Electron app info from environment variables
 const electronAppInfoEnv: { [key: string]: string | undefined } =
@@ -197,20 +193,16 @@ function getVortexPath(id: AppPath): string {
     return electronAppInfoEnv[id]!;
   }
 
-  // 2. Renderer process: use preload values
+  // 2. Renderer process: use ApplicationData cache (populated by ApplicationData.init())
   if (!isMainProcess && typeof window !== "undefined") {
-    try {
-      const vortexPaths = getPreloadVortexPaths();
-      if (vortexPaths !== undefined) {
-        // Check cache first (for setVortexPath overrides)
-        if (cache[id] !== undefined) {
-          const value = cache[id];
-          return typeof value === "string" ? value : value();
-        }
-        return vortexPaths[id];
+    const vortexPaths = ApplicationData.vortexPaths;
+    if (vortexPaths !== undefined) {
+      // Check cache first (for setVortexPath overrides)
+      if (cache[id] !== undefined) {
+        const value = cache[id];
+        return typeof value === "string" ? value : value();
       }
-    } catch {
-      // Preload not available yet
+      return vortexPaths[id];
     }
   }
 
