@@ -74,7 +74,6 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import Debouncer from "./Debouncer";
-import makeRemoteCall from "./electronRemote";
 import epicGamesLauncher from "./EpicGamesLauncher";
 import {
   getVisibleWindow,
@@ -82,7 +81,18 @@ import {
   withContext as withErrorContext,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import { extend } from "./ExtensionProvider";
+
+/**
+ * @deprecated Use window.api for IPC communication from renderer to main process.
+ * See src/shared/types/preload.ts for the complete API.
+ */
+function makeRemoteCall(): never {
+  throw new Error(
+    "makeRemoteCall has been removed. Use window.api instead. " +
+      "See src/shared/types/preload.ts for available APIs.",
+  );
+}
+// Note: extend is renderer-only, available via ../renderer/controls/ComponentEx
 import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
 import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 export type { Normalize } from "./getNormalizeFunc.ts";
@@ -173,7 +183,7 @@ export {
   delay,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
-  extend,
+  // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
   findDownloadByRef,

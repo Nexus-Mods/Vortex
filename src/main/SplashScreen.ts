@@ -2,7 +2,7 @@ import { BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import getVortexPath from "../util/getVortexPath";
+import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
 
 class SplashScreen {

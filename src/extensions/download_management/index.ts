@@ -56,7 +56,6 @@ import type DownloadManager from "./DownloadManager";
 import type { DownloadObserver } from "./DownloadObserver";
 import type observe from "./DownloadObserver";
 
-import type * as RemoteT from "@electron/remote";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import Zip from "node-7z";
@@ -65,7 +64,6 @@ import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 import { fileMD5 } from "vortexmt";
 import winapi from "winapi-bindings";
-import lazyRequire from "../../util/lazyRequire";
 import setDownloadGames from "./util/setDownloadGames";
 import { ensureLoggedIn } from "../nexus_integration/util";
 import NXMUrl from "../nexus_integration/NXMUrl";
@@ -76,8 +74,6 @@ import {
 } from "../nexus_integration/util/convertGameId";
 import extendAPI from "./util/extendApi";
 import { unknownToError } from "../../shared/errors";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
 
 let observer: DownloadObserver;
 let manager: DownloadManager;
@@ -1449,12 +1445,13 @@ function init(context: IExtensionContextExt): boolean {
     {
       let powerTimer: NodeJS.Timeout;
       let powerBlockerId: number;
-      const stopTimer = () => {
-        if (
-          powerBlockerId !== undefined &&
-          remote.powerSaveBlocker.isStarted(powerBlockerId)
-        ) {
-          remote.powerSaveBlocker.stop(powerBlockerId);
+      const stopTimer = async () => {
+        if (powerBlockerId !== undefined) {
+          const isStarted =
+            await window.api.powerSaveBlocker.isStarted(powerBlockerId);
+          if (isStarted) {
+            await window.api.powerSaveBlocker.stop(powerBlockerId);
+          }
         }
         powerBlockerId = undefined;
         powerTimer = undefined;
@@ -1514,9 +1511,12 @@ function init(context: IExtensionContextExt): boolean {
               clearTimeout(powerTimer);
             }
             if (powerBlockerId === undefined) {
-              powerBlockerId = remote.powerSaveBlocker.start(
-                "prevent-app-suspension",
-              );
+              // Start power save blocker asynchronously
+              window.api.powerSaveBlocker
+                .start("prevent-app-suspension")
+                .then((id) => {
+                  powerBlockerId = id;
+                });
             }
             powerTimer = setTimeout(stopTimer, 60000);
           }

@@ -20,6 +20,7 @@ import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
 import type { IState } from "../types/IState";
 import type { IParameters, ISetItem } from "../util/commandLine";
 import type ExtensionManagerT from "../util/ExtensionManager";
+import type { GlobalWithRedux } from "./ipcHandlers";
 import type MainWindowT from "./MainWindow";
 import type TrayIconT from "./TrayIcon";
 
@@ -32,6 +33,7 @@ import {
 } from "../actions/app";
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { STATE_BACKUP_PATH } from "../reducers/index";
+import { ApplicationData } from "../shared/applicationData";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
@@ -82,6 +84,7 @@ import {
   spawnSelf,
   timeout,
 } from "../util/util";
+import "./ipcHandlers";
 import { installDevelExtensions } from "./devel";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -89,20 +92,65 @@ import SplashScreen from "./SplashScreen";
 
 const STATE_CHUNK_SIZE = 128 * 1024;
 
+/**
+ * Initialize the application data cache with app information and paths.
+ * This must be called early in the main process startup, before the renderer starts.
+ * The renderer can then retrieve this data via async IPC instead of sync calls.
+ */
+export function initPreloadData(): void {
+  if (ApplicationData.isInitialized) {
+    return;
+  }
+
+  ApplicationData.set({
+    appName: app.name,
+    appVersion: app.getVersion(),
+    vortexPaths: {
+      base: getVortexPath("base"),
+      assets: getVortexPath("assets"),
+      assets_unpacked: getVortexPath("assets_unpacked"),
+      modules: getVortexPath("modules"),
+      modules_unpacked: getVortexPath("modules_unpacked"),
+      bundledPlugins: getVortexPath("bundledPlugins"),
+      locales: getVortexPath("locales"),
+      package: getVortexPath("package"),
+      package_unpacked: getVortexPath("package_unpacked"),
+      application: getVortexPath("application"),
+      userData: getVortexPath("userData"),
+      appData: getVortexPath("appData"),
+      localAppData: getVortexPath("localAppData"),
+      temp: getVortexPath("temp"),
+      home: getVortexPath("home"),
+      documents: getVortexPath("documents"),
+      exe: getVortexPath("exe"),
+      desktop: getVortexPath("desktop"),
+    },
+  });
+}
+
+// TODO: remove this once extension manager separation is complete
+function last<T>(array: T[]): T | undefined {
+  if (array.length === 0) {
+    return undefined;
+  }
+  return array[array.length - 1];
+}
+
 class Application {
-  public static shouldIgnoreError(error: any, promise?: any): boolean {
-    if (error instanceof UserCanceled) {
+  public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
+    const err = unknownToError(error);
+    if (err instanceof UserCanceled) {
       return true;
     }
 
-    if (!error) {
+    if (!err) {
       log("error", "empty error unhandled", {
         wasPromise: promise !== undefined,
       });
       return true;
     }
 
-    if (error.message === "Object has been destroyed") {
+    if (err.message === "Object has been destroyed") {
       // This happens when Vortex crashed because of something else so there is no point
       // reporting this, it might otherwise obfuscate the actual problem
       return true;
@@ -111,13 +159,14 @@ class Application {
     // this error message appears to happen as the result of some other problem crashing the
     // renderer process, so all this may do is obfuscate what's actually going on.
     if (
-      error.message.includes(
+      err.message.includes(
         "Error processing argument at index 0, conversion failure from",
       )
     ) {
       return true;
     }
 
+    const code = getErrorCode(err);
     if (
       [
         "net::ERR_CONNECTION_RESET",
@@ -127,26 +176,16 @@ class Application {
         "net::ERR_SSL_PROTOCOL_ERROR",
         "net::ERR_HTTP2_PROTOCOL_ERROR",
         "net::ERR_INCOMPLETE_CHUNKED_ENCODING",
-      ].includes(error.message) ||
-      ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(error.code)
+      ].includes(err.message) ||
+      ["ETIMEDOUT", "ECONNRESET", "EPIPE"].includes(code)
     ) {
-      log("warn", "network error unhandled", error.stack);
+      log("warn", "network error unhandled", err.stack);
       return true;
     }
 
-    if (
-      ["EACCES", "EPERM"].includes(error.errno) &&
-      error.path !== undefined &&
-      error.path.indexOf("vortex-setup") !== -1
-    ) {
-      // It's wonderous how electron-builder finds new ways to be more shit without even being
-      // updated. Probably caused by node update
-      log("warn", "suppressing error message", {
-        message: error.message,
-        stack: error.stack,
-      });
-      return true;
-    }
+    // We used to handle err.errno here (incorrectly)
+    //  e.g. ['EPERM', 'EACCES'].includes(err.errno)
+    // but errno is a number, not a string.
 
     return false;
   }
@@ -319,15 +358,8 @@ class Application {
 
     app.on(
       "web-contents-created",
-      (_event: Electron.Event, contents: Electron.WebContents) => {
-        const promise = async () => {
-          (await import("@electron/remote/main")).enable(contents);
-          contents.on("will-attach-webview", this.attachWebView);
-        };
-
-        promise().catch((err: unknown) =>
-          log("error", "failed to enable electron remote", err),
-        );
+      (event: Electron.Event, contents: Electron.WebContents) => {
+        contents.on("will-attach-webview", this.attachWebView);
       },
     );
 
@@ -358,7 +390,7 @@ class Application {
   };
 
   private genHandleError() {
-    return (error: any, promise?: any) => {
+    return (error: unknown, promise?: unknown) => {
       if (Application.shouldIgnoreError(error, promise)) {
         return;
       }
@@ -368,6 +400,9 @@ class Application {
   }
 
   private async regularStart(args: IParameters): Promise<void> {
+    // Initialize preload data cache before renderer starts
+    // This allows the renderer to fetch app info via async IPC instead of sync calls
+    initPreloadData();
     try {
       await writeFile(this.mStartupLogPath, new Date().toUTCString());
     } catch {
@@ -960,6 +995,7 @@ class Application {
         newStore.replaceReducer(
           reducer(this.mExtensions.getReducers(), querySanitize),
         );
+
         return PromiseBB.mapSeries(allHives(this.mExtensions), (hive) =>
           insertPersistor(
             hive,
@@ -1069,7 +1105,7 @@ class Application {
 
         let sendState: Buffer;
 
-        (global as any).getReduxStateMsgpack = (idx: number) => {
+        (global as GlobalWithRedux).getReduxStateMsgpack = (idx: number) => {
           const msgpack: typeof msgpackT = require("@msgpack/msgpack");
           if (sendState === undefined || idx === 0) {
             sendState = Buffer.from(
@@ -1300,7 +1336,5 @@ class Application {
     }
   }
 }
-
-betterIpcMain.handle("example:ping", () => "pong", { includeArgs: true });
 
 export default Application;

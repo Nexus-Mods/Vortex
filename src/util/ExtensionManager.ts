@@ -118,7 +118,6 @@ import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
 import type * as winapiT from "vortex-run";
 import { getApplication } from "./application";
-import makeRemoteCall, { makeRemoteCallSync } from "./electronRemote";
 import { VCREDIST_URL } from "../shared/constants";
 import { fileMD5 } from "vortexmt";
 import * as fsVortex from "../util/fs";
@@ -130,6 +129,7 @@ import {
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
+import { getPreloadApi } from "./preloadAccess";
 
 export function isExtSame(
   installed: IExtension,
@@ -146,107 +146,55 @@ const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
-function selfCL(userDataPath?: string): [string, string[]] {
-  let execPath = process.execPath;
-  // make it work when using the development version
-  if (execPath.endsWith("electron.exe")) {
-    execPath = path.join(getVortexPath("package"), "vortex.bat");
-  }
+// TODO: remove this when separation is complete
+// Protocol client functions - now use window.api preload bridge
+const setSelfAsProtocolClient = (
+  protocol: string,
+  udPath: string,
+): Promise<void> => {
+  return getPreloadApi().app.setProtocolClient(protocol, udPath);
+};
 
-  const args = [];
-  /*
-  TODO: This is necessary for downloads to multiple instances to work correctly but
-    it doesn't work until https://github.com/electron/electron/issues/18397 is fixed
+const isSelfProtocolClient = (
+  protocol: string,
+  udPath: string,
+): Promise<boolean> => {
+  return getPreloadApi().app.isProtocolClient(protocol, udPath);
+};
 
-  if (userDataPath !== undefined) {
-    args.push('--user-data', userDataPath);
-  }
-  */
+const removeSelfAsProtocolClient = (
+  protocol: string,
+  udPath: string,
+): Promise<void> => {
+  return getPreloadApi().app.removeProtocolClient(protocol, udPath);
+};
 
-  args.push("-d");
+// Dialog functions - now use window.api preload bridge
+const showOpenDialog = (
+  options: Electron.OpenDialogOptions,
+): Promise<Electron.OpenDialogReturnValue> => {
+  return getPreloadApi().dialog.showOpen(options);
+};
 
-  return [execPath, args];
-}
+const showSaveDialog = (
+  options: Electron.SaveDialogOptions,
+): Promise<Electron.SaveDialogReturnValue> => {
+  return getPreloadApi().dialog.showSave(options);
+};
 
-const setSelfAsProtocolClient = makeRemoteCallSync(
-  "set-as-default-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    electron.app.setAsDefaultProtocolClient(protocol, execPath, args);
-  },
-);
+const appExit = (exitCode?: number): Promise<void> => {
+  return getPreloadApi().app.exit(exitCode);
+};
 
-const isSelfProtocolClient = makeRemoteCallSync(
-  "is-self-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    return electron.app.isDefaultProtocolClient(protocol, execPath, args);
-  },
-);
+const showErrorBox = (title: string, content: string): Promise<void> => {
+  return getPreloadApi().dialog.showErrorBox(title, content);
+};
 
-const removeSelfAsProtocolClient = makeRemoteCallSync(
-  "remove-as-default-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    electron.app.removeAsDefaultProtocolClient(protocol, execPath, args);
-  },
-);
-
-const showOpenDialog = makeRemoteCall(
-  "show-open-dialog",
-  (electron, contents, options: Electron.OpenDialogOptions) => {
-    let window: Electron.BrowserWindow | null = null;
-    try {
-      window = electron.BrowserWindow?.fromWebContents?.(contents);
-    } catch (err) {
-      // nop
-    }
-
-    return electron.dialog.showOpenDialog(window, options);
-  },
-);
-
-const showSaveDialog = makeRemoteCall(
-  "show-save-dialog",
-  (electron, contents, options: Electron.SaveDialogOptions) => {
-    let window: Electron.BrowserWindow = null;
-    try {
-      window = electron.BrowserWindow?.fromWebContents?.(contents);
-    } catch (err) {
-      // nop
-    }
-
-    return electron.dialog.showSaveDialog(window, options);
-  },
-);
-
-const appExit = makeRemoteCallSync(
-  "exit-application",
-  (electron, contents, exitCode?: number) => {
-    electron.app.exit(exitCode);
-  },
-);
-
-const showErrorBox = makeRemoteCall(
-  "show-error-box",
-  (electron, contents, title: string, content: string) => {
-    electron.dialog.showErrorBox(title, content);
-    return undefined;
-  },
-);
-
-const showMessageBox = makeRemoteCall(
-  "show-message-box",
-  (electron, contents, options: Electron.MessageBoxOptions) => {
-    let window: Electron.BrowserWindow = null;
-    try {
-      window = electron.BrowserWindow?.fromWebContents?.(contents);
-    } catch (err) {
-      // nop
-    }
-    return electron.dialog.showMessageBox(window, options);
-  },
-);
+const showMessageBox = (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  return getPreloadApi().dialog.showMessageBox(options);
+};
 
 export interface IRegisteredExtension {
   name: string;
@@ -1759,11 +1707,8 @@ class ExtensionManager {
   };
 
   private showErrorBox = (message: string, details: string | Error | any) => {
-    if (typeof details === "string") {
-      showErrorBox(message, details);
-    } else {
-      showErrorBox(message, details.message);
-    }
+    const errMessage = getErrorMessageOrDefault(details);
+    void showErrorBox(message, errMessage);
   };
 
   /**
@@ -1972,16 +1917,19 @@ class ExtensionManager {
   private commandLineUserData = () =>
     this.mApi.getState().session.base.commandLine?.userData;
 
-  private registerProtocol = (
+  private registerProtocol = async (
     protocol: string,
     def: boolean,
     callback: (url: string, install: boolean) => void,
-  ): boolean => {
+  ): Promise<boolean> => {
     log("info", "register protocol", { protocol });
-    const haveToRegister =
-      def && !isSelfProtocolClient(protocol, this.commandLineUserData());
+    const isAlreadyClient = await isSelfProtocolClient(
+      protocol,
+      this.commandLineUserData(),
+    );
+    const haveToRegister = def && !isAlreadyClient;
     if (def) {
-      setSelfAsProtocolClient(protocol, this.commandLineUserData());
+      await setSelfAsProtocolClient(protocol, this.commandLineUserData());
     }
     this.mProtocolHandlers[protocol] = callback;
     return haveToRegister;
@@ -2002,9 +1950,9 @@ class ExtensionManager {
     this.mArchiveHandlers[extension] = handler;
   };
 
-  private deregisterProtocol = (protocol: string) => {
+  private deregisterProtocol = async (protocol: string): Promise<void> => {
     log("info", "deregister protocol");
-    removeSelfAsProtocolClient(protocol, this.commandLineUserData());
+    await removeSelfAsProtocolClient(protocol, this.commandLineUserData());
   };
 
   private lookupModReference = (

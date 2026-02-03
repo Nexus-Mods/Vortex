@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { app, ipcMain, ipcRenderer } from "electron";
 import * as path from "path";
 import type { IExtensionApi } from "../types/IExtensionContext";
 
@@ -10,7 +10,6 @@ import type {
 } from "../types/IPreset";
 
 import { iPresetSchema, iPresetsStateSchema } from "../types/IPreset.gen";
-import { makeRemoteCallSync } from "./electronRemote";
 
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
@@ -20,10 +19,7 @@ import {
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
-
-const getAppName = makeRemoteCallSync("get-application-name", (electron) =>
-  electron.app.getName(),
-);
+import { getAppName } from "./preloadAccess";
 
 type StepCB = (step: IPresetStep, data: unknown) => PromiseLike<void>;
 
@@ -120,7 +116,7 @@ class PresetManager {
     // is loaded
     this.mStatePath = path.resolve(
       getVortexPath("appData"),
-      getAppName(),
+      app ? app.getName() : getAppName(),
       "presetState.json",
     );
     log("debug", "read preset state", { statePath: this.mStatePath });

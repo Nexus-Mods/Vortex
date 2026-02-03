@@ -141,10 +141,9 @@ test("manage fake Stardew Valley", async ({
     await mainWindow.waitForTimeout(3000);
 
     // Verify game was discovered
-    console.log("7. Verifying...");
-    const isDiscovered = await mainWindow.evaluate(() => {
-      const remote = (window as any).require("@electron/remote");
-      const state = JSON.parse(remote.getGlobal("getReduxState")());
+    console.log('7. Verifying...');
+    const isDiscovered = await mainWindow.evaluate(async () => {
+      const state = await (window as any).api.redux.getState() as any;
       return !!state?.settings?.gameMode?.discovered?.stardewvalley;
     });
 
@@ -168,9 +167,8 @@ test("manage fake Stardew Valley", async ({
       console.log(`   Download Popup URL: ${modUrl}`);
 
       // Check Vortex download state before download
-      const downloadsBefore = await mainWindow.evaluate(() => {
-        const remote = (window as any).require("@electron/remote");
-        const state = JSON.parse(remote.getGlobal("getReduxState")());
+      const downloadsBefore = await mainWindow.evaluate(async () => {
+        const state = await (window as any).api.redux.getState() as any;
         return {
           downloadCount: Object.keys(state?.persistent?.downloads?.files || {})
             .length,
@@ -199,9 +197,8 @@ test("manage fake Stardew Valley", async ({
         await mainWindow.waitForTimeout(2000);
 
         // Check Vortex download state after download
-        const downloadsAfter = await mainWindow.evaluate(() => {
-          const remote = (window as any).require("@electron/remote");
-          const state = JSON.parse(remote.getGlobal("getReduxState")());
+        const downloadsAfter = await mainWindow.evaluate(async () => {
+          const state = await (window as any).api.redux.getState() as any;
           const downloads = state?.persistent?.downloads?.files || {};
           return {
             downloadCount: Object.keys(downloads).length,

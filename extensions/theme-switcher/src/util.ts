@@ -9,27 +9,17 @@ interface IFont {
   family: string;
 }
 
-const getAvailableFontImpl = () => {
+// Get available system fonts - runs directly in renderer process
+export function getAvailableFonts(): Promise<string[]> {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fontScanner = require("font-scanner");
-  return fontScanner
-    .getAvailableFonts()
-    .then((fonts: IFont[]) =>
-      Array.from(
-        new Set<string>([
-          "Inter",
-          "Roboto",
-          "Montserrat",
-          "BebasNeue",
-          ...(fonts || []).map((font) => font.family).sort(),
-        ]),
-      ),
-    );
-};
-
-const getAvailableFonts: () => Promise<string[]> = util.makeRemoteCall(
-  "get-available-fonts",
-  getAvailableFontImpl,
-);
-
-export { getAvailableFonts };
+  const fontScanner = require('font-scanner');
+  return fontScanner.getAvailableFonts()
+    .then((fonts: IFont[]) => Array.from(new Set<string>(
+      [
+        'Inter',
+        'Roboto',
+        'Montserrat',
+        'BebasNeue',
+        ...(fonts || []).map(font => font.family).sort(),
+      ])));
+}

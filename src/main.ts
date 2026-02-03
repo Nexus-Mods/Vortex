@@ -31,10 +31,11 @@ import { VORTEX_VERSION } from "./shared/constants";
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 import "./util/application.electron";
+
 import { app, dialog } from "electron";
 import * as path from "path";
 
-import getVortexPath from "./util/getVortexPath";
+import getVortexPath from "./main/getVortexPath";
 
 const earlyErrHandler = (error: Error) => {
   if (error.stack.includes("[as dlopen]")) {
@@ -164,7 +165,7 @@ import type * as child_processT from "child_process";
 // required for the side-effect!
 import "./util/exeIcon";
 import "./util/monkeyPatching";
-import "./util/webview";
+import "./main/webview";
 import { getErrorMessage } from "./shared/errors";
 import {} from "./util/extensionRequire";
 import * as fs from "./util/fs";
@@ -315,18 +316,7 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch("remote-debugging-port", DEBUG_PORT);
   }
 
-  try {
-    const remote = await import("@electron/remote/main");
-    remote.initialize();
-  } catch (err) {
-    const message = getErrorMessage(err);
-    if (message && !message.includes("already been initialized")) {
-      throw err;
-    }
-  }
-
-  let fixedT = (await import("i18next")).default.getFixedT("en");
-
+  let fixedT = require("i18next").getFixedT("en");
   try {
     fixedT("dummy");
   } catch {
