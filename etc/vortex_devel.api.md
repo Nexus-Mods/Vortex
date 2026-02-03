@@ -3021,8 +3021,10 @@ const instance: IGameStore | undefined;
 // @public (undocumented)
 const instance_2: GameStoreHelper;
 
+// Warning: (ae-forgotten-export) The symbol "Steam" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-const instance_3: IGameStore;
+const instance_3: Steam;
 
 // @public (undocumented)
 type InstructionType = "copy" | "mkdir" | "submodule" | "generatefile" | "iniedit" | "unsupported" | "attribute" | "setmodtype" | "error" | "rule";
@@ -3712,7 +3714,13 @@ interface IStateVerifier {
 // @public (undocumented)
 interface ISteamEntry extends IGameStoreEntry {
     // (undocumented)
+    compatDataPath?: string;
+    // (undocumented)
     manifestData?: any;
+    // (undocumented)
+    protonPath?: string;
+    // (undocumented)
+    usesProton?: boolean;
 }
 
 // @public (undocumented)

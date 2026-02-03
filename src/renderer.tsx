@@ -91,6 +91,8 @@ import {
 } from "./actions/notifications";
 import reducer, { Decision } from "./reducers/index";
 import { log } from "./renderer/logging";
+import { initApplicationMenu } from "./renderer/menu";
+import StyleManager from "./renderer/StyleManager";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
@@ -109,8 +111,6 @@ import getI18n, {
   fallbackTFunc,
   type TFunction,
 } from "./util/i18n";
-
-import { initApplicationMenu } from "./renderer/menu";
 import { showError } from "./util/message";
 import presetManager from "./util/PresetManager";
 import safeForwardToMain from "./util/safeForwardToMain";
@@ -484,6 +484,8 @@ async function initGlobals(): Promise<void> {
 }
 
 async function init(): Promise<ExtensionManager | null> {
+  await StyleManager.renderDefault();
+
   // extension manager initialized without store, the information about what
   // extensions are to be loaded has to be retrieved from the main process
   extensions = new ExtensionManager(undefined, eventEmitter);
@@ -753,18 +755,6 @@ async function load(extensions: ExtensionManager): Promise<void> {
     lang: store.getState().settings.interface.language,
   });
   await changeLanguage(store.getState().settings.interface.language);
-
-  try {
-    await Promise.resolve(extensions.renderStyle());
-  } catch (err) {
-    terminate(
-      {
-        message: "failed to parse UI theme",
-        details: getErrorMessageOrDefault(err),
-      },
-      store.getState(),
-    );
-  }
 
   presetManager.start();
 
