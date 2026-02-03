@@ -139,7 +139,11 @@ export async function resolveProtonPath(
 ): Promise<string | undefined> {
   // 1. Check custom compatibility tools directory (GE-Proton, etc.)
   // Custom tools use their config name as the folder name directly
-  const customToolPath = path.join(steamPath, "compatibilitytools.d", protonName);
+  const customToolPath = path.join(
+    steamPath,
+    "compatibilitytools.d",
+    protonName,
+  );
   if (await pathExists(customToolPath)) {
     return customToolPath;
   }

@@ -29,7 +29,7 @@ import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getErrorCode, unknownToError } from "../shared/errors";
 import { isWindowsExecutable } from "./linux/proton";
-import { Steam, type ISteamEntry } from "./Steam";
+import type { Steam, ISteamEntry } from "./Steam";
 
 function getCurrentWindow() {
   if (process.type === "renderer") {
