@@ -46,7 +46,7 @@ module.exports = {
         loader: "ts-loader",
         exclude: /node_modules/,
         options: {
-          configFile: "tsconfig.renderer.json",
+          configFile: "tsconfig.webpack.json",
           transpileOnly,
           compilerOptions: {
             sourceMap: true,
@@ -61,6 +61,7 @@ module.exports = {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
     alias: {
       "@shared": path.resolve(__dirname, "src/shared/"),
+      "@renderer": path.resolve(__dirname, "src/renderer/"),
     },
   },
   plugins,
