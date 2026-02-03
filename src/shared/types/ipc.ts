@@ -2,6 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type Electron from "electron";
+
 import type { Level } from "./logging";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
@@ -26,6 +28,50 @@ export interface MainChannels {
   // Examples:
   "example:main_foo": () => void;
   "example:main_bar": (data: string) => void;
+
+  // BrowserView event forwarding
+  // Dynamic channel: `view-${viewId}-${eventId}`
+  // We use a pattern to match: view-*
+
+  // Window event forwarding (main -> renderer)
+  "window:event:maximize": () => void;
+  "window:event:unmaximize": () => void;
+  "window:event:close": () => void;
+  "window:event:focus": () => void;
+  "window:event:blur": () => void;
+
+  // Menu click events (main -> renderer)
+  "menu:click": (menuItemId: string) => void;
+}
+
+/** Vortex application paths - computed once in main process and shared */
+export type VortexPaths = {
+  [key: string]: string;
+} & {
+  base: string;
+  assets: string;
+  assets_unpacked: string;
+  modules: string;
+  modules_unpacked: string;
+  bundledPlugins: string;
+  locales: string;
+  package: string;
+  package_unpacked: string;
+  application: string;
+  userData: string;
+  appData: string;
+  localAppData: string;
+  temp: string;
+  home: string;
+  documents: string;
+  exe: string;
+  desktop: string;
+};
+
+/** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
+export interface SyncChannels {
+  // NOTE: These are synchronous IPC channels used during preload initialization.
+  // Use sparingly as they block the renderer process.
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
@@ -34,6 +80,138 @@ export interface InvokeChannels {
 
   // Examples:
   "example:ping": () => Promise<string>;
+
+  // Dialog channels
+  "dialog:showOpen": (
+    options: Electron.OpenDialogOptions,
+  ) => Promise<Electron.OpenDialogReturnValue>;
+  "dialog:showSave": (
+    options: Electron.SaveDialogOptions,
+  ) => Promise<Electron.SaveDialogReturnValue>;
+  "dialog:showMessageBox": (
+    options: Electron.MessageBoxOptions,
+  ) => Promise<Electron.MessageBoxReturnValue>;
+  "dialog:showErrorBox": (title: string, content: string) => Promise<void>;
+
+  // App protocol client channels
+  "app:setProtocolClient": (protocol: string, udPath: string) => Promise<void>;
+  "app:isProtocolClient": (
+    protocol: string,
+    udPath: string,
+  ) => Promise<boolean>;
+  "app:removeProtocolClient": (
+    protocol: string,
+    udPath: string,
+  ) => Promise<void>;
+  "app:exit": (exitCode?: number) => Promise<void>;
+  "app:getName": () => Promise<string>;
+
+  // App path channels
+  "app:getPath": (name: string) => Promise<string>;
+  "app:setPath": (name: string, value: string) => Promise<void>;
+
+  // File icon extraction
+  "app:extractFileIcon": (exePath: string, iconPath: string) => Promise<void>;
+
+  // BrowserView channels
+  "browserView:create": (
+    src: string,
+    partition: string,
+    isNexus: boolean,
+  ) => Promise<string>;
+  "browserView:createWithEvents": (
+    src: string,
+    forwardEvents: string[],
+    options?: Electron.BrowserViewConstructorOptions,
+  ) => Promise<string>;
+  "browserView:close": (viewId: string) => Promise<void>;
+  "browserView:position": (
+    viewId: string,
+    rect: { x: number; y: number; width: number; height: number },
+  ) => Promise<void>;
+  "browserView:updateURL": (viewId: string, newURL: string) => Promise<void>;
+
+  // Jump list (Windows)
+  "app:setJumpList": (categories: Electron.JumpListCategory[]) => Promise<void>;
+
+  // Session cookies
+  "session:getCookies": (
+    filter: Electron.CookiesGetFilter,
+  ) => Promise<Electron.Cookie[]>;
+
+  // Window operations
+  "window:getId": () => Promise<number>;
+  "window:minimize": (windowId: number) => Promise<void>;
+  "window:maximize": (windowId: number) => Promise<void>;
+  "window:unmaximize": (windowId: number) => Promise<void>;
+  "window:restore": (windowId: number) => Promise<void>;
+  "window:close": (windowId: number) => Promise<void>;
+  "window:focus": (windowId: number) => Promise<void>;
+  "window:show": (windowId: number) => Promise<void>;
+  "window:hide": (windowId: number) => Promise<void>;
+  "window:isMaximized": (windowId: number) => Promise<boolean>;
+  "window:isMinimized": (windowId: number) => Promise<boolean>;
+  "window:isFocused": (windowId: number) => Promise<boolean>;
+  "window:setAlwaysOnTop": (windowId: number, flag: boolean) => Promise<void>;
+  "window:moveTop": (windowId: number) => Promise<void>;
+
+  // Content tracing operations
+  "contentTracing:startRecording": (
+    options: Electron.TraceConfig | Electron.TraceCategoriesAndOptions,
+  ) => Promise<void>;
+  "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
+
+  // Redux state transfer
+  // NOTE: Redux state is a complex nested object that is serializable
+  // but too complex to type precisely. The actual data is always serializable.
+  "redux:getState": () => Promise<{}>;
+  // Returns a base64-encoded msgpack chunk of the Redux state
+  "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;
+
+  // Login item settings
+  "app:setLoginItemSettings": (settings: Electron.Settings) => Promise<void>;
+  "app:getLoginItemSettings": () => Promise<Electron.LoginItemSettings>;
+
+  // Clipboard operations
+  "clipboard:writeText": (text: string) => Promise<void>;
+  "clipboard:readText": () => Promise<string>;
+
+  // Power save blocker
+  "powerSaveBlocker:start": (
+    type: "prevent-app-suspension" | "prevent-display-sleep",
+  ) => Promise<number>;
+  "powerSaveBlocker:stop": (id: number) => Promise<void>;
+  "powerSaveBlocker:isStarted": (id: number) => Promise<boolean>;
+
+  // App path - getAppPath returns the current application directory
+  "app:getAppPath": () => Promise<string>;
+
+  // App version - async alternative to app:getVersionSync
+  "app:getVersion": () => Promise<string>;
+
+  // Vortex paths - async alternative to vortex:getPathsSync
+  "app:getVortexPaths": () => Promise<VortexPaths>;
+
+  // Additional window operations
+  "window:getPosition": (windowId: number) => Promise<[number, number]>;
+  "window:setPosition": (
+    windowId: number,
+    x: number,
+    y: number,
+  ) => Promise<void>;
+  "window:getSize": (windowId: number) => Promise<[number, number]>;
+  "window:setSize": (
+    windowId: number,
+    width: number,
+    height: number,
+  ) => Promise<void>;
+  "window:isVisible": (windowId: number) => Promise<boolean>;
+  "window:toggleDevTools": (windowId: number) => Promise<void>;
+
+  // Menu operations
+  // Note: Menu template is complex with nested submenus (can be recursive), so we use unknown[]
+  // to avoid circular type references - the actual expected type is SerializableMenuItem[]
+  "menu:setApplicationMenu": (template: unknown[]) => Promise<void>;
 }
 
 /** Represents all IPC-safe typed arrays */
@@ -58,6 +236,7 @@ export type Serializable =
   | boolean
   | null
   | undefined
+  | void
   | Date
   | Serializable[]
   | { [key: string]: Serializable }
@@ -69,14 +248,6 @@ export type Serializable =
   | TypedArray;
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
-type IsUnknown<T> =
-  IsAny<T> extends true
-    ? false
-    : unknown extends T
-      ? T extends unknown
-        ? true
-        : false
-      : false;
 
 type HasError<T> = T extends { __error__: string }
   ? true
@@ -95,19 +266,16 @@ export type AssertSerializable<T> =
   // any
   IsAny<T> extends true
     ? { __error__: "any is not serializable for IPC" }
-    : // unknown
-      IsUnknown<T> extends true
-      ? { __error__: "unknown is not serializable for IPC" }
-      : // known serializables
-        T extends Serializable
-        ? T
-        : // objects
-          T extends object
-          ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
-            ? { __error__: "Type is not serializable for IPC" }
-            : T
-          : // everything else
-            { __error__: "Type is not serializable for IPC" };
+    : // known serializables
+      T extends Serializable
+      ? T
+      : // objects
+        T extends object
+        ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
+          ? { __error__: "Type is not serializable for IPC" }
+          : T
+        : // everything else
+          { __error__: "Type is not serializable for IPC" };
 
 /** Utility type to check all args are serializable */
 export type SerializableArgs<T extends readonly unknown[]> = {

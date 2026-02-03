@@ -17,9 +17,8 @@
 // spelling of `min--moz-device-pixel-ratio` is intentional.
 @mixin img-retina($file-1x, $file-2x, $width-1x, $height-1x) {
     background-image: url(if(
-        $bootstrap-sass-asset-helper,
-        twbs-image-path("#{$file-1x}"),
-        "#{$file-1x}"
+        sass($bootstrap-sass-asset-helper): twbs-image-path("#{$file-1x}") ;
+            else: "#{$file-1x}"
     ));
 
     @media only screen and (-webkit-min-device-pixel-ratio: 2),
@@ -29,9 +28,8 @@
         only screen and (min-resolution: 192dpi),
         only screen and (min-resolution: 2dppx) {
         background-image: url(if(
-            $bootstrap-sass-asset-helper,
-            twbs-image-path("#{$file-2x}"),
-            "#{$file-2x}"
+            sass($bootstrap-sass-asset-helper): twbs-image-path("#{$file-2x}") ;
+                else: "#{$file-2x}"
         ));
         background-size: $width-1x $height-1x;
     }

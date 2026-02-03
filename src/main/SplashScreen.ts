@@ -1,70 +1,62 @@
-import PromiseBB from "bluebird";
+import { BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
-import getVortexPath from "../util/getVortexPath";
-import { log } from "../util/log";
+
+import getVortexPath from "./getVortexPath";
+import { log } from "./logging";
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow | null = null;
 
-  public fadeOut() {
+  public async fadeOut(): Promise<void> {
     // apparently we can't prevent the user from closing the splash with alt-f4...
-    if (this.mWindow === null || this.mWindow.isDestroyed()) {
-      return PromiseBB.resolve();
-    }
+    if (this.mWindow === null || this.mWindow.isDestroyed()) return;
+
     // ensure the splash screen remains visible
     this.mWindow.setAlwaysOnTop(true);
 
     // don't fade out immediately, otherwise the it looks odd
     // as the main window appears at the same time
-    return (
-      PromiseBB.delay(200)
-        .then(() => {
-          if (!this.mWindow?.isDestroyed()) {
-            try {
-              this.mWindow?.webContents.send("fade-out");
-            } catch (err) {
-              log("warn", "failed to fade out splash screen", err);
-            }
-          }
-        })
-        // wait for the fade out animation to finish before destroying
-        // the window
-        .then(() => PromiseBB.delay(500))
-        .then(() => {
-          if (!this.mWindow?.isDestroyed()) {
-            this.mWindow?.close();
-          }
-          this.mWindow = null;
-        })
-    );
+
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), ms);
+      });
+
+    await delay(200);
+
+    if (!this.mWindow?.isDestroyed()) {
+      try {
+        this.mWindow?.webContents.send("fade-out");
+      } catch (err) {
+        log("warn", "failed to fade out splash screen", err);
+      }
+    }
+
+    await delay(500);
+
+    if (!this.mWindow?.isDestroyed()) {
+      this.mWindow?.close();
+    }
+
+    this.mWindow = null;
   }
 
-  public create(disableGPU?: boolean): PromiseBB<void> {
-    const BrowserWindow: typeof Electron.BrowserWindow =
-      require("electron").BrowserWindow;
-
-    return new PromiseBB<void>((resolve, reject) => {
+  public create(disableGPU?: boolean): Promise<void> {
+    return new Promise<void>((resolve) => {
       const timeout = setTimeout(() => {
         log("warn", "splash screen taking awfully long");
-        resolve?.();
-        resolve = undefined!;
+        resolve();
       }, 1000);
 
       const onReady = () => {
         clearTimeout(timeout);
         this.mWindow?.show();
-        resolve?.();
-        resolve = undefined!;
+        resolve();
       };
 
       this.mWindow = new BrowserWindow({
         frame: false,
-        /*
-        width: 687,
-        height: 240,
-        transparent: !disableGPU,
-        */
         width: 475,
         height: 166,
         transparent: false,
@@ -87,11 +79,14 @@ class SplashScreen {
 
       this.mWindow.once("ready-to-show", onReady);
 
-      this.mWindow.loadURL(
-        pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
-          `?disableGPU=${disableGPU ? 1 : 0}`,
-      );
-      // this.mWindow.webContents.openDevTools();
+      this.mWindow
+        .loadURL(
+          pathToFileURL(path.join(getVortexPath("base"), "splash.html")).href +
+            `?disableGPU=${disableGPU ? 1 : 0}`,
+        )
+        .catch((err: unknown) =>
+          log("error", "failed to load splash screen URL", err),
+        );
     });
   }
 

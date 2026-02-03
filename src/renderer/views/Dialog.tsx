@@ -1,9 +1,3 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-// Disabled: This component legitimately syncs dialog state in effects when the
-// dialogs array changes (tracking current dialog ID, content, and validation).
-
-import type * as RemoteT from "@electron/remote";
-
 import update from "immutability-helper";
 import React from "react";
 import {
@@ -34,8 +28,8 @@ import type { TFunction } from "../../util/i18n";
 
 import { triggerDialogLink } from "../../actions";
 import { closeDialog, closeDialogs } from "../../actions/notifications";
-import lazyRequire from "../../util/lazyRequire";
 import { MutexWrapper } from "../../util/MutexContext";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import bbcode from "../controls/bbcode";
 import Collapse from "../controls/Collapse";
 import ErrorBoundary from "../controls/ErrorBoundary";
@@ -44,9 +38,6 @@ import Webview from "../controls/Webview";
 
 // TODO: Port to DialogResult.input
 type DialogInputData = Record<string, boolean | string | undefined>;
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);
 
 const nop = () => undefined;
 
@@ -808,13 +799,17 @@ export const Dialog: React.FC = () => {
           setConditionResults(validationResults);
         }
 
-        const window = remote.getCurrentWindow();
-        if (window.isMinimized()) {
-          window.restore();
-        }
-        window.setAlwaysOnTop(true);
-        window.show();
-        window.setAlwaysOnTop(false);
+        // Bring window to focus when a new dialog appears
+        const winId = getWindowId();
+        const api = getPreloadApi();
+        void api.window.isMinimized(winId).then((minimized: boolean) => {
+          if (minimized) {
+            void api.window.restore(winId);
+          }
+          void api.window.setAlwaysOnTop(winId, true);
+          void api.window.show(winId);
+          void api.window.setAlwaysOnTop(winId, false);
+        });
       } else if (prevDialogs[0]?.content !== dialogs[0]?.content) {
         // same dialog id but maybe the content changed?
         const newDialogState = dialogs[0].content;

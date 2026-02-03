@@ -8,11 +8,7 @@
     "rootDir": "./src",
     "outDir": "./out",
     "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["src/shared/*"],
-      "@renderer/*": ["src/renderer/*"]
-    }
+    "baseUrl": "."
   },
   "files": [
     "./typings.custom/index.d.ts",

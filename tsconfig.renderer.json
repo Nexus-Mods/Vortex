@@ -25,10 +25,6 @@
     "moduleResolution": "node", // TODO: change to bundler
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": {
-      "@renderer/*": ["src/renderer/*"],
-      "@shared/*": ["src/shared/*"]
-    },
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "outDir": "./out",
     "rootDir": "./src",

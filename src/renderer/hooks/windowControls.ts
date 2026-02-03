@@ -1,43 +1,54 @@
-import type * as RemoteT from "@electron/remote";
-import type { BrowserWindow } from "electron";
+import { useEffect, useState } from "react";
 
-import React, { useEffect, useState } from "react";
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 
-import lazyRequire from "../../util/lazyRequire";
+export const minimize = () => {
+  const api = getPreloadApi();
+  const windowId = getWindowId();
+  void api.window.minimize(windowId);
+};
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const remote = lazyRequire(() => require("@electron/remote") as typeof RemoteT);
+export const close = () => {
+  const api = getPreloadApi();
+  const windowId = getWindowId();
+  void api.window.close(windowId);
+};
 
-let cachedWindow: BrowserWindow | undefined;
-export const getWindow = () => (cachedWindow ??= remote.getCurrentWindow());
-
-export const minimize = () => getWindow().minimize();
-export const close = () => getWindow().close();
 export const toggleMaximize = () => {
-  const win = getWindow();
-  if (win.isMaximized()) {
-    win.unmaximize();
-  } else {
-    win.maximize();
-  }
+  const api = getPreloadApi();
+  const windowId = getWindowId();
+  void api.window.isMaximized(windowId).then((isMaximized) => {
+    if (isMaximized) {
+      void api.window.unmaximize(windowId);
+    } else {
+      void api.window.maximize(windowId);
+    }
+  });
 };
 
 export const useIsMaximized = () => {
-  const [isMaximized, setIsMaximized] = useState(() =>
-    getWindow().isMaximized(),
-  );
+  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    const win = getWindow();
-    const onMaximize = () => setIsMaximized(true);
-    const onUnmaximize = () => setIsMaximized(false);
+    const api = getPreloadApi();
+    const windowId = getWindowId();
 
-    win.on("maximize", onMaximize);
-    win.on("unmaximize", onUnmaximize);
+    // Fetch initial maximized state
+    void api.window.isMaximized(windowId).then((maximized) => {
+      setIsMaximized(maximized);
+    });
+
+    // Subscribe to window events
+    const unsubscribeMaximize = api.window.onMaximize(() =>
+      setIsMaximized(true),
+    );
+    const unsubscribeUnmaximize = api.window.onUnmaximize(() =>
+      setIsMaximized(false),
+    );
 
     return () => {
-      win.removeListener("maximize", onMaximize);
-      win.removeListener("unmaximize", onUnmaximize);
+      unsubscribeMaximize();
+      unsubscribeUnmaximize();
     };
   }, []);
 

@@ -306,7 +306,7 @@
     opacity: 1;
     &.mainpage-leave-active {
         opacity: 0;
-        transition: opacity floor($transition-time-half / 2) ease-out;
+        transition: opacity floor($transition-time-half * 0.5) ease-out;
     }
 }
 

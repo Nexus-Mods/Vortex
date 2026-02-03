@@ -4,7 +4,6 @@ import {
   StalledError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import makeRemoteCall from "../../util/electronRemote";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { delayed, INVALID_FILENAME_RE, truthy } from "../../util/util";
@@ -38,13 +37,13 @@ import type { IExtensionApi } from "../../types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
+import { getPreloadApi } from "../../util/preloadAccess";
 
-const getCookies = makeRemoteCall(
-  "get-cookies",
-  (electron, webContents, filter: Electron.CookiesGetFilter) => {
-    return webContents.session.cookies.get(filter);
-  },
-);
+function getCookies(
+  filter: Electron.CookiesGetFilter,
+): Promise<Electron.Cookie[]> {
+  return getPreloadApi().session.getCookies(filter);
+}
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -1647,7 +1646,9 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Ensure URL is a string, not a URL object (URL objects don't serialize properly through IPC)
+          const url = resolved.urls[0];
+          return typeof url === "string" ? url : String(url);
         }),
       confirmedOffset: 0,
       confirmedSize: this.mMinChunkSize,
@@ -2330,7 +2331,9 @@ class DownloadManager {
                   new ProcessCanceled("Failed to resolve download URL"),
                 );
               }
-              return resolved.urls[0];
+              // Ensure URL is a string, not a URL object
+              const url = resolved.urls[0];
+              return typeof url === "string" ? url : String(url);
             }),
         });
         offset += chunkSize;
@@ -2410,7 +2413,9 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Ensure URL is a string, not a URL object
+          const url = resolved.urls[0];
+          return typeof url === "string" ? url : String(url);
         }),
       // Immutable confirmed fields
       confirmedOffset,

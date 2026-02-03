@@ -1,7 +1,7 @@
-import type { Level } from "@shared/types/logging";
-
 import path from "path";
 import winston from "winston";
+
+import type { Level } from "../shared/types/logging";
 
 import { betterIpcMain } from "./ipc";
 

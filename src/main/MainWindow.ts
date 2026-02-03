@@ -1,7 +1,7 @@
 import type * as Redux from "redux";
 
-import PromiseBB from "bluebird";
 import { app, ipcMain, screen, webContents } from "electron";
+import { BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -19,11 +19,11 @@ import {
 import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
-import getVortexPath from "../util/getVortexPath";
+import getVortexPath from "./getVortexPath";
 import opn from "../util/opn";
 import { downloadPath } from "../util/selectors";
 import { parseBool } from "../util/util";
-import { closeAllViews } from "../util/webview";
+import { closeAllViews } from "./webview";
 import { log } from "./logging";
 
 const MIN_HEIGHT = 700;
@@ -46,7 +46,7 @@ interface IRect {
   y2: number;
 }
 
-function bounds2rect(bounds): IRect {
+function bounds2rect(bounds: Electron.Rectangle): IRect {
   return {
     x1: bounds.x,
     y1: bounds.y,
@@ -91,35 +91,31 @@ class MainWindow {
         const size: number[] = this.mWindow.getSize();
         store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
       }
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }, 500);
 
     this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
       if (this.mWindow !== null) {
         store.dispatch(setWindowPosition({ x, y }));
       }
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }, 500);
   }
 
-  public create(
+  public async create(
     store: ThunkStore<IState>,
-  ): PromiseBB<Electron.WebContents | undefined> {
-    if (this.mWindow !== null) {
-      return PromiseBB.resolve(undefined);
-    }
-
-    const BrowserWindow: typeof Electron.BrowserWindow =
-      require("electron").BrowserWindow;
+  ): Promise<Electron.WebContents | undefined> {
+    if (this.mWindow !== null) return undefined;
 
     this.mWindow = new BrowserWindow(
       this.getWindowSettings(store.getState().settings.window),
     );
 
-    this.mWindow.loadURL(
-      pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
-    );
-    // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
+    this.mWindow
+      .loadURL(
+        pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
+      )
+      .catch((err: unknown) => log("error", "error loading window URL", err));
 
     let cancelTimer: NodeJS.Timeout;
 
@@ -134,7 +130,7 @@ class MainWindow {
     }
     this.mWindow.webContents.on(
       "console-message",
-      (evt: Electron.Event, level: number, message: string) => {
+      (_evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
           //   provide the other parameters of the message.
@@ -161,7 +157,7 @@ class MainWindow {
 
     this.mWindow.webContents.on(
       "render-process-gone",
-      (evt, details: Electron.RenderProcessGoneDetails) => {
+      (_evt, details: Electron.RenderProcessGoneDetails) => {
         log("error", "render process gone", {
           exitCode: details.exitCode,
           reason: details.reason,
@@ -261,7 +257,7 @@ class MainWindow {
 
     this.initEventHandlers(store);
 
-    return new PromiseBB<Electron.WebContents>((resolve) => {
+    return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow?.once("ready-to-show", () => {
         if (resolve !== undefined && this.mWindow !== null) {
           resolve(this.mWindow.webContents);
@@ -407,7 +403,7 @@ class MainWindow {
         nodeIntegrationInWorker: true,
         webviewTag: true,
         enableWebSQL: false,
-        contextIsolation: false, // Required for @electron/remote compatibility
+        contextIsolation: false, // Required for preload script compatibility
         backgroundThrottling: false,
       },
     };
@@ -422,13 +418,31 @@ class MainWindow {
       if (this.mWindow === null) {
         return;
       }
+      // Forward close event to renderer
+      this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
     });
-    this.mWindow.on("maximize", () => store.dispatch(setMaximized(true)));
-    this.mWindow.on("unmaximize", () => store.dispatch(setMaximized(false)));
+    this.mWindow.on("maximize", () => {
+      store.dispatch(setMaximized(true));
+      // Forward maximize event to renderer
+      this.mWindow?.webContents.send("window:event:maximize");
+    });
+    this.mWindow.on("unmaximize", () => {
+      store.dispatch(setMaximized(false));
+      // Forward unmaximize event to renderer
+      this.mWindow?.webContents.send("window:event:unmaximize");
+    });
+    this.mWindow.on("focus", () => {
+      // Forward focus event to renderer
+      this.mWindow?.webContents.send("window:event:focus");
+    });
+    this.mWindow.on("blur", () => {
+      // Forward blur event to renderer
+      this.mWindow?.webContents.send("window:event:blur");
+    });
     this.mWindow.on("resize", () => this.mResizeDebouncer.schedule());
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {
