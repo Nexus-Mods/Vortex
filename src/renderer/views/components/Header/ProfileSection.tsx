@@ -93,8 +93,8 @@ export const ProfileSection: FC = () => {
   }, [dispatch]);
 
   const handleProfileClick = useCallback(() => {
-    if (loggedIn && userInfo?.userId) {
-      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => undefined);
+    if (loggedIn && userInfo?.userId !== undefined) {
+      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
     } else {
       dispatch(setDialogVisible("login-dialog"));
       api.events.emit("request-nexus-login", (err: Error) => {
@@ -106,10 +106,10 @@ export const ProfileSection: FC = () => {
   }, [api, dispatch, loggedIn, userInfo]);
 
   const handleSendFeedback = useCallback(() => {
-    opn("https://forms.gle/YF9ED2Xe4ef9jKf99").catch(() => undefined);
+    opn("https://forms.gle/YF9ED2Xe4ef9jKf99").catch(() => {});
   }, []);
 
-  if (!loggedIn) {
+  if (!loggedIn || !userInfo) {
     return <ActionButton title={t("Log in")} onClick={handleProfileClick} />;
   }
 
@@ -118,7 +118,7 @@ export const ProfileSection: FC = () => {
       <Menu.Button
         as={ActionButton}
         imageSrc={userInfo.profileUrl}
-        title={userInfo?.name ?? t("Profile")}
+        title={userInfo.name ?? t("Profile")}
         username={userInfo.name}
       />
 
