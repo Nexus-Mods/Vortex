@@ -19,32 +19,65 @@ const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
 
 interface DownloadProgress {
   isDownloading: boolean;
+  isPaused: boolean;
   progress: number; // 0-100
+  speedMBps: number; // Speed in MB/s
+  estimatedMins: number; // Estimated time remaining in minutes
 }
 
 function useDownloadProgress(): DownloadProgress {
   return useSelector((state: IState) => {
     const files = state.persistent.downloads?.files ?? {};
-    const activeDownloads = Object.values(files).filter((dl) =>
+    const speed = state.persistent.downloads?.speed ?? 0;
+    const allDownloads = Object.values(files);
+
+    const activeDownloads = allDownloads.filter((dl) =>
       ACTIVE_DOWNLOAD_STATES.includes(dl.state),
     );
+    const pausedDownloads = allDownloads.filter((dl) => dl.state === "paused");
 
-    if (activeDownloads.length === 0) {
-      return { isDownloading: false, progress: 0 };
+    // If there are no active or paused downloads, nothing is happening
+    if (activeDownloads.length === 0 && pausedDownloads.length === 0) {
+      return {
+        isDownloading: false,
+        isPaused: false,
+        progress: 0,
+        speedMBps: 0,
+        estimatedMins: 0,
+      };
     }
 
-    const totalSize = activeDownloads.reduce(
+    // Combine active and paused downloads for progress calculation
+    const relevantDownloads = [...activeDownloads, ...pausedDownloads];
+
+    const totalSize = relevantDownloads.reduce(
       (sum, dl) => sum + Math.max(1, dl.size ?? 0, dl.received),
       0,
     );
-    const totalReceived = activeDownloads.reduce(
+    const totalReceived = relevantDownloads.reduce(
       (sum, dl) => sum + dl.received,
       0,
     );
 
     const progress = totalSize > 0 ? (totalReceived * 100) / totalSize : 0;
 
-    return { isDownloading: true, progress };
+    // isPaused: true only if ALL downloads are paused (none actively downloading)
+    const isPaused = activeDownloads.length === 0 && pausedDownloads.length > 0;
+
+    // Speed in MB/s (speed from state is in bytes/s)
+    const speedMBps = speed / (1024 * 1024);
+
+    // Estimated time remaining in minutes
+    const remainingBytes = totalSize - totalReceived;
+    const estimatedMins = speed > 0 ? remainingBytes / speed / 60 : 0;
+
+    return {
+      isDownloading: true,
+      isPaused,
+      progress,
+      speedMBps,
+      estimatedMins,
+    };
   });
 }
 
@@ -103,20 +136,28 @@ export const DownloadButton: FC = () => {
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
   const isActive = mainPage === "Downloads";
 
-  // const { isDownloading, progress } = useDownloadProgress();
+  const downloadProgress = useDownloadProgress();
 
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  // Debug overrides - these toggle switches override real values when enabled
+  const [overrideDownloading, setOverrideDownloading] = useState(false);
+  const [overridePaused, setOverridePaused] = useState(false);
   const [isTime, setIsTime] = useState(false);
-  const progress = 33;
+
+  // Use real data, but allow debug switches to override with test values
+  const useTestData = overrideDownloading && !downloadProgress.isDownloading;
+  const isDownloading = overrideDownloading || downloadProgress.isDownloading;
+  const isPaused = overridePaused || downloadProgress.isPaused;
+  const progress = useTestData ? 33 : downloadProgress.progress;
+  const speedMBps = useTestData ? 8.6 : downloadProgress.speedMBps;
+  const estimatedMins = useTestData ? 48 : downloadProgress.estimatedMins;
 
   return (
     <div className="flex flex-col gap-y-1">
-      <button onClick={() => setIsDownloading((prev) => !prev)}>
+      <button onClick={() => setOverrideDownloading((prev) => !prev)}>
         Downloading: {isDownloading ? "✔" : "✖"}
       </button>
 
-      <button onClick={() => setIsPaused((prev) => !prev)}>
+      <button onClick={() => setOverridePaused((prev) => !prev)}>
         Paused: {isPaused ? "✔" : "✖"}
       </button>
 
@@ -149,7 +190,7 @@ export const DownloadButton: FC = () => {
                 className="leading-none font-semibold"
                 type="body-sm"
               >
-                {isTime ? 48 : 8.6}
+                {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
               </Typography>
             )}
 
