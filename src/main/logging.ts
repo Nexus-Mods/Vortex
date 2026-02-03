@@ -84,9 +84,14 @@ function setupLogger(
       })
     : undefined;
 
+  const transports: winston.TransportInstance[] = [fileTransport];
+  if (consoleTransport) {
+    transports.push(consoleTransport);
+  }
+
   const logger = new winston.Logger({
     level: "debug",
-    transports: [fileTransport, consoleTransport],
+    transports,
   });
 
   return logger;
