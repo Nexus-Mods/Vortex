@@ -128,6 +128,9 @@ if (ipcMain !== undefined) {
             }),
             { encoding: "utf8" },
           );
+
+          if (evt.sender?.isDestroyed()) return;
+          evt.sender.send(replyEvent, null, result.css);
         } catch (err) {
           log("error", "error compiling sass", err);
           if (evt.sender?.isDestroyed()) return;
