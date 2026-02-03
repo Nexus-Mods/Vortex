@@ -267,7 +267,14 @@ export default function Tools(props: IStarterProps) {
     };
     onStateUpdate();
     updateValidTools(state.tools);
-  }, [discoveredGames, gameMode, knownGames, toolsOrder, mods, deploymentCounter]);
+  }, [
+    discoveredGames,
+    gameMode,
+    knownGames,
+    toolsOrder,
+    mods,
+    deploymentCounter,
+  ]);
 
   React.useEffect(() => {
     if (toolsOrder.length === 0 && state.tools.length > 0) {
