@@ -1,6 +1,6 @@
 {
   "eslint.enable": true,
-  "editor.defaultFormatter": "prettier.prettier-vscode",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "jest.pathToJest": "node_modules\\.bin\\jest",
   "typescript.tsdk": "./node_modules/typescript/lib",
