@@ -28,7 +28,7 @@ const statusMap: Record<Status, { className: string; icon: string }> = {
 };
 
 const Notification = ({
-  actions,
+  actions = [],
   children,
   status,
   title,
@@ -36,25 +36,39 @@ const Notification = ({
   onSettings,
   onView,
 }: PropsWithChildren<{
-  actions?: { label: string, onClick: () => void }[];
+  actions?: { label: string; onClick: () => void }[];
   status: "error" | "info" | "success" | "warning";
   title?: string;
   onDismiss?: () => void;
   onSettings?: () => void;
   onView?: () => void;
 }>) => (
-  <div className="flex gap-x-3 rounded-xs bg-surface-low p-2">
+  <div
+    className={joinClasses(["flex gap-x-3 rounded-xs bg-surface-low p-2"], {
+      "hover-overlay cursor-pointer": !!onView,
+    })}
+    onClick={onView}
+  >
     <Icon
-      className={joinClasses(["mt-0.5 shrink-0", statusMap[status].className])}
+      className={joinClasses([
+        "relative mt-0.5 shrink-0",
+        statusMap[status].className,
+      ])}
       path={statusMap[status].icon}
       size="sm"
     />
 
-    <div className="flex grow flex-col gap-y-2">
+    <div className="relative flex grow flex-col gap-y-2">
       <Typography appearance="moderate" as="div" typographyType="body-sm">
         {!!title && <p className="font-semibold">{title}</p>}
 
-        <p>{children} {onView && <TypographyLink />}</p>
+        <p>
+          {children}
+
+          {!!onView && (
+            <span className="pl-1 text-neutral-strong underline">View</span>
+          )}
+        </p>
       </Typography>
 
       {!!actions.length && (
@@ -74,9 +88,9 @@ const Notification = ({
       )}
     </div>
 
-    {(onSettings || onDismiss) && (
-      <div className="flex shrink-0 items-start gap-x-1">
-        {onSettings && (
+    {(!!onSettings || !!onDismiss) && (
+      <div className="relative flex shrink-0 items-start gap-x-1">
+        {!!onSettings && (
           <Button
             buttonType="tertiary"
             leftIconPath={mdiCogOutline}
@@ -85,7 +99,7 @@ const Notification = ({
           />
         )}
 
-        {onDismiss && (
+        {!!onDismiss && (
           <Button
             buttonType="tertiary"
             leftIconPath={mdiClose}
@@ -103,36 +117,64 @@ export const Notifications = () => (
     <Popover.Button as={IconButton} iconPath={mdiBell} title="Notifications" />
 
     <Popover.Panel className="absolute right-0 z-panel mt-2.5 w-sm space-y-0.5 rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
-      <Notification status="info" onView={() => console.log("view")}>
+      <Notification
+        status="info"
+        onDismiss={() => console.log("dismiss")}
+        onView={() => console.log("view")}
+      >
         Vortex will now handle Nexus Download links.
       </Notification>
 
       <Notification
         actions={[
-          { label: 'More', onClick: () => console.log("more") },
-          { label: 'Check again', onClick: () => console.log("check again") },
+          { label: "Yes", onClick: () => console.log("yes") },
+          { label: "No", onClick: () => console.log("no") },
         ]}
         status="error"
-      >
-        Missing Masters
-      </Notification>
-
-      <Notification status="info" onDismiss={() => console.log("closed")}>
-        Vortex will now handle Nexus Download links
-      </Notification>
-
-      <Notification
-        status="success"
-        onDismiss={() => console.log("closed")}
+        title="Did this Collection work for you?"
+        onDismiss={() => console.log("dismiss")}
         onSettings={() => console.log("settings")}
       >
+        Gate to Sovngarde
+      </Notification>
+
+      <Notification
+        actions={[{ label: "More", onClick: () => console.log("more") }]}
+        status="info"
+        onDismiss={() => console.log("closed")}
+      >
         Vortex will now handle Nexus Download links
       </Notification>
 
       <Notification
+        actions={[
+          { label: "More", onClick: () => console.log("more") },
+          { label: "Dismiss", onClick: () => console.log("dismiss") },
+        ]}
+        status="info"
+      >
+        Vortex will now handle Nexus Download links
+      </Notification>
+
+      <Notification
+        actions={[
+          { label: "Check again", onClick: () => console.log("check again") },
+        ]}
         status="warning"
-        onDismiss={() => console.log("closed")}
-        onMore={() => console.log("more")}
+      >
+        Vortex will now handle Nexus Download links
+      </Notification>
+
+      <Notification
+        actions={[{ label: "More", onClick: () => console.log("more") }]}
+        status="error"
+      >
+        Vortex will now handle Nexus Download links
+      </Notification>
+
+      <Notification
+        actions={[{ label: "More", onClick: () => console.log("more") }]}
+        status="success"
       >
         Vortex will now handle Nexus Download links
       </Notification>
