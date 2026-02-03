@@ -14,9 +14,6 @@
     "moduleResolution": "node", // TODO: change to nodenext
     "types": ["node"],
     "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["src/shared/*"]
-    },
     "outDir": "./out",
     "rootDir": "./src",
     "jsx": "react-jsx", // TODO: remove after renderer separation

@@ -1,4 +1,4 @@
-import type { Level } from "@shared/types/logging";
+import type { Level } from "../shared/types/logging";
 
 export function log(level: Level, message: string, metadata?: unknown) {
   const meta = metadata === undefined ? undefined : JSON.stringify(metadata);
