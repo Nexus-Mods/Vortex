@@ -1,4 +1,4 @@
-import React, { type ComponentType } from "react";
+import { type ComponentType } from "react";
 
 import type { IMainPageOptions } from "../../types/IExtensionContext";
 import type { IMainPage } from "../../types/IMainPage";

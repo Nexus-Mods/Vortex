@@ -1,4 +1,4 @@
-import React, { useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import type { IState } from "../../types/IState";
 
