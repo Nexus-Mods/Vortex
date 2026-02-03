@@ -1,3 +1,5 @@
+import { ipcMain, type WebContents } from "electron";
+
 import type {
   RendererChannels,
   MainChannels,
@@ -5,9 +7,7 @@ import type {
   SyncChannels,
   SerializableArgs,
   AssertSerializable,
-} from "@shared/types/ipc.js";
-
-import { ipcMain, type WebContents } from "electron";
+} from "../shared/types/ipc.js";
 
 import { log } from "./logging";
 
