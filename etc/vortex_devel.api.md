@@ -620,6 +620,33 @@ class CollectionsDownloadFailedEvent implements MixpanelEvent {
 }
 
 // @public
+class CollectionsDraftedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number, creation_method: "from_profile" | "quick_collection" | "empty");
+    // (undocumented)
+    readonly eventName = "Collections: Collection drafted in Vortex";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft update uploaded";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft uploaded";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
 class CollectionsInstallationCancelledEvent implements MixpanelEvent {
     constructor(collection_id: string, revision_id: string, game_id: number);
     // (undocumented)
@@ -6144,6 +6171,9 @@ declare namespace util {
         CollectionsInstallationFailedEvent,
         CollectionsInstallationCancelledEvent,
         CollectionsDownloadClickedEvent,
+        CollectionsDraftedEvent,
+        CollectionsDraftUploadedEvent,
+        CollectionsDraftUpdateUploadedEvent,
         TextGroup,
         calcDuration,
         showSuccess,

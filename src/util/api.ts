@@ -153,6 +153,9 @@ import {
   CollectionsInstallationCompletedEvent,
   CollectionsInstallationFailedEvent,
   CollectionsInstallationCancelledEvent,
+  CollectionsDraftedEvent,
+  CollectionsDraftUploadedEvent,
+  CollectionsDraftUpdateUploadedEvent,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
 
 export * from "./network";
@@ -273,6 +276,9 @@ export {
   CollectionsInstallationFailedEvent,
   CollectionsInstallationCancelledEvent,
   CollectionsDownloadClickedEvent,
+  CollectionsDraftedEvent,
+  CollectionsDraftUploadedEvent,
+  CollectionsDraftUpdateUploadedEvent,
 };
 
 // getText functions are rolled up into one function

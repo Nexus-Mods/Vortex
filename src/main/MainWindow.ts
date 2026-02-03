@@ -1,28 +1,30 @@
+import type * as Redux from "redux";
+
+import PromiseBB from "bluebird";
+import { ipcMain, screen, webContents } from "electron";
+import * as path from "path";
+import { pathToFileURL } from "url";
+
+import type { ThunkStore } from "../types/IExtensionContext";
+import type { IState, IWindow } from "../types/IState";
+import type * as storeHelperT from "../util/storeHelper";
+import type TrayIcon from "./TrayIcon";
+
 import { addNotification } from "../actions/notifications";
 import {
   setMaximized,
   setWindowPosition,
   setWindowSize,
 } from "../actions/window";
-import type { ThunkStore } from "../types/IExtensionContext";
-import type { IState, IWindow } from "../types/IState";
+import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
 import getVortexPath from "./getVortexPath";
-import { log } from "../util/log";
 import opn from "../util/opn";
 import { downloadPath } from "../util/selectors";
-import type * as storeHelperT from "../util/storeHelper";
 import { parseBool } from "../util/util";
 import { closeAllViews } from "./webview";
-
-import PromiseBB from "bluebird";
-import { ipcMain, screen, webContents } from "electron";
-import * as path from "path";
-import type * as Redux from "redux";
-import { pathToFileURL } from "url";
-import type TrayIcon from "./TrayIcon";
-import { getErrorMessageOrDefault } from "../shared/errors";
+import { log } from "./logging";
 
 const MIN_HEIGHT = 700;
 const REQUEST_HEADER_FILTER = {
