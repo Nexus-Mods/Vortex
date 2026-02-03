@@ -18,6 +18,7 @@ import { setPrimaryTool } from "./actions";
 import settingsReducer from "./reducers";
 import Tools from "./Tools";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 
 function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   const state = api.store.getState();
@@ -94,6 +95,8 @@ const onDeploymentEvent = (api: IExtensionApi): PromiseBB<void> => {
   const state = api.store.getState();
   const gameMode = activeGameId(state);
   if (gameMode !== undefined) {
+    // Increment deployment counter to trigger tool validation update
+    api.store.dispatch(incrementDeploymentCounter(gameMode));
     return api.emitAndAwait("discover-tools", gameMode);
   }
   return PromiseBB.resolve();

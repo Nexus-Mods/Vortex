@@ -306,7 +306,12 @@ export async function doExportToAPI(
         throw new util.UserCanceled();
       }
     }
+
     await withTmpDir(async (tmpPath) => {
+      const isNewUpload = mod.attributes?.collectionId === undefined;
+      const game = util.getGame(gameId);
+      const userInfo = state.persistent["nexus"]?.userInfo;
+
       const filePath = await writeCollectionToFile(state, info, mod, tmpPath);
       collectionId = mod.attributes?.collectionId ?? undefined;
       // collection api doesn't (currently) distinguish between uploader & author so
@@ -370,6 +375,19 @@ export async function doExportToAPI(
           ((revisionNumber ?? 0) + 1).toString(),
         ),
       );
+
+      if (userInfo?.userId) {
+        const eventName = isNewUpload
+          ? "collection_draft_uploaded"
+          : "collection_draft_updated";
+        api.events.emit("analytics-track-mixpanel-event", {
+          eventName,
+          properties: {
+            collection_name: mod.attributes?.name ?? "Unknown",
+            game_name: game.name,
+          },
+        });
+      }
     });
     progressEnd();
   } catch (err) {
