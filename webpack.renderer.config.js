@@ -59,10 +59,6 @@ module.exports = {
   },
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
-    alias: {
-      "@shared": path.resolve(__dirname, "src/shared/"),
-      "@renderer": path.resolve(__dirname, "src/renderer/"),
-    },
   },
   plugins,
   optimization: {
