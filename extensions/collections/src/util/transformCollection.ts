@@ -1371,6 +1371,22 @@ export async function createCollectionFromProfile(
       state.persistent.mods[profile.gameId] ?? {},
       id,
     );
+
+    const userInfo = state.persistent["nexus"]?.userInfo;
+    if (userInfo?.userId) {
+      const game = util.getGame(profile.gameId);
+      const creationMethod = isQuickCollection
+        ? "quick_collection"
+        : "from_profile";
+      api.events.emit("analytics-track-mixpanel-event", {
+        eventName: "collection_drafted",
+        properties: {
+          collection_name: name,
+          game_name: game.name,
+          creation_method: creationMethod,
+        },
+      });
+    }
   } else {
     name = mod.attributes?.name;
     updateCollection(api, profile.gameId, mod, rules);
