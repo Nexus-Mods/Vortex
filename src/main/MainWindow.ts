@@ -1,7 +1,7 @@
 import type * as Redux from "redux";
 
 import PromiseBB from "bluebird";
-import { ipcMain, screen, webContents } from "electron";
+import { app, ipcMain, screen, webContents } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -399,7 +399,10 @@ class MainWindow {
       titleBarStyle:
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
-        preload: path.join(__dirname, "../preload/index.js"),
+        preload: path.join(
+          getVortexPath("base"),
+          app.isPackaged ? "preload.js" : "preload/index.js",
+        ),
         nodeIntegration: true, // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,
