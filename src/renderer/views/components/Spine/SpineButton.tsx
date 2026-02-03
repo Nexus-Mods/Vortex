@@ -18,11 +18,11 @@ export const SpineButton: FC<SpineButtonProps> = ({
   <button
     className={joinClasses([
       className,
-      "flex size-12 items-center justify-center transition-colors",
-      "hover:border-neutral-strong hover:bg-surface-translucent-low hover:text-neutral-strong",
+      "flex size-12 items-center justify-center rounded-lg transition-colors",
+      "hover:border-neutral-strong hover:bg-surface-translucent-high hover:text-neutral-strong",
       isActive
         ? "border-neutral-strong bg-surface-translucent-low text-neutral-strong"
-        : "border-stroke-weak",
+        : "border-stroke-weak text-neutral-moderate",
     ])}
     {...props}
   >

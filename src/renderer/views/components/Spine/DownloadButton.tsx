@@ -1,11 +1,14 @@
 import { mdiDownload } from "@mdi/js";
-import React, { type FC } from "react";
+import React, { type FC, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../../extensions/download_management/types/IDownload";
 import type { IState } from "../../../../types/IState";
 
 import { setOpenMainPage } from "../../../../actions/session";
+import { Icon } from "../../../../tailwind/components/next/icon";
+import { Typography } from "../../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { SpineButton } from "./SpineButton";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
@@ -45,17 +48,13 @@ function useDownloadProgress(): DownloadProgress {
   });
 }
 
-interface ProgressRingProps {
-  progress: number; // 0-100
-  size: number;
-  strokeWidth: number;
-}
-
-const ProgressRing: FC<ProgressRingProps> = ({
-  progress,
-  size,
-  strokeWidth,
-}) => {
+const ProgressRing: FC<{
+  isActive: boolean;
+  isPaused: boolean;
+  progress: number;
+}> = ({ isActive, isPaused, progress }) => {
+  const size = 48;
+  const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
@@ -68,25 +67,30 @@ const ProgressRing: FC<ProgressRingProps> = ({
     >
       {/* Background circle */}
       <circle
+        className="stroke-stroke-weak"
         cx={size / 2}
         cy={size / 2}
         fill="none"
         r={radius}
-        stroke="rgba(255, 255, 255, 0.1)"
         strokeWidth={strokeWidth}
       />
 
       {/* Progress circle */}
       <circle
-        className="transition-[stroke-dashoffset] duration-300"
+        className={joinClasses([
+          "transition-colors",
+          isActive
+            ? "stroke-neutral-strong"
+            : isPaused
+              ? "stroke-neutral-moderate"
+              : "stroke-info-subdued group-hover/download:stroke-info-strong",
+        ])}
         cx={size / 2}
         cy={size / 2}
         fill="none"
         r={radius}
-        stroke="var(--color-accent-brand, #da8e35)"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        strokeLinecap="round"
         strokeWidth={strokeWidth}
       />
     </svg>
@@ -97,21 +101,72 @@ export const DownloadButton: FC = () => {
   const dispatch = useDispatch();
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const { isDownloading, progress } = useDownloadProgress();
+  const isActive = mainPage === "Downloads";
+
+  // const { isDownloading, progress } = useDownloadProgress();
+
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isTime, setIsTime] = useState(false);
+  const progress = 33;
 
   return (
-    <div className="relative size-12">
-      <SpineButton
-        className="rounded-full border-2 text-neutral-strong"
-        iconPath={mdiDownload}
-        isActive={mainPage === "Downloads"}
+    <div className="flex flex-col gap-y-1">
+      <button onClick={() => setIsDownloading((prev) => !prev)}>
+        Downloading: {isDownloading ? "✔" : "✖"}
+      </button>
+
+      <button onClick={() => setIsPaused((prev) => !prev)}>
+        Paused: {isPaused ? "✔" : "✖"}
+      </button>
+
+      <button onClick={() => setIsTime((prev) => !prev)}>
+        Time: {isTime ? "✔" : "✖"}
+      </button>
+
+      <button
+        className={joinClasses(
+          [
+            "group/download relative flex size-12 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
+            "hover:bg-surface-translucent-high",
+            isPaused || isDownloading
+              ? ""
+              : isActive
+                ? "border-2 border-neutral-strong"
+                : "border-2 border-stroke-weak hover:border-neutral-strong",
+          ],
+          { "bg-surface-translucent-low": isActive },
+        )}
         title="Downloads"
         onClick={() => dispatch(setOpenMainPage("Downloads", false))}
-      />
+      >
+        {isPaused || isDownloading ? (
+          <>
+            {!isPaused && (
+              <Typography
+                appearance="none"
+                as="span"
+                className="leading-none font-semibold"
+                type="body-sm"
+              >
+                {isTime ? 48 : 8.6}
+              </Typography>
+            )}
 
-      {isDownloading && (
-        <ProgressRing progress={progress} size={48} strokeWidth={3} />
-      )}
+            <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
+              {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
+            </span>
+
+            <ProgressRing
+              isActive={isActive}
+              isPaused={isPaused}
+              progress={progress}
+            />
+          </>
+        ) : (
+          <Icon className="transition-colors" path={mdiDownload} size="lg" />
+        )}
+      </button>
     </div>
   );
 };

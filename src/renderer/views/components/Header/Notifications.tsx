@@ -45,7 +45,7 @@ const Notification = ({
 }>) => (
   <div
     className={joinClasses(["flex gap-x-3 rounded-xs bg-surface-low p-2"], {
-      "hover-overlay cursor-pointer": !!onView,
+      "cursor-pointer transition-colors hover:bg-surface-mid": !!onView,
     })}
     onClick={onView}
   >

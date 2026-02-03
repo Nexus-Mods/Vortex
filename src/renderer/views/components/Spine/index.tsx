@@ -54,7 +54,7 @@ export const Spine: FC = () => {
     <div className="flex shrink-0 flex-col justify-between border-r border-stroke-weak p-3">
       <div className="flex flex-col gap-y-3">
         <SpineButton
-          className="rounded-lg border-2 text-neutral-moderate"
+          className="border-2"
           iconPath={mdiHome}
           isActive={selection.type === "home"}
           onClick={selectHome}
@@ -72,7 +72,7 @@ export const Spine: FC = () => {
         ))}
 
         <SpineButton
-          className="rounded-lg border-2 border-dotted text-neutral-moderate hover:border-solid"
+          className="border-2 border-dotted hover:border-solid"
           iconPath={mdiPlus}
           isActive={mainPage === "Games"}
           title="Games"
@@ -82,7 +82,7 @@ export const Spine: FC = () => {
 
       <div className="flex flex-col gap-y-3">
         <SpineButton
-          className="rounded-lg text-neutral-moderate hover:border-2"
+          className="hover:border-2"
           iconPath={mdiPuzzle}
           isActive={mainPage === "Extensions"}
           title="Extensions"
