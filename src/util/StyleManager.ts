@@ -1,24 +1,27 @@
-import { getErrorMessageOrDefault } from "../shared/errors";
+import type * as sassT from "sass";
+
+import PromiseBB from "bluebird";
+import { ipcMain, ipcRenderer } from "electron";
+import * as _ from "lodash";
+import * as path from "path";
+import { pathToFileURL } from "url";
+
 import type { IExtensionApi } from "../types/IExtensionContext";
+
+import { getErrorMessageOrDefault, unknownToError } from "../shared/errors";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { sanitizeCSSId } from "./util";
 
-import PromiseBB from "bluebird";
-import { ipcMain, ipcRenderer } from "electron";
-import * as _ from "lodash";
-import * as path from "path";
-import type * as sassT from "sass";
-import { pathToFileURL } from "url";
-
 function asarUnpacked(input: string): string {
   return input.replace("app.asar" + path.sep, "app.asar.unpacked" + path.sep);
 }
 
-function cachePath() {
-  return path.join(getVortexPath("temp"), "css-cache.json");
+function cachePath(): string {
+  const res = path.join(getVortexPath("temp"), "css-cache.json");
+  return res;
 }
 
 if (ipcMain !== undefined) {
@@ -108,41 +111,29 @@ if (ipcMain !== undefined) {
     setTimeout(
       () => {
         const started = Date.now();
-        sass.render(
-          {
-            outFile: path.join(assetsPath, "theme.css"),
-            includePaths: [assetsPath, modulesPath],
-            data: sassIndex,
-            outputStyle: isDevel ? "expanded" : "compressed",
-          },
-          (err, output) => {
-            log("info", "sass compiled in", `${Date.now() - started}ms`);
-            if (evt.sender?.isDestroyed()) {
-              return;
-            }
-            if (err !== null) {
-              // the error has its own class and its message is missing relevant information
-              evt.sender.send(replyEvent, new Error(err.formatted));
-            } else {
-              // remove utf8-bom if it's there
-              const css = _.isEqual(
-                Array.from(output.css.slice(0, 3)),
-                [0xef, 0xbb, 0xbf],
-              )
-                ? output.css.slice(3)
-                : output.css;
-              evt.sender.send(replyEvent, null, css.toString());
-              fs.writeFileAsync(
-                cachePath(),
-                JSON.stringify({
-                  stylesheets,
-                  css: css.toString(),
-                }),
-                { encoding: "utf8" },
-              ).catch(() => null);
-            }
-          },
-        );
+
+        try {
+          const result = sass.compileString(sassIndex, {
+            style: isDevel ? "expanded" : "compressed",
+            loadPaths: [assetsPath, modulesPath],
+          });
+
+          log("info", "sass compiled in", `${Date.now() - started}ms`);
+          fs.writeFileSync(path.join(assetsPath, "theme.css"), result.css);
+          fs.writeFileSync(
+            cachePath(),
+            JSON.stringify({
+              stylesheets,
+              css: result.css,
+            }),
+            { encoding: "utf8" },
+          );
+        } catch (err) {
+          log("error", "error compiling sass", err);
+          if (evt.sender?.isDestroyed()) return;
+          evt.sender.send(replyEvent, unknownToError(err));
+          return;
+        }
       },
       requested ? 0 : 2000,
     );
@@ -320,7 +311,7 @@ class StyleManager {
     const stylesheets: string[] = this.mPartials
       .filter((partial) => partial.file !== undefined)
       .map((partial) => {
-        const file = partial.file!;
+        const file = partial.file;
         return path.isAbsolute(file) ? asarUnpacked(file) : file;
       });
 
@@ -340,7 +331,7 @@ class StyleManager {
     const head = document.getElementsByTagName("head")[0];
     let found = false;
     for (let i = 0; i < head.children.length && !found; ++i) {
-      const item = head.children.item(i)!;
+      const item = head.children.item(i);
       if (item.id === "theme") {
         head.replaceChild(style, item);
         found = true;
