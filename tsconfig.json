@@ -1,36 +1,18 @@
 {
-  "compileOnSave": true,
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "moduleResolution": "node",
-
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "verbatimModuleSyntax": false,
-
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "preserveConstEnums": true,
-    "removeComments": true,
-
-    "rootDir": "./src",
-    "outDir": "./out",
-
-    "jsx": "react",
-
-    "noImplicitAny": false,
-    "useUnknownInCatchVariables": true
-  },
-  "files": [
-    "typings.custom/index.d.ts",
-    "src/main.ts",
-    "src/index.ts",
-    "src/renderer.tsx",
-    "src/splash.ts",
-    "src/extensions/index.ts"
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.shared.json"
+    },
+    {
+      "path": "./tsconfig.main.json"
+    },
+    {
+      "path": "./tsconfig.renderer.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
   ]
 }

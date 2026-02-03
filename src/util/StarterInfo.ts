@@ -30,13 +30,31 @@ import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getErrorCode, unknownToError } from "../shared/errors";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
+import type { Api, PreloadWindow } from "../shared/types/preload";
 
-function getCurrentWindow() {
+// TODO: remove this when separation is complete
+const getPreloadApi = (): Api =>
+  (window as unknown as PreloadWindow as { api: Api }).api;
+const getWindowId = (): number =>
+  (window as unknown as { windowId: number }).windowId;
+
+async function hideWindow(): Promise<void> {
   if (process.type === "renderer") {
-    return require("@electron/remote").getCurrentWindow();
-  } else {
-    return undefined;
+    await getPreloadApi().window.hide(getWindowId());
   }
+}
+
+async function showWindow(): Promise<void> {
+  if (process.type === "renderer") {
+    await getPreloadApi().window.show(getWindowId());
+  }
+}
+
+async function isWindowVisible(): Promise<boolean> {
+  if (process.type === "renderer") {
+    return getPreloadApi().window.isVisible(getWindowId());
+  }
+  return false;
 }
 
 export interface IStarterInfo {
@@ -205,7 +223,7 @@ class StarterInfo implements IStarterInfo {
               );
             }
             if (["hide", "hide_recover"].includes(info.onStart)) {
-              getCurrentWindow().hide();
+              void hideWindow();
             } else if (info.onStart === "close") {
               getApplication().quit();
             }
@@ -273,7 +291,7 @@ class StarterInfo implements IStarterInfo {
     const spawned = () => {
       onSpawned();
       if (["hide", "hide_recover"].includes(info.onStart)) {
-        getCurrentWindow().hide();
+        void hideWindow();
       } else if (info.onStart === "close") {
         getApplication().quit();
       }
@@ -362,7 +380,7 @@ class StarterInfo implements IStarterInfo {
             },
             false,
           );
-        } else if (code === "UNKNOWN") {
+        } else if (["UNKNOWN", "EFTYPE"].includes(code)) {
           // info sucks but node.js doesn't give us too much information about what went wrong
           // and we can't have users misconfigure their tools and then report the error they
           // get as feedback
@@ -392,12 +410,9 @@ class StarterInfo implements IStarterInfo {
           });
         }
       })
-      .then(() => {
-        if (
-          info.onStart === "hide_recover" &&
-          !getCurrentWindow().isVisible()
-        ) {
-          getCurrentWindow().show();
+      .then(async () => {
+        if (info.onStart === "hide_recover" && !(await isWindowVisible())) {
+          await showWindow();
         }
       });
   }

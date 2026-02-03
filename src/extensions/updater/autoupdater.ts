@@ -23,14 +23,19 @@ const CHECKING_FOR_UPDATES_ID = "vortex-checking-updates-notification";
 const UPDATE_AVAILABLE_ID = "vortex-update-available-notification";
 const FORCED_SWITCH_TO_BETA_ID = "switched-to-beta-channel";
 
-let app = appIn;
-let dialog = dialogIn;
-if (process.type === "renderer") {
-  // tslint:disable-next-line:no-var-requires
-  const remote = require("@electron/remote");
-  app = remote.app;
-  dialog = remote.dialog;
-}
+const app = appIn;
+
+// Async dialog helper that works in both main and renderer processes
+const showMessageBox = async (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  if (process.type === "renderer") {
+    return window.api.dialog.showMessageBox(options);
+  } else {
+    const win = getVisibleWindow();
+    return dialogIn.showMessageBox(win, options);
+  }
+};
 
 const appName = "com.nexusmods.vortex";
 const ELECTRON_BUILDER_NS_UUID = "50e065bc-3134-11e6-9bab-38c9862bdaf3";
@@ -62,8 +67,7 @@ function openTesting() {
 
 function updateWarning() {
   // if dev, don't do this
-
-  dialog.showMessageBoxSync(getVisibleWindow(), {
+  void showMessageBox({
     type: "info",
     title: "Vortex critical update",
     message:
@@ -288,7 +292,7 @@ Are you sure you want to downgrade?`,
 
   autoUpdater.on("error", (err) => {
     // need to remove notifications?!
-    api.dismissNotification(CHECKING_FOR_UPDATES_ID);
+    api.dismissNotification?.(CHECKING_FOR_UPDATES_ID);
 
     if (err.cmd !== undefined && err.cmd.startsWith("powershell.exe")) {
       api.showErrorNotification(
@@ -351,7 +355,7 @@ Are you sure you want to downgrade?`,
 
   autoUpdater.on("update-available", (info: UpdateInfo) => {
     // need to remove notifications?!
-    api.dismissNotification(CHECKING_FOR_UPDATES_ID);
+    api.dismissNotification?.(CHECKING_FOR_UPDATES_ID);
 
     log("info", "found update available", {
       version: info.version,

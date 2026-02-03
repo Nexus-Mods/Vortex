@@ -76,6 +76,7 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
       iniFiles: [
         path.join("{mygames}", "FalloutNV", "Fallout.ini"),
         path.join("{mygames}", "FalloutNV", "FalloutPrefs.ini"),
+        path.join("{mygames}", "FalloutNV", "FalloutCustom.ini"),
       ],
       iniFormat: "winapi",
     },

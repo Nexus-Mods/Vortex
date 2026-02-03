@@ -1,42 +1,40 @@
-import type * as RemoteT from "@electron/remote";
-import type { BrowserWindow } from "electron";
 import * as React from "react";
 import { IconButton } from "../controls/TooltipControls";
-import lazyRequire from "../../util/lazyRequire";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
-
-const window = (() => {
-  let res: BrowserWindow;
-  return () => {
-    if (res === undefined) {
-      res = remote.getCurrentWindow();
-    }
-    return res;
-  };
-})();
+import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 
 class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   private mClosed: boolean = false;
+  private mUnsubscribeMaximize: (() => void) | null = null;
+  private mUnsubscribeUnmaximize: (() => void) | null = null;
+  private mUnsubscribeClose: (() => void) | null = null;
 
   constructor(props: {}) {
     super(props);
 
     this.state = {
-      isMaximized: window().isMaximized(),
+      isMaximized: false,
     };
   }
 
   public componentDidMount() {
-    window().on("maximize", this.onMaximize);
-    window().on("unmaximize", this.onUnMaximize);
-    window().on("close", this.onClose);
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+
+    // Fetch initial maximized state
+    api.window.isMaximized(windowId).then((maximized: boolean) => {
+      this.setState({ isMaximized: maximized });
+    });
+
+    // Subscribe to window events
+    this.mUnsubscribeMaximize = api.window.onMaximize(this.onMaximize);
+    this.mUnsubscribeUnmaximize = api.window.onUnmaximize(this.onUnMaximize);
+    this.mUnsubscribeClose = api.window.onClose(this.onClose);
   }
 
   public componentWillUnmount() {
-    window().removeListener("maximize", this.onMaximize);
-    window().removeListener("unmaximize", this.onUnMaximize);
-    window().removeListener("close", this.onClose);
+    this.mUnsubscribeMaximize?.();
+    this.mUnsubscribeUnmaximize?.();
+    this.mUnsubscribeClose?.();
   }
 
   public render(): JSX.Element {
@@ -72,7 +70,9 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   }
 
   private minimize = () => {
-    window().minimize();
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+    void api.window.minimize(windowId);
   };
 
   private onMaximize = () => {
@@ -90,12 +90,20 @@ class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   };
 
   private toggleMaximize = () => {
-    const wasMaximized = window().isMaximized();
-    wasMaximized ? window().unmaximize() : window().maximize();
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+    const { isMaximized } = this.state;
+    if (isMaximized) {
+      void api.window.unmaximize(windowId);
+    } else {
+      void api.window.maximize(windowId);
+    }
   };
 
   private close = () => {
-    window().close();
+    const api = getPreloadApi();
+    const windowId = getWindowId();
+    void api.window.close(windowId);
   };
 }
 

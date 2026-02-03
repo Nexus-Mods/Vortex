@@ -31,10 +31,7 @@
         "private": false
       }
     ],
-    "publisherName": [
-      "Black Tree Gaming Limited",
-      "Black Tree Gaming Ltd"
-    ]
+    "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"]
   },
   "nsis": {
     "perMachine": true,

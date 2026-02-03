@@ -18,8 +18,10 @@ export class Archive {
   /**
    * list files at the specified path
    */
-  public get readDir(): (archivePath: string) => PromiseBB<string[]> {
-    return this.mHandler.readDir !== undefined
+  public get readDir():
+    | ((archivePath: string) => PromiseBB<string[]>)
+    | undefined {
+    return this.mHandler.readDir
       ? (archivePath: string) => this.mHandler.readDir(archivePath)
       : undefined;
   }
@@ -27,30 +29,33 @@ export class Archive {
   /**
    * read a file at the specified path via a stream
    */
-  public get readFile(): (filePath: string) => NodeJS.ReadableStream {
-    return this.mHandler.readFile !== undefined
-      ? (filePath: string) => this.mHandler.readFile(filePath)
+  public get readFile():
+    | ((filePath: string) => NodeJS.ReadableStream)
+    | undefined {
+    return this.mHandler.readFile
+      ? (filePath: string) => this.mHandler.readFile!(filePath)
       : undefined;
   }
 
   /**
    * extract a single file
    */
-  public get extractFile(): (
-    filePath: string,
-    outputPath: string,
-  ) => PromiseBB<void> {
-    return this.mHandler.extractFile !== undefined
+  public get extractFile():
+    | ((filePath: string, outputPath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.extractFile
       ? (filePath: string, outputPath: string) =>
-          this.mHandler.extractFile(filePath, outputPath)
+          this.mHandler.extractFile!(filePath, outputPath)
       : undefined;
   }
 
   /**
    * extract the entire archive
    */
-  public get extractAll(): (outputPath: string) => PromiseBB<void> {
-    return this.mHandler.extractAll !== undefined
+  public get extractAll():
+    | ((outputPath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.extractAll
       ? (outputPath: string) => this.mHandler.extractAll(outputPath)
       : undefined;
   }
@@ -58,28 +63,25 @@ export class Archive {
   /**
    * create this archive from the files in sourcePath
    */
-  public get create(): (sourcePath: string) => PromiseBB<void> {
-    return this.mHandler.create !== undefined
-      ? (sourcePath: string) => this.mHandler.create(sourcePath)
+  public get create(): ((sourcePath: string) => PromiseBB<void>) | undefined {
+    return this.mHandler.create
+      ? (sourcePath: string) => this.mHandler.create!(sourcePath)
       : undefined;
   }
 
   /**
    * add a single file to the archive
    */
-  public get addFile(): (
-    filePath: string,
-    sourcePath: string,
-  ) => PromiseBB<void> {
-    return this.mHandler.addFile !== undefined
+  public get addFile():
+    | ((filePath: string, sourcePath: string) => PromiseBB<void>)
+    | undefined {
+    return this.mHandler.addFile
       ? (filePath: string, sourcePath: string) =>
-          this.mHandler.addFile(filePath, sourcePath)
+          this.mHandler.addFile!(filePath, sourcePath)
       : undefined;
   }
 
-  public get write(): () => PromiseBB<void> {
-    return this.mHandler.write !== undefined
-      ? () => this.mHandler.write()
-      : undefined;
+  public get write(): (() => PromiseBB<void>) | undefined {
+    return this.mHandler.write ? () => this.mHandler.write!() : undefined;
   }
 }

@@ -1,10 +1,10 @@
-import Promise from 'bluebird';
-import * as _ from 'lodash';
-import * as React from 'react';
-import Select from 'react-select';
-import { connect } from 'react-redux';
-import { types, selectors } from 'vortex-api';
-import { ILOOTList } from '../types/ILOOTList';
+import Promise from "bluebird";
+import * as _ from "lodash";
+import * as React from "react";
+import Select from "react-select";
+import { connect } from "react-redux";
+import { types, selectors } from "vortex-api";
+import { ILOOTList } from "../types/ILOOTList";
 
 interface IConnectedProps {
   gameId: string;
@@ -18,15 +18,16 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { filter, masterlist, userlist } = this.props;
 
-    const options = Array.from(new Set(
-          [].concat(masterlist.groups, userlist.groups)
-            .map(iter => iter.name)))
-      .map(iter => ({ label: iter, value: iter }));
+    const options = Array.from(
+      new Set(
+        [].concat(masterlist.groups, userlist.groups).map((iter) => iter.name),
+      ),
+    ).map((iter) => ({ label: iter, value: iter }));
 
     return (
       <Select
         isMulti
-        className='select-compact'
+        className="select-compact"
         options={options}
         value={filter}
         onChange={this.changeFilter}
@@ -34,10 +35,13 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     );
   }
 
-  private changeFilter = (value: Array<{ value: string, label: string }>) => {
+  private changeFilter = (value: Array<{ value: string; label: string }>) => {
     const { attributeId, onSetFilter } = this.props;
-    onSetFilter(attributeId, value.map(val => val.value));
-  }
+    onSetFilter(
+      attributeId,
+      value.map((val) => val.value),
+    );
+  };
 }
 
 const emptyList: ILOOTList = {
@@ -56,7 +60,8 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 const GroupFilterComponentConn = connect(mapStateToProps)(
-  GroupFilterComponent) as any;
+  GroupFilterComponent,
+) as any;
 
 class GroupFilter implements types.ITableFilter {
   public component = GroupFilterComponentConn;

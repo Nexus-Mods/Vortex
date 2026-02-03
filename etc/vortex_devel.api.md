@@ -19,7 +19,8 @@ import type { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
-import type { ComponentProps } from 'react';
+import { ComplexActionCreator6 } from 'redux-act';
+import { ComponentProps } from 'react';
 import { ComponentType } from 'react';
 import { constants } from 'fs';
 import { createReadStream } from 'original-fs';
@@ -80,7 +81,6 @@ import { ParametricKeySelector } from 're-reselect';
 import { ParametricSelector } from 're-reselect';
 import { default as Promise_2 } from 'bluebird';
 import type * as Promise_3 from 'bluebird';
-import PromiseBB from 'bluebird';
 import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
@@ -100,6 +100,7 @@ import * as semver from 'semver';
 import SevenZip from 'node-7z';
 import { Stats } from 'fs';
 import { statSync } from 'original-fs';
+import { SVGAttributes } from 'react';
 import { symlinkSync } from 'original-fs';
 import type { TFunction as TFunction_2 } from 'i18next';
 import type { ThunkDispatch } from 'redux-thunk';
@@ -353,13 +354,13 @@ const activeGameId: (state: IState) => string;
 const activeProfile: (state: any) => IProfile | undefined;
 
 // @public
-const addDialog: reduxAct.ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
-    id: string;
-    type: string;
-    title: string;
-    content: IDialogContent;
-    defaultAction: string;
-    actions: string[];
+const addDialog: ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
+id: string;
+type: string;
+title: string;
+content: IDialogContent;
+defaultAction: string;
+actions: string[];
 }, {}>;
 
 // @public
@@ -404,7 +405,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise_2<void>;
+function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -421,19 +422,19 @@ export const Advanced: React_2.ComponentType<{}>;
 const apiKey: (state: IState) => any;
 
 // @public (undocumented)
-const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => PromiseBB<void>;
+const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => Promise_2<void>;
 
 // @public
 class Archive {
     constructor(handler: IArchiveHandler);
-    get addFile(): (filePath: string, sourcePath: string) => Promise_2<void>;
-    get create(): (sourcePath: string) => Promise_2<void>;
-    get extractAll(): (outputPath: string) => Promise_2<void>;
-    get extractFile(): (filePath: string, outputPath: string) => Promise_2<void>;
-    get readDir(): (archivePath: string) => Promise_2<string[]>;
-    get readFile(): (filePath: string) => NodeJS.ReadableStream;
+    get addFile(): ((filePath: string, sourcePath: string) => Promise_2<void>) | undefined;
+    get create(): ((sourcePath: string) => Promise_2<void>) | undefined;
+    get extractAll(): ((outputPath: string) => Promise_2<void>) | undefined;
+    get extractFile(): ((filePath: string, outputPath: string) => Promise_2<void>) | undefined;
+    get readDir(): ((archivePath: string) => Promise_2<string[]>) | undefined;
+    get readFile(): ((filePath: string) => NodeJS.ReadableStream) | undefined;
     // (undocumented)
-    get write(): () => Promise_2<void>;
+    get write(): (() => Promise_2<void>) | undefined;
 }
 
 // @public (undocumented)
@@ -464,7 +465,7 @@ function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Actio
 function bbcodeToHTML(input: string): string;
 
 // @public (undocumented)
-function bundleAttachment(options?: IErrorOptions): Promise_2<string>;
+function bundleAttachment(options?: IErrorOptions): Promise_2<string | undefined>;
 
 // @public
 class Button_3 extends React_2.PureComponent<ButtonProps_2, {}> {
@@ -504,10 +505,10 @@ enum Campaign {
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
 // @public (undocumented)
-function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs_2.Stats): PromiseBB<void>;
+function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs_2.Stats): Promise_2<void>;
 
 // @public (undocumented)
-function changeFileOwnership(filePath: string, stat: fs_2.Stats): PromiseBB<void>;
+function changeFileOwnership(filePath: string, stat: fs_2.Stats): Promise_2<void>;
 
 // @public
 function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T;
@@ -519,7 +520,7 @@ type CheckFunction = () => Promise_2<ITestResult>;
 function checksum(input: Buffer): string;
 
 // @public (undocumented)
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void>;
+const chmodAsync: (path: string, mode: string | number) => Promise_2<void>;
 
 // @public (undocumented)
 const clearDialog: ComplexActionCreator1<string, {
@@ -556,7 +557,7 @@ class ClickPopover extends React_2.Component<ClickPopoverProps, {
 type ClickPopoverProps = ButtonProps_2 & IIconButtonExtraProps & {};
 
 // @public (undocumented)
-const closeAsync: (fd: number) => PromiseBB<void>;
+const closeAsync: (fd: number) => Promise_2<void>;
 
 // @public (undocumented)
 const closeBrowser: EmptyActionCreator;
@@ -614,6 +615,33 @@ class CollectionsDownloadFailedEvent implements MixpanelEvent {
     constructor(collection_id: string, revision_id: string, game_id: number, error_code: string, error_message: string);
     // (undocumented)
     readonly eventName = "collections_download_failed";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number, creation_method: "from_profile" | "quick_collection" | "empty");
+    // (undocumented)
+    readonly eventName = "Collections: Collection drafted in Vortex";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft update uploaded";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, user_id: number);
+    // (undocumented)
+    readonly eventName = "Collections: Draft uploaded";
     // (undocumented)
     readonly properties: Record<string, any>;
 }
@@ -712,7 +740,7 @@ function convertGameIdReverse(knownGames: IGameStored[], input: string): string;
 function copyAsync(src: string, dest: string, options?: fs_2.CopyOptions & {
     noSelfCopy?: boolean;
     showDialogCallback?: () => boolean;
-}): PromiseBB<void>;
+}): Promise_2<void>;
 
 // @public
 function copyFileAtomic(srcPath: string, destPath: string): Promise_2<void>;
@@ -772,7 +800,7 @@ class Debouncer {
     clear(): void;
     runNow(callback: (err: Error) => void, ...args: any[]): void;
     schedule(callback?: (err: Error) => void, ...args: any[]): void;
-    wait(callback: (err: Error) => void, immediately?: boolean): void;
+    wait(callback: (err: Error | null) => void, immediately?: boolean): void;
 }
 
 // @public
@@ -836,7 +864,7 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 function dismissAllNotifications(): (dispatch: any) => Promise_2<void>;
 
 // @public
-const dismissDialog: reduxAct.ComplexActionCreator1<any, any, {}>;
+const dismissDialog: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 function dismissNotification(id: string): (dispatch: any) => Promise_2<void>;
@@ -941,16 +969,16 @@ instanceId: string;
 }, {}>;
 
 // @public (undocumented)
-function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => PromiseBB<void>): PromiseBB<void>;
+function ensureDirAsync(dirPath: string, onDirCreatedCB?: (created: string) => Promise_2<void>): Promise_2<void>;
 
 // @public (undocumented)
 function ensureDirSync(dirPath: string): void;
 
 // @public (undocumented)
-function ensureDirWritableAsync(dirPath: string, confirm?: () => PromiseLike<void>): PromiseBB<void>;
+function ensureDirWritableAsync(dirPath: string, confirm?: () => PromiseLike<void>): Promise_2<void>;
 
 // @public (undocumented)
-function ensureFileAsync(filePath: string): PromiseBB<void>;
+function ensureFileAsync(filePath: string): Promise_2<void>;
 
 // @public (undocumented)
 export const ErrorBoundary: any;
@@ -1017,7 +1045,7 @@ export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
 }
 
 // @public (undocumented)
-function forcePerm<T>(t: TFunction, op: () => PromiseBB<T>, filePath?: string, maxTries?: number): PromiseBB<T>;
+function forcePerm<T>(t: TFunction, op: () => Promise_2<T>, filePath?: string, maxTries?: number): Promise_2<T>;
 
 // @public (undocumented)
 const forgetExtension: reduxAct.ComplexActionCreator1<any, any, {}>;
@@ -1140,7 +1168,7 @@ declare namespace fs {
 export { fs }
 
 // @public (undocumented)
-const fsyncAsync: (fd: number) => PromiseBB<void>;
+const fsyncAsync: (fd: number) => Promise_2<void>;
 
 // @public (undocumented)
 const gameById: ParametricSelector<any, string, IGameStored> & {
@@ -1205,7 +1233,7 @@ class GameStoreNotFound extends Error {
 function generateCollectionSessionId(collectionId: string, profileId: string): string;
 
 // @public (undocumented)
-function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => PromiseBB<any>;
+function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
 function getActivator(activatorId: string): IDeploymentMethod;
@@ -1444,7 +1472,7 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
 function getReduxLog(): Promise<ILog[]>;
 
 // @public
-function getSafe<T>(state: any, path: Array<string | number>, fallback: T): T;
+function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T;
 
 // @public
 function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
@@ -1453,7 +1481,7 @@ function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
 function getText(group: TextGroup, textId: string, t: TFunction): string;
 
 // @public (undocumented)
-function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null;
+function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null;
 
 // Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point index.d.ts
 //
@@ -1710,7 +1738,7 @@ export class Icon extends React_2.Component<IIconProps, {
 }
 
 // @public
-class Icon_3 extends React_2.Component<IconProps_2, {}> {
+class Icon_3 extends React_2.Component<IconProps, {}> {
     // (undocumented)
     render(): React_2.JSX.Element;
 }
@@ -1740,7 +1768,7 @@ interface IConditionResult {
 }
 
 // @public (undocumented)
-type IconProps_2 = ITooltipProps & ITooltipIconProps;
+type IconProps = ITooltipProps & ITooltipIconProps;
 
 // @public (undocumented)
 interface IControlBase {
@@ -2399,7 +2427,7 @@ interface IGameStore {
     findByAppId: (appId: string | string[]) => Promise_2<IGameStoreEntry>;
     findByName: (appName: string) => Promise_2<IGameStoreEntry>;
     getExecInfo?: (appId: any) => Promise_2<IExecInfo>;
-    getGameStorePath: () => Promise_2<string>;
+    getGameStorePath: () => Promise_2<string | undefined>;
     getPosixPath?: (name: string) => Promise_2<string>;
     id: string;
     identifyGame?: (gamePath: string, fallback: (gamePath: string) => PromiseLike<boolean>) => Promise_2<boolean>;
@@ -2457,7 +2485,7 @@ interface IGameStoreEntry {
     // (undocumented)
     gamePath: string;
     // (undocumented)
-    gameStoreId: string;
+    gameStoreId: string | undefined;
     // (undocumented)
     lastUpdated?: Date;
     // (undocumented)
@@ -2992,7 +3020,7 @@ const installPathForGame: ParametricSelector<IState, string, string> & {
 type InstallPathMode = "userData" | "suggested";
 
 // @public (undocumented)
-const instance: IGameStore;
+const instance: IGameStore | undefined;
 
 // Warning: (ae-forgotten-export) The symbol "GameStoreHelper" needs to be exported by the entry point index.d.ts
 //
@@ -3295,7 +3323,7 @@ clearCache: () => void;
 const isCollectionPhaseComplete: (state: IState, phase: number) => boolean;
 
 // @public (undocumented)
-function isDirectoryAsync(dirPath: string): PromiseBB<boolean>;
+function isDirectoryAsync(dirPath: string): Promise_2<boolean>;
 
 // @public
 interface ISession {
@@ -4050,7 +4078,7 @@ const lastActiveProfileForGame: ParametricSelector<IState, string, string> & {
 };
 
 // @public (undocumented)
-function linkAsync(src: string, dest: string, options?: ILinkFileOptions): PromiseBB<void>;
+function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point index.d.ts
 //
@@ -4074,16 +4102,16 @@ function local<T>(id: string, init: T): T;
 // @public (undocumented)
 type LockedState = true | false | "true" | "false" | "always" | "never";
 
-// Warning: (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Level" needs to be exported by the entry point index.d.ts
 //
-// @public
-export function log(level: LogLevel, message: string, metadata?: unknown): void;
+// @public @deprecated (undocumented)
+export function log(level: Level, message: string, metadata?: unknown): void;
 
 // @public (undocumented)
 function lookupFromDownload(download: IDownload): IModLookupInfo;
 
 // @public (undocumented)
-const lstatAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const lstatAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // @public (undocumented)
 export const MainContext: React_2.Context<IComponentContext>;
@@ -4103,7 +4131,7 @@ export class MainPage extends ComponentEx<IProps_11, {}> {
 }
 
 // @public (undocumented)
-function makeFileWritableAsync(filePath: string): PromiseBB<void>;
+function makeFileWritableAsync(filePath: string): Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "GetSelection" needs to be exported by the entry point index.d.ts
 //
@@ -4160,14 +4188,14 @@ type Method = "GET" | "POST" | "PUT";
 class MissingInterpreter extends Error {
     constructor(message: string, url?: string);
     // (undocumented)
-    get url(): string;
+    get url(): string | undefined;
 }
 
 // @public (undocumented)
-const mkdirAsync: (path: string) => PromiseBB<void>;
+const mkdirAsync: (path: string) => Promise_2<void>;
 
 // @public (undocumented)
-const mkdirsAsync: (path: string) => PromiseBB<void>;
+const mkdirsAsync: (path: string) => Promise_2<void>;
 
 // @public (undocumented)
 export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props, {}> {
@@ -4228,10 +4256,10 @@ const modsForGame: (state: IState, gameId: string) => {
 export const More: React_2.ComponentClass<IMoreProps>;
 
 // @public (undocumented)
-const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => PromiseBB<void>;
+const moveAsync: (src: string, dest: string, options?: fs_2.MoveOptions) => Promise_2<void>;
 
 // @public
-function moveRenameAsync(src: string, dest: string): PromiseBB<string>;
+function moveRenameAsync(src: string, dest: string): Promise_2<string>;
 
 // @public (undocumented)
 function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void;
@@ -4330,7 +4358,7 @@ function onceCB<T extends Function>(func: T): T;
 function open_2(target: string, wait?: boolean): Promise_2<void>;
 
 // @public (undocumented)
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number>;
+const openAsync: (path: string, flags: string | number, mode?: number) => Promise_2<number>;
 
 // @public (undocumented)
 export class OptionsFilter implements ITableFilter {
@@ -4499,25 +4527,25 @@ export const RadialProgress: React_2.ComponentClass<IBaseProps_10>;
 function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string | Buffer>;
 
 // @public (undocumented)
-const readAsync: <BufferT>(...args: any[]) => PromiseBB<{
+const readAsync: <BufferT>(...args: any[]) => Promise_2<{
     bytesRead: number;
     buffer: BufferT;
 }>;
 
 // @public (undocumented)
-const readdirAsync: (path: string) => PromiseBB<string[]>;
+const readdirAsync: (path: string) => Promise_2<string[]>;
 
 // @public (undocumented)
 function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string): Promise_2<any[]>;
 
 // @public (undocumented)
-const readFileAsync: (...args: any[]) => PromiseBB<any>;
+const readFileAsync: (...args: any[]) => Promise_2<any>;
 
 // @public
 function readFileBOM(filePath: string, fallbackEncoding: string): Promise<string>;
 
 // @public (undocumented)
-function readlinkAsync(linkPath: string): PromiseBB<string>;
+function readlinkAsync(linkPath: string): Promise_2<string>;
 
 // @public (undocumented)
 class ReduxProp<T> {
@@ -4569,7 +4597,7 @@ function rehydrate<T extends object>(state: T, inbound: any, path: string[], rep
 function relativeTime(date: Date, t: TFunction): string;
 
 // @public (undocumented)
-function removeAsync(remPath: string, options?: IRemoveFileOptions): PromiseBB<void>;
+function removeAsync(remPath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
 const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
@@ -4619,7 +4647,7 @@ function removeValue<T>(state: T, path: Array<string | number>, value: any): T;
 function removeValueIf<T extends object>(state: T, path: Array<string | number>, predicate: (element: any) => boolean): T;
 
 // @public (undocumented)
-function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void>;
+function renameAsync(sourcePath: string, destinationPath: string): Promise_2<void>;
 
 // @public (undocumented)
 const renameCategory: reduxAct.ComplexActionCreator3<string, string, string, {
@@ -4655,7 +4683,7 @@ function resolveCategoryPath(category: string | number, state: IState): string;
 type Revertability = "yes" | "never" | "invalid";
 
 // @public (undocumented)
-function rmdirAsync(dirPath: string): PromiseBB<void>;
+function rmdirAsync(dirPath: string): Promise_2<void>;
 
 // @public
 function sanitizeCSSId(input: string): string;
@@ -5278,7 +5306,7 @@ const setUpdateChannel: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 class SetupError extends Error {
     constructor(message: string, component?: string);
     // (undocumented)
-    get component(): string;
+    get component(): string | undefined;
 }
 
 // @public (undocumented)
@@ -5426,16 +5454,16 @@ class StarterInfo implements IStarterInfo {
 }
 
 // @public
-const startNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const startNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
-const statAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const statAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // @public (undocumented)
 type StateChangeCallback<T = any> = (previous: T, current: T) => void;
 
 // @public (undocumented)
-const statSilentAsync: (path: string) => PromiseBB<fs_2.Stats>;
+const statSilentAsync: (path: string) => Promise_2<fs_2.Stats>;
 
 // Warning: (ae-forgotten-export) The symbol "ISteps" needs to be exported by the entry point index.d.ts
 //
@@ -5452,10 +5480,10 @@ const stopActivity: reduxAct.ComplexActionCreator2<string, string, {
 }>;
 
 // @public (undocumented)
-const stopAllNotifications: reduxAct.EmptyActionCreator;
+const stopAllNotifications: EmptyActionCreator;
 
 // @public
-const stopNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const stopNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public
 const suppressNotification: ComplexActionCreator2<string, boolean, {
@@ -5464,7 +5492,7 @@ suppress: boolean;
 }, {}>;
 
 // @public (undocumented)
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void>;
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps_11" needs to be exported by the entry point index.d.ts
 //
@@ -5573,7 +5601,11 @@ export const Tailwind: {
     }>;
     CollectionTileDemo: ComponentType<ICollectionTileDemoProps>;
     Link: ForwardRefExoticComponent<link.LinkProps & RefAttributes<HTMLAnchorElement>>;
-    Icon: ({ path, size, sizeOverride, className, title, ...rest }: icon.IconProps) => JSX_2.Element;
+    Icon: ({ path, size, className, title, ...props }: Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
+        path: string;
+        size?: icon.IconSize;
+        title?: string;
+    }) => JSX_2.Element;
     Button: (all: (ButtonHTMLAttributes<HTMLButtonElement> & ({
         as?: "button";
         disabled?: boolean;
@@ -5740,7 +5772,7 @@ declare namespace tooltip {
         NavItemProps,
         NavItem_2 as NavItem,
         ITooltipIconProps,
-        IconProps_2 as IconProps,
+        IconProps,
         Icon_3 as Icon,
         ClickPopoverProps,
         ClickPopover
@@ -5973,7 +6005,7 @@ export { types }
 function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[];
 
 // @public (undocumented)
-function unlinkAsync(filePath: string, options?: IRemoveFileOptions): PromiseBB<void>;
+function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Promise_2<void>;
 
 // @public (undocumented)
 const UPDATE_CHANNELS: readonly ["stable", "beta", "next", "none"];
@@ -5990,13 +6022,13 @@ const updateCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictiona
 type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
 
 // @public (undocumented)
-const updateNotification: reduxAct.ComplexActionCreator3<string, number, string, {
-    id: string;
-    progress: number;
-    message: string;
+const updateNotification: ComplexActionCreator3<string, number, string, {
+id: string;
+progress: number;
+message: string;
 }, {
-    forward: boolean;
-    scope: string;
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
@@ -6139,6 +6171,9 @@ declare namespace util {
         CollectionsInstallationFailedEvent,
         CollectionsInstallationCancelledEvent,
         CollectionsDownloadClickedEvent,
+        CollectionsDraftedEvent,
+        CollectionsDraftUploadedEvent,
+        CollectionsDraftUpdateUploadedEvent,
         TextGroup,
         calcDuration,
         showSuccess,
@@ -6176,7 +6211,7 @@ declare namespace util {
 export { util }
 
 // @public (undocumented)
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void>;
+const utimesAsync: (path: string, atime: number, mtime: number) => Promise_2<void>;
 
 // @public (undocumented)
 type ValidationState = "success" | "warning" | "error";
@@ -6228,22 +6263,22 @@ const willRemoveProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 function withContext(id: string, value: string, fun: () => Promise_2<any>): Promise_2<any>;
 
 // @public (undocumented)
-const withTmpDir: (...args: any[]) => PromiseBB<any>;
+const withTmpDir: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
-function withTmpDirImpl<T>(cb: (tmpPath: string) => PromiseBB<T>): PromiseBB<T>;
+function withTmpDirImpl<T>(cb: (tmpPath: string) => Promise_2<T>): Promise_2<T>;
 
 // @public (undocumented)
-const withTmpFile: (...args: any[]) => PromiseBB<any>;
+const withTmpFile: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
-const writeAsync: <BufferT>(...args: any[]) => PromiseBB<{
+const writeAsync: <BufferT>(...args: any[]) => Promise_2<{
     bytesWritten: number;
     buffer: BufferT;
 }>;
 
 // @public (undocumented)
-const writeFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => PromiseBB<void>;
+const writeFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions) => Promise_2<void>;
 
 // @public (undocumented)
 function writeFileAtomic(filePath: string, input: string | Buffer): Promise_2<void>;
@@ -6273,9 +6308,9 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // api/lib/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point index.d.ts
 // api/lib/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point index.d.ts
 // api/lib/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:101:5 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:109:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:169:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:103:9 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
+// api/lib/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
 // api/lib/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
 // api/lib/types/IState.d.ts:361:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
 // api/lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts

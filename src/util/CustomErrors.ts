@@ -129,14 +129,14 @@ export class DocumentsPathMissing extends Error {
 }
 
 export class SetupError extends Error {
-  private mComponent: string;
+  private mComponent: string | undefined;
   constructor(message: string, component?: string) {
     super(message);
     this.name = this.constructor.name;
     this.mComponent = component;
   }
 
-  public get component(): string {
+  public get component(): string | undefined {
     return this.mComponent;
   }
 }
@@ -174,14 +174,14 @@ export class HTTPError extends Error {
 }
 
 export class MissingInterpreter extends Error {
-  private mURL: string;
+  private mURL: string | undefined;
   constructor(message: string, url?: string) {
     super(message);
     this.name = this.constructor.name;
     this.mURL = url;
   }
 
-  public get url(): string {
+  public get url(): string | undefined {
     return this.mURL;
   }
 }
@@ -227,7 +227,7 @@ export class SelfCopyCheckError extends Error {
 }
 
 export class ArchiveBrokenError extends Error {
-  private mFileName: string;
+  private mFileName: string | undefined;
   constructor(fileNameOrMessage: string, message?: string) {
     if (message == null) {
       // Single argument: it's just a message
@@ -240,7 +240,7 @@ export class ArchiveBrokenError extends Error {
     this.name = this.constructor.name;
   }
 
-  public get fileName(): string {
+  public get fileName(): string | undefined {
     return this.mFileName;
   }
 }

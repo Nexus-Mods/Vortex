@@ -81,9 +81,8 @@ $headings-color: inherit !default;
 // [converter] If $bootstrap-sass-asset-helper if used, provide path relative to the assets load path.
 // [converter] This is because some asset helpers, such as Sprockets, do not work with file-relative paths.
 $icon-font-path: if(
-    $bootstrap-sass-asset-helper,
-    "bootstrap/",
-    "../fonts/bootstrap/"
+    sass($bootstrap-sass-asset-helper): "bootstrap/" ;
+        else: "../fonts/bootstrap/",
 ) !default;
 
 //** File name for all font files.
@@ -367,9 +366,9 @@ $container-lg: $container-large-desktop !default;
 $navbar-height: 50px !default;
 $navbar-margin-bottom: $line-height-computed !default;
 $navbar-border-radius: $border-radius-base !default;
-$navbar-padding-horizontal: floor(($grid-gutter-width / 2)) !default;
+$navbar-padding-horizontal: floor(($grid-gutter-width * 0.5)) !default;
 $navbar-padding-vertical: (
-    ($navbar-height - $line-height-computed) / 2
+    ($navbar-height - $line-height-computed) * 0.5
 ) !default;
 $navbar-collapse-max-height: 340px !default;
 

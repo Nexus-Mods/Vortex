@@ -1,8 +1,8 @@
 /* eslint-disable */
-import { useSelector } from 'react-redux';
-import * as React from 'react';
-import { ControlLabel, ListGroup, Popover, Table } from 'react-bootstrap';
-import { Overlay, Toggle, selectors, types, util } from 'vortex-api';
+import { useSelector } from "react-redux";
+import * as React from "react";
+import { ControlLabel, ListGroup, Popover, Table } from "react-bootstrap";
+import { Overlay, Toggle, selectors, types, util } from "vortex-api";
 
 export interface IPathTools {
   relative(lhs: string, rhs: string): string;
@@ -28,26 +28,31 @@ function FileOverrides(props: IFileOverridesProps) {
   const target = React.useRef<HTMLElement>();
   const container = React.useRef<HTMLDivElement>();
 
-  const modsWithOverrides = React.useMemo(() =>
-    (collection.rules ?? [])
-      .filter(rule => ['requires', 'recommends'].includes(rule.type))
-      .map(rule => util.findModByRef(rule.reference, mods))
-      .filter(mod => (mod?.fileOverrides ?? []).length > 0)
-  , [collection, mods]);
+  const modsWithOverrides = React.useMemo(
+    () =>
+      (collection.rules ?? [])
+        .filter((rule) => ["requires", "recommends"].includes(rule.type))
+        .map((rule) => util.findModByRef(rule.reference, mods))
+        .filter((mod) => (mod?.fileOverrides ?? []).length > 0),
+    [collection, mods],
+  );
 
   const toggleOverride = React.useCallback((value: boolean, dataId: string) => {
-    onSetCollectionAttribute(['fileOverrides', dataId], value)
+    onSetCollectionAttribute(["fileOverrides", dataId], value);
   }, []);
 
-  const togglePopover = React.useCallback((evt: React.MouseEvent<HTMLElement>) => {
-    const modId = evt.currentTarget.getAttribute('data-modid');
-    if (showOverlay === modId) {
-      setShowOverlay(undefined);
-    } else {
-      target.current = evt.currentTarget;
-      setShowOverlay(modId);
-    }
-  }, [setShowOverlay, showOverlay]);
+  const togglePopover = React.useCallback(
+    (evt: React.MouseEvent<HTMLElement>) => {
+      const modId = evt.currentTarget.getAttribute("data-modid");
+      if (showOverlay === modId) {
+        setShowOverlay(undefined);
+      } else {
+        target.current = evt.currentTarget;
+        setShowOverlay(modId);
+      }
+    },
+    [setShowOverlay, showOverlay],
+  );
 
   const hide = React.useCallback((evt) => {
     evt.preventDefault();
@@ -55,51 +60,68 @@ function FileOverrides(props: IFileOverridesProps) {
   }, []);
 
   const getBounds = React.useCallback((): DOMRect => {
-    return container.current !== undefined ? container.current.getBoundingClientRect() : {
-      left: 0,
-      top: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
-    } as any;
+    return container.current !== undefined
+      ? container.current.getBoundingClientRect()
+      : ({
+          left: 0,
+          top: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+        } as any);
   }, [container.current]);
 
   const mod = mods[showOverlay];
-  const toRelPath = (filePath: string) => pathTool.relative(discovery.path, filePath);
-  const popover = showOverlay === undefined ? <Popover/> : (
-    <Popover id='file-overrides-popover'>
-      <ListGroup>
-        {(mod.fileOverrides ?? []).map(override => (
-          <div key={override}>{toRelPath(override)}</div>
-        ))}
-      </ListGroup>
-    </Popover>
-  );
+  const toRelPath = (filePath: string) =>
+    pathTool.relative(discovery.path, filePath);
+  const popover =
+    showOverlay === undefined ? (
+      <Popover />
+    ) : (
+      <Popover id="file-overrides-popover">
+        <ListGroup>
+          {(mod.fileOverrides ?? []).map((override) => (
+            <div key={override}>{toRelPath(override)}</div>
+          ))}
+        </ListGroup>
+      </Popover>
+    );
 
-  const isEnabled = (id: string) => collection.attributes?.collection?.fileOverrides?.[id] ?? false;
+  const isEnabled = (id: string) =>
+    collection.attributes?.collection?.fileOverrides?.[id] ?? false;
   return (
-    <div ref={container} id='collection-file-overrides' className='collection-file-overrides'>
+    <div
+      ref={container}
+      id="collection-file-overrides"
+      className="collection-file-overrides"
+    >
       <ControlLabel>
         <p>
-          {t('File overrides can be considered as a type of ignore list. This page will allow you to export file overrides that '
-           + 'are defined for your selected mod list. As of Vortex 1.10.x, the file overrides are generated automatically based on '
-           + 'mod rules you export as part of your collection.')}
+          {t(
+            "File overrides can be considered as a type of ignore list. This page will allow you to export file overrides that " +
+              "are defined for your selected mod list. As of Vortex 1.10.x, the file overrides are generated automatically based on " +
+              "mod rules you export as part of your collection.",
+          )}
         </p>
         <p>
-          {t('Please note that these pre-generated file overrides are toggled off by default as Vortex will '
-           + 'generate them on the users machine as part of the collection installation automatically. Therefore there\'s no '
-           + 'explicit need to export these overrides unless you have manually set certain overrides which are not generated by the mod dependency system.')}
+          {t(
+            "Please note that these pre-generated file overrides are toggled off by default as Vortex will " +
+              "generate them on the users machine as part of the collection installation automatically. Therefore there's no " +
+              "explicit need to export these overrides unless you have manually set certain overrides which are not generated by the mod dependency system.",
+          )}
         </p>
         <p>
-          {t('Any mods enabled below will NOT be deployed on the user\'s machine. '
-           + 'Please use this feature sparingly as most users are not aware that Vortex offers this functionality and may '
-           + 'encounter trouble when trying to tweak/remove them.')}
+          {t(
+            "Any mods enabled below will NOT be deployed on the user's machine. " +
+              "Please use this feature sparingly as most users are not aware that Vortex offers this functionality and may " +
+              "encounter trouble when trying to tweak/remove them.",
+          )}
         </p>
       </ControlLabel>
       <Table>
         <tbody>
-          {modsWithOverrides.map(mod => (
+          {modsWithOverrides.map((mod) => (
             <tr key={mod.id}>
               <td>
                 <Toggle
@@ -113,7 +135,7 @@ function FileOverrides(props: IFileOverridesProps) {
                     rootClose
                     show={showOverlay !== undefined}
                     onHide={hide}
-                    orientation='horizontal'
+                    orientation="horizontal"
                     getBounds={getBounds}
                     target={target.current}
                   >
@@ -123,7 +145,7 @@ function FileOverrides(props: IFileOverridesProps) {
               </td>
               <td>
                 <a data-modid={mod.id} onClick={togglePopover}>
-                  {t('contains {{count}} file override', {
+                  {t("contains {{count}} file override", {
                     count: (mod.fileOverrides ?? []).length,
                   })}
                 </a>

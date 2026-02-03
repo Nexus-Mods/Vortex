@@ -1,3 +1,3 @@
-let webpack = require('vortex-api/bin/webpack').default;
+let webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('gamebryo-archive-invalidation', __dirname, 5);
+module.exports = webpack("gamebryo-archive-invalidation", __dirname, 5);

@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-      branches: [ master ]
+    branches: [master]
   pull_request:
-      branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -52,11 +52,12 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-timeout 600000 install
 
+      - name: Lint
+        run: yarn lint:ci
+
       - name: Build
         run: yarn build
 
       - name: Test
         if: runner.os == 'Windows'
         run: yarn test
-
-

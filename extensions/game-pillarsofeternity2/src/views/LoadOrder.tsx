@@ -1,12 +1,19 @@
-import { ILoadOrder, ILoadOrderDisplayItem } from '../types';
+import { ILoadOrder, ILoadOrderDisplayItem } from "../types";
 
-import DraggableList from './DraggableList';
-import LoadOrderEntry from './LoadOrderEntry';
+import DraggableList from "./DraggableList";
+import LoadOrderEntry from "./LoadOrderEntry";
 
-import * as React from 'react';
-import { Panel } from 'react-bootstrap';
-import { withTranslation } from 'react-i18next';
-import { ComponentEx, DNDContainer, FlexLayout, MainPage, types, util } from 'vortex-api';
+import * as React from "react";
+import { Panel } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import {
+  ComponentEx,
+  DNDContainer,
+  FlexLayout,
+  MainPage,
+  types,
+  util,
+} from "vortex-api";
 
 const PanelX: any = Panel;
 
@@ -36,10 +43,13 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
       const { enabled, disabled } = this.state;
       const newOrder: ILoadOrder = {};
       const numEnabled = enabled.length;
-      enabled.forEach((item, idx) =>
-        newOrder[item.id] = { pos: idx, enabled: true });
-      disabled.forEach((item, idx) =>
-        newOrder[item.id] = { pos: numEnabled + idx, enabled: false });
+      enabled.forEach(
+        (item, idx) => (newOrder[item.id] = { pos: idx, enabled: true }),
+      );
+      disabled.forEach(
+        (item, idx) =>
+          (newOrder[item.id] = { pos: numEnabled + idx, enabled: false }),
+      );
 
       this.props.onSetLoadOrder(newOrder);
       return null;
@@ -51,9 +61,11 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: ILoadOrderProps) {
-    if ((this.props.loadOrder !== newProps.loadOrder)
-        || (this.props.mods !== newProps.mods)
-        || (this.props.profile !== newProps.profile)) {
+    if (
+      this.props.loadOrder !== newProps.loadOrder ||
+      this.props.mods !== newProps.mods ||
+      this.props.profile !== newProps.profile
+    ) {
       this.updateState(newProps);
     }
   }
@@ -65,18 +77,18 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
     return (
       <MainPage>
         <MainPage.Body>
-          <Panel id='pillars2-plugin-panel'>
+          <Panel id="pillars2-plugin-panel">
             <PanelX.Body>
-              <DNDContainer style={{ height: '100%' }}>
-                <FlexLayout type='row'>
+              <DNDContainer style={{ height: "100%" }}>
+                <FlexLayout type="row">
                   <FlexLayout.Flex>
-                    <FlexLayout type='column'>
+                    <FlexLayout type="column">
                       <FlexLayout.Fixed>
-                        <h4>{t('Enabled')}</h4>
+                        <h4>{t("Enabled")}</h4>
                       </FlexLayout.Fixed>
                       <FlexLayout.Flex>
                         <DraggableList
-                          id='enabled'
+                          id="enabled"
                           items={enabled}
                           itemRenderer={LoadOrderEntry}
                           apply={this.applyEnabled}
@@ -85,13 +97,13 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
                     </FlexLayout>
                   </FlexLayout.Flex>
                   <FlexLayout.Flex>
-                    <FlexLayout type='column'>
+                    <FlexLayout type="column">
                       <FlexLayout.Fixed>
-                        <h4>{t('Disabled')}</h4>
+                        <h4>{t("Disabled")}</h4>
                       </FlexLayout.Fixed>
                       <FlexLayout.Flex>
                         <DraggableList
-                          id='disabled'
+                          id="disabled"
                           items={disabled}
                           itemRenderer={LoadOrderEntry}
                           apply={this.applyDisabled}
@@ -112,39 +124,52 @@ class LoadOrder extends ComponentEx<ILoadOrderProps, ILoadOrderState> {
     const { mods, loadOrder, profile } = props;
 
     const sorted = Object.keys(loadOrder || {})
-      .filter(lo => (mods[lo] !== undefined)
-                 && util.getSafe(profile, ['modState', lo, 'enabled'], false))
+      .filter(
+        (lo) =>
+          mods[lo] !== undefined &&
+          util.getSafe(profile, ["modState", lo, "enabled"], false),
+      )
       .sort((lhs, rhs) => loadOrder[lhs].pos - loadOrder[rhs].pos);
 
-    const mapToItem = (id: string) => ({ id, name: util.renderModName(mods[id]) });
+    const mapToItem = (id: string) => ({
+      id,
+      name: util.renderModName(mods[id]),
+    });
 
     this.nextState.enabled = sorted
-      .filter(id => loadOrder[id].enabled)
+      .filter((id) => loadOrder[id].enabled)
       .map(mapToItem);
 
     // disabled list should also include mods that currently have no load order assigned
-    this.nextState.disabled = [].concat(
-      sorted.filter(id => !loadOrder[id].enabled),
-      Object.keys(mods)
-        .filter(id => (loadOrder[id] === undefined)
-                   && util.getSafe(profile, ['modState', id, 'enabled'], false)),
-    ).map(mapToItem);
+    this.nextState.disabled = []
+      .concat(
+        sorted.filter((id) => !loadOrder[id].enabled),
+        Object.keys(mods).filter(
+          (id) =>
+            loadOrder[id] === undefined &&
+            util.getSafe(profile, ["modState", id, "enabled"], false),
+        ),
+      )
+      .map(mapToItem);
   }
 
   private applyEnabled = (ordered: ILoadOrderDisplayItem[]) => {
     this.nextState.enabled = ordered;
-    this.nextState.disabled = this.state.disabled.filter(entry =>
-      ordered.find(item => item.id === entry.id) === undefined);
+    this.nextState.disabled = this.state.disabled.filter(
+      (entry) => ordered.find((item) => item.id === entry.id) === undefined,
+    );
     this.mWriteDebouncer.schedule();
-  }
+  };
 
   private applyDisabled = (ordered: ILoadOrderDisplayItem[]) => {
     this.nextState.disabled = ordered;
-    this.nextState.enabled = this.state.enabled.filter(entry =>
-      ordered.find(item => item.id === entry.id) === undefined);
+    this.nextState.enabled = this.state.enabled.filter(
+      (entry) => ordered.find((item) => item.id === entry.id) === undefined,
+    );
     this.mWriteDebouncer.schedule();
-  }
+  };
 }
 
-export default withTranslation(['common', 'game-pillarsofeternity2'])(
-  LoadOrder as any) as React.ComponentClass<ILoadOrderProps>;
+export default withTranslation(["common", "game-pillarsofeternity2"])(
+  LoadOrder as any,
+) as React.ComponentClass<ILoadOrderProps>;

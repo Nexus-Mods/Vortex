@@ -81,3 +81,6 @@ playwright/.run-counter
 
 # api-extractor
 temp/
+
+# ESLint
+.eslintcache

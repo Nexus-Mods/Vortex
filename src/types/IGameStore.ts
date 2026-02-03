@@ -125,7 +125,7 @@ export interface IGameStore {
    *  "isGameStoreInstalled" function so that the game store helper
    *  is able to confirm that the gamestore is installed on the user's PC
    */
-  getGameStorePath: () => PromiseBB<string>;
+  getGameStorePath: () => PromiseBB<string | undefined>;
 
   /**
    * Launches the game using this game launcher.

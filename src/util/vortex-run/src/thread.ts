@@ -3,6 +3,16 @@ import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
 
+function getErrorMessage(err: any): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === "string") {
+    return err;
+  }
+  return String(err);
+}
+
 function trampoline(
   baseDir: string,
   moduleRoot: string,
@@ -96,7 +106,7 @@ function runThreaded(
               // tslint:disable-next-line:no-console
               console.error(
                 "failed to clean up temporary script",
-                getErrorMessageOrDefault(cleanupErr),
+                getErrorMessage(cleanupErr),
               );
             }
             return reject(writeErr);

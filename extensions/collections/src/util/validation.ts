@@ -1,4 +1,4 @@
 export interface IValidationResult {
-  valid: 'success' | 'warning' | 'error';
+  valid: "success" | "warning" | "error";
   reason?: string;
 }

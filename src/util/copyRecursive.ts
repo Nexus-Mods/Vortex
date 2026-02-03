@@ -14,7 +14,7 @@ interface IQueueEntry {
 function copyFile(
   source: string,
   destination: string,
-  callback: (err: Error) => void,
+  callback: (err: Error | null) => void,
 ) {
   const readStream = fs.createReadStream(source, {
     highWaterMark: BUFFER_SIZE,
@@ -41,7 +41,7 @@ function copyDir(
   sourcePath: string,
   destinationPath: string,
   relPath: string,
-  callback: (err: Error, entries?: IQueueEntry[]) => void,
+  callback: (err: Error | null, entries?: IQueueEntry[]) => void,
 ) {
   fs.mkdir(path.join(destinationPath, relPath), (err) => {
     if (err !== null && err.code !== "EEXIST") {
@@ -93,8 +93,8 @@ function copyDir(
 function copyRecursive(source: string, destination: string): PromiseBB<void> {
   return new PromiseBB<void>((resolve, reject) => {
     const queue = {
-      dir: [],
-      file: [],
+      dir: Array<string>(),
+      file: Array<string>(),
     };
     const slots = {
       dir: MAX_PARALLEL_DIR,
@@ -105,13 +105,16 @@ function copyRecursive(source: string, destination: string): PromiseBB<void> {
       --slots[type];
 
       const job = queue[type].shift();
+      if (job === undefined) {
+        return done(type);
+      }
       if (type === "dir") {
         copyDir(source, destination, job, (err, entries) => {
           if (err !== null) {
             return reject(err);
           }
 
-          entries.forEach((entry) => {
+          entries?.forEach((entry) => {
             queue[entry.isDir ? "dir" : "file"].push(entry.relPath);
           });
           done(type);

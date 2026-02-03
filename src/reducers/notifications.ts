@@ -1,5 +1,6 @@
 import * as actions from "../actions/notifications";
 import type { IReducerSpec } from "../types/IExtensionContext";
+import type { INotification } from "../types/INotification";
 
 import { getSafe, pushSafe, removeValueIf, setSafe } from "../util/storeHelper";
 
@@ -20,7 +21,7 @@ export const notificationsReducer: IReducerSpec = {
       if (payload.id === undefined) {
         payload.id = shortid();
       } else {
-        const existing = getSafe(state, statePath, []).find(
+        const existing = getSafe(state, statePath, Array<INotification>()).find(
           (noti) => noti.id === payload.id,
         );
         if (existing !== undefined) {

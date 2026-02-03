@@ -1,0 +1,24 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "src/main.ts",
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/shared/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "commonjs", // TODO: change to nodenext
+    "moduleResolution": "node", // TODO: change to nodenext
+    "types": ["node"],
+    "baseUrl": ".",
+    "outDir": "./out",
+    "rootDir": "./src",
+    "jsx": "react-jsx", // TODO: remove after renderer separation
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "removeComments": true
+  }
+}

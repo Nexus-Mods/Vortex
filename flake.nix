@@ -4,15 +4,19 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    flake-compat = {
+      url = "github:NixOS/flake-compat";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
+          packages = with pkgs; [
             # Node.js and package manager
             nodejs_22
             yarn
@@ -21,12 +25,16 @@
             (python3.withPackages (ps: [ ps.setuptools ]))
 
             # Build tools
+            gitMinimal
             gnumake
             pkg-config
 
             # C/C++ toolchain
             clang
             llvmPackages.libcxx
+
+            # Dotnet
+            dotnetCorePackages.sdk_9_0
 
             # Electron (wrapped with GTK dependencies)
             electron_39 # 14 Dec 2025: We're ahead of Vortex which is on 37. Doing this for default Wayland support.
@@ -53,6 +61,9 @@
 
             # Point to Nix-provided Electron
             ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
+
+            # Make the dotnet runtime available
+            DOTNET_ROOT = "${pkgs.dotnetCorePackages.runtime_9_0}/share/dotnet";
           };
 
           # Set up GTK environment (mimics wrapGAppsHook3)
