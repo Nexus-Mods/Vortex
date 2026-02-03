@@ -274,7 +274,7 @@
 .packery-item,
 .stamp,
 .fixed-item {
-    padding: floor(($half-gutter / 2));
+    padding: floor(($half-gutter * 0.5));
     // overflow: hidden;
 
     .packery-buttons {
