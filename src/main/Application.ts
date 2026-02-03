@@ -1,5 +1,4 @@
 import type * as msgpackT from "@msgpack/msgpack";
-import type { crashReporter as crashReporterT } from "electron";
 
 import PromiseBB from "bluebird";
 import crashDump from "crash-dump";
@@ -77,6 +76,7 @@ import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
 import presetManager from "../util/PresetManager";
 import startupSettings from "../util/startupSettings";
+import "./ipcHandlers";
 import {} from "../util/storeHelper";
 import {
   isMajorDowngrade,
@@ -84,7 +84,6 @@ import {
   spawnSelf,
   timeout,
 } from "../util/util";
-import "./ipcHandlers";
 import { installDevelExtensions } from "./devel";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -225,7 +224,8 @@ class Application {
       // nop, this is the expected case
     }
 
-    this.mDeinitCrashDump = crashDump(
+    // NOTE(erri120): crash-dump is mistyped
+    this.mDeinitCrashDump = (crashDump as any).default(
       path.join(tempPath, "dumps", `crash-main-${Date.now()}.dmp`),
     );
 
