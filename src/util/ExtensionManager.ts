@@ -2520,9 +2520,19 @@ class ExtensionManager {
             }),
         )
         .catch(ProcessCanceled, () => null)
-        .catch({ code: "EACCES" }, () =>
-          this.runElevated(executable, cwd, args, env, options.onSpawned),
-        )
+        .catch({ code: "EACCES" }, (err) => {
+          // Elevated execution is only supported on Windows
+          if (process.platform !== "win32") {
+            return PromiseBB.reject(err);
+          }
+          return this.runElevated(
+            executable,
+            cwd,
+            args,
+            env,
+            options.onSpawned,
+          );
+        })
         .catch({ code: "ECANCELED" }, () =>
           PromiseBB.reject(new UserCanceled()),
         )

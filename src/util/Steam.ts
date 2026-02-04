@@ -21,6 +21,12 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import getVortexPath from "./getVortexPath";
 import { getErrorMessageOrDefault } from "../shared/errors";
+import { findLinuxSteamPath } from "./linux/steamPaths";
+import {
+  getProtonInfo,
+  buildProtonEnvironment,
+  buildProtonCommand,
+} from "./linux/proton";
 
 const STORE_ID = "steam";
 const STORE_NAME = "Steam";
@@ -29,6 +35,9 @@ const STORE_PRIORITY = 40;
 
 export interface ISteamEntry extends IGameStoreEntry {
   manifestData?: any;
+  usesProton?: boolean;
+  compatDataPath?: string;
+  protonPath?: string;
 }
 
 /// obsolete, no longer used. But it's exported through the api
@@ -72,9 +81,8 @@ class Steam implements IGameStore {
         this.mBaseFolder = PromiseBB.resolve(undefined);
       }
     } else {
-      this.mBaseFolder = PromiseBB.resolve(
-        path.resolve(getVortexPath("home"), ".steam", "steam"),
-      );
+      const linuxPath = findLinuxSteamPath();
+      this.mBaseFolder = PromiseBB.resolve(linuxPath);
     }
   }
 
@@ -359,6 +367,32 @@ class Steam implements IGameStore {
               })
               .filter((obj): obj is ISteamEntry => !!obj);
           })
+          .then((entries: ISteamEntry[]) => {
+            // Add Proton info on Linux
+            if (process.platform === "win32") {
+              return entries;
+            }
+            return this.mBaseFolder.then((basePath) =>
+              PromiseBB.map(entries, async (entry) => {
+                try {
+                  const protonInfo = await getProtonInfo(
+                    basePath,
+                    steamAppsPath,
+                    entry.appid,
+                  );
+                  entry.usesProton = protonInfo.usesProton;
+                  entry.compatDataPath = protonInfo.compatDataPath;
+                  entry.protonPath = protonInfo.protonPath;
+                } catch (err) {
+                  log("debug", "Could not get Proton info for game", {
+                    appid: entry.appid,
+                    error: getErrorMessageOrDefault(err),
+                  });
+                }
+                return entry;
+              }),
+            );
+          })
           .catch({ code: "ENOENT" }, (err: any) => {
             // no biggy, this can happen for example if the steam library is on a removable medium
             // which is currently removed
@@ -386,8 +420,47 @@ class Steam implements IGameStore {
         }),
     );
   }
+
+  /**
+   * Run a Windows tool through Proton using the game's prefix
+   */
+  public async runToolWithProton(
+    api: IExtensionApi,
+    exePath: string,
+    args: string[],
+    options: any,
+    gameEntry: ISteamEntry,
+  ): Promise<void> {
+    if (
+      !gameEntry.usesProton ||
+      !gameEntry.protonPath ||
+      !gameEntry.compatDataPath
+    ) {
+      return api.runExecutable(exePath, args, options);
+    }
+
+    const steamPath = await this.mBaseFolder;
+    const { executable, args: protonArgs } = buildProtonCommand(
+      gameEntry.protonPath,
+      exePath,
+      args,
+    );
+    const protonEnv = buildProtonEnvironment(
+      gameEntry.compatDataPath,
+      steamPath,
+      options.env,
+    );
+
+    return api.runExecutable(executable, protonArgs, {
+      ...options,
+      env: protonEnv,
+      shell: false,
+    });
+  }
 }
 
-const instance: IGameStore = new Steam();
+const instance: Steam = new Steam();
 
 export default instance;
+
+export { Steam };
