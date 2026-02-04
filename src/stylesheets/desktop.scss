@@ -81,6 +81,15 @@ fieldset[disabled] .btn {
     }
 }
 
+// in native ui's, there is no text selection on 'label' elements,
+// only on elements that expect user input
+:not(input):not(textarea),
+:not(input):not(textarea)::after,
+:not(input):not(textarea)::before {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 input,
 button,
 textarea,
