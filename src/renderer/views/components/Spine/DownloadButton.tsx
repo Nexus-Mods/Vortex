@@ -1,5 +1,5 @@
 import { mdiDownload } from "@mdi/js";
-import React, { type FC, useState } from "react";
+import React, { type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../../extensions/download_management/types/IDownload";
@@ -136,78 +136,55 @@ export const DownloadButton: FC = () => {
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
   const isActive = mainPage === "Downloads";
 
-  const downloadProgress = useDownloadProgress();
+  const { isDownloading, isPaused, progress, speedMBps, estimatedMins } =
+    useDownloadProgress();
 
-  // Debug overrides - these toggle switches override real values when enabled
-  const [overrideDownloading, setOverrideDownloading] = useState(false);
-  const [overridePaused, setOverridePaused] = useState(false);
-  const [isTime, setIsTime] = useState(false);
-
-  // Use real data, but allow debug switches to override with test values
-  const useTestData = overrideDownloading && !downloadProgress.isDownloading;
-  const isDownloading = overrideDownloading || downloadProgress.isDownloading;
-  const isPaused = overridePaused || downloadProgress.isPaused;
-  const progress = useTestData ? 33 : downloadProgress.progress;
-  const speedMBps = useTestData ? 8.6 : downloadProgress.speedMBps;
-  const estimatedMins = useTestData ? 48 : downloadProgress.estimatedMins;
+  // TODO: Add mechanism to toggle between speed and time display
+  const isTime = false;
 
   return (
-    <div className="flex flex-col gap-y-1">
-      <button onClick={() => setOverrideDownloading((prev) => !prev)}>
-        Downloading: {isDownloading ? "✔" : "✖"}
-      </button>
+    <button
+      className={joinClasses(
+        [
+          "group/download relative flex size-12 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
+          "hover:bg-surface-translucent-high",
+          isPaused || isDownloading
+            ? ""
+            : isActive
+              ? "border-2 border-neutral-strong"
+              : "border-2 border-stroke-weak hover:border-neutral-strong",
+        ],
+        { "bg-surface-translucent-low": isActive },
+      )}
+      title="Downloads"
+      onClick={() => dispatch(setOpenMainPage("Downloads", false))}
+    >
+      {isPaused || isDownloading ? (
+        <>
+          {!isPaused && (
+            <Typography
+              appearance="none"
+              as="span"
+              className="leading-none font-semibold"
+              type="body-sm"
+            >
+              {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
+            </Typography>
+          )}
 
-      <button onClick={() => setOverridePaused((prev) => !prev)}>
-        Paused: {isPaused ? "✔" : "✖"}
-      </button>
+          <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
+            {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
+          </span>
 
-      <button onClick={() => setIsTime((prev) => !prev)}>
-        Time: {isTime ? "✔" : "✖"}
-      </button>
-
-      <button
-        className={joinClasses(
-          [
-            "group/download relative flex size-12 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
-            "hover:bg-surface-translucent-high",
-            isPaused || isDownloading
-              ? ""
-              : isActive
-                ? "border-2 border-neutral-strong"
-                : "border-2 border-stroke-weak hover:border-neutral-strong",
-          ],
-          { "bg-surface-translucent-low": isActive },
-        )}
-        title="Downloads"
-        onClick={() => dispatch(setOpenMainPage("Downloads", false))}
-      >
-        {isPaused || isDownloading ? (
-          <>
-            {!isPaused && (
-              <Typography
-                appearance="none"
-                as="span"
-                className="leading-none font-semibold"
-                type="body-sm"
-              >
-                {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
-              </Typography>
-            )}
-
-            <span className="text-[0.375rem] leading-none tracking-[1px] uppercase">
-              {isPaused ? "paused" : isTime ? "mins" : "mb/s"}
-            </span>
-
-            <ProgressRing
-              isActive={isActive}
-              isPaused={isPaused}
-              progress={progress}
-            />
-          </>
-        ) : (
-          <Icon className="transition-colors" path={mdiDownload} size="lg" />
-        )}
-      </button>
-    </div>
+          <ProgressRing
+            isActive={isActive}
+            isPaused={isPaused}
+            progress={progress}
+          />
+        </>
+      ) : (
+        <Icon className="transition-colors" path={mdiDownload} size="lg" />
+      )}
+    </button>
   );
 };

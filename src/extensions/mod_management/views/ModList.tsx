@@ -80,7 +80,6 @@ import * as _ from "lodash";
 import path from "path";
 import * as React from "react";
 import { Button, ButtonGroup, MenuItem, Panel } from "react-bootstrap";
-import * as ReactDOM from "react-dom";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
@@ -353,9 +352,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.updateModsWithState(this.props).then(() => this.forceUpdate());
   }
 
-  public setBoundsRef = (ref) => {
+  public setBoundsRef = (ref: Element) => {
     if (ref !== null) {
-      this.mRef = ReactDOM.findDOMNode(ref) as Element;
+      this.mRef = ref;
       this.forceUpdate();
     }
   };
