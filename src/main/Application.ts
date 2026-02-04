@@ -1,9 +1,16 @@
-import type * as msgpackT from "@msgpack/msgpack";
 import type crashDumpT from "crash-dump";
 import type { crashReporter as crashReporterT } from "electron";
 import type * as permissionsT from "permissions";
 import type * as uuidT from "uuid";
 import type * as winapiT from "winapi-bindings";
+
+import type { AppInitMetadata } from "../shared/types/ipc";
+import type { IWindow } from "../types/IState";
+import type { IParameters, ISetItem } from "../util/commandLine";
+
+import type MainWindowT from "./MainWindow";
+import type SplashScreenT from "./SplashScreen";
+import type TrayIconT from "./TrayIcon";
 
 import PromiseBB from "bluebird";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
@@ -13,47 +20,15 @@ import * as _ from "lodash";
 import * as path from "path";
 import * as semver from "semver";
 
-import type { StateError } from "../store/reduxSanity";
-import type { ThunkStore } from "../types/IExtensionContext";
-import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
-import type { IState } from "../types/IState";
-import type { IParameters, ISetItem } from "../util/commandLine";
-import type * as develT from "../util/devel";
-import type ExtensionManagerT from "../util/ExtensionManager";
-import type MainWindowT from "./MainWindow";
-import type SplashScreenT from "./SplashScreen";
-import type TrayIconT from "./TrayIcon";
-
-import { addNotification, setCommandLine, showDialog } from "../actions";
-import {
-  setApplicationVersion,
-  setInstallType,
-  setInstanceId,
-  setWarnedAdmin,
-} from "../actions/app";
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
-import { STATE_BACKUP_PATH } from "../reducers/index";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
-import LevelPersist, { DatabaseLocked } from "../store/LevelPersist";
-import {
-  allHives,
-  createFullStateBackup,
-  createVortexStore,
-  currentStatePath,
-  extendStore,
-  finalizeStoreWrite,
-  importState,
-  insertPersistor,
-  markImported,
-  querySanitize,
-} from "../store/store";
-import SubPersistor from "../store/SubPersistor";
+import { currentStatePath } from "../store/store";
 import { getApplication } from "../util/application";
-import commandLine, { relaunch } from "../util/commandLine";
+import commandLine from "../util/commandLine";
 import {
   DataInvalid,
   DocumentsPathMissing,
@@ -64,7 +39,6 @@ import {
   didIgnoreError,
   disableErrorReport,
   getVisibleWindow,
-  setOutdated,
   setWindow,
   terminate,
   toError,
@@ -73,34 +47,26 @@ import { validateFiles } from "../util/fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
-import { prettifyNodeErrorMessage, showError } from "../util/message";
-import migrate from "../util/migrate";
-import presetManager from "../util/PresetManager";
+import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
-import {} from "../util/storeHelper";
-import {
-  isMajorDowngrade,
-  replaceRecursive,
-  spawnSelf,
-  timeout,
-} from "../util/util";
+import { isMajorDowngrade, timeout } from "../util/util";
+import { setupMainExtensions } from "./extensions";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
+import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
+import {
+  initMainPersistence,
+  readPersistedValue,
+  registerHive,
+  finalizeMainWrite,
+} from "./store/mainPersistence";
+import SubPersistor from "./store/SubPersistor";
 
 const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 const permissions = lazyRequire<typeof permissionsT>(() =>
   require("permissions"),
 );
 const winapi = lazyRequire<typeof winapiT>(() => require("winapi-bindings"));
-
-const STATE_CHUNK_SIZE = 128 * 1024;
-
-function last(array: any[]): any {
-  if (array.length === 0) {
-    return undefined;
-  }
-  return array[array.length - 1];
-}
 
 class Application {
   public static shouldIgnoreError(error: any, promise?: any): boolean {
@@ -165,18 +131,20 @@ class Application {
   }
 
   private mBasePath: string;
-  private mStore: ThunkStore<IState>;
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
-  private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
+  private mAppMetadata: AppInitMetadata;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
   private mDeinitCrashDump: () => void;
 
   constructor(args: IParameters) {
     this.mArgs = args;
+
+    // Set up main process extensions IPC handlers
+    setupMainExtensions();
 
     ipcMain.on("show-window", () => this.showMainWindow(args?.startMinimized));
     app.commandLine.appendSwitch(
@@ -239,23 +207,30 @@ class Application {
     });
   }
 
-  private startUi(): PromiseBB<void> {
+  private async startUi(): Promise<void> {
     const MainWindow = require("./MainWindow").default;
-    this.mMainWindow = new MainWindow(this.mStore, this.mArgs.inspector);
+
+    // Read window settings from persistence before creating window
+    const windowSettings = await readPersistedValue<IWindow>("settings", [
+      "window",
+    ]);
+
+    // Create window with null store (renderer owns the store now) and initial window settings
+    this.mMainWindow = new MainWindow(
+      null,
+      this.mArgs.inspector,
+      windowSettings,
+    );
     log("debug", "creating main window");
-    return this.mMainWindow.create(this.mStore).then((webContents) => {
+    return this.mMainWindow.create(null).then((webContents) => {
       if (!webContents) {
         return PromiseBB.reject(new Error("no web contents from main window"));
       }
       log("debug", "window created");
-      this.mExtensions.setupApiMain(this.mStore, webContents);
-      setOutdated(this.mExtensions.getApi());
-      // in the past we would process some command line arguments the same as we do when
-      // they get passed in from a second instance but that was inconsistent
-      // because we don't use most arguments from secondary instances and the
-      // rest get handled by the extension they are intended for.
-      // so now "applyArguments()" is only intended for forwarding messages from
-      // secondary instances
+
+      // Send app initialization metadata to renderer
+      // Renderer will dispatch Redux actions based on this
+      webContents.send("app:init", this.mAppMetadata);
 
       if (didIgnoreError()) {
         webContents.send("did-ignore-error", true);
@@ -276,7 +251,7 @@ class Application {
   private setupAppEvents(args: IParameters) {
     app.on("window-all-closed", () => {
       log("info", "Vortex closing");
-      finalizeStoreWrite().then(() => {
+      finalizeMainWrite().then(() => {
         log("info", "clean application end");
         if (this.mTray !== undefined) {
           this.mTray.close();
@@ -292,7 +267,7 @@ class Application {
 
     app.on("activate", () => {
       if (this.mMainWindow !== undefined) {
-        this.mMainWindow.create(this.mStore);
+        this.mMainWindow.create(null);
       }
     });
 
@@ -382,7 +357,8 @@ class Application {
         return;
       }
 
-      terminate(toError(error), this.mStore.getState());
+      // Store is now in renderer, so we can't access state from main process
+      terminate(toError(error), {});
     };
   }
 
@@ -392,7 +368,7 @@ class Application {
       fs
         .writeFileAsync(this.mStartupLogPath, new Date().toUTCString())
         .catch(() => null)
-        .tap(() => {
+        .then(() => {
           log("info", "--------------------------");
           log("info", "Vortex Version", getApplication().version);
           log("info", "Parameters", process.argv.join(" "));
@@ -405,83 +381,89 @@ class Application {
             : this.startSplash(),
         )
         // start initialization
-        .tap((splashIn) =>
-          splashIn !== undefined
-            ? log("debug", "showing splash screen")
-            : log("debug", "starting without splash screen"),
-        )
-        .then((splashIn) => {
+        .then((splashIn: SplashScreenT | undefined) => {
+          if (splashIn !== undefined) {
+            log("debug", "showing splash screen");
+          } else {
+            log("debug", "starting without splash screen");
+          }
           splash = splashIn;
-          return this.createStore(args.restore, args.merge).catch(
-            DataInvalid,
-            (err) => {
-              log("error", "store data invalid", getErrorMessageOrDefault(err));
-              dialog
-                .showMessageBox(getVisibleWindow(), {
-                  type: "error",
-                  buttons: ["Continue"],
-                  title: "Error",
-                  message: "Data corrupted",
-                  detail:
-                    "The application state which contains things like your Vortex " +
-                    "settings, meta data about mods and other important data is " +
-                    "corrupted and can't be read. This could be a result of " +
-                    "hard disk corruption, a power outage or something similar. " +
-                    "Vortex will now try to repair the database, usually this " +
-                    "should work fine but please check that settings, mod list and so " +
-                    "on are ok before you deploy anything. " +
-                    "If not, you can go to settings->workarounds and restore a backup " +
-                    "which shouldn't lose you more than an hour of progress.",
-                })
-                .then(() => this.createStore(args.restore, args.merge, true));
-            },
-          );
+          return this.setupPersistence().catch(DataInvalid, (err) => {
+            log(
+              "error",
+              "persistence data invalid",
+              getErrorMessageOrDefault(err),
+            );
+            return dialog
+              .showMessageBox(getVisibleWindow(), {
+                type: "error",
+                buttons: ["Continue"],
+                title: "Error",
+                message: "Data corrupted",
+                detail:
+                  "The application state which contains things like your Vortex " +
+                  "settings, meta data about mods and other important data is " +
+                  "corrupted and can't be read. This could be a result of " +
+                  "hard disk corruption, a power outage or something similar. " +
+                  "Vortex will now try to repair the database, usually this " +
+                  "should work fine but please check that settings, mod list and so " +
+                  "on are ok before you deploy anything. " +
+                  "If not, you can go to settings->workarounds and restore a backup " +
+                  "which shouldn't lose you more than an hour of progress.",
+              })
+              .then(() => this.setupPersistence(true));
+          });
         })
-        .tap(() => log("debug", "checking admin rights"))
-        .then(() => this.warnAdmin())
-        .tap(() => log("debug", "checking how Vortex was installed"))
-        .then(() => this.identifyInstallType())
-        .tap(() => log("debug", "checking if migration is required"))
-        .then(() => this.checkUpgrade())
-        .tap(() => log("debug", "setting up error handlers"))
         .then(() => {
-          // as soon as we have a store, install an extended error handler that has
-          // access to application state
+          log("debug", "checking admin rights");
+          return this.warnAdmin();
+        })
+        .then(() => {
+          log("debug", "checking how Vortex was installed");
+          return this.identifyInstallType();
+        })
+        .then(() => {
+          log("debug", "checking if migration is required");
+          return this.checkUpgrade();
+        })
+        .then(() => {
+          log("debug", "setting up error handlers");
+          // Install error handler (no longer has access to store state)
           const handleError = this.genHandleError();
           process.removeAllListeners("uncaughtException");
           process.removeAllListeners("unhandledRejection");
           process.on("uncaughtException", handleError);
           process.on("unhandledRejection", handleError);
         })
-        .then(() => {
-          this.mStore.dispatch(setCommandLine(args));
-        })
         .then(() => this.initDevel())
-        .tap(() => log("debug", "starting user interface"))
         .then(() => {
           this.setupContextMenu();
           return PromiseBB.resolve();
         })
-        .then(() => this.startUi())
-        .tap(() => log("debug", "setting up tray icon"))
-        .then(() => this.createTray())
+        .then(() => {
+          log("debug", "starting user interface");
+          return this.startUi();
+        })
+        .then(() => {
+          log("debug", "setting up tray icon");
+          return this.createTray();
+        })
         // end initialization
-        .tap(() => {
+        .then(() => {
           if (splash !== undefined) {
             log("debug", "removing splash screen");
           }
-        })
-        .then(() => {
           this.connectTrayAndWindow();
           return splash !== undefined ? splash.fadeOut() : PromiseBB.resolve();
         })
-        .tapCatch((err) =>
+        .catch((err) => {
           log(
             "debug",
             "quitting with exception",
             getErrorMessageOrDefault(err),
-          ),
-        )
+          );
+          return PromiseBB.reject(err);
+        })
         .catch(UserCanceled, () => app.exit())
         .catch(ProcessCanceled, () => {
           app.quit();
@@ -541,7 +523,7 @@ class Application {
                   code: pretty.code,
                   stack: unknownError.stack,
                 },
-                this.mStore !== undefined ? this.mStore.getState() : {},
+                {},
                 pretty.allowReport,
               );
             } else {
@@ -552,7 +534,7 @@ class Application {
                   details: err.message,
                   stack: err.stack,
                 },
-                this.mStore !== undefined ? this.mStore.getState() : {},
+                {},
               );
             }
           } catch (err) {
@@ -636,104 +618,101 @@ class Application {
         path.join(getVortexPath("application"), "Uninstall Vortex.exe"),
       )
       .then(() => {
-        this.mStore.dispatch(setInstallType("regular"));
+        // Collect metadata - renderer will dispatch the action
+        this.mAppMetadata.installType = "regular";
       })
       .catch(() => {
-        this.mStore.dispatch(setInstallType("managed"));
+        this.mAppMetadata.installType = "managed";
       });
   }
 
   private warnAdmin(): PromiseBB<void> {
-    const state: IState = this.mStore.getState();
-    return timeout(PromiseBB.resolve(isAdmin()), 1000).then((admin) => {
-      if (admin === undefined || !admin) {
-        return PromiseBB.resolve();
-      }
-      log("warn", "running as administrator");
-      if (state.app.warnedAdmin > 0) {
-        return PromiseBB.resolve();
-      }
-      return this.isUACEnabled().then((uacEnabled) =>
-        dialog
-          .showMessageBox(getVisibleWindow(), {
-            title: "Admin rights detected",
-            message:
-              `Vortex has detected that it is being run with administrator rights. It is strongly 
-              advised to not run any application with admin rights as adverse effects may include 
-              permission issues or even security risks. Continue at your own risk` +
-              (!uacEnabled
-                ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your 
-                  operating system.  We strongly recommend you re-enable these to avoid file permissions 
-                  issues and potential security risks.`
-                : ""),
-            buttons: ["Quit", "Ignore"],
-            noLink: true,
-          })
-          .then((result) => {
-            if (result.response === 0) {
-              app.quit();
-            } else {
-              this.mStore.dispatch(setWarnedAdmin(1));
-              return PromiseBB.resolve();
-            }
-          }),
-      );
+    // Read warnedAdmin from persistence since we don't have the store yet
+    return PromiseBB.resolve(
+      readPersistedValue<number>("app", ["warnedAdmin"]),
+    ).then((warnedAdmin) => {
+      return timeout(PromiseBB.resolve(isAdmin()), 1000).then((admin) => {
+        if (admin === undefined || !admin) {
+          return PromiseBB.resolve();
+        }
+        log("warn", "running as administrator");
+        if ((warnedAdmin ?? 0) > 0) {
+          return PromiseBB.resolve();
+        }
+        return this.isUACEnabled().then((uacEnabled) =>
+          dialog
+            .showMessageBox(getVisibleWindow(), {
+              title: "Admin rights detected",
+              message:
+                `Vortex has detected that it is being run with administrator rights. It is strongly
+                  advised to not run any application with admin rights as adverse effects may include
+                  permission issues or even security risks. Continue at your own risk` +
+                (!uacEnabled
+                  ? `\n\nPlease note: User Account Control (UAC) notifications are disabled in your
+                      operating system.  We strongly recommend you re-enable these to avoid file permissions
+                      issues and potential security risks.`
+                  : ""),
+              buttons: ["Quit", "Ignore"],
+              noLink: true,
+            })
+            .then((result) => {
+              if (result.response === 0) {
+                app.quit();
+              } else {
+                // Collect metadata - renderer will dispatch the action
+                this.mAppMetadata.warnedAdmin = 1;
+                return PromiseBB.resolve();
+              }
+            }),
+        );
+      });
     });
   }
 
   private checkUpgrade(): PromiseBB<void> {
     const currentVersion = getApplication().version;
     return this.migrateIfNecessary(currentVersion).then(() => {
-      this.mStore.dispatch(setApplicationVersion(currentVersion));
+      // Collect metadata - renderer will dispatch the action
+      this.mAppMetadata.version = currentVersion;
       return PromiseBB.resolve();
     });
   }
 
   private migrateIfNecessary(currentVersion: string): PromiseBB<void> {
-    const state: IState = this.mStore.getState();
-    const lastVersion = state.app.appVersion || "0.0.0";
+    // Read appVersion from persistence since we don't have the store
+    return PromiseBB.resolve(
+      readPersistedValue<string>("app", ["appVersion"]),
+    ).then((lastVersionPersisted) => {
+      const lastVersion = lastVersionPersisted || "0.0.0";
 
-    if (this.mFirstStart || process.env.NODE_ENV === "development") {
-      // don't check version change in development builds or on first start
-      return PromiseBB.resolve();
-    }
-
-    if (isMajorDowngrade(lastVersion, currentVersion)) {
-      if (
-        dialog.showMessageBoxSync(getVisibleWindow(), {
-          type: "warning",
-          title: "Downgrade detected",
-          message: `You're using a version of Vortex that is older than the version you ran previously. 
-        Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this 
-        older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
-          buttons: ["Quit", "Continue at your own risk"],
-          noLink: true,
-        }) === 0
-      ) {
-        app.quit();
-        return PromiseBB.reject(new UserCanceled());
+      if (this.mFirstStart || process.env.NODE_ENV === "development") {
+        // don't check version change in development builds or on first start
+        return PromiseBB.resolve();
       }
-    } else if (semver.gt(currentVersion, lastVersion)) {
-      log("info", "Vortex was updated, checking for necessary migrations");
-      return migrate(this.mStore, getVisibleWindow())
-        .then(() => {
-          return PromiseBB.resolve();
-        })
-        .catch(
-          (err) =>
-            !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled),
-          (err: Error) => {
-            dialog.showErrorBox(
-              "Migration failed",
-              "The migration from the previous Vortex release failed. " +
-                "Please resolve the errors you got, then try again.",
-            );
-            app.exit(1);
-            return PromiseBB.reject(new ProcessCanceled("Migration failed"));
-          },
-        );
-    }
-    return PromiseBB.resolve();
+
+      if (isMajorDowngrade(lastVersion, currentVersion)) {
+        if (
+          dialog.showMessageBoxSync(getVisibleWindow(), {
+            type: "warning",
+            title: "Downgrade detected",
+            message: `You're using a version of Vortex that is older than the version you ran previously.
+          Active version: (${currentVersion}) Previously run: (${lastVersion}). Continuing to run this
+          older version may cause irreversible damage to your application state and setup. Continue at your own risk. `,
+            buttons: ["Quit", "Continue at your own risk"],
+            noLink: true,
+          }) === 0
+        ) {
+          app.quit();
+          return PromiseBB.reject(new UserCanceled());
+        }
+      } else if (semver.gt(currentVersion, lastVersion)) {
+        log("info", "Vortex was updated, checking for necessary migrations");
+        // Note: migrate() still uses store for now - this may need refactoring
+        // if migrations need to be run before the renderer loads
+        return PromiseBB.resolve();
+      }
+      return PromiseBB.resolve();
+    });
   }
 
   private splitPath(statePath: string): string[] {
@@ -874,7 +853,9 @@ class Application {
 
   private createTray(): PromiseBB<void> {
     const TrayIcon = require("./TrayIcon").default;
-    this.mTray = new TrayIcon(this.mExtensions.getApi());
+    // Pass null api since ExtensionManager is now renderer-only
+    //  and TrayIcon used to receive the api from there.
+    this.mTray = new TrayIcon(null);
     return PromiseBB.resolve();
   }
 
@@ -907,49 +888,23 @@ class Application {
     }
   }
 
-  private createStore(
-    restoreBackup?: string,
-    mergeBackup?: string,
-    repair?: boolean,
-  ): PromiseBB<void> {
-    const newStore = createVortexStore(this.sanityCheckCB);
-    const backupPath = path.join(app.getPath("temp"), STATE_BACKUP_PATH);
-    let backups: string[];
-
-    const updateBackups = () =>
-      fs
-        .ensureDirAsync(backupPath)
-        .then(() => fs.readdirAsync(backupPath))
-        .filter(
-          (fileName: string) =>
-            fileName.startsWith("backup") && path.extname(fileName) === ".json",
-        )
-        .then((backupsIn) => {
-          backups = backupsIn;
-        })
-        .catch((err) => {
-          log("error", "failed to read backups", getErrorMessageOrDefault(err));
-          backups = [];
-        });
-
-    const deleteBackups = () =>
-      PromiseBB.map(backups, (backupName) =>
-        fs
-          .removeAsync(path.join(backupPath, backupName))
-          .catch(() => undefined),
-      ).then(() => null);
-
+  /**
+   * Set up persistence system for the main process.
+   * In the new architecture, main process only handles persistence - renderer owns the Redux store.
+   */
+  private setupPersistence(repair?: boolean): PromiseBB<void> {
     // storing the last version that ran in the startup.json settings file.
-    // We have that same information in the leveldb store but what if we need
-    // to react to an upgrade before the state is loaded?
-    // In development of 1.4 I assumed we had a case where this was necessary.
-    // Turned out it wasn't, still feel it's sensible to have this
-    // information available asap
     startupSettings.storeVersion = getApplication().version;
 
-    // 1. load only user settings to determine if we're in multi-user mode
-    // 2. load app settings to determine which extensions to load
-    // 3. load extensions, then load all settings, including extensions
+    // Initialize app metadata that will be sent to renderer
+    this.mAppMetadata = {
+      commandLine: this.mArgs as unknown as Record<string, unknown>,
+    };
+
+    // 1. Create LevelPersist for the base path
+    // 2. Check multi-user mode from persisted user settings
+    // 3. Initialize main persistence system
+    // 4. Register core hives for hydration
     return LevelPersist.create(
       path.join(this.mBasePath, currentStatePath),
       undefined,
@@ -957,11 +912,69 @@ class Application {
     )
       .then((levelPersistor) => {
         this.mLevelPersistors.push(levelPersistor);
-        return insertPersistor(
-          "user",
-          new SubPersistor(levelPersistor, "user"),
-        );
+        // Read user settings to check multi-user mode
+        const subPersistor = new SubPersistor(levelPersistor, "user");
+        return Promise.resolve(subPersistor.getItem(["multiUser"]))
+          .then((multiUserStr: string) => {
+            const multiUser: boolean = multiUserStr
+              ? Boolean(JSON.parse(multiUserStr))
+              : false;
+            return { levelPersistor, multiUser };
+          })
+          .catch(() => ({ levelPersistor, multiUser: false }));
       })
+      .then(
+        ({
+          levelPersistor,
+          multiUser,
+        }: {
+          levelPersistor: LevelPersist;
+          multiUser: boolean;
+        }) => {
+          let dataPath = app.getPath("userData");
+          if (this.mArgs.userData !== undefined) {
+            dataPath = this.mArgs.userData;
+          } else if (multiUser) {
+            dataPath = this.multiUserPath();
+          }
+          setVortexPath("userData", dataPath);
+          this.mBasePath = dataPath;
+          let created = false;
+          try {
+            fs.statSync(dataPath);
+          } catch {
+            fs.ensureDirSync(dataPath);
+            created = true;
+          }
+          if (multiUser && created) {
+            permissions.allow(dataPath, "group", "rwx");
+          }
+          fs.ensureDirSync(path.join(dataPath, "temp"));
+
+          log("info", `using ${dataPath} as the storage directory`);
+          if (multiUser || this.mArgs.userData !== undefined) {
+            log(
+              "info",
+              "all further logging will happen in",
+              path.join(dataPath, "vortex.log"),
+            );
+            changeLogPath(dataPath);
+            log("info", "--------------------------");
+            log("info", "Vortex Version", getApplication().version);
+            // Create a new LevelPersist for the actual data path if different
+            return LevelPersist.create(
+              path.join(dataPath, currentStatePath),
+              undefined,
+              repair ?? false,
+            ).then((newLevelPersistor) => {
+              this.mLevelPersistors.push(newLevelPersistor);
+              return newLevelPersistor;
+            });
+          } else {
+            return levelPersistor;
+          }
+        },
+      )
       .catch(DataInvalid, (err) => {
         const failedPersistor = this.mLevelPersistors.pop();
         if (!failedPersistor) {
@@ -969,312 +982,46 @@ class Application {
         }
         return failedPersistor.close().then(() => PromiseBB.reject(err));
       })
-      .then(() => {
-        let dataPath = app.getPath("userData");
-        const { multiUser } = newStore.getState().user;
-        if (this.mArgs.userData !== undefined) {
-          dataPath = this.mArgs.userData;
-        } else if (multiUser) {
-          dataPath = this.multiUserPath();
-        }
-        setVortexPath("userData", dataPath);
-        this.mBasePath = dataPath;
-        let created = false;
-        try {
-          fs.statSync(dataPath);
-        } catch (err) {
-          fs.ensureDirSync(dataPath);
-          created = true;
-        }
-        if (multiUser && created) {
-          permissions.allow(dataPath, "group", "rwx");
-        }
-        fs.ensureDirSync(path.join(dataPath, "temp"));
+      .then((levelPersistor: LevelPersist) => {
+        log("debug", "initializing main persistence system");
+        // Initialize the IPC-based persistence system
+        initMainPersistence(levelPersistor);
 
-        log("info", `using ${dataPath} as the storage directory`);
-        if (multiUser || this.mArgs.userData !== undefined) {
-          log(
-            "info",
-            "all further logging will happen in",
-            path.join(dataPath, "vortex.log"),
-          );
-          changeLogPath(dataPath);
-          log("info", "--------------------------");
-          log("info", "Vortex Version", getApplication().version);
-          return LevelPersist.create(
-            path.join(dataPath, currentStatePath),
-            undefined,
-            repair ?? false,
-          ).then((levelPersistor) => {
-            this.mLevelPersistors.push(levelPersistor);
-          });
-        } else {
-          return PromiseBB.resolve();
-        }
+        // Register core hives - these will be loaded for hydration
+        return PromiseBB.all([
+          registerHive("app"),
+          registerHive("user"),
+          registerHive("settings"),
+          registerHive("persistent"),
+          registerHive("confidential"),
+        ]);
       })
       .then(() => {
-        log("debug", "reading app state");
-        return insertPersistor(
-          "app",
-          new SubPersistor(last(this.mLevelPersistors), "app"),
+        // Read instanceId from persistence for metadata
+        return readPersistedValue<string>("app", ["instanceId"]).then(
+          (instanceId) => {
+            if (instanceId === undefined) {
+              this.mFirstStart = true;
+              const newId = uuid.v4();
+              log("debug", "first startup, generated instance id", {
+                instanceId: newId,
+              });
+              this.mAppMetadata.instanceId = newId;
+            } else {
+              log("debug", "startup instance", { instanceId });
+              this.mAppMetadata.instanceId = instanceId;
+            }
+          },
         );
       })
       .then(() => {
-        if (newStore.getState().app.instanceId === undefined) {
-          this.mFirstStart = true;
-          const newId = uuid.v4();
-          log("debug", "first startup, generated instance id", {
-            instanceId: newId,
-          });
-          newStore.dispatch(setInstanceId(newId));
-        } else {
-          log("debug", "startup instance", {
-            instanceId: newStore.getState().app.instanceId,
-          });
-        }
-        const ExtensionManager = require("../util/ExtensionManager").default;
-        this.mExtensions = new ExtensionManager(newStore);
-        if (this.mExtensions.hasOutdatedExtensions) {
-          log("debug", "relaunching to remove outdated extensions");
-          finalizeStoreWrite().then(() => relaunch());
-
-          // relaunching the process happens asynchronously but we don't want to any further work
-          // before that
-          return new PromiseBB(() => null);
-        }
-        const reducer = require("../reducers/index").default;
-        newStore.replaceReducer(
-          reducer(this.mExtensions.getReducers(), querySanitize),
-        );
-        return PromiseBB.mapSeries(allHives(this.mExtensions), (hive) =>
-          insertPersistor(
-            hive,
-            new SubPersistor(last(this.mLevelPersistors), hive),
-          ),
-        );
-      })
-      .then(() => {
-        log("debug", "checking if state db needs to be upgraded");
-        return importState(this.mBasePath);
-      })
-      .then((oldState) => {
-        // mark as imported first, otherwise we risk importing again, overwriting data.
-        // this way we risk not importing but since the old state is still there, that
-        // can be repaired
-        return oldState !== undefined
-          ? markImported(this.mBasePath).then(() => {
-              newStore.dispatch({
-                type: "__hydrate",
-                payload: oldState,
-              });
-            })
-          : PromiseBB.resolve();
-      })
-      .then(() => {
-        log("debug", "updating state backups");
-        return updateBackups();
-      })
-      .then(() => {
-        if (restoreBackup !== undefined) {
-          log("info", "restoring state backup", restoreBackup);
-          return fs
-            .readFileAsync(restoreBackup, { encoding: "utf-8" })
-            .then((backupState) => {
-              newStore.dispatch({
-                type: "__hydrate_replace",
-                payload: JSON.parse(backupState),
-              });
-            })
-            .then(() => deleteBackups())
-            .then(() => updateBackups())
-            .catch((err) => {
-              if (err instanceof UserCanceled) {
-                return PromiseBB.reject(err);
-              }
-              terminate(
-                {
-                  message: "Failed to restore backup",
-                  details:
-                    getErrorCode(err) !== "ENOENT"
-                      ? getErrorMessageOrDefault(err)
-                      : "Specified backup file doesn't exist",
-                  path: restoreBackup,
-                },
-                {},
-                false,
-              );
-            });
-        } else if (mergeBackup !== undefined) {
-          log("info", "merging state backup", mergeBackup);
-          return fs
-            .readFileAsync(mergeBackup, { encoding: "utf-8" })
-            .then((backupState) => {
-              newStore.dispatch({
-                type: "__hydrate",
-                payload: JSON.parse(backupState),
-              });
-            })
-            .catch((err) => {
-              if (err instanceof UserCanceled) {
-                return PromiseBB.reject(err);
-              }
-              terminate(
-                {
-                  message: "Failed to merge backup",
-                  details:
-                    getErrorCode(err) !== "ENOENT"
-                      ? getErrorMessageOrDefault(err)
-                      : "Specified backup file doesn't exist",
-                  path: mergeBackup,
-                },
-                {},
-                false,
-              );
-            });
-        } else {
-          return PromiseBB.resolve();
-        }
-      })
-      .then(() => {
-        const hydrateHandler = (stepIn: IPresetStep): PromiseBB<void> => {
-          newStore.dispatch({
-            type: "__hydrate",
-            payload: (stepIn as IPresetStepHydrateState).state,
-          });
-
-          return PromiseBB.resolve();
-        };
-        presetManager.on("hydrate", hydrateHandler);
-        presetManager.now("hydrate", hydrateHandler);
-      })
-      .then(() => {
-        this.mStore = newStore;
-
-        let sendState: Buffer;
-
-        (global as any).getReduxStateMsgpack = (idx: number) => {
-          const msgpack: typeof msgpackT = require("@msgpack/msgpack");
-          if (sendState === undefined || idx === 0) {
-            sendState = Buffer.from(
-              msgpack.encode(
-                replaceRecursive(
-                  this.mStore.getState(),
-                  undefined,
-                  "__UNDEFINED__",
-                ),
-              ),
-            );
-          }
-          const res = sendState.slice(
-            idx * STATE_CHUNK_SIZE,
-            (idx + 1) * STATE_CHUNK_SIZE,
-          );
-          return res.toString("base64");
-        };
-
-        this.mExtensions.setStore(newStore);
-        log("debug", "setting up extended store");
-        return extendStore(newStore, this.mExtensions);
-      })
-      .then(() => {
-        if (backups.length > 0) {
-          const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
-          const mostRecent = sorted[0];
-          const timestamp = path
-            .basename(mostRecent, ".json")
-            .replace("backup_", "");
-          const date = new Date(+timestamp);
-          const dateString =
-            `${date.toDateString()} ` +
-            `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-          const replace = { date: dateString };
-          this.mStore.dispatch(
-            addNotification({
-              type: "info",
-              message:
-                "Found an application state backup. Created on: {{date}}",
-              actions: [
-                {
-                  title: "Restore",
-                  action: () => {
-                    this.mStore.dispatch(
-                      showDialog(
-                        "question",
-                        "Restoring Application State",
-                        {
-                          bbcode:
-                            "You are attempting to restore an application state backup which will revert any " +
-                            "state changes you have made since the backup was created.[br][/br][br][/br]" +
-                            "Please note that this operation will NOT uninstall/remove any mods you " +
-                            "may have downloaded/installed since the backup was created, however Vortex " +
-                            'may "forget" some changes:[list]' +
-                            "[*] Which download archive belongs to which mod installation, exhibiting " +
-                            'itself as "duplicate" entries of the same mod (archive entry and installed mod entry).' +
-                            "[*] The state of an installed mod - reverting it to a disabled state." +
-                            "[*] Any conflict rules you had defined after the state backup." +
-                            "[*] Any other configuration changes you may have made." +
-                            "[/list][br][/br]" +
-                            "Are you sure you wish to restore the backed up state ?",
-                        },
-                        [
-                          { label: "Cancel" },
-                          {
-                            label: "Restore",
-                            action: () => {
-                              log("info", "sorted backups", sorted);
-                              spawnSelf([
-                                "--restore",
-                                path.join(backupPath, mostRecent),
-                              ]);
-                              app.exit();
-                            },
-                          },
-                        ],
-                      ),
-                    );
-                  },
-                },
-                {
-                  title: "Delete",
-                  action: (dismiss) => {
-                    deleteBackups();
-                    dismiss();
-                  },
-                },
-              ],
-              replace,
-            }),
-          );
-        } else if (!repair) {
-          // we started without any problems, save this application state
-          return createFullStateBackup("startup", this.mStore)
-            .then(() => PromiseBB.resolve())
-            .catch((err) =>
-              log(
-                "error",
-                "Failed to create startup state backup",
-                getErrorMessageOrDefault(err),
-              ),
-            );
-        }
-        return PromiseBB.resolve();
-      })
-      .then(() => this.mExtensions.doOnce());
+        log("debug", "persistence setup complete");
+      });
   }
-
-  private sanityCheckCB = (err: StateError) => {
-    err["attachLogOnReport"] = true;
-    showError(
-      this.mStore.dispatch,
-      "An invalid state change was prevented, this was probably caused by a bug",
-      err,
-    );
-  };
 
   private initDevel(): PromiseBB<void> {
     if (process.env.NODE_ENV === "development") {
-      const { installDevelExtensions } =
-        require("../util/devel") as typeof develT;
+      const { installDevelExtensions } = require("../util/devel") as any;
       return installDevelExtensions();
     } else {
       return PromiseBB.resolve();
@@ -1288,23 +1035,35 @@ class Application {
       app.exit();
       return;
     }
-    const windowMetrics = this.mStore.getState().settings.window;
-    const maximized: boolean = windowMetrics.maximized || false;
-    try {
-      this.mMainWindow.show(maximized, startMinimized);
-    } catch (err) {
-      if (this.mMainWindow === null) {
-        // It's possible for the user to forcefully close Vortex just
-        //  as it attempts to show the main window and obviously cause
-        //  the app to crash if we don't handle the exception.
-        log("error", "failed to show main window", err);
-        app.exit();
-        return;
-      } else {
-        throw err;
-      }
-    }
-    setWindow(this.mMainWindow.getHandle());
+    // Read maximized setting from persistence since store is in renderer
+    readPersistedValue<boolean>("settings", ["window", "maximized"])
+      .then((maximized) => {
+        try {
+          this.mMainWindow?.show(maximized ?? false, startMinimized);
+        } catch (err) {
+          if (this.mMainWindow === null) {
+            // It's possible for the user to forcefully close Vortex just
+            //  as it attempts to show the main window and obviously cause
+            //  the app to crash if we don't handle the exception.
+            log("error", "failed to show main window", err);
+            app.exit();
+            return;
+          } else {
+            throw err;
+          }
+        }
+        setWindow(this.mMainWindow?.getHandle() ?? null);
+      })
+      .catch((err) => {
+        log(
+          "error",
+          "failed to read window settings",
+          getErrorMessageOrDefault(err),
+        );
+        // Fall back to non-maximized
+        this.mMainWindow?.show(false, startMinimized);
+        setWindow(this.mMainWindow?.getHandle() ?? null);
+      });
   }
 
   private testUserEnvironment(): PromiseBB<void> {

@@ -6,10 +6,7 @@ import type { ICollectionInstallState } from "../extensions/collections_integrat
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type {
-  IAvailableExtension,
-  IExtension,
-} from "../extensions/extension_manager/types";
+import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type {

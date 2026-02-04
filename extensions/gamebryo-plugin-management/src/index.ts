@@ -44,7 +44,6 @@ import LootInterface from './autosort';
 import { GHOST_EXT, NAMESPACE } from './statics';
 
 import Promise from 'bluebird';
-import { ipcMain, ipcRenderer } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
 import I18next from 'i18next';
@@ -205,7 +204,9 @@ function updatePluginListImpl(store: types.ThunkStore<any>,
               prev[pluginId] = path.basename(pluginStates[pluginId].filePath);
               return prev;
             }, {});
-            ipcRenderer.send('gamebryo-set-known-plugins', knownPlugins);
+            if (pluginPersistor !== undefined) {
+              pluginPersistor.setKnownPlugins(knownPlugins);
+            }
           }
           return Promise.resolve();
         });
@@ -489,9 +490,11 @@ function register(context: IExtensionContextExt,
       const currentState = util.getSafe(state, ['pluginManagementEnabled', profileId], false);
       if (currentState !== enabled) {
         if (enabled) {
-          ipcRenderer.send('gamebryo-gamesupport-sync-state', profile.gameId, sanitizeForIPC(getGameSupport()[profile.gameId]));
+          syncGameSupport(profile.gameId, getGameSupport()[profile.gameId]);
+          startSync(context.api);
+        } else {
+          stopSync();
         }
-        sendStartStopSync(enabled);
       }
       return undefined;
     }
@@ -539,29 +542,22 @@ function initPersistor(context: IExtensionContextExt) {
   const onError = (message: string, detail: Error, options?: types.IErrorOptions) => {
     context.api.showErrorNotification(message, detail, options);
   };
-  // TODO: Currently need to stop this from being called in the render process.
-  //   This is mega-ugly and needs to go
-  if (process.type === 'browser') {
-    if (pluginPersistor === undefined) {
-      pluginPersistor = new PluginPersistor(onError, () =>
-        context.api.store.getState().settings.plugins.autoSort);
-    }
-    if (userlistPersistor === undefined) {
-      userlistPersistor = new UserlistPersistor('userlist', onError);
-    }
-    if (masterlistPersistor === undefined) {
-      masterlistPersistor = new UserlistPersistor('masterlist', onError);
-    }
+
+  // Initialize persistors in renderer process (where Redux store now lives)
+  if (pluginPersistor === undefined) {
+    pluginPersistor = new PluginPersistor(onError, () =>
+      context.api.store.getState().settings.plugins.autoSort);
   }
-  if (pluginPersistor !== undefined) {
-    context.registerPersistor('loadOrder', pluginPersistor);
+  if (userlistPersistor === undefined) {
+    userlistPersistor = new UserlistPersistor('userlist', onError);
   }
-  if (userlistPersistor !== undefined) {
-    context.registerPersistor('userlist', userlistPersistor);
+  if (masterlistPersistor === undefined) {
+    masterlistPersistor = new UserlistPersistor('masterlist', onError);
   }
-  if (masterlistPersistor !== undefined) {
-    context.registerPersistor('masterlist', masterlistPersistor);
-  }
+
+  context.registerPersistor('loadOrder', pluginPersistor);
+  context.registerPersistor('userlist', userlistPersistor);
+  context.registerPersistor('masterlist', masterlistPersistor);
 }
 
 /**
@@ -589,40 +585,48 @@ function updateCurrentProfile(api: types.IExtensionApi): Promise<void> {
 
 let watcher: fs.FSWatcher;
 
-let remotePromise: { resolve: () => void, reject: (err: Error) => void };
-
-// enabling/disableing sync of the persistors needs to happen in main process
-// but the events that trigger it happen in the renderer, so we have to use
-// ipcs to send the instruction and to return the result.
-function sendStartStopSync(enable: boolean): Promise<void> {
-  return new Promise((resolve, reject) => {
-    remotePromise = { resolve, reject };
-    ipcRenderer.send('plugin-sync', enable);
-  });
-}
-
 function stopSync(): Promise<void> {
-  if (process.type === 'renderer') {
-    return sendStartStopSync(false);
-  }
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
   }
 
+  if (pluginPersistor === undefined) {
+    log('debug', 'stopSync: pluginPersistor is undefined, resolving immediately');
+    return Promise.resolve();
+  }
+
   return pluginPersistor.disable();
 }
 
-function startSyncRemote(api: types.IExtensionApi): Promise<void> {
-  return sendStartStopSync(true).then(() => {
-    const store = api.store;
+function startSync(api: types.IExtensionApi): Promise<void> {
+  const store = api.store;
 
+  // start with a clean slate
+  store.dispatch(setPluginOrder([], false));
+
+  const gameId = selectors.activeGameId(store.getState());
+
+  let prom: Promise<void> = Promise.resolve();
+
+  if (pluginPersistor !== undefined) {
+    prom = pluginPersistor.loadFiles(gameId);
+  }
+
+  if (userlistPersistor !== undefined) {
+    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
+  }
+
+  if (masterlistPersistor !== undefined) {
+    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
+  }
+
+  return prom.then(() => {
     const gameDiscovery = selectors.currentGameDiscovery(store.getState());
     if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
       return;
     }
 
-    const gameId = selectors.activeGameId(store.getState());
     const game = util.getGame(gameId);
     if (game === undefined) {
       return;
@@ -687,34 +691,6 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
                                 {allowReport: err.code !== 'ENOENT'});
     }
   });
-}
-
-function startSync(api: types.IExtensionApi): Promise<void> {
-  if (process.type === 'renderer') {
-    return startSyncRemote(api);
-  }
-  const store = api.store;
-
-  // start with a clean slate
-  store.dispatch(setPluginOrder([], false));
-
-  const gameId = selectors.activeGameId(store.getState());
-
-  let prom: Promise<void> = Promise.resolve();
-
-  if (pluginPersistor !== undefined) {
-    prom = pluginPersistor.loadFiles(gameId);
-  }
-
-  if (userlistPersistor !== undefined) {
-    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
-  }
-
-  if (masterlistPersistor !== undefined) {
-    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
-  }
-
-  return prom;
 }
 
 function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
@@ -1366,60 +1342,10 @@ function init(context: IExtensionContextExt) {
   context.registerHistoryStack('plugins', history);
 
   context
-  // Similar to once, we need to initGameSupport from the get-go or the pluginPersistor
-  //  will not use the updated appDataPath values (given that the gameSupport object
-  //  wasn't previously initialized for the main application thread)
-  .onceMain(() => initGameSupport(context.api).then(() => {
-    ipcMain.on('plugin-sync', (event: Electron.IpcMainEvent, enabled: boolean) => {
-      const promise = enabled ? startSync(context.api) : stopSync();
-      promise
-        .then(() => {
-          if (!event.sender.isDestroyed()) {
-            event.sender.send('plugin-sync-ret', null);
-          }
-        })
-        .catch(err => {
-          if (!event.sender.isDestroyed()) {
-            event.sender.send('plugin-sync-ret', { message: err.message, stack: err.stack });
-          }
-        });
-    });
-    ipcMain.on('did-update-masterlist', () => {
-      if (masterlistPersistor !== undefined) {
-        const gameId = selectors.activeGameId(context.api.store.getState());
-        masterlistPersistor.loadFiles(gameId);
-      }
-    });
-    ipcMain.on('gamebryo-set-known-plugins',
-               (event: Electron.Event, knownPlugins: { [pluginId: string]: string }) => {
-      pluginPersistor.setKnownPlugins(knownPlugins);
-    });
-
-    ipcMain.on('gamebryo-gamesupport-sync-state', (event, gameMode: string, gameData: IGameSupport) => {
-      syncGameSupport(gameMode, gameData);
-    });
-  }));
-
-  context
   // first thing on once, init game support for the previously discovered games
   .once(() => initGameSupport(context.api)
     .then(() => {
       const store = context.api.store;
-      const current = getGameSupport();
-      Object.entries(current).forEach(([gameMode, gameData]) => {
-        ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
-      });
-
-      ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
-        if (remotePromise !== undefined) {
-          if (error !== null) {
-            remotePromise.reject(error);
-          } else {
-            remotePromise.resolve();
-          }
-          remotePromise = undefined;
-        }
-      });
 
       context.api.setStylesheet('plugin-management',
                                 path.join(__dirname, 'plugin_management.scss'));
@@ -1528,15 +1454,12 @@ function init(context: IExtensionContextExt) {
                 .then(() => loot.wait())
                 .catch(err => {
                   context.api.showErrorNotification('Failed to change profile', err);
+                  return Promise.resolve();
                 });
             });
           });
 
       context.api.events.on('profile-did-change', (newProfileId: string) => {
-        const current = getGameSupport();
-        Object.entries(current).forEach(([gameMode, gameData]) => {
-          ipcRenderer.send('gamebryo-gamesupport-sync-state', gameMode, sanitizeForIPC(gameData));
-        });
         const newProfile =
             util.getSafe(store.getState(),
                         ['persistent', 'profiles', newProfileId], undefined);
@@ -1551,7 +1474,10 @@ function init(context: IExtensionContextExt) {
       });
 
       context.api.events.on('did-update-masterlist', () => {
-        ipcRenderer.send('did-update-masterlist');
+        if (masterlistPersistor !== undefined) {
+          const gameId = selectors.activeGameId(context.api.store.getState());
+          masterlistPersistor.loadFiles(gameId);
+        }
       });
 
       context.api.events.on('mod-enabled', (profileId: string, modId: string) => {

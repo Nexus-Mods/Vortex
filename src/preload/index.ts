@@ -1,9 +1,13 @@
 import type {
+  DiffOperation,
+  PersistedHive,
+  AppInitMetadata,
   RendererChannels,
   InvokeChannels,
   MainChannels,
   SerializableArgs,
   AssertSerializable,
+  Serializable,
 } from "@shared/types/ipc";
 import type { PreloadWindow } from "@shared/types/preload";
 
@@ -17,6 +21,7 @@ const betterIpcRenderer = {
   invoke: rendererInvoke,
   send: rendererSend,
   on: rendererOn,
+  off: rendererOff,
 };
 
 try {
@@ -32,6 +37,92 @@ try {
 
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
+    },
+
+    persist: {
+      sendDiff: (hive: PersistedHive, operations: DiffOperation[]) =>
+        betterIpcRenderer.send("persist:diff", hive, operations),
+
+      getHydration: () => betterIpcRenderer.invoke("persist:get-hydration"),
+
+      onHydrate: (
+        callback: (hive: PersistedHive, data: Serializable) => void,
+      ) =>
+        betterIpcRenderer.on("persist:hydrate", (_, hive, data) =>
+          callback(hive, data),
+        ),
+    },
+
+    window: {
+      onResized: (callback: (width: number, height: number) => void) =>
+        betterIpcRenderer.on("window:resized", (_, width, height) =>
+          callback(width, height),
+        ),
+
+      onMoved: (callback: (x: number, y: number) => void) =>
+        betterIpcRenderer.on("window:moved", (_, x, y) => callback(x, y)),
+
+      onMaximized: (callback: (maximized: boolean) => void) =>
+        betterIpcRenderer.on("window:maximized", (_, maximized) =>
+          callback(maximized),
+        ),
+    },
+
+    app: {
+      onInit: (callback: (metadata: AppInitMetadata) => void) =>
+        betterIpcRenderer.on("app:init", (_, metadata) => callback(metadata)),
+    },
+
+    extensions: {
+      initializeAllMain: (installType: string) =>
+        betterIpcRenderer.send("extensions:init-all-main", installType),
+
+      requestMainInit: (extensionName: string) =>
+        new Promise<{ success: boolean; error?: string }>((resolve) => {
+          // Set up one-time response listener
+          const responseHandler = (
+            _: Electron.IpcRendererEvent,
+            response: {
+              extensionName: string;
+              success: boolean;
+              error?: string;
+            },
+          ) => {
+            if (response.extensionName === extensionName) {
+              betterIpcRenderer.off(
+                "extensions:init-main-response",
+                responseHandler,
+              );
+              resolve(response);
+            }
+          };
+          betterIpcRenderer.on(
+            "extensions:init-main-response",
+            responseHandler,
+          );
+
+          // Send the request
+          betterIpcRenderer.send("extensions:init-main", extensionName);
+        }),
+    },
+
+    updater: {
+      getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
+      setChannel: (channel: string, manual: boolean) =>
+        betterIpcRenderer.send("updater:set-channel", channel, manual),
+      checkForUpdates: (channel: string, manual: boolean) =>
+        betterIpcRenderer.send("updater:check-for-updates", channel, manual),
+      downloadUpdate: (
+        channel: string,
+        installAfterDownload: boolean = false,
+      ) =>
+        betterIpcRenderer.send(
+          "updater:download",
+          channel,
+          installAfterDownload,
+        ),
+      restartAndInstall: () =>
+        betterIpcRenderer.send("updater:restart-and-install"),
     },
   });
 } catch (err) {
@@ -74,4 +165,14 @@ function rendererOn<C extends keyof MainChannels>(
   ) => void,
 ): void {
   ipcRenderer.on(channel, listener);
+}
+
+function rendererOff<C extends keyof MainChannels>(
+  channel: C,
+  listener: (
+    event: Electron.IpcRendererEvent,
+    ...args: SerializableArgs<Parameters<MainChannels[C]>>
+  ) => void,
+): void {
+  ipcRenderer.off(channel, listener);
 }

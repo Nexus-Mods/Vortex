@@ -82,7 +82,7 @@ import {
   withContext as withErrorContext,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import { extend } from "./ExtensionProvider";
+import { extend } from "../renderer/ExtensionProvider";
 import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
 import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 export type { Normalize } from "./getNormalizeFunc.ts";

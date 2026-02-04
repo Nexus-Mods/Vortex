@@ -1,6 +1,6 @@
 import type { IMainPageOptions } from "../types/IExtensionContext";
 
-import type ExtensionManager from "./ExtensionManager";
+import type ExtensionManager from "../renderer/ExtensionManager";
 import { debugTranslations, getMissingTranslations } from "./i18n";
 import { log } from "./log";
 

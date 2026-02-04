@@ -1,0 +1,37 @@
+import type { Serializable } from "./ipc";
+
+/**
+ * Minimal representation of persisted state hives for IPC type safety.
+ *
+ * The full IState type with all nested interfaces is defined in src/types/IState.ts
+ * and cannot be moved to shared because of external dependencies:
+ * - IMod imports from 'modmeta-db' (external npm package)
+ * - IDownload imports from runtime code (DownloadManager.ts)
+ * - Deep transitive dependencies on Bluebird, ITool chain, etc.
+ *
+ * This minimal version provides type-safe hive names without those dependencies.
+ * The renderer can cast the Serializable data to IState[hive] where full typing is needed.
+ */
+
+/**
+ * Minimal interface representing the structure of persisted state.
+ * Each hive's data is typed as Serializable at the IPC boundary.
+ */
+export interface PersistedState {
+  /** Application-level state (version, extensions, install type) */
+  app: Serializable;
+  /** User-specific state (multi-user settings) */
+  user: Serializable;
+  /** Sensitive data (account info) */
+  confidential: Serializable;
+  /** User preferences and UI settings */
+  settings: Serializable;
+  /** Long-term persistent data (profiles, mods, downloads, categories) */
+  persistent: Serializable;
+}
+
+/**
+ * Valid hive names for persisted state.
+ * Excludes 'session' which is ephemeral and not persisted.
+ */
+export type PersistedHive = keyof PersistedState;

@@ -10,7 +10,7 @@ import { withTranslation } from "react-i18next";
 import { clearImmediate, setImmediate } from "timers";
 import { truthy } from "../../util/util";
 export { connect } from "react-redux";
-export { extend } from "../../util/ExtensionProvider";
+export { extend } from "../ExtensionProvider";
 
 const translate: any = withTranslation;
 

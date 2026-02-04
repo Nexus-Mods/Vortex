@@ -274,7 +274,9 @@ function init(context: types.IExtensionContext): boolean {
             // to the last active profile. Just in case lastActiveProfile and newProfile are
             // different (which should *not* ever be the case) we need to bake these
             // settings now so they don't get overridden
-            .tap(() => bakeSettings(context.api, lastActiveProfile))
+            .then((success) => {
+              return bakeSettings(context.api, lastActiveProfile).then(() => success);
+            })
             .then((success: boolean) => success && (newProfile !== undefined)
               ? onSwitchGameProfile(store, lastActiveProfile, newProfile)
               : Promise.resolve(success))

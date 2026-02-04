@@ -17,7 +17,11 @@ import {
 import opn from "../../util/opn";
 import { largeNumToString } from "../../util/util";
 
-import type { IAvailableExtension, IExtension, ISelector } from "./types";
+import type {
+  IAvailableExtension,
+  IExtension,
+  ISelector,
+} from "../../types/extensions";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 
 import * as React from "react";

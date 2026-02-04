@@ -1,12 +1,13 @@
-import type { IPersistor } from "../types/IExtensionContext";
-import { DataInvalid } from "../util/CustomErrors";
-import { log } from "../util/log";
+import type { IPersistor } from "../../types/IExtensionContext";
 
 import PromiseBB from "bluebird";
 import encode from "encoding-down";
 import type leveldownT from "leveldown";
 import * as levelup from "levelup";
-import { unknownToError } from "../shared/errors";
+
+import { unknownToError } from "../../shared/errors";
+import { DataInvalid } from "../../util/CustomErrors";
+import { log } from "../../util/log";
 
 const SEPARATOR: string = "###";
 

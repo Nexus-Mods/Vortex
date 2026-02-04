@@ -353,8 +353,9 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    layout: state.settings.interface.dashboardLayout,
-    dashletSettings: state.settings.interface.dashletSettings,
+    // Defensive checks: interface might not be initialized during hydration
+    layout: state.settings?.interface?.dashboardLayout ?? [],
+    dashletSettings: state.settings?.interface?.dashletSettings ?? {},
   };
 }
 

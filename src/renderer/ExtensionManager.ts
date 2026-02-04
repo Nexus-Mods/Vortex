@@ -1,34 +1,25 @@
-import {
-  forgetExtension,
-  removeExtension,
-  setExtensionEnabled,
-  setExtensionVersion,
-} from "../actions/app";
-import {
-  addNotification,
-  closeDialog,
-  dismissNotification,
-  dismissAllNotifications,
-  showDialog,
-} from "../actions/notifications";
+import type { SpawnOptions } from "child_process";
+import type { OpenDialogOptions, SaveDialogOptions } from "electron";
+import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
+import type * as modmetaT from "modmeta-db";
+import type { ToastOptions } from "react-hot-toast";
+import type * as winapiT from "vortex-run";
+
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
-} from "../actions/notifications.ts";
-import { suppressNotification } from "../actions/notificationSettings";
-import { setExtensionLoadFailures } from "../actions/session";
-
-import { setOptionalExtensions } from "../extensions/extension_manager/actions";
-import type {
-  IAvailableExtension,
-  IExtension,
-} from "../extensions/extension_manager/types";
+} from "../actions/notifications";
 import type {
   IModReference,
   IModRepoId,
 } from "../extensions/mod_management/types/IMod";
-import type { ExtensionInit } from "../types/Extension";
+import type { SanityCheck } from "../store/reduxSanity";
+import type {
+  IAvailableExtension,
+  IExtension,
+  IRegisteredExtension,
+} from "../types/extensions";
 import type {
   ArchiveHandlerCreator,
   IArchiveHandler,
@@ -57,9 +48,48 @@ import type {
   IExtensionState,
   IState,
 } from "../types/IState";
+import type { i18n } from "../util/i18n";
 
-import { Archive } from "./archives";
-import { COMPANY_ID } from "./constants";
+import PromiseBB from "bluebird";
+import { spawn } from "child_process";
+import { EventEmitter } from "events";
+import * as fs from "fs-extra";
+import * as fuzz from "fuzzball";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+import * as net from "net";
+import * as path from "path";
+import { toast } from "react-hot-toast";
+import * as semver from "semver";
+import { generate as shortid } from "shortid";
+import stringFormat from "string-template";
+import { fileMD5 } from "vortexmt";
+
+import {
+  forgetExtension,
+  setExtensionEnabled,
+  setExtensionVersion,
+} from "../actions/app";
+import {
+  addNotification,
+  closeDialog,
+  dismissAllNotifications,
+  dismissNotification,
+  showDialog,
+} from "../actions/notifications";
+import { suppressNotification } from "../actions/notificationSettings";
+import { setExtensionLoadFailures } from "../actions/session";
+import { setOptionalExtensions } from "../extensions/extension_manager/actions";
+import { VCREDIST_URL } from "../shared/constants";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../shared/errors";
+import { registerSanityCheck } from "../store/reduxSanity";
+import { Archive } from "../util/archives";
+import { getApplication } from "../util/application";
+import { COMPANY_ID } from "../util/constants";
 import {
   MissingDependency,
   NotSupportedError,
@@ -67,21 +97,19 @@ import {
   ThirdPartyError,
   TimeoutError,
   UserCanceled,
-} from "./CustomErrors";
-import { disableErrorReport, isOutdated } from "./errorHandling";
-import getVortexPath from "./getVortexPath";
-import type { i18n } from "./i18n";
-import { TString } from "./i18n";
-import lazyRequire from "./lazyRequire";
-import { log } from "./log";
-import { showError } from "./message";
-import { registerSanityCheck } from "../store/reduxSanity";
-import type { SanityCheck } from "../store/reduxSanity.ts";
-import ReduxWatcher from "../store/ReduxWatcher";
-import runElevatedCustomTool from "./runElevatedCustomTool";
-import { activeGameId } from "./selectors";
-import { getSafe } from "./storeHelper";
-import StyleManager from "./StyleManager";
+} from "../util/CustomErrors";
+import makeRemoteCall, { makeRemoteCallSync } from "../util/electronRemote";
+import { disableErrorReport, isOutdated } from "../util/errorHandling";
+import * as fsVortex from "../util/fs";
+import getVortexPath from "../util/getVortexPath";
+import { TString } from "../util/i18n";
+import lazyRequire from "../util/lazyRequire";
+import { log } from "../util/log";
+import { showError } from "../util/message";
+import runElevatedCustomTool from "../util/runElevatedCustomTool";
+import { activeGameId } from "../util/selectors";
+import { getSafe } from "../util/storeHelper";
+import StyleManager from "../util/StyleManager";
 import {
   filteredEnvironment,
   isFunction,
@@ -91,45 +119,11 @@ import {
   truthy,
   wrapExtCBAsync,
   wrapExtCBSync,
-} from "./util";
+} from "../util/util";
+import ReduxWatcher from "./store/ReduxWatcher";
+import type { PreloadWindow } from "../shared/types/preload";
 
-import PromiseBB from "bluebird";
-import { spawn } from "child_process";
-import type { SpawnOptions } from "child_process";
-import { ipcMain, ipcRenderer } from "electron";
-import type {
-  OpenDialogOptions,
-  SaveDialogOptions,
-  WebContents,
-} from "electron";
-import { EventEmitter } from "events";
-import * as fs from "fs-extra";
-import * as fuzz from "fuzzball";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
-import type * as modmetaT from "modmeta-db";
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
-import * as net from "net";
-import * as path from "path";
-import type * as Redux from "redux";
-import * as semver from "semver";
-import { generate as shortid } from "shortid";
-import stringFormat from "string-template";
-import type * as winapiT from "vortex-run";
-import { getApplication } from "./application";
-import makeRemoteCall, { makeRemoteCallSync } from "./electronRemote";
-import { VCREDIST_URL } from "../shared/constants";
-import { fileMD5 } from "vortexmt";
-import * as fsVortex from "../util/fs";
-
-import { toast } from "react-hot-toast";
-import type { ToastOptions } from "react-hot-toast";
-import {
-  getErrorCode,
-  unknownToError,
-  getErrorMessageOrDefault,
-} from "../shared/errors";
 
 export function isExtSame(
   installed: IExtension,
@@ -247,15 +241,6 @@ const showMessageBox = makeRemoteCall(
     return electron.dialog.showMessageBox(window, options);
   },
 );
-
-export interface IRegisteredExtension {
-  name: string;
-  namespace: string;
-  path: string;
-  dynamic: boolean;
-  initFunc: () => ExtensionInit;
-  info?: IExtension;
-}
 
 interface IWatcherRegistry {
   [watchPath: string]: StateChangeCallback[];
@@ -694,9 +679,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
           incompatibleExtensions[call.extension] === undefined,
       );
     } else {
-      if (process.type === "renderer") {
-        log("debug", "all extensions compatible");
-      }
+      log("debug", "all extensions compatible");
     }
 
     return incompatibleExtensions;
@@ -812,87 +795,6 @@ class ContextProxyHandler implements ProxyHandler<any> {
   };
 }
 
-class EventProxy extends EventEmitter {
-  private mTarget: WebContents;
-  private mRemoteCallbacks: { [id: string]: (...args) => void } = {};
-  private mRemotePromises: {
-    [id: string]: { resolve: (res) => void; reject: (err) => void };
-  } = {};
-
-  constructor(target: WebContents) {
-    super();
-    this.mTarget = target;
-    // any listener attached to this proxy will be attached to
-    // the event handler in the target process as well so those events
-    // get relayed to here
-    this.on("newListener", (event, listener) => {
-      // TODO: workaround: instead of two parameters I get one array with two elements.
-      //   this differs from the documentation of newListener so I assume it'a a bug?
-      if (Array.isArray(event)) {
-        event = event[0];
-      }
-      this.mTarget.send("register-relay-listener", event);
-    });
-    // TODO: support removeListener
-    ipcMain.on("relay-event", (event, eventName, ...args) => {
-      if (event.sender === this.mTarget) {
-        super.emit(eventName, ...args);
-      }
-    });
-    ipcMain.on("relay-cb", (event, id, ...args) => {
-      const cb = this.mRemoteCallbacks[id];
-      if (cb !== undefined) {
-        const newArgs = args.map((arg) => {
-          if (arg.__promise === undefined) {
-            return arg;
-          } else {
-            return new PromiseBB((resolve, reject) => {
-              this.mRemotePromises[arg.__promise] = { resolve, reject };
-            });
-          }
-        });
-        cb(...newArgs);
-        delete this.mRemoteCallbacks[id];
-      }
-    });
-    ipcMain.on("relay-cb-resolve", (event, id, res) => {
-      const prom = this.mRemotePromises[id];
-      if (prom !== undefined) {
-        prom.resolve(res);
-        delete this.mRemotePromises[id];
-      }
-    });
-    ipcMain.on("relay-cb-reject", (event, id, err) => {
-      const prom = this.mRemotePromises[id];
-      if (prom !== undefined) {
-        prom.reject(err);
-        delete this.mRemotePromises[id];
-      }
-    });
-  }
-
-  public emit(eventName: string, ...args) {
-    if (
-      !super.emit(eventName, args) &&
-      this.mTarget !== undefined &&
-      !this.mTarget.isDestroyed()
-    ) {
-      // relay all events this process didn't handle itself to the connected
-      // process
-      if (typeof args[args.length - 1] === "function") {
-        const id = shortid();
-        this.mRemoteCallbacks[id] = args[args.length - 1];
-        const newArgs = [].concat(args.slice(0, args.length - 1), id);
-        this.mTarget.send("relay-event-with-cb", eventName, ...newArgs);
-      } else {
-        this.mTarget.send("relay-event", eventName, ...args);
-      }
-      return true;
-    }
-    return false;
-  }
-}
-
 const UNDEFINED = {};
 
 type CBFunc = (...args: any[]) => void;
@@ -969,9 +871,22 @@ class ExtensionManager {
   // the idea behind this was that we might want to support things like typescript
   // or coffescript directly but that would require us shipping the corresponding compilers
   private mExtensionFormats: string[] = ["index.js"];
+  // Pending actions to dispatch when setStore() is called (renderer-only architecture)
+  private mPendingDisables: string[] = [];
+  private mPendingRemoves: string[] = [];
 
+  /**
+   * Create ExtensionManager.
+   *
+   * In the new renderer-only architecture:
+   * - Pass extensionState directly (from hydrated app.extensions)
+   * - Store will be set later via setStore() after reducer is initialized
+   *
+   * @param extensionState - Pre-loaded extension state from hydration (renderer-only)
+   * @param eventEmitter - Event emitter for extension communication
+   */
   constructor(
-    initStore?: Redux.Store<any>,
+    extensionState?: { [extId: string]: IExtensionState },
     eventEmitter?: NodeJS.EventEmitter,
   ) {
     this.mEventEmitter = eventEmitter;
@@ -1043,52 +958,47 @@ class ExtensionManager {
       ext: {},
       NAMESPACE: "common",
     };
-    if (initStore !== undefined) {
-      // apologies for the sync operation but this needs to happen before extensions are loaded
-      // and everything in this phase of startup is synchronous anyway
-      try {
-        const disableExtensions = fs
-          .readdirSync(getVortexPath("temp"))
-          .filter((name) => name.startsWith("__disable_"));
-        disableExtensions.forEach((ext) => {
-          const extId = ext.substr(10);
-          log("info", "disabling extension that caused a crash before", {
-            extId,
-          });
-          initStore.dispatch(setExtensionEnabled(extId, false));
-          fs.unlinkSync(path.join(getVortexPath("temp"), ext));
+
+    // Use provided extension state directly (renderer-only architecture)
+    // Extensions that need to be removed will be handled when setStore() is called
+    this.mExtensionState = extensionState ?? {};
+
+    // Handle extensions that caused crashes - mark for disabling
+    // The actual dispatch will happen when setStore() is called
+    this.mPendingDisables = [];
+    try {
+      const disableExtensions = fs
+        .readdirSync(getVortexPath("temp"))
+        .filter((name) => name.startsWith("__disable_"));
+      disableExtensions.forEach((ext) => {
+        const extId = ext.substr(10);
+        log("info", "disabling extension that caused a crash before", {
+          extId,
         });
-      } catch (err) {
-        const code = getErrorCode(err);
-        // an ENOENT will happen on the first start where the dir doesn't
-        // exist yet. No problem
-        if (code !== "ENOENT") {
-          log("error", "failed to read disabled extensions", err);
-        }
+        this.mPendingDisables.push(extId);
+        fs.unlinkSync(path.join(getVortexPath("temp"), ext));
+      });
+    } catch (err) {
+      const code = getErrorCode(err);
+      // an ENOENT will happen on the first start where the dir doesn't
+      // exist yet. No problem
+      if (code !== "ENOENT") {
+        log("error", "failed to read disabled extensions", err);
       }
-
-      this.mExtensionState = initStore.getState().app.extensions;
-      const extensionsPath = path.join(getVortexPath("userData"), "plugins");
-
-      Object.keys(this.mExtensionState)
-        .filter((extId) => this.mExtensionState[extId].remove)
-        .forEach((extId) => {
-          log("info", "removing", path.join(extensionsPath, extId));
-          fs.removeSync(path.join(extensionsPath, extId));
-          initStore.dispatch(forgetExtension(extId));
-        });
-      ipcMain.on("__get_extension_state", (event) => {
-        event.returnValue = this.mExtensionState;
-      });
-      ipcMain.on("__ui_is_ready", () => {
-        this.mOnUIStarted();
-      });
-    } else {
-      this.mExtensionState = ipcRenderer.sendSync("__get_extension_state");
     }
-    if (process.type === "renderer") {
-      this.mStyleManager = new StyleManager(this.mApi);
-    }
+
+    // Check for extensions marked for removal
+    const extensionsPath = path.join(getVortexPath("userData"), "plugins");
+    this.mPendingRemoves = [];
+    Object.keys(this.mExtensionState)
+      .filter((extId) => this.mExtensionState[extId].remove)
+      .forEach((extId) => {
+        log("info", "removing", path.join(extensionsPath, extId));
+        fs.removeSync(path.join(extensionsPath, extId));
+        this.mPendingRemoves.push(extId);
+      });
+
+    this.mStyleManager = new StyleManager(this.mApi);
     this.mExtensions = this.prepareExtensions();
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
@@ -1097,9 +1007,8 @@ class ExtensionManager {
         log("info", "extension older than bundled version, will be removed", {
           name: ext,
         });
-        // if we get here in the renderer process, initStore is not defined.
-        // This should happen in the main process only
-        initStore?.dispatch?.(removeExtension(ext));
+        // Store pending removal - will be dispatched when setStore() is called
+        this.mPendingRemoves.push(ext);
       });
       return;
     }
@@ -1129,6 +1038,18 @@ class ExtensionManager {
    */
   public setStore<S extends IState>(store: ThunkStore<S>) {
     this.mReduxWatcher = new ReduxWatcher(store, this.watcherError);
+
+    // Process any pending actions that were deferred during construction
+    // (renderer-only architecture - dispatches happen after store is ready)
+    this.mPendingDisables.forEach((extId) => {
+      store.dispatch(setExtensionEnabled(extId, false));
+    });
+    this.mPendingDisables = [];
+
+    this.mPendingRemoves.forEach((extId) => {
+      store.dispatch(forgetExtension(extId));
+    });
+    this.mPendingRemoves = [];
 
     this.mExtensionState = getSafe(store.getState(), ["app", "extensions"], {});
 
@@ -1237,26 +1158,9 @@ class ExtensionManager {
       this.mForceDBReconnect = true;
     });
 
-    if (ipcRenderer !== undefined) {
-      ipcRenderer.on("send-notification", (event, notification) =>
-        this.mApi.sendNotification(notification),
-      );
-      ipcRenderer.on(
-        "show-error-notification",
-        (event, message, details, options, isError) => {
-          let data = JSON.parse(details);
-          if (isError) {
-            data = Object.assign(new Error(), data);
-          }
-          this.mApi.showErrorNotification(message, data, options || undefined);
-        },
-      );
-
-      store.dispatch(setOptionalExtensions(this.mOptionalExtensions));
-      store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
-    } else {
-      this.migrateExtensions();
-    }
+    store.dispatch(setOptionalExtensions(this.mOptionalExtensions));
+    store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
+    this.migrateExtensions();
     this.reportExtLoadErrors();
   }
 
@@ -1306,53 +1210,6 @@ class ExtensionManager {
         ),
       );
     }
-  }
-
-  /**
-   * set up the api for the main process.
-   *
-   * @param {Redux.Store<S>} store
-   * @param {NodeJS.Events} ipc channel to the renderer process, in case a call has to be
-   *                            delegated there
-   *
-   * @memberOf ExtensionManager
-   */
-  public setupApiMain<S>(store: Redux.Store<S>, ipc: WebContents) {
-    this.mApi.showErrorNotification = (
-      message: string,
-      details: string | Error,
-      options: IErrorOptions,
-    ) => {
-      try {
-        // make an attempt to serialise error objects in such a way that they can be
-        // reconstructed.
-        const data: any =
-          typeof details === "object" ? { ...details } : details;
-        if (details instanceof Error) {
-          // details.stack, details.name AND details.message seem to be getters.
-          data.stack = details.stack;
-          data.name = details.name;
-          data.message = details.message;
-          // stack is also optional. If we don't have one, generate one to this function
-          // which is better than nothing because otherwise the code reconstructing the error
-          // will produce a stack that is completely useless
-          if (data.stack === undefined) {
-            data.stack = new Error().stack;
-          }
-        }
-        ipc.send(
-          "show-error-notification",
-          message,
-          JSON.stringify(data),
-          options,
-          details instanceof Error,
-        );
-      } catch (err) {
-        // this may happen if the ipc has already been destroyed
-        this.showErrorBox(message, details);
-      }
-    };
-    this.mApi.events = this.mEventEmitter = new EventProxy(ipc);
   }
 
   /**
@@ -1463,9 +1320,10 @@ class ExtensionManager {
    * once.
    */
   public doOnce(): PromiseBB<void> {
-    const calls = this.mContextProxyHandler.getCalls(
-      process.type === "renderer" ? "once" : "onceMain",
-    );
+    // Since ExtensionManager is renderer-only, we need to handle both once and onceMain
+    const onceCalls = this.mContextProxyHandler.getCalls("once");
+    const onceMainCalls = this.mContextProxyHandler.getCalls("onceMain");
+    const allCalls = [...onceCalls, ...onceMainCalls];
 
     const reportError = (
       err: unknown,
@@ -1490,15 +1348,39 @@ class ExtensionManager {
       );
     };
 
-    return PromiseBB.mapSeries(calls, (call, idx) => {
-      log("debug", "once", { extension: call.extension });
+    return PromiseBB.mapSeries(allCalls, (call, idx) => {
+      const isMainCall = onceMainCalls.includes(call);
+      log("debug", isMainCall ? "onceMain" : "once", {
+        extension: call.extension,
+      });
       const ext = this.mExtensions.find((iter) => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         this.mLoadingCallbacks.forEach((cb) => {
           cb(call.extension, idx);
         });
-        const prom = call.arguments[0]() || PromiseBB.resolve();
+
+        let prom: PromiseBB<void>;
+        if (isMainCall) {
+          // For onceMain, request main process initialization via IPC
+          log("debug", "Requesting main process initialization", {
+            extension: call.extension,
+          });
+          prom = PromiseBB.resolve(
+            (window as unknown as PreloadWindow).api.extensions.requestMainInit(
+              call.extension,
+            ),
+          ).then((result) => {
+            if (!result.success) {
+              throw new Error(
+                result.error || "Main process initialization failed",
+              );
+            }
+          });
+        } else {
+          // For once, execute the callback directly in renderer
+          prom = call.arguments[0]() || PromiseBB.resolve();
+        }
 
         const start = Date.now();
         return timeout(prom, 60000, {
@@ -1529,7 +1411,7 @@ class ExtensionManager {
       }
     }).then(() => {
       this.mLoadingCallbacks.forEach((cb) => {
-        cb(undefined, calls.length);
+        cb(undefined, allCalls.length);
       });
       log("debug", "once done");
     });
@@ -1545,10 +1427,10 @@ class ExtensionManager {
   }
 
   public get numOnce() {
-    const calls = this.mContextProxyHandler.getCalls(
-      process.type === "renderer" ? "once" : "onceMain",
-    );
-    return calls.length;
+    // Count both once and onceMain calls since we handle both in renderer
+    const onceCalls = this.mContextProxyHandler.getCalls("once");
+    const onceMainCalls = this.mContextProxyHandler.getCalls("onceMain");
+    return onceCalls.length + onceMainCalls.length;
   }
 
   public onLoadingExtension(cb: (name: string, idx: number) => void) {
@@ -1557,7 +1439,6 @@ class ExtensionManager {
 
   public setUIReady() {
     this.mOnUIStarted();
-    ipcRenderer.send("__ui_is_ready");
   }
 
   private watcherError = (err: Error, selector: string[]) => {
@@ -1777,10 +1658,7 @@ class ExtensionManager {
     this.mContextProxyHandler = new ContextProxyHandler(context);
     const contextProxy = new Proxy(context, this.mContextProxyHandler);
     this.mExtensions.forEach((ext) => {
-      if (process.type === "renderer") {
-        // log this only once so we don't spam the log file with this
-        log("info", "init extension", { name: ext.name, path: ext.path });
-      }
+      log("info", "init extension", { name: ext.name, path: ext.path });
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         const apiProxy = new APIProxyCreator(ext, this.mEventEmitter);
@@ -1832,9 +1710,7 @@ class ExtensionManager {
       },
     );
 
-    if (process.type === "renderer") {
-      log("info", "all extensions initialized");
-    }
+    log("info", "all extensions initialized");
   }
 
   private migrateExtensions() {
@@ -3090,7 +2966,7 @@ class ExtensionManager {
       "installer_fomod_native",
     ];
 
-    require("./extensionRequire").default(() => this.extensions);
+    require("../util/extensionRequire").default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();

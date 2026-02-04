@@ -76,7 +76,8 @@ class GlobalNotifications {
 
     this.mIsEnabled = () => {
       const state: IState = api.store?.getState();
-      return state.settings.interface.desktopNotifications;
+      // Defensive check: interface might not be initialized during hydration
+      return state?.settings?.interface?.desktopNotifications ?? false;
     };
   }
 

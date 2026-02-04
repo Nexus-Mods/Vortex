@@ -3,9 +3,23 @@
 // are never used to create an object. They are only used for type inferrence.
 
 import type { Level } from "./logging";
+import type { PersistedHive, PersistedState } from "./state";
+
+// Re-export state types for convenience
+export type { PersistedHive, PersistedState };
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
+
+/** A single diff operation for state persistence */
+export interface DiffOperation {
+  /** Whether to set or remove a value */
+  type: "set" | "remove";
+  /** Path to the value in state (e.g., ["settings", "window", "x"]) */
+  path: string[];
+  /** The value to set (only for "set" operations) - changing this to "Serializable" gives off infinite type errors */
+  value?: unknown;
+}
 
 /** Type containing all known channels used by renderer processes to send messages to the main process */
 export interface RendererChannels {
@@ -17,6 +31,27 @@ export interface RendererChannels {
   // Examples:
   "example:renderer_foo": () => void;
   "example:renderer_bar": (data: number) => void;
+
+  // Persistence: Send diff operations to main for persistence
+  "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;
+
+  // Extensions: Initialize all main process extensions
+  "extensions:init-all-main": (installType: string) => void;
+
+  // Extensions: Initialize specific extension in main process (per-extension)
+  "extensions:init-main": (extensionName: string) => void;
+
+  // Updater: Set update channel
+  "updater:set-channel": (channel: string, manual: boolean) => void;
+
+  // Updater: Check for updates
+  "updater:check-for-updates": (channel: string, manual: boolean) => void;
+
+  // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
+  "updater:download": (channel: string, installAfterDownload: boolean) => void;
+
+  // Updater: Restart and install update
+  "updater:restart-and-install": () => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -26,6 +61,55 @@ export interface MainChannels {
   // Examples:
   "example:main_foo": () => void;
   "example:main_bar": (data: string) => void;
+
+  // Persistence: Send hydration data to renderer on startup
+  "persist:hydrate": (hive: PersistedHive, data: Serializable) => void;
+
+  // Window events: Main sends window state changes to renderer
+  // Renderer decides how to handle (e.g., dispatch Redux actions)
+  "window:resized": (width: number, height: number) => void;
+  "window:moved": (x: number, y: number) => void;
+  "window:maximized": (maximized: boolean) => void;
+
+  // App initialization: Main sends all startup metadata to renderer in one message
+  "app:init": (metadata: AppInitMetadata) => void;
+
+  // Extensions: Response from main process after initializing an extension
+  "extensions:init-main-response": (response: {
+    extensionName: string;
+    success: boolean;
+    error?: string;
+  }) => void;
+}
+
+/** Metadata sent from main to renderer during app initialization */
+export interface AppInitMetadata {
+  /** Command line arguments */
+  commandLine: Record<string, unknown>;
+  /** Install type (regular installer or managed like Epic/MS Store) */
+  installType?: "regular" | "managed";
+  /** Application version string */
+  version?: string;
+  /** Instance ID for crash reporting */
+  instanceId?: string;
+  /** Whether user was warned about admin (0 = not warned) */
+  warnedAdmin?: number;
+}
+
+/** Status of the auto-updater in main process */
+export interface UpdateStatus {
+  /** Whether an update is available */
+  available: boolean;
+  /** Whether update is downloaded and ready to install */
+  downloaded: boolean;
+  /** Version of the available update */
+  version?: string;
+  /** Release notes/changelog for the update */
+  releaseNotes?: string;
+  /** Download progress (0-100) if downloading */
+  downloadProgress?: number;
+  /** Error message if update check failed */
+  error?: string;
 }
 
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
@@ -34,6 +118,12 @@ export interface InvokeChannels {
 
   // Examples:
   "example:ping": () => Promise<string>;
+
+  // Persistence: Get all hydration data at startup (called once during init)
+  "persist:get-hydration": () => Promise<Partial<PersistedState>>;
+
+  // Updater: Query current update status from main process
+  "updater:get-status": () => Promise<UpdateStatus>;
 }
 
 /** Represents all IPC-safe typed arrays */
@@ -68,15 +158,35 @@ export type Serializable =
   | DataView
   | TypedArray;
 
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+type HasError<T> = T extends { __error__: string }
+  ? true
+  : T extends object
+    ? { [K in keyof T]: HasError<T[K]> }[keyof T] extends true
+      ? true
+      : false
+    : false;
+
 // NOTE(erri120): If you found this type because you got an error, that means you're trying to pass data across the IPC
 // that can't be serialized. Check the list of supported types above and pick one of them. If you think there is a type missing
 // from the list above, write a small proof and we can discuss it.
-
-// NOTE(erri120): Alternative is using `never` in the fallback but that doesn't produce very nice error messages.
+//
 /** Utility type to assert that the type is serializable */
-export type AssertSerializable<T> = T extends Serializable
-  ? T
-  : { __error__: "Type is not serializable for IPC" };
+export type AssertSerializable<T> =
+  // any is not allowed - it bypasses all type checking
+  IsAny<T> extends true
+    ? { __error__: "any is not serializable for IPC" }
+    : // known serializables
+      T extends Serializable
+      ? T
+      : // objects - check all properties recursively
+        T extends object
+        ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
+          ? { __error__: "Type is not serializable for IPC" }
+          : T
+        : // everything else is rejected
+          { __error__: "Type is not serializable for IPC" };
 
 /** Utility type to check all args are serializable */
 export type SerializableArgs<T extends readonly unknown[]> = {

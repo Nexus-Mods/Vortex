@@ -1,9 +1,4 @@
 import { addNotification } from "../actions/notifications";
-import {
-  setMaximized,
-  setWindowPosition,
-  setWindowSize,
-} from "../actions/window";
 import type { ThunkStore } from "../types/IExtensionContext";
 import type { IState, IWindow } from "../types/IState";
 import Debouncer from "../util/Debouncer";
@@ -73,35 +68,59 @@ function reactArea(input: IRect): number {
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow | null = null;
-  // timers used to prevent window resize/move from constantly causeing writes to the
+  // timers used to prevent window resize/move from constantly causing writes to the
   // store
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
   private mInspector: boolean;
-  private mStore: Redux.Store<IState>;
+  private mStore: Redux.Store<IState> | null;
+  private mInitialWindowSettings: IWindow | null = null;
 
-  constructor(store: Redux.Store<IState>, inspector: boolean) {
+  /**
+   * Create a MainWindow instance.
+   *
+   * @param store - Redux store (optional in new architecture, renderer owns store)
+   * @param inspector - Whether to open dev tools
+   * @param windowSettings - Optional initial window settings (from persistence)
+   */
+  constructor(
+    store: Redux.Store<IState> | null,
+    inspector: boolean,
+    windowSettings?: IWindow,
+  ) {
     this.mStore = store;
     this.mInspector = inspector === true;
+    this.mInitialWindowSettings = windowSettings ?? null;
+
     this.mResizeDebouncer = new Debouncer(() => {
       if (this.mWindow !== null && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
-        store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
+        this.sendWindowEvent("window:resized", size[0], size[1]);
       }
       return PromiseBB.resolve();
     }, 500);
 
     this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
       if (this.mWindow !== null) {
-        store.dispatch(setWindowPosition({ x, y }));
+        this.sendWindowEvent("window:moved", x, y);
       }
       return PromiseBB.resolve();
     }, 500);
   }
 
+  /**
+   * Send a window event to the renderer via IPC.
+   * In the new architecture, renderer handles dispatching Redux actions.
+   */
+  private sendWindowEvent(channel: string, ...args: unknown[]): void {
+    if (this.mWindow?.webContents) {
+      this.mWindow.webContents.send(channel, ...args);
+    }
+  }
+
   public create(
-    store: ThunkStore<IState>,
+    store: ThunkStore<IState> | null,
   ): PromiseBB<Electron.WebContents | undefined> {
     if (this.mWindow !== null) {
       return PromiseBB.resolve(undefined);
@@ -110,9 +129,11 @@ class MainWindow {
     const BrowserWindow: typeof Electron.BrowserWindow =
       require("electron").BrowserWindow;
 
-    this.mWindow = new BrowserWindow(
-      this.getWindowSettings(store.getState().settings.window),
-    );
+    // Use store state if available, otherwise fall back to initial window settings
+    const windowMetrics =
+      store?.getState()?.settings?.window ?? this.mInitialWindowSettings;
+
+    this.mWindow = new BrowserWindow(this.getWindowSettings(windowMetrics));
 
     this.mWindow.loadURL(
       pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
@@ -165,12 +186,16 @@ class MainWindow {
           reason: details.reason,
         });
         if (details.reason !== "killed") {
-          store.dispatch(
-            addNotification({
-              type: "error",
-              message: "Vortex restarted after a crash, sorry about that.",
-            }),
-          );
+          // In the new architecture where store is in renderer, we can't dispatch here.
+          // The crash recovery notification will be handled by the renderer on reload.
+          if (store !== null) {
+            store.dispatch(
+              addNotification({
+                type: "error",
+                message: "Vortex restarted after a crash, sorry about that.",
+              }),
+            );
+          }
           // workaround for electron issue #19887
           setImmediate(() => {
             process.env.CRASH_REPORTING =
@@ -231,7 +256,11 @@ class MainWindow {
       // unfortunately we have to deal with these events in the main process even though
       // we'll do the work in the renderer
       if (item.getURL().startsWith("blob:")) {
-        const dlPath = downloadPath(this.mStore.getState());
+        // Get download path from store if available, otherwise use system temp
+        const dlPath =
+          this.mStore !== null
+            ? downloadPath(this.mStore.getState())
+            : require("electron").app.getPath("temp");
         item.setSavePath(path.join(dlPath, item.getFilename() + ".tmp"));
         item.once("done", () => {
           signalUrl(item);
@@ -257,7 +286,7 @@ class MainWindow {
       event.preventDefault();
     });
 
-    this.initEventHandlers(store);
+    this.initEventHandlers();
 
     return new PromiseBB<Electron.WebContents>((resolve) => {
       this.mWindow?.once("ready-to-show", () => {
@@ -362,7 +391,7 @@ class MainWindow {
   }
 
   private getWindowSettings(
-    windowMetrics: IWindow,
+    windowMetrics: IWindow | null | undefined,
   ): Electron.BrowserWindowConstructorOptions {
     const { getSafe } = require("../util/storeHelper") as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
@@ -408,7 +437,7 @@ class MainWindow {
     };
   }
 
-  private initEventHandlers(store: Redux.Store<IState>) {
+  private initEventHandlers() {
     if (this.mWindow === null) {
       return;
     }
@@ -422,8 +451,12 @@ class MainWindow {
     this.mWindow.on("closed", () => {
       this.mWindow = null;
     });
-    this.mWindow.on("maximize", () => store.dispatch(setMaximized(true)));
-    this.mWindow.on("unmaximize", () => store.dispatch(setMaximized(false)));
+    this.mWindow.on("maximize", () =>
+      this.sendWindowEvent("window:maximized", true),
+    );
+    this.mWindow.on("unmaximize", () =>
+      this.sendWindowEvent("window:maximized", false),
+    );
     this.mWindow.on("resize", () => this.mResizeDebouncer.schedule());
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {

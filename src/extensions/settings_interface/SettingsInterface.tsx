@@ -26,7 +26,7 @@ import { truthy } from "../../util/util";
 import type {
   IAvailableExtension,
   IExtensionDownloadInfo,
-} from "../extension_manager/types";
+} from "../../types/extensions";
 import { readExtensibleDir } from "../extension_manager/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";

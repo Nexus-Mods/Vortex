@@ -1,7 +1,4 @@
-import type {
-  IAvailableExtension,
-  IExtensionDownloadInfo,
-} from "../extensions/extension_manager/types";
+import type { IAvailableExtension, IExtensionDownloadInfo } from "./extensions";
 import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
 import type {
   GameVersionProviderFunc,
@@ -33,7 +30,7 @@ import type {
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
 import type { Archive } from "../util/archives";
-import type { IRegisteredExtension } from "../util/ExtensionManager";
+import type { IRegisteredExtension } from "./extensions";
 import type { i18n, TFunction } from "../util/i18n";
 import type ReduxProp from "../renderer/ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
@@ -297,14 +294,14 @@ export type PersistorKey = string[];
  * @interface IPersistor
  */
 export interface IPersistor {
-  setResetCallback(cb: () => PromiseBB<void>): void;
-  getItem(key: PersistorKey): PromiseBB<string>;
-  setItem(key: PersistorKey, value: string): PromiseBB<void>;
-  removeItem(key: PersistorKey): PromiseBB<void>;
-  getAllKeys(): PromiseBB<PersistorKey[]>;
+  setResetCallback(cb: () => PromiseLike<void>): void;
+  getItem(key: PersistorKey): PromiseLike<string>;
+  setItem(key: PersistorKey, value: string): PromiseLike<void>;
+  removeItem(key: PersistorKey): PromiseLike<void>;
+  getAllKeys(): PromiseLike<PersistorKey[]>;
   getAllKVs?(
     prefix?: string,
-  ): PromiseBB<Array<{ key: PersistorKey; value: string }>>;
+  ): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
 }
 
 /**

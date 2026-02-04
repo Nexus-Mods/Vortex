@@ -6,7 +6,7 @@ import type { NotificationDismiss } from "../../types/INotification";
 import type { IExtensionLoadFailure, IState } from "../../types/IState";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
-import { isExtSame } from "../../util/ExtensionManager";
+import { isExtSame } from "../../renderer/ExtensionManager";
 import { log } from "../../util/log";
 import makeReactive from "../../util/makeReactive";
 
@@ -22,7 +22,7 @@ import type {
   IAvailableExtension,
   IExtension,
   IExtensionDownloadInfo,
-} from "./types";
+} from "../../types/extensions";
 import {
   downloadAndInstallExtension,
   fetchAvailableExtensions,

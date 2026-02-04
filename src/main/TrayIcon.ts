@@ -6,13 +6,26 @@ import type { BrowserWindow } from "electron";
 import { app, Menu, Tray } from "electron";
 import * as path from "path";
 
+/**
+ * Manages the tray icon and its interactions.
+ * With the toasts system in place, the tray icon interactions are pretty much
+ * useless.
+ *
+ * The extension manager refactor work also makes this class obsolete as we're
+ * not forwarding the IExtensionApi anymore.
+ *
+ * However, we might want to enhance the tray icon functionality in the future, so
+ * we'll keep this class for now.
+ *
+ * @deprecated
+ */
 class TrayIcon {
   private mTrayIcon: Electron.Tray;
-  private mApi: IExtensionApi;
+  private mApi: IExtensionApi | null;
   private mImagePath: string;
   private mInitialized: boolean = false;
 
-  constructor(api: IExtensionApi) {
+  constructor(api: IExtensionApi | null) {
     this.mApi = api;
     this.mImagePath = path.resolve(
       getVortexPath("assets"),
@@ -70,14 +83,14 @@ class TrayIcon {
       ]),
     );
 
-    this.mApi.events.on("show-balloon", (title: string, content: string) =>
+    this.mApi?.events?.on("show-balloon", (title: string, content: string) =>
       this.showNotification(title, content),
     );
     this.mInitialized = true;
   }
 
   private startGame() {
-    this.mApi.events.emit("quick-launch");
+    this.mApi?.events?.emit("quick-launch");
   }
 
   private showNotification(title: string, content: string) {
