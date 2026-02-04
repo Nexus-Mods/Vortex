@@ -22,18 +22,23 @@ import {
 } from "./notificationUtils";
 import { useNotificationTranslation } from "./useNotificationTranslation";
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<
+  NotificationType,
+  { className: string; icon: string }
+> = {
   error: { className: "text-danger-strong", icon: mdiAlertOctagon },
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
   info: { className: "text-info-strong", icon: mdiInformationOutline },
   activity: { className: "text-info-strong", icon: mdiInformationOutline },
+  global: { className: "text-info-strong", icon: mdiInformationOutline },
+  silent: { className: "text-info-strong", icon: mdiInformationOutline },
 };
 
 const getNotificationStatus = (
   type: NotificationType,
 ): { className: string; icon: string } => {
-  return STATUS_MAP[type] || STATUS_MAP.info;
+  return STATUS_MAP[type];
 };
 
 interface INotificationItemProps {

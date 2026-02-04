@@ -25,16 +25,13 @@ export const Notifications = () => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 
-  // Redux state
   const notifications = useSelector(
     (state: IState) => state.session.notifications.notifications,
   );
 
-  // Local state
   const [expand, setExpand] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);
 
-  // Hooks
   const filtered = useNotificationFiltering({ notifications, open });
   const { dismissAll, suppress, triggerAction } = useNotificationActions({
     notifications,
