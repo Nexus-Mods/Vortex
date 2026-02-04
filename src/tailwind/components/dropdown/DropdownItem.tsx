@@ -40,14 +40,17 @@ export const DropdownItem = ({
   leftIconPath,
   rightIcon,
   rightIconPath,
+  onClick,
   ...props
-}: ComponentProps<typeof Menu.Item> & DropdownItemProps) => (
+}: ComponentProps<typeof Menu.Item> &
+  DropdownItemProps & { onClick?: () => void }) => (
   <Menu.Item {...props}>
     {({ active }) => (
       <button
         className={joinClasses(["nxm-dropdown-item", className], {
           "nxm-dropdown-item--active": active,
         })}
+        onClick={onClick}
       >
         {customContent ?? (
           <>
