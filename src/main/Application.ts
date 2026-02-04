@@ -15,7 +15,6 @@ import winapi from "winapi-bindings";
 
 import type { StateError } from "../store/reduxSanity";
 import type { ThunkStore } from "../types/IExtensionContext";
-import type { IPresetStep, IPresetStepHydrateState } from "../types/IPreset";
 import type { IState } from "../types/IState";
 import type { IParameters, ISetItem } from "../util/commandLine";
 import type ExtensionManagerT from "../util/ExtensionManager";
@@ -74,7 +73,6 @@ import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { prettifyNodeErrorMessage, showError } from "../util/message";
 import migrate from "../util/migrate";
-import presetManager from "../util/PresetManager";
 import startupSettings from "../util/startupSettings";
 import "./ipcHandlers";
 import {} from "../util/storeHelper";
@@ -1090,18 +1088,6 @@ class Application {
         } else {
           return PromiseBB.resolve();
         }
-      })
-      .then(() => {
-        const hydrateHandler = (stepIn: IPresetStep): PromiseBB<void> => {
-          newStore.dispatch({
-            type: "__hydrate",
-            payload: (stepIn as IPresetStepHydrateState).state,
-          });
-
-          return PromiseBB.resolve();
-        };
-        presetManager.on("hydrate", hydrateHandler);
-        presetManager.now("hydrate", hydrateHandler);
       })
       .then(() => {
         this.mStore = newStore;
