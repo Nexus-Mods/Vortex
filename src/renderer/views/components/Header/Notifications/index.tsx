@@ -13,14 +13,6 @@ import { useNotificationActions } from "./useNotificationActions";
 import { useNotificationFiltering } from "./useNotificationFiltering";
 import { useNotificationItems } from "./useNotificationItems";
 
-const BADGE_STYLES = {
-  position: "absolute" as const,
-  top: "-4px",
-  right: "-4px",
-  fontSize: "10px",
-  padding: "2px 6px",
-};
-
 export const Notifications = () => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
@@ -71,16 +63,13 @@ export const Notifications = () => {
           <Popover.Button
             as={IconButton}
             iconPath={notifications.length > 0 ? mdiBell : mdiBellOutline}
+            itemCount={notifications.length}
             title="Notifications"
             onClick={toggle}
-          >
-            {notifications.length > 0 && (
-              <Badge style={BADGE_STYLES}>{notifications.length}</Badge>
-            )}
-          </Popover.Button>
+          />
 
           {popoverOpen && items.length > 0 && (
-            <Popover.Panel className="absolute right-0 z-1033 mt-2.5 w-sm space-y-0.5 rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
+            <Popover.Panel className="scrollbar absolute right-0 z-1033 mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
               {items.map((notification) => (
                 <NotificationItem
                   collapsed={collapsed[notification.group]}
