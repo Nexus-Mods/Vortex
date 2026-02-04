@@ -21,6 +21,7 @@ import type ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 import { log } from "../../util/log";
 import { betterIpcMain } from "../ipc";
+import { registerAllPersistedHives } from "./mainPersistence";
 
 /**
  * Set up IPC handlers for persistence operations.
@@ -38,9 +39,11 @@ export function setupPersistenceIPC(persistor: ReduxPersistorIPC): void {
   });
 
   // Handle hydration request from renderer at startup
+  // Auto-discovers all hives in the database and registers them
   betterIpcMain.handle("persist:get-hydration", async (_event) => {
     log("debug", "Renderer requested hydration data");
-    const data = await persistor.getAllHydrationData();
+    // Auto-discover and register all hives found in the database
+    const data = await registerAllPersistedHives();
     log("debug", "Sending hydration data", {
       hives: Object.keys(data),
     });

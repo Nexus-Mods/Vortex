@@ -27,7 +27,6 @@ import type { LogLevel } from "../../util/log";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
-import presetManager from "../../util/PresetManager";
 import {
   activeGameId,
   downloadPathForGame,
@@ -1431,8 +1430,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     });
 
   checkModsWithMissingMeta(api);
-
-  presetManager.on("login_nexus", () => ensureLoggedIn(api));
 
   callbacks.forEach((cb) => cb(nexus));
 }

@@ -167,3 +167,55 @@ export async function readHiveData(
     return {};
   }
 }
+
+/**
+ * Get all hive names that have persisted data in LevelDB.
+ * This allows discovering unknown hives that were previously persisted.
+ *
+ * @returns Promise resolving to array of hive names
+ */
+export async function getPersistedHives(): Promise<string[]> {
+  if (levelPersist === undefined) {
+    return [];
+  }
+
+  try {
+    return await levelPersist.getPersistedHives();
+  } catch (err) {
+    const message = getErrorMessageOrDefault(err);
+    log("warn", "Could not get persisted hives", { error: message });
+    return [];
+  }
+}
+
+/**
+ * Register all hives found in the database and return their hydration data.
+ * This auto-discovers and registers any hives that have persisted data.
+ *
+ * @returns Promise resolving to hydration data for all discovered hives
+ */
+export async function registerAllPersistedHives(): Promise<{
+  [hive: string]: Serializable;
+}> {
+  if (mainPersistor === undefined || levelPersist === undefined) {
+    return {};
+  }
+
+  const hives = await getPersistedHives();
+  log("info", "Discovered persisted hives", { hives });
+
+  const result: { [hive: string]: Serializable } = {};
+
+  for (const hive of hives) {
+    try {
+      const subPersistor = new SubPersistor(levelPersist, hive);
+      result[hive] = await mainPersistor.insertPersistor(hive, subPersistor);
+    } catch (err) {
+      const message = getErrorMessageOrDefault(err);
+      log("warn", "Could not register hive", { hive, error: message });
+      result[hive] = {};
+    }
+  }
+
+  return result;
+}

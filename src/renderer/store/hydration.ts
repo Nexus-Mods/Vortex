@@ -8,6 +8,7 @@
 import type { IState } from "../../types/IState";
 
 import { log } from "../logging";
+import { addPersistedHives } from "./persistDiffMiddleware";
 
 /**
  * Fetch hydration data from main process via preload API.
@@ -27,9 +28,14 @@ export async function fetchHydrationState(): Promise<Partial<IState>> {
     log("debug", "Fetching hydration data from main process");
     const hydrationData = await window.api.persist.getHydration();
 
+    const discoveredHives = Object.keys(hydrationData);
     log("debug", "Received hydration data", {
-      hives: Object.keys(hydrationData),
+      hives: discoveredHives,
     });
+
+    // Register discovered hives with the persistence middleware
+    // This ensures any hives found in LevelDB will be tracked for future changes
+    addPersistedHives(discoveredHives);
 
     // Return hydration data directly - reducers will handle defaults for missing keys
     // Cast through unknown: IPC returns Serializable, but we know it conforms to IState
@@ -55,6 +61,8 @@ export function setupHydrationListener(
 
   window.api.persist.onHydrate((hive, data) => {
     log("debug", "Received incremental hydration", { hive });
+    // Register this hive for persistence tracking
+    addPersistedHives([hive]);
     dispatch({
       type: "__hydrate",
       payload: { [hive]: data },

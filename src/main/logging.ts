@@ -112,7 +112,7 @@ class LoggerSingleton {
   }
 
   static log(level: Level, message: string, metadata?: unknown): void {
-    // TODO: broken logging because of the PresetManager import with side-effects
+    // TODO: broken logging from tests
     if (!this.#instance) {
       console.log(`BROKEN LOGGING: ${level} ${message}`);
     } else {

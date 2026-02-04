@@ -28,6 +28,12 @@ export interface PersistedState {
   settings: Serializable;
   /** Long-term persistent data (profiles, mods, downloads, categories) */
   persistent: Serializable;
+  /** Gamebryo plugin load order (persisted to plugins.txt/loadorder.txt) */
+  loadOrder: Serializable;
+  /** Gamebryo LOOT userlist (persisted to userlist.yaml) */
+  userlist: Serializable;
+  /** Gamebryo LOOT masterlist (persisted to masterlist.yaml) */
+  masterlist: Serializable;
 }
 
 /**

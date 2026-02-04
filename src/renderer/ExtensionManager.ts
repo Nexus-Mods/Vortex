@@ -29,6 +29,7 @@ import type {
   IExtensionContext,
   ILookupDetails,
   IOpenOptions,
+  IPersistor,
   IReducerSpec,
   IRunOptions,
   IRunParameters,
@@ -120,6 +121,7 @@ import {
 } from "../util/util";
 import ReduxWatcher from "./store/ReduxWatcher";
 import { getPreloadApi } from "../util/preloadAccess";
+import { computeStateDiff } from "./store/stateDiff";
 import type { PreloadWindow } from "../shared/types/preload";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
@@ -821,6 +823,15 @@ class ExtensionManager {
   // Pending actions to dispatch when setStore() is called (renderer-only architecture)
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
+  // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
+  private mExtensionPersistors: {
+    [hive: string]: { persistor: IPersistor; debounce: number };
+  } = {};
+  // Previous state for extension persistor diff computation
+  private mPersistorPrevState: { [hive: string]: unknown } = {};
+  // Debounce timers for extension persistors
+  private mPersistorTimers: { [hive: string]: ReturnType<typeof setTimeout> } =
+    {};
 
   /**
    * Create ExtensionManager.
@@ -1001,6 +1012,9 @@ class ExtensionManager {
     this.mPendingRemoves = [];
 
     this.mExtensionState = getSafe(store.getState(), ["app", "extensions"], {});
+
+    // Initialize extension-registered persistors (e.g., loadOrder -> plugins.txt)
+    this.initExtensionPersistors(store);
 
     this.mApi.sendNotification = (notification: INotification): string => {
       const noti = { ...notification };
@@ -1221,6 +1235,217 @@ class ExtensionManager {
    */
   public applyExtensionsOfExtensions() {
     this.mContextProxyHandler.invokeAdditions(this.mExtensions);
+  }
+
+  /**
+   * Initialize extension-registered persistors.
+   * Should be called after the store is set up.
+   * This enables extensions to persist custom state hives to external files
+   * (e.g., loadOrder -> plugins.txt, userlist -> userlist.yaml)
+   */
+  public initExtensionPersistors<S extends IState>(store: ThunkStore<S>) {
+    // Collect all persistor registrations from extensions
+    this.apply(
+      "registerPersistor",
+      (hive: string, persistor: IPersistor, debounce?: number) => {
+        log("info", "Registering extension persistor", { hive });
+        this.mExtensionPersistors[hive] = {
+          persistor,
+          debounce: debounce ?? 200,
+        };
+        // Initialize previous state for this hive
+        this.mPersistorPrevState[hive] = (store.getState() as IState)[
+          hive as keyof IState
+        ];
+
+        // Set up the reset callback - called when persistor loads data from file
+        // This hydrates the Redux state from the persistor's data
+        persistor.setResetCallback(() => {
+          return this.hydrateFromPersistor(hive, persistor, store);
+        });
+      },
+    );
+
+    // Subscribe to store changes to notify extension persistors
+    if (Object.keys(this.mExtensionPersistors).length > 0) {
+      log("info", "Setting up extension persistor subscriptions", {
+        hives: Object.keys(this.mExtensionPersistors),
+      });
+
+      store.subscribe(() => {
+        const newState = store.getState() as IState;
+        this.notifyExtensionPersistors(newState);
+      });
+    }
+  }
+
+  /**
+   * Hydrate Redux state from a persistor's data.
+   * Called when a persistor loads data from its backing store (e.g., plugins.txt).
+   */
+  private async hydrateFromPersistor<S extends IState>(
+    hive: string,
+    persistor: IPersistor,
+    store: ThunkStore<S>,
+  ): Promise<void> {
+    try {
+      log("debug", "Hydrating from extension persistor", { hive });
+
+      // Build the hydration data from the persistor
+      const hydrationData: Record<string, unknown> = {};
+
+      if (persistor.getAllKVs !== undefined) {
+        // Fast path: get all key-value pairs at once
+        const kvPairs = await persistor.getAllKVs();
+        for (const { key, value } of kvPairs) {
+          this.insertAtPath(hydrationData, key, this.deserialize(value));
+        }
+      } else {
+        // Slow path: get keys first, then values
+        const keys = await persistor.getAllKeys();
+        for (const key of keys) {
+          try {
+            const value = await persistor.getItem(key);
+            this.insertAtPath(hydrationData, key, this.deserialize(value));
+          } catch (err) {
+            log("warn", "Failed to get persistor item", {
+              hive,
+              key: key.join("."),
+              error: getErrorMessageOrDefault(err),
+            });
+          }
+        }
+      }
+
+      // Dispatch hydration action to update Redux state
+      store.dispatch({
+        type: "__hydrate",
+        payload: { [hive]: hydrationData },
+      } as any);
+
+      // Update our tracked previous state to match what we just hydrated
+      this.mPersistorPrevState[hive] = hydrationData;
+
+      log("debug", "Extension persistor hydration complete", {
+        hive,
+        keyCount: Object.keys(hydrationData).length,
+      });
+    } catch (err) {
+      log("error", "Failed to hydrate from extension persistor", {
+        hive,
+        error: getErrorMessageOrDefault(err),
+      });
+    }
+  }
+
+  /**
+   * Insert a value at a nested path in an object.
+   */
+  private insertAtPath(
+    target: Record<string, unknown>,
+    path: string[],
+    value: unknown,
+  ): void {
+    let current: Record<string, unknown> = target;
+    for (let i = 0; i < path.length - 1; i++) {
+      if (current[path[i]] === undefined) {
+        current[path[i]] = {};
+      }
+      current = current[path[i]] as Record<string, unknown>;
+    }
+    if (path.length > 0) {
+      current[path[path.length - 1]] = value;
+    }
+  }
+
+  /**
+   * Deserialize a value from the persistor.
+   */
+  private deserialize(value: string): unknown {
+    if (value === undefined || value.length === 0) {
+      return "";
+    }
+    try {
+      return JSON.parse(value);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Notify extension persistors of state changes.
+   * Computes diffs and calls setItem/removeItem on each persistor.
+   */
+  private notifyExtensionPersistors(newState: IState) {
+    for (const [hive, { persistor, debounce }] of Object.entries(
+      this.mExtensionPersistors,
+    )) {
+      const newHive = newState[hive as keyof IState];
+
+      // Skip if hive hasn't changed from the last PERSISTED state
+      if (this.mPersistorPrevState[hive] === newHive) {
+        continue;
+      }
+
+      // Clear any pending timer for this hive
+      if (this.mPersistorTimers[hive] !== undefined) {
+        clearTimeout(this.mPersistorTimers[hive]);
+      }
+
+      // Schedule debounced persist - capture newHive but use stored prevState when running
+      // This ensures multiple rapid changes are accumulated into one diff
+      const capturedNewHive = newHive;
+      this.mPersistorTimers[hive] = setTimeout(() => {
+        const oldHive = this.mPersistorPrevState[hive];
+        this.persistHiveChanges(hive, persistor, oldHive, capturedNewHive);
+        // Update previous state AFTER successful persist
+        this.mPersistorPrevState[hive] = capturedNewHive;
+        delete this.mPersistorTimers[hive];
+      }, debounce);
+    }
+  }
+
+  /**
+   * Persist changes for a specific hive by computing diff and calling persistor methods.
+   */
+  private persistHiveChanges(
+    hive: string,
+    persistor: IPersistor,
+    oldHive: unknown,
+    newHive: unknown,
+  ) {
+    try {
+      const operations = computeStateDiff(oldHive, newHive);
+
+      for (const op of operations) {
+        if (op.type === "set") {
+          Promise.resolve(
+            persistor.setItem(op.path, JSON.stringify(op.value)),
+          ).catch((err: unknown) => {
+            log("error", "Extension persistor setItem failed", {
+              hive,
+              path: op.path.join("."),
+              error: getErrorMessageOrDefault(err),
+            });
+          });
+        } else {
+          Promise.resolve(persistor.removeItem(op.path)).catch(
+            (err: unknown) => {
+              log("error", "Extension persistor removeItem failed", {
+                hive,
+                path: op.path.join("."),
+                error: getErrorMessageOrDefault(err),
+              });
+            },
+          );
+        }
+      }
+    } catch (err) {
+      log("error", "Failed to compute extension persistor diff", {
+        hive,
+        error: getErrorMessageOrDefault(err),
+      });
+    }
   }
 
   /**

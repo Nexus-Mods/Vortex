@@ -129,6 +129,38 @@ class LevelPersist implements IPersistor {
     });
   }
 
+  /**
+   * Get all unique hive names that have persisted data.
+   * Extracts the first segment of each key to find all hives.
+   */
+  public getPersistedHives(): PromiseBB<string[]> {
+    return new PromiseBB((resolve, reject) => {
+      const hives = new Set<string>();
+      let resolved = false;
+      this.mDB
+        .createKeyStream()
+        .on("data", (data: string) => {
+          // Extract hive name (first segment before separator)
+          const separatorIndex = data.indexOf(SEPARATOR);
+          const hive =
+            separatorIndex >= 0 ? data.slice(0, separatorIndex) : data;
+          hives.add(hive);
+        })
+        .on("error", (error) => {
+          if (!resolved) {
+            reject(error);
+            resolved = true;
+          }
+        })
+        .on("close", () => {
+          if (!resolved) {
+            resolve([...hives]);
+            resolved = true;
+          }
+        });
+    });
+  }
+
   public getAllKVs(
     prefix?: string,
   ): PromiseBB<Array<{ key: string[]; value: string }>> {

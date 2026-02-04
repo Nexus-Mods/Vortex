@@ -390,7 +390,10 @@ function register(
   context.registerReducer(["session", "plugins"], pluginsReducer);
   context.registerReducer(["loadOrder"], loadOrderReducer);
   context.registerReducer(["userlist"], userlistReducer);
-  context.registerReducer(["masterlist"], { defaults: {}, reducers: {} });
+  context.registerReducer(["masterlist"], {
+    defaults: { globals: [], plugins: [], groups: [] },
+    reducers: {},
+  });
   context.registerReducer(["settings", "plugins"], settingsReducer);
   context.registerReducer(
     ["session", "pluginDependencies"],

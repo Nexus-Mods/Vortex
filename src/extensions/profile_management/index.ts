@@ -16,21 +16,29 @@
  *      enables or disables a mod in the current profile
  */
 
-import type { IDialogResult } from "../../actions/notifications";
-import { addNotification, showDialog } from "../../actions/notifications";
+import type * as Redux from "redux";
 
-import {
-  clearUIBlocker,
-  setProgress,
-  setUIBlocker,
-} from "../../actions/session";
+import PromiseBB from "bluebird";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+
+import type { IDialogResult } from "../../actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,
   ThunkStore,
 } from "../../types/IExtensionContext";
-import type { IPresetStep, IPresetStepSetGame } from "../../types/IPreset";
 import type { IGameStored, IState } from "../../types/IState";
+import type { IExtension, IRegisteredExtension } from "../../types/extensions";
+import type { IProfile } from "./types/IProfile";
+import type { IProfileFeature } from "./types/IProfileFeature";
+
+import { addNotification, showDialog } from "../../actions/notifications";
+import {
+  clearUIBlocker,
+  setProgress,
+  setUIBlocker,
+} from "../../actions/session";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,
@@ -39,13 +47,11 @@ import {
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import type { IRegisteredExtension } from "../../types/extensions";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import onceCB from "../../util/onceCB";
-import presetManager from "../../util/PresetManager";
 import {
   discoveryByGame,
   gameById,
@@ -54,14 +60,11 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
-
-import type { IExtension } from "../../types/extensions";
 import { readExtensions } from "../extension_manager/util";
 import { getGame } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
-
 import {
   forgetMod,
   removeProfile,
@@ -74,17 +77,10 @@ import {
   setCurrentProfile,
   setNextProfile,
 } from "./actions/settings";
+import { STUCK_TIMEOUT } from "./constants";
 import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
-import { CorruptActiveProfile } from "./types/Errors";
-import type { IProfile } from "./types/IProfile";
-import type { IProfileFeature } from "./types/IProfileFeature";
-import Connector from "./views/Connector";
-import ProfileView from "./views/ProfileView";
-import TransferDialog from "./views/TransferDialog";
-
-import { STUCK_TIMEOUT } from "./constants";
 import {
   activeGameId,
   activeProfile,
@@ -92,11 +88,10 @@ import {
   profileById,
 } from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
+import { CorruptActiveProfile } from "./types/Errors";
+import Connector from "./views/Connector";
+import ProfileView from "./views/ProfileView";
+import TransferDialog from "./views/TransferDialog";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const profileFiles: {
@@ -1294,12 +1289,6 @@ function init(context: IExtensionContext): boolean {
         }
       }
     }
-
-    presetManager.on("setgame", (step: IPresetStep): PromiseBB<void> => {
-      return manageGame(context.api, (step as IPresetStepSetGame).game)
-        .then(() => context.api.ext.awaitProfileSwitch?.())
-        .then(() => null);
-    });
   });
 
   context.registerDialog("profile-transfer-connector", Connector);

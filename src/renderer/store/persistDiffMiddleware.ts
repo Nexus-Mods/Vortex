@@ -17,16 +17,41 @@ import { log } from "../../util/log";
 import { computeStateDiff } from "./stateDiff";
 
 /**
- * Hives that should be persisted to disk.
- * Session state is ephemeral and not persisted.
+ * Core hives that are always persisted to LevelDB.
+ * Additional hives can be discovered from the database at startup.
  */
-const PERSISTED_HIVES: PersistedHive[] = [
+const CORE_HIVES: PersistedHive[] = [
   "app",
   "settings",
   "persistent",
   "confidential",
   "user",
 ];
+
+/**
+ * Dynamic set of hives to persist. Starts with core hives,
+ * additional hives can be added when discovered from hydration data.
+ */
+let persistedHives: Set<string> = new Set(CORE_HIVES);
+
+/**
+ * Add additional hives to be persisted.
+ * Called when hydration data includes hives not in the core set.
+ *
+ * @param hives - Array of hive names to add
+ */
+export function addPersistedHives(hives: string[]): void {
+  for (const hive of hives) {
+    persistedHives.add(hive);
+  }
+}
+
+/**
+ * Get the current list of persisted hives.
+ */
+export function getPersistedHives(): string[] {
+  return [...persistedHives];
+}
 
 /**
  * Minimum time between diff sends to avoid IPC flood.
@@ -180,7 +205,7 @@ export function createPersistDiffMiddleware(
       }
 
       // Compute and queue diffs for each persisted hive
-      for (const hive of PERSISTED_HIVES) {
+      for (const hive of persistedHives) {
         const oldHive = previousState[hive as keyof IState];
         const newHive = newState[hive as keyof IState];
 
@@ -192,7 +217,7 @@ export function createPersistDiffMiddleware(
         // Compute diff for this hive
         const operations = computeStateDiff(oldHive, newHive);
         if (operations.length > 0) {
-          queueDiffs(hive, operations);
+          queueDiffs(hive as PersistedHive, operations);
         }
       }
 

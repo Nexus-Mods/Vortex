@@ -124,7 +124,6 @@ import getI18n, {
   type TFunction,
 } from "./util/i18n";
 import { showError } from "./util/message";
-import presetManager from "./util/PresetManager";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
 
@@ -520,7 +519,6 @@ async function init(): Promise<ExtensionManager | null> {
 
   extensions.setStore(store);
   setOutdated(extensions.getApi());
-  presetManager.setApi(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log("debug", "renderer connected to store");
 
@@ -765,8 +763,6 @@ async function load(extensions: ExtensionManager): Promise<void> {
     lang: store.getState().settings.interface.language,
   });
   await changeLanguage(store.getState().settings.interface.language);
-
-  presetManager.start();
 
   extensions.setUIReady();
   log("debug", "render with language", { language: i18n.language });

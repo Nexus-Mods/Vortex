@@ -1,12 +1,6 @@
 /**
  * @type {import("ts-to-zod").TsToZodConfig}
  **/
-const config = [
-  {
-    name: "IPreset",
-    input: "./src/types/IPreset.ts",
-    output: "./src/types/IPreset.gen.ts",
-  },
-];
+const config = [];
 
 export default config;
