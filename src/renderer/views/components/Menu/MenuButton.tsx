@@ -22,7 +22,7 @@ export const MenuButton: FC<MenuButtonProps> = ({
   return (
     <button
       className={joinClasses([
-        "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-low hover:text-neutral-moderate",
+        "flex h-10 items-center gap-x-3 rounded-lg px-3 transition-colors hover:bg-surface-mid hover:text-neutral-moderate",
         isActive
           ? "bg-surface-low text-neutral-moderate"
           : "text-neutral-subdued",
