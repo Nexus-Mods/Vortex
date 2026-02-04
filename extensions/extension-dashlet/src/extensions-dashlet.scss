@@ -1,92 +1,92 @@
 .dashlet-extensions {
-  display: flex;
-  flex-direction: column;
-
-  ul {
-    margin: 0;
-    padding: 0 8px 0 0;
-    overflow: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
 
-  .placeholder {
-    height: 100%;
-  }
-
-  .extension-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    user-select: all;
-    border-radius: 4px;
-    border: 1px solid #1c1e1d;
-    padding: 16px;
-    background-color: $brand-bg;
-  }
-
-  .extension-image {
-    height: 100px;
-    background-size: cover !important;
-    background-position-y: 30% !important;
-    min-height: 50px;
-  }
-
-  .extension-type {
-    position: absolute;
-    top: 8px;    
-    left: 8px;
-    padding: 2px 8px;
-    font-family: $font-family-base;
-    font-weight: 600;
-    box-shadow: 0px 2px 6px 1px rgba(0,0,0,0.5);
-    background-color: $brand-info;
-    text-transform: uppercase;
-    color: $white;
-    border-radius: 20px;
-    font-size: smaller
-  }
-
-  .extension-title {
-    @extend .h4;
-  }
-
-  .extension-name {
-    @extend .h4;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  h4 {
-    margin: 0;
-    text-transform: uppercase;
-
-    a {
-      cursor: pointer;
+    ul {
+        margin: 0;
+        padding: 0 8px 0 0;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
-  }
 
-  .extension-summary {
-    margin: 0;
-  }
+    .placeholder {
+        height: 100%;
+    }
 
-  .extension-extra {
-    background: $gray-lighter;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0;
-    font-size: smaller;
-    margin: 0;
-  
-    svg {
-      margin-right: 4px;
+    .extension-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        user-select: all;
+        border-radius: 4px;
+        border: 1px solid #1c1e1d;
+        padding: 16px;
+        background-color: $brand-bg;
     }
-  
-    > div:not(:first-child) {
-      margin-left: 16px;
+
+    .extension-image {
+        height: 100px;
+        background-size: cover !important;
+        background-position-y: 30% !important;
+        min-height: 50px;
     }
-  }
+
+    .extension-type {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 2px 8px;
+        font-family: $font-family-base;
+        font-weight: 600;
+        box-shadow: 0px 2px 6px 1px rgba(0, 0, 0, 0.5);
+        background-color: $brand-info;
+        text-transform: uppercase;
+        color: $white;
+        border-radius: 20px;
+        font-size: smaller;
+    }
+
+    .extension-title {
+        @extend .h4;
+    }
+
+    .extension-name {
+        @extend .h4;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    h4 {
+        margin: 0;
+        text-transform: uppercase;
+
+        a {
+            cursor: pointer;
+        }
+    }
+
+    .extension-summary {
+        margin: 0;
+    }
+
+    .extension-extra {
+        background: $gray-lighter;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0;
+        font-size: smaller;
+        margin: 0;
+
+        svg {
+            margin-right: 4px;
+        }
+
+        > div:not(:first-child) {
+            margin-left: 16px;
+        }
+    }
 }

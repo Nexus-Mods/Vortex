@@ -1,7 +1,7 @@
-import type { Level } from "@shared/types/logging";
-
 import path from "path";
 import winston from "winston";
+
+import type { Level } from "../shared/types/logging";
 
 import { betterIpcMain } from "./ipc";
 
@@ -84,9 +84,14 @@ function setupLogger(
       })
     : undefined;
 
+  const transports: winston.TransportInstance[] = [fileTransport];
+  if (consoleTransport) {
+    transports.push(consoleTransport);
+  }
+
   const logger = new winston.Logger({
     level: "debug",
-    transports: [fileTransport, consoleTransport],
+    transports,
   });
 
   return logger;
@@ -135,9 +140,14 @@ export function changeLogPath(newBasePath: string): void {
   logger.add(fileTransport);
 }
 
+function sanitize(message: string): string {
+  return message.replaceAll("%", "%%");
+}
+
 export function log(level: Level, message: string, metadata?: unknown): void {
   const meta = metadata === undefined ? undefined : JSON.stringify(metadata);
-  LoggerSingleton.log(level, message, {
+  const sanitized = sanitize(message);
+  LoggerSingleton.log(level, sanitized, {
     process: "main",
     extra: meta,
   } satisfies Metadata);

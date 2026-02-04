@@ -1,4 +1,4 @@
-import * as util from 'util';
+import * as util from "util";
 
 export interface IModEntry {
   nexusId: string;
@@ -33,4 +33,4 @@ export function ParseError(message) {
 
 util.inherits(ParseError, Error);
 
-ParseError.prototype.name = 'ParseError';
+ParseError.prototype.name = "ParseError";

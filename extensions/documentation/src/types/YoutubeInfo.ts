@@ -28,13 +28,23 @@ export interface IYoutubeInfo {
 
 export let nextId = 0;
 
-export function createTutorialVideo(ytId: string,
-                                    name: string,
-                                    start: string | number,
-                                    end: string | number,
-                                    attribution: IVideoAttribution,
-                                    group?: string): IYoutubeInfo {
-  return { id: nextId++, ytId, name, start, end, attribution, group: group || 'Tutorials' };
+export function createTutorialVideo(
+  ytId: string,
+  name: string,
+  start: string | number,
+  end: string | number,
+  attribution: IVideoAttribution,
+  group?: string,
+): IYoutubeInfo {
+  return {
+    id: nextId++,
+    ytId,
+    name,
+    start,
+    end,
+    attribution,
+    group: group || "Tutorials",
+  };
 }
 
 export default IYoutubeInfo;

@@ -1,3 +1,3 @@
-const webpack = require('vortex-api/bin/webpack').default;
+const webpack = require("vortex-api/bin/webpack").default;
 
-module.exports = webpack('extensions-dashlet', __dirname, 5);
+module.exports = webpack("extensions-dashlet", __dirname, 5);

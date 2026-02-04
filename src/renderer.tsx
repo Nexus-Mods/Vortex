@@ -1,3 +1,5 @@
+// Preload types are declared in renderer/preload.d.ts
+
 if (process.env.DEBUG_REACT_RENDERS === "true") {
   const whyDidYouRender = require("@welldone-software/why-did-you-render");
   whyDidYouRender?.(require("react"), {
@@ -6,11 +8,20 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
   });
 }
 
-const earlyErrHandler = (evt) => {
-  const { error } = evt;
-  const remote = require("@electron/remote");
-  remote.dialog.showErrorBox("Unhandled error", error.stack);
-  remote.app.exit(1);
+// Set up requireRemap first, BEFORE any other requires
+// IMPORTANT: Use require() not import, because imports are hoisted to the top
+// tslint:disable-next-line:no-var-requires
+const requireRemap = require("./util/requireRemap").default;
+requireRemap();
+
+const earlyErrHandler = (evt: ErrorEvent) => {
+  const error = evt.error as Error | undefined;
+  // Use preload API for dialog and app access
+  void window.api.dialog.showErrorBox(
+    "Unhandled error",
+    error?.stack ?? String(evt.error),
+  );
+  void window.api.app.exit(1);
 };
 
 // turn all error logs into a single parameter. The reason is that (at least in production)
@@ -23,9 +34,6 @@ console.error = (...args) => {
 
 window.addEventListener("error", earlyErrHandler);
 window.addEventListener("unhandledrejection", earlyErrHandler);
-
-import requireRemap from "./util/requireRemap";
-requireRemap();
 
 if (process.env.NODE_ENV === "development") {
   const rebuildRequire = require("./util/requireRebuild").default;
@@ -54,7 +62,6 @@ import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
 import "./util/application.electron";
-import * as remote from "@electron/remote";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -95,6 +102,8 @@ import { fetchHydrationState } from "./renderer/store/hydration";
 import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
 import reducer, { Decision } from "./reducers/index";
 import { log } from "./renderer/logging";
+import { initApplicationMenu } from "./renderer/menu";
+import StyleManager from "./renderer/StyleManager";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
@@ -114,7 +123,6 @@ import getI18n, {
   fallbackTFunc,
   type TFunction,
 } from "./util/i18n";
-import { initApplicationMenu } from "./util/menu";
 import { showError } from "./util/message";
 import presetManager from "./util/PresetManager";
 import { getSafe } from "./util/storeHelper";
@@ -127,14 +135,12 @@ setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 let deinitCrashDump: () => void;
 
 if (process.env.CRASH_REPORTING === "vortex") {
-  const crashDump: typeof crashDumpT = require("crash-dump").default;
-  deinitCrashDump = crashDump(
-    path.join(
-      remote.app.getPath("temp"),
-      "dumps",
-      `crash-renderer-${Date.now()}.dmp`,
-    ),
-  );
+  void window.api.app.getPath("temp").then((tempPath: string) => {
+    const crashDump: typeof crashDumpT = require("crash-dump").default;
+    deinitCrashDump = crashDump(
+      path.join(tempPath, "dumps", `crash-renderer-${Date.now()}.dmp`),
+    );
+  });
 }
 
 // on windows, inject the native error code into "unknown" errors to help track those down
@@ -427,7 +433,16 @@ const tFunc: TFunction = fallbackTFunc;
 let startupFinished: () => void;
 let extensions: ExtensionManager;
 
+async function initGlobals(): Promise<void> {
+  // Initialize application data asynchronously from main process cache
+  // This replaces synchronous IPC calls that were in the preload script
+  const { ApplicationData } = await import("./shared/applicationData");
+  await ApplicationData.init();
+}
+
 async function init(): Promise<ExtensionManager | null> {
+  await StyleManager.renderDefault();
+
   // Fetch hydration data from main process (persisted state)
   log("debug", "fetching hydration data from main process");
   const hydratedState: Partial<IState> = await fetchHydrationState();
@@ -751,18 +766,6 @@ async function load(extensions: ExtensionManager): Promise<void> {
   });
   await changeLanguage(store.getState().settings.interface.language);
 
-  try {
-    await Promise.resolve(extensions.renderStyle());
-  } catch (err) {
-    terminate(
-      {
-        message: "failed to parse UI theme",
-        details: getErrorMessageOrDefault(err),
-      },
-      store.getState(),
-    );
-  }
-
   presetManager.start();
 
   extensions.setUIReady();
@@ -823,6 +826,7 @@ function renderer(extensions: ExtensionManager | null) {
   );
 }
 
-init()
+initGlobals()
+  .then(() => init())
   .then((extensions) => renderer(extensions))
   .catch((err) => log("error", "error setting up renderer", err));

@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-      branches: [ master ]
+    branches: [master]
   pull_request:
-      branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -61,5 +61,3 @@ jobs:
       - name: Test
         if: runner.os == 'Windows'
         run: yarn test
-
-

@@ -1,15 +1,22 @@
-import filesNewer from './util/filesNewer';
-import { bsaVersion, fileFilter, iniPath, initGameSupport, isSupported, targetAge } from './util/gameSupport';
-import Settings from './views/Settings';
+import filesNewer from "./util/filesNewer";
+import {
+  bsaVersion,
+  fileFilter,
+  iniPath,
+  initGameSupport,
+  isSupported,
+  targetAge,
+} from "./util/gameSupport";
+import Settings from "./views/Settings";
 
-import { toggleInvalidation } from './bsaRedirection';
-import { REDIRECTION_MOD } from './constants';
+import { toggleInvalidation } from "./bsaRedirection";
+import { REDIRECTION_MOD } from "./constants";
 
-import I18next from 'i18next';
-import * as path from 'path';
-import {} from 'redux-thunk';
-import { actions, fs, log, selectors, types, util } from 'vortex-api';
-import {IniFile} from 'vortex-parse-ini';
+import I18next from "i18next";
+import * as path from "path";
+import {} from "redux-thunk";
+import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { IniFile } from "vortex-parse-ini";
 
 function testArchivesAge(api: types.IExtensionApi) {
   const state: types.IState = api.store.getState();
@@ -20,8 +27,10 @@ function testArchivesAge(api: types.IExtensionApi) {
   }
 
   const gamePath: string = util.getSafe(
-      state,
-      ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined);
+    state,
+    ["settings", "gameMode", "discovered", gameId, "path"],
+    undefined,
+  );
 
   if (gamePath === undefined) {
     // TODO: happened in testing, but how does one get here with no path configured?
@@ -29,7 +38,7 @@ function testArchivesAge(api: types.IExtensionApi) {
   }
 
   const game = util.getGame(gameId);
-  const dataPath = game.getModPaths(gamePath)[''];
+  const dataPath = game.getModPaths(gamePath)[""];
 
   const age = targetAge(gameId);
   if (age === undefined) {
@@ -42,32 +51,43 @@ function testArchivesAge(api: types.IExtensionApi) {
       if (files.length === 0) {
         return Promise.resolve(undefined);
       }
-      return Promise.all(files.map(file => fs.utimesAsync(
-                                path.join(dataPath, file),
-                                age.getTime() / 1000,
-                                age.getTime() / 1000)))
-        .then(() => {
-          log('info', `Updated timestamps on ${files.length} archive files for game ${gameId}`);
-          return Promise.resolve(undefined);
-        });
-    })
-      .catch((err: Error) => {
-        const canceled = err instanceof util.ProcessCanceled || err instanceof util.UserCanceled;
-        api.showErrorNotification('Failed to read bsa/ba2 files.', err, {
-          allowReport: !canceled && !['ENOENT', 'EPERM'].includes((err as any).code),
-        });
+      return Promise.all(
+        files.map((file) =>
+          fs.utimesAsync(
+            path.join(dataPath, file),
+            age.getTime() / 1000,
+            age.getTime() / 1000,
+          ),
+        ),
+      ).then(() => {
+        log(
+          "info",
+          `Updated timestamps on ${files.length} archive files for game ${gameId}`,
+        );
         return Promise.resolve(undefined);
       });
+    })
+    .catch((err: Error) => {
+      const canceled =
+        err instanceof util.ProcessCanceled || err instanceof util.UserCanceled;
+      api.showErrorNotification("Failed to read bsa/ba2 files.", err, {
+        allowReport:
+          !canceled && !["ENOENT", "EPERM"].includes((err as any).code),
+      });
+      return Promise.resolve(undefined);
+    });
 }
 
-function applyIniSettings(api: types.IExtensionApi,
-                          profile: types.IProfile,
-                          iniFile: IniFile<any>) {
+function applyIniSettings(
+  api: types.IExtensionApi,
+  profile: types.IProfile,
+  iniFile: IniFile<any>,
+) {
   if (iniFile.data.Archive === undefined) {
     iniFile.data.Archive = {};
   }
   iniFile.data.Archive.bInvalidateOlderFiles = 1;
-  iniFile.data.Archive.sResourceDataDirsFinal = '';
+  iniFile.data.Archive.sResourceDataDirsFinal = "";
 }
 
 interface IToDoProps {
@@ -76,45 +96,54 @@ interface IToDoProps {
 }
 
 function useBSARedirection(gameMode: string) {
-  return isSupported(gameMode) && (bsaVersion(gameMode) !== undefined);
+  return isSupported(gameMode) && bsaVersion(gameMode) !== undefined;
 }
 
 function init(context: types.IExtensionContext): boolean {
   initGameSupport(context.api);
-  context.registerTest('archive-backdate', 'gamemode-activated',
-                       () => testArchivesAge(context.api) as any);
+  context.registerTest(
+    "archive-backdate",
+    "gamemode-activated",
+    () => testArchivesAge(context.api) as any,
+  );
 
   context.registerToDo(
-    'bsa-redirection', 'workaround',
+    "bsa-redirection",
+    "workaround",
     (state: types.IState): IToDoProps => {
       const gameMode = selectors.activeGameId(state);
       return {
         gameMode,
-        mods: util.getSafe(state, ['persistent', 'mods', gameMode], {}),
+        mods: util.getSafe(state, ["persistent", "mods", gameMode], {}),
       };
-    }, 'workaround',
-    'Archive Invalidation', (props: IToDoProps) => toggleInvalidation(context.api, props.gameMode),
+    },
+    "workaround",
+    "Archive Invalidation",
+    (props: IToDoProps) => toggleInvalidation(context.api, props.gameMode),
     (props: IToDoProps) => useBSARedirection(props.gameMode),
-    (t: typeof I18next.t, props: IToDoProps) => (
-      (props.mods[REDIRECTION_MOD] !== undefined) ? t('Yes') : t('No')
-    ),
+    (t: typeof I18next.t, props: IToDoProps) =>
+      props.mods[REDIRECTION_MOD] !== undefined ? t("Yes") : t("No"),
     undefined,
   );
 
-  (context.registerSettings as any)('Workarounds', Settings, undefined, () =>
+  (context.registerSettings as any)("Workarounds", Settings, undefined, () =>
     useBSARedirection(selectors.activeGameId(context.api.store.getState())),
   );
 
   context.once(() => {
-    context.api.onAsync('apply-settings',
+    context.api.onAsync(
+      "apply-settings",
       (profile: types.IProfile, filePath: string, ini: IniFile<any>) => {
-        log('debug', 'apply AI settings', { gameId: profile.gameId, filePath });
-        if (isSupported(profile.gameId)
-            && (filePath.toLowerCase() === iniPath(profile.gameId).toLowerCase())) {
+        log("debug", "apply AI settings", { gameId: profile.gameId, filePath });
+        if (
+          isSupported(profile.gameId) &&
+          filePath.toLowerCase() === iniPath(profile.gameId).toLowerCase()
+        ) {
           applyIniSettings(context.api, profile, ini);
         }
         return Promise.resolve();
-      });
+      },
+    );
   });
 
   return true;

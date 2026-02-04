@@ -1,74 +1,71 @@
 .dashlet-changelog {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  .changelog-container {
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
 
-    .changelog-entry {
+    .changelog-container {
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
 
-      -webkit-user-select: all;
-      user-select: all;
+        .changelog-entry {
+            -webkit-user-select: all;
+            user-select: all;
 
-      border-radius: 4px;
-      border: 1px solid #1c1e1d;
-      margin-right: 8px;
-      padding: 16px;
-      background-color: $brand-bg;
+            border-radius: 4px;
+            border: 1px solid #1c1e1d;
+            margin-right: 8px;
+            padding: 16px;
+            background-color: $brand-bg;
 
-      .changelog-title {
-        font-weight: bold;
-        text-transform: uppercase; 
-        margin: 0 0 4px 0;
-      }
+            .changelog-title {
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 0 0 4px 0;
+            }
 
-      .changelog-text {
-        overflow: auto;
-        white-space: inherit;
-        -webkit-user-select: all;
-        user-select: all;
+            .changelog-text {
+                overflow: auto;
+                white-space: inherit;
+                -webkit-user-select: all;
+                user-select: all;
 
-        // adjacent UL in case we don't have markdown headings in the way
-     
-        ul, ol {
-          padding-inline-start: 24px;
-          margin: 0;
+                // adjacent UL in case we don't have markdown headings in the way
+
+                ul,
+                ol {
+                    padding-inline-start: 24px;
+                    margin: 0;
+                }
+
+                li {
+                    background-color: transparent;
+                    margin-bottom: 10px;
+                    -webkit-user-select: all;
+                    user-select: all;
+                }
+
+                p {
+                    margin-top: 6px;
+                }
+
+                img {
+                    width: 100%;
+                    border: 1px solid $border-color;
+                    padding: 8px;
+                    white-space: normal;
+                    border-radius: 8px;
+                }
+
+                h3 {
+                    font-size: 1.1em;
+                }
+
+                > ul {
+                    margin-top: 6px;
+                }
+            }
         }
-
-        li {
-          background-color: transparent;
-          margin-bottom: 10px;
-          -webkit-user-select: all;
-          user-select: all;
-        }
-
-        p {
-          margin-top: 6px;
-
-          
-        }
-
-        img {
-          width: 100%;
-          border: 1px solid $border-color;
-          padding: 8px;
-          white-space: normal;
-          border-radius: 8px;
-        }
-
-        h3 {
-          font-size: 1.1em;
-        }
-
-        > ul {
-          margin-top: 6px;
-         }
-
-      }
     }
-  }
 }

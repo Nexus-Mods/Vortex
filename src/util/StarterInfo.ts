@@ -28,13 +28,33 @@ import * as fs from "fs";
 import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getErrorCode, unknownToError } from "../shared/errors";
+import { isWindowsExecutable } from "./linux/proton";
+import type { Steam, ISteamEntry } from "./Steam";
+import type { Api, PreloadWindow } from "../shared/types/preload";
 
-function getCurrentWindow() {
+// TODO: remove this when separation is complete
+const getPreloadApi = (): Api =>
+  (window as unknown as PreloadWindow as { api: Api }).api;
+const getWindowId = (): number =>
+  (window as unknown as { windowId: number }).windowId;
+
+async function hideWindow(): Promise<void> {
   if (process.type === "renderer") {
-    return require("@electron/remote").getCurrentWindow();
-  } else {
-    return undefined;
+    await getPreloadApi().window.hide(getWindowId());
   }
+}
+
+async function showWindow(): Promise<void> {
+  if (process.type === "renderer") {
+    await getPreloadApi().window.show(getWindowId());
+  }
+}
+
+async function isWindowVisible(): Promise<boolean> {
+  if (process.type === "renderer") {
+    return getPreloadApi().window.isVisible(getWindowId());
+  }
+  return false;
 }
 
 export interface IStarterInfo {
@@ -63,6 +83,48 @@ type OnShowErrorFunc = (
   details?: string | Error | any,
   allowReport?: boolean,
 ) => void;
+
+/**
+ * Check if a game or tool should run through Proton on Linux.
+ * Returns the matching Steam game entry if Proton should be used, undefined otherwise.
+ *
+ * This enables running Windows executables directly through Proton rather than
+ * via `steam -applaunch`, allowing custom command-line arguments and running
+ * different executables (like mod tools) with the game's Proton prefix.
+ */
+async function shouldRunWithProton(
+  info: IStarterInfo,
+  api: IExtensionApi,
+): Promise<ISteamEntry | undefined> {
+  if (process.platform === "win32") {
+    return undefined;
+  }
+  if (!isWindowsExecutable(info.exePath)) {
+    return undefined;
+  }
+  if (info.store !== "steam") {
+    return undefined;
+  }
+
+  try {
+    const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+    const games = await steamStore.allGames();
+
+    // Find the game entry that matches this executable's location
+    return games.find(
+      (g) =>
+        info.workingDirectory
+          ?.toLowerCase()
+          .startsWith(g.gamePath.toLowerCase()) ||
+        info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
+    );
+  } catch (err: any) {
+    log("debug", "Could not check for Proton execution", {
+      error: err?.message,
+    });
+    return undefined;
+  }
+}
 
 /**
  * wrapper for information about a game or tool, combining static and runtime/discovery information
@@ -96,6 +158,8 @@ class StarterInfo implements IStarterInfo {
     onShowError: OnShowErrorFunc,
   ) {
     const game: IGame = getGame(info.gameId);
+    // Determine if game requires a specific launcher (Steam, Epic, etc.)
+    // On Linux, Steam games run through Proton directly rather than via steam -applaunch
     const launcherPromise: PromiseBB<{ launcher: string; addInfo?: any }> =
       game.requiresLauncher !== undefined && info.isGame
         ? PromiseBB.resolve(
@@ -151,11 +215,15 @@ class StarterInfo implements IStarterInfo {
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
-            api.store.dispatch(
-              setToolRunning(info.exePath, Date.now(), info.exclusive),
-            );
+            // On Linux with Steam, we can't track when the game exits (ProcessMonitor
+            // only works on Windows), so don't set tool as running to avoid stuck spinner
+            if (!(process.platform !== "win32" && res.launcher === "steam")) {
+              api.store.dispatch(
+                setToolRunning(info.exePath, Date.now(), info.exclusive),
+              );
+            }
             if (["hide", "hide_recover"].includes(info.onStart)) {
-              getCurrentWindow().hide();
+              void hideWindow();
             } else if (info.onStart === "close") {
               getApplication().quit();
             }
@@ -214,20 +282,50 @@ class StarterInfo implements IStarterInfo {
     return info["__iconCache"];
   }
 
-  private static runDirectly(
+  private static async runDirectly(
     info: IStarterInfo,
     api: IExtensionApi,
     onShowError: OnShowErrorFunc,
     onSpawned: () => void,
-  ): PromiseBB<void> {
+  ): Promise<void> {
     const spawned = () => {
       onSpawned();
       if (["hide", "hide_recover"].includes(info.onStart)) {
-        getCurrentWindow().hide();
+        void hideWindow();
       } else if (info.onStart === "close") {
         getApplication().quit();
       }
     };
+
+    // Check if game/tool should run through Proton on Linux
+    const protonGameEntry = await shouldRunWithProton(info, api);
+    if (protonGameEntry?.usesProton) {
+      // On Linux with Proton, we can't track when the process exits (ProcessMonitor
+      // only works on Windows), so don't set tool as running to avoid stuck spinner
+      const protonSpawned = () => {
+        if (["hide", "hide_recover"].includes(info.onStart)) {
+          hideWindow();
+        } else if (info.onStart === "close") {
+          getApplication().quit();
+        }
+      };
+
+      const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+      return steamStore.runToolWithProton(
+        api,
+        info.exePath,
+        info.commandLine,
+        {
+          cwd: info.workingDirectory || path.dirname(info.exePath),
+          env: info.environment,
+          suggestDeploy: true,
+          shell: info.shell,
+          detach: info.detach || info.onStart === "close",
+          onSpawned: protonSpawned,
+        },
+        protonGameEntry,
+      );
+    }
 
     return api
       .runExecutable(info.exePath, info.commandLine, {
@@ -312,12 +410,9 @@ class StarterInfo implements IStarterInfo {
           });
         }
       })
-      .then(() => {
-        if (
-          info.onStart === "hide_recover" &&
-          !getCurrentWindow().isVisible()
-        ) {
-          getCurrentWindow().show();
+      .then(async () => {
+        if (info.onStart === "hide_recover" && !(await isWindowVisible())) {
+          await showWindow();
         }
       });
   }
@@ -411,6 +506,9 @@ class StarterInfo implements IStarterInfo {
   ) {
     this.gameId = gameDiscovery.id || game.id;
     this.extensionPath = gameDiscovery.extensionPath || game.extensionPath;
+    // Store is set from game discovery for both games and tools
+    // Tools need this to enable Proton execution on Linux
+    this.store = gameDiscovery.store;
     this.detach = getSafe(
       toolDiscovery,
       ["detach"],
@@ -461,7 +559,6 @@ class StarterInfo implements IStarterInfo {
     this.logoName = gameDiscovery.logo || game.logo;
     this.details = game.details;
     this.exclusive = true;
-    this.store = gameDiscovery.store;
   }
 
   private initFromTool(

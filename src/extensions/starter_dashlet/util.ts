@@ -15,11 +15,6 @@ import StarterInfo from "../../util/StarterInfo";
 
 import { truthy } from "../../util/util";
 
-import lazyRequire from "../../util/lazyRequire";
-import type * as remoteT from "@electron/remote";
-import { makeRemoteCallSync } from "../../util/electronRemote";
-const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
-
 export const propOf = <T>(name: keyof T) => name;
 
 export function isEqual(lhs: object, rhs: object) {
@@ -62,16 +57,11 @@ export function splitCommandLine(input: string): string[] {
   return res;
 }
 
-const setJumpList = makeRemoteCallSync(
-  "set-jump-list",
-  (electron, window, categories: Electron.JumpListCategory[]) => {
-    try {
-      electron.app.setJumpList(categories);
-    } catch (err) {
-      console.error(err);
-    }
-  },
-);
+function setJumpList(categories: Electron.JumpListCategory[]): Promise<void> {
+  return window.api.app.setJumpList(categories).catch((err) => {
+    console.error(err);
+  });
+}
 
 export function updateJumpList(starters: IStarterInfo[]) {
   if (process.platform !== "win32") {

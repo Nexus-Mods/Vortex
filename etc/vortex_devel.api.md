@@ -19,6 +19,8 @@ import type { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
+import { ComplexActionCreator4 } from 'redux-act';
+import { ComplexActionCreator5 } from 'redux-act';
 import { ComplexActionCreator6 } from 'redux-act';
 import { ComponentProps } from 'react';
 import { ComponentType } from 'react';
@@ -27,7 +29,6 @@ import { createReadStream } from 'original-fs';
 import { createWriteStream } from 'original-fs';
 import { Dropdown as Dropdown_2 } from 'react-bootstrap';
 import { DropdownButton as DropdownButton_2 } from 'react-bootstrap';
-import * as electron from 'electron';
 import { EmptyActionCreator } from 'redux-act';
 import type { EndorsedStatus } from '@nexusmods/nexus-api';
 import { ForwardRefExoticComponent } from 'react';
@@ -378,11 +379,11 @@ const addDiscoveredTool: reduxAct.ComplexActionCreator4<string, string, IDiscove
 }, {}>;
 
 // @public
-const addLocalDownload: reduxAct.ComplexActionCreator4<string, string, string, number, {
-    id: string;
-    game: string;
-    localPath: string;
-    fileSize: number;
+const addLocalDownload: ComplexActionCreator4<string, string, string, number, {
+id: string;
+game: string;
+localPath: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
@@ -615,6 +616,33 @@ class CollectionsDownloadFailedEvent implements MixpanelEvent {
     constructor(collection_id: string, revision_id: string, game_id: number, error_code: string, error_message: string);
     // (undocumented)
     readonly eventName = "collections_download_failed";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, creation_method: "from_profile" | "quick_collection" | "empty");
+    // (undocumented)
+    readonly eventName = "collection_drafted";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string);
+    // (undocumented)
+    readonly eventName = "collection_draft_updated";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string);
+    // (undocumented)
+    readonly eventName = "collection_draft_uploaded";
     // (undocumented)
     readonly properties: Record<string, any>;
 }
@@ -865,12 +893,12 @@ function downloadPathForGame(state: IState, gameId?: string): string;
 // Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point index.d.ts
 //
 // @public
-const downloadProgress: reduxAct.ComplexActionCreator5<string, number, number, IChunk[], string[], {
-    id: string;
-    received: number;
-    total: number;
-    chunks: IChunk[];
-    urls: string[];
+const downloadProgress: ComplexActionCreator5<string, number, number, IChunk[], string[], {
+id: string;
+received: number;
+total: number;
+chunks: IChunk[];
+urls: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -956,13 +984,6 @@ function ensureFileAsync(filePath: string): Promise_2<void>;
 // @public (undocumented)
 export const ErrorBoundary: any;
 
-// Warning: (ae-forgotten-export) The symbol "IExtendedProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "Omit_2" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-function extend(registerFunc: (...args: any[]) => void, groupProp?: string, addExtInfo?: boolean): <P extends IExtendedProps>(component: React_2.ComponentType<P>) => React_2.ComponentType<Omit_2<P, keyof IExtendedProps> & IExtensibleProps>;
-
 // @public (undocumented)
 function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 
@@ -970,14 +991,14 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(filePath: string): Promise<string>;
 
 // @public
-const finalizingDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const finalizingDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const finalizingProgress: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    progress: number;
+const finalizingProgress: ComplexActionCreator2<string, number, {
+id: string;
+progress: number;
 }, {}>;
 
 // @public (undocumented)
@@ -994,10 +1015,10 @@ function findModByRef(reference: IModReference, mods: {
 }): IMod;
 
 // @public
-const finishDownload: reduxAct.ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
-    id: string;
-    state: "finished" | "failed" | "redirect";
-    failCause: any;
+const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
+id: string;
+state: "finished" | "failed" | "redirect";
+failCause: any;
 }, {}>;
 
 // @public (undocumented)
@@ -2909,11 +2930,11 @@ interface IModTypeOptions {
 }
 
 // @public
-const initDownload: reduxAct.ComplexActionCreator4<string, string[], IDictionary, string[], {
-    id: string;
-    urls: string[];
-    modInfo: IDictionary;
-    games: string[];
+const initDownload: ComplexActionCreator4<string, string[], IDictionary, string[], {
+id: string;
+urls: string[];
+modInfo: IDictionary;
+games: string[];
 }, {}>;
 
 // @public
@@ -3000,8 +3021,10 @@ const instance: IGameStore | undefined;
 // @public (undocumented)
 const instance_2: GameStoreHelper;
 
+// Warning: (ae-forgotten-export) The symbol "Steam" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-const instance_3: IGameStore;
+const instance_3: Steam;
 
 // @public (undocumented)
 type InstructionType = "copy" | "mkdir" | "submodule" | "generatefile" | "iniedit" | "unsupported" | "attribute" | "setmodtype" | "error" | "rule";
@@ -3059,20 +3082,20 @@ interface IOverlaysState {
 // @public
 interface IPersistor {
     // (undocumented)
-    getAllKeys(): Promise_2<PersistorKey[]>;
+    getAllKeys(): PromiseLike<PersistorKey[]>;
     // (undocumented)
-    getAllKVs?(prefix?: string): Promise_2<Array<{
+    getAllKVs?(prefix?: string): PromiseLike<Array<{
         key: PersistorKey;
         value: string;
     }>>;
     // (undocumented)
-    getItem(key: PersistorKey): Promise_2<string>;
+    getItem(key: PersistorKey): PromiseLike<string>;
     // (undocumented)
-    removeItem(key: PersistorKey): Promise_2<void>;
+    removeItem(key: PersistorKey): PromiseLike<void>;
     // (undocumented)
-    setItem(key: PersistorKey, value: string): Promise_2<void>;
+    setItem(key: PersistorKey, value: string): PromiseLike<void>;
     // (undocumented)
-    setResetCallback(cb: () => Promise_2<void>): void;
+    setResetCallback(cb: () => PromiseLike<void>): void;
 }
 
 // @public
@@ -3691,7 +3714,13 @@ interface IStateVerifier {
 // @public (undocumented)
 interface ISteamEntry extends IGameStoreEntry {
     // (undocumented)
+    compatDataPath?: string;
+    // (undocumented)
     manifestData?: any;
+    // (undocumented)
+    protonPath?: string;
+    // (undocumented)
+    usesProton?: boolean;
 }
 
 // @public (undocumented)
@@ -4128,10 +4157,8 @@ function makeQueue<T>(): (func: () => Bluebird<T>, tryOnly: boolean) => Bluebird
 // @public
 function makeReactive<T extends object>(value: T): T;
 
-// Warning: (ae-forgotten-export) The symbol "Arr" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-function makeRemoteCall<T, ArgsT extends Arr>(id: string, cb: (mainElectron: typeof electron, window: electron.WebContents, ...args: ArgsT) => Promise<T>): (...args: ArgsT) => Promise<T>;
+// @public @deprecated (undocumented)
+function makeRemoteCall(): never;
 
 // @public (undocumented)
 function makeUnique<T>(input: T[]): T[];
@@ -4143,9 +4170,9 @@ function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
-const mergeDownloadModInfo: reduxAct.ComplexActionCreator2<string, any, {
-    id: string;
-    value: any;
+const mergeDownloadModInfo: ComplexActionCreator2<string, any, {
+id: string;
+value: any;
 }, {}>;
 
 // @public
@@ -4392,10 +4419,10 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
 function pad(value: number, padding: string, width: number): string;
 
 // @public
-const pauseDownload: reduxAct.ComplexActionCreator3<string, boolean, IChunk[], {
-    id: string;
-    paused: boolean;
-    chunks: IChunk[];
+const pauseDownload: ComplexActionCreator3<string, boolean, IChunk[], {
+id: string;
+paused: boolean;
+chunks: IChunk[];
 }, {}>;
 
 // @public (undocumented)
@@ -4579,13 +4606,13 @@ const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
 }, {}>;
 
 // @public
-const removeDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const removeDownloadSilent: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownloadSilent: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
@@ -4836,9 +4863,9 @@ const setCollectionConcurrency: reduxAct.ComplexActionCreator1<unknown, unknown,
 const setCommandLine: reduxAct.ComplexActionCreator1<IParameters, IParameters, {}>;
 
 // @public (undocumented)
-const setCompatibleGames: reduxAct.ComplexActionCreator2<string, string[], {
-    id: string;
-    games: string[];
+const setCompatibleGames: ComplexActionCreator2<string, string[], {
+id: string;
+games: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -4879,66 +4906,66 @@ const setDialogVisible: reduxAct.ComplexActionCreator1<string, {
 }, {}>;
 
 // @public
-const setDownloadFilePath: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    filePath: string;
+const setDownloadFilePath: ComplexActionCreator2<string, string, {
+id: string;
+filePath: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHash: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    fileMD5: string;
+const setDownloadHash: ComplexActionCreator2<string, string, {
+id: string;
+fileMD5: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHashByFile: reduxAct.ComplexActionCreator3<string, string, number, {
-    fileName: string;
-    fileMD5: string;
-    fileSize: number;
+const setDownloadHashByFile: ComplexActionCreator3<string, string, number, {
+fileName: string;
+fileMD5: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInstalled: reduxAct.ComplexActionCreator3<string, string, string, {
-    id: string;
-    gameId: string;
-    modId: string;
+const setDownloadInstalled: ComplexActionCreator3<string, string, string, {
+id: string;
+gameId: string;
+modId: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInterrupted: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    realReceived: number;
+const setDownloadInterrupted: ComplexActionCreator2<string, number, {
+id: string;
+realReceived: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadModInfo: reduxAct.ComplexActionCreator3<string, string, any, {
-    id: string;
-    key: string;
-    value: any;
+const setDownloadModInfo: ComplexActionCreator3<string, string, any, {
+id: string;
+key: string;
+value: any;
 }, {}>;
 
 // @public (undocumented)
 const setDownloadPath: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-const setDownloadPausable: reduxAct.ComplexActionCreator2<string, boolean, {
-    id: string;
-    pausable: boolean;
+const setDownloadPausable: ComplexActionCreator2<string, boolean, {
+id: string;
+pausable: boolean;
 }, {}>;
 
 // @public
-const setDownloadSpeed: reduxAct.ComplexActionCreator1<unknown, unknown, {
-    forward: boolean;
-    scope: string;
+const setDownloadSpeed: ComplexActionCreator1<unknown, unknown, {
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
-const setDownloadSpeeds: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setDownloadSpeeds: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setDownloadTime: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    time: number;
+const setDownloadTime: ComplexActionCreator2<string, number, {
+id: string;
+time: number;
 }, {}>;
 
 // @public (undocumented)
@@ -5361,8 +5388,8 @@ instanceId: string;
 }, {}>;
 
 // @public
-const startDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const startDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public
@@ -5468,6 +5495,7 @@ suppress: boolean;
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise_2<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps_11" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
 export const Table: React_2.ComponentType<IBaseProps_11 & IExtensibleProps>;
@@ -6051,7 +6079,6 @@ declare namespace util {
         delay,
         deriveModInstallName as deriveInstallName,
         instance as epicGamesLauncher,
-        extend,
         extractExeIcon,
         fileMD5,
         findDownloadByRef,
@@ -6144,6 +6171,9 @@ declare namespace util {
         CollectionsInstallationFailedEvent,
         CollectionsInstallationCancelledEvent,
         CollectionsDownloadClickedEvent,
+        CollectionsDraftedEvent,
+        CollectionsDraftUploadedEvent,
+        CollectionsDraftUpdateUploadedEvent,
         TextGroup,
         calcDuration,
         showSuccess,
