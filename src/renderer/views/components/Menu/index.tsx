@@ -1,13 +1,10 @@
-import React, { type FC, useMemo } from "react";
+import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-
-import type { IState } from "../../../../types/IState";
+import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../../actions/session";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
-import { useWindowContext } from "../../../contexts";
-import { gameSettingsPage, settingsPage, useMainPages } from "../../../hooks";
+import { usePagesContext, useWindowContext } from "../../../contexts";
 import { useSpineContext } from "../SpineContext";
 import { getIconPath } from "./iconMap";
 import { MenuButton } from "./MenuButton";
@@ -15,28 +12,10 @@ import { MenuButton } from "./MenuButton";
 export const Menu: FC = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
-  const { selection } = useSpineContext();
+  const { visiblePages } = useSpineContext();
   const dispatch = useDispatch();
 
-  const mainPages = useMainPages();
-
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-
-  // Filter visible pages based on Spine selection
-  const visiblePages = useMemo(() => {
-    const isHome = selection.type === "home";
-    const pages = mainPages.filter((page) => {
-      const passesGroupFilter = isHome
-        ? page.group !== "per-game"
-        : page.group === "per-game" || page.id === "Downloads";
-      try {
-        return passesGroupFilter && page.visible();
-      } catch {
-        return false;
-      }
-    });
-    return [...pages, isHome ? settingsPage : gameSettingsPage];
-  }, [mainPages, selection]);
+  const { mainPage } = usePagesContext();
 
   return (
     <div

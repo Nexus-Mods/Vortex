@@ -1110,9 +1110,25 @@ function init(context: IExtensionContextExt): boolean {
     downloadAttributes(context.api, props, withAddInProgress);
 
   context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 40,
     hotkey: "D",
     group: "global",
     badge: downloadCount,
+    props: () => ({
+      downloadPathForGame,
+      columns: downloadColumns,
+    }),
+  });
+
+  context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 210,
+    id: "game-downloads",
+    hotkey: "D",
+    group: "per-game",
+    badge: downloadCount,
+    isModernOnly: true,
+    visible: () =>
+      selectors.activeGameId(context.api.store.getState()) !== undefined,
     props: () => ({
       downloadPathForGame,
       columns: downloadColumns,

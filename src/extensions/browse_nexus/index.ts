@@ -10,13 +10,13 @@ import BrowseNexusPage from "./views/BrowseNexusPage";
 function init(context: IExtensionContext): boolean {
   // Register the Browse page
   context.registerMainPage("search", "Browse Nexus Mods", BrowseNexusPage, {
+    priority: 0, // Force top of game section
     hotkey: "B",
     group: "per-game",
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     props: () => ({
       api: context.api,
     }),
-    priority: 0, // Force top of game section
   });
 
   return true;

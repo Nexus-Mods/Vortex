@@ -37,8 +37,10 @@ export default function init(context: types.IExtensionContext) {
   context.registerReducer(["session", "tutorials"], sessionReducer);
 
   context.registerMainPage("details", "Knowledge Base", DocumentationView, {
+    priority: 25,
     hotkeyRaw: "F1",
     group: "global",
+    isClassicOnly: true,
   } as any);
 
   const tutData = getTutorialData();

@@ -51,6 +51,7 @@ interface IConnectedProps {
   discoveredGames: { [gameId: string]: IDiscoveryResult };
   activity: string[];
   mods: { [gameId: string]: { [modId: string]: IMod } };
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -133,21 +134,25 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
             )}
           </div>
           {this.renderAddOrEdit(edit)}
-          <div>
-            {t("Other Games")}{" "}
-            <a onClick={this.toggleOther}>
-              {showOther ? t("Hide") : t("Show")}
-            </a>
-          </div>
-          <Collapse in={showOther}>
-            <div>
-              <div className="profile-list">
-                {otherProfilesSorted.map((profileId) =>
-                  this.renderProfile(profileId, supportedFeatures),
-                )}
+          {!this.props.useModernLayout && (
+            <>
+              <div>
+                {t("Other Games")}{" "}
+                <a onClick={this.toggleOther}>
+                  {showOther ? t("Hide") : t("Show")}
+                </a>
               </div>
-            </div>
-          </Collapse>
+              <Collapse in={showOther}>
+                <div>
+                  <div className="profile-list">
+                    {otherProfilesSorted.map((profileId) =>
+                      this.renderProfile(profileId, supportedFeatures),
+                    )}
+                  </div>
+                </div>
+              </Collapse>
+            </>
+          )}
           {isDeploying ? this.renderOverlay() : null}
         </MainPage.Body>
       </MainPage>
@@ -444,6 +449,7 @@ function mapStateToProps(state: IState): IConnectedProps {
       ["session", "base", "activity", "mods"],
       emptyArray,
     ),
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

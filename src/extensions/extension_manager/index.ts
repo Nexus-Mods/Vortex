@@ -369,6 +369,7 @@ function init(context: IExtensionContext) {
   context.registerReducer(["session", "extensions"], sessionReducer);
 
   context.registerMainPage("extensions", "Extensions", ExtensionManager, {
+    priority: 20,
     hotkey: "X",
     group: "global",
     // visible: () => context.api.store.getState().settings.interface.advanced,

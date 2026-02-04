@@ -2,9 +2,9 @@ import React, { type FC, useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../actions/session";
-import { useWindowContext } from "../../contexts";
+import { usePagesContext, useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
-import { settingsPage, usePageRendering, useMainPages } from "../../hooks";
+import { usePageRendering } from "../../hooks";
 import { ContentPane, Sidebar } from "./index";
 
 /**
@@ -12,12 +12,11 @@ import { ContentPane, Sidebar } from "./index";
  * For Classic layout.
  */
 export const MainLayout: FC = () => {
-  const mainPages = useMainPages();
+  const { mainPages, mainPage } = usePagesContext();
 
   const dispatch = useDispatch();
 
-  const { mainPage, secondaryPage, setLoadedPages, renderPage } =
-    usePageRendering();
+  const { secondaryPage, setLoadedPages, renderPage } = usePageRendering();
 
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
 
@@ -25,7 +24,7 @@ export const MainLayout: FC = () => {
   const sidebarTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const initializedRef = useRef(false);
 
-  // Set initial page on mount (lowest priority page)
+  // Set initial page on mount (first page from sorted list)
   useEffect(() => {
     if (initializedRef.current) {
       return;
@@ -33,10 +32,7 @@ export const MainLayout: FC = () => {
     initializedRef.current = true;
 
     if (mainPages.length > 0) {
-      const defaultPage = [...mainPages].sort(
-        (lhs, rhs) => lhs.priority - rhs.priority,
-      )[0];
-      dispatch(setOpenMainPage(defaultPage.title, false));
+      dispatch(setOpenMainPage(mainPages[0].title, false));
     }
   }, [mainPages, dispatch]);
 
@@ -104,18 +100,13 @@ export const MainLayout: FC = () => {
     <FlexLayout.Flex>
       <FlexLayout style={{ overflow: "hidden" }} type="row">
         <Sidebar
-          objects={mainPages}
-          settingsPage={settingsPage}
+          pages={mainPages}
           onClickPage={handleClickPage}
           onSidebarRef={handleSidebarRef}
           onToggleMenu={handleToggleMenu}
         />
 
-        <ContentPane>
-          {mainPages.map(renderPage)}
-
-          {renderPage(settingsPage)}
-        </ContentPane>
+        <ContentPane>{mainPages.map(renderPage)}</ContentPane>
       </FlexLayout>
     </FlexLayout.Flex>
   );

@@ -15,8 +15,7 @@ import { MainFooter } from "../MainFooter";
 import { PageGroup } from "./PageGroup";
 
 export interface ISidebarProps {
-  objects: IMainPage[];
-  settingsPage: IMainPage;
+  pages: IMainPage[];
   onClickPage: (pageId: string, ctrlKey: boolean) => void;
   onToggleMenu: () => void;
   onSidebarRef: (ref: HTMLElement | null) => void;
@@ -27,8 +26,7 @@ export interface ISidebarProps {
  * For Classic layout.
  */
 export const Sidebar: FC<ISidebarProps> = (props) => {
-  const { objects, settingsPage, onClickPage, onToggleMenu, onSidebarRef } =
-    props;
+  const { pages, onClickPage, onToggleMenu, onSidebarRef } = props;
 
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
@@ -59,10 +57,7 @@ export const Sidebar: FC<ISidebarProps> = (props) => {
     <FlexLayout.Fixed className={sbClass} id="main-nav-sidebar">
       <div id="main-nav-container" ref={onSidebarRef}>
         {pageGroups.map(({ title, key }) => {
-          const groupPages = objects.filter((page) => page.group === key);
-          if (key === "global") {
-            groupPages.push(settingsPage);
-          }
+          const groupPages = pages.filter((page) => page.group === key);
           return (
             <PageGroup
               groupKey={key}

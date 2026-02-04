@@ -9,6 +9,7 @@ import { setOpenMainPage } from "../../../../actions/session";
 import { Icon } from "../../../../tailwind/components/next/icon";
 import { Typography } from "../../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
+import { useSpineContext } from "../SpineContext";
 import { SpineButton } from "./SpineButton";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
@@ -132,9 +133,11 @@ const ProgressRing: FC<{
 
 export const DownloadButton: FC = () => {
   const dispatch = useDispatch();
+  const { selection } = useSpineContext();
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const isActive = mainPage === "Downloads";
+  const targetPage = selection.type === "game" ? "game-downloads" : "Downloads";
+  const isActive = mainPage === targetPage;
 
   const { isDownloading, isPaused, progress, speedMBps, estimatedMins } =
     useDownloadProgress();
@@ -157,7 +160,7 @@ export const DownloadButton: FC = () => {
         { "bg-surface-translucent-low": isActive },
       )}
       title="Downloads"
-      onClick={() => dispatch(setOpenMainPage("Downloads", false))}
+      onClick={() => dispatch(setOpenMainPage(targetPage, false))}
     >
       {isPaused || isDownloading ? (
         <>

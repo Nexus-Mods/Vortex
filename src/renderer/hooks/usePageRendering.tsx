@@ -4,29 +4,7 @@ import { useSelector } from "react-redux";
 import type { IMainPage } from "../../types/IMainPage";
 import type { IState } from "../../types/IState";
 
-import { GameSettings } from "../views/GameSettings";
 import { MainPageContainer } from "../views/MainPageContainer";
-import { Settings } from "../views/Settings";
-
-export const gameSettingsPage: IMainPage = {
-  id: "game_settings",
-  title: "Settings",
-  group: "per-game",
-  component: GameSettings,
-  icon: "settings",
-  propsFunc: () => undefined,
-  visible: () => true,
-};
-
-export const settingsPage: IMainPage = {
-  id: "application_settings",
-  title: "Settings",
-  group: "global",
-  component: Settings,
-  icon: "settings",
-  propsFunc: () => undefined,
-  visible: () => true,
-};
 
 export const usePageRendering = () => {
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);

@@ -26,6 +26,8 @@ const registerMainPage = (
     propsFunc: options.props || emptyFunc,
     visible: options.visible || trueFunc,
     group: options.group,
+    isClassicOnly: options.isClassicOnly,
+    isModernOnly: options.isModernOnly,
     badge: options.badge,
     activity: options.activity,
     priority: options.priority !== undefined ? options.priority : 100,

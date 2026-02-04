@@ -1,15 +1,11 @@
 import React, { type FC } from "react";
 
-import {
-  gameSettingsPage,
-  settingsPage,
-  usePageRendering,
-  useMainPages,
-} from "../../hooks";
+import { usePagesContext } from "../../contexts";
+import { usePageRendering } from "../../hooks";
 import { DNDContainer } from "../DNDContainer";
 
 export const ModernContentPane: FC = () => {
-  const mainPages = useMainPages();
+  const { mainPages } = usePagesContext();
 
   const { renderPage } = usePageRendering();
 
@@ -24,10 +20,6 @@ export const ModernContentPane: FC = () => {
         }}
       >
         {mainPages.map(renderPage)}
-
-        {renderPage(settingsPage)}
-
-        {renderPage(gameSettingsPage)}
       </DNDContainer>
     </div>
   );

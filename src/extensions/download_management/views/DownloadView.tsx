@@ -119,7 +119,7 @@ const nop = () => null;
 const DROPZONE_ACCEPT: DropType[] = ["urls", "files"];
 
 function MountTrigger(props: { cb: () => void }) {
-  React.useCallback(() => {
+  React.useEffect(() => {
     props.cb();
   }, []);
   return null;

@@ -168,6 +168,8 @@ export interface IMainPageOptions {
   hotkeyRaw?: string;
   visible?: () => boolean;
   group: "dashboard" | "global" | "per-game" | "support" | "hidden";
+  isClassicOnly?: boolean;
+  isModernOnly?: boolean;
   priority?: number;
   props?: PropsCallback;
   badge?: ReduxProp<any>;
