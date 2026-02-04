@@ -16,6 +16,9 @@ export interface Api {
   /** Sends a log message to the main process */
   log(level: Level, message: string, metadata?: string): void;
 
+  /** Compiles SASS stylesheets to CSS */
+  compileStylesheets(files: string[]): Promise<string>;
+
   /** Example APIs */
   example: Example;
 

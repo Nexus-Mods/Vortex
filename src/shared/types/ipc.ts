@@ -212,6 +212,9 @@ export interface InvokeChannels {
   // Note: Menu template is complex with nested submenus (can be recursive), so we use unknown[]
   // to avoid circular type references - the actual expected type is SerializableMenuItem[]
   "menu:setApplicationMenu": (template: unknown[]) => Promise<void>;
+
+  // Compile stylesheets
+  "styles:compile": (filePaths: string[]) => Promise<string>;
 }
 
 /** Represents all IPC-safe typed arrays */

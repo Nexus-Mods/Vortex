@@ -88,6 +88,7 @@ import { installDevelExtensions } from "./devel";
 import { betterIpcMain } from "./ipc";
 import { log, setupLogging, changeLogPath } from "./logging";
 import SplashScreen from "./SplashScreen";
+import StylesheetCompiler from "./stylesheetCompiler";
 
 const STATE_CHUNK_SIZE = 128 * 1024;
 
@@ -550,6 +551,8 @@ class Application {
     process.on("unhandledRejection", handleError);
 
     this.mStore.dispatch(setCommandLine(args));
+
+    StylesheetCompiler.init();
 
     await this.initDevel();
 

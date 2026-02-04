@@ -29,6 +29,9 @@ try {
     log: (level, message, metadata) =>
       betterIpcRenderer.send("logging:log", level, message, metadata),
 
+    compileStylesheets: (filePaths) =>
+      betterIpcRenderer.invoke("styles:compile", filePaths),
+
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },
