@@ -26,9 +26,9 @@ function customFormatter(options: FormatOptions, forConsole: boolean): string {
   // https://github.com/winstonjs/winston/blob/b8baf4c6797d652f882e61a8a3bd8d00875e5596/lib/winston/config.js#L21
   const logLevel = forConsole
     ? winston.config.colorize(
-        options.level as unknown as number,
-        formattedLogLevel,
-      )
+      options.level as unknown as number,
+      formattedLogLevel,
+    )
     : formattedLogLevel;
 
   const message = options.message ?? "";
@@ -78,10 +78,10 @@ function setupLogger(
 
   const consoleTransport = useConsole
     ? new winston.transports.Console({
-        level: "debug",
-        timestamp: timestamp,
-        formatter: formatter,
-      })
+      level: "debug",
+      timestamp: timestamp,
+      formatter: formatter,
+    })
     : undefined;
 
   const transports: winston.TransportInstance[] = [fileTransport];
@@ -112,7 +112,7 @@ class LoggerSingleton {
   }
 
   static log(level: Level, message: string, metadata?: unknown): void {
-    // TODO: broken logging because of the PresetManager import with side-effects
+    // TODO: broken logging from tests
     if (!this.#instance) {
       console.log(`BROKEN LOGGING: ${level} ${message}`);
     } else {
