@@ -2197,11 +2197,11 @@ function init(context: IExtensionContext): boolean {
     "Mods",
     LazyComponent(() => require("./views/ModList")),
     {
+      priority: 50,
       hotkey: "M",
       group: "per-game",
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
       activity: modsActivity,
-      priority: 50,
       props: () => ({ modSources: getModSources() }),
     },
   );
@@ -2310,9 +2310,9 @@ function init(context: IExtensionContext): boolean {
   context.registerDialog(
     "fix-deployment",
     LazyComponent(() => require("./views/FixDeploymentDialog")),
-    () => {
+    () => ({
       // nop
-    },
+    }),
   );
 
   context.registerDialog(

@@ -1,65 +1,47 @@
-import ProgressBar from "../controls/ProgressBar";
+import React, { useEffect, useMemo, useState, type FC } from "react";
+
 import type ExtensionManager from "../../util/ExtensionManager";
 
-import * as React from "react";
+import ProgressBar from "../controls/ProgressBar";
 
 export interface ILoadingScreenProps {
   extensions: ExtensionManager;
 }
 
-interface ILoadingScreenState {
-  currentlyLoading: string;
-  loaded: number;
-}
+const readable = (input: string): string => {
+  if (input === undefined) {
+    return "Done";
+  }
+  return input
+    .split(/[_-]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
-class LoadingScreen extends React.Component<
-  ILoadingScreenProps,
-  ILoadingScreenState
-> {
-  private mTotalExtensions: number;
-  constructor(props: ILoadingScreenProps) {
-    super(props);
+export const LoadingScreen: FC<ILoadingScreenProps> = (props) => {
+  const { extensions } = props;
 
-    this.state = {
-      currentlyLoading: "",
-      loaded: 0,
-    };
+  const [currentlyLoading, setCurrentlyLoading] = useState("");
+  const [loaded, setLoaded] = useState(0);
+  const totalExtensions = useMemo(() => extensions.numOnce, [extensions]);
 
-    const { extensions } = this.props;
-
-    this.mTotalExtensions = extensions.numOnce;
-
+  useEffect(() => {
     extensions.onLoadingExtension((name: string, idx: number) => {
-      this.setState({
-        currentlyLoading: name,
-        loaded: idx,
-      });
+      setCurrentlyLoading(name);
+      setLoaded(idx);
     });
-  }
+  }, [extensions]);
 
-  public render(): JSX.Element {
-    const { currentlyLoading, loaded } = this.state;
-    return (
-      <div id="loading-screen">
-        <ProgressBar
-          labelLeft="Loading Extensions"
-          labelRight={this.readable(currentlyLoading)}
-          now={loaded}
-          max={this.mTotalExtensions}
-        />
-      </div>
-    );
-  }
-
-  private readable(input: string): string {
-    if (input === undefined) {
-      return "Done";
-    }
-    return input
-      .split(/[_-]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }
-}
+  return (
+    <div id="loading-screen">
+      <ProgressBar
+        labelLeft="Loading Extensions"
+        labelRight={readable(currentlyLoading)}
+        max={totalExtensions}
+        now={loaded}
+      />
+    </div>
+  );
+};
 
 export default LoadingScreen;

@@ -27,6 +27,7 @@ import type {
   IExtensionDownloadInfo,
 } from "../extension_manager/types";
 
+import { getPreloadApi } from "../..//util/preloadAccess";
 import { showDialog } from "../../actions/notifications";
 import { resetSuppression } from "../../actions/notificationSettings";
 import { setCustomTitlebar } from "../../actions/window";
@@ -70,7 +71,7 @@ interface ILanguage {
   ext: Array<Partial<IExtensionDownloadInfo>>;
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   startup: IParameters;
   changeStartup: (key: string, value: any) => void;
 }
@@ -467,7 +468,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       //  bug reports.
       onSetStartMinimized(false);
     }
-    window.api.app.setLoginItemSettings({
+    const api = getPreloadApi();
+    api.app.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: startOnBoot ? (startMinimized ? ["--start-minimized"] : []) : [],
@@ -478,7 +480,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     const { autoStart, startMinimized, onSetStartMinimized } = this.props;
     const isMinimized = !startMinimized === true;
     onSetStartMinimized(isMinimized);
-    window.api.app.setLoginItemSettings({
+    const api = getPreloadApi();
+    api.app.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: isMinimized ? ["--start-minimized"] : [],

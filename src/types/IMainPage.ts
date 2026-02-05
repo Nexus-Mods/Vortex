@@ -18,6 +18,8 @@ export interface IMainPage {
   propsFunc: () => any;
   visible: () => boolean;
   group: "global" | "per-game" | "support" | "hidden" | "dashboard";
+  isClassicOnly?: boolean;
+  isModernOnly?: boolean;
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

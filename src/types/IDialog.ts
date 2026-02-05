@@ -117,7 +117,7 @@ export interface IDialogContent {
    * list of clickable entries that don't (necessarily) cause the dialog to close
    */
   links?: ILink[];
-  parameters?: any;
+  parameters?: Record<string, string | number> & { count?: number };
   options?: {
     translated?: boolean;
     wrap?: boolean;

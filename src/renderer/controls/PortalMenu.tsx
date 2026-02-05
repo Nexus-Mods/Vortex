@@ -7,8 +7,8 @@ import { Overlay } from "react-overlays";
 
 interface IPortalMenuProps {
   open: boolean;
-  target: Element;
-  onClick: (evt) => void;
+  target: Element | React.Component | null;
+  onClick: (evt: React.MouseEvent<HTMLElement>) => void;
   onClose: () => void;
   onSelect?: SelectCallback;
   useMousePosition?: boolean | { x: number; y: number };

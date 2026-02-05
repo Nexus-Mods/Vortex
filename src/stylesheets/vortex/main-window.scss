@@ -355,7 +355,8 @@
     display: flex;
     flex-direction: column;
 
-    &.current {
+    &.current,
+    &.page-active {
         opacity: 1;
         z-index: 1000;
         transition-delay: 0s;

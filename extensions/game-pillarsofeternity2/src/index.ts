@@ -155,6 +155,7 @@ function init(context: types.IExtensionContext) {
   });
 
   context.registerMainPage("sort-none", "Load Order", LoadOrder, {
+    priority: 120,
     id: "pillars2-loadorder",
     hotkey: "E",
     group: "per-game",

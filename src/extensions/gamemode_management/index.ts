@@ -715,6 +715,7 @@ function init(context: IExtensionContext): boolean {
     "Games",
     LazyComponent(() => require("./views/GamePicker")),
     {
+      priority: 10,
       hotkey: "G",
       group: "global",
       props: () => ({

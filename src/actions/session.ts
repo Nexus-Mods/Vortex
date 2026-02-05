@@ -1,6 +1,5 @@
+import { createAction } from "redux-act";
 import type { IParameters } from "../util/commandLine";
-
-import safeCreateAction from "./safeCreateAction";
 
 import * as reduxAct from "redux-act";
 
@@ -13,39 +12,39 @@ const uiOnlyMeta =
  * action to choose which item in a group to display (all other items in the
  * group will be hidden). the itemId can be undefined to hide them all.
  */
-export const displayGroup = safeCreateAction(
+export const displayGroup = createAction(
   "DISPLAY_GROUP",
   (groupId: string, itemId: string) => ({ groupId, itemId }),
 );
 
-export const setDialogVisible = safeCreateAction(
+export const setDialogVisible = createAction(
   "SET_DIALOG_VISIBLE",
   (dialogId: string) => ({ dialogId }),
 );
 
-export const setSettingsPage = safeCreateAction(
+export const setSettingsPage = createAction(
   "SET_SETTINGS_PAGE",
   (pageId: string) => ({ pageId }),
 );
 
-export const setOpenMainPage = safeCreateAction(
+export const setOpenMainPage = createAction(
   "SET_OPEN_MAINPAGE",
   (page: string, secondary: boolean) => ({ page, secondary }),
 );
 
-export const startActivity = safeCreateAction(
+export const startActivity = createAction(
   "START_ACTIVITY",
   (group: string, activityId: string) => ({ group, activityId }),
   uiOnlyMeta,
 );
 
-export const stopActivity = safeCreateAction(
+export const stopActivity = createAction(
   "STOP_ACTIVITY",
   (group: string, activityId: string) => ({ group, activityId }),
   uiOnlyMeta,
 );
 
-export const setProgress = safeCreateAction(
+export const setProgress = createAction(
   "SET_PROGRESS",
   (group: string, progressId: string, text: string, percent: number) => ({
     group,
@@ -55,7 +54,7 @@ export const setProgress = safeCreateAction(
   }),
 );
 
-export const setToolRunning = safeCreateAction(
+export const setToolRunning = createAction(
   "SET_TOOL_RUNNING",
   (exePath: string, started: number, exclusive: boolean) => ({
     exePath,
@@ -64,7 +63,7 @@ export const setToolRunning = safeCreateAction(
   }),
 );
 
-export const setToolPid = safeCreateAction(
+export const setToolPid = createAction(
   "SET_TOOL_RUNNING",
   (exePath: string, pid: number, exclusive: boolean) => ({
     exePath,
@@ -73,17 +72,17 @@ export const setToolPid = safeCreateAction(
   }),
 );
 
-export const setToolStopped = safeCreateAction(
+export const setToolStopped = createAction(
   "SET_TOOL_STOPPED",
   (exePath: string) => ({ exePath }),
 );
 
-export const setExtensionLoadFailures = safeCreateAction(
+export const setExtensionLoadFailures = createAction(
   "SET_EXT_LOAD_FAILURES",
   (failures) => failures,
 );
 
-export const setUIBlocker = safeCreateAction(
+export const setUIBlocker = createAction(
   "SET_UI_BLOCKER",
   (id: string, icon: string, description: string, mayCancel: boolean) => ({
     id,
@@ -93,17 +92,17 @@ export const setUIBlocker = safeCreateAction(
   }),
 );
 
-export const clearUIBlocker = safeCreateAction(
+export const clearUIBlocker = createAction(
   "CLEAR_UI_BLOCKER",
   (id: string) => id,
 );
 
-export const setNetworkConnected = safeCreateAction(
+export const setNetworkConnected = createAction(
   "SET_NETWORK_CONNECTED",
   (connected: boolean) => connected,
 );
 
-export const setCommandLine = safeCreateAction(
+export const setCommandLine = createAction(
   "SET_COMMAND_LINE",
   (args: IParameters) => args,
 );

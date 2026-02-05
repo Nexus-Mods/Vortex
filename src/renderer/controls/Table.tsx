@@ -1782,6 +1782,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       // regular click -> select only the clicked row, everything else get deselected
       this.selectOnly(rowId, groupId, true);
     }
+
+    // Focus the table container to enable keyboard shortcuts (CTRL+A, arrow keys, etc.)
+    this.mScrollRef?.focus();
   };
 
   private selectOnly(rowId: string, groupId: string, click: boolean) {
