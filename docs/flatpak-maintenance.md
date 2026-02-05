@@ -18,13 +18,14 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 | -------------------- | ---------------------------------------------------------- |
 | `flatpak_sources.py` | Regenerate `flatpak/generated-sources.json` from lockfiles |
 | `flatpak_build.py`   | Build the Flatpak with standard defaults                   |
-| `flatpak_run.py`     | Run the build output without installing                    |
+| `flatpak_run.py`     | Run the build output directly with `flatpak-builder --run` |
 
-### Distribution workflow
+### Distribution/UX Testing workflow
 
-| Script              | Purpose                                               |
-| ------------------- | ----------------------------------------------------- |
-| `flatpak_bundle.py` | Export to a local repo and create a `.flatpak` bundle |
+| Script               | Purpose                                                                 |
+| -------------------- | ----------------------------------------------------------------------- |
+| `flatpak_install.py` | Export to a local repo, install the app (appears in KDE Discover, etc.) |
+| `flatpak_bundle.py`  | Export to a local repo and create a `.flatpak` bundle                   |
 
 ## Typical Workflow
 
@@ -40,17 +41,36 @@ python3 flatpak/scripts/flatpak_sources.py
 python3 flatpak/scripts/flatpak_build.py
 ```
 
-**3. Test:**
+**3. Test (quick development testing):**
 
 ```bash
 python3 flatpak/scripts/flatpak_run.py
 ```
 
-**4. Bundle (optional):**
+This runs the app directly without installing, using `flatpak-builder --run`.
+
+**4. Install for UX testing (optional):**
+
+```bash
+python3 flatpak/scripts/flatpak_install.py
+```
+
+This exports to a local repo (`flatpak/flatpak-repo/`) and installs the app so it appears in software centers like KDE Discover. Use `--run` to also launch it immediately:
+
+```bash
+python3 flatpak/scripts/flatpak_install.py --run
+```
+
+**5. Create bundle (optional):**
 
 ```bash
 python3 flatpak/scripts/flatpak_bundle.py
 ```
+
+## Script Differences
+
+- **`flatpak_run.py`**: Quick development testing. Runs directly via `flatpak-builder --run`. Fastest for iterative development.
+- **`flatpak_install.py`**: UX testing. Installs the app properly so it appears in software centers. Creates a local OSTree repo at `flatpak/flatpak-repo/` (gitignored).
 
 ## Runtime Updates
 

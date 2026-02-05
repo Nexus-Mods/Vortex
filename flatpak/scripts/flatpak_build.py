@@ -5,7 +5,7 @@ import argparse
 import shutil
 from pathlib import Path
 
-from _flatpak_env import ensure_venv, repo_root, run_command
+from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
 
 
 def main() -> None:
@@ -46,6 +46,8 @@ def main() -> None:
         print("Install it with your distro package manager (see CONTRIBUTE.md).")
         print("On NixOS: run 'nix develop'.")
         raise SystemExit(1)
+
+    ensure_flathub_remote()
 
     root = repo_root()
     build_dir = Path(args.build_dir)

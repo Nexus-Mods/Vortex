@@ -10,10 +10,40 @@ Build stages (in the SDK sandbox):
 
 1. `yarn install` -- offline dependency fetch
 2. `_install_app`, `subprojects_app`, `_assets_app`, `build_dist` -- compile to `app/`
-3. Copy `app/` to `/app/main`
-4. `dotnet-runtime` module -- stage .NET runtime
+3. `electron-builder` -- package app with Electron runtime to `dist/linux-unpacked/`
+4. Copy `dist/linux*-unpacked/` to `/app/main`
+5. `dotnet-runtime` module -- stage .NET runtime
 
 See `flatpak/com.nexusmods.vortex.yaml` for per-phase commands and environment variables.
+
+## Testing Approaches
+
+### Quick Development Testing (`flatpak_run.py`)
+
+Uses `flatpak-builder --run` to run the build directly without installing:
+
+```bash
+python flatpak/scripts/flatpak_run.py
+```
+
+Fastest for iterative development. No installation step required.
+
+### UX Testing (`flatpak_install.py`)
+
+Exports to a local OSTree repo and installs the app:
+
+```bash
+python flatpak/scripts/flatpak_install.py
+```
+
+This approach:
+
+1. Exports build to `flatpak/flatpak-repo/` (OSTree repository)
+2. Adds the repo as a flatpak remote
+3. Installs the app from the repo
+4. The app now appears in software centers (KDE Discover, GNOME Software)
+
+Use this to test the actual user installation experience.
 
 ## Yarn Config (`flatpak/yarnrc`)
 
@@ -24,7 +54,7 @@ See `flatpak/com.nexusmods.vortex.yaml` for per-phase commands and environment v
 
 ## Launch Mechanism
 
-`flatpak/run.sh` launches with `zypak-wrapper /app/bin/electron /app/main`.
+`flatpak/run.sh` launches with `zypak-wrapper /app/main/vortex`.
 
 - Zypak runs Electron inside the sandbox (see [Zypak docs](https://github.com/refi64/zypak))
 - Desktop file points to `run.sh`
@@ -39,3 +69,5 @@ See `flatpak/com.nexusmods.vortex.yaml` for per-phase commands and environment v
 **Zypak wrapper**: Required by the Electron BaseApp to run Chromium's sandbox inside Flatpak's sandbox.
 
 **.NET runtime staging**: Framework-dependent tools (like `dotnetprobe`) need `DOTNET_ROOT` pointing to the staged runtime at `/app/lib/dotnet`.
+
+**Electron builder**: We use `electron-builder` with the `dir` target to package the app with the Electron runtime. This creates a complete distribution in `dist/linux-unpacked/` that gets copied to `/app/main`.

@@ -63,6 +63,26 @@ def _pip_has_package(pip_exe: Path, package: str) -> bool:
     return result.returncode == 0
 
 
+def ensure_flathub_remote() -> None:
+    """Ensure the Flathub remote exists for runtime installation."""
+    result = subprocess.run(
+        ["flatpak", "remote-list"],
+        capture_output=True,
+        text=True,
+    )
+    if "flathub" not in result.stdout:
+        print("Adding Flathub remote...")
+        run_command(
+            [
+                "flatpak",
+                "remote-add",
+                "--if-not-exists",
+                "flathub",
+                "https://flathub.org/repo/flathub.flatpakrepo",
+            ]
+        )
+
+
 def ensure_venv(install_packages: bool = True) -> VenvInfo:
     venv = venv_dir()
     if not venv.exists():

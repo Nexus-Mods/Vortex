@@ -95,14 +95,18 @@ modules:
       - yarn run _assets_app
       - yarn run build_dist
 
+      # Build Electron distribution with electron-builder (dir target)
+      # This creates dist/linux-unpacked/ with the electron binary bundled
+      - yarn electron-builder --config electron-builder-config.json --publish never --linux dir
+
       # Install the launcher, desktop file, and icon into the Flatpak image.
       - install -Dm755 flatpak/run.sh /app/bin/run.sh
       - install -Dm644 flatpak/com.nexusmods.vortex.desktop /app/share/applications/com.nexusmods.vortex.desktop
       - install -Dm644 assets/images/vortex.png /app/share/icons/hicolor/512x512/apps/com.nexusmods.vortex.png
 
-      # Stage the built app payload from app/ into /app/main for runtime.
+      # Stage the built electron distribution into /app/main for runtime.
       - install -d /app/main
-      - cp -a app/. /app/main/
+      - cp -a dist/linux*-unpacked/. /app/main/
     sources:
       - type: dir
         path: ..

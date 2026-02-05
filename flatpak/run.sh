@@ -1,2 +1,2 @@
 #!/bin/sh
-exec zypak-wrapper /app/bin/electron /app/main "$@"
+exec zypak-wrapper /app/main/vortex "$@"

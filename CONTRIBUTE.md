@@ -160,29 +160,15 @@ These dependencies are only required if you are building the Flatpak package.
 
 - `flatpak`
 - `flatpak-builder`
-- `flatpak-node-generator`
-    - Provided by the `flatpak-builder-tools` Python package on most distros
-    - If it is not packaged, use `pipx install flatpak-node-generator`
 
 ### Example installs (Linux)
 
-- Ubuntu/Debian:
-    - `sudo apt install flatpak flatpak-builder`
-    - `pipx install flatpak-node-generator`
-- Fedora:
-    - `sudo dnf install flatpak flatpak-builder`
-    - `pipx install flatpak-node-generator`
-- Arch:
-    - `sudo pacman -S flatpak flatpak-builder`
-    - `pipx install flatpak-node-generator`
+- Ubuntu/Debian: `sudo apt install flatpak flatpak-builder`
+- Fedora: `sudo dnf install flatpak flatpak-builder`
+- Arch: `sudo pacman -S flatpak flatpak-builder`
 
-### Flathub remote
-
-Ensure the Flathub remote exists for runtime installation:
-
-```
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-```
+> [!note]
+> There is an additional Python-based dependency `flatpak-node-generator`, but the scripts in `flatpak/scripts/` automatically install it for you. The Flathub remote is also added automatically if missing.
 
 For the full Flatpak workflow, see `docs/flatpak-maintenance.md`.
 
