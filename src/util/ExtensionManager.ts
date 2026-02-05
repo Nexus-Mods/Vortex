@@ -1,25 +1,26 @@
-import {
-  forgetExtension,
-  removeExtension,
-  setExtensionEnabled,
-  setExtensionVersion,
-} from "../actions/app";
-import {
-  addNotification,
-  closeDialog,
-  dismissNotification,
-  dismissAllNotifications,
-  showDialog,
-} from "../actions/notifications";
+import type { SpawnOptions } from "child_process";
+import type {
+  OpenDialogOptions,
+  SaveDialogOptions,
+  WebContents,
+} from "electron";
+import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
+import type * as modmetaT from "modmeta-db";
+
+import PromiseBB from "bluebird";
+import { spawn } from "child_process";
+import { ipcMain, ipcRenderer } from "electron";
+import { EventEmitter } from "events";
+import * as fs from "fs-extra";
+import * as fuzz from "fuzzball";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
 } from "../actions/notifications.ts";
-import { suppressNotification } from "../actions/notificationSettings";
-import { setExtensionLoadFailures } from "../actions/session";
-
-import { setOptionalExtensions } from "../extensions/extension_manager/actions";
 import type {
   IAvailableExtension,
   IExtension,
@@ -28,6 +29,7 @@ import type {
   IModReference,
   IModRepoId,
 } from "../extensions/mod_management/types/IMod";
+import type { SanityCheck } from "../store/reduxSanity.ts";
 import type { ExtensionInit } from "../types/Extension";
 import type {
   ArchiveHandlerCreator,
@@ -57,7 +59,26 @@ import type {
   IExtensionState,
   IState,
 } from "../types/IState";
+import type { i18n } from "./i18n";
 
+import {
+  forgetExtension,
+  removeExtension,
+  setExtensionEnabled,
+  setExtensionVersion,
+} from "../actions/app";
+import {
+  addNotification,
+  closeDialog,
+  dismissNotification,
+  dismissAllNotifications,
+  showDialog,
+} from "../actions/notifications";
+import { suppressNotification } from "../actions/notificationSettings";
+import { setExtensionLoadFailures } from "../actions/session";
+import { setOptionalExtensions } from "../extensions/extension_manager/actions";
+import { registerSanityCheck } from "../store/reduxSanity";
+import ReduxWatcher from "../store/ReduxWatcher";
 import { Archive } from "./archives";
 import { COMPANY_ID } from "./constants";
 import {
@@ -70,18 +91,13 @@ import {
 } from "./CustomErrors";
 import { disableErrorReport, isOutdated } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
-import type { i18n } from "./i18n";
 import { TString } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { showError } from "./message";
-import { registerSanityCheck } from "../store/reduxSanity";
-import type { SanityCheck } from "../store/reduxSanity.ts";
-import ReduxWatcher from "../store/ReduxWatcher";
 import runElevatedCustomTool from "./runElevatedCustomTool";
 import { activeGameId } from "./selectors";
 import { getSafe } from "./storeHelper";
-import StyleManager from "./StyleManager";
 import {
   filteredEnvironment,
   isFunction,
@@ -92,43 +108,27 @@ import {
   wrapExtCBAsync,
   wrapExtCBSync,
 } from "./util";
-
-import PromiseBB from "bluebird";
-import { spawn } from "child_process";
-import type { SpawnOptions } from "child_process";
-import { ipcMain, ipcRenderer } from "electron";
-import type {
-  OpenDialogOptions,
-  SaveDialogOptions,
-  WebContents,
-} from "electron";
-import { EventEmitter } from "events";
-import * as fs from "fs-extra";
-import * as fuzz from "fuzzball";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
-import type * as modmetaT from "modmeta-db";
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
+import type { ToastOptions } from "react-hot-toast";
+import type * as Redux from "redux";
+import type * as winapiT from "vortex-run";
+
 import * as net from "net";
 import * as path from "path";
-import type * as Redux from "redux";
+import { toast } from "react-hot-toast";
 import * as semver from "semver";
 import { generate as shortid } from "shortid";
 import stringFormat from "string-template";
-import type * as winapiT from "vortex-run";
-import { getApplication } from "./application";
-import { VCREDIST_URL } from "../shared/constants";
 import { fileMD5 } from "vortexmt";
-import * as fsVortex from "../util/fs";
 
-import { toast } from "react-hot-toast";
-import type { ToastOptions } from "react-hot-toast";
+import { VCREDIST_URL } from "../shared/constants";
 import {
   getErrorCode,
   unknownToError,
   getErrorMessageOrDefault,
 } from "../shared/errors";
+import * as fsVortex from "../util/fs";
+import { getApplication } from "./application";
 import { getPreloadApi } from "./preloadAccess";
 
 export function isExtSame(
@@ -885,7 +885,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
-  private mStyleManager: StyleManager;
+  private mStyleManager: any;
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: {
@@ -943,9 +943,7 @@ class ExtensionManager {
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
-          return (
-            Array.isArray(input) ? input[0].toString() : input.toString()
-          ) as any;
+          return Array.isArray(input) ? input[0].toString() : input.toString();
         }
         if (options == null) {
           options = {};
@@ -975,9 +973,11 @@ class ExtensionManager {
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
       genMd5Hash: this.genMd5Hash,
-      clearStylesheet: () => this.mStyleManager.clearCache(),
+      clearStylesheet: () => {
+        /** NOTE(erri120): no-op */
+      },
       setStylesheet: (key, filePath) =>
-        this.mStyleManager.setSheet(key, filePath),
+        this.mStyleManager.addStylesheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
       withPrePost: this.withPrePost,
@@ -1035,7 +1035,8 @@ class ExtensionManager {
       this.mExtensionState = ipcRenderer.sendSync("__get_extension_state");
     }
     if (process.type === "renderer") {
-      this.mStyleManager = new StyleManager(this.mApi);
+      const s = require("../renderer/StyleManager").default;
+      this.mStyleManager = new s();
     }
     this.mExtensions = this.prepareExtensions();
 
@@ -1481,11 +1482,6 @@ class ExtensionManager {
       });
       log("debug", "once done");
     });
-  }
-
-  public renderStyle() {
-    this.mStyleManager.startAutoUpdate();
-    return this.mStyleManager.renderNow();
   }
 
   public getProtocolHandler(protocol: string) {
@@ -2211,7 +2207,7 @@ class ExtensionManager {
           const sizePromise = Buffer.isBuffer(data)
             ? PromiseBB.resolve(data.length)
             : fsVortex
-                .statAsync(data as string)
+                .statAsync(data)
                 .then((stats) => stats.size)
                 .catch(() => 0);
 
@@ -2520,9 +2516,19 @@ class ExtensionManager {
             }),
         )
         .catch(ProcessCanceled, () => null)
-        .catch({ code: "EACCES" }, () =>
-          this.runElevated(executable, cwd, args, env, options.onSpawned),
-        )
+        .catch({ code: "EACCES" }, (err) => {
+          // Elevated execution is only supported on Windows
+          if (process.platform !== "win32") {
+            return PromiseBB.reject(err);
+          }
+          return this.runElevated(
+            executable,
+            cwd,
+            args,
+            env,
+            options.onSpawned,
+          );
+        })
         .catch({ code: "ECANCELED" }, () =>
           PromiseBB.reject(new UserCanceled()),
         )

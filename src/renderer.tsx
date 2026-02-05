@@ -91,6 +91,8 @@ import {
 } from "./actions/notifications";
 import reducer, { Decision } from "./reducers/index";
 import { log } from "./renderer/logging";
+import { initApplicationMenu } from "./renderer/menu";
+import StyleManager from "./renderer/StyleManager";
 import { AppLayout } from "./renderer/views/AppLayout";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
@@ -109,10 +111,7 @@ import getI18n, {
   fallbackTFunc,
   type TFunction,
 } from "./util/i18n";
-
-import { initApplicationMenu } from "./renderer/menu";
 import { showError } from "./util/message";
-import presetManager from "./util/PresetManager";
 import safeForwardToMain from "./util/safeForwardToMain";
 import safeReplayActionRenderer from "./util/safeReplayActionRenderer";
 import { getSafe } from "./util/storeHelper";
@@ -484,6 +483,8 @@ async function initGlobals(): Promise<void> {
 }
 
 async function init(): Promise<ExtensionManager | null> {
+  await StyleManager.renderDefault();
+
   // extension manager initialized without store, the information about what
   // extensions are to be loaded has to be retrieved from the main process
   extensions = new ExtensionManager(undefined, eventEmitter);
@@ -515,7 +516,6 @@ async function init(): Promise<ExtensionManager | null> {
   safeReplayActionRenderer(store); // Safe IPC replay without double dispatch
   extensions.setStore(store);
   setOutdated(extensions.getApi());
-  presetManager.setApi(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log("debug", "renderer connected to store");
 
@@ -753,20 +753,6 @@ async function load(extensions: ExtensionManager): Promise<void> {
     lang: store.getState().settings.interface.language,
   });
   await changeLanguage(store.getState().settings.interface.language);
-
-  try {
-    await Promise.resolve(extensions.renderStyle());
-  } catch (err) {
-    terminate(
-      {
-        message: "failed to parse UI theme",
-        details: getErrorMessageOrDefault(err),
-      },
-      store.getState(),
-    );
-  }
-
-  presetManager.start();
 
   extensions.setUIReady();
   log("debug", "render with language", { language: i18n.language });

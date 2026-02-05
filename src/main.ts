@@ -150,10 +150,8 @@ try {
   // nop
 }
 
-import type { IPresetStep, IPresetStepCommandLine } from "./types/IPreset";
-
 import Application from "./main/Application";
-import commandLine, { relaunch } from "./util/commandLine";
+import commandLine from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
 // ensures tsc includes this dependency
 // Activate vortex-api polyfill for all extension requires as early as possible
@@ -169,7 +167,6 @@ import "./main/webview";
 import { getErrorMessage } from "./shared/errors";
 import {} from "./util/extensionRequire";
 import * as fs from "./util/fs";
-import presetManager from "./util/PresetManager";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -278,27 +275,6 @@ async function main(): Promise<void> {
   }
 
   // async code only allowed from here on out
-
-  if (
-    !presetManager.now("commandline", (step: IPresetStep): Promise<void> => {
-      (step as IPresetStepCommandLine).arguments.forEach((arg) => {
-        mainArgs[arg.key] = arg.value ?? true;
-      });
-      return Promise.resolve();
-    })
-  ) {
-    // if the first step was not a command-line instruction but we encounter one
-    // further down the preset queue, Vortex has to restart to process it.
-    // this is only relevant for the main process, if the renderer process encounters
-    // this it will have its own handler and can warn the user the restart is coming
-    presetManager.on("commandline", (): Promise<void> => {
-      // return a promise that doesn't finish
-      relaunch();
-      return new Promise(() => {
-        // nop
-      });
-    });
-  }
 
   try {
     await fs.statAsync(getVortexPath("userData"));
