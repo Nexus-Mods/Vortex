@@ -1,12 +1,12 @@
-import type ExtensionManager from "./ExtensionManager";
+import * as _ from "lodash";
+import * as React from "react";
 
 import type {
   IExtendedProps,
   IExtensibleProps,
 } from "../types/IExtensionProvider";
 
-import * as _ from "lodash";
-import * as React from "react";
+import ExtensionManager from "./ExtensionManager";
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
@@ -31,9 +31,7 @@ export function extend(
 ): <P extends IExtendedProps>(
   component: React.ComponentType<P>,
 ) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
-  const ExtensionManagerImpl: typeof ExtensionManager =
-    require("./ExtensionManager").default;
-  ExtensionManagerImpl.registerUIAPI(registerFunc.name);
+  ExtensionManager.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
 
   const updateExtensions = (props: any, context: any) => {

@@ -1591,10 +1591,10 @@ export interface IExtensionContext {
    *
    * @deprecated This is a very niche use case and modern Electron practices are explicitly
    * discouraging running code on the main process. This will be removed in future versions.
-   * 
+   *
    * If you need unrestricted NodeJS environment for your extension - use a separate NodeJS process
    * and communicate with it via IPC.
-   * 
+   *
    * If you need to run code before the renderer process is ready,
    * inform the Vortex team about your use case and we will investigate your requirements or
    * suggest alternatives.
