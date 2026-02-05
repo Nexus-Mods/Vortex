@@ -46,7 +46,7 @@ import {
   terminate,
   toError,
 } from "../util/errorHandling";
-import { validateFiles } from "../util/fileValidation";
+import { validateFiles } from "./fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import lazyRequire from "../util/lazyRequire";
