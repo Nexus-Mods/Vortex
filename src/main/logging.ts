@@ -26,9 +26,9 @@ function customFormatter(options: FormatOptions, forConsole: boolean): string {
   // https://github.com/winstonjs/winston/blob/b8baf4c6797d652f882e61a8a3bd8d00875e5596/lib/winston/config.js#L21
   const logLevel = forConsole
     ? winston.config.colorize(
-      options.level as unknown as number,
-      formattedLogLevel,
-    )
+        options.level as unknown as number,
+        formattedLogLevel,
+      )
     : formattedLogLevel;
 
   const message = options.message ?? "";
@@ -54,7 +54,9 @@ function formatLogLevel(level: string): string {
 }
 
 const timestamp = () => new Date().toISOString();
-const formatter = (options: unknown) =>
+const fileFormatter = (options: unknown) =>
+  customFormatter(options as FormatOptions, false);
+const consoleFormatter = (options: unknown) =>
   customFormatter(options as FormatOptions, true);
 
 function createFileTransport(basePath: string): winston.FileTransportInstance {
@@ -66,7 +68,7 @@ function createFileTransport(basePath: string): winston.FileTransportInstance {
     maxFiles: 5,
     tailable: true,
     timestamp: timestamp,
-    formatter: formatter,
+    formatter: fileFormatter,
   });
 }
 
@@ -78,10 +80,10 @@ function setupLogger(
 
   const consoleTransport = useConsole
     ? new winston.transports.Console({
-      level: "debug",
-      timestamp: timestamp,
-      formatter: formatter,
-    })
+        level: "debug",
+        timestamp: timestamp,
+        formatter: consoleFormatter,
+      })
     : undefined;
 
   const transports: winston.TransportInstance[] = [fileTransport];
