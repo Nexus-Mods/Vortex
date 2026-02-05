@@ -1,13 +1,14 @@
-import type { IPersistor } from "../../types/IExtensionContext";
+import type leveldownT from "leveldown";
 
 import PromiseBB from "bluebird";
 import encode from "encoding-down";
-import type leveldownT from "leveldown";
 import * as levelup from "levelup";
 
+import type { IPersistor } from "../../shared/types/state";
+
 import { unknownToError } from "../../shared/errors";
-import { DataInvalid } from "../../util/CustomErrors";
-import { log } from "../../util/log";
+import { DataInvalid } from "../../shared/types/errors";
+import { log } from "../logging";
 
 const SEPARATOR: string = "###";
 
@@ -82,7 +83,7 @@ class LevelPersist implements IPersistor {
 
   public close = this.restackingFunc((): PromiseBB<void> => {
     return new PromiseBB<void>((resolve, reject) => {
-      this.mDB.close((err) => (!!err ? reject(err) : resolve()));
+      this.mDB.close((err) => (err ? reject(err) : resolve()));
     });
   });
 

@@ -1,4 +1,12 @@
-import type { IAvailableExtension, IExtensionDownloadInfo } from "./extensions";
+import type PromiseBB from "bluebird";
+import type { IHashResult, IServer } from "modmeta-db";
+import type { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
+import type * as React from "react";
+import type * as Redux from "redux";
+import type { ComplexActionCreator } from "redux-act";
+import type { ThunkDispatch } from "redux-thunk";
+
+import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
 import type {
   GameVersionProviderFunc,
@@ -10,7 +18,6 @@ import type {
   IHistoryStack,
 } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
-
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -21,6 +28,7 @@ import type {
   IInstruction,
   InstructionType,
 } from "../extensions/mod_management/types/IInstallResult";
+import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
 import type {
   InstallFunc,
   ProgressDelegate,
@@ -29,14 +37,11 @@ import type {
   ISupportedResult,
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
-import type { Archive } from "../util/archives";
-import type { IRegisteredExtension } from "./extensions";
-import type { i18n, TFunction } from "../util/i18n";
+import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../renderer/ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
-
-import type { ICollectionsGameSupportEntry } from "./collections/api";
-
+import type { Archive } from "../util/archives";
+import type { i18n, TFunction } from "../util/i18n";
 import type {
   DialogActions,
   IDialogContent,
@@ -45,6 +50,9 @@ import type {
   IOverlayOptions,
   IPosition,
 } from "./api";
+import type { ICollectionsGameSupportEntry } from "./collections/api";
+import type { IAvailableExtension, IExtensionDownloadInfo } from "./extensions";
+import type { IRegisteredExtension } from "./extensions";
 import type { IActionOptions } from "./IActionDefinition";
 import type { IBannerOptions } from "./IBannerOptions";
 import type { DialogType, IDialogResult } from "./IDialog";
@@ -55,17 +63,6 @@ import type { INotification, INotificationAction } from "./INotification";
 import type { IDiscoveryResult, IMod, IState } from "./IState";
 import type { ITableAttribute } from "./ITableAttribute";
 import type { ITestResult } from "./ITestResult";
-
-import type PromiseBB from "bluebird";
-import type { IHashResult, IServer } from "modmeta-db";
-import type { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
-import type * as React from "react";
-import type * as Redux from "redux";
-import type { ComplexActionCreator } from "redux-act";
-import type { ThunkDispatch } from "redux-thunk";
-import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
-import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
-import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 
 export type {
   TestSupported,
@@ -83,6 +80,9 @@ export type {
   ISupportedResult,
   ProgressDelegate,
 };
+
+import type { PersistorKey, IPersistor } from "../shared/types/state";
+export type { PersistorKey, IPersistor };
 
 // tslint:disable-next-line:interface-name
 export interface ThunkStore<S> extends Redux.Store<S> {
@@ -281,27 +281,6 @@ export interface ILookupDetails {
   fileMD5?: string;
   fileSize?: number;
   gameId?: string;
-}
-
-export type PersistorKey = string[];
-
-/**
- * a persistor is used to hook a data file into the store.
- * This way any data file can be made available through the store and
- * updated through actions, as long as it can be represented in json
- *
- * @export
- * @interface IPersistor
- */
-export interface IPersistor {
-  setResetCallback(cb: () => PromiseLike<void>): void;
-  getItem(key: PersistorKey): PromiseLike<string>;
-  setItem(key: PersistorKey, value: string): PromiseLike<void>;
-  removeItem(key: PersistorKey): PromiseLike<void>;
-  getAllKeys(): PromiseLike<PersistorKey[]>;
-  getAllKVs?(
-    prefix?: string,
-  ): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
 }
 
 /**

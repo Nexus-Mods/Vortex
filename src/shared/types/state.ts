@@ -41,3 +41,21 @@ export interface PersistedState {
  * Excludes 'session' which is ephemeral and not persisted.
  */
 export type PersistedHive = keyof PersistedState;
+
+export type PersistorKey = string[];
+
+/**
+ * a persistor is used to hook a data file into the store.
+ * This way any data file can be made available through the store and
+ * updated through actions, as long as it can be represented in json
+ */
+export interface IPersistor {
+  setResetCallback(cb: () => PromiseLike<void>): void;
+  getItem(key: PersistorKey): PromiseLike<string>;
+  setItem(key: PersistorKey, value: string): PromiseLike<void>;
+  removeItem(key: PersistorKey): PromiseLike<void>;
+  getAllKeys(): PromiseLike<PersistorKey[]>;
+  getAllKVs?(
+    prefix?: string,
+  ): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
+}
