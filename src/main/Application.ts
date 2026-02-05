@@ -1,16 +1,3 @@
-import type * as permissionsT from "permissions";
-import type * as uuidT from "uuid";
-import type * as winapiT from "winapi-bindings";
-
-import type { AppInitMetadata } from "../shared/types/ipc";
-import type { IWindow } from "../types/IState";
-import type { IParameters, ISetItem } from "../util/commandLine";
-
-import type MainWindowT from "./MainWindow";
-import type SplashScreenT from "./SplashScreen";
-import type TrayIconT from "./TrayIcon";
-
-import PromiseBB from "bluebird";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
@@ -20,7 +7,12 @@ import { writeFile, rm, stat } from "node:fs/promises";
 import * as path from "path";
 import permissions from "permissions";
 import * as semver from "semver";
+import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
+
+import type { AppInitMetadata } from "../shared/types/ipc";
+import type { IWindow } from "../types/IState";
+import type { IParameters, ISetItem } from "../util/commandLine";
 
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
@@ -46,15 +38,16 @@ import {
   terminate,
   toError,
 } from "../util/errorHandling";
-import { validateFiles } from "./fileValidation";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import lazyRequire from "../util/lazyRequire";
 import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
 import { isMajorDowngrade, timeout } from "../util/util";
 import { setupMainExtensions } from "./extensions";
+import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
+import MainWindow from "./MainWindow";
+import SplashScreen from "./SplashScreen";
 import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
 import {
   initMainPersistence,
@@ -63,8 +56,8 @@ import {
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
+import TrayIcon from "./TrayIcon";
 
-const uuid = lazyRequire<typeof uuidT>(() => require("uuid"));
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
     const err = unknownToError(error);
@@ -122,8 +115,8 @@ class Application {
   private mBasePath: string;
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
-  private mMainWindow: MainWindowT;
-  private mTray: TrayIconT;
+  private mMainWindow: MainWindow;
+  private mTray: TrayIcon;
   private mAppMetadata: AppInitMetadata;
   private mFirstStart: boolean = false;
   private mStartupLogPath: string;
@@ -213,8 +206,6 @@ class Application {
   }
 
   private async startUi(): Promise<void> {
-    const MainWindow = require("./MainWindow").default;
-
     // Read window settings from persistence before creating window
     const windowSettings = await readPersistedValue<IWindow>("settings", [
       "window",
@@ -227,24 +218,24 @@ class Application {
       windowSettings,
     );
     log("debug", "creating main window");
-    return this.mMainWindow.create(null).then((webContents) => {
-      if (!webContents) {
-        return PromiseBB.reject(new Error("no web contents from main window"));
-      }
-      log("debug", "window created");
 
-      // Send app initialization metadata to renderer
-      // Renderer will dispatch Redux actions based on this
-      webContents.send("app:init", this.mAppMetadata);
+    const webContents = await this.mMainWindow.create(null);
+    if (!webContents) {
+      throw new Error("no web contents from main window");
+    }
 
-      if (didIgnoreError()) {
-        webContents.send("did-ignore-error", true);
-      }
-    });
+    log("debug", "window created");
+
+    // Send app initialization metadata to renderer
+    // Renderer will dispatch Redux actions based on this
+    webContents.send("app:init", this.mAppMetadata);
+
+    if (didIgnoreError()) {
+      webContents.send("did-ignore-error", true);
+    }
   }
 
-  private async startSplash(): Promise<SplashScreenT> {
-    const SplashScreen = require("./SplashScreen").default;
+  private async startSplash(): Promise<SplashScreen> {
     const splash = new SplashScreen();
     await splash.create(this.mArgs.disableGPU);
     setWindow(splash.getHandle());
@@ -254,18 +245,20 @@ class Application {
   private setupAppEvents(args: IParameters): void {
     app.on("window-all-closed", () => {
       log("info", "Vortex closing");
-      finalizeMainWrite().then(() => {
-        log("info", "clean application end");
-        if (this.mTray !== undefined) {
-          this.mTray.close();
-        }
-        if (this.mDeinitCrashDump !== undefined) {
-          this.mDeinitCrashDump();
-        }
-        if (process.platform !== "darwin") {
-          app.quit();
-        }
-      });
+      finalizeMainWrite()
+        .then(() => {
+          log("info", "clean application end");
+          if (this.mTray !== undefined) {
+            this.mTray.close();
+          }
+          if (this.mDeinitCrashDump !== undefined) {
+            this.mDeinitCrashDump();
+          }
+          if (process.platform !== "darwin") {
+            app.quit();
+          }
+        })
+        .catch((err: unknown) => log("error", "error finalizing write", err));
     });
 
     app.on("activate", () => {
@@ -331,7 +324,7 @@ class Application {
 
     app.on(
       "web-contents-created",
-      (event: Electron.Event, contents: Electron.WebContents) => {
+      (_event: Electron.Event, contents: Electron.WebContents) => {
         contents.on("will-attach-webview", this.attachWebView);
       },
     );
@@ -350,9 +343,9 @@ class Application {
   }
 
   private attachWebView = (
-    event: Electron.Event,
+    _event: Electron.Event,
     webPreferences: Electron.WebPreferences & { preloadURL?: string },
-    params,
+    _params,
   ) => {
     // disallow creation of insecure webviews
 
@@ -466,7 +459,7 @@ class Application {
     this.testUserEnvironment();
     await this.validateFiles();
 
-    let splash: SplashScreenT | undefined = undefined;
+    let splash: SplashScreen | undefined = undefined;
 
     if (!args.startMinimized) {
       log("debug", "showing splash screen");
@@ -529,7 +522,7 @@ class Application {
     await this.startUi();
 
     log("debug", "setting up tray icon");
-    await this.createTray();
+    this.createTray();
 
     if (splash) {
       log("debug", "removing splash screen");
@@ -614,10 +607,14 @@ class Application {
       "warnedAdmin",
     ]);
 
-    const adminResult = await timeout(PromiseBB.resolve(isAdmin()), 1000);
-    if (adminResult === undefined || !adminResult) {
-      return;
-    }
+    const timeout = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 1000);
+    });
+
+    const isAdminResult = await Promise.race([timeout, isAdmin()]);
+    if (typeof isAdminResult !== "boolean" || !isAdminResult) return;
 
     log("warn", "running as administrator");
     if ((warnedAdmin ?? 0) > 0) {
@@ -784,8 +781,7 @@ class Application {
     }
   }
 
-  private async createTray(): Promise<void> {
-    const TrayIcon = require("./TrayIcon").default;
+  private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
     this.mTray = new TrayIcon(null);
@@ -917,7 +913,7 @@ class Application {
       ]);
       if (instanceId === undefined) {
         this.mFirstStart = true;
-        const newId = uuid.v4();
+        const newId = uuidv4();
         log("debug", "first startup, generated instance id", {
           instanceId: newId,
         });
@@ -941,7 +937,7 @@ class Application {
 
   private async initDevel(): Promise<void> {
     if (process.env.NODE_ENV === "development") {
-      const { installDevelExtensions } = require("./devel") as any;
+      const { installDevelExtensions } = await import("./devel");
       await installDevelExtensions();
     }
   }
