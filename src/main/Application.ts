@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
 import type { AppInitMetadata } from "../shared/types/ipc";
-import type { IWindow } from "../types/IState";
+import type { IWindow } from "../shared/types/state";
 import type { IParameters, ISetItem } from "../util/commandLine";
 
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
@@ -21,7 +21,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
-import { currentStatePath } from "../store/store";
+import { currentStatePath } from "../shared/types/state";
 import { getApplication } from "../util/application";
 import commandLine from "../util/commandLine";
 import {
@@ -42,7 +42,7 @@ import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
-import { isMajorDowngrade, timeout } from "../util/util";
+import { isMajorDowngrade } from "../util/util";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -211,15 +211,10 @@ class Application {
       "window",
     ]);
 
-    // Create window with null store (renderer owns the store now) and initial window settings
-    this.mMainWindow = new MainWindow(
-      null,
-      this.mArgs.inspector,
-      windowSettings,
-    );
+    this.mMainWindow = new MainWindow(this.mArgs.inspector, windowSettings);
     log("debug", "creating main window");
 
-    const webContents = await this.mMainWindow.create(null);
+    const webContents = await this.mMainWindow.create();
     if (!webContents) {
       throw new Error("no web contents from main window");
     }
@@ -263,7 +258,7 @@ class Application {
 
     app.on("activate", () => {
       if (this.mMainWindow !== undefined) {
-        this.mMainWindow.create(null);
+        this.mMainWindow.create();
       }
     });
 

@@ -12,15 +12,11 @@
 
 import type { WebContents } from "electron";
 
-import type {
-  DiffOperation,
-  PersistedHive,
-  PersistedState,
-} from "../../shared/types/ipc";
+import type { PersistedHive, PersistedState } from "../../shared/types/ipc";
 import type ReduxPersistorIPC from "./ReduxPersistorIPC";
 
-import { log } from "../../util/log";
 import { betterIpcMain } from "../ipc";
+import { log } from "../logging";
 import { registerAllPersistedHives } from "./mainPersistence";
 
 /**
@@ -30,12 +26,12 @@ import { registerAllPersistedHives } from "./mainPersistence";
  */
 export function setupPersistenceIPC(persistor: ReduxPersistorIPC): void {
   // Handle incoming diff operations from renderer
-  betterIpcMain.on("persist:diff", (event, hive, operations) => {
+  betterIpcMain.on("persist:diff", (_event, hive, operations) => {
     log("debug", "Received persist:diff", {
       hive,
-      operationCount: (operations as DiffOperation[]).length,
+      operationCount: operations.length,
     });
-    persistor.applyDiffOperations(hive, operations as DiffOperation[]);
+    persistor.applyDiffOperations(hive, operations);
   });
 
   // Handle hydration request from renderer at startup

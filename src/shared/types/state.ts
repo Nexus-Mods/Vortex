@@ -59,3 +59,24 @@ export interface IPersistor {
     prefix?: string,
   ): PromiseLike<Array<{ key: PersistorKey; value: string }>>;
 }
+
+export interface IPosition {
+  x: number;
+  y: number;
+}
+
+export interface IDimensions {
+  height: number;
+  width: number;
+}
+
+export interface IWindow {
+  maximized: boolean;
+  position?: IPosition;
+  size: IDimensions;
+  tabsMinimized: boolean;
+  customTitlebar: boolean;
+  minimizeToTray: boolean;
+}
+
+export const currentStatePath = "state.v2";

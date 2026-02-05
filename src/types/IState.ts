@@ -20,43 +20,8 @@ import type { VortexInstallType } from "./VortexInstallType";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
-
-/**
- * interface to represent a position on the screen
- *
- * @export
- * @interface IPosition
- */
-export interface IPosition {
-  x: number;
-  y: number;
-}
-
-/**
- * interface to represent pixel-dimensions on the screen
- *
- * @export
- * @interface IDimensions
- */
-export interface IDimensions {
-  height: number;
-  width: number;
-}
-
-/**
- * interface for window state
- *
- * @export
- * @interface IWindow
- */
-export interface IWindow {
-  maximized: boolean;
-  position?: IPosition;
-  size: IDimensions;
-  tabsMinimized: boolean;
-  customTitlebar: boolean;
-  minimizeToTray: boolean;
-}
+import type { IDimensions, IPosition, IWindow } from "../shared/types/state";
+export type { IDimensions, IPosition, IWindow };
 
 /**
  * state regarding all manner of user interaction

@@ -10,8 +10,8 @@ import * as fs from "../util/fs";
 import { writeFileAtomic } from "../util/fsAtomic";
 import getVortexPath from "../util/getVortexPath";
 import { log } from "../util/log";
+export { currentStatePath } from "../shared/types/state";
 
-export const currentStatePath = "state.v2";
 export const FULL_BACKUP_PATH = "state_backups_full";
 
 export async function createFullStateBackup(

@@ -1,25 +1,18 @@
-import type * as Redux from "redux";
-
-import { app, ipcMain, screen, webContents } from "electron";
-import { BrowserWindow } from "electron";
+import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import type { ThunkStore } from "../types/IExtensionContext";
-import type { IState, IWindow } from "../types/IState";
-import type * as storeHelperT from "../util/storeHelper";
+import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
 
-import { addNotification } from "../actions/notifications";
 import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
-import getVortexPath from "./getVortexPath";
 import opn from "../util/opn";
-import { downloadPath } from "../util/selectors";
 import { parseBool } from "../util/util";
-import { closeAllViews } from "./webview";
+import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
+import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
 const REQUEST_HEADER_FILTER = {
@@ -76,7 +69,6 @@ class MainWindow {
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
   private mInspector: boolean;
-  private mStore: Redux.Store<IState> | null;
   private mInitialWindowSettings: IWindow | null = null;
 
   /**
@@ -86,12 +78,7 @@ class MainWindow {
    * @param inspector - Whether to open dev tools
    * @param windowSettings - Optional initial window settings (from persistence)
    */
-  constructor(
-    store: Redux.Store<IState> | null,
-    inspector: boolean,
-    windowSettings?: IWindow,
-  ) {
-    this.mStore = store;
+  constructor(inspector: boolean, windowSettings?: IWindow) {
     this.mInspector = inspector === true;
     this.mInitialWindowSettings = windowSettings ?? null;
 
@@ -121,21 +108,14 @@ class MainWindow {
     }
   }
 
-  public create(
-    store: ThunkStore<IState> | null,
-  ): Promise<Electron.WebContents | undefined> {
+  public create(): Promise<Electron.WebContents | undefined> {
     if (this.mWindow !== null) {
       return Promise.resolve(undefined);
     }
 
-    const BrowserWindow: typeof Electron.BrowserWindow =
-      require("electron").BrowserWindow;
-
-    // Use store state if available, otherwise fall back to initial window settings
-    const windowMetrics =
-      store?.getState()?.settings?.window ?? this.mInitialWindowSettings;
-
-    this.mWindow = new BrowserWindow(this.getWindowSettings(windowMetrics));
+    this.mWindow = new BrowserWindow(
+      this.getWindowSettings(this.mInitialWindowSettings),
+    );
 
     this.mWindow
       .loadURL(
@@ -189,16 +169,6 @@ class MainWindow {
           reason: details.reason,
         });
         if (details.reason !== "killed") {
-          // In the new architecture where store is in renderer, we can't dispatch here.
-          // The crash recovery notification will be handled by the renderer on reload.
-          if (store !== null) {
-            store.dispatch(
-              addNotification({
-                type: "error",
-                message: "Vortex restarted after a crash, sorry about that.",
-              }),
-            );
-          }
           // workaround for electron issue #19887
           setImmediate(() => {
             process.env.CRASH_REPORTING =
@@ -217,7 +187,7 @@ class MainWindow {
 
     this.mWindow.webContents.on(
       "did-fail-load",
-      (evt, code, description, url) => {
+      (_evt, code, description, url) => {
         log("error", "failed to load page", { code, description, url });
       },
     );
@@ -260,10 +230,7 @@ class MainWindow {
       // we'll do the work in the renderer
       if (item.getURL().startsWith("blob:")) {
         // Get download path from store if available, otherwise use system temp
-        const dlPath =
-          this.mStore !== null
-            ? downloadPath(this.mStore.getState())
-            : require("electron").app.getPath("temp");
+        const dlPath = app.getPath("temp");
         item.setSavePath(path.join(dlPath, item.getFilename() + ".tmp"));
         item.once("done", () => {
           signalUrl(item);
@@ -396,34 +363,25 @@ class MainWindow {
   private getWindowSettings(
     windowMetrics: IWindow | null | undefined,
   ): Electron.BrowserWindowConstructorOptions {
-    const { getSafe } = require("../util/storeHelper") as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
     const width = Math.max(
       1024,
-      getSafe(
-        windowMetrics,
-        ["size", "width"],
-        Math.floor(screenArea.width * 0.8),
-      ),
+      windowMetrics?.size?.width ?? Math.floor(screenArea.width * 0.8),
     );
     const height = Math.max(
       MIN_HEIGHT,
-      getSafe(
-        windowMetrics,
-        ["size", "height"],
-        Math.floor(screenArea.height * 0.8),
-      ),
+      windowMetrics?.size?.height ?? Math.floor(screenArea.height * 0.8),
     );
     return {
       width,
       height,
       minWidth: 1024,
       minHeight: MIN_HEIGHT,
-      x: getSafe(windowMetrics, ["position", "x"], undefined),
-      y: getSafe(windowMetrics, ["position", "y"], undefined),
+      x: windowMetrics?.position?.x ?? undefined,
+      y: windowMetrics?.position?.y ?? undefined,
       backgroundColor: "#fff",
       autoHideMenuBar: true,
-      frame: !getSafe(windowMetrics, ["customTitlebar"], true),
+      frame: !(windowMetrics?.customTitlebar ?? true),
       show: false,
       title: "Vortex",
       titleBarStyle:

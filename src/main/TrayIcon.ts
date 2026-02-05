@@ -1,10 +1,12 @@
-import type { IExtensionApi } from "../types/api";
-import getVortexPath from "./getVortexPath";
-import { log } from "../util/log";
-
 import type { BrowserWindow } from "electron";
+
 import { app, Menu, Tray } from "electron";
 import * as path from "path";
+
+import type { IExtensionApi } from "../types/api";
+
+import getVortexPath from "./getVortexPath";
+import { log } from "./logging";
 
 /**
  * Manages the tray icon and its interactions.
@@ -34,7 +36,7 @@ class TrayIcon {
     );
     try {
       this.initTrayIcon();
-    } catch (err) {
+    } catch {
       // This appears to be caused by a bug in electron. It happens randomly,
       // very rarely and the error message looks like it's entirely internal
       setTimeout(() => {
