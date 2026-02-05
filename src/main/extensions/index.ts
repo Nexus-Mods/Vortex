@@ -6,9 +6,9 @@
  */
 
 import { betterIpcMain } from "../ipc";
-import { initUpdater } from "./updater";
-import { initNexusIntegration } from "./nexusIntegration";
 import { log } from "../logging";
+import { initNexusIntegration } from "./nexusIntegration";
+import { initUpdater } from "./updater";
 
 let initialized = false;
 

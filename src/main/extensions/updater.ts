@@ -3,9 +3,9 @@
  * Handles auto-update functionality in the main process
  */
 
-import { setupAutoUpdater } from "./autoupdater";
-import { log } from "../logging";
 import { getErrorMessageOrDefault } from "../../shared/errors";
+import { log } from "../logging";
+import { setupAutoUpdater } from "./autoupdater";
 
 /**
  * Initialize the updater in the main process.

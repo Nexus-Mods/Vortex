@@ -3,9 +3,10 @@
  * Handles main process tasks for Nexus integration
  */
 
-import * as fs from "../../util/fs";
-import * as path from "path";
-import getVortexPath from "../../util/getVortexPath";
+import fs from "node:fs";
+import path from "node:path";
+
+import getVortexPath from "../getVortexPath";
 import { log } from "../logging";
 
 /**
@@ -20,10 +21,10 @@ export function initNexusIntegration(): void {
 
     // Remove log file if it's from a different day
     if (stat.mtime.getUTCDate() !== now.getUTCDate()) {
-      fs.removeSync(logPath);
+      fs.rmSync(logPath);
       log("debug", "Removed old nexus request log");
     }
-  } catch (err) {
+  } catch {
     // Silently ignore errors (file might not exist yet)
   }
 
