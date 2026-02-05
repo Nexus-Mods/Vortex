@@ -4,20 +4,20 @@
   <id>com.nexusmods.vortex</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  
+
   <name>Vortex</name>
   <summary>Mod manager for PC games</summary>
-  
+
   <!-- TODO: Placeholder text. Adapted from README by LLM. -->
   <description>
     <p>
-      Vortex is the open-source mod manager from Nexus Mods. It is designed to make modding 
-      your game as simple as possible for new users, while still providing enough control 
+      Vortex is the open-source mod manager from Nexus Mods. It is designed to make modding
+      your game as simple as possible for new users, while still providing enough control
       for more experienced veterans of the modding scene.
     </p>
     <p>
-      Vortex takes complex tasks such as sorting your load order or managing your mod files 
-      and automates as much of the process as possible, with the goal of achieving a stable 
+      Vortex takes complex tasks such as sorting your load order or managing your mod files
+      and automates as much of the process as possible, with the goal of achieving a stable
       modded game with minimal effort. Spend less time modding and more time playing your games.
     </p>
     <p>Features:</p>
@@ -31,17 +31,18 @@
       <li>Extension framework for community plugins</li>
     </ul>
   </description>
-  
+
   <developer id="com.nexusmods">
     <name>Black Tree Gaming Ltd.</name>
   </developer>
-  
+
   <url type="homepage">https://www.nexusmods.com/about/vortex/</url>
   <url type="bugtracker">https://github.com/Nexus-Mods/Vortex/issues</url>
   <url type="faq">https://github.com/Nexus-Mods/Vortex/wiki</url>
   <url type="help">https://wiki.nexusmods.com/index.php/Category:Vortex</url>
   <url type="vcs-browser">https://github.com/Nexus-Mods/Vortex</url>
-  
+
+  <!-- Content rating generated using OARS: https://hughsie.github.io/oars/generate.html -->
   <content_rating type="oars-1.1">
     <content_attribute id="violence-cartoon">none</content_attribute>
     <content_attribute id="violence-fantasy">none</content_attribute>
@@ -63,8 +64,8 @@
     <content_attribute id="language-profanity">none</content_attribute>
     <content_attribute id="language-humor">none</content_attribute>
     <content_attribute id="language-discrimination">none</content_attribute>
-    <content_attribute id="social-chat">intense</content_attribute>
-    <content_attribute id="social-info">intense</content_attribute>
+    <content_attribute id="social-chat">none</content_attribute>
+    <content_attribute id="social-info">moderate</content_attribute>
     <content_attribute id="social-audio">none</content_attribute>
     <content_attribute id="social-location">none</content_attribute>
     <content_attribute id="social-contacts">none</content_attribute>
@@ -74,12 +75,12 @@
     <content_attribute id="money-purchasing">none</content_attribute>
     <content_attribute id="money-gambling">none</content_attribute>
   </content_rating>
-  
+
   <categories>
     <category>Game</category>
     <category>Utility</category>
   </categories>
-  
+
   <keywords>
     <keyword>mods</keyword>
     <keyword>modding</keyword>
@@ -89,26 +90,34 @@
     <keyword>skyrim</keyword>
     <keyword>fallout</keyword>
   </keywords>
-  
+
   <recommends>
     <control>keyboard</control>
     <control>pointing</control>
   </recommends>
-  
+
   <provides>
     <binary>vortex</binary>
     <mediatype>x-scheme-handler/nxm</mediatype>
   </provides>
-  
+
   <launchable type="desktop-id">com.nexusmods.vortex.desktop</launchable>
-  
+
   <screenshots>
     <screenshot type="default">
       <caption>Vortex main interface showing installed mods</caption>
     </screenshot>
   </screenshots>
-  
+
   <requires>
     <display_length compare="ge">1024</display_length>
   </requires>
+
+  <releases>
+    <release version="0.0.1" date="2026-02-05">
+      <description>
+        <p>Development build</p>
+      </description>
+    </release>
+  </releases>
 </component>

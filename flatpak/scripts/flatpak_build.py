@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
+from update_metainfo_version import update_metainfo_version
 
 
 def main() -> None:
@@ -40,6 +41,9 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_venv(install_packages=False)
+
+    # Update metainfo version from package.json
+    update_metainfo_version(repo_root())
 
     if shutil.which("flatpak-builder") is None:
         print("flatpak-builder not found on PATH.")
