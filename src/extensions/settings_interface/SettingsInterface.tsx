@@ -14,6 +14,8 @@ import {
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
+import { getPreloadApi } from "../..//util/preloadAccess";
+
 import type {
   DialogActions,
   DialogType,
@@ -467,7 +469,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       //  bug reports.
       onSetStartMinimized(false);
     }
-    window.api.app.setLoginItemSettings({
+    const api = getPreloadApi();
+    api.app.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: startOnBoot ? (startMinimized ? ["--start-minimized"] : []) : [],
@@ -478,7 +481,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     const { autoStart, startMinimized, onSetStartMinimized } = this.props;
     const isMinimized = !startMinimized === true;
     onSetStartMinimized(isMinimized);
-    window.api.app.setLoginItemSettings({
+    const api = getPreloadApi();
+    api.app.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: isMinimized ? ["--start-minimized"] : [],
