@@ -1,16 +1,14 @@
-import { mdiPlay } from "@mdi/js";
-import React, { useRef, useState, type FC, useLayoutEffect } from "react";
+import React, { useState, type FC, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../../actions/session";
-import { Button } from "../../../../tailwind/components/next/button";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { usePagesContext, useWindowContext } from "../../../contexts";
 import { useSpineContext } from "../SpineContext";
 import { getIconPath } from "./iconMap";
 import { MenuButton } from "./MenuButton";
-import { ToolButton } from "./ToolButton";
+import { ToolsSection } from "./ToolsSection";
 
 export const Menu: FC = () => {
   const { t } = useTranslation();
@@ -22,6 +20,7 @@ export const Menu: FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useLayoutEffect(() => {
+    // eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), 150);
 
@@ -53,41 +52,7 @@ export const Menu: FC = () => {
         ))}
       </div>
 
-      <div
-        className={joinClasses([
-          "flex flex-col items-center gap-y-1.5 rounded-md bg-surface-low py-1.5 transition-[width,padding]",
-          menuIsCollapsed ? "w-10 px-0.5" : "w-50 px-1.5",
-        ])}
-      >
-        <div
-          className={joinClasses([
-            "flex flex-wrap items-center gap-1.5 transition-[translate,opacity]",
-            menuIsCollapsed ? "w-8" : "w-46",
-            isAnimating ? "translate-y-6 opacity-0 duration-0" : "duration-200",
-          ])}
-        >
-          {[1, 2, 3, 4, 5].map((index) => (
-            <ToolButton
-              imageSrc={
-                index % 2
-                  ? "https://images.nexusmods.com/images/games/v2/3333/thumbnail.jpg"
-                  : "https://images.nexusmods.com/images/games/v2/1151/thumbnail.jpg"
-              }
-              key={index}
-              title={`Tool ${index}`}
-            />
-          ))}
-        </div>
-
-        <Button
-          buttonType="secondary"
-          className="w-full transition-all"
-          filled="strong"
-          leftIconPath={mdiPlay}
-        >
-          {!menuIsCollapsed ? "Play" : undefined}
-        </Button>
-      </div>
+      <ToolsSection isAnimating={isAnimating} />
     </div>
   );
 };

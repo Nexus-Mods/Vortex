@@ -10,7 +10,6 @@ import { Icon } from "../../../../tailwind/components/next/icon";
 import { Typography } from "../../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { useSpineContext } from "../SpineContext";
-import { SpineButton } from "./SpineButton";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
   "init",
