@@ -160,12 +160,14 @@ These dependencies are only required if you are building the Flatpak package.
 
 - `flatpak`
 - `flatpak-builder`
+- `appstream` (for AppStream metadata validation - `appstreamcli`)
 
 ### Example installs (Linux)
 
-- Ubuntu/Debian: `sudo apt install flatpak flatpak-builder`
-- Fedora: `sudo dnf install flatpak flatpak-builder`
-- Arch: `sudo pacman -S flatpak flatpak-builder`
+- Ubuntu/Debian: `sudo apt install flatpak flatpak-builder appstream`
+- Fedora: `sudo dnf install flatpak flatpak-builder appstream`
+- Arch: `sudo pacman -S flatpak flatpak-builder appstream`
+- NixOS: Included in `nix develop` (via `flake.nix`)
 
 > [!note]
 > There is an additional Python-based dependency `flatpak-node-generator`, but the scripts in `flatpak/scripts/` automatically install it for you. The Flathub remote is also added automatically if missing.

@@ -20,6 +20,7 @@
             # Flatpak tooling
             flatpak
             flatpak-builder
+            appstream
 
             # Python with setuptools for node-gyp (distutils removed in Python 3.12+)
             (python3.withPackages (ps: [ ps.setuptools ]))

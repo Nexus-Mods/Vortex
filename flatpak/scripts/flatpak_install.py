@@ -106,11 +106,30 @@ def main() -> None:
         return
 
     # Export to local repo
-    print(f"Exporting {args.app_id} to local repo...")
-    export_cmd = ["flatpak-builder"]
-    if not args.no_clean:
-        export_cmd.append("--force-clean")
-    export_cmd.extend(["--repo", str(repo_dir), str(build_dir), str(manifest)])
+    if args.no_clean:
+        # Use flatpak build-export to export existing build without rebuilding
+        print(f"Exporting {args.app_id} from existing build...")
+        if not build_dir.exists():
+            print(f"Error: Build directory {build_dir} does not exist.")
+            print("Run without --no-clean to perform initial build.")
+            raise SystemExit(1)
+        export_cmd = [
+            "flatpak",
+            "build-export",
+            str(repo_dir),
+            str(build_dir),
+        ]
+    else:
+        # Use flatpak-builder to build and export
+        print(f"Building and exporting {args.app_id} to local repo...")
+        export_cmd = [
+            "flatpak-builder",
+            "--force-clean",
+            "--repo",
+            str(repo_dir),
+            str(build_dir),
+            str(manifest),
+        ]
     run_command(export_cmd, cwd=root)
 
     # Uninstall if reinstalling
@@ -123,12 +142,16 @@ def main() -> None:
 
     # Add repo as remote
     print(f"Adding local repo as remote '{args.remote_name}'...")
+    # Remove existing remote if it exists to avoid caching issues
+    subprocess.run(
+        ["flatpak", "remote-delete", "--user", args.remote_name],
+        capture_output=True,
+    )
     subprocess.run(
         [
             "flatpak",
             "remote-add",
             "--user",
-            "--if-not-exists",
             "--no-gpg-verify",
             args.remote_name,
             str(repo_dir),

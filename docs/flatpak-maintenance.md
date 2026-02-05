@@ -27,6 +27,16 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 | `flatpak_install.py` | Export to a local repo, install the app (appears in KDE Discover, etc.) |
 | `flatpak_bundle.py`  | Export to a local repo and create a `.flatpak` bundle                   |
 
+> [!tip] Reusing builds
+> By default, scripts do clean builds (delete and rebuild). Use `--no-clean` to reuse existing builds and save time during iterative development:
+>
+> ```bash
+> python3 flatpak/scripts/flatpak_build.py --no-clean
+> python3 flatpak/scripts/flatpak_install.py --no-clean
+> ```
+>
+> `flatpak_run.py` never rebuilds—it always runs the existing build.
+
 ## Typical Workflow
 
 **1. Regenerate sources** (whenever `yarn.lock` changes):
