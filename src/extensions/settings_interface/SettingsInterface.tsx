@@ -14,8 +14,6 @@ import {
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
-import { getPreloadApi } from "../..//util/preloadAccess";
-
 import type {
   DialogActions,
   DialogType,
@@ -29,6 +27,7 @@ import type {
   IExtensionDownloadInfo,
 } from "../extension_manager/types";
 
+import { getPreloadApi } from "../..//util/preloadAccess";
 import { showDialog } from "../../actions/notifications";
 import { resetSuppression } from "../../actions/notificationSettings";
 import { setCustomTitlebar } from "../../actions/window";
