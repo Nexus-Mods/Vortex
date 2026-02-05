@@ -1,4 +1,4 @@
-import type { IPersistor, PersistorKey } from "../../types/IExtensionContext";
+import type { IPersistor, PersistorKey } from "../../shared/types/state";
 
 class SubPersistor implements IPersistor {
   public getAllKVs:
