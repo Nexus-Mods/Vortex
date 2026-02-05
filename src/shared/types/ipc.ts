@@ -313,8 +313,8 @@ export type TypedArray =
   | BigInt64Array
   | BigUint64Array;
 
-/** Represents all IPC-safe types */
-export type Serializable =
+/** Represents all IPC-safe primitives */
+type SerializablePrimitive =
   | string
   | number
   | bigint
@@ -323,14 +323,16 @@ export type Serializable =
   | undefined
   | void
   | Date
-  | Serializable[]
-  | { [key: string]: Serializable }
-  | Map<Serializable, Serializable>
-  | Set<Serializable>
   | ArrayBuffer
   | SharedArrayBuffer
   | DataView
   | TypedArray;
+
+/** Represents all IPC-safe types */
+export type Serializable =
+  | SerializablePrimitive
+  | Serializable[]
+  | { [key: string]: Serializable };
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
