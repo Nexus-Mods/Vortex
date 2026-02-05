@@ -24,3 +24,106 @@ export const getGameImageUrl = (
 
   return undefined;
 };
+
+// Pool of emojis for profile identification
+const PROFILE_EMOJIS = [
+  "🎮",
+  "🎯",
+  "🎲",
+  "🎨",
+  "🎭",
+  "🎪",
+  "🎺",
+  "🎸",
+  "🎹",
+  "🎼",
+  "🎵",
+  "🎬",
+  "🎤",
+  "🎧",
+  "🎩",
+  "🎪",
+  "⚔️",
+  "🏹",
+  "🛡️",
+  "🗡️",
+  "🪓",
+  "🔨",
+  "⚒️",
+  "🔧",
+  "⚡",
+  "🔥",
+  "💧",
+  "❄️",
+  "🌟",
+  "⭐",
+  "✨",
+  "💫",
+  "🌙",
+  "☀️",
+  "🌈",
+  "🌸",
+  "🌺",
+  "🌻",
+  "🌹",
+  "🌷",
+  "🍀",
+  "🌿",
+  "🌲",
+  "🌳",
+  "🌴",
+  "🌵",
+  "🌾",
+  "🌱",
+  "🐉",
+  "🐲",
+  "🦄",
+  "🦅",
+  "🦉",
+  "🦊",
+  "🐺",
+  "🦁",
+  "🐯",
+  "🐻",
+  "🐼",
+  "🐨",
+  "🐸",
+  "🐢",
+  "🦎",
+  "🐍",
+  "👑",
+  "💎",
+  "🔮",
+  "🎁",
+  "🏆",
+  "🥇",
+  "🥈",
+  "🥉",
+];
+
+/**
+ * Simple string hash function for deterministic emoji selection
+ */
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
+/**
+ * Gets a deterministic emoji from the profile emoji pool based on a seed
+ * If no seed is provided, returns a random emoji
+ */
+export const getRandomProfileEmoji = (seed?: string): string => {
+  if (seed !== undefined) {
+    const hash = hashString(seed);
+    const index = hash % PROFILE_EMOJIS.length;
+    return PROFILE_EMOJIS[index];
+  }
+  const randomIndex = Math.floor(Math.random() * PROFILE_EMOJIS.length);
+  return PROFILE_EMOJIS[randomIndex];
+};

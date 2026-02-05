@@ -40,6 +40,7 @@ import {
   setProgress,
   setUIBlocker,
 } from "../../actions/session";
+import { getRandomProfileEmoji } from "../../renderer/views/components/Spine/utils";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,
@@ -1101,6 +1102,27 @@ function init(context: IExtensionContext): boolean {
     const store = context.api.store;
 
     addDescriptionFeature();
+
+    // Assign deterministic emojis to profiles that don't have one
+    const state: IState = store.getState();
+    const profiles = state.persistent.profiles;
+    const updates: IProfile[] = [];
+
+    Object.values(profiles).forEach((profile: IProfile) => {
+      if (profile.emoji === undefined) {
+        updates.push({
+          ...profile,
+          emoji: getRandomProfileEmoji(profile.id),
+        });
+      }
+    });
+
+    if (updates.length > 0) {
+      batchDispatch(
+        store,
+        updates.map((profile) => setProfile(profile)),
+      );
+    }
 
     context.api.events.on("activate-game", (gameId: string) => {
       activateGame(store, gameId);

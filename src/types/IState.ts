@@ -380,7 +380,10 @@ export interface IState {
     downloads: IStateDownloads;
     categories: { [gameId: string]: ICategoryDictionary };
     gameMode: IStateGameMode;
-    deployment: { needToDeploy: { [gameId: string]: boolean } };
+    deployment: {
+      needToDeploy: { [gameId: string]: boolean };
+      lastDeployedProfile: { [gameId: string]: string };
+    };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
   };

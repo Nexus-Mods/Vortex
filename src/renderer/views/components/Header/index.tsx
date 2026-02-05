@@ -27,14 +27,16 @@ export const Header: FC = () => {
   const knownGames = useSelector(
     (state: IState) => state.session.gameMode.known,
   );
+  const profiles = useSelector((state: IState) => state.persistent.profiles);
 
   const title = useMemo(() => {
     if (selection.type === "home") {
       return t("Home");
     }
-    const game = knownGames.find((g) => g.id === selection.gameId);
+    const profile = profiles[selection.profileId];
+    const game = knownGames.find((g) => g.id === profile?.gameId);
     return game?.name ?? t("Home");
-  }, [selection, knownGames, t]);
+  }, [selection, knownGames, profiles, t]);
 
   const handleToggleMenu = useCallback(() => {
     setMenuIsCollapsed((prev) => !prev);

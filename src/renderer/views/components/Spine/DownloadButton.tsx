@@ -136,7 +136,8 @@ export const DownloadButton: FC = () => {
   const { selection } = useSpineContext();
 
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const targetPage = selection.type === "game" ? "game-downloads" : "Downloads";
+  const targetPage =
+    selection.type === "profile" ? "game-downloads" : "Downloads";
   const isActive = mainPage === targetPage;
 
   const { isDownloading, isPaused, progress, speedMBps, estimatedMins } =

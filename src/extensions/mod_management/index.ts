@@ -75,7 +75,10 @@ import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
-import { deploymentReducer } from "./reducers/deployment";
+import {
+  deploymentReducer,
+  setLastDeployedProfile,
+} from "./reducers/deployment";
 import { modsReducer } from "./reducers/mods";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
@@ -1649,6 +1652,14 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on("mods-enabled", onModsEnabled(api, deploymentTimer));
+
+  api.events.on("mods-did-deploy", (profileId: string) => {
+    const state = api.getState();
+    const profile = state.persistent.profiles[profileId];
+    if (profile !== undefined) {
+      api.store.dispatch(setLastDeployedProfile(profile.gameId, profile.id));
+    }
+  });
 
   api.events.on("gamemode-activated", (newMode: string) =>
     onGameModeActivated(api, getAllActivators(), newMode),

@@ -21,13 +21,13 @@ import { useMainContext, usePagesContext } from "../../contexts";
 
 export type SpineSelection =
   | { type: "home" }
-  | { type: "game"; gameId: string };
+  | { type: "profile"; profileId: string };
 
 interface ISpineContext {
   selection: SpineSelection;
   visiblePages: IMainPage[];
   selectHome: () => void;
-  selectGame: (gameId: string) => void;
+  selectProfile: (profileId: string) => void;
 }
 
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
@@ -37,23 +37,16 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();
 
-  const lastActiveProfile = useSelector(
-    (state: IState) => state.settings.profiles.lastActiveProfile,
-  );
   const activeProfileId = useSelector(
     (state: IState) => state.settings.profiles.activeProfileId,
   );
-  const activeGameId = useSelector((state: IState) => {
-    if (activeProfileId === undefined) return undefined;
-    return state.persistent.profiles[activeProfileId]?.gameId;
-  });
 
   const selection: SpineSelection = useMemo(() => {
-    if (activeGameId !== undefined) {
-      return { type: "game", gameId: activeGameId };
+    if (activeProfileId !== undefined) {
+      return { type: "profile", profileId: activeProfileId };
     }
     return { type: "home" };
-  }, [activeGameId]);
+  }, [activeProfileId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -63,8 +56,8 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // activeGameId is included as dependency to re-filter when game changes
-  // since page.visible() checks often depend on the active game
+  // activeProfileId is included as dependency to re-filter when profile changes
+  // since page.visible() checks often depend on the active profile
   const homePages = useMemo(
     () =>
       mainPages.filter(
@@ -73,7 +66,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
           page.group !== "hidden" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId],
+    [mainPages, isPageVisible, activeProfileId],
   );
 
   const gamePages = useMemo(
@@ -81,7 +74,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
       mainPages.filter(
         (page) => page.group === "per-game" && isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId],
+    [mainPages, isPageVisible, activeProfileId],
   );
 
   const defaultHomePage = homePages[0]?.id;
@@ -90,7 +83,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const visiblePages = selection.type === "home" ? homePages : gamePages;
 
   useEffect(() => {
-    if (selection.type === "game" && defaultGamePage !== undefined) {
+    if (selection.type === "profile" && defaultGamePage !== undefined) {
       dispatch(setOpenMainPage(defaultGamePage, false));
     }
   }, []);
@@ -104,11 +97,10 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     batchDispatch(api.store, actions);
   }, [activeProfileId, api.store, defaultHomePage]);
 
-  const selectGame = useCallback(
-    (gameId: string) => {
+  const selectProfile = useCallback(
+    (profileId: string) => {
       if (defaultGamePage === undefined) return;
-      const profileId = lastActiveProfile[gameId];
-      if (profileId !== undefined && profileId !== activeProfileId) {
+      if (profileId !== activeProfileId) {
         // Profile needs to change - wait for activation before navigating
         dispatch(setNextProfile(profileId));
         api?.events.once("profile-did-change", () => {
@@ -119,12 +111,12 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
         dispatch(setOpenMainPage(defaultGamePage, false));
       }
     },
-    [lastActiveProfile, activeProfileId, dispatch, api, defaultGamePage],
+    [activeProfileId, dispatch, api, defaultGamePage],
   );
 
   const value = useMemo(
-    () => ({ selection, visiblePages, selectHome, selectGame }),
-    [selection, visiblePages, selectHome, selectGame],
+    () => ({ selection, visiblePages, selectHome, selectProfile }),
+    [selection, visiblePages, selectHome, selectProfile],
   );
 
   return (

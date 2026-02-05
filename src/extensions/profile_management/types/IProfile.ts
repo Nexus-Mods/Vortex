@@ -11,4 +11,5 @@ export interface IProfile {
   lastActivated: number;
   pendingRemove?: boolean;
   features?: { [featureId: string]: any };
+  emoji?: string;
 }

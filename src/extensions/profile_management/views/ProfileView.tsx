@@ -25,6 +25,8 @@ import { setFeature, setProfile } from "../actions/profiles";
 import { setNextProfile } from "../actions/settings";
 import type { IProfile } from "../types/IProfile";
 import type { IProfileFeature } from "../types/IProfileFeature";
+
+import { getRandomProfileEmoji } from "../../../renderer/views/components/Spine/utils";
 import { profilePath, removeProfile } from "../util/manage";
 
 import ProfileEdit from "./ProfileEdit";
@@ -332,7 +334,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { onAddProfile } = this.props;
     if (profile.id === "__new") {
       const newId: string = shortid();
-      const newProf: IProfile = update(profile, { id: { $set: newId } });
+      const emoji = profile.emoji ?? getRandomProfileEmoji(newId);
+      const newProf: IProfile = update(profile, {
+        id: { $set: newId },
+        emoji: { $set: emoji },
+      });
       fs.ensureDirAsync(profilePath(newProf)).then(() => {
         onAddProfile(newProf);
       });
@@ -367,6 +373,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { onAddProfile, profiles } = this.props;
     const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
+    newProfile.emoji = getRandomProfileEmoji(newProfile.id);
     fs.ensureDirAsync(profilePath(profiles[profileId]))
       .then(() =>
         fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)),
