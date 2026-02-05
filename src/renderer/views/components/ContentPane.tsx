@@ -10,7 +10,7 @@ export const ModernContentPane: FC = () => {
   const { renderPage } = usePageRendering();
 
   return (
-    <div className="grow overflow-auto rounded-lg bg-surface-low p-3">
+    <div className="grow overflow-hidden rounded-lg bg-surface-low p-3">
       <DNDContainer
         style={{
           display: "flex",
