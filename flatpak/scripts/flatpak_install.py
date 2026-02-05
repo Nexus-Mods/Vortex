@@ -10,6 +10,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from _flatpak_build_utils import refresh_metadata_in_build
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
 
 
@@ -51,9 +52,9 @@ def main() -> None:
         help="Flatpak app id (default: com.nexusmods.vortex)",
     )
     parser.add_argument(
-        "--no-clean",
+        "--skip-build",
         action="store_true",
-        help="Do not pass --force-clean when exporting",
+        help="Export from existing build without rebuilding",
     )
     parser.add_argument(
         "--reinstall",
@@ -106,13 +107,16 @@ def main() -> None:
         return
 
     # Export to local repo
-    if args.no_clean:
-        # Use flatpak build-export to export existing build without rebuilding
-        print(f"Exporting {args.app_id} from existing build...")
+    if args.skip_build:
+        # Update metainfo and export existing build without rebuilding
+        print(f"Updating metainfo and exporting {args.app_id} from existing build...")
         if not build_dir.exists():
             print(f"Error: Build directory {build_dir} does not exist.")
-            print("Run without --no-clean to perform initial build.")
+            print("Run without --skip-build to perform initial build.")
             raise SystemExit(1)
+
+        refresh_metadata_in_build(build_dir, repo_dir)
+
         export_cmd = [
             "flatpak",
             "build-export",

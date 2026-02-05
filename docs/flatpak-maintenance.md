@@ -27,55 +27,74 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 | `flatpak_install.py` | Export to a local repo, install the app (appears in KDE Discover, etc.) |
 | `flatpak_bundle.py`  | Export to a local repo and create a `.flatpak` bundle                   |
 
-> [!tip] Reusing builds
-> By default, scripts do clean builds (delete and rebuild). Use `--no-clean` to reuse existing builds and save time during iterative development:
->
-> ```bash
-> python3 flatpak/scripts/flatpak_build.py --no-clean
-> python3 flatpak/scripts/flatpak_install.py --no-clean
-> ```
->
-> `flatpak_run.py` never rebuilds—it always runs the existing build.
+## Typical Workflows
 
-## Typical Workflow
+### First-time Setup
 
-**1. Regenerate sources** (whenever `yarn.lock` changes):
+Regenerate sources (whenever `yarn.lock` changes):
 
 ```bash
 python3 flatpak/scripts/flatpak_sources.py
 ```
 
-**2. Build:**
+### Development Iteration
+
+**Quick test (fastest, no install):**
 
 ```bash
 python3 flatpak/scripts/flatpak_build.py
-```
-
-**3. Test (quick development testing):**
-
-```bash
 python3 flatpak/scripts/flatpak_run.py
 ```
 
-This runs the app directly without installing, using `flatpak-builder --run`.
+**UX testing (appears in Discover, GNOME Software):**
 
-**4. Install for UX testing (optional):**
+Builds and installs the app (it will appear in software centers like KDE Discover):
 
 ```bash
 python3 flatpak/scripts/flatpak_install.py
+# Optionally run immediately: python3 flatpak/scripts/flatpak_install.py --run
 ```
 
-This exports to a local repo (`flatpak/flatpak-repo/`) and installs the app so it appears in software centers like KDE Discover. Use `--run` to also launch it immediately:
+If you already built with `flatpak_build.py`, use `--skip-build` to avoid rebuilding:
 
 ```bash
-python3 flatpak/scripts/flatpak_install.py --run
+python3 flatpak/scripts/flatpak_install.py --skip-build
 ```
 
-**5. Create bundle (optional):**
+### Updating Metadata Only
+
+To update metadata (com.nexusmods.vortex.metainfo.xml):
+
+```bash
+python3 flatpak/scripts/flatpak_build.py --refresh-metadata
+# Then reinstall to see changes: python3 flatpak/scripts/flatpak_install.py --skip-build --reinstall
+```
+
+Or update metainfo during install:
+
+```bash
+python3 flatpak/scripts/flatpak_install.py --skip-build --reinstall
+```
+
+### Creating a Bundle
+
+Builds and creates a `.flatpak` bundle file for publishing:
 
 ```bash
 python3 flatpak/scripts/flatpak_bundle.py
 ```
+
+If you already built with `flatpak_build.py`, use `--skip-build` to avoid rebuilding:
+
+```bash
+python3 flatpak/scripts/flatpak_bundle.py --skip-build
+```
+
+### Workflow Notes
+
+- `flatpak_run.py` always uses the existing build—no export or install step
+- `flatpak_install.py --skip-build` re-exports from existing build and updates metainfo
+- `flatpak_bundle.py` creates a `.flatpak` file for distribution
 
 ## Script Differences
 
