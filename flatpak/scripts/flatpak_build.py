@@ -5,7 +5,6 @@ import argparse
 import shutil
 from pathlib import Path
 
-from _flatpak_build_utils import refresh_metadata_in_build
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
 from update_metainfo_version import update_metainfo_version
 
@@ -39,11 +38,6 @@ def main() -> None:
         action="store_true",
         help="Install dependencies system-wide (default: --user)",
     )
-    parser.add_argument(
-        "--refresh-metadata",
-        action="store_true",
-        help="Update metainfo and re-export without rebuilding",
-    )
     args = parser.parse_args()
 
     ensure_venv(install_packages=False)
@@ -67,16 +61,8 @@ def main() -> None:
 
     ensure_flathub_remote()
 
-    # Always update metainfo version from package.json
+    # Always update metainfo version from package.json before build
     update_metainfo_version(root)
-
-    if args.refresh_metadata:
-        # Update metainfo and re-export
-        refresh_metadata_in_build(build_dir, repo_dir)
-
-        print("\nDone! Run the following to install the updated version:")
-        print(f"  python flatpak/scripts/flatpak_install.py --skip-build")
-        return
 
     # Full build
     cmd = ["flatpak-builder", "--force-clean"]

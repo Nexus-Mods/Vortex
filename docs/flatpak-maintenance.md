@@ -61,21 +61,6 @@ If you already built with `flatpak_build.py`, use `--skip-build` to avoid rebuil
 python3 flatpak/scripts/flatpak_install.py --skip-build
 ```
 
-### Updating Metadata Only
-
-To update metadata (com.nexusmods.vortex.metainfo.xml):
-
-```bash
-python3 flatpak/scripts/flatpak_build.py --refresh-metadata
-# Then reinstall to see changes: python3 flatpak/scripts/flatpak_install.py --skip-build --reinstall
-```
-
-Or update metainfo during install:
-
-```bash
-python3 flatpak/scripts/flatpak_install.py --skip-build --reinstall
-```
-
 ### Creating a Bundle
 
 Builds and creates a `.flatpak` bundle file for publishing:
@@ -93,7 +78,7 @@ python3 flatpak/scripts/flatpak_bundle.py --skip-build
 ### Workflow Notes
 
 - `flatpak_run.py` always uses the existing build—no export or install step
-- `flatpak_install.py --skip-build` re-exports from existing build and updates metainfo
+- `flatpak_install.py --skip-build` re-exports from existing build without rebuilding
 - `flatpak_bundle.py` creates a `.flatpak` file for distribution
 
 ## Script Differences
