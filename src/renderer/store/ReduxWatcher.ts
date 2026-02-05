@@ -1,6 +1,8 @@
-import { isEqual } from "lodash";
 import type * as Redux from "redux";
-import { unknownToError } from "../shared/errors";
+
+import { isEqual } from "lodash";
+
+import { unknownToError } from "../../shared/errors";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);

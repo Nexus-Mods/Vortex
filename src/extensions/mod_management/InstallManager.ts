@@ -1388,7 +1388,7 @@ class InstallManager {
               })
               // calculate the md5 hash here so we can store it with the mod meta information later,
               // otherwise we'd not remember the hash when installing from external file
-              .tap(() => {
+              .then((gameId) => {
                 // Check if we already have the hash from the download to avoid recalculation
                 const existingHash = getSafe(
                   fullInfo,
@@ -1403,7 +1403,7 @@ class InstallManager {
                 if (existingHash && existingSize) {
                   archiveMD5 = existingHash;
                   archiveSize = existingSize;
-                  return Promise.resolve();
+                  return Promise.resolve(gameId);
                 }
 
                 // Only calculate hash if we don't have it
@@ -1420,6 +1420,7 @@ class InstallManager {
                   } catch (err) {
                     // no operation
                   }
+                  return gameId;
                 });
               })
               .then((gameId) => {
@@ -1797,12 +1798,13 @@ class InstallManager {
                     fullInfo.choices,
                     unattended,
                     details,
-                  ).tap(() => {
+                  ).then((result) => {
                     const endTime = Date.now();
                     log("debug", "processed instructions", {
                       installId: activeInstall.installId,
                       duration: endTime - startTime,
                     });
+                    return result;
                   });
                 },
               )
@@ -5189,13 +5191,14 @@ class InstallManager {
             }
           },
         )
-        .tap(() => {
+        .then((result) => {
           if (context !== undefined) {
             context.set(
               "items-completed",
               context.get("items-completed", 0) + 1,
             );
           }
+          return result;
         })
         .catch((err) => {
           return reject(err);

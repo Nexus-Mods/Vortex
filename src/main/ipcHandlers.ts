@@ -13,9 +13,6 @@ import type {
   TraceCategoriesAndOptions,
 } from "electron";
 
-import type { SerializableMenuItem } from "../shared/types/preload";
-import type { AppPath } from "../util/getVortexPath";
-
 import {
   app,
   BrowserView,
@@ -28,10 +25,12 @@ import {
 } from "electron";
 import * as path from "path";
 
+import type { SerializableMenuItem } from "../shared/types/preload";
+import type { AppPath } from "../util/getVortexPath";
+
 import { ApplicationData } from "../shared/applicationData";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-
 import { betterIpcMain } from "./ipc";
 import { extraWebViews } from "./webview";
 

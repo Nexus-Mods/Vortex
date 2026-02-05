@@ -5,7 +5,7 @@
 /**
  * dummy comment
  */
-import type { IExtensionReducer } from "../types/Extension";
+import type { IExtensionReducer } from "../types/extensions";
 import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
 import { UserCanceled } from "../util/CustomErrors";

@@ -1,9 +1,9 @@
-import { log } from "./log";
-
-import * as crypto from "crypto";
 import fs from "fs-extra";
-import * as path from "path";
+import * as crypto from "node:crypto";
+import * as path from "node:path";
+
 import { getErrorMessageOrDefault } from "../shared/errors";
+import { log } from "./logging";
 
 async function readHashList(
   basePath: string,

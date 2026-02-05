@@ -46,7 +46,8 @@ function init(context: IExtensionContext): boolean {
     Dashlet,
     (state) => {
       const allTodos: IToDo[] = [].concat(todos(context.api), extTodos);
-      const steps = state.settings.firststeps.steps;
+      // Defensive check: firststeps might not be initialized during hydration
+      const steps = state.settings?.firststeps?.steps ?? {};
 
       const visibleSteps = allTodos.filter((item) => {
         if (steps[item.id]) {

@@ -827,17 +827,7 @@ function doDownload(api: IExtensionApi, url: string): PromiseBB<string> {
   );
 }
 
-function onceMain(api: IExtensionApi) {
-  try {
-    const stat = fs.statSync(requestLog.logPath);
-    const now = new Date();
-    if (stat.mtime.getUTCDate() !== now.getUTCDate()) {
-      fs.removeSync(requestLog.logPath);
-    }
-  } catch (err) {
-    // nop
-  }
-}
+// Main process initialization moved to src/main/extensions/nexusIntegration.ts
 
 interface IAwaitedLink {
   gameId: string;
@@ -2505,7 +2495,6 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.once(() => once(context.api, extIntegrations));
-  context.onceMain(() => onceMain(context.api));
 
   return true;
 }

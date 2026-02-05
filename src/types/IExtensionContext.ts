@@ -1,7 +1,12 @@
-import type {
-  IAvailableExtension,
-  IExtensionDownloadInfo,
-} from "../extensions/extension_manager/types";
+import type PromiseBB from "bluebird";
+import type { IHashResult, IServer } from "modmeta-db";
+import type { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
+import type * as React from "react";
+import type * as Redux from "redux";
+import type { ComplexActionCreator } from "redux-act";
+import type { ThunkDispatch } from "redux-thunk";
+
+import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
 import type {
   GameVersionProviderFunc,
@@ -13,7 +18,6 @@ import type {
   IHistoryStack,
 } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
-
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -24,6 +28,7 @@ import type {
   IInstruction,
   InstructionType,
 } from "../extensions/mod_management/types/IInstallResult";
+import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
 import type {
   InstallFunc,
   ProgressDelegate,
@@ -32,14 +37,11 @@ import type {
   ISupportedResult,
   TestSupported,
 } from "../extensions/mod_management/types/TestSupported";
-import type { Archive } from "../util/archives";
-import type { IRegisteredExtension } from "../util/ExtensionManager";
-import type { i18n, TFunction } from "../util/i18n";
+import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../renderer/ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
-
-import type { ICollectionsGameSupportEntry } from "./collections/api";
-
+import type { Archive } from "../util/archives";
+import type { i18n, TFunction } from "../util/i18n";
 import type {
   DialogActions,
   IDialogContent,
@@ -48,6 +50,9 @@ import type {
   IOverlayOptions,
   IPosition,
 } from "./api";
+import type { ICollectionsGameSupportEntry } from "./collections/api";
+import type { IAvailableExtension, IExtensionDownloadInfo } from "./extensions";
+import type { IRegisteredExtension } from "./extensions";
 import type { IActionOptions } from "./IActionDefinition";
 import type { IBannerOptions } from "./IBannerOptions";
 import type { DialogType, IDialogResult } from "./IDialog";
@@ -58,17 +63,6 @@ import type { INotification, INotificationAction } from "./INotification";
 import type { IDiscoveryResult, IMod, IState } from "./IState";
 import type { ITableAttribute } from "./ITableAttribute";
 import type { ITestResult } from "./ITestResult";
-
-import type PromiseBB from "bluebird";
-import type { IHashResult, IServer } from "modmeta-db";
-import type { ILookupResult, IModInfo, IQuery, IReference } from "modmeta-db";
-import type * as React from "react";
-import type * as Redux from "redux";
-import type { ComplexActionCreator } from "redux-act";
-import type { ThunkDispatch } from "redux-thunk";
-import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
-import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
-import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 
 export type {
   TestSupported,
@@ -86,6 +80,9 @@ export type {
   ISupportedResult,
   ProgressDelegate,
 };
+
+import type { PersistorKey, IPersistor } from "../shared/types/state";
+export type { PersistorKey, IPersistor };
 
 // tslint:disable-next-line:interface-name
 export interface ThunkStore<S> extends Redux.Store<S> {
@@ -284,27 +281,6 @@ export interface ILookupDetails {
   fileMD5?: string;
   fileSize?: number;
   gameId?: string;
-}
-
-export type PersistorKey = string[];
-
-/**
- * a persistor is used to hook a data file into the store.
- * This way any data file can be made available through the store and
- * updated through actions, as long as it can be represented in json
- *
- * @export
- * @interface IPersistor
- */
-export interface IPersistor {
-  setResetCallback(cb: () => PromiseBB<void>): void;
-  getItem(key: PersistorKey): PromiseBB<string>;
-  setItem(key: PersistorKey, value: string): PromiseBB<void>;
-  removeItem(key: PersistorKey): PromiseBB<void>;
-  getAllKeys(): PromiseBB<PersistorKey[]>;
-  getAllKVs?(
-    prefix?: string,
-  ): PromiseBB<Array<{ key: PersistorKey; value: string }>>;
 }
 
 /**
@@ -1591,6 +1567,16 @@ export interface IExtensionContext {
    * almost certain you don't want this).
    * While almost all program logic of Vortex runs in the renderer process, some libraries will not
    * work correctly on that process so you have to run on the main process.
+   *
+   * @deprecated This is a very niche use case and modern Electron practices are explicitly
+   * discouraging running code on the main process. This will be removed in future versions.
+   *
+   * If you need unrestricted NodeJS environment for your extension - use a separate NodeJS process
+   * and communicate with it via IPC.
+   *
+   * If you need to run code before the renderer process is ready,
+   * inform the Vortex team about your use case and we will investigate your requirements or
+   * suggest alternatives.
    */
   onceMain: (callback: () => void) => void;
 

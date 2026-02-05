@@ -1,4 +1,4 @@
-jest.mock('../src/util/ExtensionProvider');
+jest.mock('../src/renderer/ExtensionProvider');
 jest.mock('react-i18next', () => ({
   withTranslation: () => (component) => component,
   translate: () => (component) => component,

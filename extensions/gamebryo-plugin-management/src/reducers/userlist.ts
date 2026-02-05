@@ -151,7 +151,7 @@ const userlistReducer: types.IReducerSpec = {
       );
     },
   },
-  defaults: {},
+  defaults: { plugins: [], groups: [] },
 };
 
 export default userlistReducer;

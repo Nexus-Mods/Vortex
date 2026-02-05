@@ -1,4 +1,4 @@
-import { extend } from "../../util/ExtensionProvider";
+import { extend } from "../ExtensionProvider";
 
 import * as React from "react";
 

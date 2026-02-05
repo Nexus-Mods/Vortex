@@ -1,7 +1,7 @@
 import * as reactSelect from "../renderer/controls/ReactSelectWrap";
 
-import type { IRegisteredExtension } from "./ExtensionManager";
-import ExtensionManager from "./ExtensionManager";
+import type { IRegisteredExtension } from "../types/extensions";
+import ExtensionManager from "../renderer/ExtensionManager";
 
 import {} from "module";
 import * as reduxAct from "redux-act";

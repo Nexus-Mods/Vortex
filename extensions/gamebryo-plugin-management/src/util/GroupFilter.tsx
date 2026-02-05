@@ -20,7 +20,9 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
 
     const options = Array.from(
       new Set(
-        [].concat(masterlist.groups, userlist.groups).map((iter) => iter.name),
+        []
+          .concat(masterlist.groups ?? [], userlist.groups ?? [])
+          .map((iter) => iter.name),
       ),
     ).map((iter) => ({ label: iter, value: iter }));
 

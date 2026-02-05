@@ -20,13 +20,15 @@ import { getSafe } from "../../util/storeHelper";
 import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
 
-import type Bluebird from "bluebird";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
-function createBackup(api: IExtensionApi, name: string): Bluebird<string> {
+function createBackup(api: IExtensionApi, name: string): Promise<string> {
   return createFullStateBackup(name, api.store).catch((err) => {
-    log("error", "failed to create state backup", { error: err.message });
+    log("error", "failed to create state backup", {
+      error: getErrorMessageOrDefault(err),
+    });
     return api.sendNotification({
       type: "error",
       message: "Failed to create state backup.",
@@ -127,7 +129,7 @@ function init(context: IExtensionContext): boolean {
     Workarounds,
     () => ({
       onCreateManualBackup: () => {
-        createBackup(context.api, "manual").then((backupPath) =>
+        void createBackup(context.api, "manual").then((backupPath) =>
           context.api.sendNotification({
             type: "success",
             message: "Backup created",
@@ -174,12 +176,12 @@ function init(context: IExtensionContext): boolean {
     {},
     "Reset to manifest",
     () => {
-      resetToManifest(context.api);
+      void resetToManifest(context.api);
     },
   );
 
-  context.onceMain(() => {
-    setInterval(() => createBackup(context.api, "hourly"), ONE_HOUR);
+  context.once(() => {
+    setInterval(() => void createBackup(context.api, "hourly"), ONE_HOUR);
   });
 
   return true;

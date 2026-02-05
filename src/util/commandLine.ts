@@ -1,9 +1,7 @@
 import program from "commander";
 import { app, ipcMain, ipcRenderer } from "electron";
-import * as fs from "fs-extra";
-import * as path from "path";
+
 import { getApplication } from "./application";
-import { log } from "./log";
 import startupSettings from "./startupSettings";
 
 export interface IParameters {

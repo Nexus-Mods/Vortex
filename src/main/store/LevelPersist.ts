@@ -1,12 +1,14 @@
-import type { IPersistor } from "../types/IExtensionContext";
-import { DataInvalid } from "../util/CustomErrors";
-import { log } from "../util/log";
+import type leveldownT from "leveldown";
 
 import PromiseBB from "bluebird";
 import encode from "encoding-down";
-import type leveldownT from "leveldown";
 import * as levelup from "levelup";
-import { unknownToError } from "../shared/errors";
+
+import type { IPersistor } from "../../shared/types/state";
+
+import { unknownToError } from "../../shared/errors";
+import { DataInvalid } from "../../shared/types/errors";
+import { log } from "../logging";
 
 const SEPARATOR: string = "###";
 
@@ -81,7 +83,7 @@ class LevelPersist implements IPersistor {
 
   public close = this.restackingFunc((): PromiseBB<void> => {
     return new PromiseBB<void>((resolve, reject) => {
-      this.mDB.close((err) => (!!err ? reject(err) : resolve()));
+      this.mDB.close((err) => (err ? reject(err) : resolve()));
     });
   });
 
@@ -122,6 +124,38 @@ class LevelPersist implements IPersistor {
         .on("close", () => {
           if (!resolved) {
             resolve(keys);
+            resolved = true;
+          }
+        });
+    });
+  }
+
+  /**
+   * Get all unique hive names that have persisted data.
+   * Extracts the first segment of each key to find all hives.
+   */
+  public getPersistedHives(): PromiseBB<string[]> {
+    return new PromiseBB((resolve, reject) => {
+      const hives = new Set<string>();
+      let resolved = false;
+      this.mDB
+        .createKeyStream()
+        .on("data", (data: string) => {
+          // Extract hive name (first segment before separator)
+          const separatorIndex = data.indexOf(SEPARATOR);
+          const hive =
+            separatorIndex >= 0 ? data.slice(0, separatorIndex) : data;
+          hives.add(hive);
+        })
+        .on("error", (error) => {
+          if (!resolved) {
+            reject(error);
+            resolved = true;
+          }
+        })
+        .on("close", () => {
+          if (!resolved) {
+            resolve([...hives]);
             resolved = true;
           }
         });

@@ -1,13 +1,18 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type {
+  DiffOperation,
+  PersistedHive,
+  AppInitMetadata,
   RendererChannels,
   InvokeChannels,
   MainChannels,
   SerializableArgs,
   AssertSerializable,
+  Serializable,
 } from "../shared/types/ipc";
 import type { PreloadWindow } from "../shared/types/preload";
+
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.
 // 2) Use betterIpcRenderer defined below instead of raw ipcRenderer.
@@ -16,6 +21,7 @@ const betterIpcRenderer = {
   invoke: rendererInvoke,
   send: rendererSend,
   on: rendererOn,
+  off: rendererOff,
 };
 
 try {
@@ -35,6 +41,73 @@ try {
     example: {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },
+
+    persist: {
+      sendDiff: (hive: PersistedHive, operations: DiffOperation[]) =>
+        betterIpcRenderer.send("persist:diff", hive, operations),
+
+      getHydration: () => betterIpcRenderer.invoke("persist:get-hydration"),
+
+      onHydrate: (
+        callback: (hive: PersistedHive, data: Serializable) => void,
+      ) =>
+        betterIpcRenderer.on("persist:hydrate", (_, hive, data) =>
+          callback(hive, data),
+        ),
+    },
+
+    extensions: {
+      initializeAllMain: (installType: string) =>
+        betterIpcRenderer.send("extensions:init-all-main", installType),
+
+      requestMainInit: (extensionName: string) =>
+        new Promise<{ success: boolean; error?: string }>((resolve) => {
+          // Set up one-time response listener
+          const responseHandler = (
+            _: Electron.IpcRendererEvent,
+            response: {
+              extensionName: string;
+              success: boolean;
+              error?: string;
+            },
+          ) => {
+            if (response.extensionName === extensionName) {
+              betterIpcRenderer.off(
+                "extensions:init-main-response",
+                responseHandler,
+              );
+              resolve(response);
+            }
+          };
+          betterIpcRenderer.on(
+            "extensions:init-main-response",
+            responseHandler,
+          );
+
+          // Send the request
+          betterIpcRenderer.send("extensions:init-main", extensionName);
+        }),
+    },
+
+    updater: {
+      getStatus: () => betterIpcRenderer.invoke("updater:get-status"),
+      setChannel: (channel: string, manual: boolean) =>
+        betterIpcRenderer.send("updater:set-channel", channel, manual),
+      checkForUpdates: (channel: string, manual: boolean) =>
+        betterIpcRenderer.send("updater:check-for-updates", channel, manual),
+      downloadUpdate: (
+        channel: string,
+        installAfterDownload: boolean = false,
+      ) =>
+        betterIpcRenderer.send(
+          "updater:download",
+          channel,
+          installAfterDownload,
+        ),
+      restartAndInstall: () =>
+        betterIpcRenderer.send("updater:restart-and-install"),
+    },
+
     dialog: {
       showOpen: (options) =>
         betterIpcRenderer.invoke("dialog:showOpen", options),
@@ -46,6 +119,8 @@ try {
         betterIpcRenderer.invoke("dialog:showErrorBox", title, content),
     },
     app: {
+      onInit: (callback: (metadata: AppInitMetadata) => void) =>
+        betterIpcRenderer.on("app:init", (_, metadata) => callback(metadata)),
       setProtocolClient: (protocol: string, udPath: string) =>
         betterIpcRenderer.invoke("app:setProtocolClient", protocol, udPath),
       isProtocolClient: (protocol: string, udPath: string) =>
@@ -146,6 +221,27 @@ try {
         ipcRenderer.on("window:event:blur", listener);
         return () => ipcRenderer.removeListener("window:event:blur", listener);
       },
+      onResized: (callback: (width: number, height: number) => void) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          width: number,
+          height: number,
+        ) => callback(width, height);
+        ipcRenderer.on("window:resized", listener);
+        return () => ipcRenderer.removeListener("window:resized", listener);
+      },
+      onMoved: (callback: (x: number, y: number) => void) => {
+        const listener = (_: Electron.IpcRendererEvent, x: number, y: number) =>
+          callback(x, y);
+        ipcRenderer.on("window:moved", listener);
+        return () => ipcRenderer.removeListener("window:moved", listener);
+      },
+      onMaximized: (callback: (maximized: boolean) => void) => {
+        const listener = (_: Electron.IpcRendererEvent, maximized: boolean) =>
+          callback(maximized);
+        ipcRenderer.on("window:maximized", listener);
+        return () => ipcRenderer.removeListener("window:maximized", listener);
+      },
       getPosition: (windowId: number) =>
         betterIpcRenderer.invoke("window:getPosition", windowId),
       setPosition: (windowId: number, x: number, y: number) =>
@@ -235,4 +331,14 @@ function rendererOn<C extends keyof MainChannels>(
   ) => void,
 ): void {
   ipcRenderer.on(channel, listener);
+}
+
+function rendererOff<C extends keyof MainChannels>(
+  channel: C,
+  listener: (
+    event: Electron.IpcRendererEvent,
+    ...args: SerializableArgs<Parameters<MainChannels[C]>>
+  ) => void,
+): void {
+  ipcRenderer.off(channel, listener);
 }

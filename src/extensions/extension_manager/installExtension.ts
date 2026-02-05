@@ -14,7 +14,7 @@ import {
   languageExists,
 } from "../settings_interface/languagemap";
 
-import type { ExtensionType, IExtension } from "./types";
+import type { ExtensionType, IExtension } from "../../types/extensions";
 import { readExtensionInfo } from "./util";
 
 import PromiseBB from "bluebird";

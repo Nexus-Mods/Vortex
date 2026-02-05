@@ -150,23 +150,19 @@ try {
   // nop
 }
 
+import type * as child_processT from "child_process";
+
 import Application from "./main/Application";
 import commandLine from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
-// ensures tsc includes this dependency
-// Activate vortex-api polyfill for all extension requires as early as possible
-import extensionRequire from "./util/extensionRequire";
-import {} from "./util/requireRebuild";
-extensionRequire(() => []); // Use an empty array or replace with a global accessor if needed
-import type * as child_processT from "child_process";
-
+import * as fs from "./util/fs";
 // required for the side-effect!
 import "./util/exeIcon";
 import "./util/monkeyPatching";
 import "./main/webview";
-import { getErrorMessage } from "./shared/errors";
-import {} from "./util/extensionRequire";
-import * as fs from "./util/fs";
+import "./main/ipcHandlers";
+import "./main/stylesheetCompiler";
+import {} from "./util/requireRebuild";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -292,7 +288,7 @@ async function main(): Promise<void> {
     app.commandLine.appendSwitch("remote-debugging-port", DEBUG_PORT);
   }
 
-  let fixedT = require("i18next").getFixedT("en");
+  let fixedT = (await import("i18next")).default.getFixedT("en");
   try {
     fixedT("dummy");
   } catch {

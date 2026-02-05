@@ -33,7 +33,7 @@ import { getSafe } from "../../util/storeHelper";
 
 import { batchDispatch } from "../../util/util";
 
-import type { IExtensionDownloadInfo } from "../extension_manager/types";
+import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";

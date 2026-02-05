@@ -1,4 +1,4 @@
-import type { IExtension } from "../extensions/extension_manager/types";
+import type { IExtension } from "../types/extensions";
 
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";

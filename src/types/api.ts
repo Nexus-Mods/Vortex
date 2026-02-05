@@ -29,7 +29,7 @@ export type {
 } from "./IGameStore.ts";
 export type { IStarterInfo } from "../util/StarterInfo";
 
-export type { IRegisteredExtension } from "../util/ExtensionManager";
+export type { IRegisteredExtension } from "./extensions";
 
 export type {
   ICollectionInstallState,
@@ -37,10 +37,7 @@ export type {
   ICollectionInstallSession,
   CollectionModStatus,
 } from "../extensions/collections_integration/types";
-export type {
-  IAvailableExtension,
-  IExtension,
-} from "../extensions/extension_manager/types";
+export type { IAvailableExtension, IExtension } from "./extensions";
 export type {
   LoadOrder,
   LoadOrder as FBLOLoadOrder,

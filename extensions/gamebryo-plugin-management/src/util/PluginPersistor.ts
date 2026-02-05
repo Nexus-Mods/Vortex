@@ -70,6 +70,7 @@ class PluginPersistor implements types.IPersistor {
   }
 
   public disable(): Promise<void> {
+    log("debug", "PluginPersistor.disable called");
     return this.enqueue(
       () =>
         new Promise<void>((resolve) => {
@@ -82,10 +83,16 @@ class PluginPersistor implements types.IPersistor {
           if (this.mResetCallback) {
             prom = this.reset();
           }
-          prom.then(() => {
-            this.stopWatch();
-            resolve();
-          });
+          prom
+            .then(() => {
+              this.stopWatch();
+              resolve();
+            })
+            .catch((err) => {
+              log("error", "failed to disable plugin persistor", err);
+              this.stopWatch();
+              resolve();
+            });
         }),
     );
   }
@@ -260,7 +267,19 @@ class PluginPersistor implements types.IPersistor {
     if (!this.mSerializeScheduled) {
       this.mSerializeScheduled = true;
       // ensure we don't try to concurrently write the files
-      this.enqueue(() => Promise.delay(200, this.doSerialize()));
+      this.enqueue(
+        () =>
+          new Promise<void>((resolve) => {
+            setTimeout(() => {
+              this.doSerialize()
+                .then(() => resolve())
+                .catch((err) => {
+                  log("error", "failed to serialize plugin list", err);
+                  resolve();
+                });
+            }, 200);
+          }),
+      );
     }
     return Promise.resolve();
   }

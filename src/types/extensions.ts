@@ -1,7 +1,20 @@
-import type {
-  IExtensionLoadFailure,
-  IExtensionState,
-} from "../../types/IState";
+import type { IExtensionContext, IReducerSpec } from "./IExtensionContext";
+import type { IExtensionLoadFailure, IExtensionState } from "./IState";
+
+/**
+ * Common types for extensions - ideally this will live in renderer/types
+ * given that at present, main doesn't need to know about extensions beyond
+ * persisting their state.
+ *
+ * But lets keep it here for now to avoid dependency chaos.
+ */
+
+export interface IExtensionReducer {
+  path: string[];
+  reducer: IReducerSpec;
+}
+
+export type ExtensionInit = (context: IExtensionContext) => boolean;
 
 export type ExtensionType = "game" | "translation" | "theme";
 
@@ -79,4 +92,13 @@ export interface ISelector {
   modId: number;
   github: string;
   githubRawPath: string;
+}
+
+export interface IRegisteredExtension {
+  name: string;
+  namespace: string;
+  path: string;
+  dynamic: boolean;
+  initFunc: () => ExtensionInit;
+  info?: IExtension;
 }

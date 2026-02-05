@@ -29,7 +29,7 @@ import type {
   IUIBlocker,
 } from "../../types/IState";
 import { connect, extend } from "../controls/ComponentEx";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
+import type { IRegisteredExtension } from "../../types/extensions";
 import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { createQueue, MutexProvider } from "../../util/MutexContext";

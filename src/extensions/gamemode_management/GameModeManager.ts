@@ -21,7 +21,7 @@ import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
-import type { IExtensionDownloadInfo } from "../extension_manager/types";
+import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 
 import {
@@ -283,7 +283,10 @@ class GameModeManager {
           this.onDiscoveredTool,
         ),
       )
-      .tap(() => this.postDiscovery());
+      .then((result) => {
+        this.postDiscovery();
+        return result;
+      });
   }
 
   public startToolDiscovery(gameId: string) {

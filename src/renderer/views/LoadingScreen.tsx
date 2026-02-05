@@ -1,5 +1,5 @@
 import ProgressBar from "../controls/ProgressBar";
-import type ExtensionManager from "../../util/ExtensionManager";
+import type ExtensionManager from "../ExtensionManager";
 
 import * as React from "react";
 

@@ -9,7 +9,6 @@ import {
 import { log } from "../../util/log";
 import { setUpdateChannel } from "./actions";
 
-import { ipcRenderer } from "electron";
 import * as React from "react";
 import {
   Alert,
@@ -187,11 +186,9 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
   private checkNow = () => {
     // send what updateChannel you are on, unless it's none, then send stable. manual check as well
-    ipcRenderer.send(
-      "check-for-updates",
-      this.props.updateChannel === "none" ? "stable" : this.props.updateChannel,
-      true,
-    );
+    const channel =
+      this.props.updateChannel === "none" ? "stable" : this.props.updateChannel;
+    window.api.updater.checkForUpdates(channel, true);
   };
 
   private selectChannel = (evt) => {

@@ -22,10 +22,6 @@ import type {
 } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
 import type { IParameters } from "../../util/commandLine";
-import type {
-  IAvailableExtension,
-  IExtensionDownloadInfo,
-} from "../extension_manager/types";
 
 import { showDialog } from "../../actions/notifications";
 import { resetSuppression } from "../../actions/notificationSettings";
@@ -41,6 +37,11 @@ import { relaunch } from "../../util/commandLine";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { truthy } from "../../util/util";
+
+import type {
+  IAvailableExtension,
+  IExtensionDownloadInfo,
+} from "../../types/extensions";
 import { readExtensibleDir } from "../extension_manager/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";
