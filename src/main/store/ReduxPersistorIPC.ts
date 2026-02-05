@@ -12,7 +12,7 @@
  */
 
 import type { DiffOperation, Serializable } from "../../shared/types/ipc";
-import type { IPersistor, PersistorKey } from "../../types/IExtensionContext";
+import type { IPersistor, PersistorKey } from "../../shared/types/state";
 
 import { unknownToError } from "../../shared/errors";
 import { terminate } from "../../util/errorHandling";
