@@ -19,7 +19,7 @@
     "i18next": "^8.4.3",
     "ts-loader": "^9.4.1",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.75.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^5.0.0"
   },
   "dependencies": {
