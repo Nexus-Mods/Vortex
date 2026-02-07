@@ -23,7 +23,7 @@
     "tmp": "^0.0.31",
     "ts-loader": "^9.2.6",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^4.9.1"
   }
 }
