@@ -1,29 +1,11 @@
-import {
-  NEXUS_BASE_URL,
-  OAUTH_CLIENT_ID,
-} from "../extensions/nexus_integration/constants";
-import type { IErrorOptions, IExtensionApi } from "../types/api";
-import type { IError } from "../types/IError";
-
-import { COMPANY_ID } from "./constants";
-import { UserCanceled } from "./CustomErrors";
-import { genHash } from "./genHash";
-import getVortexPath from "./getVortexPath";
-import { fallbackTFunc } from "./i18n";
-import { log } from "./log";
-import { bundleAttachment } from "./message";
-import opn from "./opn";
-import { getPreloadApi } from "./preloadAccess";
-import { getSafe } from "./storeHelper";
-import { flatten, getAllPropertyNames, spawnSelf } from "./util";
-
 import type {
   IFeedbackResponse,
   IOAuthCredentials,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
+
+import PromiseBB from "bluebird";
 import { dialog as dialogIn, ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
@@ -32,9 +14,28 @@ import * as path from "path";
 import * as semver from "semver";
 import { inspect } from "util";
 import {} from "uuid";
-import { getApplication } from "./application";
-import { getCPUArch } from "./nativeArch";
+
+import type { IErrorOptions, IExtensionApi } from "../types/api";
+import type { IError } from "../types/IError";
+
+import {
+  NEXUS_BASE_URL,
+  OAUTH_CLIENT_ID,
+} from "../extensions/nexus_integration/constants";
 import { getErrorMessageOrDefault } from "../shared/errors";
+import { getApplication } from "./application";
+import { COMPANY_ID } from "./constants";
+import { UserCanceled } from "./CustomErrors";
+import { genHash } from "./genHash";
+import getVortexPath from "./getVortexPath";
+import { fallbackTFunc } from "./i18n";
+import { log } from "./log";
+import { bundleAttachment } from "./message";
+import { getCPUArch } from "./nativeArch";
+import opn from "./opn";
+import { getPreloadApi } from "./preloadAccess";
+import { getSafe } from "./storeHelper";
+import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
 // Async dialog helpers for cross-process compatibility
 const showMessageBox = async (
@@ -394,7 +395,7 @@ export function getWindow(): BrowserWindow | null {
   return defaultWindow;
 }
 
-let currentWindow: BrowserWindow | null = null;
+const currentWindow: BrowserWindow | null = null;
 
 function getCurrentWindow(): BrowserWindow | null {
   // In renderer process, we can't access BrowserWindow directly
