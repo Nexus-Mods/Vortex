@@ -18,7 +18,7 @@ export default function init(context: IExtensionContext) {
   context.registerReducer(["persistent", "loadOrder"], modLoadOrderReducer);
   context.registerReducer(["settings", "loadOrder"], loadOrderSettingsReducer);
 
-  context.registerMainPage("sort-none", "Load Order", LoadOrderPage, {
+  context.registerMainPage("sort-none", "Load order", LoadOrderPage, {
     priority: 120,
     id: "generic-loadorder",
     hotkey: "E",

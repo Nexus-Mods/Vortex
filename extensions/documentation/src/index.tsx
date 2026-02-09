@@ -36,7 +36,7 @@ function generateUrl(wikiId: string) {
 export default function init(context: types.IExtensionContext) {
   context.registerReducer(["session", "tutorials"], sessionReducer);
 
-  context.registerMainPage("details", "Knowledge Base", DocumentationView, {
+  context.registerMainPage("details", "Knowledge base", DocumentationView, {
     priority: 25,
     hotkeyRaw: "F1",
     group: "global",
