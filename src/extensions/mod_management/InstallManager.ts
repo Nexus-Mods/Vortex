@@ -185,7 +185,6 @@ import {
 import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
-import { STAGING_DIR_TAG } from "./stagingDirectory";
 
 import { HTTPError } from "@nexusmods/nexus-api";
 import Bluebird, { method as toBluebird } from "bluebird";
@@ -3578,25 +3577,32 @@ class InstallManager {
     );
   }
 
-  private isCritical(error: string): boolean {
-    // Don't treat file-in-use errors as critical - they can be retried
-    if (this.isFileInUse(error)) {
-      return false;
+  private isFileInUse(errorMessage: string, errorCode?: string): boolean {
+    if (errorCode && ["EBUSY", "EPERM", "EACCES"].includes(errorCode)) {
+      return true;
     }
-    return (
-      error.indexOf("Unexpected end of archive") !== -1 ||
-      error.indexOf("ERROR: Data Error") !== -1 ||
-      // used to be "Can not", current 7z prints "Cannot"
-      error.indexOf("Cannot open the file as archive") !== -1 ||
-      error.indexOf("Can not open the file as archive") !== -1
-    );
+    const lowered = errorMessage.toLowerCase();
+    const patterns = [
+      "being used by another process",
+      "locked by another process",
+      "denied",
+      "cannot open",
+      "can not open",
+    ];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
-  private isFileInUse(error: string): boolean {
-    return (
-      error.indexOf("being used by another process") !== -1 ||
-      error.indexOf("locked by another process") !== -1
-    );
+  private isCritical(errorMessage: string): boolean {
+    // Don't treat file-in-use errors as critical - they can be retried
+    if (this.isFileInUse(errorMessage)) {
+      return false;
+    }
+    const lowered = errorMessage.toLowerCase();
+    const patterns = [
+      "unexpected end of archive",
+      "error: data error",
+    ];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
   private extractWithRetry(
@@ -3619,8 +3625,10 @@ class InstallManager {
           progress,
           queryPassword as any,
         )
-        .catch((err: Error) => {
-          if (this.isFileInUse(err.message) && retriesLeft > 0) {
+        .catch((err) => {
+          const error = unknownToError(err);
+          const code = getErrorCode(err);
+          if (this.isFileInUse(error.message, code) && retriesLeft > 0) {
             log("info", "archive file in use, retrying extraction", {
               archivePath: path.basename(archivePath),
               retriesLeft,
@@ -3630,12 +3638,12 @@ class InstallManager {
               attemptExtract(retriesLeft - 1),
             );
           }
-          if (this.isCritical(err.message)) {
+          if (this.isCritical(error.message)) {
             return Bluebird.reject(
-              new ArchiveBrokenError(path.basename(archivePath), err.message),
+              new ArchiveBrokenError(path.basename(archivePath), error.message),
             );
           }
-          return Bluebird.reject(err);
+          return Bluebird.reject(error);
         });
     };
     return attemptExtract(maxRetries);
