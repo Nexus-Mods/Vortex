@@ -103,38 +103,37 @@
 
   <launchable type="desktop-id">com.nexusmods.vortex.desktop</launchable>
 
-  <!-- TODO: Are these links stable? Do we need to vendor them?
-       Note: These images are actually WebP format, not PNG (despite .png extension) -->
+  <!-- Screenshots hosted in repo for reliable access -->
   <screenshots>
     <screenshot type="default">
-      <image width="951" height="333">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1690272155-1455020317.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/01.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336766-2026851941.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/02.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336774-866905969.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/03.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336777-2125751922.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/04.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336769-1321849528.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/05.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336762-1263056244.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/06.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336762-1895217246.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/07.png</image>
     </screenshot>
     <screenshot>
-      <image width="1486" height="700">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336766-472588291.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/08.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336769-1851525527.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/09.png</image>
     </screenshot>
     <screenshot>
-      <image width="1920" height="1080">https://staticdelivery.nexusmods.com/mods/2295/images/1/1-1710336778-415029866.png</image>
+      <image>https://raw.githubusercontent.com/Nexus-Mods/Vortex/flatpak-build/flatpak/screenshots/10.png</image>
     </screenshot>
   </screenshots>
 
