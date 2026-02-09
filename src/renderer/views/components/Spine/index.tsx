@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { IState } from "../../../../types/IState";
 
 import { setOpenMainPage } from "../../../../actions/session";
-import { useSpineContext } from "../SpineContext";
+import { useSpineContext } from "./SpineContext";
 import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";

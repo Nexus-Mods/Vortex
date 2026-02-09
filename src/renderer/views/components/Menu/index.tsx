@@ -12,8 +12,9 @@ import { setOpenMainPage } from "../../../../actions";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { usePagesContext, useWindowContext } from "../../../contexts";
 import { getIconPath } from "../iconMap";
-import { useSpineContext } from "../SpineContext";
+import { useSpineContext } from "../Spine/SpineContext";
 import { MenuButton } from "./MenuButton";
+import { MenuProvider, useMenuContext } from "./MenuContext";
 import { ToolsSection } from "./ToolsSection";
 
 const toolPadding = {
@@ -24,7 +25,7 @@ const toolPadding = {
   5: "pb-66",
 };
 
-export const Menu: FC = () => {
+const MenuContent: FC = () => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const { visiblePages } = useSpineContext();
@@ -32,6 +33,7 @@ export const Menu: FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { mainPage } = usePagesContext();
+  const { toolCount } = useMenuContext();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -71,8 +73,7 @@ export const Menu: FC = () => {
         <div
           className={joinClasses([
             "flex flex-col gap-y-0.5 transition-[width]",
-            // todo pass tool count to adjust scroll padding when collapsed
-            menuIsCollapsed ? `w-10 ${toolPadding[1]}` : "w-50 pb-28",
+            menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-50 pb-28",
           ])}
         >
           {visiblePages.map((page) => (
@@ -93,5 +94,13 @@ export const Menu: FC = () => {
 
       <ToolsSection isAnimating={isAnimating} />
     </div>
+  );
+};
+
+export const Menu: FC = () => {
+  return (
+    <MenuProvider>
+      <MenuContent />
+    </MenuProvider>
   );
 };

@@ -7,7 +7,7 @@ import type { IState } from "../../../../types/IState";
 
 import { Typography } from "../../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../contexts";
-import { useSpineContext } from "../SpineContext";
+import { useSpineContext } from "../Spine/SpineContext";
 import { HelpSection } from "./HelpSection";
 import { IconButton } from "./IconButton";
 import { Notifications } from "./Notifications";

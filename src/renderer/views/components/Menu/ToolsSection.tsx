@@ -1,14 +1,12 @@
 import { mdiPlay } from "@mdi/js";
-import React, { useCallback, type FC } from "react";
+import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 
 import { Button } from "../../../../tailwind/components/next/button";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
-import { showError } from "../../../../util/message";
-import { useMainContext, useWindowContext } from "../../../contexts";
+import { useWindowContext } from "../../../contexts";
+import { useMenuContext } from "./MenuContext";
 import { ToolButton } from "./ToolButton";
-import { type ShowErrorCallback, useTools } from "./useTools";
 
 interface ToolsSectionProps {
   isAnimating: boolean;
@@ -17,16 +15,6 @@ interface ToolsSectionProps {
 export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
-  const { api } = useMainContext();
-  const dispatch = useDispatch();
-
-  const onShowError: ShowErrorCallback = useCallback(
-    (message, details, allowReport) => {
-      showError(dispatch, message, details, { allowReport });
-    },
-    [dispatch],
-  );
-
   const {
     gameMode,
     visibleTools,
@@ -36,7 +24,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
     exclusiveRunning,
     startTool,
     handlePlay,
-  } = useTools(onShowError, api);
+  } = useMenuContext();
 
   if (gameMode === undefined) {
     return null;

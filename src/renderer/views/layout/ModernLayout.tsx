@@ -5,7 +5,7 @@ import { ModernContentPane } from "../components/ContentPane";
 import { Header } from "../components/Header";
 import { Menu } from "../components/Menu";
 import { Spine } from "../components/Spine";
-import { SpineProvider } from "../components/SpineContext";
+import { SpineProvider } from "../components/Spine/SpineContext";
 import { DialogLayer } from "./DialogLayer";
 import { LayoutContainer } from "./LayoutContainer";
 import { ProfileSwitcher } from "./ProfileSwitcher";

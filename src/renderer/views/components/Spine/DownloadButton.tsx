@@ -9,7 +9,7 @@ import { setOpenMainPage } from "../../../../actions/session";
 import { Icon } from "../../../../tailwind/components/next/icon";
 import { Typography } from "../../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
-import { useSpineContext } from "../SpineContext";
+import { useSpineContext } from "./SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
   "init",
