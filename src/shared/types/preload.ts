@@ -3,14 +3,12 @@ import type * as Electron from "electron";
 import type {
   DiffOperation,
   AppInitMetadata,
-  PersistedHive,
-  PersistedState,
   Serializable,
   UpdateStatus,
   VortexPaths,
 } from "./ipc";
-
 import type { Level } from "./logging";
+import type { PersistedHive, PersistedState } from "./state";
 
 /** Globals exposed by the preload script to the renderer */
 export interface PreloadWindow {

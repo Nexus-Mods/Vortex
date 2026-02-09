@@ -7,9 +7,6 @@ import type Electron from "electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
-// Re-export state types for convenience
-export type { PersistedHive, PersistedState };
-
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
 
