@@ -406,7 +406,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
+function addNotification(notification: INotification): (dispatch: any) => Promise_2<void> | Promise<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -1015,9 +1015,9 @@ function findModByRef(reference: IModReference, mods: {
 }): IMod;
 
 // @public
-const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
+const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
 id: string;
-state: "finished" | "failed" | "redirect";
+state: "failed" | "finished" | "redirect";
 failCause: any;
 }, {}>;
 
@@ -1942,7 +1942,7 @@ interface IDictionary {
     [key: string]: any;
 }
 
-// @public
+// @public (undocumented)
 interface IDimensions {
     // (undocumented)
     height: number;
@@ -2228,6 +2228,7 @@ interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, 
 interface IExtensionContext {
     api: IExtensionApi;
     once: (callback: () => void | Promise_2<void>) => void;
+    // @deprecated
     onceMain: (callback: () => void) => void;
     optional: any;
     registerAction: RegisterAction;
@@ -3098,7 +3099,7 @@ interface IPersistor {
     setResetCallback(cb: () => PromiseLike<void>): void;
 }
 
-// @public
+// @public (undocumented)
 interface IPosition {
     // (undocumented)
     x: number;
@@ -4035,7 +4036,7 @@ interface IValidationResult {
     invalid: IInvalidResult[];
 }
 
-// @public
+// @public (undocumented)
 interface IWindow {
     // (undocumented)
     customTitlebar: boolean;
@@ -5880,6 +5881,8 @@ declare namespace types {
         IQuery,
         InstructionType,
         IReference,
+        PersistorKey,
+        IPersistor,
         ThunkStore,
         PropsCallback,
         PersistingType,
@@ -5906,8 +5909,6 @@ declare namespace types {
         ISaveOptions,
         StateChangeCallback,
         ILookupDetails,
-        PersistorKey,
-        IPersistor,
         IArchiveOptions,
         IArchiveHandler,
         ArchiveHandlerCreator,
@@ -5942,8 +5943,8 @@ declare namespace types {
         NotificationType,
         INotification,
         IDownload,
-        IPosition,
         IDimensions,
+        IPosition,
         IWindow,
         INotificationState,
         IExtensionLoadFailure,
@@ -6312,8 +6313,8 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // api/lib/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
 // api/lib/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
 // api/lib/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:361:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
+// api/lib/types/IState.d.ts:329:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
+// api/lib/types/IState.d.ts:359:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

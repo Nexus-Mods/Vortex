@@ -70,24 +70,6 @@ process.on("unhandledRejection", earlyErrHandler);
 // dlls will not be able to load vc-runtime files shipped with Vortex.
 process.chdir(getVortexPath("application"));
 
-/* the below would completely restart Vortex to ensure everything is loaded with the cwd
-   reset but that doesn't seem to be necessary
-// if this is the primary instance, verify we run from the right cwd, otherwise
-// vc runtime files might not load correctly
-if (!process.argv.includes('--relaunched')
-  && (path.normalize(process.cwd()).toLowerCase()
-    !== path.normalize(getVortexPath('application')).toLowerCase())) {
-  // tslint:disable-next-line:no-var-requires
-  const cp: typeof child_processT = require('child_process');
-  const args = [].concat(['--relaunched'], process.argv.slice(1));
-  const proc = cp.spawn(process.execPath, args, {
-    cwd: getVortexPath('application'),
-    detached: true,
-  });
-  app.quit();
-}
-*/
-
 import * as sourceMapSupport from "source-map-support";
 
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
@@ -104,9 +86,6 @@ function setEnv(key: string, value: string, force?: boolean) {
 
 if (process.env.NODE_ENV !== "development") {
   setEnv("NODE_ENV", "production", true);
-} else {
-  const rebuildRequire = require("./util/requireRebuild").default;
-  rebuildRequire();
 }
 
 if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
@@ -146,23 +125,18 @@ import type * as winapiT from "winapi-bindings";
 try {
   const winapi: typeof winapiT = require("winapi-bindings");
   winapi?.SetProcessPreferredUILanguages?.(["en-US"]);
-} catch (err) {
+} catch {
   // nop
 }
 
 import type * as child_processT from "child_process";
 
 import Application from "./main/Application";
+import { init as initIpcHandlers } from "./main/ipcHandlers";
+import StylesheetCompiler from "./main/stylesheetCompiler";
 import commandLine from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
 import * as fs from "./util/fs";
-// required for the side-effect!
-import "./util/exeIcon";
-import "./util/monkeyPatching";
-import "./main/webview";
-import "./main/ipcHandlers";
-import "./main/stylesheetCompiler";
-import {} from "./util/requireRebuild";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -175,13 +149,6 @@ const handleError = (error: Error) => {
 
   terminate(toError(error), {});
 };
-
-async function firstTimeInit() {
-  // use this to do first time setup, that is: code to be run
-  // only the very first time vortex starts up.
-  // This functionality was introduced but then we ended up solving
-  // the problem in a different way that's why this is unused currently
-}
 
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
@@ -209,6 +176,9 @@ async function main(): Promise<void> {
     "disable-features",
     "UseEcoQoSForBackgroundProcess",
   );
+
+  initIpcHandlers();
+  StylesheetCompiler.init();
 
   // --run has to be evaluated *before* we request the single instance lock!
   if (mainArgs.run !== undefined) {
@@ -275,7 +245,7 @@ async function main(): Promise<void> {
   try {
     await fs.statAsync(getVortexPath("userData"));
   } catch {
-    await firstTimeInit();
+    // no-op
   }
 
   process.on("uncaughtException", handleError);
@@ -295,12 +265,6 @@ async function main(): Promise<void> {
     fixedT = (input) => input;
   }
 
-  /* allow application controlled scaling
-  if (process.platform === 'win32') {
-    app.commandLine.appendSwitch('high-dpi-support', 'true');
-    app.commandLine.appendSwitch('force-device-scale-factor', '1');
-  }
-  */
   application = new Application(mainArgs);
 }
 
