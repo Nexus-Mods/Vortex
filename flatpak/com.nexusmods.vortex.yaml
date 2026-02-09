@@ -1,0 +1,109 @@
+# Docs: Electron - https://docs.flatpak.org/en/latest/electron.html
+# Docs: Dotnet - https://docs.flatpak.org/en/latest/dotnet.html
+app-id: com.nexusmods.vortex
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: "25.08"
+command: run.sh
+
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.node22
+  - org.freedesktop.Sdk.Extension.dotnet9
+
+build-options:
+  append-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/dotnet9/bin
+  append-ld-library-path: /usr/lib/sdk/dotnet9/lib
+  # Network access is enabled during build to let Yarn resolve packages.
+  # Remove once offline installs are fully stable (all deps in generated-sources.json).
+  build-args:
+    - --share=network
+  env:
+    # Electron install behavior (global): prevent Electron downloads because BaseApp provides it.
+    # Ref: https://github.com/electron/electron/blob/main/docs/api/environment-variables.md
+    ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+    # Node/Yarn offline cache locations for reproducible builds.
+    # Flatpak builds run offline by default; these paths are inside the build sandbox.
+    # Ref: https://docs.flatpak.org/en/latest/electron.html#the-application-module
+    npm_config_cache: /run/build/vortex/flatpak-node/npm-cache
+    npm_config_nodedir: /usr/lib/sdk/node22
+    npm_config_offline: "true"
+    XDG_CACHE_HOME: /run/build/vortex/flatpak-node/cache
+    YARN_CACHE_FOLDER: /run/build/vortex/flatpak-node/yarn-cache
+    YARN_IGNORE_ENGINES: "1"
+    YARN_OFFLINE_MIRROR: /run/build/vortex/flatpak-node/yarn-mirror
+    YARN_OFFLINE_MIRROR_PRUNING: "false"
+
+    # Dotnet SDK settings for build-time tools (runtime DOTNET_ROOT is set via finish-args).
+    DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    DOTNET_NOLOGO: "1"
+    DOTNET_ROOT: /usr/lib/sdk/dotnet9
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+    # Build stability: avoid parallel extension builds and skip preinstall side effects
+    # (preinstall updates submodules and triggers extra build steps that are not needed here).
+    NO_PARALLEL: "1"
+    VORTEX_SKIP_PREINSTALL: "1"
+
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  - --share=network
+  # Full host filesystem access is required for modding workflows:
+  # game installs can be anywhere, deployment uses hardlinks/symlinks/moves,
+  # plugins and external tools need arbitrary path access.
+  # Portals are not viable because scanning and deployment are background ops
+  # that can't wait for user-mediated prompts.
+  - --filesystem=host
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --system-talk-name=org.freedesktop.UDisks2
+  # Runtime: .NET runtime location for framework-dependent tools
+  - --env=DOTNET_ROOT=/app/lib/dotnet
+  # Integration: disable internal updater (Flatpak handles updates)
+  - --env=IGNORE_UPDATES=yes
+  # Integration: use gio for trash, respect host cursor theme
+  - --env=ELECTRON_TRASH=gio
+  - --env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons
+
+modules:
+  - name: dotnet-runtime
+    buildsystem: simple
+    build-commands:
+      # Install the .NET runtime into /app/lib/dotnet for framework-dependent tools.
+      - /usr/lib/sdk/dotnet9/bin/install.sh
+
+  - name: vortex
+    buildsystem: simple
+    build-commands:
+      # Steps match `.github/workflows/package.yml` where possible.
+
+      # Configure Yarn for Flatpak caches, then install dependencies.
+      - cp flatpak/yarnrc .yarnrc
+      - yarn install --non-interactive --check-files --frozen-lockfile
+
+      # Build the app following the standard workflow from CONTRIBUTE.md.
+      - yarn run build
+
+      # Prepare app/ directory for packaging
+      - yarn run _install_app
+      - yarn run subprojects_app
+      - yarn run _assets_app
+      - yarn run build_dist
+
+      # Install the launcher, desktop file, and icon into the Flatpak image.
+      - install -Dm755 flatpak/run.sh /app/bin/run.sh
+      - install -Dm644 flatpak/com.nexusmods.vortex.desktop /app/share/applications/com.nexusmods.vortex.desktop
+      - install -Dm644 assets/images/vortex.png /app/share/icons/hicolor/512x512/apps/com.nexusmods.vortex.png
+
+      # Stage the built app payload from app/ into /app/main for runtime.
+      - install -d /app/main
+      - cp -a app/. /app/main/
+    sources:
+      - type: dir
+        path: ..
+      - generated-sources.json

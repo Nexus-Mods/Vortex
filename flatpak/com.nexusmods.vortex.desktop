@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Vortex
+Comment=Mod Manager
+Exec=run.sh
+Icon=com.nexusmods.vortex
+Terminal=false
+Categories=Network;Development;Game;
+MimeType=x-scheme-handler/nxm;
+StartupWMClass=Vortex

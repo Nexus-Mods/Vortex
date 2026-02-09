@@ -148,6 +148,44 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Build: `yarn build`
 - Start: `yarn start`
 
+Python is included in the dev shell (with `setuptools`) for node-gyp and the Flatpak helper scripts.
+
+**Debugging (Nix):** start VS Code from `nix develop` (or via direnv), then use `Debug Electron (System Electron)` to launch the system Electron from your Nix shell `PATH`.
+
+## Flatpak Basics (Linux Packaging)
+
+These dependencies are only required if you are building the Flatpak package.
+
+### Requirements
+
+- `flatpak`
+- `flatpak-builder`
+- `flatpak-node-generator`
+    - Provided by the `flatpak-builder-tools` Python package on most distros
+    - If it is not packaged, use `pipx install flatpak-node-generator`
+
+### Example installs (Linux)
+
+- Ubuntu/Debian:
+    - `sudo apt install flatpak flatpak-builder`
+    - `pipx install flatpak-node-generator`
+- Fedora:
+    - `sudo dnf install flatpak flatpak-builder`
+    - `pipx install flatpak-node-generator`
+- Arch:
+    - `sudo pacman -S flatpak flatpak-builder`
+    - `pipx install flatpak-node-generator`
+
+### Flathub remote
+
+Ensure the Flathub remote exists for runtime installation:
+
+```
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+```
+
+For the full Flatpak workflow, see `docs/flatpak-maintenance.md`.
+
 ## Editor Setup
 
 ### VS Code

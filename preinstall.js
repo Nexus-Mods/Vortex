@@ -126,12 +126,16 @@ async function buildFomodNative() {
   }
 }
 
-
 /**
  * Main preinstall routine
  */
 async function main() {
   console.log("Starting preinstall script...");
+
+  if (process.env.VORTEX_SKIP_PREINSTALL === "1") {
+    console.log("Preinstall skipped (VORTEX_SKIP_PREINSTALL=1)");
+    return;
+  }
 
   try {
     // Update git submodules
