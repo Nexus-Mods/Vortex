@@ -221,10 +221,11 @@ class Application {
       );
     }
 
-    setupLogging(
-      app.getPath("userData"),
-      process.env.NODE_ENV === "development",
-    );
+    // Enable console logging in development or when VORTEX_ENABLE_LOGGING is set
+    const enableLogging =
+      process.env.NODE_ENV === "development" ||
+      process.env.VORTEX_ENABLE_LOGGING === "1";
+    setupLogging(app.getPath("userData"), enableLogging);
     this.setupAppEvents(args);
   }
 

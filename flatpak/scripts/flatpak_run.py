@@ -28,6 +28,11 @@ def main() -> None:
         help="Command to run inside the build (default: /app/bin/run.sh)",
     )
     parser.add_argument(
+        "--log",
+        action="store_true",
+        help="Enable console logging (sets VORTEX_ENABLE_LOGGING=1)",
+    )
+    parser.add_argument(
         "command_args",
         nargs=argparse.REMAINDER,
         help="Arguments passed to the command (use -- to separate)",
@@ -53,6 +58,8 @@ def main() -> None:
         manifest = root / manifest
 
     cmd = ["flatpak-builder", "--run", str(build_dir), str(manifest), args.command]
+    if args.log:
+        cmd.extend(["--env=VORTEX_ENABLE_LOGGING=1"])
     if args.command_args:
         cmd.extend(args.command_args)
 
