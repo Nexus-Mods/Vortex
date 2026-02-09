@@ -115,7 +115,13 @@ def main() -> None:
             raise SystemExit(1)
 
         print(f"Re-exporting to {repo_dir}...")
-        export_cmd = ["flatpak", "build-export", str(repo_dir), str(build_dir)]
+        export_cmd = [
+            "flatpak",
+            "build-export",
+            "--update-appstream",
+            str(repo_dir),
+            str(build_dir),
+        ]
         run_command(export_cmd, cwd=root)
     else:
         # Use flatpak-builder to build and export
@@ -129,6 +135,19 @@ def main() -> None:
             str(manifest),
         ]
         run_command(export_cmd, cwd=root)
+
+        # Update appstream metadata after build
+        print("Updating appstream in repo...")
+        run_command(
+            [
+                "flatpak",
+                "build-export",
+                "--update-appstream",
+                str(repo_dir),
+                str(build_dir),
+            ],
+            cwd=root,
+        )
 
     # Uninstall if reinstalling (keep user data for development)
     if args.reinstall and already_installed:
