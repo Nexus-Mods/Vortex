@@ -4509,7 +4509,20 @@ class InstallManager {
         },
       );
       if (fatal !== undefined) {
-        return Bluebird.reject(new ProcessCanceled("Installer script failed"));
+        const errorMessages = instructionGroups.error.map((err) => err.source);
+        const errorSummary = errorMessages.join("; ");
+        return Bluebird.reject(
+          new ProcessCanceled(
+            `Installer script failed: ${errorSummary}`,
+            {
+              modId,
+              errors: instructionGroups.error.map((err) => ({
+                severity: err.value,
+                message: err.source,
+              })),
+            },
+          ),
+        );
       }
     }
 
