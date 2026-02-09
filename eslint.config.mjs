@@ -11,6 +11,8 @@ import tseslint from "typescript-eslint";
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "./eslint-rules/no-bluebird-resolve-promiselike.mjs";
 import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
+import noRestrictedImportsRule from "./eslint-rules/no-restricted-imports.mjs";
+import noModuleImportsRule from "./eslint-rules/no-module-imports.mjs";
 
 const isCI = !!process.env.CI;
 const tseslintConfig = isCI
@@ -106,13 +108,45 @@ export default defineConfig([
           "no-cross-imports": noCrossImportsRule,
           "no-bluebird-promise-alias": noBluebirdPromiseAliasRule,
           "no-bluebird-resolve-promiselike": noBluebirdResolveWithPromiseLike,
+          "no-restricted-imports-errors": noRestrictedImportsRule,
+          "no-restricted-imports-warnings": noRestrictedImportsRule,
+          "no-module-imports": noModuleImportsRule,
         },
       },
     },
     rules: {
+      "vortex/no-module-imports": "error",
       "vortex/no-cross-imports": "error",
       "vortex/no-bluebird-promise-alias": "error",
       "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
+      "vortex/no-restricted-imports-errors": [
+        "error",
+        {
+          restrictions: [
+            {
+              name: "process",
+              message:
+                "process is a Node.js global variable and shouldn't be imported like a module",
+            },
+            {
+              name: "node:process",
+              message:
+                "process is a Node.js global variable and shouldn't be imported like a module",
+            },
+          ],
+        },
+      ],
+      "vortex/no-restricted-imports-warnings": [
+        "warn",
+        {
+          restrictions: [
+            {
+              name: "bluebird",
+              message: "Please avoid using Bluebird. Use ES6 promises instead",
+            },
+          ],
+        },
+      ],
     },
   },
 
@@ -120,14 +154,6 @@ export default defineConfig([
     name: "Migrating Webpack to Vite",
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/no-restricted-imports": [
-        "error",
-        {
-          name: "process",
-          message:
-            "process is a Node.js global variable and shouldn't be imported like a module",
-        },
-      ],
     },
   },
 
@@ -135,13 +161,6 @@ export default defineConfig([
     // NOTE(erri120): This legacy config only exists "temporarily" (we'll see how true that holds)
     name: "Vortex legacy config",
     rules: {
-      "@typescript-eslint/no-restricted-imports": [
-        "warn",
-        {
-          name: "bluebird",
-          message: "Please avoid using Bluebird. Use ES6 promises instead",
-        },
-      ],
       // NOTE(erri120): These rules were errors by default but got turned into warnings until we fix the code
       // To get the codebase up to stuff, we want all of these warnings to go back to being errors.
       // How to do that:

@@ -1,4 +1,4 @@
-import * as path from "path";
+import path from "node:path";
 
 /** @type {import("eslint").Rule.RuleModule} */
 export default {
