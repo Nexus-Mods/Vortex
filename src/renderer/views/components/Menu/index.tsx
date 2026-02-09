@@ -1,4 +1,10 @@
-import React, { useState, type FC, useLayoutEffect } from "react";
+import React, {
+  useState,
+  type FC,
+  useLayoutEffect,
+  useRef,
+  useEffect,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -23,9 +29,24 @@ export const Menu: FC = () => {
   const { menuIsCollapsed } = useWindowContext();
   const { visiblePages } = useSpineContext();
   const dispatch = useDispatch();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { mainPage } = usePagesContext();
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  const onScroll = (event: Event) =>
+    setIsScrolled((event.target as HTMLDivElement).scrollTop > 0);
+
+  useEffect(() => {
+    if (!scrollRef.current) {
+      return;
+    }
+
+    const element = scrollRef.current;
+    element.addEventListener("scroll", onScroll);
+    return () => element.removeEventListener("scroll", onScroll);
+  }, [scrollRef]);
 
   useLayoutEffect(() => {
     // eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
@@ -42,7 +63,11 @@ export const Menu: FC = () => {
         menuIsCollapsed ? "w-16" : "w-56",
       ])}
     >
-      <div className="mr-1 min-h-0 w-full overflow-y-auto pl-3">
+      {isScrolled && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
+      )}
+
+      <div className="mr-1 min-h-0 w-full overflow-y-auto pl-3" ref={scrollRef}>
         <div
           className={joinClasses([
             "flex flex-col gap-y-0.5 transition-[width]",
