@@ -2097,7 +2097,8 @@ function mapStateToProps(state: IState, ownProps: any): IConnectedProps {
     groupBy = undefined;
   }
   return {
-    language: state.settings.interface.language,
+    // Defensive check: interface might not be initialized during hydration
+    language: state.settings?.interface?.language ?? "en",
     attributeState: getSafe(
       state,
       ["settings", "tables", ownProps.tableId, "attributes"],

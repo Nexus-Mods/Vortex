@@ -36,8 +36,6 @@ window.addEventListener("error", earlyErrHandler);
 window.addEventListener("unhandledrejection", earlyErrHandler);
 
 if (process.env.NODE_ENV === "development") {
-  const rebuildRequire = require("./util/requireRebuild").default;
-  rebuildRequire();
   process.traceProcessWarnings = true;
   const sourceMapSupport = require("source-map-support");
   sourceMapSupport.install();
@@ -58,7 +56,6 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(["en-US"]);
 }
 
-import type * as msgpackT from "@msgpack/msgpack";
 import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
@@ -67,7 +64,6 @@ import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
 import * as nativeErr from "native-errors";
-import { writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
 import { DndProvider } from "react-dnd";
@@ -86,12 +82,27 @@ import type { IState } from "./types/IState";
 
 import { setLanguage, setNetworkConnected } from "./actions";
 import {
+  setApplicationVersion,
+  setInstallType,
+  setInstanceId,
+  setWarnedAdmin,
+} from "./actions/app";
+import {
   addNotification,
   setupNotificationSuppression,
 } from "./actions/notifications";
+import {
+  setMaximized,
+  setWindowPosition,
+  setWindowSize,
+} from "./actions/window";
 import reducer, { Decision } from "./reducers/index";
+import ExtensionManager from "./renderer/ExtensionManager";
+import { ExtensionContext } from "./renderer/ExtensionProvider";
 import { log } from "./renderer/logging";
 import { initApplicationMenu } from "./renderer/menu";
+import { fetchHydrationState } from "./renderer/store/hydration";
+import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
 import StyleManager from "./renderer/StyleManager";
 import { AppLayout } from "./renderer/views/AppLayout";
 import LoadingScreen from "./renderer/views/LoadingScreen";
@@ -101,8 +112,7 @@ import { reduxSanity, type StateError } from "./store/reduxSanity";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
-import ExtensionManager from "./util/ExtensionManager";
-import { ExtensionContext } from "./util/ExtensionProvider";
+import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
 import GlobalNotifications from "./util/GlobalNotifications";
@@ -112,70 +122,10 @@ import getI18n, {
   type TFunction,
 } from "./util/i18n";
 import { showError } from "./util/message";
-import safeForwardToMain from "./util/safeForwardToMain";
-import safeReplayActionRenderer from "./util/safeReplayActionRenderer";
 import { getSafe } from "./util/storeHelper";
-import {
-  bytesToString,
-  getAllPropertyNames,
-  replaceRecursive,
-} from "./util/util";
+import { bytesToString, getAllPropertyNames } from "./util/util";
 
 log("debug", "renderer process started", { pid: process["pid"] });
-
-function fetchReduxState(): IState {
-  return ipcRenderer.sendSync("get-redux-state");
-}
-
-async function initialState(): Promise<IState> {
-  try {
-    return fetchReduxState();
-  } catch (err) {
-    if (err instanceof SyntaxError) {
-      const tempPath = await window.api.app.getPath("temp");
-      const dumpPath = path.join(tempPath, "invalid_state.json");
-      const reduxState = await window.api.redux.getState();
-      writeFileSync(dumpPath, JSON.stringify(reduxState));
-      log(
-        "error",
-        "Failed to transfer application state. This indicates an issue with a " +
-          "foreign library we need help debugging with. Please pack up and send in the file" +
-          `"${dumpPath}"`,
-      );
-
-      // we don't understand the error yet but most likely large state gets corrupted during IPC
-      // somehow, so we try a chunked transfer as a fallback
-      // NOTE: This uses msgpack for serialization to rule out json as the problem. However this
-      //   msgpack library converts undefined to null whereas JSON encoding just drops all undefined
-      //   values so going this route may cause new issues where code isn't capable of handling
-      //   null. This is only an issue for the "session" hive or on the very first start because
-      //   everything that had been serialized had the undefined values dropped anyway.
-      let stateSerialized: Buffer = Buffer.alloc(0);
-
-      let idx = 0;
-      while (true) {
-        const newData: string = (await window.api.redux.getStateMsgpack(
-          idx++,
-        )) as string;
-        if (newData === "") {
-          break;
-        }
-        stateSerialized = Buffer.concat([
-          stateSerialized,
-          Buffer.from(newData, "base64"),
-        ]);
-      }
-
-      const msgpack: typeof msgpackT = require("@msgpack/msgpack");
-
-      return replaceRecursive(
-        msgpack.decode(stateSerialized),
-        "__UNDEFINED__",
-        undefined,
-      );
-    }
-  }
-}
 
 setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 
@@ -215,10 +165,15 @@ Bluebird.config({
   longStackTraces: false,
 });
 
-// set up store. Through the electronEnhancer this is automatically
-// synchronized with the main process store
+// set up store. State is persisted via persistDiffMiddleware which
+// sends diffs to the main process for storage
 
-const middleware = [thunkMiddleware, reduxSanity(sanityCheckCB), reduxLogger()];
+const middleware = [
+  thunkMiddleware,
+  reduxSanity(sanityCheckCB),
+  persistDiffMiddleware,
+  reduxLogger(),
+];
 
 function sanityCheckCB(err: StateError) {
   err["attachLogOnReport"] = true;
@@ -464,11 +419,11 @@ if (process.env.NODE_ENV === "development") {
     shouldHotReload: false,
   });
   enhancer = compose(
-    applyMiddleware(...middleware, safeForwardToMain, freeze),
+    applyMiddleware(...middleware, freeze),
     devtool || ((id) => id),
   );
 } else {
-  enhancer = compose(applyMiddleware(...middleware, safeForwardToMain));
+  enhancer = compose(applyMiddleware(...middleware));
 }
 
 const tFunc: TFunction = fallbackTFunc;
@@ -485,9 +440,18 @@ async function initGlobals(): Promise<void> {
 async function init(): Promise<ExtensionManager | null> {
   await StyleManager.renderDefault();
 
-  // extension manager initialized without store, the information about what
-  // extensions are to be loaded has to be retrieved from the main process
-  extensions = new ExtensionManager(undefined, eventEmitter);
+  // Fetch hydration data from main process (persisted state)
+  log("debug", "fetching hydration data from main process");
+  const hydratedState: Partial<IState> = await fetchHydrationState();
+  log("debug", "hydration data received", {
+    hives: Object.keys(hydratedState),
+  });
+
+  // Get extension state from hydrated app state for ExtensionManager
+  const extensionState = hydratedState?.app?.extensions ?? {};
+
+  // Extension manager initialized with extension state from hydration
+  extensions = new ExtensionManager(extensionState, eventEmitter);
   if (extensions.hasOutdatedExtensions) {
     // we should *not* get here, the main process should never have started the renderer
     // if there are outdated extensions
@@ -503,21 +467,65 @@ async function init(): Promise<ExtensionManager | null> {
       .getApi()
       .showErrorNotification("Failed to update application state", err);
 
-  // I only want to add reducers, but redux-electron-store seems to break
-  // when calling replaceReducer in the renderer
-  // (https://github.com/samiskin/redux-electron-store/issues/48)
-  // now that we're not using it any more, may want to try again
-  // store.replaceReducer(reducer(extReducers));
+  // Create store WITHOUT preloaded state - reducers will initialize with defaults
+  // Then we dispatch __hydrate to merge persisted data with defaults
   store = createStore(
     reducer(extReducers, () => Decision.QUIT, reportReducerError),
-    await initialState(),
     enhancer,
   );
-  safeReplayActionRenderer(store); // Safe IPC replay without double dispatch
+
+  // Hydrate each hive by dispatching __hydrate action
+  // This merges persisted data with reducer defaults (like the old architecture)
+  for (const hive of Object.keys(hydratedState)) {
+    store.dispatch({
+      type: "__hydrate",
+      payload: { [hive]: hydratedState[hive] },
+    });
+  }
+
+  // Set up window event handlers from main process
+  if (window.api?.window) {
+    window.api.window.onResized((width, height) => {
+      store.dispatch(setWindowSize({ width, height }));
+    });
+    window.api.window.onMoved((x, y) => {
+      store.dispatch(setWindowPosition({ x, y }));
+    });
+    window.api.window.onMaximized((maximized) => {
+      store.dispatch(setMaximized(maximized));
+    });
+  }
+
+  // Set up app initialization handler from main process
+  if (window.api?.app) {
+    window.api.app.onInit((metadata) => {
+      log("debug", "received app:init metadata from main", metadata);
+      if (metadata.version) {
+        store.dispatch(setApplicationVersion(metadata.version));
+      }
+      if (metadata.installType) {
+        store.dispatch(setInstallType(metadata.installType));
+      }
+      if (metadata.instanceId) {
+        store.dispatch(setInstanceId(metadata.instanceId));
+      }
+      if (metadata.warnedAdmin !== undefined) {
+        store.dispatch(setWarnedAdmin(metadata.warnedAdmin));
+      }
+    });
+  }
+
   extensions.setStore(store);
   setOutdated(extensions.getApi());
   extensions.applyExtensionsOfExtensions();
   log("debug", "renderer connected to store");
+
+  // Initialize main process extensions
+  const installType = store.getState().app?.installType ?? "official";
+  window.api.extensions.initializeAllMain(installType);
+  log("debug", "main process extensions initialization triggered", {
+    installType,
+  });
 
   setupNotificationSuppression((id) => {
     const state = store.getState();

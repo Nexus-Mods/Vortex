@@ -1,13 +1,13 @@
-import type ExtensionManager from "./ExtensionManager";
+import * as _ from "lodash";
+import * as React from "react";
 
+import type { IExtensionContext } from "../types/IExtensionContext";
 import type {
   IExtendedProps,
   IExtensibleProps,
 } from "../types/IExtensionProvider";
-import type { IExtensionContext } from "../types/IExtensionContext";
 
-import * as _ from "lodash";
-import * as React from "react";
+import ExtensionManager from "./ExtensionManager";
 
 // Cache for extension objects to avoid re-collecting on every render
 const extensionCache: Map<string, unknown[]> = new Map();
@@ -101,9 +101,7 @@ export function extend(
 ): <P extends IExtendedProps>(
   component: React.ComponentType<P>,
 ) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
-  const ExtensionManagerImpl: typeof ExtensionManager =
-    require("./ExtensionManager").default;
-  ExtensionManagerImpl.registerUIAPI(registerFunc.name);
+  ExtensionManager.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
 
   const updateExtensions = (props: any, context: ExtensionManager) => {

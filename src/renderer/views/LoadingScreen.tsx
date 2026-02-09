@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, type FC } from "react";
+import React from "react";
 
-import type ExtensionManager from "../../util/ExtensionManager";
+import type ExtensionManager from "../ExtensionManager";
 
 import ProgressBar from "../controls/ProgressBar";
 
@@ -18,14 +18,14 @@ const readable = (input: string): string => {
     .join(" ");
 };
 
-export const LoadingScreen: FC<ILoadingScreenProps> = (props) => {
+export const LoadingScreen: React.FC<ILoadingScreenProps> = (props) => {
   const { extensions } = props;
 
-  const [currentlyLoading, setCurrentlyLoading] = useState("");
-  const [loaded, setLoaded] = useState(0);
-  const totalExtensions = useMemo(() => extensions.numOnce, [extensions]);
+  const [currentlyLoading, setCurrentlyLoading] = React.useState("");
+  const [loaded, setLoaded] = React.useState(0);
+  const totalExtensions = React.useMemo(() => extensions.numOnce, [extensions]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     extensions.onLoadingExtension((name: string, idx: number) => {
       setCurrentlyLoading(name);
       setLoaded(idx);

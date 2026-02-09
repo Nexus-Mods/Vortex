@@ -18,7 +18,7 @@ import {
   DropdownItem,
   DropdownItems,
 } from "../../../../tailwind/components/dropdown";
-import { useExtensionContext } from "../../../../util/ExtensionProvider";
+import { useExtensionContext } from "../../../ExtensionProvider";
 import { getIconPath } from "../iconMap";
 import { IconButton } from "./IconButton";
 import { useGlobalIconActions } from "./useGlobalIconActions";

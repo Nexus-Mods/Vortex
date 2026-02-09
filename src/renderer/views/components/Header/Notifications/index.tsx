@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 
 import type { IState } from "../../../../../types/IState";
 
-import { useExtensionContext } from "../../../../../util/ExtensionProvider";
+import { useExtensionContext } from "../../../../ExtensionProvider";
 import { IconButton } from "../IconButton";
 import { NotificationItem } from "./NotificationItem";
 import { useNotificationActions } from "./useNotificationActions";

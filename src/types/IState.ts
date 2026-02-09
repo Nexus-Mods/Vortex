@@ -6,10 +6,7 @@ import type { ICollectionInstallState } from "../extensions/collections_integrat
 
 import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type {
-  IAvailableExtension,
-  IExtension,
-} from "../extensions/extension_manager/types";
+import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type {
@@ -24,43 +21,8 @@ import type { VortexInstallType } from "./VortexInstallType";
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
 
-/**
- * interface to represent a position on the screen
- *
- * @export
- * @interface IPosition
- */
-export interface IPosition {
-  x: number;
-  y: number;
-}
-
-/**
- * interface to represent pixel-dimensions on the screen
- *
- * @export
- * @interface IDimensions
- */
-export interface IDimensions {
-  height: number;
-  width: number;
-}
-
-/**
- * interface for window state
- *
- * @export
- * @interface IWindow
- */
-export interface IWindow {
-  maximized: boolean;
-  position?: IPosition;
-  size: IDimensions;
-  tabsMinimized: boolean;
-  customTitlebar: boolean;
-  minimizeToTray: boolean;
-  useModernLayout: boolean;
-}
+import type { IDimensions, IPosition, IWindow } from "../shared/types/state";
+export type { IDimensions, IPosition, IWindow };
 
 /**
  * state regarding all manner of user interaction

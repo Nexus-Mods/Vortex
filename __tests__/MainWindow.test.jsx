@@ -1,21 +1,4 @@
-jest.mock('../src/util/ExtensionProvider', () => {
-  const React = require('react');
-  const mockExtensionManager = {
-    getApi: () => ({
-      events: {
-        on: jest.fn(),
-        emit: jest.fn(),
-      },
-      getState: () => ({}),
-    }),
-    apply: jest.fn(),
-  };
-  return {
-    ExtensionContext: React.createContext(mockExtensionManager),
-    useExtensionObjects: () => [],
-    extend: () => (component) => component,
-  };
-});
+jest.mock('../src/renderer/ExtensionProvider');
 jest.mock('react-i18next', () => ({
   withTranslation: () => (component) => component,
   translate: () => (component) => component,

@@ -185,7 +185,6 @@ import {
 import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
-import { STAGING_DIR_TAG } from "./stagingDirectory";
 
 import { HTTPError } from "@nexusmods/nexus-api";
 import Bluebird, { method as toBluebird } from "bluebird";
@@ -1388,7 +1387,7 @@ class InstallManager {
               })
               // calculate the md5 hash here so we can store it with the mod meta information later,
               // otherwise we'd not remember the hash when installing from external file
-              .tap(() => {
+              .then((gameId) => {
                 // Check if we already have the hash from the download to avoid recalculation
                 const existingHash = getSafe(
                   fullInfo,
@@ -1403,7 +1402,7 @@ class InstallManager {
                 if (existingHash && existingSize) {
                   archiveMD5 = existingHash;
                   archiveSize = existingSize;
-                  return Promise.resolve();
+                  return Promise.resolve(gameId);
                 }
 
                 // Only calculate hash if we don't have it
@@ -1420,6 +1419,7 @@ class InstallManager {
                   } catch (err) {
                     // no operation
                   }
+                  return gameId;
                 });
               })
               .then((gameId) => {
@@ -1797,12 +1797,13 @@ class InstallManager {
                     fullInfo.choices,
                     unattended,
                     details,
-                  ).tap(() => {
+                  ).then((result) => {
                     const endTime = Date.now();
                     log("debug", "processed instructions", {
                       installId: activeInstall.installId,
                       duration: endTime - startTime,
                     });
+                    return result;
                   });
                 },
               )
@@ -3578,25 +3579,29 @@ class InstallManager {
     );
   }
 
-  private isCritical(error: string): boolean {
-    // Don't treat file-in-use errors as critical - they can be retried
-    if (this.isFileInUse(error)) {
-      return false;
+  private isFileInUse(errorMessage: string, errorCode?: string): boolean {
+    if (errorCode && ["EBUSY", "EPERM", "EACCES"].includes(errorCode)) {
+      return true;
     }
-    return (
-      error.indexOf("Unexpected end of archive") !== -1 ||
-      error.indexOf("ERROR: Data Error") !== -1 ||
-      // used to be "Can not", current 7z prints "Cannot"
-      error.indexOf("Cannot open the file as archive") !== -1 ||
-      error.indexOf("Can not open the file as archive") !== -1
-    );
+    const lowered = errorMessage.toLowerCase();
+    const patterns = [
+      "being used by another process",
+      "locked by another process",
+      "denied",
+      "cannot open",
+      "can not open",
+    ];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
-  private isFileInUse(error: string): boolean {
-    return (
-      error.indexOf("being used by another process") !== -1 ||
-      error.indexOf("locked by another process") !== -1
-    );
+  private isCritical(errorMessage: string): boolean {
+    // Don't treat file-in-use errors as critical - they can be retried
+    if (this.isFileInUse(errorMessage)) {
+      return false;
+    }
+    const lowered = errorMessage.toLowerCase();
+    const patterns = ["unexpected end of archive", "error: data error"];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
   private extractWithRetry(
@@ -3619,8 +3624,10 @@ class InstallManager {
           progress,
           queryPassword as any,
         )
-        .catch((err: Error) => {
-          if (this.isFileInUse(err.message) && retriesLeft > 0) {
+        .catch((err) => {
+          const error = unknownToError(err);
+          const code = getErrorCode(err);
+          if (this.isFileInUse(error.message, code) && retriesLeft > 0) {
             log("info", "archive file in use, retrying extraction", {
               archivePath: path.basename(archivePath),
               retriesLeft,
@@ -3630,12 +3637,12 @@ class InstallManager {
               attemptExtract(retriesLeft - 1),
             );
           }
-          if (this.isCritical(err.message)) {
+          if (this.isCritical(error.message)) {
             return Bluebird.reject(
-              new ArchiveBrokenError(path.basename(archivePath), err.message),
+              new ArchiveBrokenError(path.basename(archivePath), error.message),
             );
           }
-          return Bluebird.reject(err);
+          return Bluebird.reject(error);
         });
     };
     return attemptExtract(maxRetries);
@@ -4499,7 +4506,17 @@ class InstallManager {
         },
       );
       if (fatal !== undefined) {
-        return Bluebird.reject(new ProcessCanceled("Installer script failed"));
+        const errorMessages = instructionGroups.error.map((err) => err.source);
+        const errorSummary = errorMessages.join("; ");
+        return Bluebird.reject(
+          new ProcessCanceled(`Installer script failed: ${errorSummary}`, {
+            modId,
+            errors: instructionGroups.error.map((err) => ({
+              severity: err.value,
+              message: err.source,
+            })),
+          }),
+        );
       }
     }
 
@@ -5189,13 +5206,14 @@ class InstallManager {
             }
           },
         )
-        .tap(() => {
+        .then((result) => {
           if (context !== undefined) {
             context.set(
               "items-completed",
               context.get("items-completed", 0) + 1,
             );
           }
+          return result;
         })
         .catch((err) => {
           return reject(err);

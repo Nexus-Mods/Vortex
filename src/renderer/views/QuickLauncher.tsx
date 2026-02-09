@@ -12,7 +12,6 @@ import { makeExeId } from "../../reducers/session";
 import { unknownToError } from "../../shared/errors";
 import Debouncer from "../../util/Debouncer";
 import { log } from "../../util/log";
-import { useExtensionContext } from "../../util/ExtensionProvider";
 import { showError } from "../../util/message";
 import {
   activeGameId,
@@ -26,6 +25,7 @@ import { truthy } from "../../util/util";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
+import { useExtensionContext } from "../ExtensionProvider";
 
 type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 
@@ -57,20 +57,22 @@ export const QuickLauncher: React.FC = () => {
     ),
   );
   const knownGames = useSelector(
-    (state: IState) => state.session.gameMode.known,
+    (state: IState) => state.session?.gameMode?.known ?? [],
   );
-  const profiles = useSelector((state: IState) => state.persistent.profiles);
+  const profiles = useSelector(
+    (state: IState) => state.persistent?.profiles ?? {},
+  );
   const discoveredGames = useSelector(
-    (state: IState) => state.settings.gameMode.discovered,
+    (state: IState) => state.settings?.gameMode?.discovered ?? {},
   );
   const profilesVisible = useSelector(
-    (state: IState) => state.settings.interface.profilesVisible,
+    (state: IState) => state.settings?.interface?.profilesVisible ?? false,
   );
   const lastActiveProfile = useSelector(
-    (state: IState) => state.settings.profiles.lastActiveProfile,
+    (state: IState) => state.settings?.profiles?.lastActiveProfile ?? {},
   );
   const toolsRunning = useSelector(
-    (state: IState) => state.session.base.toolsRunning,
+    (state: IState) => state.session?.base?.toolsRunning ?? {},
   );
 
   // Derived state - gameIconCache with debouncing

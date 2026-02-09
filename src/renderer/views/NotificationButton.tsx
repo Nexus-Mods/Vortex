@@ -21,9 +21,9 @@ import {
 } from "../../actions/notifications";
 import { suppressNotification } from "../../actions/notificationSettings";
 import Debouncer from "../../util/Debouncer";
-import { useExtensionContext } from "../../util/ExtensionProvider";
 import Icon from "../controls/Icon";
 import RadialProgress from "../controls/RadialProgress";
+import { useExtensionContext } from "../ExtensionProvider";
 import { Notification } from "./Notification";
 
 export interface IBaseProps {

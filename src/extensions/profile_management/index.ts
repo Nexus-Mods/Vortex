@@ -29,8 +29,7 @@ import type {
   ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IGameStored, IState } from "../../types/IState";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
-import type { IExtension } from "../extension_manager/types";
+import type { IExtension, IRegisteredExtension } from "../../types/extensions";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 
@@ -93,6 +92,7 @@ import { CorruptActiveProfile } from "./types/Errors";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const profileFiles: {
   [gameId: string]: Array<string | (() => PromiseLike<string[]>)>;
@@ -466,13 +466,14 @@ function genOnProfileChange(
         // changes that happened.
         const enqueue = (cb: () => PromiseBB<void>) => {
           queue = queue.then(cb).catch((err) => {
-            log("error", "error in profile-will-change handler", err.message);
+            const message = getErrorMessageOrDefault(err);
+            log("error", "error in profile-will-change handler", message);
             PromiseBB.resolve();
           });
         };
 
-        // changes to profile files are only saved back to the profile at this point
         const oldProfile = state.persistent.profiles[prev];
+        // changes to profile files are only saved back to the profile at this point
         queue = queue.then(() => refreshProfile(store, oldProfile, "import"));
 
         api.events.emit("profile-will-change", current, enqueue);
@@ -487,18 +488,24 @@ function genOnProfileChange(
 
         return (
           queue
-            .then(() => refreshProfile(store, profile, "export"))
+            .then(() => {
+              log("debug", "starting refresh profile export");
+              return refreshProfile(store, profile, "export");
+            })
             // ensure the old profile is synchronised before we switch, otherwise me might
             // revert some changes
-            .tap(() =>
-              log("info", "will deploy previously active profile", prev),
-            )
-            .then(() => deploy(api, prev))
-            .tap(() => log("info", "will deploy next active profile", current))
-            .then(() => deploy(api, current))
-            .tap(() => log("info", "did deploy next active profile", current))
             .then(() => {
-              const prof = profileById(api.store.getState(), current);
+              log("info", "will deploy previously active profile", prev);
+              return deploy(api, prev);
+            })
+            .then(() => {
+              log("info", "did deploy previously active profile", prev);
+              log("info", "will deploy next active profile", current);
+              return deploy(api, current);
+            })
+            .then(() => {
+              log("info", "did deploy next active profile", current);
+              const prof = profileById(api.store.getState() as IState, current);
               if (prof === undefined) {
                 return PromiseBB.reject(
                   new ProcessCanceled(
@@ -518,8 +525,9 @@ function genOnProfileChange(
             })
         );
       })
-      .tapCatch(() => {
+      .catch((err) => {
         cancelSwitch();
+        return PromiseBB.reject(err);
       })
       .catch(ProcessCanceled, (err) => {
         showError(store.dispatch, "Failed to set profile", err.message, {

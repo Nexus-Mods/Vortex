@@ -1896,7 +1896,7 @@ function getUserInfo(
           actions: [
             {
               title: 'Check for update', action: () => {
-                ipcRenderer.send('check-for-updates', 'stable');
+                window.api.updater.checkForUpdates('stable', true);
               },
             },
           ],

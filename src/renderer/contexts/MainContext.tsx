@@ -15,7 +15,7 @@ import { useDispatch } from "react-redux";
 import type { IComponentContext } from "../../types/IComponentContext";
 
 import { setOpenMainPage } from "../../actions/session";
-import { useExtensionContext } from "../../util/ExtensionProvider";
+import { useExtensionContext } from "../ExtensionProvider";
 import { useMenuLayerContext } from "./MenuLayerContext";
 import { useWindowContext } from "./WindowContext";
 

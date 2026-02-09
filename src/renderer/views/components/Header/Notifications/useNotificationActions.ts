@@ -11,7 +11,7 @@ import {
   fireNotificationAction,
 } from "../../../../../actions/notifications";
 import { suppressNotification } from "../../../../../actions/notificationSettings";
-import { useExtensionContext } from "../../../../../util/ExtensionProvider";
+import { useExtensionContext } from "../../../../ExtensionProvider";
 
 interface UseNotificationActionsProps {
   notifications: INotification[];

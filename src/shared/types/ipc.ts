@@ -5,43 +5,51 @@
 import type Electron from "electron";
 
 import type { Level } from "./logging";
+import type { PersistedHive, PersistedState } from "./state";
+
+// Re-export state types for convenience
+export type { PersistedHive, PersistedState };
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
 
-/** Type containing all known channels used by renderer processes to send messages to the main process */
-export interface RendererChannels {
-  // NOTE(erri120): Parameters must be serializable and return values must be void.
-
-  /** Logs a message */
-  "logging:log": (level: Level, message: string, metadata?: string) => void;
-
-  // Examples:
-  "example:renderer_foo": () => void;
-  "example:renderer_bar": (data: number) => void;
+/** A single diff operation for state persistence */
+export interface DiffOperation {
+  /** Whether to set or remove a value */
+  type: "set" | "remove";
+  /** Path to the value in state (e.g., ["settings", "window", "x"]) */
+  path: string[];
+  /** The value to set (only for "set" operations) - changing this to "Serializable" gives off infinite type errors */
+  value?: unknown;
 }
 
-/** Type containing all known channels used by the main process to send messages to a renderer process */
-export interface MainChannels {
-  // NOTE(erri120): Parameters must be serializable and return values must be void.
+export interface AppInitMetadata {
+  /** Command line arguments */
+  commandLine: Record<string, unknown>;
+  /** Install type (regular installer or managed like Epic/MS Store) */
+  installType?: "regular" | "managed";
+  /** Application version string */
+  version?: string;
+  /** Instance ID for crash reporting */
+  instanceId?: string;
+  /** Whether user was warned about admin (0 = not warned) */
+  warnedAdmin?: number;
+}
 
-  // Examples:
-  "example:main_foo": () => void;
-  "example:main_bar": (data: string) => void;
-
-  // BrowserView event forwarding
-  // Dynamic channel: `view-${viewId}-${eventId}`
-  // We use a pattern to match: view-*
-
-  // Window event forwarding (main -> renderer)
-  "window:event:maximize": () => void;
-  "window:event:unmaximize": () => void;
-  "window:event:close": () => void;
-  "window:event:focus": () => void;
-  "window:event:blur": () => void;
-
-  // Menu click events (main -> renderer)
-  "menu:click": (menuItemId: string) => void;
+/** Status of the auto-updater in main process */
+export interface UpdateStatus {
+  /** Whether an update is available */
+  available: boolean;
+  /** Whether update is downloaded and ready to install */
+  downloaded: boolean;
+  /** Version of the available update */
+  version?: string;
+  /** Release notes/changelog for the update */
+  releaseNotes?: string;
+  /** Download progress (0-100) if downloading */
+  downloadProgress?: number;
+  /** Error message if update check failed */
+  error?: string;
 }
 
 /** Vortex application paths - computed once in main process and shared */
@@ -68,6 +76,75 @@ export type VortexPaths = {
   desktop: string;
 };
 
+/** Type containing all known channels used by renderer processes to send messages to the main process */
+export interface RendererChannels {
+  // NOTE(erri120): Parameters must be serializable and return values must be void.
+
+  /** Logs a message */
+  "logging:log": (level: Level, message: string, metadata?: string) => void;
+
+  // Examples:
+  "example:renderer_foo": () => void;
+  "example:renderer_bar": (data: number) => void;
+
+  // Persistence: Send diff operations to main for persistence
+  "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;
+
+  // Extensions: Initialize all main process extensions
+  "extensions:init-all-main": (installType: string) => void;
+
+  // Extensions: Initialize specific extension in main process (per-extension)
+  "extensions:init-main": (extensionName: string) => void;
+
+  // Updater: Set update channel
+  "updater:set-channel": (channel: string, manual: boolean) => void;
+
+  // Updater: Check for updates
+  "updater:check-for-updates": (channel: string, manual: boolean) => void;
+
+  // Updater: Download the available update (installAfterDownload triggers auto-restart when done)
+  "updater:download": (channel: string, installAfterDownload: boolean) => void;
+
+  // Updater: Restart and install update
+  "updater:restart-and-install": () => void;
+}
+
+/** Type containing all known channels used by the main process to send messages to a renderer process */
+export interface MainChannels {
+  // NOTE(erri120): Parameters must be serializable and return values must be void.
+
+  // Examples:
+  "example:main_foo": () => void;
+  "example:main_bar": (data: string) => void;
+
+  // Persistence: Send hydration data to renderer on startup
+  "persist:hydrate": (hive: PersistedHive, data: Serializable) => void;
+
+  // App initialization: Main sends all startup metadata to renderer in one message
+  "app:init": (metadata: AppInitMetadata) => void;
+
+  // Extensions: Response from main process after initializing an extension
+  "extensions:init-main-response": (response: {
+    extensionName: string;
+    success: boolean;
+    error?: string;
+  }) => void;
+
+  // BrowserView event forwarding
+  // Dynamic channel: `view-${viewId}-${eventId}`
+  // We use a pattern to match: view-*
+
+  // Window event forwarding (main -> renderer)
+  "window:event:maximize": () => void;
+  "window:event:unmaximize": () => void;
+  "window:event:close": () => void;
+  "window:event:focus": () => void;
+  "window:event:blur": () => void;
+
+  // Menu click events (main -> renderer)
+  "menu:click": (menuItemId: string) => void;
+}
+
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
 export interface SyncChannels {
   // NOTE: These are synchronous IPC channels used during preload initialization.
@@ -81,6 +158,11 @@ export interface InvokeChannels {
   // Examples:
   "example:ping": () => Promise<string>;
 
+  // Persistence: Get all hydration data at startup (called once during init)
+  "persist:get-hydration": () => Promise<Partial<PersistedState>>;
+
+  // Updater: Query current update status from main process
+  "updater:get-status": () => Promise<UpdateStatus>;
   // Dialog channels
   "dialog:showOpen": (
     options: Electron.OpenDialogOptions,
@@ -231,8 +313,8 @@ export type TypedArray =
   | BigInt64Array
   | BigUint64Array;
 
-/** Represents all IPC-safe types */
-export type Serializable =
+/** Represents all IPC-safe primitives */
+type SerializablePrimitive =
   | string
   | number
   | bigint
@@ -241,14 +323,16 @@ export type Serializable =
   | undefined
   | void
   | Date
-  | Serializable[]
-  | { [key: string]: Serializable }
-  | Map<Serializable, Serializable>
-  | Set<Serializable>
   | ArrayBuffer
   | SharedArrayBuffer
   | DataView
   | TypedArray;
+
+/** Represents all IPC-safe types */
+export type Serializable =
+  | SerializablePrimitive
+  | Serializable[]
+  | { [key: string]: Serializable };
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

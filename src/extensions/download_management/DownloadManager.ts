@@ -219,7 +219,7 @@ class DownloadWorker {
           // to use it now
           job.received = job.size;
           job.size = 0;
-          const [ignore, fileName] = jobUrl.split("<")[0].split("|");
+          const [ignore, fileName] = jobUrl.toString().split("<")[0].split("|");
           finishCB(false, fileName);
         } else if (jobUrl) {
           this.assignJob(job, jobUrl);
@@ -2145,11 +2145,14 @@ class DownloadManager {
     }
 
     // For single-chunk downloads, update confirmedSize only if download hasn't started yet
+    // AND it starts from the beginning of the file. Partial chunks (from resumed multi-chunk
+    // downloads or 416 recovery) should keep their original confirmedSize.
     // Once download has started (confirmedReceived > 0), confirmedSize is immutable
     // Note: confirmedSize may have already been updated by the worker in handleResponse
     if (
       download.chunks.length === 1 &&
-      download.chunks[0].confirmedReceived === 0
+      download.chunks[0].confirmedReceived === 0 &&
+      download.chunks[0].confirmedOffset === 0
     ) {
       download.chunks[0].confirmedSize = size;
       // Recalculate derived size field
@@ -2346,11 +2349,14 @@ class DownloadManager {
       });
     } else {
       // Single chunk download - update confirmedSize only if download hasn't started yet
+      // AND it starts from the beginning of the file. Partial chunks (from resumed multi-chunk
+      // downloads or 416 recovery) should keep their original confirmedSize.
       // Once download has started (confirmedReceived > 0), confirmedSize is immutable
       // Note: confirmedSize may have already been updated by the worker in handleResponse
       if (
         download.chunks.length === 1 &&
-        download.chunks[0].confirmedReceived === 0
+        download.chunks[0].confirmedReceived === 0 &&
+        download.chunks[0].confirmedOffset === 0
       ) {
         download.chunks[0].confirmedSize = fileSize;
         // Recalculate derived size field

@@ -2,7 +2,7 @@ import React, { type FC, type JSX } from "react";
 
 import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 
-import { useExtensionObjects } from "../../util/ExtensionProvider";
+import { useExtensionObjects } from "../ExtensionProvider";
 
 export interface IBaseProps {
   slim: boolean;

@@ -4,8 +4,8 @@ import type {
   IActionDefinition,
   IActionOptions,
 } from "../../types/IActionDefinition";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
-import { extend } from "../../util/ExtensionProvider";
+import type { IRegisteredExtension } from "../../types/extensions";
+import { extend } from "../ExtensionProvider";
 
 import * as _ from "lodash";
 import * as React from "react";

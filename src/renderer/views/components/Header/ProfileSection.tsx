@@ -29,7 +29,7 @@ import {
   DropdownItems,
 } from "../../../../tailwind/components/dropdown";
 import { Icon } from "../../../../tailwind/components/next/icon";
-import { useExtensionContext } from "../../../../util/ExtensionProvider";
+import { useExtensionContext } from "../../../ExtensionProvider";
 import {
   hasNexusConfidential,
   hasNexusPersistent,

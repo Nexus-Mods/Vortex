@@ -9,10 +9,10 @@ import type { IState } from "../../types/IState";
 import type startupSettingsT from "../../util/startupSettings";
 
 import { setSettingsPage } from "../../actions/session";
-import { useExtensionObjects } from "../../util/ExtensionProvider";
 import lazyRequire from "../../util/lazyRequire";
 import makeReactive from "../../util/makeReactive";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import { useExtensionObjects } from "../ExtensionProvider";
 import MainPage from "./MainPage";
 
 const startupSettings = lazyRequire(

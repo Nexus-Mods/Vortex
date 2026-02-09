@@ -2,11 +2,11 @@ import React, { type FC } from "react";
 
 import type { PropsCallbackTyped } from "../../types/IExtensionContext";
 
-import { useExtensionObjects } from "../../util/ExtensionProvider";
 import ErrorBoundary, {
   type IBaseProps as IErrorBoundaryProps,
 } from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
+import { useExtensionObjects } from "../ExtensionProvider";
 
 export interface IBaseProps {
   visibleDialog: string;
