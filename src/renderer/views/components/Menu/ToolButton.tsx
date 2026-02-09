@@ -1,8 +1,12 @@
+import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 import { pathToFileURL } from "url";
 
 import type { IStarterInfo } from "../../../../util/StarterInfo";
 
+import { Icon } from "../../../../tailwind/components/next/icon";
+import { Typography } from "../../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../../tailwind/components/next/utils";
 import StarterInfo from "../../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,31 +33,69 @@ export const ToolButton: FC<ToolButtonProps> = ({
     }
   }, [starter]);
 
+  // todo
+  const isLoading = false;
+
   return (
     <button
-      className="hover-overlay relative size-8 shrink-0 rounded-sm border border-stroke-moderate before:z-1"
+      className={joinClasses(
+        "group/tool-button relative size-8 shrink-0 rounded-sm border border-stroke-moderate",
+        { "pointer-events-none cursor-not-allowed": isLoading },
+      )}
       title={isValid ? starter.name : `${starter.name} (Not configured)`}
       {...props}
     >
       {imageSrc ? (
         <img
           alt={starter.name}
-          className={`absolute inset-0 size-full object-cover ${!isValid ? "opacity-40 grayscale" : ""}`}
+          className={joinClasses(
+            "absolute inset-0 size-full rounded-sm object-cover",
+            { "opacity-40 grayscale": !isValid },
+          )}
           src={imageSrc}
         />
       ) : (
-        <div
-          className={`text-foreground-muted absolute inset-0 flex items-center justify-center bg-surface-high text-xs ${!isValid ? "opacity-40" : ""}`}
+        <Typography
+          as="span"
+          className={joinClasses(
+            "absolute inset-0 flex items-center justify-center bg-surface-high leading-none font-semibold",
+            { "opacity-40": !isValid },
+          )}
+          typographyType="body-xs"
         >
           {starter.name?.charAt(0)?.toUpperCase() || "?"}
-        </div>
+        </Typography>
       )}
 
-      <span className="absolute inset-0 z-1 rounded-sm border border-stroke-moderate" />
+      <span
+        className={joinClasses(
+          [
+            "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-stroke-moderate transition-colors",
+            "group-hover/tool-button:border-stroke-strong group-hover/tool-button:bg-translucent-600",
+          ],
+          { "border-stroke-strong bg-translucent-600": isLoading },
+        )}
+      >
+        <span
+          className={joinClasses(
+            [
+              "relative text-neutral-inverted opacity-0 transition-opacity",
+              "group-hover/tool-button:opacity-100",
+            ],
+            { "animate-spin opacity-100": isLoading },
+          )}
+        >
+          {isLoading ? (
+            <>
+              <Icon className="opacity-40" path={mdiCircleOutline} />
 
-      {isPrimary && (
-        <span className="bg-accent-primary absolute -top-0.5 -right-0.5 z-2 size-2 rounded-full" />
-      )}
+              <Icon className="absolute inset-0" path={mdiLoading} />
+            </>
+          ) : (
+            <Icon path={mdiPlay} />
+          )}
+        </span>
+      </span>
     </button>
   );
 };

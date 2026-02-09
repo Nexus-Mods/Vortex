@@ -40,6 +40,9 @@ export const Header: FC = () => {
     setMenuIsCollapsed((prev) => !prev);
   }, [setMenuIsCollapsed]);
 
+  // todo
+  const profileName = "Profile name here";
+
   return (
     <div
       className="flex h-11 items-center justify-between pl-4"
@@ -55,8 +58,15 @@ export const Header: FC = () => {
           onClick={handleToggleMenu}
         />
 
-        <Typography className="truncate leading-5 font-semibold">
-          {title}
+        <Typography
+          appearance="none"
+          className="flex items-center gap-x-2 truncate leading-5 font-semibold"
+        >
+          <span className="text-neutral-strong">{title}</span>
+
+          {profileName && (
+            <span className="text-neutral-subdued">{profileName}</span>
+          )}
         </Typography>
       </div>
 
