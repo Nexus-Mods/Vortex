@@ -45,7 +45,7 @@ export const Header: FC = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between pl-4"
+      className="flex h-11 items-center justify-between pl-5"
       style={{ WebkitAppRegion: "drag" } as CSSProperties}
     >
       <div

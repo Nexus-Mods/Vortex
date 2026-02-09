@@ -56,12 +56,13 @@ export const ToolButton: FC<ToolButtonProps> = ({
         />
       ) : (
         <Typography
+          appearance="moderate"
           as="span"
           className={joinClasses(
-            "absolute inset-0 flex items-center justify-center bg-surface-high leading-none font-semibold",
+            "absolute inset-0 flex items-center justify-center bg-surface-high leading-none",
             { "opacity-40": !isValid },
           )}
-          typographyType="body-xs"
+          typographyType="body-lg"
         >
           {starter.name?.charAt(0)?.toUpperCase() || "?"}
         </Typography>
