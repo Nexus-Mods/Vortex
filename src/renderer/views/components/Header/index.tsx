@@ -22,6 +22,12 @@ export const Header: FC = () => {
   const knownGames = useSelector(
     (state: IState) => state.session.gameMode.known,
   );
+  const activeProfileId = useSelector(
+    (state: IState) => state.settings.profiles.activeProfileId,
+  );
+  const activeProfile = useSelector(
+    (state: IState) => state.persistent.profiles[activeProfileId],
+  );
 
   const title = useMemo(() => {
     if (selection.type === "home") {
@@ -35,8 +41,8 @@ export const Header: FC = () => {
     setMenuIsCollapsed((prev) => !prev);
   }, [setMenuIsCollapsed]);
 
-  // todo
-  const profileName = "Profile name here";
+  const profileName =
+    selection.type !== "home" ? activeProfile?.name : undefined;
 
   return (
     <div

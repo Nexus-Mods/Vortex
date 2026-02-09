@@ -64,7 +64,7 @@ export const setToolRunning = createAction(
 );
 
 export const setToolPid = createAction(
-  "SET_TOOL_RUNNING",
+  "SET_TOOL_PID",
   (exePath: string, pid: number, exclusive: boolean) => ({
     exePath,
     pid,
