@@ -69,7 +69,7 @@ export const Notifications = () => {
           />
 
           {popoverOpen && items.length > 0 && (
-            <Popover.Panel className="scrollbar z-popover absolute right-0 mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
+            <Popover.Panel className="absolute right-0 z-popover mt-2.5 max-h-[50vh] w-sm space-y-0.5 overflow-y-auto rounded-sm border border-stroke-weak bg-surface-base p-1 shadow-md">
               {items.map((notification) => (
                 <NotificationItem
                   collapsed={collapsed[notification.group]}

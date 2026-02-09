@@ -23,7 +23,7 @@ export const ModernLayout: FC = () => {
         <div className="flex grow flex-col">
           <Header />
 
-          <div className="flex h-full pr-3 pb-3">
+          <div className="flex min-h-0 grow">
             {switchingProfile ? (
               <ProfileSwitcher />
             ) : (

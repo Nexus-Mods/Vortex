@@ -1,5 +1,6 @@
-import * as React from "react";
 import type { ReactNode } from "react";
+
+import * as React from "react";
 
 import { joinClasses } from "../../utils";
 
@@ -15,12 +16,12 @@ export const TabBar = ({
 }) => (
   <div
     className={joinClasses([
-      "scrollbar relative flex gap-x-6 overflow-x-auto",
+      "relative flex gap-x-6 overflow-x-auto",
       className,
     ])}
     role="tablist"
   >
-    <div className="bg-stroke-subdued absolute inset-x-0 bottom-0 h-px w-full" />
+    <div className="absolute inset-x-0 bottom-0 h-px w-full bg-stroke-subdued" />
 
     {children}
   </div>
