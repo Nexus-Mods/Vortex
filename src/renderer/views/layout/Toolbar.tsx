@@ -1,4 +1,4 @@
-import React, { type FC } from "react";
+import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import * as semver from "semver";
@@ -34,6 +34,12 @@ export const Toolbar: FC = () => {
     "toolbar-version-container toolbar-version-" + prerelease;
 
   const className = customTitlebar ? "toolbar-app-region" : "toolbar-default";
+
+  // Filter out modernOnly actions (Classic UI should only show classicOnly or neutral actions)
+  const filterGlobalIcons = useCallback(
+    (action: IActionDefinition) => !action.options?.modernOnly,
+    [],
+  );
 
   if (switchingProfile) {
     return <div className={className} />;
@@ -90,6 +96,7 @@ export const Toolbar: FC = () => {
           <IconBar
             className="global-icons"
             collapse={true}
+            filter={filterGlobalIcons}
             group="global-icons"
             id="global-icons"
             orientation="vertical"

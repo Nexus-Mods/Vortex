@@ -23,19 +23,21 @@ export const ModernLayout: FC = () => {
         <div className="flex grow flex-col">
           <Header />
 
-          {switchingProfile ? (
-            <ProfileSwitcher />
-          ) : (
-            <div className="flex h-full pr-3 pb-3">
-              <Menu />
+          <div className="flex h-full pr-3 pb-3">
+            {switchingProfile ? (
+              <ProfileSwitcher />
+            ) : (
+              <>
+                <Menu />
 
-              <ModernContentPane />
+                <ModernContentPane />
+              </>
+            )}
 
-              <DialogLayer />
+            <DialogLayer />
 
-              <ToastContainer />
-            </div>
-          )}
+            <ToastContainer />
+          </div>
         </div>
       </LayoutContainer>
 

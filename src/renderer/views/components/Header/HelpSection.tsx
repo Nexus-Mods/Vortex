@@ -8,14 +8,19 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
+import type { IActionDefinition } from "../../../../types/IActionDefinition";
+
 import { setDialogVisible } from "../../../../actions/session";
 import {
   Dropdown,
+  DropdownDivider,
   DropdownItem,
   DropdownItems,
 } from "../../../../tailwind/components/dropdown";
 import { useExtensionContext } from "../../../../util/ExtensionProvider";
+import { getIconPath } from "../Menu/iconMap";
 import { IconButton } from "./IconButton";
+import { useGlobalIconActions } from "./useGlobalIconActions";
 
 export const HelpSection: FC = () => {
   const dispatch = useDispatch();
@@ -35,6 +40,16 @@ export const HelpSection: FC = () => {
     api.events.emit("show-main-page", "About");
   }, [api]);
 
+  const globalIconActions = useGlobalIconActions(extensions);
+
+  const handleGlobalIconAction = useCallback((action: IActionDefinition) => {
+    return () => {
+      if (action.action) {
+        action.action([]);
+      }
+    };
+  }, []);
+
   return (
     <Dropdown>
       <Menu.Button
@@ -44,6 +59,18 @@ export const HelpSection: FC = () => {
       />
 
       <DropdownItems>
+        {globalIconActions.map((action) => (
+          <DropdownItem
+            key={`${action.icon}-${action.title}`}
+            leftIconPath={getIconPath(action.icon)}
+            onClick={handleGlobalIconAction(action)}
+          >
+            {t(action.title, { ns: action.options?.namespace })}
+          </DropdownItem>
+        ))}
+
+        {globalIconActions.length > 0 && <DropdownDivider />}
+
         <DropdownItem
           leftIconPath={mdiHelpCircleOutline}
           onClick={handleHelpCentre}
@@ -55,7 +82,7 @@ export const HelpSection: FC = () => {
           leftIconPath={mdiFileDocumentOutline}
           onClick={handleDiagnosticFiles}
         >
-          {t("View Logs")}
+          {t("View logs")}
         </DropdownItem>
 
         <DropdownItem

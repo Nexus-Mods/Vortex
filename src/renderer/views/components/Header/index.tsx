@@ -1,10 +1,5 @@
 import { mdiMenuOpen, mdiMenuClose } from "@mdi/js";
-import React, {
-  type CSSProperties,
-  type FC,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { type FC, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -46,11 +41,11 @@ export const Header: FC = () => {
   return (
     <div
       className="flex h-11 items-center justify-between pl-5"
-      style={{ WebkitAppRegion: "drag" } as CSSProperties}
+      style={{ WebkitAppRegion: "drag" }}
     >
       <div
         className="flex items-center gap-x-1"
-        style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+        style={{ WebkitAppRegion: "no-drag" }}
       >
         <IconButton
           iconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
@@ -72,7 +67,7 @@ export const Header: FC = () => {
 
       <div
         className="flex items-center gap-x-4"
-        style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+        style={{ WebkitAppRegion: "no-drag" }}
       >
         <PremiumIndicator />
 

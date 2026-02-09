@@ -400,7 +400,7 @@ function init(context: types.IExtensionContext) {
     "global-icons",
     100,
     "feedback",
-    {},
+    { classicOnly: true } as any,
     "Send Feedback",
     () => util.opn(FEEDBACK_GOOGLE_FORM).catch(() => null) as any,
   );
@@ -409,7 +409,7 @@ function init(context: types.IExtensionContext) {
     "global-icons",
     100,
     "bug",
-    {},
+    { classicOnly: true } as any,
     "Report Bug",
     () => util.opn(VORTEX_ISSUE_TRACKER).catch(() => null) as any,
   );

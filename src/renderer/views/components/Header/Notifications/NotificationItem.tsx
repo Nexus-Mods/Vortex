@@ -22,10 +22,7 @@ import {
 } from "./notificationUtils";
 import { useNotificationTranslation } from "./useNotificationTranslation";
 
-const STATUS_MAP: Record<
-  NotificationType,
-  { className: string; icon: string }
-> = {
+const STATUS_MAP = {
   error: { className: "text-danger-strong", icon: mdiAlertOctagon },
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
@@ -33,7 +30,7 @@ const STATUS_MAP: Record<
   activity: { className: "text-info-strong", icon: mdiInformationOutline },
   global: { className: "text-info-strong", icon: mdiInformationOutline },
   silent: { className: "text-info-strong", icon: mdiInformationOutline },
-};
+} satisfies Record<NotificationType, { className: string; icon: string }>;
 
 const getNotificationStatus = (
   type: NotificationType,
