@@ -3082,20 +3082,20 @@ interface IOverlaysState {
 // @public
 interface IPersistor {
     // (undocumented)
-    getAllKeys(): Promise_2<PersistorKey[]>;
+    getAllKeys(): PromiseLike<PersistorKey[]>;
     // (undocumented)
-    getAllKVs?(prefix?: string): Promise_2<Array<{
+    getAllKVs?(prefix?: string): PromiseLike<Array<{
         key: PersistorKey;
         value: string;
     }>>;
     // (undocumented)
-    getItem(key: PersistorKey): Promise_2<string>;
+    getItem(key: PersistorKey): PromiseLike<string>;
     // (undocumented)
-    removeItem(key: PersistorKey): Promise_2<void>;
+    removeItem(key: PersistorKey): PromiseLike<void>;
     // (undocumented)
-    setItem(key: PersistorKey, value: string): Promise_2<void>;
+    setItem(key: PersistorKey, value: string): PromiseLike<void>;
     // (undocumented)
-    setResetCallback(cb: () => Promise_2<void>): void;
+    setResetCallback(cb: () => PromiseLike<void>): void;
 }
 
 // @public

@@ -7,7 +7,7 @@ import { SITE_ID } from "../gamemode_management/constants";
 import type { EndorseMod } from "../nexus_integration/attributes";
 import EndorseModButton from "../nexus_integration/views/EndorseModButton";
 
-import type { IExtensionWithState } from "./types";
+import type { IExtensionWithState } from "../../types/extensions";
 
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";

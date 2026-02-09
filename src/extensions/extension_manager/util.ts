@@ -30,7 +30,7 @@ import type {
   IExtensionDownloadInfo,
   IExtensionManifest,
   ISelector,
-} from "./types";
+} from "../../types/extensions";
 
 import PromiseBB from "bluebird";
 import * as _ from "lodash";

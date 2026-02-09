@@ -167,8 +167,9 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
   });
 
   return {
-    dismissAll: state.settings.firststeps.dismissAll,
-    steps: state.settings.firststeps.steps,
+    // Defensive checks: firststeps might not be initialized during hydration
+    dismissAll: state.settings?.firststeps?.dismissAll ?? false,
+    steps: state.settings?.firststeps?.steps ?? {},
     extensionProps,
   };
 }

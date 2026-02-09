@@ -71,7 +71,8 @@ function mapStateToProps(
   ownProps: IUsageProps,
 ): IConnectedProps {
   return {
-    show: state.settings.interface.usage[ownProps.infoId] !== false,
+    // Defensive check: interface.usage might not be initialized during hydration
+    show: state.settings?.interface?.usage?.[ownProps.infoId] !== false,
   };
 }
 

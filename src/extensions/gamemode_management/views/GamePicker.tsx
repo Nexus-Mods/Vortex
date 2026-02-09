@@ -21,7 +21,7 @@ import MainPage from "../../../renderer/views/MainPage";
 import type {
   IAvailableExtension,
   IExtension,
-} from "../../extension_manager/types";
+} from "../../../types/extensions";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 

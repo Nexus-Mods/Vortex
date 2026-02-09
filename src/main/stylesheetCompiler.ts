@@ -92,3 +92,6 @@ export default class StylesheetCompiler {
     return this.#instance;
   }
 }
+
+// Auto-initialize when module is imported
+StylesheetCompiler.init();

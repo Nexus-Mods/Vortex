@@ -1,6 +1,15 @@
 import type * as Electron from "electron";
 
-import type { VortexPaths } from "./ipc";
+import type {
+  DiffOperation,
+  AppInitMetadata,
+  PersistedHive,
+  PersistedState,
+  Serializable,
+  UpdateStatus,
+  VortexPaths,
+} from "./ipc";
+
 import type { Level } from "./logging";
 
 /** Globals exposed by the preload script to the renderer */
@@ -22,6 +31,14 @@ export interface Api {
   /** Example APIs */
   example: Example;
 
+  /** Persistence API - for syncing state to main process for storage */
+  persist: PersistApi;
+
+  /** Extensions API - for requesting main process initialization */
+  extensions: ExtensionsApi;
+
+  /** Updater API - for querying update status from main process */
+  updater: UpdaterApi;
   /** Dialog APIs */
   dialog: Dialog;
 
@@ -79,6 +96,12 @@ export interface Dialog {
 }
 
 export interface App {
+  /**
+   * Register a callback for app initialization metadata from main.
+   * Called once during startup with all app metadata.
+   */
+  onInit(callback: (metadata: AppInitMetadata) => void): void;
+
   /** Set as default protocol client */
   setProtocolClient(protocol: string, udPath: string): Promise<void>;
 
@@ -209,6 +232,15 @@ export interface WindowAPI {
   /** Register listener for window blur event. Returns unsubscribe function. */
   onBlur(callback: () => void): () => void;
 
+  /** Register listener for window resize event (from MainWindow debouncer). Returns unsubscribe function. */
+  onResized(callback: (width: number, height: number) => void): () => void;
+
+  /** Register listener for window move event (from MainWindow debouncer). Returns unsubscribe function. */
+  onMoved(callback: (x: number, y: number) => void): () => void;
+
+  /** Register listener for window maximized state change. Returns unsubscribe function. */
+  onMaximized(callback: (maximized: boolean) => void): () => void;
+
   /** Get window position */
   getPosition(windowId: number): Promise<[number, number]>;
 
@@ -287,4 +319,71 @@ export interface Versions {
   node: string;
   chromium: string;
   electron: string;
+}
+
+/** API for renderer to communicate state changes to main for persistence */
+export interface PersistApi {
+  /**
+   * Send diff operations to main process for persistence.
+   * Called by the persistence middleware after each state change.
+   */
+  sendDiff(hive: PersistedHive, operations: DiffOperation[]): void;
+
+  /**
+   * Get all hydration data from main process at startup.
+   * Returns persisted state for all hives.
+   */
+  getHydration(): Promise<Partial<PersistedState>>;
+
+  /**
+   * Register a callback for when main sends hydration data.
+   * Used for incremental hydration updates after initial load.
+   */
+  onHydrate(callback: (hive: PersistedHive, data: Serializable) => void): void;
+}
+
+/** API for requesting extension main process initialization */
+export interface ExtensionsApi {
+  /**
+   * Initialize all main process extensions.
+   * Should be called once after ExtensionManager is initialized.
+   */
+  initializeAllMain(installType: string): void;
+
+  /**
+   * Request main process initialization for a specific extension.
+   * Returns a promise that resolves when the extension is initialized or fails.
+   */
+  requestMainInit(
+    extensionName: string,
+  ): Promise<{ success: boolean; error?: string }>;
+}
+
+/** API for querying update status from main process */
+export interface UpdaterApi {
+  /**
+   * Get current update status from main process.
+   */
+  getStatus(): Promise<UpdateStatus>;
+
+  /**
+   * Set the update channel and trigger an update check.
+   */
+  setChannel(channel: string, manual: boolean): void;
+
+  /**
+   * Check for updates on the specified channel.
+   */
+  checkForUpdates(channel: string, manual: boolean): void;
+
+  /**
+   * Download the available update on the specified channel.
+   * If installAfterDownload is true, automatically restart and install when download completes.
+   */
+  downloadUpdate(channel: string, installAfterDownload?: boolean): void;
+
+  /**
+   * Trigger restart and install of the downloaded update.
+   */
+  restartAndInstall(): void;
 }

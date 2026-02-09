@@ -92,7 +92,7 @@ function makeRemoteCall(): never {
       "See src/shared/types/preload.ts for available APIs.",
   );
 }
-// Note: extend is renderer-only, available via ../renderer/controls/ComponentEx
+
 import { copyFileAtomic, writeFileAtomic } from "./fsAtomic";
 import getNormalizeFunc, { makeNormalizingDict } from "./getNormalizeFunc";
 export type { Normalize } from "./getNormalizeFunc.ts";

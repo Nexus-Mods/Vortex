@@ -392,12 +392,13 @@ function mapStateToProps(state: IState): IConnectedProps {
       false,
     ),
 
-    knownGames: state.session.gameMode.known,
-    profiles: state.persistent.profiles,
-    discoveredGames: state.settings.gameMode.discovered,
-    profilesVisible: state.settings.interface.profilesVisible,
-    lastActiveProfile: state.settings.profiles.lastActiveProfile,
-    toolsRunning: state.session.base.toolsRunning,
+    knownGames: state.session?.gameMode?.known ?? [],
+    profiles: state.persistent?.profiles ?? {},
+    // Defensive checks: settings might not be fully initialized during hydration
+    discoveredGames: state.settings?.gameMode?.discovered ?? {},
+    profilesVisible: state.settings?.interface?.profilesVisible ?? false,
+    lastActiveProfile: state.settings?.profiles?.lastActiveProfile ?? {},
+    toolsRunning: state.session?.base?.toolsRunning ?? {},
   };
 }
 

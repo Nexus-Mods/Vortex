@@ -1,4 +1,5 @@
 import { log } from "./log";
+export { DataInvalid } from "../shared/types/errors";
 
 export class NotSupportedError extends Error {
   constructor() {
@@ -55,13 +56,6 @@ export class ProcessCanceled extends Error {
 
   public get extraInfo() {
     return this.mExtraInfo;
-  }
-}
-
-export class DataInvalid extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = this.constructor.name;
   }
 }
 
@@ -218,7 +212,7 @@ export class ThirdPartyError extends Error {
 }
 
 export class SelfCopyCheckError extends Error {
-  constructor(src: string, dest: string, ino: BigInt) {
+  constructor(src: string, dest: string, ino: bigint) {
     super(
       `Source "${src}" and destination "${dest}" are the same file (id "${ino}").`,
     );

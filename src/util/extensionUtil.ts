@@ -1,7 +1,4 @@
-import type {
-  IAvailableExtension,
-  IExtension,
-} from "../extensions/extension_manager/types";
+import type { IAvailableExtension, IExtension } from "../types/extensions";
 
 /**
  * Check if an installed extension matches a remote available extension
