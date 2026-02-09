@@ -104,9 +104,6 @@ function setEnv(key: string, value: string, force?: boolean) {
 
 if (process.env.NODE_ENV !== "development") {
   setEnv("NODE_ENV", "production", true);
-} else {
-  const rebuildRequire = require("./util/requireRebuild").default;
-  rebuildRequire();
 }
 
 if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
@@ -162,7 +159,6 @@ import "./util/monkeyPatching";
 import "./main/webview";
 import "./main/ipcHandlers";
 import "./main/stylesheetCompiler";
-import {} from "./util/requireRebuild";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

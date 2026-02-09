@@ -36,8 +36,6 @@ window.addEventListener("error", earlyErrHandler);
 window.addEventListener("unhandledrejection", earlyErrHandler);
 
 if (process.env.NODE_ENV === "development") {
-  const rebuildRequire = require("./util/requireRebuild").default;
-  rebuildRequire();
   process.traceProcessWarnings = true;
   const sourceMapSupport = require("source-map-support");
   sourceMapSupport.install();
@@ -82,13 +80,13 @@ import { generate as shortid } from "shortid";
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
+import { setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
   setInstallType,
   setInstanceId,
   setWarnedAdmin,
 } from "./actions/app";
-import { setLanguage, setNetworkConnected } from "./actions";
 import {
   addNotification,
   setupNotificationSuppression,
@@ -98,11 +96,13 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "./actions/window";
-import { fetchHydrationState } from "./renderer/store/hydration";
-import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
 import reducer, { Decision } from "./reducers/index";
+import ExtensionManager from "./renderer/ExtensionManager";
+import { ExtensionContext } from "./renderer/ExtensionProvider";
 import { log } from "./renderer/logging";
 import { initApplicationMenu } from "./renderer/menu";
+import { fetchHydrationState } from "./renderer/store/hydration";
+import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
 import StyleManager from "./renderer/StyleManager";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
@@ -112,8 +112,6 @@ import { reduxSanity, type StateError } from "./store/reduxSanity";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
-import ExtensionManager from "./renderer/ExtensionManager";
-import { ExtensionContext } from "./renderer/ExtensionProvider";
 import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import getVortexPath, { setVortexPath } from "./util/getVortexPath";
