@@ -54,7 +54,9 @@ function formatLogLevel(level: string): string {
 }
 
 const timestamp = () => new Date().toISOString();
-const formatter = (options: unknown) =>
+const fileFormatter = (options: unknown) =>
+  customFormatter(options as FormatOptions, false);
+const consoleFormatter = (options: unknown) =>
   customFormatter(options as FormatOptions, true);
 
 function createFileTransport(basePath: string): winston.FileTransportInstance {
@@ -66,7 +68,7 @@ function createFileTransport(basePath: string): winston.FileTransportInstance {
     maxFiles: 5,
     tailable: true,
     timestamp: timestamp,
-    formatter: formatter,
+    formatter: fileFormatter,
   });
 }
 
@@ -80,7 +82,7 @@ function setupLogger(
     ? new winston.transports.Console({
         level: "debug",
         timestamp: timestamp,
-        formatter: formatter,
+        formatter: consoleFormatter,
       })
     : undefined;
 
