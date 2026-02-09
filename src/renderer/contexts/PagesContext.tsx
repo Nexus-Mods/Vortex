@@ -19,11 +19,11 @@ import { Settings } from "../views/Settings";
 const gameSettingsPage: IMainPage = {
   priority: 200,
   id: "game_settings",
-  title: "Settings",
+  title: "Game preferences",
   group: "per-game",
   isModernOnly: true,
   component: GameSettings,
-  icon: "settings",
+  icon: "tune",
   propsFunc: () => undefined,
   visible: () => true,
 };

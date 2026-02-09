@@ -9,6 +9,7 @@ import {
   mdiMenu,
   mdiPuzzle,
   mdiShapeOutline,
+  mdiTune,
   mdiViewDashboard,
   mdiWeb,
 } from "@mdi/js";
@@ -26,6 +27,7 @@ const iconMap: Record<string, string> = {
   show: mdiEye,
   feedback: mdiCommentTextOutline,
   nexus: mdiWeb,
+  tune: mdiTune,
 };
 
 export const getIconPath = (
