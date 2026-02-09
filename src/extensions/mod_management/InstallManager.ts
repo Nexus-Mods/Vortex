@@ -3564,25 +3564,26 @@ class InstallManager {
     );
   }
 
-  private isCritical(error: string): boolean {
+  private isCritical(errorMessage: string): boolean {
     // Don't treat file-in-use errors as critical - they can be retried
-    if (this.isFileInUse(error)) {
+    if (this.isFileInUse(errorMessage)) {
       return false;
     }
-    return (
-      error.indexOf("Unexpected end of archive") !== -1 ||
-      error.indexOf("ERROR: Data Error") !== -1 ||
-      // used to be "Can not", current 7z prints "Cannot"
-      error.indexOf("Cannot open the file as archive") !== -1 ||
-      error.indexOf("Can not open the file as archive") !== -1
-    );
+    const lowered = errorMessage.toLowerCase();
+    const patterns = ["unexpected end of archive", "error: data error"];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
-  private isFileInUse(error: string): boolean {
-    return (
-      error.indexOf("being used by another process") !== -1 ||
-      error.indexOf("locked by another process") !== -1
-    );
+  private isFileInUse(errorMessage: string): boolean {
+    const lowered = errorMessage.toLowerCase();
+    const patterns = [
+      "being used by another process",
+      "locked by another process",
+      "denied",
+      "cannot open",
+      "can not open",
+    ];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
   private extractWithRetry(
@@ -7640,7 +7641,10 @@ class InstallManager {
     // Don't allow reporting for user-initiated cancellations
     const isCanceled =
       details instanceof UserCanceled ||
-      (details instanceof String && ["usercanceled", "canceled", "cancelled"].some(term => details.toLowerCase().includes(term)));
+      (details instanceof String &&
+        ["usercanceled", "canceled", "cancelled"].some((term) =>
+          details.toLowerCase().includes(term),
+        ));
     const allowReport = isCanceled ? false : options.allowReport;
 
     if (this.mNotificationAggregator.isAggregating(aggregationId)) {
