@@ -36,8 +36,11 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
 
   private changeFilter = (value: Array<{ value: string, label: string }>) => {
     const { attributeId, onSetFilter } = this.props;
-    onSetFilter(attributeId, value.map(val => val.value));
-  }
+    onSetFilter(
+      attributeId,
+      (value ?? []).map((val) => val.value),
+    );
+  };
 }
 
 const emptyList: ILOOTList = {
