@@ -28,6 +28,9 @@ const iconMap: Record<string, string> = {
   nexus: mdiWeb,
 };
 
-export const getIconPath = (iconName: string): string => {
-  return iconMap[iconName] ?? mdiShapeOutline;
+export const getIconPath = (
+  iconName: string,
+  fallbackIcon: string = mdiShapeOutline,
+): string => {
+  return iconMap[iconName] ?? fallbackIcon;
 };

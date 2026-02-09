@@ -3,6 +3,7 @@ import {
   mdiFileDocumentOutline,
   mdiHelpCircleOutline,
   mdiInformationOutline,
+  mdiPuzzle,
 } from "@mdi/js";
 import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,7 +19,7 @@ import {
   DropdownItems,
 } from "../../../../tailwind/components/dropdown";
 import { useExtensionContext } from "../../../../util/ExtensionProvider";
-import { getIconPath } from "../Menu/iconMap";
+import { getIconPath } from "../iconMap";
 import { IconButton } from "./IconButton";
 import { useGlobalIconActions } from "./useGlobalIconActions";
 
@@ -62,7 +63,7 @@ export const HelpSection: FC = () => {
         {globalIconActions.map((action) => (
           <DropdownItem
             key={`${action.icon}-${action.title}`}
-            leftIconPath={getIconPath(action.icon)}
+            leftIconPath={mdiPuzzle}
             onClick={handleGlobalIconAction(action)}
           >
             {t(action.title, { ns: action.options?.namespace })}

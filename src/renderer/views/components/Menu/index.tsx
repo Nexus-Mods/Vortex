@@ -6,7 +6,7 @@ import { setOpenMainPage } from "../../../../actions/session";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { usePagesContext, useWindowContext } from "../../../contexts";
 import { useSpineContext } from "../SpineContext";
-import { getIconPath } from "./iconMap";
+import { getIconPath } from "../iconMap";
 import { MenuButton } from "./MenuButton";
 import { ToolsSection } from "./ToolsSection";
 
