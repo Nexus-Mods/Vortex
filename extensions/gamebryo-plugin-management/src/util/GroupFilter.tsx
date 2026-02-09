@@ -41,7 +41,7 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     const { attributeId, onSetFilter } = this.props;
     onSetFilter(
       attributeId,
-      value.map((val) => val.value),
+      (value ?? []).map((val) => val.value),
     );
   };
 }
