@@ -16,7 +16,6 @@ import * as semver from "semver";
 
 import type { UpdateStatus } from "../../shared/types/ipc";
 
-import { getApplication } from "../../util/application";
 import { getVisibleWindow } from "../../util/errorHandling";
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
@@ -52,7 +51,7 @@ export function setupAutoUpdater(installType: string): void {
   const autoUpdater: typeof AUType = require("electron-updater").autoUpdater;
 
   let cancellationToken: CancellationToken;
-  const currentVersion = semver.parse(getApplication().version);
+  const currentVersion = semver.parse(app.getVersion());
   let updateChannel = "stable";
 
   // Register invoke handler for status queries

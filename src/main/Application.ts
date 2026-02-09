@@ -22,7 +22,6 @@ import {
   unknownToError,
 } from "../shared/errors";
 import { currentStatePath } from "../shared/types/state";
-import { getApplication } from "../util/application";
 import commandLine from "../util/commandLine";
 import {
   DataInvalid,
@@ -448,7 +447,7 @@ class Application {
 
   private async regularStartInner(args: IParameters): Promise<void> {
     log("info", "--------------------------");
-    log("info", "Vortex Version", getApplication().version);
+    log("info", "Vortex Version", app.getVersion());
     log("info", "Parameters", process.argv.join(" "));
 
     this.testUserEnvironment();
@@ -641,7 +640,7 @@ class Application {
   }
 
   private async checkUpgrade(): Promise<void> {
-    const currentVersion = getApplication().version;
+    const currentVersion = app.getVersion();
     await this.migrateIfNecessary(currentVersion);
     // Collect metadata - renderer will dispatch the action
     this.mAppMetadata.version = currentVersion;
@@ -817,7 +816,7 @@ class Application {
    */
   private async setupPersistence(repair?: boolean): Promise<void> {
     // storing the last version that ran in the startup.json settings file.
-    startupSettings.storeVersion = getApplication().version;
+    startupSettings.storeVersion = app.getVersion();
 
     // Initialize app metadata that will be sent to renderer
     this.mAppMetadata = {
@@ -878,7 +877,7 @@ class Application {
         );
         changeLogPath(dataPath);
         log("info", "--------------------------");
-        log("info", "Vortex Version", getApplication().version);
+        log("info", "Vortex Version", app.getVersion());
 
         const newLevelPersistor = await LevelPersist.create(
           path.join(dataPath, currentStatePath),
