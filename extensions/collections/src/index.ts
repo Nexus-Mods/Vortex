@@ -16,14 +16,15 @@ import HealthDownvoteDialog from './views/CollectionPageView/HealthDownvoteDialo
 import CollectionsMainPage from './views/CollectionList';
 import { InstallChangelogDialog, InstallFinishDialog, InstallStartDialog } from './views/InstallDialog';
 
-import { isInstallationActive, getActiveInstallSession } from './util/selectors'
+import { getActiveInstallSession } from "./util/selectors";
 
-import { IPathTools } from './views/CollectionPageEdit/FileOverrides';
+import { IPathTools } from "./views/CollectionPageEdit/FileOverrides";
 
-import CollectionAttributeRenderer from './views/CollectionModsPageAttributeRenderer';
+import CollectionAttributeRenderer from "./views/CollectionModsPageAttributeRenderer";
 
 import {
-  addCollectionAction, addCollectionCondition,
+  addCollectionAction,
+  addCollectionCondition,
   alreadyIncluded,
   initFromProfile,
   removeCollectionAction, removeCollectionCondition,
@@ -262,8 +263,19 @@ async function pauseCollection(api: types.IExtensionApi,
     return;
   }
 
-  (collection?.rules ?? []).forEach(rule => {
-    const dlId = util.findDownloadByRef(rule.reference, downloads);
+  (collection?.rules ?? []).forEach((rule) => {
+    // findDownloadByRef has been modified to omit these fields as well, BUT, the vortex-api
+    //  types don't reflect that change currently. The API submodule needs a complete cleanup
+    //  before we can update the dependency and given the massive changes we've been making
+    //  to the codebase recently + the imminent 1.16 stable release - updating the API submodule
+    //  is not worth the risk at this moment, so will just omit the fields here as well.
+    // TODO: update the vortex-api types and remove the omit when we update the dependency.
+    const cleanReference = _.omit(rule.reference, [
+      "installerChoices",
+      "fileList",
+      "patches",
+    ]);
+    const dlId = util.findDownloadByRef(cleanReference, downloads);
     if (dlId !== undefined) {
       api.events.emit('pause-download', dlId);
     }
@@ -1045,6 +1057,39 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
       api.store.dispatch(actions.setModAttribute(gameId, modId, 'installCompleted', Date.now()));
     }
   });
+
+  // Pause collection installation if user becomes unauthenticated
+  api.onStateChange(
+    ["persistent", "nexus", "userInfo"],
+    (oldValue, newValue) => {
+      // Only pause if user logged out (userInfo became undefined), not during re-login
+      if (oldValue !== undefined && newValue === undefined) {
+        if (!driver.installDone && driver.collection !== undefined) {
+          const gameId =
+            driver.profile?.gameId ?? selectors.activeGameId(api.getState());
+          const modId = driver.collection.id;
+          log("info", "User logged out during collection install, pausing", {
+            modId,
+          });
+          pauseCollection(api, gameId, modId, true)
+            .then(() => {
+              api.sendNotification({
+                type: "warning",
+                title: "Collection paused",
+                message: "You have been logged out. Please log in and resume.",
+                displayMS: 5000,
+              });
+            })
+            .catch((err) => {
+              log("error", "Failed to pause collection after logout", {
+                modId,
+                error: err.message,
+              });
+            });
+        }
+      }
+    },
+  );
 
   const doCheckVoteRequest = () => {
     checkVoteRequest(api)

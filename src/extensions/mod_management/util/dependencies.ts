@@ -370,6 +370,10 @@ export function findDownloadByRef(
     reference = _.omit(reference, ["fileMD5"]);
   }
 
+  // Downloads don't contain patch/fileList/installerChoices info, so exclude
+  // these from matching to avoid false negatives
+  reference = _.omit(reference, ["patches", "fileList", "installerChoices"]);
+
   try {
     const fuzzy = isFuzzyVersion(reference.versionMatch);
     const fileExpression =

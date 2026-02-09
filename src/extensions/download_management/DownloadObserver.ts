@@ -153,20 +153,22 @@ export class DownloadObserver {
     });
 
     api.onStateChange(["persistent", "nexus", "userInfo"], (old, newValue) => {
-      if (old?.isPremium !== newValue?.isPremium) {
-        // User's premium status has changed
-        // Clear the download queue by pausing all active downloads
+      // Pause active downloads only on actual premium status change (not login/logout).
+      // When user logs out, other handlers (e.g., collections) deal with pausing.
+      if (
+        old !== undefined &&
+        newValue !== undefined &&
+        old.isPremium !== newValue.isPremium
+      ) {
         const state = api.getState();
         const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach((dlId) => {
-          this.handleRemoveDownload(dlId, undefined, { silent: true });
+          this.handlePauseDownload(dlId);
         });
-        if (newValue?.isPremium === true) {
-          manager.setMaxConcurrentDownloads(10);
-        } else {
-          manager.setMaxConcurrentDownloads(1);
-        }
       }
+
+      // Always adjust concurrent downloads limit based on current premium status
+      manager.setMaxConcurrentDownloads(newValue?.isPremium === true ? 10 : 1);
     });
   }
 
