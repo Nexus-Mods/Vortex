@@ -354,62 +354,36 @@ import { Button } from '../../../tailwind/next/button';
 **Demo:** See `ButtonDemo` component
 
 **Icon Support:**
-Icons are fully supported using Material Design Icons from `@mdi/js`:
+Icons are supported using Material Design Icons from `@mdi/js` and custom Nexus icons from `tailwind/lib/icon-paths`. The `path` prop accepts a full SVG path string, so you must import the icon path first:
 
 ```tsx
-// With icon name (automatically looks up in @mdi/js)
-<Button buttonType="primary" leftIconPath="mdiDownload">
+import { mdiDownload, mdiChevronRight, mdiCog, mdiChevronDown } from "@mdi/js";
+import { nxmVortex, nxmCollection, nxmInstall } from "../../../tailwind/lib/icon-paths";
+
+// With left icon
+<Button buttonType="primary" leftIconPath={mdiDownload}>
   Download
 </Button>
 
 // With right icon
-<Button buttonType="secondary" rightIconPath="mdiChevronRight">
+<Button buttonType="secondary" rightIconPath={mdiChevronRight}>
   Next
 </Button>
 
 // With both icons
-<Button buttonType="tertiary" leftIconPath="mdiCog" rightIconPath="mdiChevronDown">
+<Button buttonType="tertiary" leftIconPath={mdiCog} rightIconPath={mdiChevronDown}>
   Settings
 </Button>
-```
 
-Available icon names can be found at: https://pictogrammers.com/library/mdi/
-
-**Nexus Mods Custom Icons:**
-In addition to Material Design Icons, the Icon component supports 34 custom Nexus Mods icons:
-
-```tsx
-// Using Nexus Mods custom icons
-<Button buttonType="primary" leftIconPath="nxmVortex">
+// With Nexus Mods custom icons
+<Button buttonType="primary" leftIconPath={nxmVortex}>
   Launch Vortex
 </Button>
-
-<Button buttonType="secondary" leftIconPath="nxmCollection">
-  Collections
-</Button>
-
-<Button buttonType="tertiary" leftIconPath="nxmInstall">
-  Install Mod
-</Button>
 ```
 
-**Available Nexus Icons:**
+Available MDI icons can be found at: https://pictogrammers.com/library/mdi/
 
-- **Brand/App**: `nxmVortex`, `nxmMod`, `nxmModOutline`, `nxmCollection`, `nxmCollections`
-- **Actions**: `nxmInstall`, `nxmDataCheck`, `nxmClipboard`, `nxmUnblock`
-- **Stats/Display**: `nxmUniqueDownloads`, `nxmFileSize`, `nxmHandHeartOutline` (endorsement), `nxmRosette` (featured), `nxmStar`
-- **Social/Publishers**: `nxmDiscord`, `nxmTikTok`, `nxmTwitch`, `nxmX`, `nxmElectronicArts`, `nxmEpicGames`, `nxmPayPal`
-- **UI/Navigation**: `nxmBackArrow`, `nxmGridStandard`, `nxmGridCompact`, `nxmGridList`
-- **Support**: `nxmBug`, `nxmShieldQuestion`, `nxmShieldCross`, `nxmTrackingCentre`
-- **Gaming**: `nxmJoystick`
-
-All Nexus icons are located in `src/tailwind/lib/icon-paths/` and can be imported directly:
-
-```tsx
-import { nxmVortex, nxmCollection } from "../../../tailwind/lib/icon-paths";
-// or
-import { nxmVortex, nxmCollection } from "tailwind";
-```
+Nexus icons are located in `src/tailwind/lib/icon-paths/` and include icons for brand, actions, stats, social, navigation, and more.
 
 ### Icon
 
@@ -422,14 +396,9 @@ Located in `icon/`
 
 **Features:**
 
-- Supports Material Design Icons from `@mdi/js` (5000+ icons)
-- Supports 34 custom Nexus Mods icons
-- Auto-resolution of icon names to SVG paths
+- Accepts full SVG path strings (import from `@mdi/js` or `tailwind/lib/icon-paths`)
 - Named size system matching web team (xs, sm, md, lg, xl, 2xl, none)
-- Custom size override with rem units
-- Type-safe XOr constraint prevents conflicting size props
 - Accessibility support with title attribute
-- Direct SVG path data support
 
 **Size System:**
 
@@ -445,43 +414,20 @@ Located in `icon/`
 
 ```tsx
 import { Icon } from '../../../tailwind/components/next/icon';
+import { mdiAccount, mdiDownload } from "@mdi/js";
+import { nxmVortex } from "../../../tailwind/lib/icon-paths";
 
 // Material Design Icon with named size
-<Icon path="mdiAccount" size="md" />
+<Icon path={mdiAccount} size="md" />
 
 // Nexus Mods Icon with named size
-<Icon path="nxmVortex" size="lg" />
+<Icon path={nxmVortex} size="lg" />
 
 // Custom size with className (use size="none")
-<Icon path="mdiDownload" size="none" className="tw:size-6" />
-
-// Custom rem size with sizeOverride
-<Icon path="mdiAccount" sizeOverride="1.75rem" />
-
-// Direct SVG path
-<Icon path="M12 2L2 7L12 12L22 7L12 2Z" size="sm" />
+<Icon path={mdiDownload} size="none" className="tw:size-6" />
 
 // With accessibility
-<Icon path="mdiAccount" size="md" title="User Account" />
-```
-
-**Icon Resolution:**
-The Icon component automatically resolves icon names:
-
-1. Icons starting with `mdi` are looked up in `@mdi/js`
-2. Icons starting with `nxm` are looked up in custom Nexus icon paths
-3. Strings starting with `M` or `m` are treated as direct SVG path data
-
-**Type Safety:**
-The component uses an XOr type constraint - you can use either `size` OR `sizeOverride`, but not both:
-
-```tsx
-// ✅ Valid
-<Icon path="mdiAccount" size="md" />
-<Icon path="mdiAccount" sizeOverride="1.5rem" />
-
-// ❌ TypeScript error - cannot use both
-<Icon path="mdiAccount" size="md" sizeOverride="1.5rem" />
+<Icon path={mdiAccount} size="md" title="User Account" />
 ```
 
 ### Link
