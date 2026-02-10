@@ -193,24 +193,17 @@ class ReduxPersistorIPC {
         err.stack?.match(/IO error: .*Append: cannot write/) !== null
       ) {
         terminate(
-          {
-            message:
-              "There is not enough space on the disk. Vortex needs to quit now to " +
+          new Error(
+            "There is not enough space on the disk. Vortex needs to quit now to " +
               "ensure you're not losing further work. Please free up some space, " +
               "then restart Vortex.",
-          },
-          undefined,
-          false,
+          ),
         );
         // Retry on user ignore
         return this.processOperations(hive, persistor, operations);
       } else {
         terminate(
-          {
-            message: `Failed to store application state: ${err.message}`,
-            stack: err.stack,
-          },
-          undefined,
+          new Error(`Failed to store application state: ${err.message}`),
           true,
         );
       }

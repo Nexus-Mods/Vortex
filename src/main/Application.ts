@@ -35,10 +35,7 @@ import startupSettings from "../util/startupSettings";
 import { isMajorDowngrade } from "../util/util";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
-import {
-  disableErrorReporting,
-  errorToReportableError,
-} from "./errorReporting";
+import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -347,8 +344,7 @@ class Application {
         return;
       }
 
-      // Store is now in renderer, so we can't access state from main process
-      terminate(errorToReportableError(error), {});
+      terminate(error);
     };
   }
 
@@ -420,16 +416,12 @@ class Application {
           /{{ *([a-zA-Z]+) *}}/g,
           (_, key) => pretty.replace?.[key] || key,
         );
-        terminate(
-          {
-            message: "Startup failed",
-            details,
-            code: pretty.code,
-            stack: error.stack,
-          },
-          {},
-          pretty.allowReport,
-        );
+
+        error.message = "Startup failed";
+        error["details"] = details;
+        error["code"] = pretty.code;
+
+        terminate(error, pretty.allowReport);
       }
     } finally {
       try {

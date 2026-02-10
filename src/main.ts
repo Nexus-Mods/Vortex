@@ -134,7 +134,6 @@ import type * as child_processT from "child_process";
 import Application from "./main/Application";
 import { parseCommandline } from "./main/cli";
 import { terminate } from "./main/errorHandling";
-import { errorToReportableError } from "./main/errorReporting";
 import { init as initIpcHandlers } from "./main/ipcHandlers";
 import StylesheetCompiler from "./main/stylesheetCompiler";
 import * as fs from "./util/fs";
@@ -148,7 +147,7 @@ const handleError = (error: Error) => {
     return;
   }
 
-  terminate(errorToReportableError(error), {});
+  terminate(error);
 };
 
 async function main(): Promise<void> {
