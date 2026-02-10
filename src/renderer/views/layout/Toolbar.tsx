@@ -37,7 +37,7 @@ export const Toolbar: FC = () => {
 
   // Filter out modernOnly actions (Classic UI should only show classicOnly or neutral actions)
   const filterGlobalIcons = useCallback(
-    (action: IActionDefinition) => !action.options?.modernOnly,
+    (action: IActionDefinition) => !action.options?.isModernOnly,
     [],
   );
 

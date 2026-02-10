@@ -35,7 +35,7 @@ export const useGlobalIconActions = (
         if (
           group === "global-icons" &&
           typeof iconOrComponent === "string" &&
-          !options?.classicOnly
+          !options?.isClassicOnly
         ) {
           actions.push({
             icon: iconOrComponent,

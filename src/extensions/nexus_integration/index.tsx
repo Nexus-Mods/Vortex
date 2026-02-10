@@ -2055,7 +2055,7 @@ function init(context: IExtensionContextExt): boolean {
     "application-icons",
     200,
     LoginIcon,
-    { classicOnly: true },
+    { isClassicOnly: true },
     () => ({
       nexus,
     }),
@@ -2211,7 +2211,7 @@ function init(context: IExtensionContextExt): boolean {
     "global-icons",
     100,
     "nexus",
-    { classicOnly: true },
+    { isClassicOnly: true },
     "Refresh User Info",
     () => {
       log("info", "Refresh User Info global menu item clicked");

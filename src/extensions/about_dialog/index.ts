@@ -7,7 +7,7 @@ function init(context: IExtensionContext): boolean {
     "global-icons",
     200,
     "about",
-    { classicOnly: true },
+    { isClassicOnly: true },
     "About",
     () => {
       context.api.events.emit("show-main-page", "About");

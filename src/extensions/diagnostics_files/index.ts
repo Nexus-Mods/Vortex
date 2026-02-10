@@ -8,7 +8,7 @@ function init(context: IExtensionContext): boolean {
     "global-icons",
     190,
     "changelog",
-    { classicOnly: true },
+    { isClassicOnly: true },
     "View Logs",
     () => {
       context.api.store.dispatch(setDialogVisible("diagnostics-files-dialog"));

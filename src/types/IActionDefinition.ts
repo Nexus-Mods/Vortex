@@ -4,8 +4,8 @@ export interface IActionOptions {
   noCollapse?: boolean;
   namespace?: string;
   hollowIcon?: boolean;
-  classicOnly?: boolean;
-  modernOnly?: boolean;
+  isClassicOnly?: boolean;
+  isModernOnly?: boolean;
 }
 
 export type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
