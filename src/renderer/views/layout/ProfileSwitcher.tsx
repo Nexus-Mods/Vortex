@@ -5,21 +5,10 @@ import { useDispatch, useSelector } from "react-redux";
 import type { IState } from "../../../types/IState";
 
 import { setDialogVisible } from "../../../actions/session";
-import { getSafe } from "../../../util/storeHelper";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
-
-// TODO: Move to redux
-type IProgressProfile = {
-  deploying?: IProfileDeploying;
-};
-
-type IProfileDeploying = {
-  percent: number;
-  text: string;
-};
 
 /**
  * Provides a profile switcher component.
@@ -33,12 +22,8 @@ export const ProfileSwitcher: FC = () => {
     (state: IState) => state.settings.profiles.nextProfileId,
   );
   const profiles = useSelector((state: IState) => state.persistent.profiles);
-  const progressProfile = useSelector((state: IState) =>
-    getSafe<IProgressProfile | undefined>(
-      state.session.base,
-      ["progress", "profile"],
-      undefined,
-    ),
+  const progressProfile = useSelector(
+    (state: IState) => state.session.base.progress?.profile,
   );
   const visibleDialog = useSelector(
     (state: IState) => state.session.base.visibleDialog || undefined,
@@ -48,24 +33,19 @@ export const ProfileSwitcher: FC = () => {
     dispatch(setDialogVisible(undefined));
   }, [dispatch]);
 
-  const progress = getSafe<IProfileDeploying | undefined>(
-    progressProfile,
-    ["deploying"],
-    undefined,
-  );
+  const deploying = progressProfile?.deploying;
   const profile =
     nextProfileId !== undefined ? profiles[nextProfileId] : undefined;
 
-  const control =
-    progress !== undefined ? (
-      <ProgressBar
-        labelLeft={progress.text}
-        now={progress.percent}
-        style={{ width: "50%" }}
-      />
-    ) : (
-      <Spinner style={{ width: 64, height: 64 }} />
-    );
+  const control = deploying ? (
+    <ProgressBar
+      labelLeft={deploying.text}
+      now={deploying.percent}
+      style={{ width: "50%" }}
+    />
+  ) : (
+    <Spinner style={{ width: 64, height: 64 }} />
+  );
 
   return (
     <div key="wait">

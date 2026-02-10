@@ -1,11 +1,12 @@
 import React from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { pathToFileURL } from "url";
 
-import type { IDiscoveredTool, IToolStored } from "../.././/types/api";
+import type { IDiscoveredTool } from "../../types/api";
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
+import type { IProfile } from "../../extensions/profile_management/types/IProfile";
 import type { IState } from "../../types/IState";
 
 import { makeExeId } from "../../reducers/session";
@@ -20,7 +21,6 @@ import {
   activeProfile,
 } from "../../util/selectors";
 import StarterInfo from "../../util/StarterInfo";
-import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
@@ -42,37 +42,36 @@ export const QuickLauncher: React.FC = () => {
   const gameDiscovery = useSelector((state: IState) =>
     currentGameDiscovery(state),
   );
-  const discoveredTools = useSelector((state: IState) =>
-    getSafe<{ [key: string]: IDiscoveredTool }>(
-      state,
-      ["settings", "gameMode", "discovered", gameMode, "tools"],
-      {},
-    ),
+  const discoveredTools = useSelector(
+    (state: IState) =>
+      state.settings?.gameMode?.discovered?.[gameMode ?? ""]?.tools ?? {},
+    shallowEqual,
   );
-  const primaryTool = useSelector((state: IState) =>
-    getSafe<IToolStored | undefined>(
-      state,
-      ["settings", "interface", "primaryTool", gameMode],
-      undefined,
-    ),
+  const primaryToolId = useSelector(
+    (state: IState) => state.settings?.interface?.primaryTool?.[gameMode ?? ""],
   );
   const knownGames = useSelector(
     (state: IState) => state.session?.gameMode?.known ?? [],
+    shallowEqual,
   );
   const profiles = useSelector(
     (state: IState) => state.persistent?.profiles ?? {},
+    shallowEqual,
   );
   const discoveredGames = useSelector(
     (state: IState) => state.settings?.gameMode?.discovered ?? {},
+    shallowEqual,
   );
   const profilesVisible = useSelector(
     (state: IState) => state.settings?.interface?.profilesVisible ?? false,
   );
   const lastActiveProfile = useSelector(
     (state: IState) => state.settings?.profiles?.lastActiveProfile ?? {},
+    shallowEqual,
   );
   const toolsRunning = useSelector(
     (state: IState) => state.session?.base?.toolsRunning ?? {},
+    shallowEqual,
   );
 
   // Derived state - gameIconCache with debouncing
@@ -82,9 +81,7 @@ export const QuickLauncher: React.FC = () => {
         new Set<string>(
           Object.keys(profiles)
             .map((profileId) => profiles[profileId].gameId)
-            .filter((gameId) =>
-              truthy(getSafe(discoveredGames, [gameId, "path"], undefined)),
-            ),
+            .filter((gameId) => truthy(discoveredGames[gameId]?.path)),
         ),
       );
 
@@ -117,9 +114,7 @@ export const QuickLauncher: React.FC = () => {
         new Set<string>(
           Object.keys(p)
             .map((profileId) => p[profileId].gameId)
-            .filter((gameId) =>
-              truthy(getSafe(dg, [gameId, "path"], undefined)),
-            ),
+            .filter((gameId) => truthy(dg[gameId]?.path)),
         ),
       );
 
@@ -151,15 +146,18 @@ export const QuickLauncher: React.FC = () => {
     }
 
     try {
-      const foundGameSupportedTools = primaryTool
-        ? game.supportedTools?.find((tool) => tool.id === primaryTool.id)
+      const foundGameSupportedTools = primaryToolId
+        ? game.supportedTools?.find((tool) => tool.id === primaryToolId)
         : undefined;
-      const foundDiscoveredTool = primaryTool
+      const foundDiscoveredTool = primaryToolId
         ? Object.values(discoveredTools).find(
-            (tool) => tool.id === primaryTool.id,
+            (tool) => tool.id === primaryToolId,
           )
         : undefined;
-      if (!primaryTool || (!foundGameSupportedTools && !foundDiscoveredTool)) {
+      if (
+        primaryToolId == undefined ||
+        (!foundGameSupportedTools && !foundDiscoveredTool)
+      ) {
         return new StarterInfo(game, gameDiscovery);
       } else {
         try {
@@ -186,7 +184,7 @@ export const QuickLauncher: React.FC = () => {
       });
       return undefined;
     }
-  }, [game, gameDiscovery, primaryTool, discoveredTools]);
+  }, [game, gameDiscovery, primaryToolId, discoveredTools]);
 
   const onShowError = React.useCallback(
     (message: string, details?: string | Error, allowReport?: boolean) => {
@@ -207,9 +205,9 @@ export const QuickLauncher: React.FC = () => {
     api.events.emit("analytics-track-click-event", "Header", "Play game");
     const state = api.getState();
     const profile = activeProfile(state);
-    const currentModsState = getSafe(profile, ["modState"], false);
-    const enabledMods = Object.keys(currentModsState).filter((modId) =>
-      getSafe(currentModsState, [modId, "enabled"], false),
+    const currentModsState = profile?.modState ?? {};
+    const enabledMods = Object.keys(currentModsState).filter(
+      (modId) => currentModsState?.[modId]?.enabled ?? false,
     );
     const gameMods = state.persistent.mods[profile.gameId] || {};
     const collections = Object.values(gameMods)
@@ -263,16 +261,10 @@ export const QuickLauncher: React.FC = () => {
       const profile = profiles[lastActiveProfile[gameId]];
 
       let displayName =
-        getSafe(
-          discovered,
-          ["shortName"],
-          getSafe<string | undefined>(cachedGame, ["shortName"], undefined),
-        ) ||
-        getSafe<string | undefined>(
-          discovered,
-          ["name"],
-          getSafe<string | undefined>(cachedGame, ["name"], undefined),
-        );
+        discovered?.shortName ??
+        cachedGame?.shortName ??
+        discovered?.name ??
+        cachedGame?.name;
 
       if (displayName !== undefined) {
         displayName = displayName.replace(/\t/g, " ");
@@ -319,7 +311,7 @@ export const QuickLauncher: React.FC = () => {
 
     return Object.keys(gameIconCache)
       .filter((gameId) => gameId !== game?.id)
-      .filter((gameId) => !getSafe(discoveredGames, [gameId, "hidden"], false))
+      .filter((gameId) => !(discoveredGames?.[gameId]?.hidden ?? false))
       .map((gameId) => (
         <MenuItem eventKey={gameId} key={gameId}>
           {renderGameOption(gameId)}
