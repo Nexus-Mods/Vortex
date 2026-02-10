@@ -4490,16 +4490,13 @@ class InstallManager {
         const errorMessages = instructionGroups.error.map((err) => err.source);
         const errorSummary = errorMessages.join("; ");
         return Bluebird.reject(
-          new ProcessCanceled(
-            `Installer script failed: ${errorSummary}`,
-            {
-              modId,
-              errors: instructionGroups.error.map((err) => ({
-                severity: err.value,
-                message: err.source,
-              })),
-            },
-          ),
+          new ProcessCanceled(`Installer script failed: ${errorSummary}`, {
+            modId,
+            errors: instructionGroups.error.map((err) => ({
+              severity: err.value,
+              message: err.source,
+            })),
+          }),
         );
       }
     }
