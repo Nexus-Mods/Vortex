@@ -16,6 +16,7 @@ import * as semver from "semver";
 
 import type { UpdateStatus } from "../../shared/types/ipc";
 
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 import { getVisibleWindow } from "../../util/errorHandling";
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
@@ -170,12 +171,16 @@ export function setupAutoUpdater(installType: string): void {
         // Auto-download for regular installs
         if (installType === "regular" && check?.downloadPromise) {
           check.downloadPromise.catch((err) => {
-            log("warn", "Auto-download failed", err);
+            log("warn", "Auto-download failed", {
+              error: getErrorMessageOrDefault(err),
+            });
           });
         }
       })
       .catch((err) => {
-        log("warn", "Update check failed", err);
+        log("warn", "Update check failed", {
+          error: getErrorMessageOrDefault(err),
+        });
       });
   };
 
@@ -216,7 +221,8 @@ export function setupAutoUpdater(installType: string): void {
         publisherName: ["Black Tree Gaming Ltd", "Black Tree Gaming Limited"],
       });
 
-      autoUpdater.downloadUpdate().catch((err) => {
+      autoUpdater.downloadUpdate().catch((unknownErr) => {
+        const err = unknownToError(unknownErr);
         log("error", "Download failed", { error: err.message });
         updateStatus.error = err.message;
         installAfterDownloadFlag = false;
