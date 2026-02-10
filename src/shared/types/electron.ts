@@ -7,10 +7,6 @@
  * the project.
  */
 
-// Opaque type for Electron's NativeImage (class instance that can't be serialized over IPC)
-//  sucks that we have to use unknown here, but it's only used in IPC channel definitions.
-export type NativeImage = unknown;
-
 export interface FileFilter {
   extensions: string[];
   name: string;
@@ -66,12 +62,6 @@ export interface SaveDialogReturnValue {
   bookmark?: string;
 }
 
-/**
- * MessageBox options and return value types. These are used in IPC channel definitions
- * and must stay in sync with Electron's MessageBoxOptions and MessageBoxReturnValue types.
- * Note NativeImage should not be used directly in IPC channels - use string path instead.
- * We still need it here to avoid type errors though.
- */
 export interface MessageBoxOptions {
   message: string;
   type?: "none" | "info" | "error" | "question" | "warning";
@@ -81,7 +71,6 @@ export interface MessageBoxOptions {
   detail?: string;
   checkboxLabel?: string;
   checkboxChecked?: boolean;
-  icon?: string | NativeImage;
   textWidth?: number;
   cancelId?: number;
   noLink?: boolean;
