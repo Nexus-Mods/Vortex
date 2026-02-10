@@ -2,13 +2,24 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type Electron from "electron";
-
+import type {
+  BrowserViewConstructorOptions,
+  Cookie,
+  CookiesGetFilter,
+  JumpListCategory,
+  LoginItemSettings,
+  Settings,
+  MessageBoxOptions,
+  MessageBoxReturnValue,
+  OpenDialogOptions,
+  OpenDialogReturnValue,
+  SaveDialogOptions,
+  SaveDialogReturnValue,
+  TraceConfig,
+  TraceCategoriesAndOptions,
+} from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
-
-// Re-export state types for convenience
-export type { PersistedHive, PersistedState };
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -165,14 +176,14 @@ export interface InvokeChannels {
   "updater:get-status": () => Promise<UpdateStatus>;
   // Dialog channels
   "dialog:showOpen": (
-    options: Electron.OpenDialogOptions,
-  ) => Promise<Electron.OpenDialogReturnValue>;
+    options: OpenDialogOptions,
+  ) => Promise<OpenDialogReturnValue>;
   "dialog:showSave": (
-    options: Electron.SaveDialogOptions,
-  ) => Promise<Electron.SaveDialogReturnValue>;
+    options: SaveDialogOptions,
+  ) => Promise<SaveDialogReturnValue>;
   "dialog:showMessageBox": (
-    options: Electron.MessageBoxOptions,
-  ) => Promise<Electron.MessageBoxReturnValue>;
+    options: MessageBoxOptions,
+  ) => Promise<MessageBoxReturnValue>;
   "dialog:showErrorBox": (title: string, content: string) => Promise<void>;
 
   // App protocol client channels
@@ -204,7 +215,7 @@ export interface InvokeChannels {
   "browserView:createWithEvents": (
     src: string,
     forwardEvents: string[],
-    options?: Electron.BrowserViewConstructorOptions,
+    options?: BrowserViewConstructorOptions,
   ) => Promise<string>;
   "browserView:close": (viewId: string) => Promise<void>;
   "browserView:position": (
@@ -214,12 +225,10 @@ export interface InvokeChannels {
   "browserView:updateURL": (viewId: string, newURL: string) => Promise<void>;
 
   // Jump list (Windows)
-  "app:setJumpList": (categories: Electron.JumpListCategory[]) => Promise<void>;
+  "app:setJumpList": (categories: JumpListCategory[]) => Promise<void>;
 
   // Session cookies
-  "session:getCookies": (
-    filter: Electron.CookiesGetFilter,
-  ) => Promise<Electron.Cookie[]>;
+  "session:getCookies": (filter: CookiesGetFilter) => Promise<Cookie[]>;
 
   // Window operations
   "window:getId": () => Promise<number>;
@@ -239,7 +248,7 @@ export interface InvokeChannels {
 
   // Content tracing operations
   "contentTracing:startRecording": (
-    options: Electron.TraceConfig | Electron.TraceCategoriesAndOptions,
+    options: TraceConfig | TraceCategoriesAndOptions,
   ) => Promise<void>;
   "contentTracing:stopRecording": (resultPath: string) => Promise<string>;
 
@@ -251,8 +260,8 @@ export interface InvokeChannels {
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;
 
   // Login item settings
-  "app:setLoginItemSettings": (settings: Electron.Settings) => Promise<void>;
-  "app:getLoginItemSettings": () => Promise<Electron.LoginItemSettings>;
+  "app:setLoginItemSettings": (settings: Settings) => Promise<void>;
+  "app:getLoginItemSettings": () => Promise<LoginItemSettings>;
 
   // Clipboard operations
   "clipboard:writeText": (text: string) => Promise<void>;

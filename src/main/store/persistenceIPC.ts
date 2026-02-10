@@ -12,7 +12,7 @@
 
 import type { WebContents } from "electron";
 
-import type { PersistedHive, PersistedState } from "../../shared/types/ipc";
+import type { PersistedHive, PersistedState } from "../../shared/types/state";
 import type ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 import { betterIpcMain } from "../ipc";

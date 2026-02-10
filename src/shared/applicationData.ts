@@ -45,11 +45,6 @@ export const ApplicationData = {
    * Must be called early in renderer startup before these values are needed.
    */
   async init(): Promise<void> {
-    if (process.type === "browser") {
-      // Main process should use set() instead
-      return;
-    }
-
     if (isInitialized) {
       return;
     }

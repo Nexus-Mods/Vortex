@@ -3,6 +3,9 @@
   "extends": "./tsconfig.base.json",
   "include": ["src/shared/**/*"],
   "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "composite": true,
     "noEmit": true,
     "types": [],
