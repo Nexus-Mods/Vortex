@@ -3765,10 +3765,7 @@ class InstallManager {
           );
           switch (dialogResult?.action) {
             case no:
-              throw new ProcessCanceled(
-                "User declined to install mod with C# scripts",
-              );
-            //throw new UserCanceled();
+              throw new UserCanceled();
             //case yesForAll:
             //  break;
           }
