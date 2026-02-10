@@ -15,10 +15,6 @@ sdk-extensions:
 build-options:
   append-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/dotnet9/bin
   append-ld-library-path: /usr/lib/sdk/dotnet9/lib
-  # Network access is enabled during build to let Yarn resolve packages.
-  # Remove once offline installs are fully stable (all deps in generated-sources.json).
-  build-args:
-    - --share=network
   env:
     # Electron install behavior (global): prevent Electron downloads because BaseApp provides it.
     # Ref: https://github.com/electron/electron/blob/main/docs/api/environment-variables.md
