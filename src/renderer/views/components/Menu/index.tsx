@@ -94,6 +94,8 @@ const MenuContent: FC = () => {
       </div>
 
       <ToolsSection isAnimating={isAnimating} />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
     </div>
   );
 };

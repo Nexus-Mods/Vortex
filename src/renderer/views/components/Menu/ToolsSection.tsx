@@ -34,7 +34,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
   return (
     <div
       className={joinClasses([
-        "absolute bottom-3 left-3 flex flex-col items-center gap-y-1.5 rounded-md bg-surface-low py-1.5 shadow-lg transition-[width,padding]",
+        "absolute bottom-3 left-3 z-2 flex flex-col items-center gap-y-1.5 rounded-md border-t border-surface-mid bg-surface-low py-1.5 shadow-lg transition-[width,padding]",
         menuIsCollapsed ? "w-10 px-0.5" : "w-50 px-1.5",
       ])}
     >
