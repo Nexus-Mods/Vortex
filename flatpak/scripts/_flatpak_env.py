@@ -8,6 +8,17 @@ from pathlib import Path
 from typing import NamedTuple
 
 
+FLATPAK_NODE_GENERATOR_GIT_COMMIT = "216a52efa4fcaaf6612147ffe53d9b70c97addfc"
+# Note(sewer): Keep this pinned to a known-good upstream commit.
+# Currently, PyPI release fails due to
+# "Unknown playwright browser chromium-headless-shell".
+FLATPAK_NODE_GENERATOR_GIT_URL = (
+    "git+https://github.com/flatpak/flatpak-builder-tools.git@"
+    f"{FLATPAK_NODE_GENERATOR_GIT_COMMIT}#subdirectory=node"
+)
+FLATPAK_NODE_GENERATOR_REF_MARKER = ".flatpak-node-generator-ref"
+
+
 class VenvInfo(NamedTuple):
     venv_dir: Path
     bin_dir: Path
@@ -63,6 +74,18 @@ def _pip_has_package(pip_exe: Path, package: str) -> bool:
     return result.returncode == 0
 
 
+def _flatpak_node_generator_is_pinned(info: VenvInfo) -> bool:
+    if not _pip_has_package(info.pip_exe, "flatpak-node-generator"):
+        return False
+    marker_path = info.venv_dir / FLATPAK_NODE_GENERATOR_REF_MARKER
+    if not marker_path.exists():
+        return False
+    return (
+        marker_path.read_text(encoding="utf-8").strip()
+        == FLATPAK_NODE_GENERATOR_GIT_COMMIT
+    )
+
+
 def ensure_flathub_remote() -> None:
     """Ensure the Flathub remote exists for runtime installation."""
     result = subprocess.run(
@@ -95,10 +118,21 @@ def ensure_venv(install_packages: bool = True) -> VenvInfo:
         sys.exit(1)
 
     if install_packages:
-        if not _pip_has_package(info.pip_exe, "flatpak-node-generator"):
+        if not _flatpak_node_generator_is_pinned(info):
+            print(
+                "Installing pinned flatpak-node-generator from flatpak-builder-tools "
+                f"({FLATPAK_NODE_GENERATOR_GIT_COMMIT[:12]})..."
+            )
             run_command(
-                [str(info.pip_exe), "install", "flatpak-node-generator"],
+                [
+                    str(info.pip_exe),
+                    "install",
+                    "--upgrade",
+                    FLATPAK_NODE_GENERATOR_GIT_URL,
+                ],
                 cwd=repo_root(),
             )
+            marker_path = info.venv_dir / FLATPAK_NODE_GENERATOR_REF_MARKER
+            marker_path.write_text(FLATPAK_NODE_GENERATOR_GIT_COMMIT, encoding="utf-8")
 
     return info
