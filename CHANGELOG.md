@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.16.1] - 2026-02-XX
+## [1.16.1] - 2026-02-10
 
 _Stable release based on 1.16.0-beta.5_
 
