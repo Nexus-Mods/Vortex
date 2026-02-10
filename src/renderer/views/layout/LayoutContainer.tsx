@@ -22,8 +22,9 @@ export const LayoutContainer: FC<ILayoutContainerProps> = ({
 }) => {
   const { isFocused, isHidpi } = useWindowContext();
   const { menuLayerOpen, setMenuLayerRef } = useMenuLayerContext();
-  const customTitlebar = useSelector(
-    (state: IState) => state.settings.window.customTitlebar,
+
+  const { customTitlebar, useModernLayout } = useSelector(
+    (state: IState) => state.settings.window,
   );
 
   // Add custom titlebar class on mount
@@ -48,6 +49,7 @@ export const LayoutContainer: FC<ILayoutContainerProps> = ({
         "window-unfocused": !isFocused,
         "window-frame": customTitlebar,
         "menu-open": menuLayerOpen,
+        "modern-layout": useModernLayout,
         "no-gpu-acceleration": startupSettings.disableGPU,
       })}
       key="main"

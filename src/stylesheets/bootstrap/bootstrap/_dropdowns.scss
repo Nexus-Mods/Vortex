@@ -78,7 +78,7 @@
     &:focus {
         text-decoration: none;
         color: $dropdown-link-hover-color;
-        background-color: var(--color-surface-mid);
+        background-color: $dropdown-link-hover-bg;
     }
 }
 
