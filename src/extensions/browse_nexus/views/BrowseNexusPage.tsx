@@ -4,21 +4,29 @@ import {
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
+
+import {
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiOpenInNew,
+  mdiRefresh,
+} from "@mdi/js";
 import numeral from "numeral";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
+
 import MainPage from "../../../renderer/views/MainPage";
 import Tailwind from "../../../tailwind";
-import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
-import { IState } from "../../../types/IState";
-import { IExtensionApi } from "../../../types/IExtensionContext";
+import { UserCanceled } from "../../../util/api";
 import opn from "../../../util/opn";
+import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
+import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
-import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
-import { UserCanceled } from "../../../util/api";
 
 interface IBrowseNexusPageProps {
   api: IExtensionApi;
@@ -320,9 +328,10 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           >
             <Tailwind.TabBar className="tw:mb-5">
               <Tailwind.TabButton
-                name={t("collection:browse.tabs.collections")}
                 count={allCollectionsTotal}
+                name={t("collection:browse.tabs.collections")}
               />
+
               <Tailwind.TabButton name={t("collection:browse.tabs.mods")} />
             </Tailwind.TabBar>
 
@@ -330,7 +339,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               {/* Search Bar */}
               <div className="tw:flex tw:gap-2.5 tw:mb-4 tw:items-start">
                 <Tailwind.Input
+                  errorMessage={searchValidationError || undefined}
+                  fieldClassName="tw:w-64 tw:shrink-0"
+                  hideLabel={true}
+                  label={t("collection:browse.searchPlaceholder")}
+                  placeholder={t("collection:browse.searchPlaceholder")}
                   type="text"
+                  value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     // Clear validation error when user types
@@ -338,19 +353,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       setSearchValidationError("");
                     }
                   }}
-                  value={searchQuery}
-                  placeholder={t("collection:browse.searchPlaceholder")}
                   onKeyDown={handleKeyDown}
-                  fieldClassName="tw:w-64 tw:shrink-0"
-                  errorMessage={searchValidationError || undefined}
-                  hideLabel={true}
-                  label={t("collection:browse.searchPlaceholder")}
                 />
 
                 <Tailwind.Button
                   buttonType="secondary"
-                  size="md"
                   filled="strong"
+                  size="md"
                   onClick={handleSearch}
                 >
                   {t("common:actions.search")}
@@ -358,10 +367,10 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
                 <Tailwind.Button
                   buttonType="tertiary"
-                  size="md"
                   filled="weak"
+                  leftIconPath={mdiRefresh}
+                  size="md"
                   onClick={handleRefresh}
-                  leftIconPath="mdiRefresh"
                 >
                   {t("collection:browse.refresh")}
                 </Tailwind.Button>
@@ -372,8 +381,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography
-                      typographyType="body-lg"
                       appearance="subdued"
+                      typographyType="body-lg"
                     >
                       {t("collection:browse.loading")}
                     </Tailwind.Typography>
@@ -383,15 +392,16 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography
-                      typographyType="body-lg"
                       appearance="none"
                       className="tw:mb-2 tw:text-danger-moderate"
+                      typographyType="body-lg"
                     >
                       {t("collection:browse.error")}
                     </Tailwind.Typography>
+
                     <Tailwind.Typography
-                      typographyType="body-md"
                       appearance="subdued"
+                      typographyType="body-md"
                     >
                       {error.message}
                     </Tailwind.Typography>
@@ -401,8 +411,8 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-8">
                   <div className="tw:text-center">
                     <Tailwind.Typography
-                      typographyType="body-lg"
                       appearance="subdued"
+                      typographyType="body-lg"
                     >
                       {t("collection:browse.noCollections")}
                     </Tailwind.Typography>
@@ -413,9 +423,9 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   {/* Results count and sort */}
                   <div className="tw:flex tw:justify-between tw:items-center tw:mb-5">
                     <Tailwind.Typography
-                      typographyType="body-md"
                       appearance="moderate"
-                      isTranslucent
+                      isTranslucent={true}
+                      typographyType="body-md"
                     >
                       {t("collection:browse.resultsCount", {
                         total: numeral(totalCount).format("0,0"),
@@ -423,14 +433,14 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     </Tailwind.Typography>
 
                     <Tailwind.Select
+                      className="tw:flex tw:max-w-64 tw:items-center tw:gap-2.5"
+                      hideLabel={true}
                       id="sort-select"
                       label={t("collection:browse.sortBy")}
-                      hideLabel={true}
                       value={SORT_OPTIONS.indexOf(sortBy)}
                       onChange={(e) =>
                         setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
                       }
-                      className="tw:flex tw:items-center tw:gap-2.5 tw:max-w-64"
                     >
                       {SORT_OPTIONS.map((option, index) => (
                         <option key={option.field} value={index}>
@@ -460,34 +470,34 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
                       return (
                         <Tailwind.CollectionTile
-                          key={collection.id}
                           api={api}
-                          slug={collection.slug}
-                          gameId={gameId}
-                          id={collection.id.toString()}
-                          title={collection.name}
                           author={{
                             name: collection.user?.name || "Unknown",
                             avatar: collection.user?.avatar,
                           }}
+                          badges={(collection as any).badges}
+                          className="tw:max-w-none"
                           coverImage={tileImage}
-                          tags={tags}
+                          description={
+                            (collection as any).summary ||
+                            "No description available."
+                          }
+                          gameId={gameId}
+                          id={collection.id.toString()}
+                          key={collection.id}
+                          slug={collection.slug}
                           stats={{
                             modCount: latestRevision?.modCount || 0,
                             size: latestRevision?.totalSize || 0,
                             endorsements: collection.endorsements || 0,
                           }}
-                          description={
-                            (collection as any).summary ||
-                            "No description available."
-                          }
+                          tags={tags}
+                          title={collection.name}
                           version={latestRevision?.revisionNumber?.toString()}
-                          badges={(collection as any).badges}
                           onAddCollection={() =>
                             handleAddCollection(collection)
                           }
                           onViewPage={() => handleViewOnNexus(collection)}
-                          className="tw:max-w-none"
                         />
                       );
                     })}
@@ -499,11 +509,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       {/* Previous Button */}
                       <Tailwind.Button
                         buttonType="tertiary"
+                        className=""
+                        disabled={currentPage === 1}
+                        leftIconPath={mdiChevronLeft}
                         size="md"
                         onClick={handlePreviousPage}
-                        disabled={currentPage === 1}
-                        leftIconPath="mdiChevronLeft"
-                        className=""
                       />
 
                       {/* Page Numbers */}
@@ -533,14 +543,15 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                                     ...
                                   </span>
                                 )}
+
                                 <Tailwind.Button
                                   buttonType="tertiary"
-                                  size="md"
+                                  className=""
                                   filled={
                                     page === currentPage ? "weak" : undefined
                                   }
+                                  size="md"
                                   onClick={() => handlePageClick(page)}
-                                  className=""
                                 >
                                   {page.toString()}
                                 </Tailwind.Button>
@@ -552,37 +563,39 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                       {/* Next Button */}
                       <Tailwind.Button
                         buttonType="tertiary"
+                        className=""
+                        disabled={currentPage === totalPages}
+                        leftIconPath={mdiChevronRight}
                         size="md"
                         onClick={handleNextPage}
-                        disabled={currentPage === totalPages}
-                        leftIconPath="mdiChevronRight"
-                        className=""
                       />
 
                       {/* Direct Page Input */}
                       <div className="tw:flex tw:items-center tw:gap-1 tw:ml-5">
                         <Tailwind.Typography
-                          typographyType="body-md"
                           appearance="subdued"
+                          typographyType="body-md"
                         >
                           {t("collection:pagination.goTo")}
                         </Tailwind.Typography>
+
                         <Tailwind.Input
+                          className="tw:min-w-10 tw:text-center"
+                          hideLabel={true}
+                          id="page-input"
+                          label={t("collection:pagination.pageNumber")}
+                          max={totalPages}
+                          min={1}
                           type="number"
                           value={pageInput}
                           onChange={(e) => setPageInput(e.target.value)}
                           onKeyDown={handlePageInputKeyDown}
-                          className="tw:min-w-10 tw:text-center"
-                          id="page-input"
-                          label={t("collection:pagination.pageNumber")}
-                          hideLabel={true}
-                          min={1}
-                          max={totalPages}
                         />
+
                         <Tailwind.Button
                           buttonType="secondary"
-                          size="md"
                           filled="weak"
+                          size="md"
                           onClick={handleGoToPage}
                         >
                           {t("collection:pagination.go")}
@@ -598,25 +611,25 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
               <div className="tw:flex tw:flex-col tw:items-center tw:gap-4 tw:py-16">
                 {/* Icon */}
                 <Tailwind.Icon
+                  className="tw:size-9 tw:text-neutral-subdued"
                   path="mdiClockOutline"
                   size="xl"
-                  className="tw:w-9 tw:h-9 tw:text-neutral-subdued"
                 />
 
                 {/* Heading */}
                 <Tailwind.Typography
-                  typographyType="body-xl"
                   appearance="subdued"
                   className="tw:font-semibold"
+                  typographyType="body-xl"
                 >
                   {t("collection:browse.modsComingSoon.title")}
                 </Tailwind.Typography>
 
                 {/* Description */}
                 <Tailwind.Typography
-                  typographyType="body-lg"
                   appearance="subdued"
                   className="tw:text-center"
+                  typographyType="body-lg"
                 >
                   {t("collection:browse.modsComingSoon.description")}
                 </Tailwind.Typography>
@@ -624,9 +637,9 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 {/* Button */}
                 <Tailwind.Button
                   buttonType="tertiary"
-                  size="sm"
                   filled="weak"
-                  leftIconPath="mdiOpenInNew"
+                  leftIconPath={mdiOpenInNew}
+                  size="sm"
                   onClick={() => {
                     const game = getGame(gameId);
                     const domainName = nexusGameId(game, gameId);
