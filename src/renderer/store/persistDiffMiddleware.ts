@@ -9,7 +9,8 @@
 
 import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
 
-import type { DiffOperation, PersistedHive } from "../../shared/types/ipc";
+import type { DiffOperation } from "../../shared/types/ipc";
+import type { PersistedHive } from "../../shared/types/state";
 import type { IState } from "../../types/IState";
 
 import { getErrorMessageOrDefault } from "../../shared/errors";
@@ -32,7 +33,7 @@ const CORE_HIVES: PersistedHive[] = [
  * Dynamic set of hives to persist. Starts with core hives,
  * additional hives can be added when discovered from hydration data.
  */
-let persistedHives: Set<string> = new Set(CORE_HIVES);
+const persistedHives: Set<string> = new Set(CORE_HIVES);
 
 /**
  * Add additional hives to be persisted.

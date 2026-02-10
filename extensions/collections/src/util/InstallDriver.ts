@@ -464,8 +464,25 @@ class InstallDriver {
           //  aware that it's installing mods that are part of the collection
           //  in order for us to apply any collection mod rules to the mods themselves
           //  upon successful installation.
-          this.mLastCollection = this.mCollection = mods[modId];
+          const collection = mods[modId];
+          this.mLastCollection = this.mCollection = collection;
           this.mStep = "installing";
+
+          // Populate mDependentMods so that patches and file overrides can be
+          // applied when the optional mods are installed.
+          const required = (collection?.rules ?? []).filter((rule) =>
+            ["requires", "recommends"].includes(rule.type),
+          );
+          this.mDependentMods = required.filter((rule) => {
+            const modRef: any = {
+              ...rule.reference,
+              patches: rule?.extra?.patches
+                ? { ...rule.extra.patches }
+                : undefined,
+              fileList: rule?.fileList,
+            };
+            return util.findModByRef(modRef, mods) === undefined;
+          });
         }
 
         const isCollectionMod = (rule) =>
@@ -879,6 +896,7 @@ class InstallDriver {
     this.mProfile = undefined;
     this.mGameId = undefined;
     this.mInstalledMods = [];
+    this.mDependentMods = [];
     this.mStep = "prepare";
     this.mOnStop?.();
   }
@@ -1246,6 +1264,7 @@ class InstallDriver {
 
     this.completeInstallationTracking(true);
     this.mCollection = undefined;
+    this.mDependentMods = [];
     this.mInstallDone = true;
     this.triggerUpdate();
   };
