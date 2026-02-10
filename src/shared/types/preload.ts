@@ -1,5 +1,20 @@
-import type * as Electron from "electron";
-
+import type {
+  BrowserViewConstructorOptions,
+  Cookie,
+  CookiesGetFilter,
+  JumpListCategory,
+  LoginItemSettings,
+  Settings,
+  MenuItemConstructorOptions,
+  MessageBoxOptions,
+  MessageBoxReturnValue,
+  OpenDialogOptions,
+  OpenDialogReturnValue,
+  SaveDialogOptions,
+  SaveDialogReturnValue,
+  TraceConfig,
+  TraceCategoriesAndOptions,
+} from "./electron";
 import type {
   DiffOperation,
   AppInitMetadata,
@@ -75,19 +90,13 @@ export interface Example {
 
 export interface Dialog {
   /** Show open file/folder dialog */
-  showOpen(
-    options: Electron.OpenDialogOptions,
-  ): Promise<Electron.OpenDialogReturnValue>;
+  showOpen(options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
 
   /** Show save file dialog */
-  showSave(
-    options: Electron.SaveDialogOptions,
-  ): Promise<Electron.SaveDialogReturnValue>;
+  showSave(options: SaveDialogOptions): Promise<SaveDialogReturnValue>;
 
   /** Show message box dialog */
-  showMessageBox(
-    options: Electron.MessageBoxOptions,
-  ): Promise<Electron.MessageBoxReturnValue>;
+  showMessageBox(options: MessageBoxOptions): Promise<MessageBoxReturnValue>;
 
   /** Show error box (blocking) */
   showErrorBox(title: string, content: string): Promise<void>;
@@ -125,13 +134,13 @@ export interface App {
   extractFileIcon(exePath: string, iconPath: string): Promise<void>;
 
   /** Set Windows jump list */
-  setJumpList(categories: Electron.JumpListCategory[]): Promise<void>;
+  setJumpList(categories: JumpListCategory[]): Promise<void>;
 
   /** Set login item settings (auto-start) */
-  setLoginItemSettings(settings: Electron.Settings): Promise<void>;
+  setLoginItemSettings(settings: Settings): Promise<void>;
 
   /** Get login item settings */
-  getLoginItemSettings(): Promise<Electron.LoginItemSettings>;
+  getLoginItemSettings(): Promise<LoginItemSettings>;
 
   /** Get the current application directory */
   getAppPath(): Promise<string>;
@@ -151,7 +160,7 @@ export interface BrowserView {
   createWithEvents(
     src: string,
     forwardEvents: string[],
-    options?: Electron.BrowserViewConstructorOptions,
+    options?: BrowserViewConstructorOptions,
   ): Promise<string>;
 
   /** Close a BrowserView */
@@ -169,7 +178,7 @@ export interface BrowserView {
 
 export interface Session {
   /** Get session cookies */
-  getCookies(filter: Electron.CookiesGetFilter): Promise<Electron.Cookie[]>;
+  getCookies(filter: CookiesGetFilter): Promise<Cookie[]>;
 }
 
 export interface WindowAPI {
@@ -259,10 +268,7 @@ export interface WindowAPI {
 }
 
 /** Serializable menu item (without click handler function) */
-export type SerializableMenuItem = Omit<
-  Electron.MenuItemConstructorOptions,
-  "click"
-> & {
+export type SerializableMenuItem = Omit<MenuItemConstructorOptions, "click"> & {
   submenu?: SerializableMenuItem[];
 };
 
@@ -277,7 +283,7 @@ export interface Menu {
 export interface ContentTracing {
   /** Start recording performance trace */
   startRecording(
-    options: Electron.TraceCategoriesAndOptions | Electron.TraceConfig,
+    options: TraceCategoriesAndOptions | TraceConfig,
   ): Promise<void>;
 
   /** Stop recording and save to file, returns the path to the trace file */
