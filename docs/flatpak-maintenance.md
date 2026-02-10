@@ -31,7 +31,15 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 
 ### First-time Setup
 
-Regenerate sources (whenever `yarn.lock` changes):
+**Initialize git submodules:**
+
+Flatpak builds run offline and cannot fetch submodules during the build. The manifest sets `VORTEX_SKIP_SUBMODULES=1` to skip the automatic submodule update in `preinstall.js`. Initialize submodules before building:
+
+```bash
+git submodule update --init --recursive
+```
+
+**Regenerate sources** (whenever `yarn.lock` changes):
 
 ```bash
 python3 flatpak/scripts/flatpak_sources.py

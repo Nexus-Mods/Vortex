@@ -38,10 +38,11 @@ build-options:
     DOTNET_ROOT: /usr/lib/sdk/dotnet9
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
 
-    # Build stability: avoid parallel extension builds and skip preinstall side effects
-    # (preinstall updates submodules and triggers extra build steps that are not needed here).
+    # Build stability: avoid parallel extension builds.
+    # Skip git submodule updates (submodules are already fetched by flatpak-builder).
+    # FOMOD installer builds are still needed and run during preinstall.
     NO_PARALLEL: "1"
-    VORTEX_SKIP_PREINSTALL: "1"
+    VORTEX_SKIP_SUBMODULES: "1"
 
 finish-args:
   - --share=ipc

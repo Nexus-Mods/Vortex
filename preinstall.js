@@ -138,8 +138,12 @@ async function main() {
   }
 
   try {
-    // Update git submodules
-    await updateSubmodules();
+    // Update git submodules (can be skipped for offline builds like Flatpak)
+    if (process.env.VORTEX_SKIP_SUBMODULES === "1") {
+      console.log("Skipping git submodules (VORTEX_SKIP_SUBMODULES=1)");
+    } else {
+      await updateSubmodules();
+    }
 
     // Build FOMOD IPC
     await buildFomodIPC();
