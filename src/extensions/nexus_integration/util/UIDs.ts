@@ -8,10 +8,13 @@ const gameNum = (() => {
   let cache: { [gameId: string]: number };
   return (gameId: string): number => {
     if (cache === undefined) {
-      cache = nexusGames().reduce((prev, game) => {
-        prev[game.domain_name] = game.id;
-        return prev;
-      }, {});
+      const games = nexusGames();
+      if (games.length > 0) {
+        cache = games.reduce((prev, game) => {
+          prev[game.domain_name] = game.id;
+          return prev;
+        }, {});
+      }
     }
 
     const game = getGame(gameId);
