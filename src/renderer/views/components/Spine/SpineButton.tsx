@@ -18,7 +18,7 @@ export const SpineButton: FC<SpineButtonProps> = ({
   <button
     className={joinClasses([
       className,
-      "flex size-12 items-center justify-center rounded-lg transition-colors",
+      "flex size-12 shrink-0 items-center justify-center rounded-lg transition-colors",
       "hover:border-neutral-strong hover:bg-surface-translucent-high hover:text-neutral-strong",
       isActive
         ? "border-neutral-strong bg-surface-translucent-low text-neutral-strong"

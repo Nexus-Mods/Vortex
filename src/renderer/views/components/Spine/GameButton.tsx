@@ -48,7 +48,7 @@ export const GameButton: FC<GameButtonProps> = ({
 
   return (
     <button
-      className="group relative size-12 overflow-hidden rounded-lg"
+      className="group relative size-12 shrink-0 overflow-hidden rounded-lg"
       {...props}
     >
       <img

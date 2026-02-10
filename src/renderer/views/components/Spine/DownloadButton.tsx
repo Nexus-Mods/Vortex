@@ -148,7 +148,7 @@ export const DownloadButton: FC = () => {
     <button
       className={joinClasses(
         [
-          "group/download relative flex size-12 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
+          "group/download relative flex size-12 shrink-0 flex-col items-center justify-center gap-y-0.5 rounded-full transition-colors",
           "hover:bg-surface-translucent-high",
           isPaused || isDownloading
             ? ""

@@ -1,20 +1,29 @@
-import { mdiHome, mdiPlus, mdiPuzzle } from "@mdi/js";
-import React, { type FC, useCallback, useMemo } from "react";
+import { mdiHome, mdiPlus } from "@mdi/js";
+import React, {
+  type FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IState } from "../../../../types/IState";
 
-import { setOpenMainPage } from "../../../../actions/session";
-import { useSpineContext } from "./SpineContext";
+import { setOpenMainPage } from "../../../../actions";
 import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
+import { useSpineContext } from "./SpineContext";
 import { getGameImageUrl } from "./utils";
 
 export const Spine: FC = () => {
+  const dispatch = useDispatch();
   const { selection, selectHome, selectGame } = useSpineContext();
 
-  const dispatch = useDispatch();
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const knownGames = useSelector(
     (state: IState) => state.session.gameMode.known,
@@ -50,47 +59,62 @@ export const Spine: FC = () => {
     });
   }, [knownGames, discoveredGames, lastActiveProfile]);
 
+  const onScroll = (event: Event) =>
+    setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
+
+  useEffect(() => {
+    if (!scrollRef.current) {
+      return;
+    }
+
+    const element = scrollRef.current;
+    element.addEventListener("scroll", onScroll);
+    return () => element.removeEventListener("scroll", onScroll);
+  }, [scrollRef]);
+
   return (
-    <div className="flex shrink-0 flex-col justify-between border-r border-stroke-weak p-3">
-      <div className="flex flex-col gap-y-3">
-        <SpineButton
-          className="border-2"
-          iconPath={mdiHome}
-          isActive={selection.type === "home"}
-          onClick={selectHome}
-        />
+    <div className="box-content flex w-18 shrink-0 flex-col items-center justify-between gap-y-3 border-r border-stroke-weak py-3">
+      <SpineButton
+        className="border-2"
+        iconPath={mdiHome}
+        isActive={selection.type === "home"}
+        onClick={selectHome}
+      />
 
-        {managedGames.map((game) => (
-          <GameButton
-            imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
-            isActive={selection.type === "game" && selection.gameId === game.id}
-            key={game.id}
-            store={discoveredGames[game.id]?.store}
-            title={game.name}
-            onClick={() => selectGame(game.id)}
-          />
-        ))}
+      <div className="relative flex min-h-0 w-full grow">
+        {canScrollUp && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
+        )}
 
-        <SpineButton
-          className="border-2 border-dotted hover:border-solid"
-          iconPath={mdiPlus}
-          isActive={mainPage === "Games"}
-          title="Games"
-          onClick={() => handleGlobalPageClick("Games")}
-        />
+        <div className="min-h-0 w-full overflow-y-auto pl-3" ref={scrollRef}>
+          <div className="flex flex-col gap-y-3 pb-6">
+            {managedGames.map((game) => (
+              <GameButton
+                imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
+                isActive={
+                  selection.type === "game" && selection.gameId === game.id
+                }
+                key={game.id}
+                store={discoveredGames[game.id]?.store}
+                title={game.name}
+                onClick={() => selectGame(game.id)}
+              />
+            ))}
+
+            <SpineButton
+              className="border-2 border-dotted hover:border-solid"
+              iconPath={mdiPlus}
+              isActive={mainPage === "Games"}
+              title="Games"
+              onClick={() => handleGlobalPageClick("Games")}
+            />
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
       </div>
 
-      <div className="flex flex-col gap-y-3">
-        <SpineButton
-          className="hover:border-2"
-          iconPath={mdiPuzzle}
-          isActive={mainPage === "Extensions"}
-          title="Extensions"
-          onClick={() => handleGlobalPageClick("Extensions")}
-        />
-
-        <DownloadButton />
-      </div>
+      <DownloadButton />
     </div>
   );
 };

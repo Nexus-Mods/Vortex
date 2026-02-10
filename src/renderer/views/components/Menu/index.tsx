@@ -34,11 +34,11 @@ const MenuContent: FC = () => {
 
   const { mainPage } = usePagesContext();
   const { toolCount } = useMenuContext();
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [canScrollUp, setCanScrollUp] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const onScroll = (event: Event) =>
-    setIsScrolled((event.target as HTMLDivElement).scrollTop > 0);
+    setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
 
   useEffect(() => {
     if (!scrollRef.current) {
@@ -65,7 +65,7 @@ const MenuContent: FC = () => {
         menuIsCollapsed ? "w-16" : "w-56",
       ])}
     >
-      {isScrolled && (
+      {canScrollUp && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
       )}
 
