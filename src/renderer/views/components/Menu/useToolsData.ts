@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
+import { shallowEqual, useSelector } from "react-redux";
 
 import type { IToolStored } from "../../../../extensions/gamemode_management/types/IToolStored";
 import type { IDiscoveredTool } from "../../../../types/IDiscoveredTool";
@@ -16,13 +16,9 @@ import {
   currentGameDiscovery,
 } from "../../../../util/selectors";
 import StarterInfo from "../../../../util/StarterInfo";
-import { getSafe } from "../../../../util/storeHelper";
-
-const emptyObj = {};
-const emptyArray: string[] = [];
 
 export interface UseToolsDataResult {
-  gameMode: string | undefined;
+  gameId: string | undefined;
   gameStarter: StarterInfo | undefined;
   tools: StarterInfo[];
   discoveredTools: { [key: string]: IDiscoveredTool };
@@ -35,31 +31,24 @@ export interface UseToolsDataResult {
  * Returns the game starter, tools list, and related metadata.
  */
 export const useToolsData = (): UseToolsDataResult => {
-  const gameMode = useSelector((state: IState) => activeGameId(state));
+  const gameId = useSelector((state: IState) => activeGameId(state));
   const game = useSelector((state: IState) => currentGame(state));
   const gameDiscovery = useSelector((state: IState) =>
     currentGameDiscovery(state),
   );
-  const discoveredTools = useSelector((state: IState) =>
-    getSafe<{ [key: string]: IDiscoveredTool }>(
-      state,
-      ["settings", "gameMode", "discovered", gameMode, "tools"],
-      emptyObj,
-    ),
+  const discoveredTools = useSelector(
+    (state: IState) =>
+      state.settings?.gameMode?.discovered?.[gameId ?? ""]?.tools ?? {},
+    shallowEqual,
   );
-  const toolsOrder = useSelector((state: IState) =>
-    getSafe<string[]>(
-      state,
-      ["settings", "interface", "tools", "order", gameMode],
-      emptyArray,
-    ),
+  const toolsOrder = useSelector(
+    (state: IState) =>
+      state.settings?.interface?.tools?.order?.[gameId ?? ""] ?? [],
+    shallowEqual,
   );
-  const primaryToolId = useSelector((state: IState) =>
-    getSafe<string | undefined>(
-      state,
-      ["settings", "interface", "primaryTool", gameMode],
-      undefined,
-    ),
+  const primaryToolId = useSelector(
+    (state: IState) =>
+      state.settings?.interface?.primaryTool?.[gameId ?? ""] ?? undefined,
   );
 
   const gameStarter = useMemo((): StarterInfo | undefined => {
@@ -83,7 +72,7 @@ export const useToolsData = (): UseToolsDataResult => {
       return [];
     }
 
-    const knownTools = getSafe(game, ["supportedTools"], Array<IToolStored>());
+    const knownTools = game?.supportedTools ?? Array<IToolStored>();
     const preConfTools = new Set<string>(knownTools.map((tool) => tool.id));
 
     const starters: StarterInfo[] = [];
@@ -121,7 +110,7 @@ export const useToolsData = (): UseToolsDataResult => {
           );
         } catch (err) {
           log("error", "tool configuration invalid", {
-            gameId: gameMode,
+            gameId,
             toolId,
             error: getErrorMessageOrDefault(err),
           });
@@ -142,11 +131,11 @@ export const useToolsData = (): UseToolsDataResult => {
     discoveredTools,
     toolsOrder,
     gameStarter?.id,
-    gameMode,
+    gameId,
   ]);
 
   return {
-    gameMode,
+    gameId,
     gameStarter,
     tools,
     discoveredTools,

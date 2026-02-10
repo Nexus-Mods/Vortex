@@ -14,7 +14,7 @@ import { usePagesContext, useWindowContext } from "../../../contexts";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
 import { MenuButton } from "./MenuButton";
-import { MenuProvider, useMenuContext } from "./MenuContext";
+import { ToolsProvider, useToolsContext } from "./ToolsContext";
 import { ToolsSection } from "./ToolsSection";
 
 const toolPadding = {
@@ -33,7 +33,8 @@ const MenuContent: FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { mainPage } = usePagesContext();
-  const { toolCount } = useMenuContext();
+  const { visibleTools } = useToolsContext();
+  const toolCount = visibleTools.length;
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -99,8 +100,8 @@ const MenuContent: FC = () => {
 
 export const Menu: FC = () => {
   return (
-    <MenuProvider>
+    <ToolsProvider>
       <MenuContent />
-    </MenuProvider>
+    </ToolsProvider>
   );
 };

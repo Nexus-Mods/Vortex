@@ -6,7 +6,6 @@ import type { IStarterInfo } from "../../../../util/StarterInfo";
 import { log } from "../../../../util/log";
 import { activeProfile } from "../../../../util/selectors";
 import StarterInfo from "../../../../util/StarterInfo";
-import { getSafe } from "../../../../util/storeHelper";
 import { useToolsData } from "./useToolsData";
 import { useToolsRunning } from "./useToolsRunning";
 import { useToolsValidation } from "./useToolsValidation";
@@ -20,12 +19,13 @@ export type ShowErrorCallback = (
 ) => void;
 
 export interface UseToolsResult {
-  gameMode: string | undefined;
+  gameId: string | undefined;
   visibleTools: IStarterInfo[];
   primaryStarter: IStarterInfo | undefined;
   primaryToolId: string | undefined;
-  isRunning: boolean;
+  isPrimaryRunning: boolean;
   exclusiveRunning: boolean;
+  isToolRunning: (toolExePath: string) => boolean;
   startTool: (info: IStarterInfo) => void;
   handlePlay: () => void;
 }
@@ -40,7 +40,7 @@ export const useTools = (
   api: IExtensionApi,
 ): UseToolsResult => {
   const {
-    gameMode,
+    gameId,
     gameStarter,
     tools,
     discoveredTools,
@@ -56,6 +56,8 @@ export const useTools = (
 
   const { isToolValid } = useToolsValidation(allStarters, discoveryPath);
 
+  const { exclusiveRunning, isToolRunning } = useToolsRunning();
+
   // Determine the primary starter (tool or game)
   const primaryStarter = useMemo((): IStarterInfo | undefined => {
     if (primaryToolId) {
@@ -67,7 +69,11 @@ export const useTools = (
     return gameStarter;
   }, [primaryToolId, tools, gameStarter]);
 
-  const { isRunning, exclusiveRunning } = useToolsRunning(primaryStarter);
+  // Check if primary starter is running
+  const isPrimaryRunning = useMemo(
+    () => isToolRunning(primaryStarter?.exePath ?? ""),
+    [isToolRunning, primaryStarter?.exePath],
+  );
 
   // Filter visible tools (valid, not hidden, includes game starter)
   const visibleTools = useMemo(() => {
@@ -126,9 +132,9 @@ export const useTools = (
 
     const state = api.getState();
     const profile = activeProfile(state);
-    const currentModsState = getSafe(profile, ["modState"], {});
-    const enabledMods = Object.keys(currentModsState).filter((modId) =>
-      getSafe(currentModsState, [modId, "enabled"], false),
+    const currentModsState = profile?.modState ?? {};
+    const enabledMods = Object.keys(currentModsState).filter(
+      (modId) => currentModsState?.[modId]?.enabled ?? false,
     );
 
     log("info", `Enabled mods at game launch: ${enabledMods.length}`);
@@ -137,12 +143,13 @@ export const useTools = (
   }, [primaryStarter, api, onShowError]);
 
   return {
-    gameMode,
+    gameId,
     visibleTools,
     primaryStarter,
     primaryToolId,
-    isRunning,
+    isPrimaryRunning,
     exclusiveRunning,
+    isToolRunning,
     startTool,
     handlePlay,
   };

@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../../../tailwind/components/next/button";
 import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../contexts";
-import { useMenuContext } from "./MenuContext";
 import { ToolButton } from "./ToolButton";
+import { useToolsContext } from "./ToolsContext";
 
 interface ToolsSectionProps {
   isAnimating: boolean;
@@ -16,17 +16,18 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
   const {
-    gameMode,
+    gameId,
     visibleTools,
     primaryStarter,
     primaryToolId,
-    isRunning,
+    isPrimaryRunning,
     exclusiveRunning,
+    isToolRunning,
     startTool,
     handlePlay,
-  } = useMenuContext();
+  } = useToolsContext();
 
-  if (gameMode === undefined) {
+  if (gameId === undefined) {
     return null;
   }
 
@@ -49,6 +50,7 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
             isPrimary={
               primaryToolId ? starter.id === primaryToolId : starter.isGame
             }
+            isRunning={isToolRunning(starter.exePath)}
             key={starter.id}
             starter={starter}
             onClick={() => startTool(starter)}
@@ -59,13 +61,13 @@ export const ToolsSection: FC<ToolsSectionProps> = ({ isAnimating }) => {
       <Button
         buttonType="secondary"
         className="w-full transition-all"
-        disabled={exclusiveRunning || isRunning || !primaryStarter}
+        disabled={exclusiveRunning || isPrimaryRunning || !primaryStarter}
         filled="strong"
         leftIconPath={mdiPlay}
         onClick={handlePlay}
       >
         {!menuIsCollapsed
-          ? isRunning
+          ? isPrimaryRunning
             ? t("Running...")
             : t("Play")
           : undefined}

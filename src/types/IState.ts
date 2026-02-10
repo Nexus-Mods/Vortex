@@ -156,6 +156,11 @@ export interface ISettingsInterface {
   foregroundDL: boolean;
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
+  tools?: {
+    addToolsToTitleBar: boolean;
+    order?: { [gameId: string]: string[] };
+  };
+  primaryTool?: { [gameId: string]: string };
 }
 
 export interface ISettingsAutomation {

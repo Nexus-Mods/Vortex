@@ -2,31 +2,22 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import type { IState } from "../../../../types/IState";
-import type { IStarterInfo } from "../../../../util/StarterInfo";
 
 import { makeExeId } from "../../../../reducers/session";
 
 export interface UseToolsRunningResult {
-  isRunning: boolean;
   exclusiveRunning: boolean;
+  isToolRunning: (toolExePath: string) => boolean;
 }
 
 /**
  * Hook to track the running state of tools.
- * Returns whether the primary starter is running and if any exclusive tool is running.
+ * Returns whether any exclusive tool is running and a function to check specific tools.
  */
-export const useToolsRunning = (
-  primaryStarter: IStarterInfo | undefined,
-): UseToolsRunningResult => {
+export const useToolsRunning = (): UseToolsRunningResult => {
   const toolsRunning = useSelector(
     (state: IState) => state.session.base.toolsRunning,
   );
-
-  const isRunning = useMemo(() => {
-    if (!primaryStarter?.exePath) return false;
-    const exeId = makeExeId(primaryStarter.exePath);
-    return toolsRunning[exeId] !== undefined;
-  }, [primaryStarter, toolsRunning]);
 
   const exclusiveRunning = useMemo(() => {
     return Object.keys(toolsRunning).some(
@@ -34,5 +25,13 @@ export const useToolsRunning = (
     );
   }, [toolsRunning]);
 
-  return { isRunning, exclusiveRunning };
+  const isToolRunning = useMemo(() => {
+    return (toolExePath: string): boolean => {
+      if (!toolExePath) return false;
+      const exeId = makeExeId(toolExePath);
+      return toolsRunning[exeId] !== undefined;
+    };
+  }, [toolsRunning]);
+
+  return { exclusiveRunning, isToolRunning };
 };

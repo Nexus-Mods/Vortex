@@ -13,12 +13,14 @@ interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   starter: IStarterInfo;
   isPrimary?: boolean;
   isValid?: boolean;
+  isRunning?: boolean;
 }
 
 export const ToolButton: FC<ToolButtonProps> = ({
   starter,
   isPrimary = false,
   isValid = true,
+  isRunning = false,
   ...props
 }) => {
   const imageSrc = useMemo(() => {
@@ -33,14 +35,11 @@ export const ToolButton: FC<ToolButtonProps> = ({
     }
   }, [starter]);
 
-  // todo
-  const isLoading = false;
-
   return (
     <button
       className={joinClasses(
         "group/tool-button relative size-8 shrink-0 rounded-sm border border-stroke-moderate",
-        { "pointer-events-none cursor-not-allowed": isLoading },
+        { "pointer-events-none cursor-not-allowed": isRunning },
       )}
       title={isValid ? starter.name : `${starter.name} (Not configured)`}
       {...props}
@@ -74,7 +73,7 @@ export const ToolButton: FC<ToolButtonProps> = ({
             "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-stroke-moderate transition-colors",
             "group-hover/tool-button:border-stroke-strong group-hover/tool-button:bg-translucent-600",
           ],
-          { "border-stroke-strong bg-translucent-600": isLoading },
+          { "border-stroke-strong bg-translucent-600": isRunning },
         )}
       >
         <span
@@ -83,10 +82,10 @@ export const ToolButton: FC<ToolButtonProps> = ({
               "relative text-neutral-inverted opacity-0 transition-opacity",
               "group-hover/tool-button:opacity-100",
             ],
-            { "animate-spin opacity-100": isLoading },
+            { "animate-spin opacity-100": isRunning },
           )}
         >
-          {isLoading ? (
+          {isRunning ? (
             <>
               <Icon className="opacity-40" path={mdiCircleOutline} />
 
