@@ -728,14 +728,28 @@ class LootInterface {
   });
 
   private fork = (modulePath: string, args: string[]) => {
-    (this.mExtensionApi as any).runExecutable(process.execPath, [modulePath].concat(args || []), {
-      detach: false,
-      suggestDeploy: false,
-      expectSuccess: true,
-      env: {
-        ELECTRON_RUN_AS_NODE: '1',
-      },
-    })
+    const attempt = (retries: number): Bluebird<void> => {
+      return (this.mExtensionApi as any)
+        .runExecutable(process.execPath, [modulePath].concat(args || []), {
+          detach: false,
+          suggestDeploy: false,
+          expectSuccess: true,
+          env: {
+            ELECTRON_RUN_AS_NODE: "1",
+          },
+        })
+        .catch((err: Error) => {
+          if ((err as any).code === "EBUSY" && retries > 0) {
+            log("debug", "LOOT fork got EBUSY, retrying", {
+              retriesLeft: retries,
+            });
+            return Bluebird.delay(500).then(() => attempt(retries - 1));
+          }
+          return Bluebird.reject(err);
+        });
+    };
+
+    attempt(5)
       .catch(util.UserCanceled, () => null)
       .catch(util.ProcessCanceled, () => null)
       .catch(err => {
