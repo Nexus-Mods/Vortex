@@ -186,7 +186,8 @@ export const getCollectionModByReference = (
     if (searchParams.tag && ref.tag === searchParams.tag) return true;
     if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5)
       return true;
-    if (searchParams.fileId && ref.id === searchParams.fileId) return true;
+    if (searchParams.fileId && ref.repo?.fileId === searchParams.fileId)
+      return true;
     if (
       searchParams.logicalFileName &&
       ref.logicalFileName === searchParams.logicalFileName
