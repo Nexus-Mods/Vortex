@@ -56,6 +56,12 @@ import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from './util/masterlist';
+import { createAction } from 'redux-act';
+
+// Action to track plugins installed during collection sessions.
+// Mirrors the action defined in collections extension so its reducer handles it.
+const trackCollectionPlugins = createAction('COLLECTION_TRACK_PLUGINS',
+  (sessionId: string, pluginNames: string[]) => ({ sessionId, pluginNames }));
 
 type TranslationFunction = typeof I18next.t;
 
@@ -1586,6 +1592,17 @@ function init(context: IExtensionContextExt) {
                     fileName => pluginExtensions(currentProfile.gameId).indexOf(
                                     path.extname(fileName).toLowerCase()) !== -1)
                     .map(fileName => path.basename(fileName, GHOST_EXT));
+
+                // Track plugins in active collection session for FOMOD prerequisite checks
+                const freshState: types.IState = context.api.getState();
+                const activeSession =
+                  freshState.session?.collections?.activeSession;
+                if (activeSession?.sessionId && plugins.length > 0) {
+                  context.api.store?.dispatch(
+                    trackCollectionPlugins(activeSession.sessionId, plugins),
+                  );
+                }
+
                 if (plugins.length === 1) {
                   const batched = [setPluginEnabled(plugins[0], true), incrementNewPluginCounter(1)];
                   util.batchDispatch(context.api.store, batched);

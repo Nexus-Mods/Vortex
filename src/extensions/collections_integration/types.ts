@@ -55,6 +55,9 @@ export interface ICollectionInstallSession {
   failedCount: number;
   /** Number of optional mods skipped */
   skippedCount: number;
+  /** Plugin filenames discovered from mods installed during this session
+   *  but not yet deployed. Used by FOMOD prerequisite checks. */
+  installedPlugins?: string[];
 }
 
 export interface ICollectionInstallState {
