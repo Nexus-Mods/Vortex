@@ -19,6 +19,8 @@ import { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
+import { ComplexActionCreator4 } from 'redux-act';
+import { ComplexActionCreator5 } from 'redux-act';
 import { ComponentProps } from 'react';
 import { ComponentType } from 'react';
 import { constants } from 'fs';
@@ -376,11 +378,11 @@ const addDiscoveredTool: reduxAct.ComplexActionCreator4<string, string, IDiscove
 }, {}>;
 
 // @public
-const addLocalDownload: reduxAct.ComplexActionCreator4<string, string, string, number, {
-    id: string;
-    game: string;
-    localPath: string;
-    fileSize: number;
+const addLocalDownload: ComplexActionCreator4<string, string, string, number, {
+id: string;
+game: string;
+localPath: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
@@ -863,12 +865,12 @@ function downloadPathForGame(state: IState, gameId?: string): string;
 // Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point index.d.ts
 //
 // @public
-const downloadProgress: reduxAct.ComplexActionCreator5<string, number, number, IChunk[], string[], {
-    id: string;
-    received: number;
-    total: number;
-    chunks: IChunk[];
-    urls: string[];
+const downloadProgress: ComplexActionCreator5<string, number, number, IChunk[], string[], {
+id: string;
+received: number;
+total: number;
+chunks: IChunk[];
+urls: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -968,14 +970,14 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(filePath: string): Promise<string>;
 
 // @public
-const finalizingDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const finalizingDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const finalizingProgress: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    progress: number;
+const finalizingProgress: ComplexActionCreator2<string, number, {
+id: string;
+progress: number;
 }, {}>;
 
 // @public (undocumented)
@@ -992,10 +994,10 @@ function findModByRef(reference: IModReference, mods: {
 }): IMod;
 
 // @public
-const finishDownload: reduxAct.ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
-    id: string;
-    state: "finished" | "failed" | "redirect";
-    failCause: any;
+const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
+id: string;
+state: "finished" | "failed" | "redirect";
+failCause: any;
 }, {}>;
 
 // @public (undocumented)
@@ -1218,18 +1220,18 @@ function getApplication(): IApplication;
 const getCollectionActiveSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionActiveSessionMod: (state: any, ruleId: string) => ICollectionModInstallInfo | undefined;
+const getCollectionActiveSessionMod: (state: IState, ruleId: string) => ICollectionModInstallInfo | undefined;
 
 // @public
-const getCollectionActiveSessionMods: (state: any) => {
+const getCollectionActiveSessionMods: (state: IState) => {
     [ruleId: string]: ICollectionModInstallInfo;
 };
 
 // @public
-const getCollectionCompletedMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionCompletedMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionCurrentPhase: (state: any) => number;
+const getCollectionCurrentPhase: (state: IState) => number;
 
 // @public
 const getCollectionInstallProgress: ((state: IState) => {
@@ -1259,13 +1261,13 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionLastActiveSessionId: (state: any) => string | undefined;
+const getCollectionLastActiveSessionId: (state: IState) => string | undefined;
 
 // @public
-const getCollectionLastCompletedSession: (state: any) => ICollectionInstallSession | undefined;
+const getCollectionLastCompletedSession: (state: IState) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionModByReference: (state: any, searchParams: {
+const getCollectionModByReference: (state: IState, searchParams: {
     tag?: string;
     modId?: string;
     fileMD5?: string;
@@ -1274,25 +1276,25 @@ const getCollectionModByReference: (state: any, searchParams: {
 }) => ICollectionModInstallInfo | undefined;
 
 // @public
-const getCollectionModsByPhase: (state: any) => Map<number, ICollectionModInstallInfo[]>;
+const getCollectionModsByPhase: (state: IState) => Map<number, ICollectionModInstallInfo[]>;
 
 // @public
-const getCollectionModsByStatus: (state: any, status: CollectionModStatus) => ICollectionModInstallInfo[];
+const getCollectionModsByStatus: (state: IState, status: CollectionModStatus) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionModsForPhase: (state: any, phase: number) => ICollectionModInstallInfo[];
+const getCollectionModsForPhase: (state: IState, phase: number) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionModsInProgress: (state: any) => ICollectionModInstallInfo[];
+const getCollectionModsInProgress: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionOptionalMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionOptionalMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionPendingMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionPendingMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionPhaseProgress: ((state: any) => {
+const getCollectionPhaseProgress: ((state: IState) => {
     phase: number;
     total: number;
     required: number;
@@ -1323,23 +1325,44 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionRequiredMods: (state: any) => ICollectionModInstallInfo[];
+const getCollectionRequiredMods: (state: IState) => ICollectionModInstallInfo[];
 
 // @public
-const getCollectionSessionById: (state: any, sessionId: string) => ICollectionInstallSession | undefined;
+const getCollectionSessionById: (state: IState, sessionId: string) => ICollectionInstallSession | undefined;
 
 // @public
-const getCollectionSessionHistory: (state: any) => {
+const getCollectionSessionHistory: (state: IState) => {
     [sessionId: string]: ICollectionInstallSession;
 };
 
+// @public (undocumented)
+const getCollectionSessionMods: (state: IState, sessionId: string) => {
+    [ruleId: string]: ICollectionModInstallInfo;
+} | undefined;
+
 // @public
-const getCollectionStatusBreakdown: ((state: any) => {
-    [status: string]: number;
+const getCollectionStatusBreakdown: ((state: IState, sessionId: string) => {
+    required: {
+        [status: string]: number;
+    };
+    optional: {
+        [status: string]: number;
+    };
+    total: {
+        [status: string]: number;
+    };
 }) & OutputSelectorFields<(args_0: {
 [ruleId: string]: ICollectionModInstallInfo;
 }) => {
+required: {
 [status: string]: number;
+};
+optional: {
+[status: string]: number;
+};
+total: {
+[status: string]: number;
+};
 }, {
 clearCache: () => void;
 }> & {
@@ -1347,7 +1370,7 @@ clearCache: () => void;
 };
 
 // @public
-const getCollectionTotalPhases: (state: any) => number;
+const getCollectionTotalPhases: (state: IState) => number;
 
 // @public (undocumented)
 function getCurrentActivator(state: IState, gameId: string, allowDefault: boolean): IDeploymentMethod;
@@ -1439,7 +1462,7 @@ function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null;
 function getVortexPath(id: AppPath): string;
 
 // @public
-const hasCollectionActiveSession: (state: any) => boolean;
+const hasCollectionActiveSession: (state: IState) => boolean;
 
 // @public
 interface IActionDefinition {
@@ -2886,11 +2909,11 @@ interface IModTypeOptions {
 }
 
 // @public
-const initDownload: reduxAct.ComplexActionCreator4<string, string[], IDictionary, string[], {
-    id: string;
-    urls: string[];
-    modInfo: IDictionary;
-    games: string[];
+const initDownload: ComplexActionCreator4<string, string[], IDictionary, string[], {
+id: string;
+urls: string[];
+modInfo: IDictionary;
+games: string[];
 }, {}>;
 
 // @public
@@ -3258,7 +3281,7 @@ interface ISaveOptions {
 function isChildPath(child: string, parent: string, normalize?: Normalize): boolean;
 
 // @public
-const isCollectionInstalling: (state: any, collectionId: string) => boolean;
+const isCollectionInstalling: (state: IState, collectionId: string) => boolean;
 
 // @public (undocumented)
 const isCollectionModPresent: ((state: IState, collectionSlug: string) => boolean) & OutputSelectorFields<(args_0: {
@@ -3270,7 +3293,7 @@ clearCache: () => void;
 };
 
 // @public
-const isCollectionPhaseComplete: (state: any, phase: number) => boolean;
+const isCollectionPhaseComplete: (state: IState, phase: number) => boolean;
 
 // @public (undocumented)
 function isDirectoryAsync(dirPath: string): PromiseBB<boolean>;
@@ -4120,9 +4143,9 @@ function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
-const mergeDownloadModInfo: reduxAct.ComplexActionCreator2<string, any, {
-    id: string;
-    value: any;
+const mergeDownloadModInfo: ComplexActionCreator2<string, any, {
+id: string;
+value: any;
 }, {}>;
 
 // @public
@@ -4369,10 +4392,10 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
 function pad(value: number, padding: string, width: number): string;
 
 // @public
-const pauseDownload: reduxAct.ComplexActionCreator3<string, boolean, IChunk[], {
-    id: string;
-    paused: boolean;
-    chunks: IChunk[];
+const pauseDownload: ComplexActionCreator3<string, boolean, IChunk[], {
+id: string;
+paused: boolean;
+chunks: IChunk[];
 }, {}>;
 
 // @public (undocumented)
@@ -4556,13 +4579,13 @@ const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
 }, {}>;
 
 // @public
-const removeDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const removeDownloadSilent: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownloadSilent: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
@@ -4692,6 +4715,7 @@ declare namespace selectors {
         getCollectionLastCompletedSession,
         hasCollectionActiveSession,
         isCollectionInstalling,
+        getCollectionSessionMods,
         getCollectionActiveSessionMods,
         getCollectionActiveSessionMod,
         getCollectionModByReference,
@@ -4812,9 +4836,9 @@ const setCollectionConcurrency: reduxAct.ComplexActionCreator1<unknown, unknown,
 const setCommandLine: reduxAct.ComplexActionCreator1<IParameters, IParameters, {}>;
 
 // @public (undocumented)
-const setCompatibleGames: reduxAct.ComplexActionCreator2<string, string[], {
-    id: string;
-    games: string[];
+const setCompatibleGames: ComplexActionCreator2<string, string[], {
+id: string;
+games: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -4855,66 +4879,66 @@ const setDialogVisible: reduxAct.ComplexActionCreator1<string, {
 }, {}>;
 
 // @public
-const setDownloadFilePath: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    filePath: string;
+const setDownloadFilePath: ComplexActionCreator2<string, string, {
+id: string;
+filePath: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHash: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    fileMD5: string;
+const setDownloadHash: ComplexActionCreator2<string, string, {
+id: string;
+fileMD5: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHashByFile: reduxAct.ComplexActionCreator3<string, string, number, {
-    fileName: string;
-    fileMD5: string;
-    fileSize: number;
+const setDownloadHashByFile: ComplexActionCreator3<string, string, number, {
+fileName: string;
+fileMD5: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInstalled: reduxAct.ComplexActionCreator3<string, string, string, {
-    id: string;
-    gameId: string;
-    modId: string;
+const setDownloadInstalled: ComplexActionCreator3<string, string, string, {
+id: string;
+gameId: string;
+modId: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInterrupted: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    realReceived: number;
+const setDownloadInterrupted: ComplexActionCreator2<string, number, {
+id: string;
+realReceived: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadModInfo: reduxAct.ComplexActionCreator3<string, string, any, {
-    id: string;
-    key: string;
-    value: any;
+const setDownloadModInfo: ComplexActionCreator3<string, string, any, {
+id: string;
+key: string;
+value: any;
 }, {}>;
 
 // @public (undocumented)
 const setDownloadPath: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-const setDownloadPausable: reduxAct.ComplexActionCreator2<string, boolean, {
-    id: string;
-    pausable: boolean;
+const setDownloadPausable: ComplexActionCreator2<string, boolean, {
+id: string;
+pausable: boolean;
 }, {}>;
 
 // @public
-const setDownloadSpeed: reduxAct.ComplexActionCreator1<unknown, unknown, {
-    forward: boolean;
-    scope: string;
+const setDownloadSpeed: ComplexActionCreator1<unknown, unknown, {
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
-const setDownloadSpeeds: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setDownloadSpeeds: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setDownloadTime: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    time: number;
+const setDownloadTime: ComplexActionCreator2<string, number, {
+id: string;
+time: number;
 }, {}>;
 
 // @public (undocumented)
@@ -5337,8 +5361,8 @@ instanceId: string;
 }, {}>;
 
 // @public
-const startDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const startDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public
