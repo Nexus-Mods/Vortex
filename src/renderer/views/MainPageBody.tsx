@@ -1,11 +1,14 @@
-import React, { type FC, type HTMLAttributes } from "react";
+import React, { type HTMLAttributes } from "react";
 
-export const MainPageBody: FC<HTMLAttributes<HTMLDivElement>> = (props) => {
-  return (
-    <div className="main-page-body" {...props}>
-      {props.children}
-    </div>
-  );
-};
+export const MainPageBody = React.forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement>
+>((props, ref) => (
+  <div className="main-page-body" ref={ref} {...props}>
+    {props.children}
+  </div>
+));
+
+MainPageBody.displayName = "MainPageBody";
 
 export default MainPageBody;

@@ -5,23 +5,23 @@
  * Provides a consistent input component with validation, hints, and accessibility features.
  */
 
-import * as React from "react";
-import type { InputHTMLAttributes, Ref } from "react";
-import { useState } from "react";
+import React, { useState, type InputHTMLAttributes, type Ref } from "react";
 
 import type { BaseFormFieldProps } from "../formfield";
-import { FormField } from "../formfield";
+
 import { joinClasses } from "../../utils";
+import { FormField } from "../formfield";
 
 export interface InputProps
   extends BaseFormFieldProps,
-    InputHTMLAttributes<HTMLInputElement> {
+    Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   /**
    * Restrict default value to string | number as we don't use this component for checkbox
    */
   defaultValue?: string | number;
   fieldClassName?: string;
   ref?: Ref<HTMLInputElement>;
+  size?: "sm" | "md";
   type?: "text" | "email" | "password" | "url" | "number" | "time" | "date";
   /**
    * Restrict value to string | number as we don't use this component for checkbox
@@ -45,6 +45,7 @@ export const Input = ({
   readOnly,
   required,
   showRequiredLabel,
+  size = "md",
   type = "text",
   value,
   ...props
@@ -76,31 +77,18 @@ export const Input = ({
       <input
         {...props}
         aria-describedby={
-          !!errorMessage
+          errorMessage
             ? `${id}_error`
             : hints.length > 0
               ? `${id}_hints`
               : undefined
         }
         aria-invalid={!!errorMessage || undefined}
-        className={joinClasses(
-          [
-            "text-neutral-strong typography-body-lg placeholder:text-neutral-subdued min-h-9 rounded border px-3 transition-colors",
-            ...(typeof errorMessage === "string"
-              ? ["bg-surface-translucent-mid border-danger-strong"]
-              : [
-                  "bg-translucent-dark-400 border-stroke-subdued",
-                  ...(readOnly || disabled
-                    ? [""]
-                    : [
-                        "focus:bg-surface-translucent-mid focus:border-stroke-strong",
-                        "hover:bg-surface-translucent-low hover:border-stroke-moderate",
-                      ]),
-                ]),
-            className,
-          ],
-          { "opacity-40 outline-none": readOnly || disabled },
-        )}
+        className={joinClasses(["nxm-input", className], {
+          "nxm-input-sm": size === "sm",
+          "nxm-input-error": typeof errorMessage === "string",
+          "nxm-input-disabled": readOnly || disabled,
+        })}
         defaultValue={defaultValue}
         disabled={disabled}
         id={id}

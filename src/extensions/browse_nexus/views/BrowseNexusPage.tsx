@@ -8,11 +8,13 @@ import type {
 import {
   mdiChevronLeft,
   mdiChevronRight,
+  mdiMagnify,
   mdiOpenInNew,
   mdiRefresh,
 } from "@mdi/js";
 import numeral from "numeral";
 import * as React from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -21,6 +23,16 @@ import type { IState } from "../../../types/IState";
 
 import MainPage from "../../../renderer/views/MainPage";
 import Tailwind from "../../../tailwind";
+import { Button } from "../../../tailwind/components/next/button";
+import { Input } from "../../../tailwind/components/next/form";
+import {
+  TabBar,
+  TabButton,
+  TabPanel,
+  TabProvider,
+} from "../../../tailwind/components/next/tabs";
+import { Typography } from "../../../tailwind/components/next/typography";
+import { Pagination } from "../../../tailwind/components/pagination/Pagination";
 import { UserCanceled } from "../../../util/api";
 import opn from "../../../util/opn";
 import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
@@ -237,30 +249,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   }, [sortBy, activeSearch]);
 
   // Scroll to top when page changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [currentPage]);
-
-  const formatFileSize = (bytes: string): string => {
-    const size = parseInt(bytes, 10);
-    if (isNaN(size)) return "0 MB";
-    const mb = size / (1024 * 1024);
-    if (mb >= 1024) {
-      return `${(mb / 1024).toFixed(2)} GB`;
-    }
-    return `${mb.toFixed(2)} MB`;
-  };
-
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
-  };
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -312,347 +305,438 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
   return (
     <MainPage id="browse-collections-page">
-      <MainPage.Body style={{ overflowY: "auto" }}>
-        <div
-          className="h-full p-5"
-          ref={(node) => {
-            if (node) {
-              scrollContainerRef.current = node.parentElement as HTMLDivElement;
-            }
-          }}
-        >
-          <Tailwind.TabProvider
+      <MainPage.Body
+        className="h-full overflow-y-auto pt-4"
+        ref={scrollContainerRef}
+      >
+        <div className="mb-10">
+          <TabProvider
             tab={selectedTab}
             tabListId="browse-nexus-tabs"
             onSetSelectedTab={setSelectedTab}
           >
-            <Tailwind.TabBar className="mb-5">
-              <Tailwind.TabButton
+            <TabBar className="pl-6" size="sm">
+              <TabButton
                 count={allCollectionsTotal}
                 name={t("collection:browse.tabs.collections")}
               />
 
-              <Tailwind.TabButton name={t("collection:browse.tabs.mods")} />
-            </Tailwind.TabBar>
+              <TabButton name={t("collection:browse.tabs.mods")} />
+            </TabBar>
 
-            <Tailwind.TabPanel name={t("collection:browse.tabs.collections")}>
-              {/* Search Bar */}
-              <div className="mb-4 flex items-start gap-2.5">
-                <Tailwind.Input
-                  errorMessage={searchValidationError || undefined}
-                  fieldClassName="w-64 shrink-0"
-                  hideLabel={true}
-                  label={t("collection:browse.searchPlaceholder")}
-                  placeholder={t("collection:browse.searchPlaceholder")}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    // Clear validation error when user types
-                    if (searchValidationError) {
-                      setSearchValidationError("");
-                    }
-                  }}
-                  onKeyDown={handleKeyDown}
-                />
-
-                <Tailwind.Button
-                  buttonType="secondary"
-                  filled="strong"
-                  size="md"
-                  onClick={handleSearch}
+            <TabPanel name={t("collection:browse.tabs.collections")}>
+              <div className="space-y-3 p-6">
+                <form
+                  className="flex items-center gap-x-2"
+                  onSubmit={() => handleSearch()}
                 >
-                  {t("common:actions.search")}
-                </Tailwind.Button>
+                  <Input
+                    errorMessage={searchValidationError || undefined}
+                    fieldClassName="max-w-60"
+                    hideLabel={true}
+                    label={t("collection:browse.searchPlaceholder")}
+                    placeholder={t("collection:browse.searchPlaceholder")}
+                    size="sm"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
 
-                <Tailwind.Button
-                  buttonType="tertiary"
-                  filled="weak"
-                  leftIconPath={mdiRefresh}
-                  size="md"
-                  onClick={handleRefresh}
-                >
-                  {t("collection:browse.refresh")}
-                </Tailwind.Button>
-              </div>
+                      // Clear validation error when user types
+                      if (searchValidationError) {
+                        setSearchValidationError("");
+                      }
+                    }}
+                  />
 
-              {/* Conditional Content */}
-              {loading ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.loading")}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="none"
-                      className="mb-2 text-danger-moderate"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.error")}
-                    </Tailwind.Typography>
+                  <Button
+                    as="button"
+                    buttonType="tertiary"
+                    filled="weak"
+                    leftIconPath={mdiMagnify}
+                    size="sm"
+                    title={t("common:actions.search")}
+                    type="submit"
+                  />
+                </form>
 
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-md"
-                    >
-                      {error.message}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : collections.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.noCollections")}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Results count and sort */}
-                  <div className="mb-5 flex items-center justify-between">
-                    <Tailwind.Typography
-                      appearance="moderate"
-                      isTranslucent={true}
-                      typographyType="body-md"
-                    >
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-x-2">
+                    <Button
+                      buttonType="tertiary"
+                      filled="weak"
+                      leftIconPath={mdiRefresh}
+                      size="sm"
+                      title={t("collection:browse.refresh")}
+                      onClick={handleRefresh}
+                    />
+
+                    <Typography appearance="moderate" isTranslucent={true}>
                       {t("collection:browse.resultsCount", {
                         total: numeral(totalCount).format("0,0"),
                       })}
-                    </Tailwind.Typography>
-
-                    <Tailwind.Select
-                      className="flex max-w-64 items-center gap-2.5"
-                      hideLabel={true}
-                      id="sort-select"
-                      label={t("collection:browse.sortBy")}
-                      value={SORT_OPTIONS.indexOf(sortBy)}
-                      onChange={(e) =>
-                        setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
-                      }
-                    >
-                      {SORT_OPTIONS.map((option, index) => (
-                        <option key={option.field} value={index}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Tailwind.Select>
+                    </Typography>
                   </div>
 
-                  {/* Collection Tiles */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(465px,1fr))] gap-4">
-                    {collections.map((collection) => {
-                      const tileImage =
-                        (collection as any).tileImage?.thumbnailUrl ||
-                        "https://placehold.co/166x207/1f1f1f/666?text=No+Image";
-                      const latestRevision = (collection as any)
-                        .latestPublishedRevision;
-                      const tags: string[] = [];
+                  {/* todo update this to use headless select */}
+                  <Tailwind.Select
+                    className="flex max-w-64 items-center gap-2.5"
+                    hideLabel={true}
+                    id="sort-select"
+                    label={t("collection:browse.sortBy")}
+                    value={SORT_OPTIONS.indexOf(sortBy)}
+                    onChange={(e) =>
+                      setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
+                    }
+                  >
+                    {SORT_OPTIONS.map((option, index) => (
+                      <option key={option.field} value={index}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Tailwind.Select>
+                </div>
 
-                      // Extract tags from collection - ensure all tags are strings
-                      if ((collection as any).category?.name) {
-                        tags.push((collection as any).category.name);
-                      }
-                      if (latestRevision?.adultContent) {
-                        tags.push("Adult");
-                      }
+                <div>Listings</div>
 
-                      return (
-                        <Tailwind.CollectionTile
-                          api={api}
-                          author={{
-                            name: collection.user?.name || "Unknown",
-                            avatar: collection.user?.avatar,
-                          }}
-                          badges={(collection as any).badges}
-                          className="max-w-none"
-                          coverImage={tileImage}
-                          description={
-                            (collection as any).summary ||
-                            "No description available."
-                          }
-                          gameId={gameId}
-                          id={collection.id.toString()}
-                          key={collection.id}
-                          slug={collection.slug}
-                          stats={{
-                            modCount: latestRevision?.modCount || 0,
-                            size: latestRevision?.totalSize || 0,
-                            endorsements: collection.endorsements || 0,
-                          }}
-                          tags={tags}
-                          title={collection.name}
-                          version={latestRevision?.revisionNumber?.toString()}
-                          onAddCollection={() =>
-                            handleAddCollection(collection)
-                          }
-                          onViewPage={() => handleViewOnNexus(collection)}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Pagination Controls */}
-                  {totalPages > 1 && (
-                    <div className="mt-8 flex items-center justify-start gap-2.5 pb-5">
-                      {/* Previous Button */}
-                      <Tailwind.Button
-                        buttonType="tertiary"
-                        className=""
-                        disabled={currentPage === 1}
-                        leftIconPath={mdiChevronLeft}
-                        size="md"
-                        onClick={handlePreviousPage}
-                      />
-
-                      {/* Page Numbers */}
-                      <div className="flex gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter((page) => {
-                            // Show first page, last page, current page, and 2 pages on each side of current
-                            if (
-                              page === 1 ||
-                              page === totalPages ||
-                              Math.abs(page - currentPage) <= 2
-                            ) {
-                              return true;
-                            }
-                            return false;
-                          })
-                          .map((page, idx, array) => {
-                            // Add ellipsis if there's a gap
-                            const prevPage = array[idx - 1];
-                            const showEllipsis =
-                              prevPage && page - prevPage > 1;
-
-                            return (
-                              <React.Fragment key={page}>
-                                {showEllipsis && (
-                                  <span className="px-1 py-2 text-gray-500">
-                                    ...
-                                  </span>
-                                )}
-
-                                <Tailwind.Button
-                                  buttonType="tertiary"
-                                  className=""
-                                  filled={
-                                    page === currentPage ? "weak" : undefined
-                                  }
-                                  size="md"
-                                  onClick={() => handlePageClick(page)}
-                                >
-                                  {page.toString()}
-                                </Tailwind.Button>
-                              </React.Fragment>
-                            );
-                          })}
-                      </div>
-
-                      {/* Next Button */}
-                      <Tailwind.Button
-                        buttonType="tertiary"
-                        className=""
-                        disabled={currentPage === totalPages}
-                        leftIconPath={mdiChevronRight}
-                        size="md"
-                        onClick={handleNextPage}
-                      />
-
-                      {/* Direct Page Input */}
-                      <div className="ml-5 flex items-center gap-1">
-                        <Tailwind.Typography
-                          appearance="subdued"
-                          typographyType="body-md"
-                        >
-                          {t("collection:pagination.goTo")}
-                        </Tailwind.Typography>
-
-                        <Tailwind.Input
-                          className="min-w-10 text-center"
-                          hideLabel={true}
-                          id="page-input"
-                          label={t("collection:pagination.pageNumber")}
-                          max={totalPages}
-                          min={1}
-                          type="number"
-                          value={pageInput}
-                          onChange={(e) => setPageInput(e.target.value)}
-                          onKeyDown={handlePageInputKeyDown}
-                        />
-
-                        <Tailwind.Button
-                          buttonType="secondary"
-                          filled="weak"
-                          size="md"
-                          onClick={handleGoToPage}
-                        >
-                          {t("collection:pagination.go")}
-                        </Tailwind.Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </Tailwind.TabPanel>
-
-            <Tailwind.TabPanel name={t("collection:browse.tabs.mods")}>
-              <div className="flex flex-col items-center gap-4 py-16">
-                {/* Icon */}
-                <Tailwind.Icon
-                  className="size-9 text-neutral-subdued"
-                  path="mdiClockOutline"
-                  size="xl"
+                <Pagination
+                  currentPage={currentPage}
+                  recordsPerPage={itemsPerPage}
+                  totalRecords={totalCount}
+                  onPaginationUpdate={(newPage) => setCurrentPage(newPage)}
                 />
-
-                {/* Heading */}
-                <Tailwind.Typography
-                  appearance="subdued"
-                  className="font-semibold"
-                  typographyType="body-xl"
-                >
-                  {t("collection:browse.modsComingSoon.title")}
-                </Tailwind.Typography>
-
-                {/* Description */}
-                <Tailwind.Typography
-                  appearance="subdued"
-                  className="text-center"
-                  typographyType="body-lg"
-                >
-                  {t("collection:browse.modsComingSoon.description")}
-                </Tailwind.Typography>
-
-                {/* Button */}
-                <Tailwind.Button
-                  buttonType="tertiary"
-                  filled="weak"
-                  leftIconPath={mdiOpenInNew}
-                  size="sm"
-                  onClick={() => {
-                    const game = getGame(gameId);
-                    const domainName = nexusGameId(game, gameId);
-                    const nexusUrl = `https://www.nexusmods.com/games/${domainName}/mods`;
-                    opn(nexusUrl).catch(() => undefined);
-                  }}
-                >
-                  {t("collection:browse.modsComingSoon.openWebsite")}
-                </Tailwind.Button>
               </div>
-            </Tailwind.TabPanel>
-          </Tailwind.TabProvider>
+            </TabPanel>
+          </TabProvider>
         </div>
+
+        <Tailwind.TabProvider
+          tab={selectedTab}
+          tabListId="browse-nexus-tabs"
+          onSetSelectedTab={setSelectedTab}
+        >
+          <Tailwind.TabBar className="mb-5">
+            <Tailwind.TabButton
+              count={allCollectionsTotal}
+              name={t("collection:browse.tabs.collections")}
+            />
+
+            <Tailwind.TabButton name={t("collection:browse.tabs.mods")} />
+          </Tailwind.TabBar>
+
+          <Tailwind.TabPanel name={t("collection:browse.tabs.collections")}>
+            {/* Search Bar */}
+            <div className="mb-4 flex items-start gap-2.5">
+              <Tailwind.Input
+                errorMessage={searchValidationError || undefined}
+                fieldClassName="w-64 shrink-0"
+                hideLabel={true}
+                label={t("collection:browse.searchPlaceholder")}
+                placeholder={t("collection:browse.searchPlaceholder")}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Clear validation error when user types
+                  if (searchValidationError) {
+                    setSearchValidationError("");
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+              />
+
+              <Tailwind.Button
+                buttonType="secondary"
+                filled="strong"
+                size="md"
+                onClick={handleSearch}
+              >
+                {t("common:actions.search")}
+              </Tailwind.Button>
+
+              <Tailwind.Button
+                buttonType="tertiary"
+                filled="weak"
+                leftIconPath={mdiRefresh}
+                size="md"
+                onClick={handleRefresh}
+              >
+                {t("collection:browse.refresh")}
+              </Tailwind.Button>
+            </div>
+
+            {/* Conditional Content */}
+            {loading ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="text-center">
+                  <Tailwind.Typography
+                    appearance="subdued"
+                    typographyType="body-lg"
+                  >
+                    {t("collection:browse.loading")}
+                  </Tailwind.Typography>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="text-center">
+                  <Tailwind.Typography
+                    appearance="none"
+                    className="mb-2 text-danger-moderate"
+                    typographyType="body-lg"
+                  >
+                    {t("collection:browse.error")}
+                  </Tailwind.Typography>
+
+                  <Tailwind.Typography
+                    appearance="subdued"
+                    typographyType="body-md"
+                  >
+                    {error.message}
+                  </Tailwind.Typography>
+                </div>
+              </div>
+            ) : collections.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="text-center">
+                  <Tailwind.Typography
+                    appearance="subdued"
+                    typographyType="body-lg"
+                  >
+                    {t("collection:browse.noCollections")}
+                  </Tailwind.Typography>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Results count and sort */}
+                <div className="mb-5 flex items-center justify-between">
+                  <Tailwind.Typography
+                    appearance="moderate"
+                    isTranslucent={true}
+                    typographyType="body-md"
+                  >
+                    {t("collection:browse.resultsCount", {
+                      total: numeral(totalCount).format("0,0"),
+                    })}
+                  </Tailwind.Typography>
+
+                  <Tailwind.Select
+                    className="flex max-w-64 items-center gap-2.5"
+                    hideLabel={true}
+                    id="sort-select"
+                    label={t("collection:browse.sortBy")}
+                    value={SORT_OPTIONS.indexOf(sortBy)}
+                    onChange={(e) =>
+                      setSortBy(SORT_OPTIONS[parseInt(e.target.value, 10)])
+                    }
+                  >
+                    {SORT_OPTIONS.map((option, index) => (
+                      <option key={option.field} value={index}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Tailwind.Select>
+                </div>
+
+                {/* Collection Tiles */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(465px,1fr))] gap-4">
+                  {collections.map((collection) => {
+                    const tileImage =
+                      (collection as any).tileImage?.thumbnailUrl ||
+                      "https://placehold.co/166x207/1f1f1f/666?text=No+Image";
+                    const latestRevision = (collection as any)
+                      .latestPublishedRevision;
+                    const tags: string[] = [];
+
+                    // Extract tags from collection - ensure all tags are strings
+                    if ((collection as any).category?.name) {
+                      tags.push((collection as any).category.name);
+                    }
+                    if (latestRevision?.adultContent) {
+                      tags.push("Adult");
+                    }
+
+                    return (
+                      <Tailwind.CollectionTile
+                        api={api}
+                        author={{
+                          name: collection.user?.name || "Unknown",
+                          avatar: collection.user?.avatar,
+                        }}
+                        badges={(collection as any).badges}
+                        className="max-w-none"
+                        coverImage={tileImage}
+                        description={
+                          (collection as any).summary ||
+                          "No description available."
+                        }
+                        gameId={gameId}
+                        id={collection.id.toString()}
+                        key={collection.id}
+                        slug={collection.slug}
+                        stats={{
+                          modCount: latestRevision?.modCount || 0,
+                          size: latestRevision?.totalSize || 0,
+                          endorsements: collection.endorsements || 0,
+                        }}
+                        tags={tags}
+                        title={collection.name}
+                        version={latestRevision?.revisionNumber?.toString()}
+                        onAddCollection={() => handleAddCollection(collection)}
+                        onViewPage={() => handleViewOnNexus(collection)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-start gap-2.5 pb-5">
+                    {/* Previous Button */}
+                    <Tailwind.Button
+                      buttonType="tertiary"
+                      className=""
+                      disabled={currentPage === 1}
+                      leftIconPath={mdiChevronLeft}
+                      size="md"
+                      onClick={handlePreviousPage}
+                    />
+
+                    {/* Page Numbers */}
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          // Show first page, last page, current page, and 2 pages on each side of current
+                          if (
+                            page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 2
+                          ) {
+                            return true;
+                          }
+                          return false;
+                        })
+                        .map((page, idx, array) => {
+                          // Add ellipsis if there's a gap
+                          const prevPage = array[idx - 1];
+                          const showEllipsis = prevPage && page - prevPage > 1;
+
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && (
+                                <span className="px-1 py-2 text-gray-500">
+                                  ...
+                                </span>
+                              )}
+
+                              <Tailwind.Button
+                                buttonType="tertiary"
+                                className=""
+                                filled={
+                                  page === currentPage ? "weak" : undefined
+                                }
+                                size="md"
+                                onClick={() => handlePageClick(page)}
+                              >
+                                {page.toString()}
+                              </Tailwind.Button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+
+                    {/* Next Button */}
+                    <Tailwind.Button
+                      buttonType="tertiary"
+                      className=""
+                      disabled={currentPage === totalPages}
+                      leftIconPath={mdiChevronRight}
+                      size="md"
+                      onClick={handleNextPage}
+                    />
+
+                    {/* Direct Page Input */}
+                    <div className="ml-5 flex items-center gap-1">
+                      <Tailwind.Typography
+                        appearance="subdued"
+                        typographyType="body-md"
+                      >
+                        {t("collection:pagination.goTo")}
+                      </Tailwind.Typography>
+
+                      <Tailwind.Input
+                        className="min-w-10 text-center"
+                        hideLabel={true}
+                        id="page-input"
+                        label={t("collection:pagination.pageNumber")}
+                        max={totalPages}
+                        min={1}
+                        type="number"
+                        value={pageInput}
+                        onChange={(e) => setPageInput(e.target.value)}
+                        onKeyDown={handlePageInputKeyDown}
+                      />
+
+                      <Tailwind.Button
+                        buttonType="secondary"
+                        filled="weak"
+                        size="md"
+                        onClick={handleGoToPage}
+                      >
+                        {t("collection:pagination.go")}
+                      </Tailwind.Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Tailwind.TabPanel>
+
+          <Tailwind.TabPanel name={t("collection:browse.tabs.mods")}>
+            <div className="flex flex-col items-center gap-4 py-16">
+              {/* Icon */}
+              <Tailwind.Icon
+                className="size-9 text-neutral-subdued"
+                path="mdiClockOutline"
+                size="xl"
+              />
+
+              {/* Heading */}
+              <Tailwind.Typography
+                appearance="subdued"
+                className="font-semibold"
+                typographyType="body-xl"
+              >
+                {t("collection:browse.modsComingSoon.title")}
+              </Tailwind.Typography>
+
+              {/* Description */}
+              <Tailwind.Typography
+                appearance="subdued"
+                className="text-center"
+                typographyType="body-lg"
+              >
+                {t("collection:browse.modsComingSoon.description")}
+              </Tailwind.Typography>
+
+              {/* Button */}
+              <Tailwind.Button
+                buttonType="tertiary"
+                filled="weak"
+                leftIconPath={mdiOpenInNew}
+                size="sm"
+                onClick={() => {
+                  const game = getGame(gameId);
+                  const domainName = nexusGameId(game, gameId);
+                  const nexusUrl = `https://www.nexusmods.com/games/${domainName}/mods`;
+                  opn(nexusUrl).catch(() => undefined);
+                }}
+              >
+                {t("collection:browse.modsComingSoon.openWebsite")}
+              </Tailwind.Button>
+            </div>
+          </Tailwind.TabPanel>
+        </Tailwind.TabProvider>
       </MainPage.Body>
     </MainPage>
   );
