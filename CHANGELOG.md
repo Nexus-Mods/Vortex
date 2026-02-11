@@ -13,6 +13,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Suppress error report for user derived FOMOD-IPC timeout errors ([#19641](https://github.com/Nexus-Mods/Vortex/issues/19641))
 - Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
 - Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
+- Fixed broken icons on Browse Collections page
 
 ## [1.16.1] - 2026-02-10
 
