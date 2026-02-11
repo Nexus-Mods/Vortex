@@ -1,12 +1,24 @@
+import type { IFeedbackResponse } from "@nexusmods/nexus-api";
+import type ZipT from "node-7z";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import * as os from "os";
+import * as path from "path";
+import { file as tmpFile, tmpName } from "tmp";
+
 /* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
-import { addNotification, showDialog } from "../actions/notifications";
-import { NoDeployment } from "../extensions/mod_management/util/exceptions";
 import type { IAttachment, IErrorOptions } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
-import { jsonRequest } from "../util/network";
-
 import type { HTTPError } from "./CustomErrors";
+
+import { addNotification, showDialog } from "../actions/notifications";
+import { NoDeployment } from "../extensions/mod_management/util/exceptions";
+import { getErrorMessageOrDefault } from "../shared/errors";
+import { jsonRequest } from "../util/network";
 import {
   StalledError,
   TemporaryError,
@@ -22,23 +34,11 @@ import {
   toError,
 } from "./errorHandling";
 import * as fs from "./fs";
-import { log } from "./log";
-import { flatten, nexusModsURL, setdefault, truthy } from "./util";
-
-import type { IFeedbackResponse } from "@nexusmods/nexus-api";
-import PromiseBB from "bluebird";
-import type ZipT from "node-7z";
-import * as os from "os";
-import * as path from "path";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { file as tmpFile, tmpName } from "tmp";
-
-import * as _ from "lodash";
 import getVortexPath from "./getVortexPath";
+import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import opn from "./opn";
-import { getErrorMessageOrDefault } from "../shared/errors";
+import { flatten, nexusModsURL, setdefault, truthy } from "./util";
 
 const GITHUB_PROJ = "Nexus-Mods/Vortex";
 
@@ -524,7 +524,7 @@ export function showError(
       id: options.id,
       type: options?.warning ? "warning" : "error",
       title: haveMessage ? title : undefined,
-      message: haveMessage ? options.message! : title,
+      message: haveMessage ? options.message : title,
       allowSuppress: options.allowSuppress,
       replace: options.replace,
       actions:

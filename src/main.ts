@@ -42,22 +42,22 @@ const earlyErrHandler = (error: Error) => {
     dialog.showErrorBox(
       "Vortex failed to start up",
       `An unexpected error occurred while Vortex was initialising:\n\n${error.message}\n\n` +
-        "This is often caused by a bad installation of the app, " +
-        "a security app interfering with Vortex " +
-        "or a problem with the Microsoft Visual C++ Redistributable installed on your PC. " +
-        "To solve this issue please try the following:\n\n" +
-        "- Wait a moment and try starting Vortex again\n" +
-        "- Reinstall Vortex from the Nexus Mods website\n" +
-        "- Install the latest Microsoft Visual C++ Redistributable (find it using a search engine)\n" +
-        "- Disable anti-virus or other security apps that might interfere and install Vortex again\n\n" +
-        "If the issue persists, please create a thread in our support forum for further assistance.",
+      "This is often caused by a bad installation of the app, " +
+      "a security app interfering with Vortex " +
+      "or a problem with the Microsoft Visual C++ Redistributable installed on your PC. " +
+      "To solve this issue please try the following:\n\n" +
+      "- Wait a moment and try starting Vortex again\n" +
+      "- Reinstall Vortex from the Nexus Mods website\n" +
+      "- Install the latest Microsoft Visual C++ Redistributable (find it using a search engine)\n" +
+      "- Disable anti-virus or other security apps that might interfere and install Vortex again\n\n" +
+      "If the issue persists, please create a thread in our support forum for further assistance.",
     );
   } else {
     dialog.showErrorBox(
       "Unhandled error",
       "Vortex failed to start up. This is usually caused by foreign software (e.g. Anti Virus) " +
-        "interfering.\n\n" +
-        error.stack,
+      "interfering.\n\n" +
+      error.stack,
     );
   }
   app.exit(1);
@@ -133,9 +133,10 @@ import type * as child_processT from "child_process";
 
 import Application from "./main/Application";
 import { parseCommandline } from "./main/cli";
+import { terminate } from "./main/errorHandling";
+import { errorToReportableError } from "./main/errorReporting";
 import { init as initIpcHandlers } from "./main/ipcHandlers";
 import StylesheetCompiler from "./main/stylesheetCompiler";
-import { sendReportFile, terminate, toError } from "./util/errorHandling";
 import * as fs from "./util/fs";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
@@ -147,17 +148,12 @@ const handleError = (error: Error) => {
     return;
   }
 
-  terminate(toError(error), {});
+  terminate(errorToReportableError(error), {});
 };
 
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
   const mainArgs = parseCommandline(process.argv, false);
-  if (mainArgs.report) {
-    return sendReportFile(mainArgs.report).then(() => {
-      app.quit();
-    });
-  }
 
   const NODE_OPTIONS = process.env.NODE_OPTIONS || "";
   process.env.NODE_OPTIONS =

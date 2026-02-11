@@ -7,8 +7,8 @@ import type TrayIcon from "./TrayIcon";
 
 import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
-import { terminate } from "../util/errorHandling";
 import { parseBool } from "../util/util";
+import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
 import { openUrl } from "./open";
@@ -153,7 +153,6 @@ class MainWindow {
                 { message: "Vortex failed to start", details: message },
                 {},
                 true,
-                "renderer",
               );
             }
           }, 15000);
@@ -322,7 +321,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-            "Moving to a sensible location.",
+          "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);

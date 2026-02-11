@@ -1,3 +1,17 @@
+export interface ReportableError {
+  message: string;
+  title?: string;
+  subtitle?: string;
+  code?: string;
+  details?: string;
+  stack?: string;
+  extension?: string;
+  path?: string;
+  allowReport?: boolean;
+  attachLog?: boolean;
+  process?: "main" | "renderer";
+}
+
 function captureStackTrace<T extends Error>(
   self: T,
   constructor?: new (...args: unknown[]) => T,

@@ -4,16 +4,18 @@ import path from "node:path";
 
 import { getErrorMessage } from "../shared/errors";
 import { UserCanceled } from "../shared/types/errors";
+import {
+  reportCrash,
+  errorToReportableError,
+  disableErrorReporting,
+  isErrorReportingDisabled,
+} from "./errorReporting";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
 
 /** Terminates the applpication on an error */
-export function terminate<E extends object = Error>(
-  error: E,
-  state: unknown,
-  allowReport?: boolean,
-): void {
-  terminateAsync(error, state, allowReport).catch(() => {
+export function terminate(error: Error, allowReport?: boolean): void {
+  terminateAsync(error, allowReport).catch(() => {
     /* ignored */
   });
 
@@ -22,9 +24,8 @@ export function terminate<E extends object = Error>(
 
 const COMPANY_ID = "Black Tree Gaming Ltd.";
 
-export async function terminateAsync<E extends object = Error>(
-  error: E,
-  state: unknown,
+export async function terminateAsync(
+  error: Error,
   allowReport?: boolean,
 ): Promise<void> {
   log("error", "unrecoverable error", error);
@@ -35,15 +36,10 @@ export async function terminateAsync<E extends object = Error>(
       : false;
 
   // TODO: disallow reporting when Vortex is outdated
-  // TODO: disallow repotring after user ignored an unrecoverable error
+  if (isErrorReportingDisabled()) allowReport = false;
 
   try {
-    const isIgnored = await showTerminateError(
-      error,
-      state,
-      allowReport,
-      false,
-    );
+    const isIgnored = await showTerminateError(error, allowReport, false);
     if (isIgnored) return;
 
     if ("extension" in error && typeof error.extension === "string") {
@@ -93,9 +89,8 @@ async function disableExtension(extension: string): Promise<void> {
 }
 
 /** @returns true if the user ignores the error */
-async function showTerminateError<E extends object = Error>(
-  error: E,
-  state: unknown,
+async function showTerminateError(
+  error: Error,
   allowReport: boolean,
   withDetails: boolean,
 ): Promise<boolean> {
@@ -122,7 +117,7 @@ async function showTerminateError<E extends object = Error>(
 
   const response = buttons[result.response];
   if (response === BUTTON_REPORT) {
-    await createErrorReport("Crash", error, state, null, ["bug", "crash"]);
+    await reportCrash("Crash", errorToReportableError(error));
     return false;
   }
 
@@ -130,14 +125,14 @@ async function showTerminateError<E extends object = Error>(
     const shouldIgnore = await confirmIgnoreError();
     if (shouldIgnore) {
       log("info", "user ignored unrecoverable error, disabling reporting");
-      // TODO: disable error reporting
+      disableErrorReporting();
     }
 
     return shouldIgnore;
   }
 
   if (response === BUTTON_DETAILS) {
-    return showTerminateError(error, state, allowReport, true);
+    return showTerminateError(error, allowReport, true);
   }
 
   return false;
@@ -180,14 +175,4 @@ function errorToDetails<E extends object = Error>(error: E): string {
   }
 
   return detail;
-}
-
-async function createErrorReport<E extends object = Error>(
-  type: string,
-  error: E,
-  state: unknown,
-  context: unknown,
-  labels: string[],
-): Promise<void> {
-  // TODO:
 }
