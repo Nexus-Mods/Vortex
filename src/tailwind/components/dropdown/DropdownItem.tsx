@@ -48,7 +48,7 @@ export const DropdownItem = ({
     {({ active }) => (
       <button
         className={joinClasses(["nxm-dropdown-item", className], {
-          "nxm-dropdown-item--active": active,
+          "nxm-dropdown-item-active": active,
         })}
         onClick={onClick}
       >
@@ -56,7 +56,9 @@ export const DropdownItem = ({
           <>
             <DropdownItemIcon icon={leftIcon} path={leftIconPath} />
 
-            {!!children && <span>{children}</span>}
+            {!!children && (
+              <span className="nxm-dropdown-item-label">{children}</span>
+            )}
 
             <DropdownItemIcon icon={rightIcon} path={rightIconPath} />
           </>

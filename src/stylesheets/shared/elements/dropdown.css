@@ -1,71 +1,129 @@
 @layer components {
     .nxm-dropdown {
         position: relative;
+    }
 
-        .nxm-dropdown-items {
-            right: 0;
-            display: flex;
-            overflow-y: auto;
-            position: absolute;
-            flex-direction: column;
-            box-shadow: var(--shadow-md);
-            z-index: var(--z-index-dropdown);
-            max-width: calc(var(--spacing) * 72);
-            min-width: calc(var(--spacing) * 52);
-            margin-top: calc(var(--spacing) * 1);
-            max-height: calc(var(--spacing) * 128);
-            border-radius: calc(var(--spacing) * 1);
-            padding-block: calc(var(--spacing) * 1.5);
-            border: 1px solid var(--color-stroke-weak);
-            background-color: var(--color-surface-mid);
+    .nxm-dropdown-button {
+        z-index: 1;
+        position: relative;
+        border-radius: calc(var(--spacing) * 1);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        white-space: nowrap;
+        font-size: var(--text-xs);
+        line-height: calc(var(--spacing) * 4);
+        letter-spacing: var(--tracking-wide);
+
+        min-height: calc(var(--spacing) * 7);
+        padding-inline: calc(var(--spacing) * 2);
+
+        color: var(--color-neutral-moderate);
+        background-color: var(--color-surface-translucent-mid);
+
+        transition-property:
+            color, background-color, border-color, outline-color, fill, stroke,
+            opacity, pointer-events;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:enabled {
+            &:hover,
+            &:focus {
+                color: var(--color-neutral-strong);
+                background-color: var(--color-surface-translucent-high);
+            }
         }
 
-        .nxm-dropdown-divider {
-            width: 100%;
-            height: 1px;
-            display: block;
-            margin-block: calc(var(--spacing) * 1.5);
+        & .nxm-dropdown-button-icon {
+            flex-shrink: 0;
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+
+            &:first-child {
+                margin-left: calc(var(--spacing) * -0.5);
+                margin-right: calc(var(--spacing) * 1.5);
+            }
+
+            &:last-child {
+                margin-left: calc(var(--spacing) * 1.5);
+                margin-right: calc(var(--spacing) * -0.5);
+            }
+        }
+    }
+
+    .nxm-dropdown-items {
+        right: 0;
+        outline: none;
+        display: flex;
+        overflow-y: auto;
+        position: absolute;
+        flex-direction: column;
+        box-shadow: var(--shadow-md);
+        z-index: var(--z-index-dropdown);
+        max-width: calc(var(--spacing) * 72);
+        min-width: calc(var(--spacing) * 52);
+        margin-top: calc(var(--spacing) * 1);
+        max-height: calc(var(--spacing) * 128);
+        border-radius: calc(var(--spacing) * 1);
+        padding-block: calc(var(--spacing) * 1.5);
+        border: 1px solid var(--color-stroke-weak);
+        background-color: var(--color-surface-mid);
+    }
+
+    .nxm-dropdown-divider {
+        width: 100%;
+        height: 1px;
+        display: block;
+        margin-block: calc(var(--spacing) * 1.5);
+        background-color: var(--color-surface-translucent-mid);
+    }
+
+    .nxm-dropdown-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+
+        column-gap: calc(var(--spacing) * 3);
+        color: var(--color-neutral-moderate);
+        padding-block: calc(var(--spacing) * 2);
+        padding-inline: calc(var(--spacing) * 3);
+
+        transition-property:
+            color, background-color, border-color, outline-color, fill, stroke,
+            opacity, pointer-events;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        &:enabled:hover,
+        &.nxm-dropdown-item-active {
+            color: var(--color-neutral-strong);
             background-color: var(--color-surface-translucent-mid);
         }
 
-        .nxm-dropdown-item {
-            width: 100%;
-            display: flex;
-            align-items: center;
+        &:focus-visible {
+            outline: none;
+        }
 
+        .nxm-dropdown-item-label {
+            flex-grow: 1;
             text-align: left;
             font-size: var(--text-sm);
             line-height: calc(var(--spacing) * 5);
             letter-spacing: var(--tracking-normal);
+        }
 
-            column-gap: calc(var(--spacing) * 3);
-            color: var(--color-neutral-moderate);
-            padding-block: calc(var(--spacing) * 2);
-            padding-inline: calc(var(--spacing) * 3);
-
-            transition-property:
-                color, background-color, border-color, outline-color, fill,
-                stroke, opacity, pointer-events;
-            transition-timing-function: var(
-                --default-transition-timing-function
-            );
-            transition-duration: var(--default-transition-duration);
-
-            &:disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-            }
-
-            &:enabled:hover {
-                color: var(--color-neutral-strong);
-                background-color: var(--color-surface-translucent-mid);
-            }
-
-            .nxm-dropdown-item-icon {
-                flex-shrink: 0;
-                width: calc(var(--spacing) * 5);
-                height: calc(var(--spacing) * 5);
-            }
+        .nxm-dropdown-item-icon {
+            flex-shrink: 0;
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
         }
     }
 }

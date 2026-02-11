@@ -1,9 +1,7 @@
 "use client";
 
-import type { ClassAttributes } from "react";
-
 import { mdiMenuLeft, mdiMenuRight } from "@mdi/js";
-import { useMemo } from "react";
+import { useMemo, type ClassAttributes } from "react";
 
 import { Icon } from "../next/icon";
 import { joinClasses } from "../next/utils";
@@ -80,55 +78,37 @@ export const Pagination = ({
     }
   };
 
-  const commonClasses =
-    "flex min-h-8 min-w-6 items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-40";
-  const arrowClasses =
-    "text-neutral-moderate enabled:hover:text-neutral-strong";
-
   return (
     <nav
       aria-label="Pagination navigation"
-      className={joinClasses([
-        "flex flex-col items-start gap-6 sm:flex-row sm:items-center",
-        className,
-      ])}
+      className={joinClasses(["nxm-pagination", className])}
       role="navigation"
       {...props}
     >
-      <div className="flex items-center gap-x-2">
+      <div className="nxm-pagination-items">
         <button
           aria-label="Go to previous page"
-          className={joinClasses([arrowClasses, commonClasses])}
+          className="nxm-pagination-arrow"
           disabled={totalPages < 1 || currentPage === 1}
           title="Previous page"
           type="button"
           onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
         >
-          <Icon path={mdiMenuLeft} size="lg" title="Previous page" />
+          <Icon path={mdiMenuLeft} size="none" />
         </button>
 
         {activePages.map((page, i) =>
           page === "..." ? (
-            <span
-              className={joinClasses([
-                "typography-body-md font-semibold text-neutral-subdued",
-                commonClasses,
-              ])}
-              key={`dots-${i}`}
-            >
+            <span className="nxm-pagination-separator" key={`dots-${i}`}>
               {page}
             </span>
           ) : (
             <button
               aria-current={currentPage === page ? "true" : "false"}
               aria-label={`Go to page ${page}`}
-              className={joinClasses([
-                commonClasses,
-                "px-1 enabled:hover:text-neutral-moderate",
-                currentPage === page
-                  ? "relative text-neutral-strong after:absolute after:inset-x-0 after:bottom-0 after:border-b after:border-b-stroke-strong"
-                  : "text-neutral-subdued",
-              ])}
+              className={joinClasses("nxm-pagination-number", {
+                "nxm-pagination-number-active": currentPage === page,
+              })}
               key={page}
               type="button"
               onClick={() => {
@@ -142,7 +122,7 @@ export const Pagination = ({
 
         <button
           aria-label="Go to next page"
-          className={joinClasses([arrowClasses, commonClasses])}
+          className="nxm-pagination-arrow"
           disabled={totalPages < 1 || currentPage === totalPages}
           title="Next page"
           type="button"
@@ -150,7 +130,7 @@ export const Pagination = ({
             handlePageChange(Math.min(totalPages, currentPage + 1));
           }}
         >
-          <Icon path={mdiMenuRight} size="lg" title="Next page" />
+          <Icon path={mdiMenuRight} size="none" />
         </button>
       </div>
 
@@ -158,8 +138,8 @@ export const Pagination = ({
         <JumpToPage
           currentPage={currentPage}
           recordsPerPage={recordsPerPage}
-          totalRecords={totalRecords}
-          onPaginationUpdate={onPaginationUpdate}
+          totalPages={totalPages}
+          onPaginationUpdate={handlePageChange}
         />
       )}
     </nav>

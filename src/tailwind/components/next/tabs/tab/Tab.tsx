@@ -1,12 +1,11 @@
 "use client";
 
-import * as React from "react";
 import type { ButtonHTMLAttributes } from "react";
-import { useEffect, useRef } from "react";
+
 import numeral from "numeral";
+import React, { useEffect, useRef } from "react";
 
 import { getTabId, joinClasses } from "../../utils";
-
 import { useTabContext } from "../tabs.context";
 
 export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -46,7 +45,6 @@ export const TabButton = ({
 
   return (
     <button
-      ref={ref}
       aria-controls={`tabcontent-${tabId}`}
       aria-selected={selected}
       className={joinClasses(["nxm-tab-button", className], {
@@ -55,6 +53,7 @@ export const TabButton = ({
       })}
       disabled={disabled}
       id={`tablist-${tabListId}-${tabId}`}
+      ref={ref}
       role="tab"
       tabIndex={selected ? 0 : -1}
       type="button"
@@ -62,15 +61,17 @@ export const TabButton = ({
       onKeyDown={onKeyDown}
       {...props}
     >
-      {name}
+      <span className="nxm-tab-button-content">
+        {name}
 
-      {count !== undefined && (
-        <span className="nxm-tab-button-count">
-          {tabType === "secondary"
-            ? `(${numeral(count).format("0,0")})`
-            : numeral(count).format("0,0")}
-        </span>
-      )}
+        {count !== undefined && (
+          <span className="nxm-tab-button-count">
+            {tabType === "secondary"
+              ? `(${numeral(count).format("0,0")})`
+              : numeral(count).format("0,0")}
+          </span>
+        )}
+      </span>
     </button>
   );
 };

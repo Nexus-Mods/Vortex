@@ -28,7 +28,7 @@ const WindowControlButton: FC<WindowControlButtonProps> = ({
 }) => (
   <button
     className={joinClasses([
-      "flex size-11 items-center justify-center text-neutral-subdued transition-colors hover:text-neutral-strong",
+      "flex size-11 items-center justify-center text-neutral-subdued -outline-offset-2 transition-colors hover:text-neutral-strong",
       className,
     ])}
     {...props}
