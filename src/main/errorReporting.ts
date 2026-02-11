@@ -1,6 +1,7 @@
 import nexusApi from "@nexusmods/nexus-api";
 import { app, dialog } from "electron";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
@@ -28,6 +29,12 @@ export function errorToReportableError(error: Error): ReportableError {
       .map((key) => `${key}: ${error[key]}`)
       .join("\n"),
   };
+}
+
+export async function sendReportFile(filePath: string): Promise<void> {
+  const contents = await readFile(filePath, "utf8");
+  const json = JSON.parse(contents);
+  await reportCrash(json.type, json.error, json.context);
 }
 
 export async function reportCrash(
