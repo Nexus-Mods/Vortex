@@ -38,7 +38,7 @@ export const ToolButton: FC<ToolButtonProps> = ({
   return (
     <button
       className={joinClasses(
-        "group/tool-button relative size-8 shrink-0 rounded-sm border border-stroke-moderate",
+        "group/tool-button relative size-8 shrink-0 rounded-sm",
         { "pointer-events-none cursor-not-allowed": isRunning },
       )}
       title={isValid ? starter.name : `${starter.name} (Not configured)`}

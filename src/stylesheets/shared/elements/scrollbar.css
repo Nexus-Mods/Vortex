@@ -4,21 +4,23 @@
 
 /* Legacy browsers with `::-webkit-scrollbar-*` support */
 @supports selector(::-webkit-scrollbar) {
-    ::-webkit-scrollbar-thumb {
-        border-radius: calc(infinity * 1px);
-        background-color: var(--color-surface-mid);
-    }
+    .modern-layout {
+        & ::-webkit-scrollbar {
+            max-width: calc(var(--spacing) * 1);
+            max-height: calc(var(--spacing) * 1);
+        }
 
-    ::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-surface-high);
-    }
+        & ::-webkit-scrollbar-thumb {
+            border-radius: calc(infinity * 1px);
+            background-color: var(--color-surface-mid);
 
-    ::-webkit-scrollbar-track {
-        background-color: transparent;
-    }
+            &:hover {
+                background-color: var(--color-surface-high);
+            }
+        }
 
-    ::-webkit-scrollbar {
-        max-width: calc(var(--spacing) * 1);
-        max-height: calc(var(--spacing) * 1);
+        & ::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
     }
 }
