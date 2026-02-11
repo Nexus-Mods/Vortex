@@ -96,25 +96,33 @@ Current baselines:
 - Node SDK: `org.freedesktop.Sdk.Extension.node22`
 - .NET SDK: `org.freedesktop.Sdk.Extension.dotnet9`
 
-## generated-sources.json & Offline Build Behaviour
+## generated-sources.json, generated-nuget-sources.json & Offline Build Behaviour
 
 Flatpak builds run in offline mode inside the build sandbox.
 
-- `flatpak-builder` downloads sources up front (npm packages in `flatpak/generated-sources.json`)
+- `flatpak-builder` downloads sources up front:
+    - npm packages in `flatpak/generated-sources.json`
+    - NuGet packages in `flatpak/generated-nuget-sources.json`
 - build commands then run offline in the sandbox using those prefetched sources
 
 This is required for _Flathub submission_ and ensures reproducible builds.
 
-To keep `generated-sources.json` in sync automatically, build scripts now:
+To keep source files in sync automatically, build scripts now:
 
-- hashes recursive repository `yarn.lock` files
-- compare against `flatpak/generated-sources.hash`
-- regenerate `flatpak/generated-sources.json` only when needed
+- hash recursive repository `yarn.lock` files and compare against `flatpak/generated-sources.hash`
+- hash FOMOD `.csproj`/NuGet input files and compare against `flatpak/generated-nuget-sources.hash`
+- regenerate each generated source file only when needed
 
 If you are debugging `generated-sources.json` generation, you can run the sync script manually:
 
 ```bash
 python3 flatpak/scripts/flatpak_sources.py --force
+```
+
+If you are debugging `generated-nuget-sources.json` generation, run:
+
+```bash
+python3 flatpak/scripts/flatpak_nuget_sources.py --force
 ```
 
 ## Troubleshooting

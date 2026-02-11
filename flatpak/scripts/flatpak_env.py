@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the Flatpak helper venv and install flatpak-node-generator (run from any directory)."""
+"""Create the Flatpak helper venv and install generator tools (run from any directory)."""
 
 import argparse
 
@@ -19,6 +19,7 @@ def main() -> None:
     print(f"Venv: {info.venv_dir}")
     print(f"Python: {info.python_exe}")
     print(f"flatpak-node-generator: {info.flatpak_node_generator}")
+    print(f"flatpak-dotnet-generator: {info.flatpak_dotnet_generator}")
 
 
 if __name__ == "__main__":

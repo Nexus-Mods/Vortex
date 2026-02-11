@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 from typing import NamedTuple
 
@@ -17,6 +18,11 @@ FLATPAK_NODE_GENERATOR_GIT_URL = (
     f"{FLATPAK_NODE_GENERATOR_GIT_COMMIT}#subdirectory=node"
 )
 FLATPAK_NODE_GENERATOR_REF_MARKER = ".flatpak-node-generator-ref"
+FLATPAK_DOTNET_GENERATOR_URL = (
+    "https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/"
+    f"{FLATPAK_NODE_GENERATOR_GIT_COMMIT}/dotnet/flatpak-dotnet-generator.py"
+)
+FLATPAK_DOTNET_GENERATOR_REF_MARKER = ".flatpak-dotnet-generator-ref"
 
 
 class VenvInfo(NamedTuple):
@@ -25,6 +31,7 @@ class VenvInfo(NamedTuple):
     python_exe: Path
     pip_exe: Path
     flatpak_node_generator: Path
+    flatpak_dotnet_generator: Path
 
 
 def repo_root() -> Path:
@@ -50,11 +57,13 @@ def _venv_paths(venv: Path) -> VenvInfo:
         python_exe = bin_dir / "python.exe"
         pip_exe = bin_dir / "pip.exe"
         flatpak_node_generator = bin_dir / "flatpak-node-generator.exe"
+        flatpak_dotnet_generator = venv / "flatpak-dotnet-generator.py"
     else:
         bin_dir = venv / "bin"
         python_exe = bin_dir / "python"
         pip_exe = bin_dir / "pip"
         flatpak_node_generator = bin_dir / "flatpak-node-generator"
+        flatpak_dotnet_generator = venv / "flatpak-dotnet-generator.py"
 
     return VenvInfo(
         venv_dir=venv,
@@ -62,6 +71,7 @@ def _venv_paths(venv: Path) -> VenvInfo:
         python_exe=python_exe,
         pip_exe=pip_exe,
         flatpak_node_generator=flatpak_node_generator,
+        flatpak_dotnet_generator=flatpak_dotnet_generator,
     )
 
 
@@ -84,6 +94,34 @@ def _flatpak_node_generator_is_pinned(info: VenvInfo) -> bool:
         marker_path.read_text(encoding="utf-8").strip()
         == FLATPAK_NODE_GENERATOR_GIT_COMMIT
     )
+
+
+def _flatpak_dotnet_generator_is_pinned(info: VenvInfo) -> bool:
+    if not info.flatpak_dotnet_generator.exists():
+        return False
+    marker_path = info.venv_dir / FLATPAK_DOTNET_GENERATOR_REF_MARKER
+    if not marker_path.exists():
+        return False
+    return (
+        marker_path.read_text(encoding="utf-8").strip()
+        == FLATPAK_NODE_GENERATOR_GIT_COMMIT
+    )
+
+
+def _install_flatpak_dotnet_generator(info: VenvInfo) -> None:
+    print(
+        "Installing pinned flatpak-dotnet-generator from flatpak-builder-tools "
+        f"({FLATPAK_NODE_GENERATOR_GIT_COMMIT[:12]})..."
+    )
+
+    with urllib.request.urlopen(FLATPAK_DOTNET_GENERATOR_URL) as response:
+        script = response.read()
+
+    info.flatpak_dotnet_generator.write_bytes(script)
+    info.flatpak_dotnet_generator.chmod(0o755)
+
+    marker_path = info.venv_dir / FLATPAK_DOTNET_GENERATOR_REF_MARKER
+    marker_path.write_text(FLATPAK_NODE_GENERATOR_GIT_COMMIT, encoding="utf-8")
 
 
 def ensure_flathub_remote() -> None:
@@ -134,5 +172,8 @@ def ensure_venv(install_packages: bool = True) -> VenvInfo:
             )
             marker_path = info.venv_dir / FLATPAK_NODE_GENERATOR_REF_MARKER
             marker_path.write_text(FLATPAK_NODE_GENERATOR_GIT_COMMIT, encoding="utf-8")
+
+        if not _flatpak_dotnet_generator_is_pinned(info):
+            _install_flatpak_dotnet_generator(info)
 
     return info

@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
+from flatpak_nuget_sources import sync_generated_nuget_sources
 from flatpak_sources import sync_generated_sources
 from update_metainfo_version import update_metainfo_version
 
@@ -65,6 +66,22 @@ def main() -> None:
         output=root / "flatpak/generated-sources.json",
         hash_file=root / "flatpak/generated-sources.hash",
         recursive=True,
+    )
+
+    sync_generated_nuget_sources(
+        search_root=root / "extensions/fomod-installer",
+        projects=[
+            root
+            / "extensions/fomod-installer/src/ModInstaller.IPC/ModInstaller.IPC.csproj",
+            root
+            / "extensions/fomod-installer/src/ModInstaller.Native/ModInstaller.Native.csproj",
+        ],
+        output=root / "flatpak/generated-nuget-sources.json",
+        hash_file=root / "flatpak/generated-nuget-sources.hash",
+        dotnet="9",
+        freedesktop="25.08",
+        destdir="flatpak-nuget-sources",
+        runtime="linux-x64",
     )
 
     ensure_flathub_remote()

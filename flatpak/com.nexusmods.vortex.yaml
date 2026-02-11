@@ -13,7 +13,7 @@ sdk-extensions:
   - org.freedesktop.Sdk.Extension.dotnet9
 
 build-options:
-  append-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/dotnet9/bin
+  prepend-path: /usr/lib/sdk/node22/bin:/usr/lib/sdk/dotnet9/bin
   append-ld-library-path: /usr/lib/sdk/dotnet9/lib
   env:
     # Electron install behavior (global): prevent Electron downloads because BaseApp provides it.
@@ -35,7 +35,7 @@ build-options:
     # Dotnet SDK settings for build-time tools (runtime DOTNET_ROOT is set via finish-args).
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     DOTNET_NOLOGO: "1"
-    DOTNET_ROOT: /usr/lib/sdk/dotnet9
+    DOTNET_ROOT: /usr/lib/sdk/dotnet9/lib
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
 
     # Build stability: avoid parallel extension builds.
@@ -81,8 +81,17 @@ modules:
 
       # Configure Yarn for Flatpak caches, then install dependencies.
       - cp flatpak/yarnrc .yarnrc
+      - |
+        cat > NuGet.Config <<'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="offline" value="flatpak-nuget-sources" />
+          </packageSources>
+        </configuration>
+        EOF
       - yarn install --non-interactive --check-files --frozen-lockfile
-
       # Build the app following the standard workflow from CONTRIBUTE.md.
       - yarn run build
 
@@ -109,3 +118,4 @@ modules:
       - type: dir
         path: ..
       - generated-sources.json
+      - generated-nuget-sources.json
