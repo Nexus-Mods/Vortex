@@ -7,8 +7,8 @@ import type TrayIcon from "./TrayIcon";
 
 import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
-import { terminate } from "../util/errorHandling";
 import { parseBool } from "../util/util";
+import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
 import { openUrl } from "./open";
@@ -149,12 +149,7 @@ class MainWindow {
           // this isn't ideal as we don't have a stack trace of the error message here
           cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate(
-                { message: "Vortex failed to start", details: message },
-                {},
-                true,
-                "renderer",
-              );
+              terminate(new Error("Vortex failed to start"), true);
             }
           }, 15000);
         }

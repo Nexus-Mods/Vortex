@@ -4467,7 +4467,7 @@ type ProblemSeverity = "warning" | "error" | "fatal";
 
 // @public (undocumented)
 class ProcessCanceled extends Error {
-    constructor(message: string, extraInfo?: any);
+    constructor(message: string, extraInfo?: unknown);
     // (undocumented)
     get extraInfo(): any;
 }
@@ -5678,10 +5678,10 @@ export const Tailwind: {
     Typography: ComponentType<typography.TypographyProps>;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IError" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ReportableError" needs to be exported by the entry point index.d.ts
 //
 // @public
-function terminate(error: IError, state: any, allowReport?: boolean, source?: string): void;
+function terminate(error: ReportableError, state: any, allowReport?: boolean, source?: string): void;
 
 // @public (undocumented)
 function testModReference(mod: IMod | IModLookupInfo, reference: IModReference, source?: {
@@ -6044,10 +6044,12 @@ function upload(targetUrl: string, dataStream: Readable, dataSize: number): Prom
 // @public (undocumented)
 export const Usage: React_2.ComponentClass<IUsageProps>;
 
-// Warning: (ae-forgotten-export) The symbol "IUserCanceledConstructor" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-const UserCanceled: IUserCanceledConstructor;
+class UserCanceled extends Error {
+    constructor(skipped?: boolean);
+    // (undocumented)
+    skipped: boolean;
+}
 
 // @public
 function userFriendlyTime(date: Date, t: TFunction, locale: string): string;

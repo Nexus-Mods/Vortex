@@ -21,27 +21,21 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
-import { currentStatePath } from "../shared/types/state";
 import {
   DataInvalid,
   DocumentsPathMissing,
   ProcessCanceled,
   UserCanceled,
-} from "../util/CustomErrors";
-import {
-  didIgnoreError,
-  disableErrorReport,
-  getVisibleWindow,
-  setWindow,
-  terminate,
-  toError,
-} from "../util/errorHandling";
+} from "../shared/types/errors";
+import { currentStatePath } from "../shared/types/state";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
 import { isMajorDowngrade } from "../util/util";
 import { parseCommandline } from "./cli";
+import { terminate } from "./errorHandling";
+import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -223,16 +217,11 @@ class Application {
     // Send app initialization metadata to renderer
     // Renderer will dispatch Redux actions based on this
     webContents.send("app:init", this.mAppMetadata);
-
-    if (didIgnoreError()) {
-      webContents.send("did-ignore-error", true);
-    }
   }
 
   private async startSplash(): Promise<SplashScreen> {
     const splash = new SplashScreen();
     await splash.create(this.mArgs.disableGPU);
-    setWindow(splash.getHandle());
     return splash;
   }
 
@@ -350,13 +339,12 @@ class Application {
   };
 
   private genHandleError() {
-    return (error: unknown, promise?: unknown) => {
+    return (error: Error, promise?: unknown) => {
       if (Application.shouldIgnoreError(error, promise)) {
         return;
       }
 
-      // Store is now in renderer, so we can't access state from main process
-      terminate(toError(error), {});
+      terminate(error);
     };
   }
 
@@ -377,17 +365,20 @@ class Application {
       } else if (err instanceof ProcessCanceled) {
         app.quit();
       } else if (err instanceof DocumentsPathMissing) {
-        const response = await dialog.showMessageBox(getVisibleWindow(), {
-          type: "error",
-          buttons: ["Close", "More info"],
-          defaultId: 1,
-          title: "Error",
-          message: "Startup failed",
-          detail:
-            'Your "My Documents" folder is missing or is ' +
-            "misconfigured. Please ensure that the folder is properly " +
-            "configured and accessible, then try again.",
-        });
+        const response = await dialog.showMessageBox(
+          this.mMainWindow.getHandle(),
+          {
+            type: "error",
+            buttons: ["Close", "More info"],
+            defaultId: 1,
+            title: "Error",
+            message: "Startup failed",
+            detail:
+              'Your "My Documents" folder is missing or is ' +
+              "misconfigured. Please ensure that the folder is properly " +
+              "configured and accessible, then try again.",
+          },
+        );
 
         if (response.response === 1) {
           await shell.openExternal(
@@ -425,16 +416,12 @@ class Application {
           /{{ *([a-zA-Z]+) *}}/g,
           (_, key) => pretty.replace?.[key] || key,
         );
-        terminate(
-          {
-            message: "Startup failed",
-            details,
-            code: pretty.code,
-            stack: error.stack,
-          },
-          {},
-          pretty.allowReport,
-        );
+
+        error.message = "Startup failed";
+        error["details"] = details;
+        error["code"] = pretty.code;
+
+        terminate(error, pretty.allowReport);
       }
     } finally {
       try {
@@ -468,7 +455,7 @@ class Application {
       if (err instanceof DataInvalid) {
         log("error", "persistence data invalid", getErrorMessageOrDefault(err));
 
-        await dialog.showMessageBox(getVisibleWindow(), {
+        await dialog.showMessageBox(this.mMainWindow.getHandle(), {
           type: "error",
           buttons: ["Continue"],
           title: "Error",
@@ -616,7 +603,7 @@ class Application {
     }
 
     const uacEnabled = this.isUACEnabled();
-    const result = await dialog.showMessageBox(getVisibleWindow(), {
+    const result = await dialog.showMessageBox(this.mMainWindow.getHandle(), {
       title: "Admin rights detected",
       message:
         `Vortex has detected that it is being run with administrator rights. It is strongly
@@ -659,7 +646,7 @@ class Application {
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      const res = dialog.showMessageBoxSync(getVisibleWindow(), {
+      const res = dialog.showMessageBoxSync(this.mMainWindow.getHandle(), {
         type: "warning",
         title: "Downgrade detected",
         message: `You're using a version of Vortex that is older than the version you ran previously.
@@ -960,7 +947,6 @@ class Application {
             throw err;
           }
         }
-        setWindow(this.mMainWindow?.getHandle() ?? null);
       })
       .catch((err) => {
         log(
@@ -970,7 +956,6 @@ class Application {
         );
         // Fall back to non-maximized
         this.mMainWindow?.show(false, startMinimized);
-        setWindow(this.mMainWindow?.getHandle() ?? null);
       });
   }
 
@@ -1008,7 +993,7 @@ class Application {
     if (response === 0) {
       app.quit();
     } else {
-      disableErrorReport();
+      disableErrorReporting();
     }
   }
 
