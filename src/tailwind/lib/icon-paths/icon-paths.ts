@@ -5,9 +5,9 @@
  * Adapted from the web team's "next" project for use in Vortex.
  *
  * Usage:
- * - In Icon component: <Icon path="nxmVortex" />
- * - In Button component: <Button leftIconPath="nxmVortex">...</Button>
- * - Direct import: import { nxmVortex } from 'tailwind/lib/icon-paths';
+ * - import { nxmVortex } from 'tailwind/lib/icon-paths';
+ * - In Icon component: <Icon path={nxmVortex} />
+ * - In Button component: <Button leftIconPath={nxmVortex}>...</Button>
  *
  * All icons are designed for a 24x24 viewBox.
  */
