@@ -103,6 +103,9 @@ export interface Dialog {
 }
 
 export interface App {
+  /** Relaunches the application with the given arguments */
+  relaunch(args?: string[]): void;
+
   /**
    * Register a callback for app initialization metadata from main.
    * Called once during startup with all app metadata.

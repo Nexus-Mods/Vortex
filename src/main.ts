@@ -132,9 +132,9 @@ try {
 import type * as child_processT from "child_process";
 
 import Application from "./main/Application";
+import { parseCommandline } from "./main/cli";
 import { init as initIpcHandlers } from "./main/ipcHandlers";
 import StylesheetCompiler from "./main/stylesheetCompiler";
-import commandLine from "./util/commandLine";
 import { sendReportFile, terminate, toError } from "./util/errorHandling";
 import * as fs from "./util/fs";
 
@@ -152,7 +152,7 @@ const handleError = (error: Error) => {
 
 async function main(): Promise<void> {
   // important: The following has to be synchronous!
-  const mainArgs = commandLine(process.argv, false);
+  const mainArgs = parseCommandline(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report).then(() => {
       app.quit();

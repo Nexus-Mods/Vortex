@@ -31,6 +31,7 @@ import type { AppPath } from "../util/getVortexPath";
 import { ApplicationData } from "../shared/applicationData";
 import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
+import { relaunch } from "./cli";
 import { betterIpcMain } from "./ipc";
 import { extraWebViews } from "./webview";
 
@@ -163,6 +164,10 @@ export function init() {
   // ============================================================================
   // App info handlers
   // ============================================================================
+
+  betterIpcMain.on("app:relaunch", (_event, args) => {
+    relaunch(args);
+  });
 
   betterIpcMain.handle("app:getName", () => {
     return ApplicationData.name ?? app.getName();
