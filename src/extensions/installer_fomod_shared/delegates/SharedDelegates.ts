@@ -83,8 +83,7 @@ export class SharedDelegates {
       // Include plugins from mods installed during active collection session
       // that haven't been deployed yet
       const collectionPlugins: string[] =
-        state.session?.collections?.activeSession?.installedPlugins ??
-        [];
+        state.session?.collections?.activeSession?.installedPlugins ?? [];
       if (collectionPlugins.length > 0) {
         const existing = new Set(plugins.map((p) => p.toLowerCase()));
         for (const cp of collectionPlugins) {
