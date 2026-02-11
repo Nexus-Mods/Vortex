@@ -63,6 +63,7 @@ finish-args:
   - --env=DOTNET_ROOT=/app/lib/dotnet
   # Integration: disable internal updater (Flatpak handles updates)
   - --env=IGNORE_UPDATES=yes
+  - --env=IS_FLATPAK=true
   # Integration: use gio for trash, respect host cursor theme
   - --env=ELECTRON_TRASH=gio
   - --env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons
