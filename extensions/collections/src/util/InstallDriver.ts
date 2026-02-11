@@ -1041,6 +1041,28 @@ class InstallDriver {
       }
     }
 
+    if (state.settings.automation.enable !== true) {
+      const enableChoice = await this.mApi.showDialog?.(
+        "question",
+        "Automation Setting Required",
+        {
+          bbcode:
+            "The [b]'Enable Mods when installed'[/b] automation setting is currently disabled." +
+            "[br][/br][br][/br]" +
+            "Collections require this setting to be enabled so that mod plugins can be activated correctly during installation. " +
+            "Without it, some mods may fail to install due to unmet prerequisites." +
+            "[br][/br][br][/br]" +
+            "Would you like to enable this setting and continue with the installation?",
+        },
+        [{ label: "Cancel" }, { label: "Enable and Continue" }],
+      );
+      if (enableChoice?.action === "Cancel") {
+        this.mInstallDone = true;
+        return false;
+      }
+      this.mApi.store?.dispatch(actions.setAutoEnable(true));
+    }
+
     this.mApi.events.emit("will-install-collection", gameId, collection.id);
 
     this.mApi.events.emit("view-collection", collection.id);
