@@ -70,7 +70,7 @@ export class VortexIPCConnection extends BaseIPCConnection {
             if (dialogResult?.action === yes) {
               return true;
             } else if (dialogResult?.action === no) {
-              return 'cancel';
+              return "cancel";
             }
             return false; // Dialog dismissed or other cases
           }
