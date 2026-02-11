@@ -5,7 +5,9 @@
     "src/main.ts",
     "src/main/**/*",
     "src/preload/**/*",
-    "src/shared/**/*"
+    "src/shared/**/*",
+    "typings.custom/electron.d.ts",
+    "typings.custom/promise.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
