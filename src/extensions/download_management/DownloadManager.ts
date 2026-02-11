@@ -646,6 +646,7 @@ class DownloadWorker {
         "EHOSTUNREACH",
         "ENETUNREACH",
         "ETIMEDOUT",
+        "ENOTFOUND",
       ].includes(err.code) ||
       err.message?.includes("socket hang up") ||
       err.message?.includes("ECONNRESET") ||
@@ -686,7 +687,9 @@ class DownloadWorker {
 
     // For timeout errors, be more permissive - retry even without progress for initial connection issues
     const isTimeoutError =
-      ["ETIMEDOUT", "ESOCKETTIMEDOUT"].includes(err.code) ||
+      ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(
+        err.code,
+      ) ||
       err.message?.includes("Request timeout") ||
       err.message?.includes("ETIMEDOUT");
 
@@ -1002,21 +1005,25 @@ class DownloadWorker {
     const res = this.mJob
       .dataCB(writeOffset, buf)
       .then(() => {
-        // Write confirmed - update confirmed received counter
         this.mInFlightWrites -= len;
-        this.mJob.confirmedReceived += len;
-
-        // Recalculate confirmed-based fields (these should already match the optimistic values)
-        // offset = confirmedOffset + confirmedReceived
-        this.mJob.offset =
-          this.mJob.confirmedOffset + this.mJob.confirmedReceived;
-        // size = confirmedSize - confirmedReceived
-        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
-
         if (this.mInFlightWrites < 0) {
-          // sanity
           this.mInFlightWrites = 0;
         }
+
+        // If the worker has ended, a new worker may already be using this job.
+        // Don't update confirmed fields or the new worker's offset tracking
+        // will be corrupted by this stale confirmation.
+        if (this.mEnded) {
+          return;
+        }
+
+        // Write confirmed - update confirmed received counter
+        this.mJob.confirmedReceived += len;
+
+        // Recalculate confirmed-based fields
+        this.mJob.offset =
+          this.mJob.confirmedOffset + this.mJob.confirmedReceived;
+        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
       })
       .catch((err) => {
         this.mInFlightWrites -= len;
@@ -1118,6 +1125,7 @@ const SLOW_WORKER_THRESHOLD = 10; // Number of "starving" measurements before co
 const SLOW_WORKER_MIN_AGE_MS = 10000; // Minimum time (10s) before allowing restart
 const SLOW_WORKER_RESTART_COOLDOWN_MS = 30000; // Cooldown period (30s) between restarts
 const MAX_WORKER_RESTARTS = 3; // Maximum restarts per worker
+const MAX_CHUNK_REQUEUES = 3; // Maximum times a chunk can be requeued after finishing with remaining data
 
 /**
  * manages downloads
@@ -2515,9 +2523,32 @@ class DownloadManager {
     // size = confirmedSize - confirmedReceived (remaining bytes)
     const hasRemainingData = job.size > 0;
 
-    job.state = paused || hasRemainingData ? "paused" : "finished";
     if (!paused && hasRemainingData) {
-      download.error = true;
+      job.requeues = (job.requeues || 0) + 1;
+      if (job.requeues >= MAX_CHUNK_REQUEUES) {
+        log(
+          "warn",
+          "chunk exceeded max requeues, marking download as errored",
+          {
+            id: download.id,
+            workerId: job.workerId,
+            remaining: job.size,
+            requeues: job.requeues,
+          },
+        );
+        download.error = true;
+        job.state = "finished";
+      } else {
+        log("info", "chunk finished with remaining data, requeuing", {
+          id: download.id,
+          workerId: job.workerId,
+          remaining: job.size,
+          requeue: job.requeues,
+        });
+        job.state = "paused";
+      }
+    } else {
+      job.state = paused || hasRemainingData ? "paused" : "finished";
     }
 
     const activeChunk = download.chunks.find((chunk: IDownloadJob) => {

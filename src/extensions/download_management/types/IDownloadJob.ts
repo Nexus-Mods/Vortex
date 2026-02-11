@@ -49,6 +49,9 @@ export interface IDownloadJob extends IChunk {
   /** Total size of this chunk in bytes (immutable once set) */
   confirmedSize: number;
 
+  /** Number of times this chunk has been requeued after finishing with remaining data */
+  requeues?: number;
+
   extraCookies: string[];
 
   dataCB?: (offset: number, data) => Promise<boolean>;
