@@ -1,36 +1,10 @@
 import program from "commander";
 import { app, ipcMain, ipcRenderer } from "electron";
 
+import type { IParameters, ISetItem } from "../shared/types/cli";
+
 import { getApplication } from "./application";
 import startupSettings from "./startupSettings";
-
-export interface IParameters {
-  download?: string;
-  install?: string;
-  installArchive?: string;
-  installExtension?: string;
-  report?: string;
-  restore?: string;
-  startMinimized?: boolean;
-  game?: string;
-  profile?: string;
-  get?: string[];
-  set?: ISetItem[];
-  del?: string[];
-  merge?: string;
-  run?: string;
-  shared?: boolean;
-  maxMemory?: string;
-  disableGPU?: boolean;
-  userData?: string;
-  inspector?: boolean;
-  storeVersion?: string;
-}
-
-export interface ISetItem {
-  key: string;
-  value: string;
-}
 
 function assign(input: string, prev: ISetItem[]): ISetItem[] {
   const [key, value] = input.split("=");

@@ -1,8 +1,8 @@
-import type { IParameters } from "../util/commandLine";
+import * as reduxAct from "redux-act";
+
+import type { IParameters } from "../shared/types/cli";
 
 import safeCreateAction from "./safeCreateAction";
-
-import * as reduxAct from "redux-act";
 
 const uiOnlyMeta =
   process.type === "renderer"
