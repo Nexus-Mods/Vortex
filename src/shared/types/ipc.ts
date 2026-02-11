@@ -98,6 +98,9 @@ export interface RendererChannels {
   "example:renderer_foo": () => void;
   "example:renderer_bar": (data: number) => void;
 
+  // Relaunches the application with the given arguments
+  "app:relaunch": (args?: string[]) => void;
+
   // Persistence: Send diff operations to main for persistence
   "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;
 

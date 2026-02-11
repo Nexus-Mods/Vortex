@@ -10,9 +10,9 @@ import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
+import type { IParameters, ISetItem } from "../shared/types/cli";
 import type { AppInitMetadata } from "../shared/types/ipc";
 import type { IWindow } from "../shared/types/state";
-import type { IParameters, ISetItem } from "../util/commandLine";
 
 import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
@@ -22,7 +22,6 @@ import {
   unknownToError,
 } from "../shared/errors";
 import { currentStatePath } from "../shared/types/state";
-import commandLine from "../util/commandLine";
 import {
   DataInvalid,
   DocumentsPathMissing,
@@ -42,6 +41,7 @@ import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
 import { isMajorDowngrade } from "../util/util";
+import { parseCommandline } from "./cli";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
@@ -263,7 +263,7 @@ class Application {
 
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
-      this.applyArguments(commandLine(secondaryArgv, true)).catch(
+      this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
         (err: unknown) => log("error", "error applying arguments", err),
       );
     });

@@ -118,6 +118,7 @@ try {
         betterIpcRenderer.invoke("dialog:showErrorBox", title, content),
     },
     app: {
+      relaunch: (args) => betterIpcRenderer.send("app:relaunch", args),
       onInit: (callback: (metadata: AppInitMetadata) => void) =>
         betterIpcRenderer.on("app:init", (_, metadata) => callback(metadata)),
       setProtocolClient: (protocol: string, udPath: string) =>
