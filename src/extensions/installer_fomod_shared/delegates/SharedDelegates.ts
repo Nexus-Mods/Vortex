@@ -4,6 +4,7 @@ import { IExtensionApi } from "../../../types/IExtensionContext";
 import { getApplication } from "../../../util/application";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";
+import { IPluginState } from "../types/interface";
 
 /**
  * Core delegates for FOMOD installer IPC communication
@@ -73,11 +74,12 @@ export class SharedDelegates {
   public getAllPlugins = (activeOnly: boolean): string[] => {
     try {
       const state = this.mApi.getState();
-      if (!hasSessionPlugins(state.session)) {
-        return [];
+
+      let pluginList: IPluginState["pluginList"] = {};
+      if (hasSessionPlugins(state.session)) {
+        pluginList = state.session.plugins?.pluginList ?? {};
       }
 
-      const pluginList = state.session.plugins?.pluginList ?? {};
       let plugins = Object.keys(pluginList);
 
       // Include plugins from mods installed during active collection session
