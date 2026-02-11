@@ -3621,10 +3621,7 @@ class InstallManager {
             }
             if (this.isCritical(err.message)) {
               return Bluebird.reject(
-                new ArchiveBrokenError(
-                  path.basename(archivePath),
-                  err.message,
-                ),
+                new ArchiveBrokenError(path.basename(archivePath), err.message),
               );
             }
             return Bluebird.reject(err);
