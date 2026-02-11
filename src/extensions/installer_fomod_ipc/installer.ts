@@ -197,6 +197,13 @@ export const install = async (
 
     return result;
   } catch (err: any) {
+    // UserCanceled is thrown directly from BaseIPCConnection when user clicks Cancel
+    // Re-throw it without modification so Vortex handles it gracefully
+    if (err instanceof UserCanceled) {
+      log("info", "FOMOD installation cancelled by user", { gameId });
+      throw err;
+    }
+
     // Provide context-aware error messages based on error type
     const errorName = err.name || "Error";
     const isTimeout = errorName === "IPCTimeoutError";

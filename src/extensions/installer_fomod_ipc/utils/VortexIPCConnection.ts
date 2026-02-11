@@ -66,7 +66,13 @@ export class VortexIPCConnection extends BaseIPCConnection {
               [{ label: no }, { label: yes } /*{ label: yesForAll }*/],
               dialogId,
             );
-            return dialogResult?.action === yes;
+            // Return true to continue, 'cancel' if user clicked Cancel, false for other cases
+            if (dialogResult?.action === yes) {
+              return true;
+            } else if (dialogResult?.action === no) {
+              return 'cancel';
+            }
+            return false; // Dialog dismissed or other cases
           }
         : undefined,
       onDismissDialog: api
