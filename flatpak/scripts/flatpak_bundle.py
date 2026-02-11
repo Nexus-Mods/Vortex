@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
+from flatpak_sources import sync_generated_sources
 
 
 def main() -> None:
@@ -88,6 +89,13 @@ def main() -> None:
         run_command(export_cmd, cwd=root)
     else:
         # Use flatpak-builder to build and export
+        sync_generated_sources(
+            lockfile=root / "yarn.lock",
+            output=root / "flatpak/generated-sources.json",
+            hash_file=root / "flatpak/generated-sources.hash",
+            recursive=True,
+        )
+
         print(f"Building and exporting to local repo...")
         export_cmd = [
             "flatpak-builder",

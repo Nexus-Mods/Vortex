@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
+from flatpak_sources import sync_generated_sources
 from update_metainfo_version import update_metainfo_version
 
 
@@ -58,6 +59,13 @@ def main() -> None:
         print("Install it with your distro package manager (see CONTRIBUTE.md).")
         print("On NixOS: run 'nix develop'.")
         raise SystemExit(1)
+
+    sync_generated_sources(
+        lockfile=root / "yarn.lock",
+        output=root / "flatpak/generated-sources.json",
+        hash_file=root / "flatpak/generated-sources.hash",
+        recursive=True,
+    )
 
     ensure_flathub_remote()
 

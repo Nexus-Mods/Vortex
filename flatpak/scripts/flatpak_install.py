@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 
 from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
+from flatpak_sources import sync_generated_sources
 
 
 def is_app_installed(app_id: str) -> bool:
@@ -125,6 +126,13 @@ def main() -> None:
         run_command(export_cmd, cwd=root)
     else:
         # Use flatpak-builder to build and export
+        sync_generated_sources(
+            lockfile=root / "yarn.lock",
+            output=root / "flatpak/generated-sources.json",
+            hash_file=root / "flatpak/generated-sources.hash",
+            recursive=True,
+        )
+
         print(f"Building and exporting {args.app_id} to local repo...")
         export_cmd = [
             "flatpak-builder",

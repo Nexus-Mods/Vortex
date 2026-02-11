@@ -14,11 +14,10 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 
 ### Development workflow
 
-| Script               | Purpose                                                    |
-| -------------------- | ---------------------------------------------------------- |
-| `flatpak_sources.py` | Regenerate `flatpak/generated-sources.json` from lockfiles |
-| `flatpak_build.py`   | Build the Flatpak with standard defaults                   |
-| `flatpak_run.py`     | Run the build output directly with `flatpak-builder --run` |
+| Script             | Purpose                                                    |
+| ------------------ | ---------------------------------------------------------- |
+| `flatpak_build.py` | Build the Flatpak with standard defaults                   |
+| `flatpak_run.py`   | Run the build output directly with `flatpak-builder --run` |
 
 ### Distribution/UX Testing workflow
 
@@ -31,18 +30,10 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 
 ### First-time Setup
 
-**Initialize git submodules:**
-
-Flatpak builds run offline and cannot fetch submodules during the build. The manifest sets `VORTEX_SKIP_SUBMODULES=1` to skip the automatic submodule update in `preinstall.js`. Initialize submodules before building:
+First ensure your submodules are up to date:
 
 ```bash
 git submodule update --init --recursive
-```
-
-**Regenerate sources** (whenever `yarn.lock` changes):
-
-```bash
-python3 flatpak/scripts/flatpak_sources.py
 ```
 
 ### Development Iteration
@@ -104,6 +95,31 @@ Current baselines:
 - BaseApp: `org.electronjs.Electron2.BaseApp` 25.08
 - Node SDK: `org.freedesktop.Sdk.Extension.node22`
 - .NET SDK: `org.freedesktop.Sdk.Extension.dotnet9`
+
+## generated-sources.json & Offline Build Behaviour
+
+Flatpak builds run in offline mode inside the build sandbox.
+
+- `flatpak-builder` downloads sources up front (npm packages in `flatpak/generated-sources.json`)
+- build commands then run offline in the sandbox using those prefetched sources
+
+This is required for _Flathub submission_ and ensures reproducible builds.
+
+To keep `generated-sources.json` in sync automatically, build scripts now:
+
+- hashes recursive repository `yarn.lock` files
+- compare against `flatpak/generated-sources.hash`
+- regenerate `flatpak/generated-sources.json` only when needed
+
+If you are debugging `generated-sources.json` generation, you can run the sync script manually:
+
+```bash
+python3 flatpak/scripts/flatpak_sources.py --force
+```
+
+## Troubleshooting
+
+- Missing submodule files during Flatpak build: `yarn install` normally runs `preinstall.js`, which initializes submodules. If you have not run `yarn install` locally, run `git submodule update --init --recursive` first.
 
 ## References
 
