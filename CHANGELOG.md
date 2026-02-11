@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.2] - 2026-02-xx
+
+- Fixed race condition when attempting to generate file UIDs ([#19602](https://github.com/Nexus-Mods/Vortex/issues/19602) and several others)
+- Added handling for transient EBUSY errors when starting loot ([#19609](https://github.com/Nexus-Mods/Vortex/issues/19609))
+- User cancelled error suppression ([#19619](https://github.com/Nexus-Mods/Vortex/issues/19619)) (fixes #19619)
+- Fixed linking issues on mod extraction/install ([#196101](https://github.com/Nexus-Mods/Vortex/issues/19610), [#19626](https://github.com/Nexus-Mods/Vortex/issues/19626), [#19700](https://github.com/Nexus-Mods/Vortex/issues/19700) and several others)
+- Suppress error report for FOMOD-IPC timeout errors ([#19641](https://github.com/Nexus-Mods/Vortex/issues/19641))
+- Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
+- Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
+
 ## [1.16.1] - 2026-02-10
 
 _Stable release based on 1.16.0-beta.5_
@@ -1396,6 +1406,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.2
 [1.16.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1
 [1.16.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.5
 [1.16.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.4
