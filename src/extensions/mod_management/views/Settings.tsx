@@ -110,6 +110,7 @@ interface IConnectedProps {
   instanceId: string;
   installPathMode: InstallPathMode;
   suggestInstallPathDirectory: string;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -285,7 +286,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </Panel.Body>
         </Panel>,
       );
-    } else {
+    } else if (!this.props.useModernLayout) {
       panels.push(
         <EmptyPlaceholder
           icon="settings"
@@ -1254,6 +1255,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     installPathMode: state.settings.mods.installPathMode,
     suggestInstallPathDirectory:
       state.settings.mods.suggestInstallPathDirectory,
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

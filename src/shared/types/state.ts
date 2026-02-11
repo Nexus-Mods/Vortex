@@ -77,6 +77,7 @@ export interface IWindow {
   tabsMinimized: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
+  useModernLayout: boolean;
 }
 
 export const currentStatePath = "state.v2";

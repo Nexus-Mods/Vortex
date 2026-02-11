@@ -12,18 +12,28 @@ export type XOr<T, U> = T | U extends object
       | (U & Partial<Record<keyof T, never>>)
   : T | U;
 
+type ClassItem = string | string[] | Record<string, boolean | undefined>;
+
 /**
  * Joins class names, filtering out falsy values
  * Supports conditional classes via object syntax
+ *
+ * @example
+ * joinClasses("foo", { bar: true }) // "foo bar"
+ * joinClasses(["foo", "bar"], { baz: true }) // "foo bar baz"
+ * joinClasses(["foo", { bar: true }]) // "foo bar"
  */
 export function joinClasses(
-  classes: (string | string[] | Record<string, boolean | undefined>)[],
+  classes: ClassItem | ClassItem[],
   conditionalClasses?: Record<string, boolean | undefined>,
 ): string {
   const classArray: string[] = [];
 
+  // Normalize to array - wrap non-array inputs
+  const classItems: ClassItem[] = Array.isArray(classes) ? classes : [classes];
+
   // Process main classes
-  classes.forEach((item) => {
+  classItems.forEach((item) => {
     if (typeof item === "string") {
       classArray.push(item);
     } else if (Array.isArray(item)) {

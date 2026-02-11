@@ -1,16 +1,11 @@
-import * as React from "react";
+import React, { type FC, type HTMLAttributes } from "react";
 
-class MainPageBody extends React.Component<
-  React.HTMLAttributes<HTMLDivElement>,
-  {}
-> {
-  public render(): JSX.Element {
-    return (
-      <div className="main-page-body" {...(this.props as any)}>
-        {this.props.children}
-      </div>
-    );
-  }
-}
+export const MainPageBody: FC<HTMLAttributes<HTMLDivElement>> = (props) => {
+  return (
+    <div className="main-page-body" {...props}>
+      {props.children}
+    </div>
+  );
+};
 
 export default MainPageBody;

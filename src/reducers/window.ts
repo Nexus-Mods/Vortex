@@ -19,6 +19,8 @@ export const windowReducer: IReducerSpec = {
       setSafe(state, ["tabsMinimized"], payload),
     [actions.setCustomTitlebar as any]: (state, payload) =>
       setSafe(state, ["customTitlebar"], payload),
+    [actions.setUseModernLayout as any]: (state, payload) =>
+      setSafe(state, ["useModernLayout"], payload),
   },
   defaults: {
     maximized: false,
@@ -27,5 +29,6 @@ export const windowReducer: IReducerSpec = {
     size: {},
     tabsMinimized: false,
     customTitlebar: true,
+    useModernLayout: false,
   },
 };

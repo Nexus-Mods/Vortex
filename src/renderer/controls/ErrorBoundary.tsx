@@ -23,12 +23,14 @@ export const ErrorContext = React.createContext<IErrorContext>({
   safeCB: (cb) => cb,
 });
 
-export interface IErrorBoundaryProps extends WithTranslation {
+export interface IBaseProps {
   visible?: boolean;
   onHide?: () => void;
   className?: string;
   canDisplayError?: boolean;
 }
+
+export interface IErrorBoundaryProps extends IBaseProps, WithTranslation {}
 
 interface IErrorBoundaryState {
   error: Error;

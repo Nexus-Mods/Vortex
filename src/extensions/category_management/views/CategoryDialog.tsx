@@ -4,7 +4,6 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import DNDContainer from "../../../renderer/views/DNDContainer";
 
 import { showCategoriesDialog } from "../actions/session";
 

@@ -18,6 +18,7 @@ function init(context: IExtensionContext): boolean {
   // Using 'details' icon (same as Knowledge Base) for development content
   context.registerMainPage("details", "Tailwind", TailwindPage, {
     group: "global",
+    isClassicOnly: true,
   });
 
   return true;

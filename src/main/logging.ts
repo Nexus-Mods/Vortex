@@ -32,8 +32,8 @@ function customFormatter(options: FormatOptions, forConsole: boolean): string {
     : formattedLogLevel;
 
   const message = options.message ?? "";
-  const meta = options.meta.extra ?? "";
-  const process = options.meta.process.toUpperCase();
+  const meta = options.meta?.extra ?? "";
+  const process = options.meta?.process?.toUpperCase() ?? "UNKNOWN";
 
   return `${timestamp} [${logLevel}] [${process}] ${message} ${meta}`;
 }

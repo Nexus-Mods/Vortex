@@ -1,0 +1,38 @@
+import {
+  mdiCog,
+  mdiCommentTextOutline,
+  mdiDownload,
+  mdiEye,
+  mdiGamepadSquare,
+  mdiHelpCircle,
+  mdiInformationOutline,
+  mdiMenu,
+  mdiPuzzle,
+  mdiShapeOutline,
+  mdiTune,
+  mdiViewDashboard,
+  mdiWeb,
+} from "@mdi/js";
+
+// Map legacy icon names to MDI paths
+const iconMap: Record<string, string> = {
+  dashboard: mdiViewDashboard,
+  mods: mdiPuzzle,
+  settings: mdiCog,
+  download: mdiDownload,
+  game: mdiGamepadSquare,
+  support: mdiHelpCircle,
+  about: mdiInformationOutline,
+  menu: mdiMenu,
+  show: mdiEye,
+  feedback: mdiCommentTextOutline,
+  nexus: mdiWeb,
+  tune: mdiTune,
+};
+
+export const getIconPath = (
+  iconName: string,
+  fallbackIcon: string = mdiShapeOutline,
+): string => {
+  return iconMap[iconName] ?? fallbackIcon;
+};

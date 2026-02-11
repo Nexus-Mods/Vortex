@@ -349,7 +349,8 @@ export default function init(context: IExtensionContext) {
     }
     context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder));
   };
-  context.registerMainPage("sort-none", "Load Order", FileBasedLoadOrderPage, {
+  context.registerMainPage("sort-none", "Load order", FileBasedLoadOrderPage, {
+    priority: 120,
     id: "file-based-loadorder",
     hotkey: "E",
     group: "per-game",
@@ -362,7 +363,6 @@ export default function init(context: IExtensionContext) {
         ? gameEntry.condition()
         : gameEntry !== undefined;
     },
-    priority: 120,
     props: () => {
       return {
         getGameEntry: findGameEntry,

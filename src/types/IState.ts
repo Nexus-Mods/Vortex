@@ -20,6 +20,7 @@ import type { VortexInstallType } from "./VortexInstallType";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
+
 import type { IDimensions, IPosition, IWindow } from "../shared/types/state";
 export type { IDimensions, IPosition, IWindow };
 
@@ -62,6 +63,19 @@ export interface IUIBlocker {
   mayCancel: boolean;
 }
 
+export interface IProgressWithProfile {
+  profile?: IProgressProfile;
+}
+
+export interface IProgressProfile {
+  deploying?: IProgressProfileDeploying;
+}
+
+export interface IProgressProfileDeploying {
+  percent: number;
+  text: string;
+}
+
 /**
  * "ephemeral" session state.
  * This state is generated at startup and forgotten at application exit
@@ -76,7 +90,9 @@ export interface ISession {
   mainPage: string;
   secondaryPage: string;
   activity: { [id: string]: string };
-  progress: { [group: string]: { [id: string]: IProgress } };
+  progress: {
+    [group: string]: { [id: string]: IProgress };
+  } & IProgressWithProfile;
   settingsPage: string;
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   toolsRunning: { [exeId: string]: IRunningTool };
@@ -155,6 +171,11 @@ export interface ISettingsInterface {
   foregroundDL: boolean;
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
+  tools?: {
+    addToolsToTitleBar: boolean;
+    order?: { [gameId: string]: string[] };
+  };
+  primaryTool?: { [gameId: string]: string };
 }
 
 export interface ISettingsAutomation {

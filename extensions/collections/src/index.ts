@@ -842,6 +842,7 @@ function register(
   };
 
   context.registerMainPage("collection", "Collections", CollectionsMainPage, {
+    priority: 60,
     hotkey: "C",
     group: "per-game",
     visible: () =>
@@ -859,7 +860,6 @@ function register(
       pathTool,
     }),
     onReset: () => resetPageCB?.(),
-    priority: 90,
   });
 
   context.registerModType(

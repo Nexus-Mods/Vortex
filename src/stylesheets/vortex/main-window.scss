@@ -325,6 +325,7 @@
 
 .mainpage-header-container {
     background-color: $brand-clickable;
+
     > div {
         width: 100%;
         height: 100%;
@@ -355,7 +356,8 @@
     display: flex;
     flex-direction: column;
 
-    &.current {
+    &.current,
+    &.page-active {
         opacity: 1;
         z-index: 1000;
         transition-delay: 0s;
