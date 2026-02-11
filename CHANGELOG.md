@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.16.2] - 2026-02-xx
+## [1.16.2] - 2026-02-12
 
 - Fixed race condition when attempting to generate file UIDs ([#19602](https://github.com/Nexus-Mods/Vortex/issues/19602) and several others)
 - Added handling for transient EBUSY errors when starting loot ([#19609](https://github.com/Nexus-Mods/Vortex/issues/19609))
@@ -14,6 +14,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
 - Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
 - Fixed broken icons on Browse Collections page
+- Reduced complexity of collection workshop query ([#19757](https://github.com/Nexus-Mods/Vortex/issues/19757) and several others)
 
 ## [1.16.1] - 2026-02-10
 
