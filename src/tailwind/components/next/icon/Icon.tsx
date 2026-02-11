@@ -1,4 +1,5 @@
 import React, { type SVGAttributes } from "react";
+
 import { joinClasses } from "../utils";
 
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
@@ -25,9 +26,9 @@ export const Icon = ({
   title?: string;
 }) => (
   <svg
-    viewBox="0 0 24 24"
     className={joinClasses([sizeMap[size], className])}
     role={title ? "img" : "presentation"}
+    viewBox="0 0 24 24"
     {...props}
   >
     {title && <title>{title}</title>}

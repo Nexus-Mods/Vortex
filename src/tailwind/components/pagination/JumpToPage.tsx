@@ -1,79 +1,66 @@
 "use client";
 
-import { useMemo } from "react";
-// import { useForm } from 'react-hook-form';
+import React, { useState, type FormEvent } from "react";
 
 import type { PaginationProps } from "./Pagination";
 
 import { Button } from "../next/button";
 import { Input } from "../next/form";
-import { Typography } from "../next/typography";
 
 export const JumpToPage = ({
   currentPage,
-  onPaginationUpdate = () => undefined,
+  onPaginationUpdate,
   recordsPerPage,
-  totalRecords = 0,
+  totalPages,
 }: Pick<
   PaginationProps,
-  "currentPage" | "onPaginationUpdate" | "recordsPerPage" | "totalRecords"
->) => {
-  const totalPages = useMemo(
-    () => Math.ceil(totalRecords / recordsPerPage),
-    [totalRecords, recordsPerPage],
-  );
+  "currentPage" | "onPaginationUpdate" | "recordsPerPage"
+> & { totalPages: number }) => {
+  const [page, setPage] = useState(currentPage);
+  const [prevCurrentPage, setPrevCurrentPage] = useState(currentPage);
 
-  // const {
-  //   formState: { errors, isValid },
-  //   handleSubmit,
-  //   register,
-  //   reset,
-  // } = useForm<{ page: number }>({
-  //   mode: 'onChange',
-  //   values: {
-  //     page: currentPage,
-  //   },
-  // });
+  if (currentPage !== prevCurrentPage) {
+    setPrevCurrentPage(currentPage);
+    setPage(currentPage);
+  }
 
-  const handlePageChange = ({ page }: { page: number }) => {
-    // if (isValid) {
-    //   window.scrollTo(0, 0);
-    //   onPaginationUpdate(+page, recordsPerPage);
-    //   reset();
-    // }
+  const isValid = Number.isInteger(page) && page >= 1 && page <= totalPages;
+
+  const handleSubmit = (event: FormEvent) => {
+    if (isValid) {
+      onPaginationUpdate(page, recordsPerPage);
+    }
+
+    event.preventDefault();
   };
 
   return (
-    <form
-      className="flex items-center gap-2"
-      // onSubmit={handleSubmit(handlePageChange)}
-    >
-      <Typography>Page</Typography>
+    <form className="nxm-pagination-page" onSubmit={handleSubmit}>
+      <div className="nxm-pagination-page-label">Page</div>
 
       <Input
         aria-label="Jump to page"
-        className="w-20!"
-        // errorMessage={errors.page?.message}
+        className="nxm-pagination-page-input"
+        errorMessage={
+          !isValid ? `Enter a page between 1 and ${totalPages}` : undefined
+        }
         fieldClassName="w-auto!"
         hideLabel={true}
         max={totalPages}
         min={1}
         pattern="[0-9]*"
+        size="sm"
         type="number"
-        //{...register('page', {
-        //  max: totalPages,
-        //  min: 1,
-        //  pattern: /^[0-9]*$/,
-        //  required: true,
-        //})}
+        value={page}
+        onChange={(e) => setPage(e.target.valueAsNumber)}
       />
 
       <Button
-        // aria-disabled={!isValid}
+        aria-disabled={!isValid}
         as="button"
         buttonType="secondary"
-        className="min-w-6"
         filled="weak"
+        size="sm"
         type="submit"
       >
         Go
