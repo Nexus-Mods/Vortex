@@ -121,14 +121,10 @@ function RemoteTile(props: IRemoteTileProps) {
                 },
               })}
             </div>
-<<<<<<< HEAD
-            <div><Icon name='mods' />{revision.modFiles.length}</div>
-=======
             <div>
               <Icon name="mods" />
               {revision.modCount ?? revision.modFiles?.length ?? 0}
             </div>
->>>>>>> f777e69db (significant reduction in complexity for workshop collection query)
           </div>
         </div>
         <HoverMenu
