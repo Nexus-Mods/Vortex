@@ -10,7 +10,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Added handling for transient EBUSY errors when starting loot ([#19609](https://github.com/Nexus-Mods/Vortex/issues/19609))
 - User cancelled error suppression ([#19619](https://github.com/Nexus-Mods/Vortex/issues/19619)) (fixes #19619)
 - Fixed linking issues on mod extraction/install ([#196101](https://github.com/Nexus-Mods/Vortex/issues/19610), [#19626](https://github.com/Nexus-Mods/Vortex/issues/19626), [#19700](https://github.com/Nexus-Mods/Vortex/issues/19700) and several others)
-- Suppress error report for FOMOD-IPC timeout errors ([#19641](https://github.com/Nexus-Mods/Vortex/issues/19641))
+- Suppress error report for user derived FOMOD-IPC timeout errors ([#19641](https://github.com/Nexus-Mods/Vortex/issues/19641))
 - Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
 - Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
 
