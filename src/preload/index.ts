@@ -41,6 +41,12 @@ try {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },
 
+    shell: {
+      openUrl: (url) => betterIpcRenderer.send("shell:openUrl", url),
+      openFile: (filePath) =>
+        betterIpcRenderer.send("shell:openFile", filePath),
+    },
+
     persist: {
       sendDiff: (hive, operations) =>
         betterIpcRenderer.send("persist:diff", hive, operations),

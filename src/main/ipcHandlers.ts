@@ -24,6 +24,7 @@ import {
   powerSaveBlocker,
 } from "electron";
 import * as path from "path";
+import { file } from "tmp";
 
 import type { SerializableMenuItem } from "../shared/types/preload";
 import type { AppPath } from "../util/getVortexPath";
@@ -33,6 +34,7 @@ import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { relaunch } from "./cli";
 import { betterIpcMain } from "./ipc";
+import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
 
 // Type-safe interface for global Redux state accessors
@@ -160,6 +162,15 @@ export function init() {
       app.exit(exitCode);
     },
   );
+
+  // Shell
+  betterIpcMain.on("shell:openUrl", (_event, url) => {
+    openUrl(new URL(url));
+  });
+
+  betterIpcMain.on("shell:openFile", (_event, filePath) => {
+    openFile(filePath);
+  });
 
   // ============================================================================
   // App info handlers

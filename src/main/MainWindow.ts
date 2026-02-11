@@ -8,10 +8,10 @@ import type TrayIcon from "./TrayIcon";
 import { getErrorMessageOrDefault } from "../shared/errors";
 import Debouncer from "../util/Debouncer";
 import { terminate } from "../util/errorHandling";
-import opn from "../util/opn";
 import { parseBool } from "../util/util";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
+import { openUrl } from "./open";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -246,13 +246,13 @@ class MainWindow {
         return { action: "deny" };
       }
       // Open in external browser (for links with target="_blank")
-      opn(details.url).catch(() => null);
+      openUrl(new URL(details.url));
       return { action: "deny" };
     });
 
     this.mWindow.webContents.on("will-navigate", (event, url) => {
       log("debug", "navigating to page", url);
-      opn(url).catch(() => null);
+      openUrl(new URL(url));
       event.preventDefault();
     });
 

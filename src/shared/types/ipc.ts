@@ -98,8 +98,14 @@ export interface RendererChannels {
   "example:renderer_foo": () => void;
   "example:renderer_bar": (data: number) => void;
 
-  // Relaunches the application with the given arguments
+  /** Relaunches the application with the given arguments */
   "app:relaunch": (args?: string[]) => void;
+
+  /** Opens the URL using the default application registered for the protocol */
+  "shell:openUrl": (url: string) => void;
+
+  /** Opens the file using the default application for the file extension */
+  "shell:openFile": (filePath: string) => void;
 
   // Persistence: Send diff operations to main for persistence
   "persist:diff": (hive: PersistedHive, operations: DiffOperation[]) => void;
