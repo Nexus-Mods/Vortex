@@ -317,7 +317,7 @@ class MainWindow {
         log(
           "warn",
           "The Vortex window was found to be mostly offscreen. " +
-          "Moving to a sensible location.",
+            "Moving to a sensible location.",
           { bounds },
         );
         this.mWindow.setPosition(pBounds.x, pBounds.y);
