@@ -58,6 +58,9 @@ export interface Api {
   /** App APIs */
   app: App;
 
+  /** Shell APIs */
+  shell: Shell;
+
   /** BrowserView APIs */
   browserView: BrowserView;
 
@@ -86,6 +89,14 @@ export interface Api {
 export interface Example {
   /** pong */
   ping(): Promise<string>;
+}
+
+export interface Shell {
+  /** Opens the URL using the default application registered for the protocol */
+  openUrl(url: string): void;
+
+  /** Opens the file using the default application for the file extension */
+  openFile(filePath: string): void;
 }
 
 export interface Dialog {

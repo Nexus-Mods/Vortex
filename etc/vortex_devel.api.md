@@ -4355,8 +4355,8 @@ function objDiff(lhs: any, rhs: any, skip?: string[]): Record<string, any>;
 // @public
 function onceCB<T extends Function>(func: T): T;
 
-// @public (undocumented)
-function open_2(target: string, wait?: boolean): Promise_2<void>;
+// @public @deprecated (undocumented)
+function open_2(target: string, _wait?: boolean): Promise_2<void>;
 
 // @public (undocumented)
 const openAsync: (path: string, flags: string | number, mode?: number) => Promise_2<number>;
