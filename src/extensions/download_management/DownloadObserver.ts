@@ -582,7 +582,19 @@ export class DownloadObserver {
       }
     };
 
-    if (res.unfinishedChunks.length > 0) {
+    if (res.hadErrors) {
+      this.mApi.store.dispatch(
+        finishDownload(id, "failed", {
+          message: "Download completed with chunk errors",
+        }),
+      );
+      this.mApi.events.emit("did-finish-download", id, "failed");
+      callback?.(
+        new ProcessCanceled("Download completed with chunk errors"),
+        id,
+      );
+      return onceFinished();
+    } else if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
       callback?.(null, id);
       return onceFinished();
