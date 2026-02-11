@@ -3598,32 +3598,38 @@ class InstallManager {
     const attemptExtract = (
       retriesLeft: number,
     ): Bluebird<{ code: number; errors: string[] }> => {
-      return zip
-        .extractFull(
-          archivePath,
-          tempPath,
-          { ssc: false },
-          progress,
-          queryPassword as any,
-        )
-        .catch((err: Error) => {
-          if (this.isFileInUse(err.message) && retriesLeft > 0) {
-            log("info", "archive file in use, retrying extraction", {
-              archivePath: path.basename(archivePath),
-              retriesLeft,
-              retryDelayMs,
-            });
-            return delay(retryDelayMs).then(() =>
-              attemptExtract(retriesLeft - 1),
-            );
-          }
-          if (this.isCritical(err.message)) {
-            return Bluebird.reject(
-              new ArchiveBrokenError(path.basename(archivePath), err.message),
-            );
-          }
-          return Bluebird.reject(err);
-        });
+      // clean up any stale temp directory from a previous failed attempt
+      return fs.removeAsync(tempPath).then(() =>
+        zip
+          .extractFull(
+            archivePath,
+            tempPath,
+            { ssc: false },
+            progress,
+            queryPassword as any,
+          )
+          .catch((err) => {
+            if (this.isFileInUse(err.message) && retriesLeft > 0) {
+              log("info", "archive file in use, retrying extraction", {
+                archivePath: path.basename(archivePath),
+                retriesLeft,
+                retryDelayMs,
+              });
+              return delay(retryDelayMs).then(() =>
+                attemptExtract(retriesLeft - 1),
+              );
+            }
+            if (this.isCritical(err.message)) {
+              return Bluebird.reject(
+                new ArchiveBrokenError(
+                  path.basename(archivePath),
+                  err.message,
+                ),
+              );
+            }
+            return Bluebird.reject(err);
+          }),
+      );
     };
     return attemptExtract(maxRetries);
   }
@@ -3710,9 +3716,6 @@ class InstallManager {
             }
           }),
         );
-      })
-      .finally(() => {
-        // process.noAsar = false;
       })
       .then(async () => {
         const hasFomodSegment = (file: string) => {
@@ -4487,16 +4490,13 @@ class InstallManager {
         const errorMessages = instructionGroups.error.map((err) => err.source);
         const errorSummary = errorMessages.join("; ");
         return Bluebird.reject(
-          new ProcessCanceled(
-            `Installer script failed: ${errorSummary}`,
-            {
-              modId,
-              errors: instructionGroups.error.map((err) => ({
-                severity: err.value,
-                message: err.source,
-              })),
-            },
-          ),
+          new ProcessCanceled(`Installer script failed: ${errorSummary}`, {
+            modId,
+            errors: instructionGroups.error.map((err) => ({
+              severity: err.value,
+              message: err.source,
+            })),
+          }),
         );
       }
     }
@@ -7481,11 +7481,14 @@ class InstallManager {
               missingFiles.add(job.src);
               return;
             }
-            if (
-              err?.code &&
-              ["EXDEV", "EPERM", "EACCES", "ENOTSUP", "EEXIST"].includes(
-                err.code,
-              )
+            if (["EISDIR", "EEXIST"].includes(err.code)) {
+              // destination exists (stale from a previous
+              // failed install?) - remove it and fall back to copy
+              await fs.removeAsync(job.dst);
+              await copyAsyncWrap(job.src, job.dst);
+            } else if (
+              err.code &&
+              ["EXDEV", "EPERM", "EACCES", "ENOTSUP"].includes(err.code)
             ) {
               await copyAsyncWrap(job.src, job.dst);
             } else {
