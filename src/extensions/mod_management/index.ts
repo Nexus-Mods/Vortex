@@ -1809,7 +1809,7 @@ function once(api: IExtensionApi) {
           : typeof optionsIn === "boolean"
             ? { allowAutoEnable: optionsIn }
             : optionsIn;
-      onStartInstallDownload(
+      void onStartInstallDownload(
         api,
         installManager,
         downloadId,

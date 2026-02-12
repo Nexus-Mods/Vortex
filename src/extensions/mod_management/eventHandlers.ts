@@ -1103,6 +1103,11 @@ export async function onStartInstallDownload(
         downloadGames[0]
       : downloadGames[0];
 
+  const activeGameIdValue = activeGameId(state);
+  const forcedGameId = downloadGames.includes(activeGameIdValue)
+    ? activeGameIdValue
+    : convertedGameId;
+
   if (!truthy(download.localPath)) {
     api.events.emit("refresh-downloads", convertedGameId, () => {
       api.showErrorNotification(
@@ -1162,7 +1167,7 @@ export async function onStartInstallDownload(
     true,
     enable && allowAutoDeploy,
     callback,
-    convertedGameId,
+    forcedGameId,
     options.fileList,
     options.unattended,
     options.forceInstaller,
