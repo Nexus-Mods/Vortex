@@ -11,9 +11,14 @@ export default class Debouncer extends GenericDebouncer<
     reset?: boolean,
     triggerImmediately: boolean = false,
   ) {
+    const boundSetTimeout = setTimeout.bind(globalThis);
+    const boundClearTimeout = clearTimeout.bind(
+      globalThis,
+    );
+
     super(
-      setTimeout,
-      clearTimeout,
+      boundSetTimeout,
+      boundClearTimeout,
       func,
       debounceMS,
       reset,
