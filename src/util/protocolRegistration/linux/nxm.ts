@@ -146,6 +146,7 @@ function generateWrapperScript(
     "GDK_PIXBUF_MODULE_FILE",
     "CHROME_DEVEL_SANDBOX",
     "ELECTRON_OVERRIDE_DIST_PATH",
+    "NODE_ENV",
   ];
 
   const electronEnvExports = electronEnvVars
@@ -232,7 +233,7 @@ function ensureDevDesktopEntry(
     "GenericName=Mod Manager\n" +
     "Comment=Mod manager for PC games from Nexus Mods\n" +
     "NoDisplay=true\n" +
-    `Exec=${escapedWrapperPathExec} --download "%u"\n` +
+    `Exec=${escapedWrapperPathExec} --download %u\n` +
     `TryExec=${escapedWrapperPathTryExec}\n` +
     "Icon=com.nexusmods.vortex\n" +
     "Terminal=false\n" +
