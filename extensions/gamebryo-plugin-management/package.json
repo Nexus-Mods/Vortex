@@ -51,7 +51,7 @@
     "redux-act": "^1.8.0",
     "redux-thunk": "^2.4.2",
     "ts-loader": "^9.5.1",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "Nexus-Mods/vortex-api#v1.16-col-tracking",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
   }
