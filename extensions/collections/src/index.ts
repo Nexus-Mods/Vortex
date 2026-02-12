@@ -1365,7 +1365,6 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
             );
           }
         }
-      }
     });
   });
 
