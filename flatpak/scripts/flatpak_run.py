@@ -57,9 +57,10 @@ def main() -> None:
     if not manifest.is_absolute():
         manifest = root / manifest
 
-    cmd = ["flatpak-builder", "--run", str(build_dir), str(manifest), args.command]
+    cmd = ["flatpak-builder", "--run"]
     if args.log:
-        cmd.extend(["--env=VORTEX_ENABLE_LOGGING=1"])
+        cmd.append("--env=VORTEX_ENABLE_LOGGING=1")
+    cmd.extend([str(build_dir), str(manifest), args.command])
     if args.command_args:
         cmd.extend(args.command_args)
 
