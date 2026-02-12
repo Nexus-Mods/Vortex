@@ -251,3 +251,23 @@ export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
     totalCount: true,
   },
 };
+
+export const MY_COLLECTIONS_SEARCH_QUERY: ICollectionQuery = {
+  revisions: {
+    id: true,
+    revisionNumber: true,
+    createdAt: true,
+    updatedAt: true,
+    rating: {
+      average: true,
+    },
+    modCount: true,
+    collection: {
+      slug: true,
+      name: true,
+      tileImage: { url: true },
+      user: { name: true },
+      game: { domainName: true },
+    },
+  },
+};
