@@ -116,6 +116,56 @@ function escapeShellScriptArgument(input: string): string {
   return input.replace(/(["\\$`])/g, "\\$1");
 }
 
+/**
+ * Generate the wrapper script content for executing Vortex.
+ *
+ * Note(sewer): xdg-utils has issues with the 'generic' fallback for `.desktop` files
+ *              which will be used in non-mainstream DEs like Hyprland, Sway, i3, etc.
+ *              We'll use a hack to work around this.
+ * ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/OS/LinuxInterop.Protocol.cs#L76-L83
+ * ref: https://gitlab.freedesktop.org/xdg/xdg-utils/-/issues/279
+ * ref: https://github.com/Nexus-Mods/NexusMods.App/issues/3293
+ *
+ * So, here we're creating a wrapper script that will be used to execute the App.
+ *
+ * Wrapper script content must be escaped for POSIX shell, not desktop-entry parsing.
+ * The desktop-entry escaping rules are applied separately to Exec/TryExec fields.
+ * Vortex adds `appPath` because Electron launches as: <electron> <appPath> ...
+ */
+function generateWrapperScript(
+  executablePath: string,
+  appPath: string,
+): string {
+  // Persist GTK/Electron environment variables used to run Vortex.
+  // This is needed for Nix, such that you can launch the desktop entry outside
+  // of the Nix devShell during development. For other environments, this will
+  // typically be unset and be a no-op.
+  const electronEnvVars = [
+    "XDG_DATA_DIRS",
+    "GIO_EXTRA_MODULES",
+    "GDK_PIXBUF_MODULE_FILE",
+    "CHROME_DEVEL_SANDBOX",
+    "ELECTRON_OVERRIDE_DIST_PATH",
+  ];
+
+  const electronEnvExports = electronEnvVars
+    .map((varName) => {
+      const value = process.env[varName];
+      if (value) {
+        return `export ${varName}="${escapeShellScriptArgument(value)}"`;
+      }
+      return null;
+    })
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  return (
+    "#!/bin/sh\n" +
+    (electronEnvExports ? electronEnvExports + "\n" : "") +
+    `exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" "$@"\n`
+  );
+}
+
 function writeFileIfChanged(
   filePath: string,
   content: string,
@@ -167,23 +217,8 @@ function ensureDevDesktopEntry(
 
   const escapedWrapperPathExec = escapeDesktopExecFilePath(wrapperPath);
   const escapedWrapperPathTryExec = escapeDesktopFilePath(wrapperPath);
-  // Note(sewer): xdg-utils has issues with the 'generic' fallback for `.desktop` files
-  //              which will be used in non-mainstream DEs like Hyprland, Sway, i3, etc.
-  //              We'll use a hack to work around this.
-  // ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/OS/LinuxInterop.Protocol.cs#L76-L83
-  // ref: https://gitlab.freedesktop.org/xdg/xdg-utils/-/issues/279
-  // ref: https://github.com/Nexus-Mods/NexusMods.App/issues/3293
-  //
-  // So, here we're creating a wrapper script that will be used to execute the App.
-  //
-  // Wrapper script content must be escaped for POSIX shell, not desktop-entry parsing.
-  // The desktop-entry escaping rules are applied separately to Exec/TryExec fields.
-  // Vortex adds `appPath` because Electron launches as: <electron> <appPath> ...
 
-  const wrapperContent =
-    "#!/bin/sh\n" +
-    `exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" "$@"\n`;
-
+  const wrapperContent = generateWrapperScript(executablePath, appPath);
   const wrapperChanged = writeFileIfChanged(wrapperPath, wrapperContent, 0o755);
 
   // Keep Linux launch arguments consistent with other Vortex desktop entries
@@ -197,7 +232,7 @@ function ensureDevDesktopEntry(
     "GenericName=Mod Manager\n" +
     "Comment=Mod manager for PC games from Nexus Mods\n" +
     "NoDisplay=true\n" +
-    `Exec=${escapedWrapperPathExec} --download %u\n` +
+    `Exec=${escapedWrapperPathExec} --download "%u"\n` +
     `TryExec=${escapedWrapperPathTryExec}\n` +
     "Icon=com.nexusmods.vortex\n" +
     "Terminal=false\n" +
