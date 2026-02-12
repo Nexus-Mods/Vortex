@@ -21,7 +21,7 @@ import userlistEditReducer from "./reducers/userlistEdit";
 import { ILoadOrder } from "./types/ILoadOrder";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
 import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
-import { IStateEx } from "./types/IStateEx";
+import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
   gameSupported,
@@ -926,7 +926,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
 
 function testMissingGroupsImpl(
   t: TranslationFunction,
-  store: Redux.Store<IStateEx>,
+  store: Redux.Store<IStateWithGamebryo>,
 ): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -1004,7 +1004,7 @@ function testMissingGroupsImpl(
 
 function testMissingGroups(
   t: TranslationFunction,
-  store: Redux.Store<IStateEx>,
+  store: Redux.Store<IStateWithGamebryo>,
   tries: number = 10,
 ): Promise<types.ITestResult> {
   return Promise.delay(100 * (10 - tries)).then(() => {
@@ -1019,7 +1019,7 @@ function testMissingGroups(
 
 function testUserlistInvalid(
   t: TranslationFunction,
-  state: IStateEx,
+  state: IStateWithGamebryo,
 ): Promise<types.ITestResult> {
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -1666,7 +1666,7 @@ function sanitizeForIPC(obj: any) {
 
 function init(context: IExtensionContextExt) {
   const setPluginLight = (id: string, enable: boolean) => {
-    const state: IStateEx = context.api.getState();
+    const state: IStateWithGamebryo = context.api.getState();
     const profile = selectors.activeProfile(state);
     const plugin: IPlugin = state.session.plugins.pluginList[id];
     if (plugin === undefined) {
