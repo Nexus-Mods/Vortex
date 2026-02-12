@@ -14,7 +14,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 - Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
 - Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
 - Fixed broken icons on Browse Collections page
-- Fixed nested revision queries on collection install ([#19757](https://github.com/Nexus-Mods/Vortex/issues/19757) and several others)
+- Fixed nested revision queries on collection install and workshop startup ([#19757](https://github.com/Nexus-Mods/Vortex/issues/19757) and several others)
 - Added error handling for fatal extraction errors
 
 ## [1.16.1] - 2026-02-10
