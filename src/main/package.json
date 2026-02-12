@@ -15,6 +15,7 @@
     "prepare:win": "mkdir build && curl -L \"https://aka.ms/vs/17/release/vc_redist.x64.exe\" -o \"./build/VC_redist.x64.exe\" && curl -L \"https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe\" -o \"./build/windowsdesktop-runtime-win-x64.exe\""
   },
   "dependencies": {
+    "@duckdb/node-api": "catalog:",
     "@electron/remote": "catalog:",
     "@headlessui/react": "catalog:",
     "@mdi/js": "catalog:",
