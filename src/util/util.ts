@@ -1,3 +1,16 @@
+import type * as Redux from "redux";
+
+import Bluebird from "bluebird";
+import { spawn } from "child_process";
+import { dequal } from "dequal";
+import * as _ from "lodash";
+import * as path from "path";
+import { batch } from "redux-act";
+import * as semver from "semver";
+import * as tmp from "tmp";
+
+import type { Normalize } from "./getNormalizeFunc";
+
 import {
   NEXUS_DOMAIN,
   NEXUS_FLAMEWORK_SUBDOMAIN,
@@ -5,21 +18,9 @@ import {
   NEXUS_PROTOCOL,
   NEXUS_USERS_SUBDOMAIN,
 } from "../extensions/nexus_integration/constants";
-
 import { TimeoutError } from "./CustomErrors";
-import type { Normalize } from "./getNormalizeFunc";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
-
-import Bluebird from "bluebird";
-import { spawn } from "child_process";
-import * as _ from "lodash";
-import * as path from "path";
-import type * as Redux from "redux";
-import { batch } from "redux-act";
-import * as semver from "semver";
-import * as tmp from "tmp";
-import { dequal } from "dequal";
 
 /**
  * count the elements in an array for which the predicate matches
@@ -677,19 +678,6 @@ export {
   INVALID_FILENAME_CHARACTERS,
 };
 
-// test if the running version is a major downgrade (downgrading by a major or minor version,
-// everything except a patch) compared to what was running last
-export function isMajorDowngrade(previous: string, current: string): boolean {
-  const majorL = semver.major(previous);
-  const majorR = semver.major(current);
-
-  if (majorL !== majorR) {
-    return majorL > majorR;
-  } else {
-    return semver.minor(previous) > semver.minor(current);
-  }
-}
-
 export interface IFlattenParameters {
   // maximum length of arrays. If this is not set the result object may become *huge*!
   maxLength?: number;
@@ -899,7 +887,7 @@ function calculateChunkSize(actions: Redux.Action[]): number {
   // Try to get cached chunk size for this action type
   const firstActionType = actions[0]?.type;
   if (firstActionType && chunkSizeCache.has(firstActionType)) {
-    return chunkSizeCache.get(firstActionType)!;
+    return chunkSizeCache.get(firstActionType);
   }
 
   // Sample first few actions to estimate average size
