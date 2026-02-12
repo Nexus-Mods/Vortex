@@ -1,9 +1,13 @@
-import { GenericDebouncer } from "../shared/Debouncer";
+import {
+  GenericDebouncer,
+  SetTimeoutFunc,
+  ClearTimeoutFunc,
+} from "../shared/Debouncer";
 
 export default class Debouncer extends GenericDebouncer<
   NodeJS.Timeout,
-  typeof setTimeout,
-  typeof clearTimeout
+  SetTimeoutFunc<NodeJS.Timeout>,
+  ClearTimeoutFunc<NodeJS.Timeout>
 > {
   constructor(
     func: (...args: any[]) => Error | PromiseLike<void>,
@@ -12,8 +16,8 @@ export default class Debouncer extends GenericDebouncer<
     triggerImmediately: boolean = false,
   ) {
     super(
-      setTimeout,
-      clearTimeout,
+      (callback, delay) => setTimeout(callback, delay),
+      (timeout) => clearTimeout(timeout),
       func,
       debounceMS,
       reset,
