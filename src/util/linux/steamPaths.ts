@@ -1,13 +1,13 @@
 import * as path from "path";
 import * as fs from "fs";
-import getVortexPath from "../getVortexPath";
+import * as os from "os";
 
 /**
  * Default Steam installation paths for Linux systems
  * Ordered by likelihood (most common first)
  */
 export function getLinuxSteamPaths(): string[] {
-  const home = getVortexPath("home");
+  const home = os.homedir();
   return [
     path.join(home, ".local", "share", "Steam"), // XDG standard (native)
     path.join(home, ".steam", "debian-installation"), // Debian/Ubuntu symlink

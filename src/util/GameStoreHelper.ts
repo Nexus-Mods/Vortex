@@ -170,16 +170,14 @@ class GameStoreHelper {
               });
             }
           }
-          if (
-            result &&
-            result.gameStoreId !== undefined &&
-            result.priority !== undefined
-          ) {
+          if (result !== undefined) {
             result.priority =
               storeQuery.prefer ??
-              this.mStoresDict[result.gameStoreId]?.priority ??
+              (result.gameStoreId !== undefined
+                ? this.mStoresDict[result.gameStoreId]?.priority
+                : undefined) ??
               defaultPriority;
-            result.priority! += prioOffset++ / 1000;
+            result.priority += prioOffset++ / 1000;
             results.push(result);
           }
         }
