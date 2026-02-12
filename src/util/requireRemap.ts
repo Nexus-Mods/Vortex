@@ -1,8 +1,11 @@
-// tslint:disable-next-line:no-var-requires
-const Module = require("module");
+import Module from "module";
+import path from "node:path";
 
-import * as path from "path";
 import * as electron from "./electron";
+
+interface InternalModule extends Module {
+  _load(request: string, parent?: Module | null, isMain?: boolean): unknown;
+}
 
 // when spawning a binary, the code doing the spawning will be baked by webpack
 // in release builds and thus reside in the app.asar file.
@@ -13,7 +16,7 @@ class ChildProcessProxy {
     if (key === "__isProxied") {
       return true;
     } else if (key === "spawn") {
-      return (command: string, ...args) => {
+      return (command: string, ...args: readonly unknown[]) => {
         const appAsar = `${path.sep}app.asar${path.sep}`;
         command = command.replace(
           appAsar,
@@ -37,9 +40,8 @@ Module.prototype.require = function (modulePath) {
   return originalRequire.apply(this, arguments);
 };
 
-function patchedLoad(orig) {
-  // tslint:disable-next-line:only-arrow-functions
-  return function (request: string, parent, ...rest) {
+function patchedLoad(orig: InternalModule["_load"]): InternalModule["_load"] {
+  return function (request, parent, ...rest) {
     if (
       request === "fs" &&
       (parent.filename.indexOf("graceful-fs") !== -1 ||
@@ -51,6 +53,7 @@ function patchedLoad(orig) {
       if (parent.filename.indexOf("preload") !== -1) {
         return orig.apply(this, [request, parent, ...rest]);
       }
+
       return electron;
     }
 
@@ -65,9 +68,11 @@ function patchedLoad(orig) {
 }
 
 export default function () {
-  const orig = (Module as any)._load;
-  (Module as any)._load = patchedLoad(orig);
+  const castModule = Module as unknown as InternalModule;
+
+  const orig = castModule._load;
+  castModule._load = patchedLoad(orig);
   return () => {
-    (Module as any)._load = orig;
+    castModule._load = orig;
   };
 }
