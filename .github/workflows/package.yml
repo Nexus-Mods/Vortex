@@ -143,6 +143,9 @@ jobs:
       - name: Bundle Application (Webpack)
         run: yarn build_dist
 
+      - name: Test
+        run: yarn test
+
       - name: Create Signed Installer
         if: ${{ inputs.use-codesigning == true }}
         run: yarn package
