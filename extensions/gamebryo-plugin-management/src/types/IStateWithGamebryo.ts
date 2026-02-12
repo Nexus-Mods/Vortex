@@ -5,7 +5,7 @@ import { IPluginCombined, IPluginDependencies, IPlugins } from "./IPlugins";
 import { types } from "vortex-api";
 
 // No idea what we need to do with this,
-// do we keep the ex type here or move it to base?
+// do we keep the ex type here or move it somewhere?
 export interface IStateWithGamebryo extends types.IState {
   masterlist: ILOOTList;
   userlist: ILOOTList;
