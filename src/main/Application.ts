@@ -41,6 +41,7 @@ import { validateFiles } from "./fileValidation";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
+import DuckDBSingleton from "./store/DuckDBSingleton";
 import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
 import {
   initMainPersistence,
@@ -231,6 +232,7 @@ class Application {
       finalizeMainWrite()
         .then(() => {
           log("info", "clean application end");
+          DuckDBSingleton.getInstance().close();
           if (this.mTray !== undefined) {
             this.mTray.close();
           }

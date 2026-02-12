@@ -62,6 +62,7 @@
     "build": "yarn tsc --composite false -p tsconfig.shared.json && yarn run check_packages && yarn run build_rest && yarn tsc --composite false -p tsconfig.main.json && yarn tsc --composite false -p tsconfig.renderer.json",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
     "gen": "yarn ts-to-zod --all",
+    "gen:queries": "ts-node scripts/generate-query-types.ts",
     "update_aboutpage": "node ./updateLicenses.js",
     "check_packages": "node checkPackages.js",
     "test:e2e": "playwright test",

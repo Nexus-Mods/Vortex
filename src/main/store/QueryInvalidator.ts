@@ -1,0 +1,78 @@
+import { BrowserWindow } from "electron";
+
+import { log } from "../logging";
+import type QueryRegistry from "./QueryRegistry";
+
+/**
+ * Connects the write path to query invalidation notifications.
+ *
+ * When dirty tables are reported (after a transaction commit),
+ * maps them to affected queries via QueryRegistry and sends
+ * invalidation events to all renderer windows.
+ */
+class QueryInvalidator {
+  private mRegistry: QueryRegistry;
+  private mPendingTables: Set<string> = new Set();
+  private mDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private mDebounceMs: number;
+
+  constructor(registry: QueryRegistry, debounceMs: number = 16) {
+    this.mRegistry = registry;
+    this.mDebounceMs = debounceMs;
+  }
+
+  /**
+   * Notify that tables have been modified.
+   * Debounces notifications to batch rapid writes.
+   */
+  public notifyDirtyTables(
+    dirtyTables: Array<{ database: string; table: string; type: string }>,
+  ): void {
+    if (!this.mRegistry.hasQueries) {
+      return;
+    }
+
+    for (const dt of dirtyTables) {
+      // Add both qualified (db.table) and unqualified (table) names
+      this.mPendingTables.add(`${dt.database}.${dt.table}`);
+      this.mPendingTables.add(dt.table);
+    }
+
+    if (this.mDebounceTimer !== undefined) {
+      clearTimeout(this.mDebounceTimer);
+    }
+
+    this.mDebounceTimer = setTimeout(() => {
+      this.flush();
+    }, this.mDebounceMs);
+  }
+
+  private flush(): void {
+    if (this.mPendingTables.size === 0) {
+      return;
+    }
+
+    const tables = [...this.mPendingTables];
+    this.mPendingTables.clear();
+    this.mDebounceTimer = undefined;
+
+    const affectedQueries = this.mRegistry.getAffectedQueries(tables);
+    if (affectedQueries.length === 0) {
+      return;
+    }
+
+    log("debug", "query-invalidator: notifying renderer", {
+      tables,
+      queries: affectedQueries,
+    });
+
+    // Send to all renderer windows
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed() && window.webContents !== undefined) {
+        window.webContents.send("query:invalidated", affectedQueries);
+      }
+    }
+  }
+}
+
+export default QueryInvalidator;
