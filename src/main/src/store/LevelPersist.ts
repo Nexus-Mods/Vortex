@@ -1,11 +1,8 @@
 import type { IPersistor } from "@vortex/shared/state";
 
-import { DataInvalid } from "@vortex/shared/errors";
-import encode from "encoding-down";
-import leveldown from "leveldown";
-import levelup from "levelup";
-import { Writable } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import type { DuckDBConnection, DuckDBInstance } from "@duckdb/node-api";
+
+import { DataInvalid, unknownToError } from "@vortex/shared/errors";
 
 import { log } from "../logging";
 
@@ -19,27 +16,52 @@ export class DatabaseLocked extends Error {
 }
 
 function repairDB(dbPath: string): Promise<void> {
-  log("warn", "repairing database", dbPath);
-
-  return new Promise((resolve, reject) => {
-    leveldown.repair(dbPath, (err) => {
-      if (err) reject(err);
-      else resolve();
+  return new Promise<void>((resolve, reject) => {
+    log("warn", "repairing database", dbPath);
+    const leveldown: typeof import("leveldown") = require("leveldown");
+    leveldown.repair(dbPath, (err: Error) => {
+      if (err !== null) {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
   });
 }
 
-function openDB(dbPath: string): Promise<levelup.LevelUp> {
-  return new Promise((resolve, reject) => {
-    const db = levelup(
-      encode(leveldown(dbPath)),
-      { keyEncoding: "utf8", valueEncoding: "utf8" },
-      (err) => {
-        if (err) reject(err);
-        else resolve(db);
-      },
-    );
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function openDB(persistPath: string): Promise<{
+  instance: DuckDBInstance;
+  connection: DuckDBConnection;
+}> {
+  const { DuckDBInstance: DuckDBInstanceCtor } = require("@duckdb/node-api");
+  log("debug", "duckdb: creating instance");
+  const instance: DuckDBInstance = await DuckDBInstanceCtor.create(":memory:", {
+    allow_unsigned_extensions: "true",
   });
+  const connection: DuckDBConnection = await instance.connect();
+  log("debug", "duckdb: installing level_pivot");
+  await connection.run(
+    "INSTALL level_pivot FROM 'https://halgari.github.io/duckdb-level-pivot/current_release'",
+  );
+  log("debug", "duckdb: loading level_pivot");
+  await connection.run("LOAD level_pivot");
+
+  const escapedPath = persistPath.replace(/'/g, "''");
+  log("debug", "duckdb: attaching database", persistPath);
+  await connection.run(
+    `ATTACH '${escapedPath}' AS db (TYPE level_pivot, CREATE_IF_MISSING true)`,
+  );
+  log("debug", "duckdb: creating kv table");
+  await connection.run(
+    "CALL level_pivot_create_table('db', 'kv', NULL, ['key', 'value'], table_mode := 'raw')",
+  );
+
+  log("debug", "duckdb: database opened successfully");
+  return { instance, connection };
 }
 
 class LevelPersist implements IPersistor {
@@ -49,110 +71,142 @@ class LevelPersist implements IPersistor {
     repair: boolean = false,
   ): Promise<LevelPersist> {
     try {
-      if (repair) await repairDB(persistPath);
-      const db = await openDB(persistPath);
-      const res = new LevelPersist(db);
-      return res;
-    } catch (err) {
+      if (repair) {
+        await repairDB(persistPath);
+      }
+      const { instance, connection } = await openDB(persistPath);
+      return new LevelPersist(instance, connection);
+    } catch (unknownErr) {
+      const err = unknownToError(unknownErr);
+      log("warn", "duckdb: openDB failed", {
+        message: err.message,
+        triesRemaining: tries,
+        path: persistPath,
+      });
       if (err instanceof DataInvalid) {
         throw err;
       }
-
+      if (/corrupt/i.test(err.message)) {
+        throw new DataInvalid(err.message);
+      }
       if (tries === 0) {
         log("info", "failed to open db", err);
         throw new DatabaseLocked();
-      } else {
-        return await new Promise((resolve) => {
-          setTimeout(() => {
-            const res = LevelPersist.create(persistPath, tries - 1, false);
-            resolve(res);
-          }, 500);
-        });
       }
+      await delay(500);
+      return LevelPersist.create(persistPath, tries - 1, false);
     }
   }
 
-  private mDB: levelup.LevelUp;
+  private mInstance: DuckDBInstance;
+  private mConnection: DuckDBConnection;
 
-  constructor(db: levelup.LevelUp) {
-    this.mDB = db;
+  constructor(instance: DuckDBInstance, connection: DuckDBConnection) {
+    this.mInstance = instance;
+    this.mConnection = connection;
   }
 
-  public close(): Promise<void> {
-    return this.mDB.close();
-  }
+  public close = this.restackingFunc(async (): Promise<void> => {
+    this.mConnection.closeSync();
+    this.mInstance.closeSync();
+  });
 
-  public setResetCallback(_cb: () => PromiseLike<void>): void {
+  public setResetCallback(cb: () => PromiseLike<void>): void {
     return undefined;
   }
 
-  public async getItem(key: string[]): Promise<string> {
-    const value: string = await this.mDB.get(key.join(SEPARATOR));
-    return value;
-  }
-
-  public async setItem(statePath: string[], newState: string): Promise<void> {
-    await this.mDB.put(statePath.join(SEPARATOR), newState);
-  }
-
-  public async removeItem(statePath: string[]): Promise<void> {
-    await this.mDB.del(statePath.join(SEPARATOR));
-  }
+  public getItem = this.restackingFunc(
+    async (key: string[]): Promise<string> => {
+      const reader = await this.mConnection.runAndReadAll(
+        "SELECT value FROM db.kv WHERE key = $1",
+        [key.join(SEPARATOR)],
+      );
+      const rows = reader.getRows();
+      if (rows.length === 0) {
+        const err = new Error(`Key not found: ${key.join(SEPARATOR)}`);
+        err.name = "NotFoundError";
+        throw err;
+      }
+      return rows[0][0] as string;
+    },
+  );
 
   public async getAllKeys(): Promise<string[][]> {
-    const keys: string[][] = [];
-
-    const writable = new Writable({
-      objectMode: true,
-      write(chunk: string, _encoding, callback) {
-        keys.push(chunk.split(SEPARATOR));
-        callback();
-      },
-    });
-
-    await pipeline(this.mDB.createKeyStream(), writable);
-    return keys;
+    const reader = await this.mConnection.runAndReadAll(
+      "SELECT key FROM db.kv",
+    );
+    const rows = reader.getRows();
+    return rows.map((row) => (row[0] as string).split(SEPARATOR));
   }
 
+  /**
+   * Get all unique hive names that have persisted data.
+   * Extracts the first segment of each key to find all hives.
+   */
   public async getPersistedHives(): Promise<string[]> {
+    const reader = await this.mConnection.runAndReadAll(
+      "SELECT DISTINCT key FROM db.kv",
+    );
+    const rows = reader.getRows();
     const hives = new Set<string>();
-
-    const writable = new Writable({
-      objectMode: true,
-      write(data: string, _encoding, callback) {
-        const separatorIndex = data.indexOf(SEPARATOR);
-        hives.add(separatorIndex >= 0 ? data.slice(0, separatorIndex) : data);
-        callback();
-      },
-    });
-
-    await pipeline(this.mDB.createKeyStream(), writable);
+    for (const row of rows) {
+      const key = row[0] as string;
+      const separatorIndex = key.indexOf(SEPARATOR);
+      const hive = separatorIndex >= 0 ? key.slice(0, separatorIndex) : key;
+      hives.add(hive);
+    }
     return [...hives];
   }
 
   public async getAllKVs(
     prefix?: string,
   ): Promise<Array<{ key: string[]; value: string }>> {
-    const kvs: Array<{ key: string[]; value: string }> = [];
+    let reader;
+    if (prefix === undefined) {
+      reader = await this.mConnection.runAndReadAll(
+        "SELECT key, value FROM db.kv",
+      );
+    } else {
+      reader = await this.mConnection.runAndReadAll(
+        "SELECT key, value FROM db.kv WHERE key > $1 AND key < $2",
+        [`${prefix}${SEPARATOR}`, `${prefix}${SEPARATOR}zzzzzzzzzzz`],
+      );
+    }
+    const rows = reader.getRows();
+    return rows.map((row) => ({
+      key: (row[0] as string).split(SEPARATOR),
+      value: row[1] as string,
+    }));
+  }
 
-    const options =
-      prefix === undefined
-        ? undefined
-        : {
-            gt: `${prefix}${SEPARATOR}`,
-            lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
-          };
+  public setItem = this.restackingFunc(
+    async (statePath: string[], newState: string): Promise<void> => {
+      await this.mConnection.run("INSERT INTO db.kv VALUES ($1, $2)", [
+        statePath.join(SEPARATOR),
+        newState,
+      ]);
+    },
+  );
 
-    const writable = new Writable({
-      objectMode: true,
-      write(data: { key: string; value: string }, _encoding, callback) {
-        kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
-        callback();
-      },
-    });
+  public removeItem = this.restackingFunc(
+    async (statePath: string[]): Promise<void> => {
+      await this.mConnection.run("DELETE FROM db.kv WHERE key = $1", [
+        statePath.join(SEPARATOR),
+      ]);
+    },
+  );
 
-    await pipeline(this.mDB.createReadStream(options), writable);
-    return kvs;
+  private restackingFunc<T extends (...args: any[]) => Promise<any>>(
+    cb: T,
+  ): (...args: Parameters<T>) => ReturnType<T> {
+    return ((...args: Parameters<T>): ReturnType<T> => {
+      const stackErr = new Error();
+      return cb(...args).catch((unknownErr: unknown) => {
+        const err = unknownToError(unknownErr);
+        err.stack = stackErr.stack;
+        throw err;
+      }) as ReturnType<T>;
+    }) as (...args: Parameters<T>) => ReturnType<T>;
   }
 }
 
