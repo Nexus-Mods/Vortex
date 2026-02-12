@@ -162,6 +162,14 @@ function generateWrapperScript(
 
   return (
     "#!/bin/sh\n" +
+    // Environment variables like LD_LIBRARY_PATH and LD_PRELOAD carried over from the
+    // browser (e.g., Vivaldi) are a common cause of failures when launching external
+    // applications. It's standard practice to unset both to prevent library conflicts.
+    // This was encountered in practice on NixOS, where these variables caused
+    // Electron to load incompatible libraries, resulting in a segfault when launching
+    // Vortex from nxm:// links.
+    "unset LD_LIBRARY_PATH\n" +
+    "unset LD_PRELOAD\n" +
     (electronEnvExports ? electronEnvExports + "\n" : "") +
     `exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" "$@"\n`
   );
