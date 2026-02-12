@@ -163,6 +163,9 @@ export interface MainChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Query system: notify renderer that queries have been invalidated
+  "query:invalidated": (queryNames: string[]) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
@@ -315,6 +318,15 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Query system: execute a named query
+  "query:execute": (
+    queryName: string,
+    params?: Record<string, Serializable>,
+  ) => Promise<Serializable[]>;
+
+  // Query system: list all available query names
+  "query:list": () => Promise<string[]>;
 }
 
 /** Represents all IPC-safe typed arrays */

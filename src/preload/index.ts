@@ -296,6 +296,25 @@ try {
       isStarted: (id: number) =>
         betterIpcRenderer.invoke("powerSaveBlocker:isStarted", id),
     },
+    query: {
+      execute: ((name: string, params: any) =>
+        betterIpcRenderer.invoke(
+          "query:execute",
+          name,
+          params,
+        ) as Promise<any>) as any,
+      list: () =>
+        betterIpcRenderer.invoke("query:list") as Promise<any>,
+      onInvalidated: (callback) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          queryNames: string[],
+        ) => callback(queryNames as any);
+        ipcRenderer.on("query:invalidated", listener);
+        return () =>
+          ipcRenderer.removeListener("query:invalidated", listener);
+      },
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
