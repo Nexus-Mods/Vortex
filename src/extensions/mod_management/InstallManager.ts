@@ -351,8 +351,8 @@ function nop() {
 }
 
 function findDownloadByReferenceTag(
-  downloads: { [downloadId: string]: any },
-  reference: any,
+  downloads: Record<string, IDownload>,
+  reference: IModReference,
 ): string | null {
   const dlId = findDownloadByRef(reference, downloads);
   if (dlId) {
@@ -373,7 +373,7 @@ function findDownloadByReferenceTag(
 }
 
 function getReadyDownloadId(
-  downloads: { [downloadId: string]: any },
+  downloads: Record<string, IDownload>,
   reference: { tag?: string; md5Hint?: string },
   hasActiveOrPendingCheck: (downloadId: string) => boolean,
 ): string | null {
@@ -6442,20 +6442,22 @@ class InstallManager {
             // instead we update the rule in the collection. This has to happen immediately,
             // otherwise the installation might have weird issues around the mod
             // being installed having a different tag than the rule
-            dep.reference = this.updateModRule(
-              api,
-              gameId,
-              sourceModId,
-              dep,
-              {
-                ...dep.reference,
-                fileList: dep.fileList,
-                patches: dep.patches,
-                installerChoices: dep.installerChoices,
-                tag: downloads[downloadId].modInfo.referenceTag,
-              },
-              recommended,
-            )?.reference;
+            const reference: IModReference = {
+              ...dep.reference,
+              fileList: dep.fileList,
+              patches: dep.patches,
+              installerChoices: dep.installerChoices,
+              tag: downloads[downloadId].modInfo.referenceTag,
+            };
+            dep.reference =
+              this.updateModRule(
+                api,
+                gameId,
+                sourceModId,
+                dep,
+                reference,
+                recommended,
+              )?.reference ?? reference;
 
             dep.mod = findModByRef(
               dep.reference,
@@ -6655,7 +6657,7 @@ class InstallManager {
     dep: IDependency,
     reference: IModReference,
     recommended: boolean,
-  ) {
+  ): IModRule | undefined {
     const state: IState = api.store.getState();
     const rules: IModRule[] = getSafe(
       state.persistent.mods,
@@ -6666,15 +6668,17 @@ class InstallManager {
       referenceEqual(iter.reference, dep.reference),
     );
 
+    const type = recommended ? "recommends" : "requires";
+
     if (oldRule === undefined) {
       return undefined;
     }
 
-    const updatedRule: IRule = {
-      ...(oldRule || {}),
-      type: recommended ? "recommends" : "requires",
-      reference,
-    };
+    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
+      return oldRule;
+    }
+
+    const updatedRule: IModRule = { ...oldRule, type, reference };
 
     api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
     api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));
