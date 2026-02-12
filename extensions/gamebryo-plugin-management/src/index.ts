@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { trackCollectionPlugins } from './actions/collection'
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { clearNewPluginCounter, incrementNewPluginCounter, setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';
@@ -56,12 +57,6 @@ import { getPluginFlags } from './views/PluginFlags';
 import { createSelector } from 'reselect';
 import { IESPFile } from './types/IESPFile';
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from './util/masterlist';
-import { createAction } from 'redux-act';
-
-// Action to track plugins installed during collection sessions.
-// Mirrors the action defined in collections extension so its reducer handles it.
-const trackCollectionPlugins = createAction('COLLECTION_TRACK_PLUGINS',
-  (sessionId: string, pluginNames: string[]) => ({ sessionId, pluginNames }));
 
 type TranslationFunction = typeof I18next.t;
 
