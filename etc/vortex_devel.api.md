@@ -1655,7 +1655,6 @@ interface ICollectionInstallSession {
     failedCount: number;
     gameId: string;
     installedCount: number;
-    installedPlugins?: string[];
     mods: {
         [ruleId: string]: ICollectionModInstallInfo;
     };

@@ -13,8 +13,5 @@ export const markModInstalled = createAction('COLLECTION_MARK_MOD_INSTALLED',
 export const finishInstallSession = createAction('COLLECTION_FINISH_INSTALL_SESSION',
   (sessionId: string, success: boolean) => ({ sessionId, success }));
 
-export const trackCollectionPlugins = createAction('COLLECTION_TRACK_PLUGINS',
-  (sessionId: string, pluginNames: string[]) => ({ sessionId, pluginNames }));
-
 export const clearOldSessions = createAction('COLLECTION_CLEAR_OLD_SESSIONS',
   (daysOld: number) => ({ daysOld }));

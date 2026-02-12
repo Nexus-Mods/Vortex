@@ -82,19 +82,6 @@ export class SharedDelegates {
 
       let plugins = Object.keys(pluginList);
 
-      // Include plugins from mods installed during active collection session
-      // that haven't been deployed yet
-      const collectionPlugins: string[] =
-        state.session?.collections?.activeSession?.installedPlugins ?? [];
-      if (collectionPlugins.length > 0) {
-        const existing = new Set(plugins.map((p) => p.toLowerCase()));
-        for (const cp of collectionPlugins) {
-          if (!existing.has(cp.toLowerCase())) {
-            plugins.push(cp);
-          }
-        }
-      }
-
       if (activeOnly === true) {
         plugins = plugins.filter((name) =>
           this.isPluginEnabled(state, pluginList, plugins, name),
@@ -119,14 +106,6 @@ export class SharedDelegates {
       // unknown plugin can't be enabled
       return false;
     }
-    if (pluginList[existingPluginName] === undefined) {
-      // Plugin from collection tracking, not yet in pluginList — check loadOrder
-      if (!hasLoadOrder(state)) {
-        return false;
-      }
-      return state.loadOrder[existingPluginName]?.enabled ?? false;
-    }
-
     if (pluginList[existingPluginName].isNative) {
       return true;
     }

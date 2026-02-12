@@ -22,7 +22,6 @@ const collectionInstallReducer = {
         installedCount,
         failedCount: 0,
         skippedCount: 0,
-        installedPlugins: [],
       };
       
       return util.setSafe(state, ['activeSession'], session);
@@ -82,27 +81,6 @@ const collectionInstallReducer = {
       newState = util.setSafe(newState, ['activeSession'], undefined);
       
       return newState;
-    },
-    [actions.trackCollectionPlugins as any]: (state: types.ICollectionInstallState, payload: any) => {
-      if (!state.activeSession || state.activeSession.sessionId !== payload.sessionId) {
-        return state;
-      }
-
-      const existing: string[] = state.activeSession?.installedPlugins ?? [];
-      const existingLower = new Set(existing.map((n) => n.toLowerCase()));
-      const newPlugins = (payload.pluginNames ?? []).filter(
-        (name: string) => !existingLower.has(name.toLowerCase()),
-      );
-
-      if (newPlugins.length === 0) {
-        return state;
-      }
-
-      return util.setSafe(
-        state,
-        ['activeSession', 'installedPlugins'],
-        [...existing, ...newPlugins],
-      );
     },
   },
 
