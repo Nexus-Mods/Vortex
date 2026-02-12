@@ -1085,11 +1085,18 @@ class InstallManager {
     return extractProm
       .then(({ code, errors }: { code: number; errors: string[] }) => {
         log("debug", "extraction completed");
-        if (code !== 0) {
-          log("warn", "extraction reported error", {
+        if (errors.length > 0) {
+          const message =
+            code > 1
+              ? `Extraction completed with ${errors.length} error(s)`
+              : `Extraction completed with ${errors.length} warning(s)`;
+          const logLevel = code > 1 ? "error" : "warn";
+          log(logLevel, message, {
             code,
             errors: errors.join("; "),
           });
+        }
+        if (code !== 0) {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
@@ -3616,6 +3623,23 @@ class InstallManager {
     const attemptExtract = (
       retriesLeft: number,
     ): Bluebird<{ code: number; errors: string[] }> => {
+      const retryIfFileInUse = (errorMessages: string[]) => {
+        if (
+          retriesLeft > 0 &&
+          errorMessages.some((msg) => this.isFileInUse(msg))
+        ) {
+          log("info", "archive file in use, retrying extraction", {
+            archivePath: path.basename(archivePath),
+            retriesLeft,
+            retryDelayMs,
+          });
+          return delay(retryDelayMs).then(() =>
+            attemptExtract(retriesLeft - 1),
+          );
+        }
+        return undefined;
+      };
+
       // clean up any stale temp directory from a previous failed attempt
       return fs.removeAsync(tempPath).then(() =>
         zip
@@ -3626,28 +3650,28 @@ class InstallManager {
             progress,
             queryPassword as any,
           )
+          .then((result: { code: number; errors: string[] }) => {
+            // 7z can resolve (not reject) with a non-zero exit code and
+            // file-in-use errors. Retry in that case instead of proceeding
+            // with a partial extraction.
+            if (result.code !== 0) {
+              return retryIfFileInUse(result.errors ?? []) ?? result;
+            }
+            return result;
+          })
           .catch((err) => {
             const error = unknownToError(err);
-            const code = getErrorCode(err);
-            if (this.isFileInUse(error.message, code) && retriesLeft > 0) {
-              log("info", "archive file in use, retrying extraction", {
-                archivePath: path.basename(archivePath),
-                retriesLeft,
-                retryDelayMs,
-              });
-              return delay(retryDelayMs).then(() =>
-                attemptExtract(retriesLeft - 1),
-              );
-            }
-            if (this.isCritical(error.message)) {
-              return Bluebird.reject(
-                new ArchiveBrokenError(
-                  path.basename(archivePath),
-                  error.message,
-                ),
-              );
-            }
-            return Bluebird.reject(error);
+            return (
+              retryIfFileInUse([error.message]) ??
+              (this.isCritical(error.message)
+                ? Bluebird.reject(
+                    new ArchiveBrokenError(
+                      path.basename(archivePath),
+                      error.message,
+                    ),
+                  )
+                : Bluebird.reject(error))
+            );
           }),
       );
     };
@@ -3715,6 +3739,9 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
+          // 7z exit codes: 0=OK, 1=Warning, 2=Fatal, 7=CLI error, 8=OOM,
+          // 255=User stopped. Note that 2 can also be raised for file-in-use
+          // which is retryable so we can't treat it as critical.
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
