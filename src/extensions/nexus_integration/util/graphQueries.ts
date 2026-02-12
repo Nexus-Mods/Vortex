@@ -82,10 +82,9 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   tileImage: {
     url: true,
   },
-  revisions: {
+  latestPublishedRevision: {
     id: true,
     revisionNumber: true,
-    revisionStatus: true,
   },
   description: true,
   summary: true,

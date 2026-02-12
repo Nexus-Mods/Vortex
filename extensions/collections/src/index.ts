@@ -544,29 +544,26 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
         const info: nexusApi.IRevision = await driver.infoCache.getRevisionInfo(
           revisionId, collectionSlug, revisionNumber, 'force');
         if (!!info) {
-          const currentRevision = info.collection.revisions
-            .filter(rev => rev.revisionStatus === 'published')
-            .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber)
-            [0];
-          // currentRevision can be undefined if this collection has no published
-          // revision (i.e. the users own draft revision)
+          const latestPublishedRev = info.collection.latestPublishedRevision;
 
-          api.store.dispatch(actions.setModAttributes(gameMode, modId, {
-            permissions: info.collection.permissions,
-            collectionSlug: info.collection.slug,
-            revisionNumber: info.revisionNumber,
-            author: info.collection.user?.name,
-            uploader: info.collection.user?.name,
-            uploaderAvatar: info.collection.user?.avatar,
-            uploaderId: info.collection.user?.memberId,
-            pictureUrl: info.collection.tileImage?.url,
-            description: info.collection.description,
-            shortDescription: info.collection.summary,
-            newestFileId: currentRevision?.revisionNumber,
-            newestVersion: currentRevision?.revisionNumber?.toString?.(),
-            metadata: info.metadata,
-            rating: info.rating,
-          }));
+          api.store.dispatch(
+            actions.setModAttributes(gameMode, modId, {
+              permissions: info.collection.permissions,
+              collectionSlug: info.collection.slug,
+              revisionNumber: info.revisionNumber,
+              author: info.collection.user?.name,
+              uploader: info.collection.user?.name,
+              uploaderAvatar: info.collection.user?.avatar,
+              uploaderId: info.collection.user?.memberId,
+              pictureUrl: info.collection.tileImage?.url,
+              description: info.collection.description,
+              shortDescription: info.collection.summary,
+              newestFileId: latestPublishedRev?.id,
+              newestVersion: latestPublishedRev?.revisionNumber?.toString?.(),
+              metadata: info.metadata,
+              rating: info.rating,
+            }),
+          );
         }
       }
     } catch (err) {
@@ -1340,23 +1337,34 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
 
     const { mods } = state.persistent;
 
-    changedIds.forEach(collId => {
-      const coll: nexusApi.ICollection = cur[collId].info;
-      const gameId = util.convertGameIdReverse(knownGames, coll.game.domainName);
-      const collModId = Object.keys(mods[gameId] ?? {})
-        .find(modId => mods[gameId][modId].attributes['collectionId'] === coll.id);
-      // don't set a "newestVersion" on own collections because we don't allow an update on those
-      // anyway
-      if ((collModId !== undefined) && !mods[gameId][collModId].attributes.editable) {
-        const newestVersion = coll.revisions
-          .filter(rev => rev.revisionStatus === 'published')
-          .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber);
+      changedIds.forEach((collId) => {
+        const coll: nexusApi.ICollection = cur[collId].info;
+        const gameId = util.convertGameIdReverse(
+          knownGames,
+          coll.game.domainName,
+        );
+        const collModId = Object.keys(mods[gameId] ?? {}).find(
+          (modId) => mods[gameId][modId].attributes["collectionId"] === coll.id,
+        );
+        // don't set a "newestVersion" on own collections because we don't allow an update on those
+        // anyway
+        if (
+          collModId !== undefined &&
+          !mods[gameId][collModId].attributes.editable
+        ) {
+          const latestRevNumber = coll.latestPublishedRevision?.revisionNumber;
 
-        if (newestVersion.length > 0) {
-          api.store.dispatch(actions.setModAttribute(gameId, collModId,
-            'newestVersion', newestVersion[0].revisionNumber.toString()));
+          if (latestRevNumber !== undefined) {
+            api.store.dispatch(
+              actions.setModAttribute(
+                gameId,
+                collModId,
+                "newestVersion",
+                latestRevNumber.toString(),
+              ),
+            );
+          }
         }
-      }
     });
   });
 
