@@ -59,6 +59,8 @@ finish-args:
   - --filesystem=host
   - --talk-name=org.kde.StatusNotifierWatcher
   - --system-talk-name=org.freedesktop.UDisks2
+  # Required for xdg-settings to register nxm:// protocol handler on host
+  - --talk-name=org.freedesktop.Flatpak
   # Runtime: .NET runtime location for framework-dependent tools
   - --env=DOTNET_ROOT=/app/lib/dotnet
   # Integration: disable internal updater (Flatpak handles updates)

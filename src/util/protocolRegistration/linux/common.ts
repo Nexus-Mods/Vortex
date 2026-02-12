@@ -1,5 +1,33 @@
-// Shared Linux protocol-registration helpers.
-// Keep protocol-agnostic command and path helpers here.
+/**
+ * Shared Linux protocol-registration helpers.
+ * Keep protocol-agnostic command and path helpers here.
+ *
+ * IMPORTANT NOTES:
+ *
+ * 1. The 'nxm' protocol handler is heavily overloaded on Nexus Mods, with many tools using it
+ *    (Mod Organizer 2, Vortex, NexusMods.App, etc.).
+ *
+ * 2. Community expectation is that the last program launched "wins" when registering for nxm://
+ *    handler. Users frequently switch between mod managers, and they expect the active one to
+ *    handle download links.
+ *
+ * 3. FLATPAK-SPAWN USAGE: In Flatpak sandbox, we spawn xdg-settings on the host via
+ *    `flatpak-spawn --host` to override the current handler. This is unorthodox for Flatpak
+ *    (which typically relies on static desktop file declarations), but necessary to meet
+ *    the "last wins" expectation and to allow seamless switching between Flatpak and
+ *    development builds without clashing.
+ *
+ *    NOTE FOR FLATHUB REVIEWERS: This escapes the sandbox to modify host MIME associations.
+ *    This is intentional and required for mod manager UX. We consider this acceptable
+ *    given that (a) users explicitly toggle "Handle Nexus Links" in settings, and (b) the
+ *    modding community expects this behaviour.
+ *
+ * 4. We rely on xdg-utils being installed on the host system. This is a safe assumption
+ *    as it is required by most browsers, and Steam (where people get their games).
+ *    Virtually all desktop Linux distributions include it too.
+ *
+ * @module Linux protocol registration helpers
+ */
 import { spawnSync } from "child_process";
 import * as os from "os";
 import * as path from "path";
@@ -37,13 +65,23 @@ export function refreshDesktopDatabase(applicationsDir: string): void {
 }
 
 /**
+ * Check if running inside a Flatpak sandbox.
+ */
+function isFlatpak(): boolean {
+  return process.env.IS_FLATPAK === "true";
+}
+
+/**
  * Read the current desktop-id associated with a URL scheme on Linux.
+ * In Flatpak, uses flatpak-spawn to query the host's settings.
  */
 export function getDefaultUrlSchemeHandler(
   protocol: string,
 ): string | undefined {
-  const command = "xdg-settings";
-  const args = ["get", "default-url-scheme-handler", protocol];
+  const args = isFlatpak()
+    ? ["--host", "xdg-settings", "get", "default-url-scheme-handler", protocol]
+    : ["get", "default-url-scheme-handler", protocol];
+  const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
   const result = runCommand(command, args);
 
   if (result.error !== undefined || result.status !== 0) {
@@ -57,14 +95,24 @@ export function getDefaultUrlSchemeHandler(
 
 /**
  * Set the desktop-id that should handle a URL scheme on Linux.
+ * In Flatpak, uses flatpak-spawn to modify the host's settings.
+ * ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/RuntimeDependency/XDGSettingsDependency.cs#L22-L34
  */
 export function setDefaultUrlSchemeHandler(
   protocol: string,
   desktopId: string,
 ): void {
-  // ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/RuntimeDependency/XDGSettingsDependency.cs#L22-L34
-  const command = "xdg-settings";
-  const args = ["set", "default-url-scheme-handler", protocol, desktopId];
+  const args = isFlatpak()
+    ? [
+        "--host",
+        "xdg-settings",
+        "set",
+        "default-url-scheme-handler",
+        protocol,
+        desktopId,
+      ]
+    : ["set", "default-url-scheme-handler", protocol, desktopId];
+  const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
   const result = runCommand(command, args);
   logCommandFailure(command, args, result);
 }
