@@ -8,13 +8,14 @@ The format is based on [Common Changelog](https://common-changelog.org/) and thi
 
 - Fixed race condition when attempting to generate file UIDs ([#19602](https://github.com/Nexus-Mods/Vortex/issues/19602) and several others)
 - Added handling for transient EBUSY errors when starting loot ([#19609](https://github.com/Nexus-Mods/Vortex/issues/19609))
-- User cancelled error suppression ([#19619](https://github.com/Nexus-Mods/Vortex/issues/19619)) (fixes #19619)
+- User cancelled error suppression ([#19619](https://github.com/Nexus-Mods/Vortex/issues/19619))
 - Fixed linking issues on mod extraction/install ([#196101](https://github.com/Nexus-Mods/Vortex/issues/19610), [#19626](https://github.com/Nexus-Mods/Vortex/issues/19626), [#19700](https://github.com/Nexus-Mods/Vortex/issues/19700) and several others)
 - Suppress error report for user derived FOMOD-IPC timeout errors ([#19641](https://github.com/Nexus-Mods/Vortex/issues/19641))
 - Fixed FOMOD native errors when installing XML FOMODs with BOM characters ([#19718](https://github.com/Nexus-Mods/Vortex/issues/19718))
 - Fixed attempts to install corrupted/failed downloads ([#19627](https://github.com/Nexus-Mods/Vortex/issues/19627))
 - Fixed broken icons on Browse Collections page
-- Reduced complexity of collection workshop query ([#19757](https://github.com/Nexus-Mods/Vortex/issues/19757) and several others)
+- Fixed nested revision queries on collection install ([#19757](https://github.com/Nexus-Mods/Vortex/issues/19757) and several others)
+- Added error handling for fatal extraction errors
 
 ## [1.16.1] - 2026-02-10
 
