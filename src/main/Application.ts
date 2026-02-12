@@ -167,11 +167,11 @@ class Application {
     );
 
     this.mBasePath = app.getPath("userData");
-    mkdirSync(this.mBasePath);
+    mkdirSync(this.mBasePath, { recursive: true });
 
     setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
-    mkdirSync(path.join(tempPath, "dumps"));
+    mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
     try {
@@ -790,7 +790,7 @@ class Application {
     if (process.platform === "win32" && process.env.ProgramData !== undefined) {
       const muPath = path.join(process.env.ProgramData, "vortex");
       try {
-        mkdirSync(muPath);
+        mkdirSync(muPath, { recursive: true });
       } catch (err) {
         const code = getErrorCode(err);
         // not sure why this would happen, ensureDir isn't supposed to report a problem if
@@ -856,13 +856,13 @@ class Application {
       try {
         statSync(dataPath);
       } catch {
-        mkdirSync(dataPath);
+        mkdirSync(dataPath, { recursive: true });
         created = true;
       }
       if (multiUser && created) {
         permissions.allow(dataPath, "group", "rwx");
       }
-      mkdirSync(path.join(dataPath, "temp"));
+      mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 
       log("info", `using ${dataPath} as the storage directory`);
 
