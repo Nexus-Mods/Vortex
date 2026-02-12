@@ -1,7 +1,7 @@
 import { GenericDebouncer } from "../shared/Debouncer";
 
 export default class Debouncer extends GenericDebouncer<
-  ReturnType<typeof setTimeout>,
+  NodeJS.Timeout,
   typeof setTimeout,
   typeof clearTimeout
 > {
