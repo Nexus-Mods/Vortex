@@ -352,6 +352,9 @@ export function findDownloadByRef(
   reference: IReference,
   downloads: { [dlId: string]: IDownload },
 ): string {
+  if (!reference) {
+    return undefined;
+  }
   if (reference["md5Hint"] !== undefined) {
     const result = Object.keys(downloads).find(
       (dlId) => downloads[dlId].fileMD5 === reference["md5Hint"],
