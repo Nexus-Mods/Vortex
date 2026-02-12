@@ -1,5 +1,4 @@
 /* eslint-disable */
-import { trackCollectionPlugins } from './actions/collection'
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from './actions/loadOrder';
 import { clearNewPluginCounter, incrementNewPluginCounter, setPluginFilePath, setPluginList, updatePluginWarnings } from './actions/plugins';
 import { removeGroupRule, setGroup } from './actions/userlist';

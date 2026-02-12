@@ -83,7 +83,7 @@ const collectionInstallReducer = {
       return newState;
     },
   },
-
+  
   defaults: initialState,
 };
 
