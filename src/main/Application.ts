@@ -3,8 +3,9 @@ import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
+import { mkdirSync, statSync } from "node:fs";
 import { writeFile, rm, stat } from "node:fs/promises";
-import * as path from "path";
+import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
@@ -28,11 +29,9 @@ import {
   UserCanceled,
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
-import * as fs from "../util/fs";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
-import { isMajorDowngrade } from "../util/util";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
@@ -50,6 +49,19 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import TrayIcon from "./TrayIcon";
+
+/** test if the running version is a major downgrade (downgrading by a major or minor version,
+/ everything except a patch) compared to what was running last */
+function isMajorDowngrade(previous: string, current: string): boolean {
+  const majorL = semver.major(previous);
+  const majorR = semver.major(current);
+
+  if (majorL !== majorR) {
+    return majorL > majorR;
+  } else {
+    return semver.minor(previous) > semver.minor(current);
+  }
+}
 
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
@@ -155,15 +167,15 @@ class Application {
     );
 
     this.mBasePath = app.getPath("userData");
-    fs.ensureDirSync(this.mBasePath);
+    mkdirSync(this.mBasePath);
 
     setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
-    fs.ensureDirSync(path.join(tempPath, "dumps"));
+    mkdirSync(path.join(tempPath, "dumps"));
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
     try {
-      fs.statSync(this.mStartupLogPath);
+      statSync(this.mStartupLogPath);
       process.env.CRASH_REPORTING = Math.random() > 0.5 ? "vortex" : "electron";
     } catch {
       // nop, this is the expected case
@@ -778,7 +790,7 @@ class Application {
     if (process.platform === "win32" && process.env.ProgramData !== undefined) {
       const muPath = path.join(process.env.ProgramData, "vortex");
       try {
-        fs.ensureDirSync(muPath);
+        mkdirSync(muPath);
       } catch (err) {
         const code = getErrorCode(err);
         // not sure why this would happen, ensureDir isn't supposed to report a problem if
@@ -842,15 +854,15 @@ class Application {
 
       let created = false;
       try {
-        fs.statSync(dataPath);
+        statSync(dataPath);
       } catch {
-        fs.ensureDirSync(dataPath);
+        mkdirSync(dataPath);
         created = true;
       }
       if (multiUser && created) {
         permissions.allow(dataPath, "group", "rwx");
       }
-      fs.ensureDirSync(path.join(dataPath, "temp"));
+      mkdirSync(path.join(dataPath, "temp"));
 
       log("info", `using ${dataPath} as the storage directory`);
 
