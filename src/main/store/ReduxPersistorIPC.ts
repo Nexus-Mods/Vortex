@@ -18,6 +18,8 @@ import { unknownToError } from "@vortex/shared";
 
 import { terminate } from "../errorHandling";
 import { log } from "../logging";
+import type LevelPersist from "./LevelPersist";
+import type QueryInvalidator from "./QueryInvalidator";
 
 /**
  * Helper to insert a value at a leaf position in a nested object.
@@ -73,9 +75,22 @@ class ReduxPersistorIPC {
   private mPersistors: { [hive: string]: IPersistor } = {};
   private mUpdateQueue: Promise<void> = Promise.resolve();
   private mPersistorFactory: PersistorFactory | undefined;
+  private mLevelPersist: LevelPersist | undefined;
+  private mInvalidator: QueryInvalidator | undefined;
 
   constructor() {
     // No store dependency - we receive diffs via IPC
+  }
+
+  /**
+   * Set the LevelPersist instance and QueryInvalidator for dirty table tracking.
+   */
+  public setQueryInvalidator(
+    levelPersist: LevelPersist,
+    invalidator: QueryInvalidator,
+  ): void {
+    this.mLevelPersist = levelPersist;
+    this.mInvalidator = invalidator;
   }
 
   /**
@@ -180,12 +195,38 @@ class ReduxPersistorIPC {
     persistor: IPersistor,
     operations: DiffOperation[],
   ): Promise<void> {
+    const useTransaction =
+      this.mLevelPersist !== undefined && this.mInvalidator !== undefined;
+
     try {
+      if (useTransaction) {
+        await this.mLevelPersist!.beginTransaction();
+      }
+
       // Process operations sequentially to maintain order
       for (const op of operations) {
         await this.applyOperation(persistor, op);
       }
+
+      if (useTransaction) {
+        // Check dirty tables BEFORE commit (while transaction is active)
+        const dirtyTables = await this.mLevelPersist!.getDirtyTables();
+        await this.mLevelPersist!.commitTransaction();
+
+        // Notify after commit
+        if (dirtyTables.length > 0) {
+          this.mInvalidator!.notifyDirtyTables(dirtyTables);
+        }
+      }
     } catch (unknownError) {
+      if (useTransaction) {
+        try {
+          await this.mLevelPersist!.rollbackTransaction();
+        } catch {
+          // rollback may fail if transaction was already rolled back
+        }
+      }
+
       const err = unknownToError(unknownError);
 
       // Handle disk full error

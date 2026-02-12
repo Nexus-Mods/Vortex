@@ -12,6 +12,8 @@
  * 3. Persists diffs to LevelDB
  * 4. Provides hydration data to renderer
  */
+import * as path from "node:path";
+
 import type { Serializable } from "@vortex/shared/ipc";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
@@ -19,12 +21,19 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type LevelPersist from "./LevelPersist";
 
 import { log } from "../logging";
+import DuckDBSingleton from "./DuckDBSingleton";
+import QueryInvalidator from "./QueryInvalidator";
+import QueryRegistry from "./QueryRegistry";
 import { setupPersistenceIPC } from "./persistenceIPC";
+import { parseAllQueries } from "./queryParser";
+import { setupQueryIPC } from "./queryIPC";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 import SubPersistor from "./SubPersistor";
 
 let mainPersistor: ReduxPersistorIPC | undefined;
 let levelPersist: LevelPersist | undefined;
+let queryRegistry: QueryRegistry | undefined;
+let queryInvalidator: QueryInvalidator | undefined;
 
 /**
  * Initialize the main process persistence system.
@@ -53,7 +62,62 @@ export function initMainPersistence(
   // Set up IPC handlers to receive diffs from renderer
   setupPersistenceIPC(mainPersistor);
 
+  // Set up the query system (async, non-blocking)
+  initQuerySystem(levelPersistor).catch((err) => {
+    log("warn", "Failed to initialize query system", {
+      error: getErrorMessageOrDefault(err),
+    });
+  });
+
   return mainPersistor;
+}
+
+/**
+ * Initialize the reactive query system.
+ * Creates QueryRegistry, QueryInvalidator, and sets up IPC handlers.
+ */
+async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
+  const singleton = DuckDBSingleton.getInstance();
+  if (!singleton.isInitialized) {
+    log("warn", "DuckDBSingleton not initialized, skipping query system");
+    return;
+  }
+
+  // Create a dedicated connection for query execution
+  const queryConnection = await singleton.createConnection();
+
+  // Parse all SQL query files
+  const queriesDir = path.resolve(__dirname, "..", "..", "queries");
+  let queries;
+  try {
+    queries = parseAllQueries(queriesDir);
+  } catch (err) {
+    log("warn", "No query files found or parse error", {
+      dir: queriesDir,
+      error: getErrorMessageOrDefault(err),
+    });
+    return;
+  }
+
+  if (queries.length === 0) {
+    log("debug", "No queries found, skipping query system initialization");
+    return;
+  }
+
+  // Initialize registry
+  queryRegistry = new QueryRegistry(queryConnection);
+  await queryRegistry.initialize(queries);
+
+  // Create invalidator and wire to persistor
+  queryInvalidator = new QueryInvalidator(queryRegistry);
+  mainPersistor?.setQueryInvalidator(levelPersistor, queryInvalidator);
+
+  // Set up IPC handlers
+  setupQueryIPC(queryRegistry);
+
+  log("info", "Query system initialized", {
+    queryCount: queryRegistry.getQueryNames().length,
+  });
 }
 
 /**

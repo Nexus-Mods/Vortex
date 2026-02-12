@@ -1,10 +1,11 @@
 import type { IPersistor } from "@vortex/shared/state";
 
-import type { DuckDBConnection, DuckDBInstance } from "@duckdb/node-api";
+import type { DuckDBConnection } from "@duckdb/node-api";
 
 import { DataInvalid } from "@vortex/shared/errors";
 
 import { log } from "../logging";
+import DuckDBSingleton from "./DuckDBSingleton";
 
 const SEPARATOR: string = "###";
 
@@ -39,33 +40,6 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function openDB(persistPath: string): Promise<{
-  instance: DuckDBInstance;
-  connection: DuckDBConnection;
-}> {
-  const { DuckDBInstance: DuckDBInstanceCtor } = require("@duckdb/node-api");
-  log("debug", "duckdb: creating instance");
-  const instance: DuckDBInstance = await DuckDBInstanceCtor.create(":memory:");
-  const connection: DuckDBConnection = await instance.connect();
-  log("debug", "duckdb: installing level_pivot");
-  await connection.run("INSTALL level_pivot");
-  log("debug", "duckdb: loading level_pivot");
-  await connection.run("LOAD level_pivot");
-
-  const escapedPath = persistPath.replace(/'/g, "''");
-  log("debug", "duckdb: attaching database", persistPath);
-  await connection.run(
-    `ATTACH '${escapedPath}' AS db (TYPE level_pivot, CREATE_IF_MISSING true)`,
-  );
-  log("debug", "duckdb: creating kv table");
-  await connection.run(
-    "CALL level_pivot_create_table('db', 'kv', NULL, ['key', 'value'], table_mode := 'raw')",
-  );
-
-  log("debug", "duckdb: database opened successfully");
-  return { instance, connection };
-}
-
 class LevelPersist implements IPersistor {
   public static async create(
     persistPath: string,
@@ -76,8 +50,18 @@ class LevelPersist implements IPersistor {
       if (repair) {
         await repairDB(persistPath);
       }
-      const { instance, connection } = await openDB(persistPath);
-      return new LevelPersist(instance, connection);
+
+      const singleton = DuckDBSingleton.getInstance();
+      await singleton.initialize();
+
+      // Generate a unique alias for this database
+      const alias =
+        singleton.attachedDatabases.size === 0
+          ? "db"
+          : `db_${singleton.attachedDatabases.size}`;
+
+      const connection = await singleton.attachDatabase(persistPath, alias);
+      return new LevelPersist(connection, alias);
     } catch (unknownErr) {
       const err = unknownToError(unknownErr);
       log("warn", "duckdb: openDB failed", {
@@ -100,17 +84,24 @@ class LevelPersist implements IPersistor {
     }
   }
 
-  private mInstance: DuckDBInstance;
   private mConnection: DuckDBConnection;
+  private mAlias: string;
 
-  constructor(instance: DuckDBInstance, connection: DuckDBConnection) {
-    this.mInstance = instance;
+  constructor(connection: DuckDBConnection, alias: string) {
     this.mConnection = connection;
+    this.mAlias = alias;
+  }
+
+  public get alias(): string {
+    return this.mAlias;
+  }
+
+  public get connection(): DuckDBConnection {
+    return this.mConnection;
   }
 
   public close = this.restackingFunc(async (): Promise<void> => {
-    this.mConnection.closeSync();
-    this.mInstance.closeSync();
+    await DuckDBSingleton.getInstance().detachDatabase(this.mAlias);
   });
 
   public setResetCallback(_cb: () => PromiseLike<void>): void {
@@ -120,7 +111,7 @@ class LevelPersist implements IPersistor {
   public getItem = this.restackingFunc(
     async (key: string[]): Promise<string> => {
       const reader = await this.mConnection.runAndReadAll(
-        "SELECT value FROM db.kv WHERE key = $1",
+        `SELECT value FROM ${this.mAlias}.kv WHERE key = $1`,
         [key.join(SEPARATOR)],
       );
       const rows = reader.getRows();
@@ -135,7 +126,7 @@ class LevelPersist implements IPersistor {
 
   public async getAllKeys(): Promise<string[][]> {
     const reader = await this.mConnection.runAndReadAll(
-      "SELECT key FROM db.kv",
+      `SELECT key FROM ${this.mAlias}.kv`,
     );
     const rows = reader.getRows();
     return rows.map((row) => (row[0] as string).split(SEPARATOR));
@@ -143,7 +134,7 @@ class LevelPersist implements IPersistor {
 
   public async getPersistedHives(): Promise<string[]> {
     const reader = await this.mConnection.runAndReadAll(
-      "SELECT DISTINCT key FROM db.kv",
+      `SELECT DISTINCT key FROM ${this.mAlias}.kv`,
     );
     const rows = reader.getRows();
     const hives = new Set<string>();
@@ -162,11 +153,11 @@ class LevelPersist implements IPersistor {
     let reader;
     if (prefix === undefined) {
       reader = await this.mConnection.runAndReadAll(
-        "SELECT key, value FROM db.kv",
+        `SELECT key, value FROM ${this.mAlias}.kv`,
       );
     } else {
       reader = await this.mConnection.runAndReadAll(
-        "SELECT key, value FROM db.kv WHERE key > $1 AND key < $2",
+        `SELECT key, value FROM ${this.mAlias}.kv WHERE key > $1 AND key < $2`,
         [`${prefix}${SEPARATOR}`, `${prefix}${SEPARATOR}zzzzzzzzzzz`],
       );
     }
@@ -179,20 +170,60 @@ class LevelPersist implements IPersistor {
 
   public setItem = this.restackingFunc(
     async (statePath: string[], newState: string): Promise<void> => {
-      await this.mConnection.run("INSERT INTO db.kv VALUES ($1, $2)", [
-        statePath.join(SEPARATOR),
-        newState,
-      ]);
+      await this.mConnection.run(
+        `INSERT INTO ${this.mAlias}.kv VALUES ($1, $2)`,
+        [statePath.join(SEPARATOR), newState],
+      );
     },
   );
 
   public removeItem = this.restackingFunc(
     async (statePath: string[]): Promise<void> => {
-      await this.mConnection.run("DELETE FROM db.kv WHERE key = $1", [
-        statePath.join(SEPARATOR),
-      ]);
+      await this.mConnection.run(
+        `DELETE FROM ${this.mAlias}.kv WHERE key = $1`,
+        [statePath.join(SEPARATOR)],
+      );
     },
   );
+
+  /**
+   * Begin a transaction on this connection.
+   */
+  public async beginTransaction(): Promise<void> {
+    await this.mConnection.run("BEGIN TRANSACTION");
+  }
+
+  /**
+   * Commit the current transaction.
+   */
+  public async commitTransaction(): Promise<void> {
+    await this.mConnection.run("COMMIT");
+  }
+
+  /**
+   * Rollback the current transaction.
+   */
+  public async rollbackTransaction(): Promise<void> {
+    await this.mConnection.run("ROLLBACK");
+  }
+
+  /**
+   * Get dirty tables from level_pivot (tables modified in the current transaction).
+   * Returns array of {database, table, type} tuples.
+   */
+  public async getDirtyTables(): Promise<
+    Array<{ database: string; table: string; type: string }>
+  > {
+    const reader = await this.mConnection.runAndReadAll(
+      "SELECT * FROM level_pivot_dirty_tables()",
+    );
+    const rows = reader.getRows();
+    return rows.map((row) => ({
+      database: row[0] as string,
+      table: row[1] as string,
+      type: row[2] as string,
+    }));
+  }
 
   private restackingFunc<T extends (...args: any[]) => Promise<any>>(
     cb: T,
