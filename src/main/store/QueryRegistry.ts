@@ -59,9 +59,7 @@ class QueryRegistry {
       // Extract table references from the query SQL
       let referencedTables: string[];
       try {
-        referencedTables = [
-          ...this.mConnection.getTableNames(q.sql, true),
-        ];
+        referencedTables = [...this.mConnection.getTableNames(q.sql, true)];
       } catch {
         // Fallback: if getTableNames fails, use empty list
         referencedTables = [];
