@@ -6,11 +6,11 @@ import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
 
 import { getErrorMessageOrDefault } from "../shared/errors";
-import Debouncer from "../util/Debouncer";
 import { parseBool } from "../util/util";
 import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
+import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
 import { closeAllViews } from "./webview";
 
