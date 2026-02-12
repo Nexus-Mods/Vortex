@@ -77,6 +77,10 @@ import { activeGameId } from "./selectors";
 import { getSafe } from "./storeHelper";
 import StyleManager from "./StyleManager";
 import {
+  deregisterProtocolHandler,
+  registerProtocolHandler,
+} from "./protocolRegistration";
+import {
   filteredEnvironment,
   isFunction,
   setdefault,
@@ -133,52 +137,6 @@ export function isExtSame(
 const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 
 const ERROR_OUTPUT_CUTOFF = 3;
-
-function selfCL(userDataPath?: string): [string, string[]] {
-  let execPath = process.execPath;
-  // make it work when using the development version
-  if (execPath.endsWith("electron.exe")) {
-    execPath = path.join(getVortexPath("package"), "vortex.bat");
-  }
-
-  const args = [];
-  /*
-  TODO: This is necessary for downloads to multiple instances to work correctly but
-    it doesn't work until https://github.com/electron/electron/issues/18397 is fixed
-
-  if (userDataPath !== undefined) {
-    args.push('--user-data', userDataPath);
-  }
-  */
-
-  args.push("-d");
-
-  return [execPath, args];
-}
-
-const setSelfAsProtocolClient = makeRemoteCallSync(
-  "set-as-default-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    electron.app.setAsDefaultProtocolClient(protocol, execPath, args);
-  },
-);
-
-const isSelfProtocolClient = makeRemoteCallSync(
-  "is-self-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    return electron.app.isDefaultProtocolClient(protocol, execPath, args);
-  },
-);
-
-const removeSelfAsProtocolClient = makeRemoteCallSync(
-  "remove-as-default-protocol-client",
-  (electron, contents, protocol: string, udPath: string) => {
-    const [execPath, args] = selfCL(udPath);
-    electron.app.removeAsDefaultProtocolClient(protocol, execPath, args);
-  },
-);
 
 const showOpenDialog = makeRemoteCall(
   "show-open-dialog",
@@ -1952,11 +1910,13 @@ class ExtensionManager {
     callback: (url: string, install: boolean) => void,
   ): boolean => {
     log("info", "register protocol", { protocol });
-    const haveToRegister =
-      def && !isSelfProtocolClient(protocol, this.commandLineUserData());
-    if (def) {
-      setSelfAsProtocolClient(protocol, this.commandLineUserData());
-    }
+
+    const haveToRegister = registerProtocolHandler({
+      protocol,
+      setAsDefault: def,
+      userDataPath: this.commandLineUserData(),
+    });
+
     this.mProtocolHandlers[protocol] = callback;
     return haveToRegister;
   };
@@ -1978,7 +1938,8 @@ class ExtensionManager {
 
   private deregisterProtocol = (protocol: string) => {
     log("info", "deregister protocol");
-    removeSelfAsProtocolClient(protocol, this.commandLineUserData());
+
+    deregisterProtocolHandler(protocol, this.commandLineUserData());
   };
 
   private lookupModReference = (

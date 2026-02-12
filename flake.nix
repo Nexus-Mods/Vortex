@@ -57,7 +57,7 @@
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
             # Point to Nix-provided Electron
-            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
+            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39.dist}";
           };
 
           # Set up GTK environment (mimics wrapGAppsHook3)
@@ -72,10 +72,8 @@
             export GDK_PIXBUF_MODULE_FILE="${pkgs.librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
 
             # Chromium sandbox
-            export CHROME_DEVEL_SANDBOX="${pkgs.electron_37}/libexec/electron/chrome-sandbox"
+            export CHROME_DEVEL_SANDBOX="${pkgs.electron_39}/libexec/electron/chrome-sandbox"
 
-            # Register protocol handler
-            ./scripts/linux-protocol-registration.sh
           '';
         };
       });

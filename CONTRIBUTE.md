@@ -111,8 +111,6 @@ sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
 - Start: `yarn start`
     - Wayland: `yarn start --ozone-platform-hint=auto`
 
-To get `nxm` protocol handler to work you need to run the script `./scripts/linux-protocol-registration.sh`. This script only needs to be run once.
-
 ### Notes
 
 - In unlikely event you can't run `volta` after install; add it to `$PATH` manually
