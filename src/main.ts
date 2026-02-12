@@ -33,7 +33,8 @@ process.env["VORTEX_VERSION"] = VORTEX_VERSION;
 import "./util/application.electron";
 
 import { app, dialog } from "electron";
-import * as path from "path";
+import { stat } from "node:fs/promises";
+import path from "node:path";
 
 import getVortexPath from "./main/getVortexPath";
 
@@ -137,7 +138,6 @@ import { terminate } from "./main/errorHandling";
 import { sendReportFile } from "./main/errorReporting";
 import { init as initIpcHandlers } from "./main/ipcHandlers";
 import StylesheetCompiler from "./main/stylesheetCompiler";
-import * as fs from "./util/fs";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -242,7 +242,7 @@ async function main(): Promise<void> {
   // async code only allowed from here on out
 
   try {
-    await fs.statAsync(getVortexPath("userData"));
+    await stat(getVortexPath("userData"));
   } catch {
     // no-op
   }
