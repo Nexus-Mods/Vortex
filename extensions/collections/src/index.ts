@@ -667,11 +667,7 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
           "force",
         );
         if (!!info) {
-          const currentRevision = info.collection.revisions
-            .filter((rev) => rev.revisionStatus === "published")
-            .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber)[0];
-          // currentRevision can be undefined if this collection has no published
-          // revision (i.e. the users own draft revision)
+          const latestPublishedRev = info.collection.latestPublishedRevision;
 
           api.store.dispatch(
             actions.setModAttributes(gameMode, modId, {
@@ -685,8 +681,8 @@ async function updateMeta(api: types.IExtensionApi, collectionId?: string) {
               pictureUrl: info.collection.tileImage?.url,
               description: info.collection.description,
               shortDescription: info.collection.summary,
-              newestFileId: currentRevision?.revisionNumber,
-              newestVersion: currentRevision?.revisionNumber?.toString?.(),
+              newestFileId: latestPublishedRev?.id,
+              newestVersion: latestPublishedRev?.revisionNumber?.toString?.(),
               metadata: info.metadata,
               rating: info.rating,
             }),
@@ -1774,17 +1770,15 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
           collModId !== undefined &&
           !mods[gameId][collModId].attributes.editable
         ) {
-          const newestVersion = coll.revisions
-            .filter((rev) => rev.revisionStatus === "published")
-            .sort((lhs, rhs) => rhs.revisionNumber - lhs.revisionNumber);
+          const latestRevNumber = coll.latestPublishedRevision?.revisionNumber;
 
-          if (newestVersion.length > 0) {
+          if (latestRevNumber !== undefined) {
             api.store.dispatch(
               actions.setModAttribute(
                 gameId,
                 collModId,
                 "newestVersion",
-                newestVersion[0].revisionNumber.toString(),
+                latestRevNumber.toString(),
               ),
             );
           }
