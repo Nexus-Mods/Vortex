@@ -22,6 +22,7 @@ import { log } from "../logging";
 import DuckDBSingleton from "./DuckDBSingleton";
 import QueryInvalidator from "./QueryInvalidator";
 import QueryRegistry from "./QueryRegistry";
+import QueryWatcher from "./QueryWatcher";
 import { setupPersistenceIPC } from "./persistenceIPC";
 import { parseAllQueries } from "./queryParser";
 import { setupQueryIPC } from "./queryIPC";
@@ -109,6 +110,22 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
   // Create invalidator and wire to persistor
   queryInvalidator = new QueryInvalidator(queryRegistry);
   mainPersistor?.setQueryInvalidator(levelPersistor, queryInvalidator);
+
+  // Create watcher and wire to invalidator
+  const queryWatcher = new QueryWatcher(queryRegistry);
+  queryInvalidator.setWatcher(queryWatcher);
+
+  // Demo watch: log when recently_managed_games results change
+  queryWatcher.watch(
+    "recently_managed_games",
+    { current_game_id: "" },
+    (diff) => {
+      log("info", "recently-managed-changed", {
+        previous: diff.previous?.map((r) => r.game_id),
+        current: diff.current.map((r) => r.game_id),
+      });
+    },
+  );
 
   // Set up IPC handlers
   setupQueryIPC(queryRegistry);

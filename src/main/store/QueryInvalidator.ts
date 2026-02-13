@@ -2,6 +2,7 @@ import { BrowserWindow } from "electron";
 
 import { log } from "../logging";
 import type QueryRegistry from "./QueryRegistry";
+import type QueryWatcher from "./QueryWatcher";
 
 /**
  * Connects the write path to query invalidation notifications.
@@ -12,6 +13,7 @@ import type QueryRegistry from "./QueryRegistry";
  */
 class QueryInvalidator {
   private mRegistry: QueryRegistry;
+  private mWatcher: QueryWatcher | undefined;
   private mPendingTables: Set<string> = new Set();
   private mDebounceTimer: ReturnType<typeof setTimeout> | undefined;
   private mDebounceMs: number;
@@ -19,6 +21,13 @@ class QueryInvalidator {
   constructor(registry: QueryRegistry, debounceMs: number = 16) {
     this.mRegistry = registry;
     this.mDebounceMs = debounceMs;
+  }
+
+  /**
+   * Set a QueryWatcher to be notified when queries are invalidated.
+   */
+  public setWatcher(watcher: QueryWatcher): void {
+    this.mWatcher = watcher;
   }
 
   /**
@@ -72,6 +81,13 @@ class QueryInvalidator {
         window.webContents.send("query:invalidated", affectedQueries);
       }
     }
+
+    // Notify watcher (fire-and-forget)
+    this.mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {
+      log("warn", "QueryWatcher notification failed", {
+        error: (err as Error).message,
+      });
+    });
   }
 }
 
