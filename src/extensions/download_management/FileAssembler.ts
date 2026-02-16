@@ -141,7 +141,7 @@ class FileAssembler {
                 .catch({ code: "EBADF" }, () => {
                   // if we log this we may be generating thousands of log messages
                 })
-                .then(() => bytesWritten);
+                .then(() => Promise.resolve(bytesWritten));
             } else {
               return Promise.resolve(bytesWritten);
             }
