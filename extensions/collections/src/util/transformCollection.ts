@@ -917,6 +917,9 @@ function deduceCollectionAttributes(
   collection: ICollection,
   mods: { [modId: string]: types.IMod },
 ): ICollectionAttributes {
+  const existingInstallMode: { [modId: string]: string } =
+    collectionMod.attributes?.collection?.installMode ?? {};
+
   const res: ICollectionAttributes = {
     collectionConfig: collection["collectionConfig"],
     installInstructions: collection.info?.installInstructions,
@@ -938,7 +941,7 @@ function deduceCollectionAttributes(
         ? "choices"
         : rule.fileList !== undefined
           ? "clone"
-          : "fresh";
+          : (existingInstallMode[mod.id] ?? "fresh");
 
     res.instructions[mod.id] = rule.extra?.instructions;
     res.source[mod.id] = {
