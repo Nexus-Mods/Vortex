@@ -255,6 +255,8 @@ class InstallDriver {
               modId,
               dependent.extra?.patches,
             );
+            const choices =
+              dependent.installerChoices ?? dependent.extra?.installerChoices;
             util.batchDispatch(api.store, [
               actions.setFileOverride(
                 gameId,
@@ -265,7 +267,7 @@ class InstallDriver {
                 gameId,
                 modId,
                 "installerChoices",
-                dependent.extra?.choices,
+                choices,
               ),
               actions.setModAttribute(
                 gameId,
