@@ -167,7 +167,10 @@ function lookupDownloadHint(
       );
     }
     return Bluebird.resolve({ url: urlNorm });
-  } else if (input.mode === "browse") {
+  } else if (
+    input.mode === "browse" ||
+    (input.mode === "manual" && input.url)
+  ) {
     let urlNorm: string = "";
     try {
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
@@ -540,7 +543,10 @@ async function gatherDependenciesGraph(
           },
         },
       });
-      if (rule.downloadHint?.mode === "browse") {
+      if (
+        rule.downloadHint?.mode === "browse" ||
+        (rule.downloadHint?.mode === "manual" && rule.downloadHint?.url)
+      ) {
         node.reresolveDownloadHint = () =>
           lookupDownloadHint(api, rule.downloadHint).then((dlHintRes) => {
             node.lookupResults[0].value = {
