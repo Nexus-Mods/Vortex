@@ -1129,7 +1129,9 @@ const SLOW_WORKER_THRESHOLD = 10; // Number of "starving" measurements before co
 const SLOW_WORKER_MIN_AGE_MS = 10000; // Minimum time (10s) before allowing restart
 const SLOW_WORKER_RESTART_COOLDOWN_MS = 30000; // Cooldown period (30s) between restarts
 const MAX_WORKER_RESTARTS = 3; // Maximum restarts per worker
-const MAX_CHUNK_REQUEUES = 3; // Maximum times a chunk can be requeued after finishing with remaining data
+const MAX_CHUNK_REQUEUES = 3; // Maximum times a chunk can be requeued after finishing with partial data
+const MAX_EMPTY_REQUEUES = 5; // Maximum times a chunk can be requeued when server sends no data (rate-limiting)
+const EMPTY_REQUEUE_DELAY_MS = 2000; // Delay before requeuing an empty-response chunk
 
 /**
  * manages downloads
@@ -1776,6 +1778,9 @@ class DownloadManager {
       });
     }
 
+    // Timestamp for checking retryAfter delays (used by both single and multi-chunk)
+    const now = Date.now();
+
     // Categorize downloads for optimized processing
     const singleChunkDownloads: IRunningDownload[] = this.mQueue.filter(
       (item) => item.chunks.length === 1 || !item.chunkable,
@@ -1803,7 +1808,9 @@ class DownloadManager {
         (chunk) => chunk.state === "init",
       );
       const pausedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "paused",
+        (chunk) =>
+          chunk.state === "paused" &&
+          (chunk.retryAfter === undefined || chunk.retryAfter <= now),
       );
       pausedChunks.forEach((chunk) => (chunk.state = "init"));
       const totalUnstarted = unstartedChunks.concat(pausedChunks);
@@ -1838,7 +1845,9 @@ class DownloadManager {
       }
 
       const pausedChunks = queueItem.chunks.filter(
-        (chunk) => chunk.state === "paused",
+        (chunk) =>
+          chunk.state === "paused" &&
+          (chunk.retryAfter === undefined || chunk.retryAfter <= now),
       );
       pausedChunks.forEach((chunk) => {
         chunk.state = "init";
@@ -1992,16 +2001,12 @@ class DownloadManager {
       job.startFailures = (job.startFailures ?? 0) + 1;
       const MAX_START_FAILURES = 3;
       if (job.startFailures >= MAX_START_FAILURES) {
-        log(
-          "error",
-          "Worker start failed too many times, canceling download",
-          {
-            workerId,
-            downloadId: download.id,
-            error: err.message,
-            failures: job.startFailures,
-          },
-        );
+        log("error", "Worker start failed too many times, canceling download", {
+          workerId,
+          downloadId: download.id,
+          error: err.message,
+          failures: job.startFailures,
+        });
         markFailed();
         return;
       }
@@ -2670,7 +2675,13 @@ class DownloadManager {
 
     if (!paused && hasRemainingData) {
       job.requeues = (job.requeues || 0) + 1;
-      if (job.requeues >= MAX_CHUNK_REQUEUES) {
+
+      // Distinguish between empty responses (CDN rate-limiting) and partial data.
+      // Empty responses get more retries with a delay to let the CDN recover.
+      const madeProgress = job.confirmedReceived > 0;
+      const maxRequeues = madeProgress ? MAX_CHUNK_REQUEUES : MAX_EMPTY_REQUEUES;
+
+      if (job.requeues >= maxRequeues) {
         log(
           "warn",
           "chunk exceeded max requeues, marking download as errored",
@@ -2679,6 +2690,7 @@ class DownloadManager {
             workerId: job.workerId,
             remaining: job.size,
             requeues: job.requeues,
+            madeProgress,
           },
         );
         download.error = true;
@@ -2689,8 +2701,14 @@ class DownloadManager {
           workerId: job.workerId,
           remaining: job.size,
           requeue: job.requeues,
+          madeProgress,
         });
         job.state = "paused";
+
+        if (!madeProgress) {
+          // Delay before retry to give the CDN time to recover from rate-limiting
+          job.retryAfter = Date.now() + EMPTY_REQUEUE_DELAY_MS;
+        }
       }
     } else {
       job.state = paused || hasRemainingData ? "paused" : "finished";

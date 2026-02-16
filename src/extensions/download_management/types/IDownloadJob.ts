@@ -55,6 +55,9 @@ export interface IDownloadJob extends IChunk {
   /** Number of times startJob has failed for this chunk */
   startFailures?: number;
 
+  /** Timestamp (ms) before which this chunk should not be retried (used for empty-response backoff) */
+  retryAfter?: number;
+
   extraCookies: string[];
 
   dataCB?: (offset: number, data) => Promise<boolean>;
