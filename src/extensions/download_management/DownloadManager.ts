@@ -2564,6 +2564,14 @@ class DownloadManager {
 
     if (activeChunk === undefined) {
       let finalPath = download.tempName;
+      // Truncate file to actual size to remove stale data from previous
+      // download attempts (e.g., non-chunkable re-downloads that don't truncate on open)
+      // Use download.size (from server) when known; download.received can be inflated
+      // by chunk retries that re-download and re-count the same bytes
+      const actualSize = ((download.size ?? 0) > 0) ? download.size : (download.received ?? 0);
+      if (actualSize > 0) {
+        download.assembler.truncate(actualSize);
+      }
       download.assembler
         .close()
         .then(() => {

@@ -190,6 +190,30 @@ class FileAssembler {
     }, false);
   }
 
+  public truncate(size: number): Promise<void> {
+    if (size <= 0) {
+      return Promise.resolve();
+    }
+    return this.mQueue(
+      () =>
+        this.mFD === undefined
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              fsFast.ftruncate(this.mFD, size, (err) => {
+                if (err) {
+                  log("warn", "failed to truncate file", {
+                    file: this.mFileName,
+                    size,
+                    error: err.message,
+                  });
+                }
+                resolve();
+              });
+            }),
+      false,
+    );
+  }
+
   private writeAsync(data: Buffer, offset: number) {
     return fs
       .writeAsync(this.mFD, data, 0, data.length, offset)
