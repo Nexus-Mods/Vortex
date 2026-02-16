@@ -11,6 +11,7 @@ import {
 } from "../../constants";
 import InfoCache from "../../util/InfoCache";
 import { validateName } from "../../util/transformCollection";
+import { hasEditPermissions } from "../../util/util";
 
 import CollectionThumbnail from "../CollectionTile";
 import CollectionThumbnailRemote from "../CollectionTile/RemoteTile";
@@ -532,9 +533,17 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
         own.map((res) => res.mod.attributes?.["collectionSlug"]),
       );
 
+      const userId = this.props.userInfo?.userId;
       own.push(
         ...this.props.localState.ownCollections
           .filter((coll) => !installed.has(coll.collection?.slug))
+          .filter((coll) => {
+            const collUserId = coll.collection?.user?.memberId;
+            if (collUserId !== undefined && collUserId === userId) {
+              return true;
+            }
+            return hasEditPermissions(coll.collection?.permissions);
+          })
           .map((coll) => ({
             mod: undefined,
             added: foreign.find(
