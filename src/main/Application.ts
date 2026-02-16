@@ -605,7 +605,7 @@ class Application {
     }
 
     const uacEnabled = this.isUACEnabled();
-    const result = await dialog.showMessageBox(this.mMainWindow.getHandle(), {
+    const result = await dialog.showMessageBox(this.mMainWindow?.getHandle() ?? null, {
       title: "Admin rights detected",
       message:
         `Vortex has detected that it is being run with administrator rights. It is strongly

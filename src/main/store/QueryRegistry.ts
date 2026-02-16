@@ -107,14 +107,14 @@ class QueryRegistry {
       throw new Error(`Unknown query: '${name}'`);
     }
 
-    // Build parameter bindings using named parameters ($name syntax)
+    // Build parameter bindings using named parameters
+    // Note: DuckDB node-api expects keys WITHOUT the $ prefix
     let values: Record<string, unknown> | undefined;
     if (params !== undefined && query.params.length > 0) {
       values = {};
       for (const paramDef of query.params) {
-        const paramKey = `$${paramDef.name}`;
         if (paramDef.name in params) {
-          values[paramKey] = params[paramDef.name];
+          values[paramDef.name] = params[paramDef.name];
         }
       }
     }

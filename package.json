@@ -59,7 +59,7 @@
     "postinstall": "node postinstall.js",
     "install:debug": "cross-env VORTEX_BUILD_CONFIG=Debug yarn install",
     "test": "jest --no-cache",
-    "build": "yarn tsc --composite false -p tsconfig.shared.json && yarn run check_packages && yarn run build_rest && yarn tsc --composite false -p tsconfig.main.json && yarn tsc --composite false -p tsconfig.renderer.json",
+    "build": "yarn tsc --composite false -p tsconfig.shared.json && yarn run check_packages && yarn run build_rest && yarn tsc --composite false -p tsconfig.main.json && node -e \"require('fs').cpSync('src/queries','out/queries',{recursive:true})\" && yarn tsc --composite false -p tsconfig.renderer.json",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
     "gen": "yarn ts-to-zod --all",
     "gen:queries": "ts-node scripts/generate-query-types.ts",

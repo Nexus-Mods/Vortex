@@ -5,11 +5,11 @@
 -- @param current_game_id VARCHAR
 SELECT
     p.profile_id,
-    p.gameId AS game_id,
-    p.name AS profile_name,
+    trim(p.gameId, '"') AS game_id,
+    trim(p.name, '"') AS profile_name,
     p.lastActivated AS last_activated
-FROM profiles_pivot p
-WHERE p.gameId != $current_game_id
+FROM db.profiles_pivot p
+WHERE trim(p.gameId, '"') != $current_game_id
   AND p.lastActivated IS NOT NULL
   AND CAST(p.lastActivated AS BIGINT) > 0
 ORDER BY CAST(p.lastActivated AS BIGINT) DESC
