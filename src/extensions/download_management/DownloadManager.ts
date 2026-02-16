@@ -324,23 +324,7 @@ class DownloadWorker {
     this.mResponse?.removeAllListeners?.("error");
     this.mRequest?.destroy?.();
     clearTimeout(this.mStallTimer);
-    const waitForInFlightWrites = () => {
-      return new Promise<void>((resolve) => {
-        if (this.mInFlightWrites === 0) {
-          resolve();
-          return;
-        }
-
-        const checkInterval = setInterval(() => {
-          if (this.mInFlightWrites === 0) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 50);
-      });
-    };
-
-    await waitForInFlightWrites();
+    await this.waitForInFlightWrites();
 
     // Reset worker state for restart
     this.mBuffers = [];
@@ -878,23 +862,8 @@ class DownloadWorker {
           );
         }
 
-        const waitForWrites = () => {
-          return new Promise<void>((resolve) => {
-            if (this.mInFlightWrites === 0) {
-              resolve();
-              return;
-            }
-            const checkInterval = setInterval(() => {
-              if (this.mInFlightWrites === 0) {
-                clearInterval(checkInterval);
-                resolve();
-              }
-            }, 50);
-          });
-        };
-
         // delay the new request a bit to ensure the old request is completely settled
-        waitForWrites().then(() => {
+        this.waitForInFlightWrites().then(() => {
           setTimeout(() => {
             ++this.mRedirectsFollowed;
             this.mRedirected = false;
