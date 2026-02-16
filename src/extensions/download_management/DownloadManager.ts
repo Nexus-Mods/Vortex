@@ -932,7 +932,7 @@ class DownloadWorker {
 
       let fileSize = chunkSize;
       if (chunkable) {
-        const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
+        const rangeExp: RegExp = /bytes (\d+)-(\d+)\/(\d+)/i;
         const sizeMatch: string[] = (
           response.headers["content-range"] as string
         ).match(rangeExp);
