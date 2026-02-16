@@ -929,6 +929,9 @@ function deduceCollectionAttributes(
   const existingInstallMode: { [modId: string]: string } =
     collectionMod.attributes?.collection?.installMode ?? {};
 
+  const existingInstallMode: { [modId: string]: string } =
+    collectionMod.attributes?.collection?.installMode ?? {};
+
   const res: ICollectionAttributes = {
     collectionConfig: collection["collectionConfig"],
     installInstructions: collection.info?.installInstructions,
