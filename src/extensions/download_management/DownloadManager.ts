@@ -452,10 +452,13 @@ class DownloadWorker {
     );
 
     try {
+      // Don't request compressed encoding — Range headers specify byte offsets
+      // of the uncompressed resource, and mixing compression with range requests
+      // causes size mismatches that corrupt chunked downloads
       const headers = {
         Range: `bytes=${job.offset}-${job.offset + job.size - 1}`,
         "User-Agent": this.mUserAgent,
-        "Accept-Encoding": "gzip, deflate",
+        "Accept-Encoding": "identity",
         Cookie: allCookies,
       };
       if (referer !== undefined) {
