@@ -14,10 +14,10 @@ Scripts in `flatpak/scripts/` automate common tasks. They manage their own virtu
 
 ### Development workflow
 
-| Script             | Purpose                                                    |
-| ------------------ | ---------------------------------------------------------- |
-| `flatpak_build.py` | Build the Flatpak with standard defaults                   |
-| `flatpak_run.py`   | Run the build output directly with `flatpak-builder --run` |
+| Script             | Purpose                                                         |
+| ------------------ | --------------------------------------------------------------- |
+| `flatpak_build.py` | Build the Flatpak with standard defaults                        |
+| `flatpak_run.py`   | Run the installed Flatpak (builds and installs first if needed) |
 
 ### Distribution/UX Testing workflow
 
@@ -76,14 +76,14 @@ python3 flatpak/scripts/flatpak_bundle.py --skip-build
 
 ### Workflow Notes
 
-- `flatpak_run.py` always uses the existing build—no export or install step
+- `flatpak_run.py` ensures the app is installed (builds and installs if needed), then runs it
 - `flatpak_install.py --skip-build` re-exports from existing build without rebuilding
 - `flatpak_bundle.py` creates a `.flatpak` file for distribution
 - `nxm://` protocol switching should work out of the box: whichever Vortex build you launched last should become the active handler
 
 ## Script Differences
 
-- **`flatpak_run.py`**: Quick development testing. Runs directly via `flatpak-builder --run`. Fastest for iterative development.
+- **`flatpak_run.py`**: Development testing with proper single-instance support. Installs the app if needed (so protocol handlers work correctly), then runs the installed version.
 - **`flatpak_install.py`**: UX testing. Installs the app properly so it appears in software centers. Creates a local OSTree repo at `flatpak/flatpak-repo/` (gitignored).
 
 ## Runtime Updates

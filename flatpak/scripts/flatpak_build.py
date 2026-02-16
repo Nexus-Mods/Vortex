@@ -2,13 +2,14 @@
 """Build the Flatpak using flatpak-builder and the repo manifest (run from any directory)."""
 
 import argparse
-import shutil
-from pathlib import Path
 
-from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
-from flatpak_nuget_sources import sync_generated_nuget_sources
-from flatpak_sources import sync_generated_sources
-from update_metainfo_version import update_metainfo_version
+from _flatpak_env import ensure_flathub_remote, ensure_venv
+from _flatpak_workflow import (
+    ensure_flatpak_tools,
+    resolve_flatpak_paths,
+    run_flatpak_builder,
+    sync_flatpak_build_inputs,
+)
 
 
 def main() -> None:
@@ -43,61 +44,20 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_venv(install_packages=False)
-
-    root = repo_root()
-    build_dir = Path(args.build_dir)
-    manifest = Path(args.manifest)
-    repo_dir = Path(args.repo)
-    if not build_dir.is_absolute():
-        build_dir = root / build_dir
-    if not manifest.is_absolute():
-        manifest = root / manifest
-    if not repo_dir.is_absolute():
-        repo_dir = root / repo_dir
-
-    if shutil.which("flatpak-builder") is None:
-        print("flatpak-builder not found on PATH.")
-        print("Install it with your distro package manager (see CONTRIBUTE.md).")
-        print("On NixOS: run 'nix develop'.")
-        raise SystemExit(1)
-
-    sync_generated_sources(
-        lockfile=root / "yarn.lock",
-        output=root / "flatpak/generated-sources.json",
-        hash_file=root / "flatpak/generated-sources.hash",
-        recursive=True,
-    )
-
-    sync_generated_nuget_sources(
-        search_root=root / "extensions/fomod-installer",
-        projects=[
-            root
-            / "extensions/fomod-installer/src/ModInstaller.IPC/ModInstaller.IPC.csproj",
-            root
-            / "extensions/fomod-installer/src/ModInstaller.Native/ModInstaller.Native.csproj",
-        ],
-        output=root / "flatpak/generated-nuget-sources.json",
-        hash_file=root / "flatpak/generated-nuget-sources.hash",
-        dotnet="9",
-        freedesktop="25.08",
-        destdir="flatpak-nuget-sources",
-        runtime="linux-x64",
-    )
-
+    ensure_flatpak_tools()
     ensure_flathub_remote()
 
-    # Always update metainfo version from package.json before build
-    update_metainfo_version(root)
+    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
 
-    # Full build
-    cmd = ["flatpak-builder", "--force-clean"]
-    cmd.extend([str(build_dir), str(manifest)])
-    if args.install_deps_from:
-        cmd.extend(["--install-deps-from", args.install_deps_from])
-    if not args.system:
-        cmd.append("--user")
+    sync_flatpak_build_inputs(paths.root)
 
-    run_command(cmd, cwd=root)
+    run_flatpak_builder(
+        root=paths.root,
+        build_dir=paths.build_dir,
+        manifest=paths.manifest,
+        install_deps_from=args.install_deps_from,
+        user_install=not args.system,
+    )
 
 
 if __name__ == "__main__":

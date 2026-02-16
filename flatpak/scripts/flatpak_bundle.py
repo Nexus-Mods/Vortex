@@ -2,12 +2,16 @@
 """Export the build to a local repo and create a .flatpak bundle (run from any directory)."""
 
 import argparse
-import shutil
 from pathlib import Path
 
-from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
-from flatpak_nuget_sources import sync_generated_nuget_sources
-from flatpak_sources import sync_generated_sources
+from _flatpak_env import ensure_flathub_remote, ensure_venv, run_command
+from _flatpak_workflow import (
+    ensure_flatpak_tools,
+    export_build_to_repo,
+    resolve_flatpak_paths,
+    run_flatpak_builder,
+    sync_flatpak_build_inputs,
+)
 
 
 def main() -> None:
@@ -47,86 +51,52 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_venv(install_packages=False)
-
-    if shutil.which("flatpak-builder") is None:
-        print("flatpak-builder not found on PATH.")
-        print("Install it with your distro package manager (see CONTRIBUTE.md).")
-        print("On NixOS: run 'nix develop'.")
-        raise SystemExit(1)
-
-    if shutil.which("flatpak") is None:
-        print("flatpak not found on PATH.")
-        print("Install it with your distro package manager (see CONTRIBUTE.md).")
-        print("On NixOS: run 'nix develop'.")
-        raise SystemExit(1)
+    ensure_flatpak_tools()
 
     ensure_flathub_remote()
 
-    root = repo_root()
-    build_dir = Path(args.build_dir)
-    manifest = Path(args.manifest)
-    repo_dir = Path(args.repo)
+    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
     bundle_path = Path(args.bundle)
 
-    if not build_dir.is_absolute():
-        build_dir = root / build_dir
-    if not manifest.is_absolute():
-        manifest = root / manifest
-    if not repo_dir.is_absolute():
-        repo_dir = root / repo_dir
     if not bundle_path.is_absolute():
-        bundle_path = root / bundle_path
+        bundle_path = paths.root / bundle_path
 
     if args.skip_build:
         # Export existing build without rebuilding
         print(f"Exporting from existing build...")
-        if not build_dir.exists():
-            print(f"Error: Build directory {build_dir} does not exist.")
+        if not paths.build_dir.exists():
+            print(f"Error: Build directory {paths.build_dir} does not exist.")
             print("Run without --skip-build to perform initial build.")
             raise SystemExit(1)
 
-        print(f"Re-exporting to {repo_dir}...")
-        export_cmd = ["flatpak", "build-export", str(repo_dir), str(build_dir)]
-        run_command(export_cmd, cwd=root)
+        print(f"Re-exporting to {paths.repo_dir}...")
+        export_build_to_repo(
+            root=paths.root,
+            repo_dir=paths.repo_dir,
+            build_dir=paths.build_dir,
+            update_appstream=False,
+        )
     else:
         # Use flatpak-builder to build and export
-        sync_generated_sources(
-            lockfile=root / "yarn.lock",
-            output=root / "flatpak/generated-sources.json",
-            hash_file=root / "flatpak/generated-sources.hash",
-            recursive=True,
-        )
-
-        sync_generated_nuget_sources(
-            search_root=root / "extensions/fomod-installer",
-            projects=[
-                root
-                / "extensions/fomod-installer/src/ModInstaller.IPC/ModInstaller.IPC.csproj",
-                root
-                / "extensions/fomod-installer/src/ModInstaller.Native/ModInstaller.Native.csproj",
-            ],
-            output=root / "flatpak/generated-nuget-sources.json",
-            hash_file=root / "flatpak/generated-nuget-sources.hash",
-            dotnet="9",
-            freedesktop="25.08",
-            destdir="flatpak-nuget-sources",
-            runtime="linux-x64",
-        )
+        sync_flatpak_build_inputs(paths.root)
 
         print(f"Building and exporting to local repo...")
-        export_cmd = [
-            "flatpak-builder",
-            "--force-clean",
-            "--repo",
-            str(repo_dir),
-            str(build_dir),
-            str(manifest),
-        ]
-        run_command(export_cmd, cwd=root)
+        run_flatpak_builder(
+            root=paths.root,
+            build_dir=paths.build_dir,
+            manifest=paths.manifest,
+            repo_dir=paths.repo_dir,
+        )
 
     run_command(
-        ["flatpak", "build-bundle", str(repo_dir), str(bundle_path), args.app_id],
-        cwd=root,
+        [
+            "flatpak",
+            "build-bundle",
+            str(paths.repo_dir),
+            str(bundle_path),
+            args.app_id,
+        ],
+        cwd=paths.root,
     )
 
 

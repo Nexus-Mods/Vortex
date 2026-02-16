@@ -6,21 +6,20 @@ KDE Discover or GNOME Software for UX testing purposes.
 """
 
 import argparse
-import shutil
-import subprocess
-from pathlib import Path
 
-from _flatpak_env import ensure_flathub_remote, ensure_venv, repo_root, run_command
-from flatpak_nuget_sources import sync_generated_nuget_sources
-from flatpak_sources import sync_generated_sources
-
-
-def is_app_installed(app_id: str) -> bool:
-    """Check if a flatpak app is installed."""
-    result = subprocess.run(
-        ["flatpak", "list", "--app"], capture_output=True, text=True
-    )
-    return app_id in result.stdout
+from _flatpak_env import ensure_flathub_remote, ensure_venv, run_command
+from _flatpak_workflow import (
+    ensure_flatpak_tools,
+    export_build_to_repo,
+    install_user_app_from_remote,
+    is_app_installed,
+    resolve_flatpak_paths,
+    reset_user_remote,
+    run_flatpak_builder,
+    sync_flatpak_build_inputs,
+    uninstall_user_app,
+    update_user_appstream,
+)
 
 
 def main() -> None:
@@ -70,32 +69,11 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_venv(install_packages=False)
-
-    if shutil.which("flatpak-builder") is None:
-        print("flatpak-builder not found on PATH.")
-        print("Install it with your distro package manager (see CONTRIBUTE.md).")
-        print("On NixOS: run 'nix develop'.")
-        raise SystemExit(1)
-
-    if shutil.which("flatpak") is None:
-        print("flatpak not found on PATH.")
-        print("Install it with your distro package manager (see CONTRIBUTE.md).")
-        print("On NixOS: run 'nix develop'.")
-        raise SystemExit(1)
+    ensure_flatpak_tools()
 
     ensure_flathub_remote()
 
-    root = repo_root()
-    build_dir = Path(args.build_dir)
-    manifest = Path(args.manifest)
-    repo_dir = Path(args.repo)
-
-    if not build_dir.is_absolute():
-        build_dir = root / build_dir
-    if not manifest.is_absolute():
-        manifest = root / manifest
-    if not repo_dir.is_absolute():
-        repo_dir = root / repo_dir
+    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
 
     # Check if already installed
     already_installed = is_app_installed(args.app_id)
@@ -104,121 +82,64 @@ def main() -> None:
         print("Use --reinstall to update it, or --run to just run it.")
         if args.run:
             print(f"\nRunning {args.app_id}...")
-            run_command(["flatpak", "run", args.app_id], cwd=root)
+            run_command(["flatpak", "run", args.app_id], cwd=paths.root)
         return
 
     # Export to local repo
     if args.skip_build:
         # Export existing build without rebuilding
         print(f"Exporting {args.app_id} from existing build...")
-        if not build_dir.exists():
-            print(f"Error: Build directory {build_dir} does not exist.")
+        if not paths.build_dir.exists():
+            print(f"Error: Build directory {paths.build_dir} does not exist.")
             print("Run without --skip-build to perform initial build.")
             raise SystemExit(1)
 
-        print(f"Re-exporting to {repo_dir}...")
-        export_cmd = [
-            "flatpak",
-            "build-export",
-            "--update-appstream",
-            str(repo_dir),
-            str(build_dir),
-        ]
-        run_command(export_cmd, cwd=root)
+        print(f"Re-exporting to {paths.repo_dir}...")
+        export_build_to_repo(
+            root=paths.root,
+            repo_dir=paths.repo_dir,
+            build_dir=paths.build_dir,
+        )
     else:
         # Use flatpak-builder to build and export
-        sync_generated_sources(
-            lockfile=root / "yarn.lock",
-            output=root / "flatpak/generated-sources.json",
-            hash_file=root / "flatpak/generated-sources.hash",
-            recursive=True,
-        )
-
-        sync_generated_nuget_sources(
-            search_root=root / "extensions/fomod-installer",
-            projects=[
-                root
-                / "extensions/fomod-installer/src/ModInstaller.IPC/ModInstaller.IPC.csproj",
-                root
-                / "extensions/fomod-installer/src/ModInstaller.Native/ModInstaller.Native.csproj",
-            ],
-            output=root / "flatpak/generated-nuget-sources.json",
-            hash_file=root / "flatpak/generated-nuget-sources.hash",
-            dotnet="9",
-            freedesktop="25.08",
-            destdir="flatpak-nuget-sources",
-            runtime="linux-x64",
-        )
+        sync_flatpak_build_inputs(paths.root)
 
         print(f"Building and exporting {args.app_id} to local repo...")
-        export_cmd = [
-            "flatpak-builder",
-            "--force-clean",
-            "--repo",
-            str(repo_dir),
-            str(build_dir),
-            str(manifest),
-        ]
-        run_command(export_cmd, cwd=root)
+        run_flatpak_builder(
+            root=paths.root,
+            build_dir=paths.build_dir,
+            manifest=paths.manifest,
+            repo_dir=paths.repo_dir,
+        )
 
         # Update appstream metadata after build
         print("Updating appstream in repo...")
-        run_command(
-            [
-                "flatpak",
-                "build-export",
-                "--update-appstream",
-                str(repo_dir),
-                str(build_dir),
-            ],
-            cwd=root,
+        export_build_to_repo(
+            root=paths.root,
+            repo_dir=paths.repo_dir,
+            build_dir=paths.build_dir,
         )
 
     # Uninstall if reinstalling (keep user data for development)
     if args.reinstall and already_installed:
         print(f"Uninstalling existing {args.app_id}...")
-        subprocess.run(
-            ["flatpak", "uninstall", "--user", "-y", args.app_id],
-            capture_output=True,
-        )
+        uninstall_user_app(args.app_id)
 
     # Update appstream metadata from remotes to pick up changes
     print("Updating AppStream metadata...")
-    subprocess.run(
-        ["flatpak", "update", "--appstream", "--user"],
-        capture_output=True,
-    )
+    update_user_appstream()
 
     # Add repo as remote
     print(f"Adding local repo as remote '{args.remote_name}'...")
-    # Remove existing remote if it exists to avoid caching issues
-    subprocess.run(
-        ["flatpak", "remote-delete", "--user", args.remote_name],
-        capture_output=True,
-    )
-    subprocess.run(
-        [
-            "flatpak",
-            "remote-add",
-            "--user",
-            "--no-gpg-verify",
-            args.remote_name,
-            str(repo_dir),
-        ],
-        check=True,
-    )
+    reset_user_remote(args.remote_name, paths.repo_dir)
 
     # Install from local repo
     print(f"Installing {args.app_id} from local repo...")
-    install_cmd = [
-        "flatpak",
-        "install",
-        "--user",
-        "-y",
-        args.remote_name,
-        args.app_id,
-    ]
-    run_command(install_cmd, cwd=root)
+    install_user_app_from_remote(
+        root=paths.root,
+        remote_name=args.remote_name,
+        app_id=args.app_id,
+    )
     print(f"\n{args.app_id} installed successfully!")
     print(f"\nThe app will now appear in software centers like KDE Discover.")
     print(f"You can also run it with: flatpak run {args.app_id}")
@@ -226,7 +147,7 @@ def main() -> None:
     # Run if requested
     if args.run:
         print(f"\nRunning {args.app_id}...")
-        run_command(["flatpak", "run", args.app_id], cwd=root)
+        run_command(["flatpak", "run", args.app_id], cwd=paths.root)
 
 
 if __name__ == "__main__":
