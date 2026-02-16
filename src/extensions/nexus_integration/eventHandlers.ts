@@ -705,6 +705,10 @@ export function onGetMyCollections(
     if (!nexusDomainId) {
       return [];
     }
+    const userId = api.getState().persistent["nexus"]?.userInfo?.userId;
+    if (userId === undefined) {
+      return [];
+    }
     try {
       const query: ICollectionQuery = MY_COLLECTIONS_SEARCH_QUERY;
       const searchResult: ICollectionSearchResult = await onSearchCollections(
@@ -721,7 +725,7 @@ export function onGetMyCollections(
         ],
         count,
         offset,
-        userId: api.getState().persistent["nexus"]?.userInfo?.userId.toString(),
+        userId: userId.toString(),
       });
 
       // For each collection, pick only the latest revision (highest revisionNumber)
