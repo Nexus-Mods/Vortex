@@ -12,7 +12,7 @@ from _flatpak_nuget_hash import (
     read_stored_hash as read_nuget_stored_hash,
     write_stored_hash as write_nuget_stored_hash,
 )
-from _flatpak_sources_hash import (
+from _flatpak_yarn_hash import (
     compute_sources_hash,
     read_stored_hash as read_sources_stored_hash,
     write_stored_hash as write_sources_stored_hash,
