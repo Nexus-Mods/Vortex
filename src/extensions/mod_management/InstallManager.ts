@@ -3599,7 +3599,7 @@ class InstallManager {
     tempPath: string,
     progress: (files: string[], percent: number) => void,
     queryPassword: () => Bluebird<string>,
-    maxRetries: number = 3,
+    maxRetries: number = 10,
     retryDelayMs: number = 1000,
   ): Bluebird<{ code: number; errors: string[] }> {
     const attemptExtract = (
