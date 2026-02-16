@@ -5,7 +5,8 @@
 CALL level_pivot_create_table(
   'db', 'mods_pivot',
   'persistent###mods###{mod_id}###{attr}',
-  ['mod_id', 'name', 'version', 'state']
+  ['mod_id', 'name', 'version', 'state'],
+  column_types := ['VARCHAR', 'JSON VARCHAR', 'JSON VARCHAR', 'JSON VARCHAR']
 );
 
 -- @name profiles_pivot
@@ -13,5 +14,6 @@ CALL level_pivot_create_table(
 CALL level_pivot_create_table(
   'db', 'profiles_pivot',
   'persistent###profiles###{profile_id}###{attr}',
-  ['profile_id', 'name', 'gameId', 'lastActivated']
+  ['profile_id', 'name', 'gameId', 'lastActivated'],
+  column_types := ['VARCHAR', 'JSON VARCHAR', 'JSON VARCHAR', 'JSON BIGINT']
 );
