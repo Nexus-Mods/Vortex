@@ -1386,45 +1386,60 @@ class DownloadManager {
       // or the user said yes, otherwise why is this resumable and not canceled?
       options.redownload = "always";
     }
-    return new Bluebird<IDownloadResult>((resolve, reject) => {
-      const download: IRunningDownload = {
-        id,
-        origName: path.basename(filePath),
-        tempName: filePath,
-        error: false,
-        urls,
-        resolvedUrls: this.resolveUrls(
-          urls,
-          path.basename(filePath),
-          options?.nameHint,
-        ),
-        options,
-        lastProgressSent: 0,
-        received,
-        size,
-        started: new Date(started),
-        chunks: [],
-        chunkable: undefined,
-        progressCB,
-        finishCB: resolve,
-        failedCB: (err) => {
-          reject(err);
-        },
-        promises: [],
-      };
-      const isPending = received === 0;
-      download.chunks = (chunks || []).map((chunk, idx) =>
-        this.toJob(download, chunk, isPending && idx === 0),
-      );
-      if (download.chunks.length > 0) {
-        download.chunks[0].errorCB = (err) => {
-          this.cancelDownload(download, err);
-        };
-        this.mQueue.push(download);
-      } else {
-        return reject(new ProcessCanceled("No unfinished chunks"));
-      }
-    });
+    // Validate file size on disk before resuming to prevent writing at wrong offsets
+    // if the file was modified externally (AV quarantine, disk error, manual edit)
+    return fs
+      .statAsync(filePath)
+      .then((stats) => stats.size)
+      .catch(() => 0)
+      .then((fileSize: number) => {
+        // Adjust chunks if file size doesn't match what the metadata expects
+        const adjustedChunks = this.validateChunksAgainstFile(
+          chunks || [],
+          received,
+          fileSize,
+        );
+
+        return new Bluebird<IDownloadResult>((resolve, reject) => {
+          const download: IRunningDownload = {
+            id,
+            origName: path.basename(filePath),
+            tempName: filePath,
+            error: false,
+            urls,
+            resolvedUrls: this.resolveUrls(
+              urls,
+              path.basename(filePath),
+              options.nameHint ?? path.basename(filePath),
+            ),
+            options,
+            lastProgressSent: 0,
+            received: adjustedChunks.adjustedReceived,
+            size,
+            started: new Date(started),
+            chunks: [],
+            chunkable: false,
+            progressCB,
+            finishCB: resolve,
+            failedCB: (err) => {
+              reject(err);
+            },
+            promises: [],
+          };
+          const isPending = adjustedChunks.adjustedReceived === 0;
+          download.chunks = adjustedChunks.chunks.map((chunk, idx) =>
+            this.toJob(download, chunk, isPending && idx === 0),
+          );
+          if (download.chunks.length > 0) {
+            download.chunks[0].errorCB = (err) => {
+              this.cancelDownload(download, err);
+            };
+            this.mQueue.push(download);
+          } else {
+            return reject(new ProcessCanceled("No unfinished chunks"));
+          }
+        });
+      });
   };
 
   /**
@@ -2379,6 +2394,65 @@ class DownloadManager {
       size: job.confirmedSize,
       offset: job.confirmedOffset,
       received: job.confirmedReceived,
+    };
+  };
+
+  /**
+   * Validates stored chunk metadata against the actual file size on disk.
+   * If the file is smaller than what chunks claim was received, adjusts chunks
+   * to restart from the actual file size to prevent writing at wrong offsets.
+   */
+  private validateChunksAgainstFile = (
+    chunks: IChunk[],
+    received: number,
+    actualFileSize: number,
+  ): { chunks: IChunk[]; adjustedReceived: number } => {
+    if (actualFileSize === 0 || chunks.length === 0) {
+      // File doesn't exist or is empty — restart all chunks from scratch
+      log("info", "resume file missing or empty, restarting chunks", {
+        actualFileSize,
+        expectedReceived: received,
+      });
+      return {
+        chunks: chunks.map((chunk) => ({
+          ...chunk,
+          received: 0,
+          offset: chunk.offset - chunk.received,
+          size: chunk.size + chunk.received,
+        })),
+        adjustedReceived: 0,
+      };
+    }
+
+    // Sum up what the chunks think they've received
+    const totalChunkReceived = chunks.reduce(
+      (sum, chunk) => sum + chunk.received,
+      0,
+    );
+
+    if (actualFileSize >= totalChunkReceived) {
+      // File is at least as large as expected — metadata is consistent
+      return { chunks, adjustedReceived: received };
+    }
+
+    // File is smaller than chunk metadata claims — something was lost.
+    // Reset all chunks to restart from the beginning for safety.
+    // A more sophisticated approach could try to figure out which chunks
+    // are valid, but that risks writing at wrong offsets.
+    log("warn", "resume file size mismatch, restarting download", {
+      actualFileSize,
+      totalChunkReceived,
+      expectedReceived: received,
+      numChunks: chunks.length,
+    });
+    return {
+      chunks: chunks.map((chunk) => ({
+        ...chunk,
+        received: 0,
+        offset: chunk.offset - chunk.received,
+        size: chunk.size + chunk.received,
+      })),
+      adjustedReceived: 0,
     };
   };
 

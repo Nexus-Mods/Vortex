@@ -1123,37 +1123,56 @@ export async function onStartInstallDownload(
   const downloadPath = downloadPathForGame(state, convertedGameId);
   const fullPath: string = path.join(downloadPath, download.localPath);
 
-  try {
-    // Small delay to ensure file handles are released and filesystem buffers are flushed
-    await new Promise((resolve) => setTimeout(resolve, 100));
+  // Verify the file is accessible for reading — on Windows, statAsync succeeds even
+  // when the file is locked by another process, so we must actually open the file to
+  // detect sharing violations (e.g., from MD5 finalization or antivirus scans).
+  const MAX_ACCESS_RETRIES = 5;
+  const RETRY_DELAY_MS = 500;
+  for (let attempt = 0; attempt < MAX_ACCESS_RETRIES; ++attempt) {
+    try {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+      // Open for reading to detect Windows sharing violations, then close immediately
+      const fd = await fs.openAsync(fullPath, "r");
+      await fs.closeAsync(fd);
 
-    // Verify file exists and is accessible by checking its stats
-    const stats = await fs.statAsync(fullPath);
+      const stats = await fs.statAsync(fullPath);
+      if (stats.size === 0) {
+        throw new Error("File appears to be empty or still being written");
+      }
 
-    // Additional verification: ensure file is readable and has expected size
-    if (stats.size === 0) {
-      throw new Error("File appears to be empty or still being written");
+      log("debug", "Download file verified as accessible for installation", {
+        downloadId,
+        filePath: path.basename(fullPath),
+        fileSize: stats.size,
+        attempts: attempt + 1,
+      });
+      break;
+    } catch (accessError) {
+      const isLocked = ["EBUSY", "EPERM", "EACCES"].includes(accessError.code);
+      if (isLocked && attempt < MAX_ACCESS_RETRIES - 1) {
+        log("debug", "file locked, retrying", {
+          downloadId,
+          attempt: attempt + 1,
+          error: accessError.message,
+        });
+        continue;
+      }
+      const message = `Download file not accessible for installation: ${accessError.message}`;
+      log("warn", message, { downloadId, filePath: path.basename(fullPath) });
+      if (callback !== undefined) {
+        callback(new DataInvalid(message), undefined);
+      } else {
+        api.showErrorNotification(
+          "Download File Locked",
+          "The download file is still being processed or is locked by another process. " +
+            "Please wait a moment and try again.",
+          { allowReport: false },
+        );
+      }
+      return;
     }
-
-    log("debug", "Download file verified as accessible for installation", {
-      downloadId,
-      filePath: path.basename(fullPath),
-      fileSize: stats.size,
-    });
-  } catch (accessError) {
-    const message = `Download file not accessible for installation: ${accessError.message}`;
-    log("warn", message, { downloadId, filePath: path.basename(fullPath) });
-    if (callback !== undefined) {
-      callback(new DataInvalid(message), undefined);
-    } else {
-      api.showErrorNotification(
-        "Download File Locked",
-        "The download file is still being processed or is locked by another process. " +
-          "Please wait a moment and try again.",
-        { allowReport: false },
-      );
-    }
-    return;
   }
 
   const allowAutoDeploy = options.allowAutoEnable !== false;

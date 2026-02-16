@@ -178,12 +178,25 @@ class FileAssembler {
         this.mFD = undefined;
         return fs
           .fsyncAsync(fd)
-          .then(() => fs.closeAsync(fd))
-          .catch({ code: "EBADF" }, () => {
-            log("warn", "failed to sync or close file", this.mFileName);
-            return Promise.resolve();
+          .catch((err) => {
+            // fsync may fail (EBADF, ENOENT, EIO, etc.) — log but always
+            // proceed to closeAsync so we don't leak the file descriptor
+            log("warn", "failed to sync file before close", {
+              file: this.mFileName,
+              error: err.message,
+            });
           })
-          .catch({ code: "ENOENT" }, () => Promise.resolve());
+          .then(() => fs.closeAsync(fd))
+          .catch((err) => {
+            // close may fail if fd is already invalid (EBADF) — nothing
+            // more we can do, but at least we tried
+            if (err.code !== "EBADF") {
+              log("warn", "failed to close file", {
+                file: this.mFileName,
+                error: err.message,
+              });
+            }
+          });
       } else {
         return Promise.resolve();
       }
