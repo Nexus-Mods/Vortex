@@ -4,9 +4,14 @@ import { initFromProfile } from '../../collectionCreate';
 import {
   MAX_COLLECTION_NAME_LENGTH,
   MIN_COLLECTION_NAME_LENGTH,
-  MOD_TYPE, NAMESPACE, NEXUS_BASE_GAMES_URL, NEXUS_BASE_URL, NEXUS_NEXT_URL } from '../../constants';
-import InfoCache from '../../util/InfoCache';
-import { validateName } from '../../util/transformCollection';
+  MOD_TYPE,
+  NAMESPACE,
+  NEXUS_BASE_GAMES_URL,
+  NEXUS_BASE_URL,
+} from "../../constants";
+import InfoCache from "../../util/InfoCache";
+import { validateName } from "../../util/transformCollection";
+import { hasEditPermissions } from "../../util/util";
 
 import CollectionThumbnail from '../CollectionTile';
 import CollectionThumbnailRemote from '../CollectionTile/RemoteTile';
@@ -423,9 +428,18 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
 
         const installed = new Set(own.map(res => res.mod.attributes?.['collectionSlug']));
 
-        own.push(...this.props.localState.ownCollections
-          .filter(coll => !installed.has(coll.collection?.slug))
-          .map(coll => ({
+      const userId = this.props.userInfo?.userId;
+      own.push(
+        ...this.props.localState.ownCollections
+          .filter((coll) => !installed.has(coll.collection?.slug))
+          .filter((coll) => {
+            const collUserId = coll.collection?.user?.memberId;
+            if (collUserId !== undefined && collUserId === userId) {
+              return true;
+            }
+            return hasEditPermissions(coll.collection?.permissions);
+          })
+          .map((coll) => ({
             mod: undefined,
             added: foreign.find(iter =>
               iter.revision?.collection?.slug === coll.collection?.slug)?.mod,
