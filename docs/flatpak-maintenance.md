@@ -79,6 +79,7 @@ python3 flatpak/scripts/flatpak_bundle.py --skip-build
 - `flatpak_run.py` always uses the existing build—no export or install step
 - `flatpak_install.py --skip-build` re-exports from existing build without rebuilding
 - `flatpak_bundle.py` creates a `.flatpak` file for distribution
+- `nxm://` protocol switching should work out of the box: whichever Vortex build you launched last should become the active handler
 
 ## Script Differences
 
@@ -128,6 +129,18 @@ python3 flatpak/scripts/flatpak_nuget_sources.py --force
 ## Troubleshooting
 
 - Missing submodule files during Flatpak build: `yarn install` normally runs `preinstall.js`, which initializes submodules. If you have not run `yarn install` locally, run `git submodule update --init --recursive` first.
+- `nxm://` handler did not switch automatically:
+
+```bash
+# Check current handler on host
+xdg-settings get default-url-scheme-handler nxm
+
+# Force Flatpak build as handler
+xdg-settings set default-url-scheme-handler nxm com.nexusmods.vortex.desktop
+
+# Force development build as handler
+xdg-settings set default-url-scheme-handler nxm com.nexusmods.vortex.dev.desktop
+```
 
 ## References
 
