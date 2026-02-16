@@ -22,34 +22,16 @@ from _flatpak_workflow import (
 )
 
 
+DEFAULT_BUILD_DIR = "build-flatpak"
+DEFAULT_MANIFEST = "flatpak/com.nexusmods.vortex.yaml"
+DEFAULT_REPO = "flatpak/flatpak-repo"
+DEFAULT_REMOTE_NAME = "vortex-local"
+DEFAULT_APP_ID = "com.nexusmods.vortex"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Export build to local repo and install for UX testing."
-    )
-    parser.add_argument(
-        "--build-dir",
-        default="build-flatpak",
-        help="Build output directory (default: build-flatpak)",
-    )
-    parser.add_argument(
-        "--manifest",
-        default="flatpak/com.nexusmods.vortex.yaml",
-        help="Flatpak manifest path (default: flatpak/com.nexusmods.vortex.yaml)",
-    )
-    parser.add_argument(
-        "--repo",
-        default="flatpak/flatpak-repo",
-        help="Local repo directory (default: flatpak/flatpak-repo)",
-    )
-    parser.add_argument(
-        "--remote-name",
-        default="vortex-local",
-        help="Name for the flatpak remote (default: vortex-local)",
-    )
-    parser.add_argument(
-        "--app-id",
-        default="com.nexusmods.vortex",
-        help="Flatpak app id (default: com.nexusmods.vortex)",
     )
     parser.add_argument(
         "--skip-build",
@@ -73,22 +55,22 @@ def main() -> None:
 
     ensure_flathub_remote()
 
-    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
+    paths = resolve_flatpak_paths(DEFAULT_BUILD_DIR, DEFAULT_MANIFEST, DEFAULT_REPO)
 
     # Check if already installed
-    already_installed = is_app_installed(args.app_id)
+    already_installed = is_app_installed(DEFAULT_APP_ID)
     if already_installed and not args.reinstall:
-        print(f"{args.app_id} is already installed.")
+        print(f"{DEFAULT_APP_ID} is already installed.")
         print("Use --reinstall to update it, or --run to just run it.")
         if args.run:
-            print(f"\nRunning {args.app_id}...")
-            run_command(["flatpak", "run", args.app_id], cwd=paths.root)
+            print(f"\nRunning {DEFAULT_APP_ID}...")
+            run_command(["flatpak", "run", DEFAULT_APP_ID], cwd=paths.root)
         return
 
     # Export to local repo
     if args.skip_build:
         # Export existing build without rebuilding
-        print(f"Exporting {args.app_id} from existing build...")
+        print(f"Exporting {DEFAULT_APP_ID} from existing build...")
         if not paths.build_dir.exists():
             print(f"Error: Build directory {paths.build_dir} does not exist.")
             print("Run without --skip-build to perform initial build.")
@@ -104,7 +86,7 @@ def main() -> None:
         # Use flatpak-builder to build and export
         sync_flatpak_build_inputs(paths.root)
 
-        print(f"Building and exporting {args.app_id} to local repo...")
+        print(f"Building and exporting {DEFAULT_APP_ID} to local repo...")
         run_flatpak_builder(
             root=paths.root,
             build_dir=paths.build_dir,
@@ -122,32 +104,32 @@ def main() -> None:
 
     # Uninstall if reinstalling (keep user data for development)
     if args.reinstall and already_installed:
-        print(f"Uninstalling existing {args.app_id}...")
-        uninstall_user_app(args.app_id)
+        print(f"Uninstalling existing {DEFAULT_APP_ID}...")
+        uninstall_user_app(DEFAULT_APP_ID)
 
     # Update appstream metadata from remotes to pick up changes
     print("Updating AppStream metadata...")
     update_user_appstream()
 
     # Add repo as remote
-    print(f"Adding local repo as remote '{args.remote_name}'...")
-    reset_user_remote(args.remote_name, paths.repo_dir)
+    print(f"Adding local repo as remote '{DEFAULT_REMOTE_NAME}'...")
+    reset_user_remote(DEFAULT_REMOTE_NAME, paths.repo_dir)
 
     # Install from local repo
-    print(f"Installing {args.app_id} from local repo...")
+    print(f"Installing {DEFAULT_APP_ID} from local repo...")
     install_user_app_from_remote(
         root=paths.root,
-        remote_name=args.remote_name,
-        app_id=args.app_id,
+        remote_name=DEFAULT_REMOTE_NAME,
+        app_id=DEFAULT_APP_ID,
     )
-    print(f"\n{args.app_id} installed successfully!")
+    print(f"\n{DEFAULT_APP_ID} installed successfully!")
     print(f"\nThe app will now appear in software centers like KDE Discover.")
-    print(f"You can also run it with: flatpak run {args.app_id}")
+    print(f"You can also run it with: flatpak run {DEFAULT_APP_ID}")
 
     # Run if requested
     if args.run:
-        print(f"\nRunning {args.app_id}...")
-        run_command(["flatpak", "run", args.app_id], cwd=paths.root)
+        print(f"\nRunning {DEFAULT_APP_ID}...")
+        run_command(["flatpak", "run", DEFAULT_APP_ID], cwd=paths.root)
 
 
 if __name__ == "__main__":

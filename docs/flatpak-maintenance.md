@@ -132,6 +132,8 @@ If you are debugging `generated-nuget-sources.json` generation, run:
 python3 flatpak/scripts/flatpak_sources.py --only nuget --force
 ```
 
+NuGet source syncing scans `extensions/` by default. Use `--search-root` if you need to narrow the scope during debugging.
+
 ## Troubleshooting
 
 - Missing submodule files during Flatpak build: `yarn install` normally runs `preinstall.js`, which initializes submodules. If you have not run `yarn install` locally, run `git submodule update --init --recursive` first.

@@ -20,13 +20,11 @@ See `flatpak/com.nexusmods.vortex.yaml` for per-phase commands and environment v
 
 ### Quick Development Testing (`flatpak_run.py`)
 
-Uses `flatpak-builder --run` to run the build directly without installing:
+Builds/installs when needed, then runs the installed app:
 
 ```bash
 python flatpak/scripts/flatpak_run.py
 ```
-
-Fastest for iterative development. No installation step required.
 
 ### UX Testing (`flatpak_install.py`)
 

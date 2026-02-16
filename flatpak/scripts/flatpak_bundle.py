@@ -14,34 +14,20 @@ from _flatpak_workflow import (
 )
 
 
+DEFAULT_BUILD_DIR = "build-flatpak"
+DEFAULT_MANIFEST = "flatpak/com.nexusmods.vortex.yaml"
+DEFAULT_REPO = "flatpak/flatpak-repo"
+DEFAULT_APP_ID = "com.nexusmods.vortex"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Export the build to a local repo and create a Flatpak bundle."
     )
     parser.add_argument(
-        "--build-dir",
-        default="build-flatpak",
-        help="Build output directory (default: build-flatpak)",
-    )
-    parser.add_argument(
-        "--manifest",
-        default="flatpak/com.nexusmods.vortex.yaml",
-        help="Flatpak manifest path (default: flatpak/com.nexusmods.vortex.yaml)",
-    )
-    parser.add_argument(
-        "--repo",
-        default="flatpak/flatpak-repo",
-        help="Local repo directory (default: flatpak/flatpak-repo)",
-    )
-    parser.add_argument(
         "--bundle",
         default="com.nexusmods.vortex.flatpak",
         help="Bundle filename (default: com.nexusmods.vortex.flatpak)",
-    )
-    parser.add_argument(
-        "--app-id",
-        default="com.nexusmods.vortex",
-        help="Flatpak app id (default: com.nexusmods.vortex)",
     )
     parser.add_argument(
         "--skip-build",
@@ -55,7 +41,7 @@ def main() -> None:
 
     ensure_flathub_remote()
 
-    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
+    paths = resolve_flatpak_paths(DEFAULT_BUILD_DIR, DEFAULT_MANIFEST, DEFAULT_REPO)
     bundle_path = Path(args.bundle)
 
     if not bundle_path.is_absolute():
@@ -94,7 +80,7 @@ def main() -> None:
             "build-bundle",
             str(paths.repo_dir),
             str(bundle_path),
-            args.app_id,
+            DEFAULT_APP_ID,
         ],
         cwd=paths.root,
     )

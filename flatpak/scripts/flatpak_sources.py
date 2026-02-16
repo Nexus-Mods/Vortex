@@ -19,6 +19,18 @@ from _flatpak_sources_hash import (
 )
 
 
+DEFAULT_LOCKFILE = "yarn.lock"
+DEFAULT_YARN_OUTPUT = "flatpak/generated-sources.json"
+DEFAULT_YARN_HASH_FILE = "flatpak/generated-sources.hash"
+DEFAULT_NUGET_SEARCH_ROOT = "extensions"
+DEFAULT_NUGET_OUTPUT = "flatpak/generated-nuget-sources.json"
+DEFAULT_NUGET_HASH_FILE = "flatpak/generated-nuget-sources.hash"
+DEFAULT_DOTNET = "9"
+DEFAULT_FREEDESKTOP = "25.08"
+DEFAULT_DESTDIR = "flatpak-nuget-sources"
+DEFAULT_RUNTIME = "linux-x64"
+
+
 def generate_sources(lockfile: Path, output: Path, recursive: bool) -> None:
     info = ensure_venv(install_packages=True)
 
@@ -199,35 +211,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Always regenerate selected source files, even when hashes match",
     )
 
-    yarn_group = parser.add_argument_group("yarn options")
-    yarn_group.add_argument(
-        "--lockfile",
-        default="yarn.lock",
-        help="Path to the root yarn.lock (default: yarn.lock)",
-    )
-    yarn_group.add_argument(
-        "--yarn-output",
-        default="flatpak/generated-sources.json",
-        help="Yarn output JSON file (default: flatpak/generated-sources.json)",
-    )
-    yarn_group.add_argument(
-        "--yarn-hash-file",
-        default="flatpak/generated-sources.hash",
-        help="Stored yarn hash file (default: flatpak/generated-sources.hash)",
-    )
-    yarn_group.add_argument(
-        "--no-recursive",
-        action="store_false",
-        dest="recursive",
-        help="Disable recursive lockfile scanning",
-    )
-    parser.set_defaults(recursive=True)
-
     nuget_group = parser.add_argument_group("nuget options")
     nuget_group.add_argument(
         "--search-root",
-        default="extensions/fomod-installer",
-        help="Root directory to scan for NuGet dependency changes",
+        default=DEFAULT_NUGET_SEARCH_ROOT,
+        help="Root directory to scan for NuGet dependency changes (default: extensions)",
     )
     nuget_group.add_argument(
         "--project",
@@ -237,36 +225,6 @@ def _build_parser() -> argparse.ArgumentParser:
             "Project file path (repeat for multiple projects). "
             "If omitted, all .csproj files under --search-root are used"
         ),
-    )
-    nuget_group.add_argument(
-        "--nuget-output",
-        default="flatpak/generated-nuget-sources.json",
-        help="NuGet output JSON file",
-    )
-    nuget_group.add_argument(
-        "--nuget-hash-file",
-        default="flatpak/generated-nuget-sources.hash",
-        help="Stored NuGet hash file",
-    )
-    nuget_group.add_argument(
-        "--dotnet",
-        default="9",
-        help="Dotnet major version for flatpak-dotnet-generator",
-    )
-    nuget_group.add_argument(
-        "--freedesktop",
-        default="25.08",
-        help="Freedesktop SDK version for flatpak-dotnet-generator",
-    )
-    nuget_group.add_argument(
-        "--destdir",
-        default="flatpak-nuget-sources",
-        help="Destination directory inside Flatpak sources output",
-    )
-    nuget_group.add_argument(
-        "--runtime",
-        default="linux-x64",
-        help="Runtime identifier used for restore dependency graph",
     )
 
     return parser
@@ -280,10 +238,10 @@ def main() -> None:
 
     if run_yarn:
         sync_generated_sources(
-            lockfile=Path(args.lockfile),
-            output=Path(args.yarn_output),
-            hash_file=Path(args.yarn_hash_file),
-            recursive=args.recursive,
+            lockfile=Path(DEFAULT_LOCKFILE),
+            output=Path(DEFAULT_YARN_OUTPUT),
+            hash_file=Path(DEFAULT_YARN_HASH_FILE),
+            recursive=True,
             force=args.force,
         )
 
@@ -293,12 +251,12 @@ def main() -> None:
         sync_generated_nuget_sources(
             search_root=Path(args.search_root),
             projects=projects,
-            output=Path(args.nuget_output),
-            hash_file=Path(args.nuget_hash_file),
-            dotnet=args.dotnet,
-            freedesktop=args.freedesktop,
-            destdir=args.destdir,
-            runtime=args.runtime,
+            output=Path(DEFAULT_NUGET_OUTPUT),
+            hash_file=Path(DEFAULT_NUGET_HASH_FILE),
+            dotnet=DEFAULT_DOTNET,
+            freedesktop=DEFAULT_FREEDESKTOP,
+            destdir=DEFAULT_DESTDIR,
+            runtime=DEFAULT_RUNTIME,
             force=args.force,
         )
 

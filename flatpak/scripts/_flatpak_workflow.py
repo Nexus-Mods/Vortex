@@ -53,7 +53,7 @@ def sync_flatpak_build_inputs(root: Path) -> None:
     )
 
     sync_generated_nuget_sources(
-        search_root=root / "extensions/fomod-installer",
+        search_root=root / "extensions",
         projects=None,
         output=root / "flatpak/generated-nuget-sources.json",
         hash_file=root / "flatpak/generated-nuget-sources.hash",

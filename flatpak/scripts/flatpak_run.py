@@ -20,34 +20,16 @@ from _flatpak_workflow import (
 )
 
 
+DEFAULT_BUILD_DIR = "build-flatpak"
+DEFAULT_MANIFEST = "flatpak/com.nexusmods.vortex.yaml"
+DEFAULT_REPO = "flatpak/flatpak-repo"
+DEFAULT_REMOTE_NAME = "vortex-local"
+DEFAULT_APP_ID = "com.nexusmods.vortex"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run the Flatpak build, installing if necessary."
-    )
-    parser.add_argument(
-        "--build-dir",
-        default="build-flatpak",
-        help="Build output directory (default: build-flatpak)",
-    )
-    parser.add_argument(
-        "--manifest",
-        default="flatpak/com.nexusmods.vortex.yaml",
-        help="Flatpak manifest path (default: flatpak/com.nexusmods.vortex.yaml)",
-    )
-    parser.add_argument(
-        "--repo",
-        default="flatpak/flatpak-repo",
-        help="Local repo directory (default: flatpak/flatpak-repo)",
-    )
-    parser.add_argument(
-        "--remote-name",
-        default="vortex-local",
-        help="Name for the flatpak remote (default: vortex-local)",
-    )
-    parser.add_argument(
-        "--app-id",
-        default="com.nexusmods.vortex",
-        help="Flatpak app id (default: com.nexusmods.vortex)",
     )
     parser.add_argument(
         "--reinstall",
@@ -76,35 +58,35 @@ def main() -> None:
 
     ensure_flathub_remote()
 
-    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
+    paths = resolve_flatpak_paths(DEFAULT_BUILD_DIR, DEFAULT_MANIFEST, DEFAULT_REPO)
 
     # Check if app is installed and if build exists
-    already_installed = is_app_installed(args.app_id)
+    already_installed = is_app_installed(DEFAULT_APP_ID)
     build_exists = paths.build_dir.exists()
 
     if args.skip_build:
         if not already_installed:
-            print(f"Error: {args.app_id} is not installed.")
+            print(f"Error: {DEFAULT_APP_ID} is not installed.")
             print("Run without --skip-build to build and install it.")
             raise SystemExit(1)
-        print(f"Running installed {args.app_id}...")
+        print(f"Running installed {DEFAULT_APP_ID}...")
     else:
         if args.reinstall and already_installed:
-            print(f"Reinstalling {args.app_id}...")
-            uninstall_user_app(args.app_id)
+            print(f"Reinstalling {DEFAULT_APP_ID}...")
+            uninstall_user_app(DEFAULT_APP_ID)
             already_installed = False
 
         should_build = args.reinstall or not build_exists
 
         if should_build:
             if args.reinstall and not already_installed:
-                print(f"Rebuilding {args.app_id} before reinstall...")
+                print(f"Rebuilding {DEFAULT_APP_ID} before reinstall...")
             elif not build_exists:
-                print(f"{args.app_id} build not found. Building...")
+                print(f"{DEFAULT_APP_ID} build not found. Building...")
 
             sync_flatpak_build_inputs(paths.root)
 
-            print(f"Building {args.app_id}...")
+            print(f"Building {DEFAULT_APP_ID}...")
             run_flatpak_builder(
                 root=paths.root,
                 build_dir=paths.build_dir,
@@ -112,34 +94,34 @@ def main() -> None:
                 repo_dir=paths.repo_dir,
             )
 
-            print(f"Installing {args.app_id} from local build...")
+            print(f"Installing {DEFAULT_APP_ID} from local build...")
             install_user_app_from_build(
                 root=paths.root,
                 build_dir=paths.build_dir,
                 repo_dir=paths.repo_dir,
-                remote_name=args.remote_name,
-                app_id=args.app_id,
+                remote_name=DEFAULT_REMOTE_NAME,
+                app_id=DEFAULT_APP_ID,
             )
-            print(f"\n{args.app_id} installed successfully!")
+            print(f"\n{DEFAULT_APP_ID} installed successfully!")
         elif not already_installed:
-            print(f"{args.app_id} not installed. Exporting from existing build...")
+            print(f"{DEFAULT_APP_ID} not installed. Exporting from existing build...")
             install_user_app_from_build(
                 root=paths.root,
                 build_dir=paths.build_dir,
                 repo_dir=paths.repo_dir,
-                remote_name=args.remote_name,
-                app_id=args.app_id,
+                remote_name=DEFAULT_REMOTE_NAME,
+                app_id=DEFAULT_APP_ID,
             )
-            print(f"\n{args.app_id} installed successfully!")
+            print(f"\n{DEFAULT_APP_ID} installed successfully!")
         else:
-            print(f"{args.app_id} is already installed. Running...")
+            print(f"{DEFAULT_APP_ID} is already installed. Running...")
             print("Use --reinstall to rebuild and reinstall.")
 
     # Run the installed app
     run_cmd = ["flatpak", "run"]
     if args.log:
         run_cmd.append("--env=VORTEX_ENABLE_LOGGING=1")
-    run_cmd.append(args.app_id)
+    run_cmd.append(DEFAULT_APP_ID)
     if args.command_args:
         run_cmd.extend(args.command_args)
 

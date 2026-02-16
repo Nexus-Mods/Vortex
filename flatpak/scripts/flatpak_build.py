@@ -12,42 +12,22 @@ from _flatpak_workflow import (
 )
 
 
+DEFAULT_BUILD_DIR = "build-flatpak"
+DEFAULT_MANIFEST = "flatpak/com.nexusmods.vortex.yaml"
+DEFAULT_REPO = "flatpak/flatpak-repo"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build the Vortex Flatpak using flatpak-builder."
     )
-    parser.add_argument(
-        "--build-dir",
-        default="build-flatpak",
-        help="Build output directory (default: build-flatpak)",
-    )
-    parser.add_argument(
-        "--manifest",
-        default="flatpak/com.nexusmods.vortex.yaml",
-        help="Flatpak manifest path (default: flatpak/com.nexusmods.vortex.yaml)",
-    )
-    parser.add_argument(
-        "--repo",
-        default="flatpak/flatpak-repo",
-        help="Local repo directory (default: flatpak/flatpak-repo)",
-    )
-    parser.add_argument(
-        "--install-deps-from",
-        default="flathub",
-        help="Remote for runtime deps (default: flathub)",
-    )
-    parser.add_argument(
-        "--system",
-        action="store_true",
-        help="Install dependencies system-wide (default: --user)",
-    )
-    args = parser.parse_args()
+    parser.parse_args()
 
     ensure_venv(install_packages=False)
     ensure_flatpak_tools()
     ensure_flathub_remote()
 
-    paths = resolve_flatpak_paths(args.build_dir, args.manifest, args.repo)
+    paths = resolve_flatpak_paths(DEFAULT_BUILD_DIR, DEFAULT_MANIFEST, DEFAULT_REPO)
 
     sync_flatpak_build_inputs(paths.root)
 
@@ -55,8 +35,8 @@ def main() -> None:
         root=paths.root,
         build_dir=paths.build_dir,
         manifest=paths.manifest,
-        install_deps_from=args.install_deps_from,
-        user_install=not args.system,
+        install_deps_from="flathub",
+        user_install=True,
     )
 
 
