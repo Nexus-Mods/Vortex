@@ -52,6 +52,9 @@ export interface IDownloadJob extends IChunk {
   /** Number of times this chunk has been requeued after finishing with remaining data */
   requeues?: number;
 
+  /** Number of times startJob has failed for this chunk */
+  startFailures?: number;
+
   extraCookies: string[];
 
   dataCB?: (offset: number, data) => Promise<boolean>;

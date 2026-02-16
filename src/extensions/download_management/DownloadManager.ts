@@ -1932,18 +1932,50 @@ class DownloadManager {
     job.workerId = workerId;
 
     return this.startJob(download, job).catch((err) => {
-      // If startJob fails, reset the job state and clean up
-      log("warn", "Failed to start worker, resetting job state", {
-        workerId,
-        downloadId: download.id,
-        error: err.message,
-      });
-
-      // Reset job state to allow retry
-      job.state = "paused";
-
       // Clean up speed calculator
       this.mSpeedCalculator.stopCounter(workerId);
+
+      // Permanent errors (file/directory missing, permission denied) should not be
+      // retried — mark the job as finished so cleanupCompletedDownloads removes
+      // the download from the queue. Otherwise we get an infinite retry loop.
+      const permanentCodes = ["ENOENT", "EACCES", "EPERM", "EISDIR"];
+      const isPermanent = permanentCodes.includes(err.code);
+
+      if (isPermanent) {
+        log("error", "Worker start failed with permanent error, canceling download", {
+          workerId,
+          downloadId: download.id,
+          error: err.message,
+          code: err.code,
+        });
+        // Mark all chunks as finished to remove from queue
+        download.chunks.forEach((chunk) => {
+          chunk.state = "finished";
+        });
+      } else {
+        // Transient error — allow limited retries
+        job.startFailures = (job.startFailures ?? 0) + 1;
+        const MAX_START_FAILURES = 3;
+        if (job.startFailures >= MAX_START_FAILURES) {
+          log("error", "Worker start failed too many times, canceling download", {
+            workerId,
+            downloadId: download.id,
+            error: err.message,
+            failures: job.startFailures,
+          });
+          download.chunks.forEach((chunk) => {
+            chunk.state = "finished";
+          });
+        } else {
+          log("warn", "Failed to start worker, will retry", {
+            workerId,
+            downloadId: download.id,
+            error: err.message,
+            failures: job.startFailures,
+          });
+          job.state = "paused";
+        }
+      }
 
       // Re-throw the error to bubble up to the caller
       throw err;
