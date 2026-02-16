@@ -794,14 +794,11 @@ class DataInvalid extends Error {
 // @public
 function deBOM(input: string): string;
 
-// @public
-class Debouncer {
+// Warning: (ae-forgotten-export) The symbol "GenericDebouncer" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+class Debouncer extends GenericDebouncer<ReturnType<typeof setTimeout>, typeof setTimeout, typeof clearTimeout> {
     constructor(func: (...args: any[]) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
-    // (undocumented)
-    clear(): void;
-    runNow(callback: (err: Error) => void, ...args: any[]): void;
-    schedule(callback?: (err: Error) => void, ...args: any[]): void;
-    wait(callback: (err: Error | null) => void, immediately?: boolean): void;
 }
 
 // @public
