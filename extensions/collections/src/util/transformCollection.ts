@@ -732,11 +732,11 @@ export function makeCollectionId(baseId: string): string {
   return `vortex_collection_${baseId}`;
 }
 
-function deduceCollectionAttributes(collectionMod: types.IMod,
-                                    collection: ICollection,
-                                    mods: { [modId: string]: types.IMod })
-                                    : ICollectionAttributes {
-
+function deduceCollectionAttributes(
+  collectionMod: types.IMod,
+  collection: ICollection,
+  mods: { [modId: string]: types.IMod },
+): ICollectionAttributes {
   const existingInstallMode: { [modId: string]: string } =
     collectionMod.attributes?.collection?.installMode ?? {};
 
@@ -756,11 +756,12 @@ function deduceCollectionAttributes(collectionMod: types.IMod,
       return;
     }
 
-    res.installMode[mod.id] = (rule.installerChoices !== undefined)
-      ? 'choices'
-      : (rule.fileList !== undefined)
-      ? 'clone'
-      : (existingInstallMode[mod.id] ?? 'fresh');
+    res.installMode[mod.id] =
+      rule.installerChoices !== undefined
+        ? "choices"
+        : rule.fileList !== undefined
+          ? "clone"
+          : (existingInstallMode[mod.id] ?? "fresh");
 
     res.instructions[mod.id] = rule.extra?.instructions;
     res.source[mod.id] = {
