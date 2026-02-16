@@ -171,7 +171,14 @@ function generateWrapperScript(
     "unset LD_LIBRARY_PATH\n" +
     "unset LD_PRELOAD\n" +
     (electronEnvExports ? electronEnvExports + "\n" : "") +
-    `exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" "$@"\n`
+    // Only pass --download when a parameter %u is provided (nxm:// links from browser).
+    // This matches Windows behaviour, which includes --download on all protocol handler calls,
+    // but does not on non-handler calls (e.g., when starting from the start menu).
+    `if [ -n "$1" ]; then\n` +
+    `  exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}" --download "$@"\n` +
+    `else\n` +
+    `  exec "${escapeShellScriptArgument(executablePath)}" "${escapeShellScriptArgument(appPath)}"\n` +
+    `fi\n`
   );
 }
 
@@ -230,10 +237,8 @@ function ensureDevDesktopEntry(
   const wrapperContent = generateWrapperScript(executablePath, appPath);
   const wrapperChanged = writeFileIfChanged(wrapperPath, wrapperContent, 0o755);
 
-  // Keep Linux launch arguments consistent with other Vortex desktop entries
-  // by using `--download %u` rather than relying on positional `%u`.
-  // ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.App/com.nexusmods.app.desktop#L13
-  // ref: https://github.com/Nexus-Mods/NexusMods.App/blob/main/src/NexusMods.Backend/OS/LinuxInterop.Protocol.cs#L55-L62
+  // The wrapper script adds --download conditionally when %u is provided.
+  // This matches Windows behaviour where --download is only passed for protocol URLs.
   const desktopFileContent =
     "[Desktop Entry]\n" +
     "Type=Application\n" +
@@ -241,7 +246,7 @@ function ensureDevDesktopEntry(
     "GenericName=Mod Manager\n" +
     "Comment=Mod manager for PC games from Nexus Mods\n" +
     "NoDisplay=true\n" +
-    `Exec=${escapedWrapperPathExec} --download %u\n` +
+    `Exec=${escapedWrapperPathExec} %u\n` +
     `TryExec=${escapedWrapperPathTryExec}\n` +
     "Icon=com.nexusmods.vortex\n" +
     "Terminal=false\n" +

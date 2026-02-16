@@ -4,7 +4,7 @@ GenericName=Mod Manager
 # TODO: Adjust this text. Placeholder.
 Comment=Mod manager for PC games from Nexus Mods
 Comment[en_US]=Mod manager for PC games from Nexus Mods
-Exec=run.sh --download %u
+Exec=run.sh %u
 Icon=com.nexusmods.vortex
 Terminal=false
 Type=Application
