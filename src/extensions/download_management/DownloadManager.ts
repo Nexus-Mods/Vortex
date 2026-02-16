@@ -1638,21 +1638,11 @@ class DownloadManager {
 
   private initChunk = (download: IRunningDownload): IDownloadJob => {
     let fileNameFromURL: string;
-    return {
+    const job: IDownloadJob = {
       url: () =>
         download.resolvedUrls().then((resolved) => {
           if (resolved.updatedUrls !== undefined) {
             download.urls = resolved.updatedUrls;
-          }
-          if (fileNameFromURL === undefined && resolved.urls.length > 0) {
-            const [urlIn, fileName] = resolved.urls[0]
-              .toString()
-              .split("<")[0]
-              .split("|");
-            fileNameFromURL =
-              fileName !== undefined
-                ? fileName
-                : decodeURI(path.basename(new URL(urlIn).pathname));
           }
           if (
             !resolved.urls ||
@@ -1668,7 +1658,20 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Rotate through available mirror URLs on retries
+          const retryCount = (job.requeues ?? 0) + (job.startFailures ?? 0);
+          const idx = retryCount % resolved.urls.length;
+          if (fileNameFromURL === undefined) {
+            const [urlIn, fileName] = resolved.urls[idx]
+              .toString()
+              .split("<")[0]
+              .split("|");
+            fileNameFromURL =
+              fileName !== undefined
+                ? fileName
+                : decodeURI(path.basename(new URL(urlIn).pathname));
+          }
+          return resolved.urls[idx];
         }),
       confirmedOffset: 0,
       confirmedSize: this.mMinChunkSize,
@@ -1690,6 +1693,7 @@ class DownloadManager {
           chunkable,
         ),
     };
+    return job;
   };
 
   private cancelDownload = (download: IRunningDownload, err: Error) => {
@@ -2542,12 +2546,6 @@ class DownloadManager {
     const job: IDownloadJob = {
       url: () =>
         download.resolvedUrls().then((resolved) => {
-          if (fileNameFromURL === undefined && resolved.urls.length > 0) {
-            fileNameFromURL = decodeURI(
-              path.basename(new URL(resolved.urls[0]).pathname),
-            );
-          }
-
           if (
             !resolved.urls ||
             resolved.urls.length === 0 ||
@@ -2566,7 +2564,15 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Rotate through available mirror URLs on retries
+          const retryCount = (job.requeues ?? 0) + (job.startFailures ?? 0);
+          const idx = retryCount % resolved.urls.length;
+          if (fileNameFromURL === undefined) {
+            fileNameFromURL = decodeURI(
+              path.basename(new URL(resolved.urls[idx]).pathname),
+            );
+          }
+          return resolved.urls[idx];
         }),
       // Immutable confirmed fields
       confirmedOffset,
@@ -2679,7 +2685,9 @@ class DownloadManager {
       // Distinguish between empty responses (CDN rate-limiting) and partial data.
       // Empty responses get more retries with a delay to let the CDN recover.
       const madeProgress = job.confirmedReceived > 0;
-      const maxRequeues = madeProgress ? MAX_CHUNK_REQUEUES : MAX_EMPTY_REQUEUES;
+      const maxRequeues = madeProgress
+        ? MAX_CHUNK_REQUEUES
+        : MAX_EMPTY_REQUEUES;
 
       if (job.requeues >= maxRequeues) {
         log(
