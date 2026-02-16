@@ -188,9 +188,10 @@ class InstallDriver {
           }
           applyPatches(api, this.mCollection,
             gameId, dependent.reference.description, modId, dependent.extra?.patches);
+          const choices = dependent.installerChoices ?? dependent.extra?.installerChoices;
           util.batchDispatch(api.store, [
             actions.setFileOverride(gameId, modId, dependent.extra?.fileOverrides),
-            actions.setModAttribute(gameId, modId, 'installerChoices', dependent.extra?.choices),
+            actions.setModAttribute(gameId, modId, 'installerChoices', choices),
             actions.setModAttribute(gameId, modId, 'patches', dependent.extra?.patches),
             actions.setModAttribute(gameId, modId, 'fileList', dependent.fileList),
           ]);
