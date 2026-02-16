@@ -188,6 +188,7 @@ class DownloadWorker {
   private mURLResolve: Bluebird<void>;
   private mOnAbort: () => void;
   private mInFlightWrites: number = 0; // Track writes sent to dataCB but not yet confirmed
+  private mWriteOffset: number = 0; // Local write position tracker, independent of job fields
 
   constructor(
     api: IExtensionApi,
@@ -261,6 +262,8 @@ class DownloadWorker {
     job.size = job.confirmedSize - job.confirmedReceived;
     // received starts at optimistic confirmed value
     job.received = job.confirmedReceived;
+
+    this.mWriteOffset = job.offset;
 
     log("debug", "requesting range", {
       id: job.workerId,
@@ -948,6 +951,8 @@ class DownloadWorker {
         // Recalculate derived fields
         this.mJob.offset = 0;
         this.mJob.received = 0;
+        // Reset local write offset so data is written starting at byte 0
+        this.mWriteOffset = 0;
       }
       if (chunkSize !== this.mJob.size) {
         // on the first request it's possible we requested more than the file size if
@@ -1002,10 +1007,13 @@ class DownloadWorker {
 
   private doWriteBuffer = (buf: Buffer): Bluebird<void> => {
     const len = buf.length;
-    const writeOffset = this.mJob.offset; // Capture offset before any updates
+    // Use local write offset tracker instead of job fields to prevent
+    // corruption from concurrent writes or restart/retry races
+    const writeOffset = this.mWriteOffset;
+    this.mWriteOffset += len;
     this.mInFlightWrites += len;
 
-    const res = this.mJob
+    return this.mJob
       .dataCB(writeOffset, buf)
       .then(() => {
         this.mInFlightWrites -= len;
@@ -1020,8 +1028,9 @@ class DownloadWorker {
           return;
         }
 
-        // Write confirmed - update confirmed received counter
+        // Write confirmed - update job fields from confirmed state only
         this.mJob.confirmedReceived += len;
+        this.mJob.received = this.mJob.confirmedReceived;
 
         // Recalculate confirmed-based fields
         this.mJob.offset =
@@ -1037,14 +1046,6 @@ class DownloadWorker {
         }
         return Bluebird.reject(err);
       });
-
-    // Update optimistic fields immediately (before write confirmation)
-    // This ensures the next write uses the correct offset
-    this.mJob.received += len;
-    this.mJob.offset += len; // Optimistically advance offset for next write
-    this.mJob.size -= len; // Optimistically reduce remaining size
-
-    return res;
   };
 
   private writeBuffer = (str?: stream.Readable): Bluebird<void> => {
