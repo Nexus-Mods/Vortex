@@ -63,12 +63,12 @@
         flex-direction: column;
         box-shadow: var(--shadow-md);
         z-index: var(--z-index-dropdown);
+        padding: calc(var(--spacing) * 1);
         max-width: calc(var(--spacing) * 72);
         min-width: calc(var(--spacing) * 52);
         margin-top: calc(var(--spacing) * 1);
         max-height: calc(var(--spacing) * 128);
         border-radius: calc(var(--spacing) * 1);
-        padding-block: calc(var(--spacing) * 1.5);
         border: 1px solid var(--color-stroke-weak);
         background-color: var(--color-surface-mid);
     }
@@ -88,7 +88,8 @@
 
         column-gap: calc(var(--spacing) * 3);
         color: var(--color-neutral-moderate);
-        padding-block: calc(var(--spacing) * 2);
+        border-radius: calc(var(--spacing) * 1);
+        padding-block: calc(var(--spacing) * 1.5);
         padding-inline: calc(var(--spacing) * 3);
 
         transition-property:
@@ -115,15 +116,15 @@
         .nxm-dropdown-item-label {
             flex-grow: 1;
             text-align: left;
-            font-size: var(--text-sm);
-            line-height: calc(var(--spacing) * 5);
-            letter-spacing: var(--tracking-normal);
+            font-size: var(--text-xs);
+            line-height: calc(var(--spacing) * 4);
+            letter-spacing: var(--tracking-wide);
         }
 
         .nxm-dropdown-item-icon {
             flex-shrink: 0;
-            width: calc(var(--spacing) * 5);
-            height: calc(var(--spacing) * 5);
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
         }
     }
 }

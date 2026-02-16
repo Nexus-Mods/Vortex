@@ -1,7 +1,5 @@
-"use client";
-
 import { mdiMenuLeft, mdiMenuRight } from "@mdi/js";
-import { useMemo, type ClassAttributes } from "react";
+import { useMemo, type ClassAttributes, type RefObject } from "react";
 
 import { Icon } from "../next/icon";
 import { joinClasses } from "../next/utils";
@@ -18,9 +16,9 @@ export interface PaginationProps extends ClassAttributes<HTMLElement> {
   onPaginationUpdate?: (page: number, recordsPerPage: number) => void;
   recordsPerPage: number;
   /**
-   * Change scroll position page when page is changed
+   * Ref to an element to scroll into view when page changes
    */
-  scrollTo?: "top" | [number, number];
+  scrollRef?: RefObject<HTMLElement>;
   totalRecords?: number;
 }
 
@@ -29,7 +27,7 @@ export const Pagination = ({
   currentPage,
   onPaginationUpdate = () => undefined,
   recordsPerPage,
-  scrollTo,
+  scrollRef,
   totalRecords = 0,
   ...props
 }: PaginationProps) => {
@@ -68,10 +66,8 @@ export const Pagination = ({
 
   const handlePageChange = (page: number) => {
     if (page !== currentPage) {
-      if (scrollTo === "top") {
-        window.scrollTo(0, 0);
-      } else if (Array.isArray(scrollTo)) {
-        window.scrollTo(...scrollTo);
+      if (scrollRef?.current) {
+        scrollRef.current.scrollTo({ top: 0 });
       }
 
       onPaginationUpdate(page, recordsPerPage);

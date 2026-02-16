@@ -1,9 +1,5 @@
-"use client";
-
-import type { ButtonHTMLAttributes } from "react";
-
 import numeral from "numeral";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 
 import { getTabId, joinClasses } from "../../utils";
 import { useTabContext } from "../tabs.context";

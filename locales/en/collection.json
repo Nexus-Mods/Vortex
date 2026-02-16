@@ -2,9 +2,10 @@
   "browse": {
     "title": "Browse Collections ({{total}})",
     "selectGame": "Please select a game to browse collections.",
-    "loading": "Loading collections...",
-    "error": "Error loading collections:",
-    "noCollections": "No collections found for this game.",
+    "noCollections": {
+      "title": "No collection results found for this game",
+      "message": "Browse mods on the website to start building your own setup."
+    },
     "searchPlaceholder": "Search collections...",
     "searchTooShort": "Search requires at least 2 characters. Please enter more text or clear the search.",
     "resultsCount": "{{total}} results",

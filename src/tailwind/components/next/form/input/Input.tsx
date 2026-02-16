@@ -35,7 +35,8 @@ export const Input = ({
   disabled,
   errorMessage,
   fieldClassName,
-  hideLabel = false,
+  hideErrors,
+  hideLabel,
   hints = [],
   hintsTypographyType,
   id,
@@ -65,6 +66,7 @@ export const Input = ({
       className={fieldClassName}
       disabled={disabled}
       errorMessage={errorMessage}
+      hideErrors={hideErrors}
       hideLabel={hideLabel}
       hints={hints}
       hintsTypographyType={hintsTypographyType}

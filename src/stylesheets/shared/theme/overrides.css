@@ -6,22 +6,22 @@
         .dropdown-menu > li > a {
             &:hover,
             &:focus {
-                background-color: var(--color-surface-mid);
+                background-color: var(--color-surface-mid) !important;
             }
         }
 
         .main-page-inner {
-            inset: 0;
+            inset: 0 !important;
         }
 
         .mainpage-header-container {
-            background-color: var(--color-surface-high);
+            background-color: var(--color-surface-high) !important;
 
             .btn-default {
-                background-color: var(--color-surface-high);
+                background-color: var(--color-surface-high) !important;
 
                 &:hover {
-                    background-color: var(--color-zinc-600);
+                    background-color: var(--color-zinc-600) !important;
                 }
             }
         }

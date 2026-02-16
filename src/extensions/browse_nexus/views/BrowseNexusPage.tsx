@@ -5,17 +5,21 @@ import type {
   SortDirection,
 } from "@nexusmods/nexus-api";
 
-import { mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
+import { mdiClockOutline, mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import numeral from "numeral";
-import * as React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 
 import MainPage from "../../../renderer/views/MainPage";
-import Tailwind from "../../../tailwind";
+import { Listing } from "../../../tailwind/components/listing";
 import { Button } from "../../../tailwind/components/next/button";
+import {
+  CollectionTile,
+  CollectionTileSkeleton,
+} from "../../../tailwind/components/next/collectiontile";
 import { Input } from "../../../tailwind/components/next/form";
 import {
   TabBar,
@@ -24,6 +28,7 @@ import {
   TabProvider,
 } from "../../../tailwind/components/next/tabs";
 import { Typography } from "../../../tailwind/components/next/typography";
+import { NoResults } from "../../../tailwind/components/no_results";
 import { Pagination } from "../../../tailwind/components/pagination/Pagination";
 import { Picker } from "../../../tailwind/components/picker";
 import { UserCanceled } from "../../../util/api";
@@ -85,22 +90,26 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       ns: ["collection", "common"],
       ...options,
     });
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const gameId = useSelector((state: IState) => activeGameId(state));
+  const gameDomainName = nexusGameId(getGame(gameId), gameId);
+
   const adultContentFilter = useSelector(
     (state: IState) => state.persistent["nexus"]?.userInfo?.adult,
   );
-  const [collections, setCollections] = React.useState<ICollection[]>([]);
-  const [totalCount, setTotalCount] = React.useState<number>(0);
-  const [allCollectionsTotal, setAllCollectionsTotal] =
-    React.useState<number>(0);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  const [sortBy, setSortBy] = React.useState<ISortOption>(SORT_OPTIONS[1]); // Default to "Most Endorsed"
-  const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [activeSearch, setActiveSearch] = React.useState<string>(""); // The search term actually being used
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [selectedTab, setSelectedTab] = React.useState<string>("collections");
-  const [refreshTrigger, setRefreshTrigger] = React.useState<number>(0);
+  const [collections, setCollections] = useState<ICollection[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [allCollectionsTotal, setAllCollectionsTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [sortBy, setSortBy] = useState<ISortOption>(SORT_OPTIONS[1]); // Default to "Most Endorsed"
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeSearch, setActiveSearch] = useState<string>(""); // The search term actually being used
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedTab, setSelectedTab] = useState<string>("collections");
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [searchValidationError, setSearchValidationError] =
     React.useState<string>("");
   const itemsPerPage = 20;
@@ -118,6 +127,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     // If search query is empty, clear the search
     // If search query is 2+ characters, perform the search
     setActiveSearch(searchQuery);
+    setCurrentPage(1);
   };
 
   const handleRefresh = () => {
@@ -170,12 +180,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     opn(nexusUrl).catch(() => undefined);
   };
 
-  const handleViewOnNexus = (collection: ICollection) => {
-    const nexusUrl = `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`;
-    opn(nexusUrl).catch(() => undefined);
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (!gameId) {
       setLoading(false);
       return;
@@ -185,7 +190,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     setError(null);
 
     const options: ICollectionSearchOptions = {
-      gameId: nexusGameId(getGame(gameId), gameId),
+      gameId: gameDomainName,
       count: 20,
       offset: (currentPage - 1) * itemsPerPage,
       sort: {
@@ -227,10 +232,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
       });
   }, [gameId, sortBy, activeSearch, currentPage, api, refreshTrigger]);
 
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [sortBy, activeSearch]);
-
   if (!gameId) {
     return (
       <MainPage id="browse-collections-page">
@@ -245,7 +246,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
 
   return (
     <MainPage id="browse-collections-page">
-      <MainPage.Body className="h-full overflow-y-auto pt-6">
+      <MainPage.Body className="h-full overflow-y-auto pt-6" ref={scrollRef}>
         <TabProvider
           tab={selectedTab}
           tabListId="browse-nexus-tabs"
@@ -306,7 +307,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     onClick={handleRefresh}
                   />
 
-                  <Typography appearance="moderate" isTranslucent={true}>
+                  <Typography
+                    appearance="moderate"
+                    isTranslucent={true}
+                    typographyType="body-sm"
+                  >
                     {t("collection:browse.resultsCount", {
                       total: numeral(totalCount).format("0,0"),
                     })}
@@ -319,111 +324,57 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     value: option,
                   }))}
                   value={sortBy}
-                  onChange={(value) => setSortBy(value)}
+                  onChange={(value) => {
+                    setSortBy(value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
 
-              {loading ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.loading")}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="none"
-                      className="mb-2 text-danger-moderate"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.error")}
-                    </Tailwind.Typography>
-
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-md"
-                    >
-                      {error.message}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : collections.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <div className="text-center">
-                    <Tailwind.Typography
-                      appearance="subdued"
-                      typographyType="body-lg"
-                    >
-                      {t("collection:browse.noCollections")}
-                    </Tailwind.Typography>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Collection Tiles */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(465px,1fr))] gap-4">
-                    {collections.map((collection) => {
-                      const tileImage =
-                        (collection as any).tileImage?.thumbnailUrl ||
-                        "https://placehold.co/166x207/1f1f1f/666?text=No+Image";
-                      const latestRevision = (collection as any)
-                        .latestPublishedRevision;
-                      const tags: string[] = [];
-
-                      // Extract tags from collection - ensure all tags are strings
-                      if ((collection as any).category?.name) {
-                        tags.push((collection as any).category.name);
-                      }
-                      if (latestRevision?.adultContent) {
-                        tags.push("Adult");
-                      }
-
-                      return (
-                        <Tailwind.CollectionTile
-                          api={api}
-                          author={{
-                            name: collection.user?.name || "Unknown",
-                            avatar: collection.user?.avatar,
-                          }}
-                          badges={(collection as any).badges}
-                          className="max-w-none"
-                          coverImage={tileImage}
-                          description={
-                            (collection as any).summary ||
-                            "No description available."
-                          }
-                          gameId={gameId}
-                          id={collection.id.toString()}
-                          key={collection.id}
-                          slug={collection.slug}
-                          stats={{
-                            modCount: latestRevision?.modCount || 0,
-                            size: latestRevision?.totalSize || 0,
-                            endorsements: collection.endorsements || 0,
-                          }}
-                          tags={tags}
-                          title={collection.name}
-                          version={latestRevision?.revisionNumber?.toString()}
-                          onAddCollection={() =>
-                            handleAddCollection(collection)
-                          }
-                          onViewPage={() => handleViewOnNexus(collection)}
-                        />
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+              <Listing
+                className="grid grid-cols-[repeat(auto-fit,minmax(26rem,1fr))] gap-4"
+                entityCount={collections?.length}
+                isError={!!error}
+                isLoading={loading}
+                noResultsChildren={
+                  <Button
+                    buttonType="tertiary"
+                    filled="weak"
+                    leftIconPath={mdiOpenInNew}
+                    size="sm"
+                    onClick={() => {
+                      opn(
+                        `https://www.nexusmods.com/games/${gameDomainName}/mods`,
+                      ).catch(() => undefined);
+                    }}
+                  >
+                    {t("collection:browse.modsComingSoon.openWebsite")}
+                  </Button>
+                }
+                noResultsMessage={t("collection:browse.noCollections.message")}
+                noResultsTitle={t("collection:browse.noCollections.title")}
+                skeletonCount={12}
+                SkeletonTile={CollectionTileSkeleton}
+              >
+                {collections?.map((collection) => (
+                  <CollectionTile
+                    api={api}
+                    collection={collection}
+                    key={collection.id}
+                    onAddCollection={() => handleAddCollection(collection)}
+                    onViewPage={() => {
+                      opn(
+                        `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
+                      ).catch(() => undefined);
+                    }}
+                  />
+                ))}
+              </Listing>
 
               <Pagination
                 currentPage={currentPage}
                 recordsPerPage={itemsPerPage}
+                scrollRef={scrollRef}
                 totalRecords={totalCount}
                 onPaginationUpdate={(newPage) => setCurrentPage(newPage)}
               />
@@ -431,48 +382,26 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           </TabPanel>
 
           <TabPanel name={t("collection:browse.tabs.mods")}>
-            <div className="flex flex-col items-center gap-4 py-16">
-              {/* Icon */}
-              <Tailwind.Icon
-                className="size-9 text-neutral-subdued"
-                path="mdiClockOutline"
-                size="xl"
-              />
-
-              {/* Heading */}
-              <Tailwind.Typography
-                appearance="subdued"
-                className="font-semibold"
-                typographyType="body-xl"
-              >
-                {t("collection:browse.modsComingSoon.title")}
-              </Tailwind.Typography>
-
-              {/* Description */}
-              <Tailwind.Typography
-                appearance="subdued"
-                className="text-center"
-                typographyType="body-lg"
-              >
-                {t("collection:browse.modsComingSoon.description")}
-              </Tailwind.Typography>
-
-              {/* Button */}
-              <Tailwind.Button
+            <NoResults
+              className="py-16"
+              iconPath={mdiClockOutline}
+              message={t("collection:browse.modsComingSoon.description")}
+              title={t("collection:browse.modsComingSoon.title")}
+            >
+              <Button
                 buttonType="tertiary"
                 filled="weak"
                 leftIconPath={mdiOpenInNew}
                 size="sm"
                 onClick={() => {
-                  const game = getGame(gameId);
-                  const domainName = nexusGameId(game, gameId);
-                  const nexusUrl = `https://www.nexusmods.com/games/${domainName}/mods`;
-                  opn(nexusUrl).catch(() => undefined);
+                  opn(
+                    `https://www.nexusmods.com/games/${gameDomainName}/mods`,
+                  ).catch(() => undefined);
                 }}
               >
                 {t("collection:browse.modsComingSoon.openWebsite")}
-              </Tailwind.Button>
-            </div>
+              </Button>
+            </NoResults>
           </TabPanel>
         </TabProvider>
       </MainPage.Body>

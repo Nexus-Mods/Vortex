@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, type FormEvent } from "react";
 
 import type { PaginationProps } from "./Pagination";
@@ -45,6 +43,7 @@ export const JumpToPage = ({
           !isValid ? `Enter a page between 1 and ${totalPages}` : undefined
         }
         fieldClassName="w-auto!"
+        hideErrors={true}
         hideLabel={true}
         max={totalPages}
         min={1}
@@ -52,7 +51,11 @@ export const JumpToPage = ({
         size="sm"
         type="number"
         value={page}
-        onChange={(e) => setPage(e.target.valueAsNumber)}
+        onChange={(e) => {
+          if (!Number.isNaN(e.target.valueAsNumber)) {
+            setPage(e.target.valueAsNumber);
+          }
+        }}
       />
 
       <Button
