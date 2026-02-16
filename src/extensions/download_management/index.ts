@@ -322,9 +322,7 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   );
   const invalid = Object.keys(downloads).filter(
     (dlId) =>
-      !archiveExtLookup.has(
-        path.extname(downloads[dlId].localPath || "").toLowerCase(),
-      ),
+      downloads[dlId].localPath && !path.extname(downloads[dlId].localPath),
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
