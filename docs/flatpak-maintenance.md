@@ -114,16 +114,22 @@ To keep source files in sync automatically, build scripts now:
 - hash FOMOD `.csproj`/NuGet input files and compare against `flatpak/generated-nuget-sources.hash`
 - regenerate each generated source file only when needed
 
+To sync both generated source files manually, run:
+
+```bash
+python3 flatpak/scripts/flatpak_sources.py
+```
+
 If you are debugging `generated-sources.json` generation, you can run the sync script manually:
 
 ```bash
-python3 flatpak/scripts/flatpak_sources.py --force
+python3 flatpak/scripts/flatpak_sources.py --only yarn --force
 ```
 
 If you are debugging `generated-nuget-sources.json` generation, run:
 
 ```bash
-python3 flatpak/scripts/flatpak_nuget_sources.py --force
+python3 flatpak/scripts/flatpak_sources.py --only nuget --force
 ```
 
 ## Troubleshooting

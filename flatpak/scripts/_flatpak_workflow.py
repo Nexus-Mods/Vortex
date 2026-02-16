@@ -7,8 +7,7 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 
 from _flatpak_env import repo_root, run_command
-from flatpak_nuget_sources import sync_generated_nuget_sources
-from flatpak_sources import sync_generated_sources
+from flatpak_sources import sync_generated_nuget_sources, sync_generated_sources
 from update_metainfo_version import update_metainfo_version
 
 
@@ -55,12 +54,7 @@ def sync_flatpak_build_inputs(root: Path) -> None:
 
     sync_generated_nuget_sources(
         search_root=root / "extensions/fomod-installer",
-        projects=[
-            root
-            / "extensions/fomod-installer/src/ModInstaller.IPC/ModInstaller.IPC.csproj",
-            root
-            / "extensions/fomod-installer/src/ModInstaller.Native/ModInstaller.Native.csproj",
-        ],
+        projects=None,
         output=root / "flatpak/generated-nuget-sources.json",
         hash_file=root / "flatpak/generated-nuget-sources.hash",
         dotnet="9",
