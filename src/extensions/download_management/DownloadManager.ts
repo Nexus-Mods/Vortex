@@ -1912,6 +1912,26 @@ class DownloadManager {
         // 2. No active chunks AND no paused chunks with remaining data
         const shouldRemove =
           allChunksFinished || (!hasActiveChunks && !hasPausedChunksWithData);
+
+        if (shouldRemove && download.error) {
+          // Download was marked as errored by startWorker (e.g., file not found,
+          // permission denied, max start retries exceeded). Report through finishCB
+          // with hadErrors so the observer can update Redux state and notify the
+          // collection installer through the normal finish path rather than through
+          // failedCB which would reject the promise and cancel the collection.
+          log("info", "removing errored download from queue", {
+            id: download.id,
+          });
+          download.finishCB({
+            filePath: download.tempName,
+            headers: download.headers,
+            unfinishedChunks: [],
+            hadErrors: true,
+            size: download.received ?? 0,
+            metaInfo: {},
+          });
+        }
+
         return !shouldRemove;
       });
     });
@@ -1941,44 +1961,59 @@ class DownloadManager {
       const permanentCodes = ["ENOENT", "EACCES", "EPERM", "EISDIR"];
       const isPermanent = permanentCodes.includes(err.code);
 
-      if (isPermanent) {
-        log("error", "Worker start failed with permanent error, canceling download", {
-          workerId,
-          downloadId: download.id,
-          error: err.message,
-          code: err.code,
-        });
-        // Mark all chunks as finished to remove from queue
+      const markFailed = () => {
+        download.error = true;
         download.chunks.forEach((chunk) => {
           chunk.state = "finished";
         });
-      } else {
-        // Transient error — allow limited retries
-        job.startFailures = (job.startFailures ?? 0) + 1;
-        const MAX_START_FAILURES = 3;
-        if (job.startFailures >= MAX_START_FAILURES) {
-          log("error", "Worker start failed too many times, canceling download", {
+        // Do NOT re-throw here. Re-throwing causes tickQueue's catch to call
+        // failedCB, which rejects the download promise and cascades into
+        // canceling any collection install that depends on this download.
+        // Instead, mark download.error = true so finishChunk / cleanup can
+        // report it through the normal finish path without rejecting the promise.
+      };
+
+      if (isPermanent) {
+        log(
+          "error",
+          "Worker start failed with permanent error, canceling download",
+          {
             workerId,
             downloadId: download.id,
             error: err.message,
-            failures: job.startFailures,
-          });
-          download.chunks.forEach((chunk) => {
-            chunk.state = "finished";
-          });
-        } else {
-          log("warn", "Failed to start worker, will retry", {
-            workerId,
-            downloadId: download.id,
-            error: err.message,
-            failures: job.startFailures,
-          });
-          job.state = "paused";
-        }
+            code: err.code,
+          },
+        );
+        markFailed();
+        return;
       }
 
-      // Re-throw the error to bubble up to the caller
-      throw err;
+      // Transient error — allow limited retries
+      job.startFailures = (job.startFailures ?? 0) + 1;
+      const MAX_START_FAILURES = 3;
+      if (job.startFailures >= MAX_START_FAILURES) {
+        log(
+          "error",
+          "Worker start failed too many times, canceling download",
+          {
+            workerId,
+            downloadId: download.id,
+            error: err.message,
+            failures: job.startFailures,
+          },
+        );
+        markFailed();
+        return;
+      }
+
+      // Transient and retries remain — set to paused for retry on next tick.
+      log("warn", "Failed to start worker, will retry", {
+        workerId,
+        downloadId: download.id,
+        error: err.message,
+        failures: job.startFailures,
+      });
+      job.state = "paused";
     });
   };
 
