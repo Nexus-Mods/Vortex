@@ -71,6 +71,14 @@ function isFlatpak(): boolean {
   return process.env.IS_FLATPAK === "true";
 }
 
+const FLATPAK_HOST_WORKDIR = "/";
+
+function withFlatpakHostArgs(commandArgs: string[]): string[] {
+  // Electron running from /app/main causes host-spawned commands to fail because
+  // that path does not exist on the host filesystem.
+  return ["--host", `--directory=${FLATPAK_HOST_WORKDIR}`, ...commandArgs];
+}
+
 /**
  * Read the current desktop-id associated with a URL scheme on Linux.
  * In Flatpak, uses flatpak-spawn to query the host's settings.
@@ -79,7 +87,12 @@ export function getDefaultUrlSchemeHandler(
   protocol: string,
 ): string | undefined {
   const args = isFlatpak()
-    ? ["--host", "xdg-settings", "get", "default-url-scheme-handler", protocol]
+    ? withFlatpakHostArgs([
+        "xdg-settings",
+        "get",
+        "default-url-scheme-handler",
+        protocol,
+      ])
     : ["get", "default-url-scheme-handler", protocol];
   const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
   const result = runCommand(command, args);
@@ -103,18 +116,53 @@ export function setDefaultUrlSchemeHandler(
   desktopId: string,
 ): void {
   const args = isFlatpak()
-    ? [
-        "--host",
+    ? withFlatpakHostArgs([
         "xdg-settings",
         "set",
         "default-url-scheme-handler",
         protocol,
         desktopId,
-      ]
+      ])
     : ["set", "default-url-scheme-handler", protocol, desktopId];
   const command = isFlatpak() ? "flatpak-spawn" : "xdg-settings";
+  const fullCommand = [command, ...args].join(" ");
+  log(
+    "info",
+    isFlatpak()
+      ? "flatpak-spawn: setting nxm handler on host"
+      : "setting nxm handler",
+    {
+      command: fullCommand,
+    },
+  );
   const result = runCommand(command, args);
-  logCommandFailure(command, args, result);
+
+  // Log the result regardless of success/failure for debugging
+  if (result.error !== undefined) {
+    log("error", "linux protocol command failed to execute", {
+      command,
+      args,
+      fullCommand,
+      error: result.error.message,
+      code: result.error.code,
+    });
+  } else if (result.status !== 0) {
+    log("error", "linux protocol command returned non-zero exit code", {
+      command,
+      args,
+      fullCommand,
+      status: result.status,
+      stderr: result.stderr.trim(),
+      stdout: result.stdout.trim(),
+    });
+  } else {
+    log("info", "linux protocol command succeeded", {
+      command,
+      args,
+      fullCommand,
+      stdout: result.stdout.trim(),
+    });
+  }
 }
 
 function runCommand(command: string, args: string[]): ICommandResult {
