@@ -1,5 +1,5 @@
 jest.mock('vortex-api', () => {
-  const storeHelper = require('../src/util/storeHelper');
+  const storeHelper = require('../src/renderer/util/storeHelper');
   return {
     util: {
       setSafe: storeHelper.setSafe,

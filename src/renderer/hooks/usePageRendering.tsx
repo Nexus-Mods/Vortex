@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useReducer } from "react";
 import { useSelector } from "react-redux";
 
-import type { IMainPage } from "../../types/IMainPage";
-import type { IState } from "../../types/IState";
+import type { IMainPage } from "../types/IMainPage";
+import type { IState } from "../types/IState";
 
 import { MainPageContainer } from "../views/MainPageContainer";
 

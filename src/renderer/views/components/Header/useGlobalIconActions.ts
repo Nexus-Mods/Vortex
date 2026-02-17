@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 
+import type ExtensionManager from "../../../ExtensionManager";
 import type {
   IActionDefinition,
   IActionOptions,
-} from "../../../../types/IActionDefinition";
-import type ExtensionManager from "../../../ExtensionManager";
+} from "../../../types/IActionDefinition";
 
 /**
  * Custom hook to fetch and sort global-icons actions from extensions.

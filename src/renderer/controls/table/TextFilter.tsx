@@ -1,7 +1,4 @@
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 
 import * as React from "react";
 import { FormControl } from "react-bootstrap";

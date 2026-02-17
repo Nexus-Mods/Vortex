@@ -8,9 +8,9 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import { setOpenMainPage } from "../../../../actions";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
+import { setOpenMainPage } from "../../../actions";
 import { usePagesContext, useWindowContext } from "../../../contexts";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
 import { MenuButton } from "./MenuButton";

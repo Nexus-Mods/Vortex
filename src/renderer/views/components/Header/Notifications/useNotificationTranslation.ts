@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import type { INotification } from "../../../../../types/INotification";
+import type { INotification } from "../../../../types/INotification";
 
 interface UseNotificationTranslationProps {
   notification: INotification;

@@ -1,7 +1,7 @@
 import React, { type FC } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../types/IState";
 
 import FlexLayout from "../../controls/FlexLayout";
 import { useSwitchingProfile } from "../../hooks";

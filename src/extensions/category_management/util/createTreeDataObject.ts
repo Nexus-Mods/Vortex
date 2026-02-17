@@ -1,4 +1,4 @@
-import { getSafe, pushSafe } from "../../../util/storeHelper";
+import { getSafe, pushSafe } from "../../../renderer/util/storeHelper";
 
 import type { IMod } from "../../mod_management/types/IMod";
 import type { ICategory } from "../types/ICategoryDictionary";

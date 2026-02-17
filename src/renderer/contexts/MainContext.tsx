@@ -12,9 +12,9 @@ import React, {
 } from "react";
 import { useDispatch } from "react-redux";
 
-import type { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../types/IComponentContext";
 
-import { setOpenMainPage } from "../../actions/session";
+import { setOpenMainPage } from "../actions/session";
 import { useExtensionContext } from "../ExtensionProvider";
 import { useMenuLayerContext } from "./MenuLayerContext";
 import { useWindowContext } from "./WindowContext";

@@ -1,10 +1,9 @@
 import { Popover } from "@headlessui/react";
 import { mdiBell, mdiBellOutline } from "@mdi/js";
 import React, { useCallback, useEffect, useState } from "react";
-import { Badge } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../../../types/IState";
+import type { IState } from "../../../../types/IState";
 
 import { useExtensionContext } from "../../../../ExtensionProvider";
 import { IconButton } from "../IconButton";

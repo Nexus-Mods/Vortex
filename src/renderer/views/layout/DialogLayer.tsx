@@ -1,9 +1,9 @@
 import React, { useCallback, type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../types/IState";
 
-import { setDialogVisible } from "../../../actions/session";
+import { setDialogVisible } from "../../actions/session";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
 import { OverlayContainer } from "../OverlayContainer";

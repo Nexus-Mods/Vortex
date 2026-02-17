@@ -1,21 +1,24 @@
-import { showDialog } from "../../../actions/notifications";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
-import type { IState } from "../../../types/IState";
+import { showDialog } from "../../../renderer/actions/notifications";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
+import type { IState } from "../../../renderer/types/IState";
 import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
-import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import * as fs from "../../../util/fs";
-import { writeFileAtomic } from "../../../util/fsAtomic";
-import getVortexPath from "../../../util/getVortexPath";
-import type { TFunction } from "../../../util/i18n";
-import { log } from "../../../util/log";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import * as fs from "../../../renderer/util/fs";
+import { writeFileAtomic } from "../../../renderer/util/fsAtomic";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import type { TFunction } from "../../../renderer/util/i18n";
+import { log } from "../../../renderer/util/log";
 import {
   activeGameId,
   discoveryByGame,
   installPathForGame,
-} from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { deBOM, makeQueue, truthy } from "../../../util/util";
+} from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { deBOM, makeQueue, truthy } from "../../../renderer/util/util";
 
 import { getGame } from "../../gamemode_management/util/getGame";
 

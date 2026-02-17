@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
@@ -11,9 +11,9 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { InstallPathMode, IState } from "../../../types/IState";
-import type { ValidationState } from "../../../types/ITableAttribute";
+} from "../../../renderer/types/IDialog";
+import type { InstallPathMode, IState } from "../../../renderer/types/IState";
+import type { ValidationState } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -27,27 +27,27 @@ import {
   TemporaryError,
   UnsupportedOperatingSystem,
   UserCanceled,
-} from "../../../util/CustomErrors";
-import { withContext } from "../../../util/errorHandling";
-import * as fs from "../../../util/fs";
-import getNormalizeFunc from "../../../util/getNormalizeFunc";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+} from "../../../renderer/util/CustomErrors";
+import { withContext } from "../../../renderer/util/errorHandling";
+import * as fs from "../../../renderer/util/fs";
+import getNormalizeFunc from "../../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import {
   cleanFailedTransfer,
   testPathTransfer,
   transferPath,
-} from "../../../util/transferPath";
+} from "../../../renderer/util/transferPath";
 import {
   ciEqual,
   isChildPath,
   isPathValid,
   isReservedDirectory,
-} from "../../../util/util";
+} from "../../../renderer/util/util";
 import {
   currentGame,
   currentGameDiscovery,

@@ -10,12 +10,12 @@ import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
-import { setGameSearchPaths } from "../../../actions";
+import { setGameSearchPaths } from "../../../renderer/actions";
 import Icon from "../../../renderer/controls/Icon";
 import Modal from "../../../renderer/controls/Modal";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IState } from "../../../types/IState";
-import type { TFunction } from "../../../util/i18n";
+import type { IState } from "../../../renderer/types/IState";
+import type { TFunction } from "../../../renderer/util/i18n";
 
 export interface IGameSelectionDialogProps {
   visible: boolean;

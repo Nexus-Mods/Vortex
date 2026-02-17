@@ -1,5 +1,5 @@
-import { fileMD5 } from "../../util/checksum";
-import * as fs from "../../util/fs";
+import { fileMD5 } from "../../renderer/util/checksum";
+import * as fs from "../../renderer/util/fs";
 import type { IInstruction } from "./types/IInstallResult";
 import type { IFileListItem } from "./types/IMod";
 import type { ISupportedInstaller } from "./types/IModInstaller";

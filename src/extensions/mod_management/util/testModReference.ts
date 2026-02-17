@@ -1,6 +1,6 @@
-import { truthy } from "../../../util/util";
+import { truthy } from "../../../renderer/util/util";
 
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 
 import type {
   IMod,

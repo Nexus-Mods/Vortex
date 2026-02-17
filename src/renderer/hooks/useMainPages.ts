@@ -1,8 +1,8 @@
 import { type ComponentType } from "react";
 
-import type { IRegisteredExtension } from "../../types/extensions";
-import type { IMainPageOptions } from "../../types/IExtensionContext";
-import type { IMainPage } from "../../types/IMainPage";
+import type { IRegisteredExtension } from "../types/extensions";
+import type { IMainPageOptions } from "../types/IExtensionContext";
+import type { IMainPage } from "../types/IMainPage";
 
 import { useExtensionObjects } from "../ExtensionProvider";
 

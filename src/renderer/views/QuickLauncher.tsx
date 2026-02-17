@@ -4,28 +4,26 @@ import { useTranslation } from "react-i18next";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { pathToFileURL } from "url";
 
-import type { IDiscoveredTool } from "../../types/api";
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
-import type { IProfile } from "../../extensions/profile_management/types/IProfile";
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
-import { makeExeId } from "../../reducers/session";
 import { unknownToError } from "../../shared/errors";
-import Debouncer from "../../util/Debouncer";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
+import EmptyPlaceholder from "../controls/EmptyPlaceholder";
+import Spinner from "../controls/Spinner";
+import { IconButton } from "../controls/TooltipControls";
+import { useExtensionContext } from "../ExtensionProvider";
+import { makeExeId } from "../reducers/session";
+import Debouncer from "../util/Debouncer";
+import { log } from "../util/log";
+import { showError } from "../util/message";
 import {
   activeGameId,
   currentGame,
   currentGameDiscovery,
   activeProfile,
-} from "../../util/selectors";
-import StarterInfo from "../../util/StarterInfo";
-import { truthy } from "../../util/util";
-import EmptyPlaceholder from "../controls/EmptyPlaceholder";
-import Spinner from "../controls/Spinner";
-import { IconButton } from "../controls/TooltipControls";
-import { useExtensionContext } from "../ExtensionProvider";
+} from "../util/selectors";
+import StarterInfo from "../util/StarterInfo";
+import { truthy } from "../util/util";
 
 type IGameIconCache = { [gameId: string]: { icon: string; game: IGameStored } };
 

@@ -13,8 +13,8 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { ILink } from "../../actions";
-import type { DialogContentItem } from "../../actions/notifications";
+import type { ILink } from "../actions";
+import type { DialogContentItem } from "../actions/notifications";
 import type {
   ConditionResults,
   DialogType,
@@ -22,19 +22,19 @@ import type {
   IConditionResult,
   IDialogContent,
   IInput,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import type { TFunction } from "../../util/i18n";
+} from "../types/IDialog";
+import type { IState } from "../types/IState";
+import type { TFunction } from "../util/i18n";
 
-import { triggerDialogLink } from "../../actions";
-import { closeDialog, closeDialogs } from "../../actions/notifications";
-import { MutexWrapper } from "../../util/MutexContext";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
+import { triggerDialogLink } from "../actions";
+import { closeDialog, closeDialogs } from "../actions/notifications";
 import bbcode from "../controls/bbcode";
 import Collapse from "../controls/Collapse";
 import ErrorBoundary from "../controls/ErrorBoundary";
 import Icon from "../controls/Icon";
 import Webview from "../controls/Webview";
+import { MutexWrapper } from "../util/MutexContext";
+import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
 // TODO: Port to DialogResult.input
 type DialogInputData = Record<string, boolean | string | undefined>;

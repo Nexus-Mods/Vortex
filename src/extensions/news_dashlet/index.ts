@@ -1,4 +1,4 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 import { activeGameId } from "../profile_management/selectors";
 

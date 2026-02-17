@@ -1,11 +1,11 @@
 import * as _ from "lodash";
 import * as React from "react";
 
-import type { IExtensionContext } from "../types/IExtensionContext";
+import type { IExtensionContext } from "./types/IExtensionContext";
 import type {
   IExtendedProps,
   IExtensibleProps,
-} from "../types/IExtensionProvider";
+} from "./types/IExtensionProvider";
 
 import ExtensionManager from "./ExtensionManager";
 

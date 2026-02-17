@@ -11,13 +11,13 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IMainPage } from "../../../../types/IMainPage";
-import type { IState } from "../../../../types/IState";
+import type { IMainPage } from "../../../types/IMainPage";
+import type { IState } from "../../../types/IState";
 
-import { setOpenMainPage } from "../../../../actions/session";
 import { setNextProfile } from "../../../../extensions/profile_management/actions/settings";
-import { batchDispatch } from "../../../../util/util";
+import { setOpenMainPage } from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
+import { batchDispatch } from "../../../util/util";
 
 export type SpineSelection =
   | { type: "home" }

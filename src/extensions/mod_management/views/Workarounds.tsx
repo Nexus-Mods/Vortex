@@ -1,5 +1,5 @@
 import Toggle from "../../../renderer/controls/Toggle";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { setCleanupOnDeploy } from "../actions/settings";
 

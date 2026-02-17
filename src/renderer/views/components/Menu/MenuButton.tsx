@@ -1,9 +1,9 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../contexts";
+import { Icon } from "../../../tailwind/components/next/icon";
+import { Typography } from "../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 
 interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: string;

@@ -6,7 +6,7 @@ import type {
   INotification,
   INotificationAction,
   NotificationType,
-} from "../../types/INotification";
+} from "../types/INotification";
 
 import Dropdown from "../controls/Dropdown";
 import Icon from "../controls/Icon";

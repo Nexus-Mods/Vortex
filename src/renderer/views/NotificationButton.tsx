@@ -8,22 +8,22 @@ import { Badge, Button, Overlay, Popover } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import type { IBar } from "../controls/RadialProgress";
 import type {
   INotification,
   INotificationAction,
-} from "../../types/INotification";
-import type { IState } from "../../types/IState";
-import type { IBar } from "../controls/RadialProgress";
+} from "../types/INotification";
+import type { IState } from "../types/IState";
 
 import {
   dismissNotification,
   fireNotificationAction,
-} from "../../actions/notifications";
-import { suppressNotification } from "../../actions/notificationSettings";
-import Debouncer from "../../util/Debouncer";
+} from "../actions/notifications";
+import { suppressNotification } from "../actions/notificationSettings";
 import Icon from "../controls/Icon";
 import RadialProgress from "../controls/RadialProgress";
 import { useExtensionContext } from "../ExtensionProvider";
+import Debouncer from "../util/Debouncer";
 import { Notification } from "./Notification";
 
 export interface IBaseProps {

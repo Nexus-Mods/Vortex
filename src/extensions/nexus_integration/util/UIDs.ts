@@ -1,6 +1,6 @@
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 

@@ -7,12 +7,12 @@ import {
 } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-// import { Icon } from "../../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
+// import { Icon } from "../../../tailwind/components/next/icon";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 import {
   nxmElectronicArts,
   nxmEpicGames,
-} from "../../../../tailwind/lib/icon-paths/icon-paths";
+} from "../../../tailwind/lib/icon-paths/icon-paths";
 
 // Fallback for stores without specific icons
 const _DEFAULT_STORE_ICON = mdiHelp;

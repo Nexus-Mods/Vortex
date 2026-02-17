@@ -9,17 +9,16 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import type { IActionDefinition } from "../../../../types/IActionDefinition";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
 
-import { setDialogVisible } from "../../../../actions/session";
+import { setDialogVisible } from "../../../actions/session";
+import { useExtensionContext } from "../../../ExtensionProvider";
 import {
   Dropdown,
   DropdownDivider,
   DropdownItem,
   DropdownItems,
-} from "../../../../tailwind/components/dropdown";
-import { useExtensionContext } from "../../../ExtensionProvider";
-import { getIconPath } from "../iconMap";
+} from "../../../tailwind/components/dropdown";
 import { IconButton } from "./IconButton";
 import { useGlobalIconActions } from "./useGlobalIconActions";
 

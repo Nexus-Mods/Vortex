@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
-import { makeExeId } from "../../../../reducers/session";
+import { makeExeId } from "../../../reducers/session";
 
 export interface UseToolsRunningResult {
   exclusiveRunning: boolean;

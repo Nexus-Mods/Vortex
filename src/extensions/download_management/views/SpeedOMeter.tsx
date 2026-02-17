@@ -5,13 +5,13 @@ import {
   PureComponentEx,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { bytesToString } from "../../../util/util";
+import { bytesToString } from "../../../renderer/util/util";
 
 import * as React from "react";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import type { DownloadState, IDownload } from "../types/IDownload";
 
-import { setAttributeFilter } from "../../../actions/tables";
+import { setAttributeFilter } from "../../../renderer/actions/tables";
 
 export interface IBaseProps {
   slim: boolean;

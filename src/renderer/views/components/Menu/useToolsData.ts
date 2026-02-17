@@ -2,20 +2,20 @@ import { useMemo } from "react";
 import { shallowEqual, useSelector } from "react-redux";
 
 import type { IToolStored } from "../../../../extensions/gamemode_management/types/IToolStored";
-import type { IDiscoveredTool } from "../../../../types/IDiscoveredTool";
-import type { IState } from "../../../../types/IState";
+import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IState } from "../../../types/IState";
 
 import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../../../../shared/errors";
-import { log } from "../../../../util/log";
+import { log } from "../../../util/log";
 import {
   activeGameId,
   currentGame,
   currentGameDiscovery,
-} from "../../../../util/selectors";
-import StarterInfo from "../../../../util/StarterInfo";
+} from "../../../util/selectors";
+import StarterInfo from "../../../util/StarterInfo";
 
 export interface UseToolsDataResult {
   gameId: string | undefined;

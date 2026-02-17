@@ -1,4 +1,4 @@
-import { setSafe } from "../../util/storeHelper";
+import { setSafe } from "../util/storeHelper";
 
 import Icon from "./Icon";
 

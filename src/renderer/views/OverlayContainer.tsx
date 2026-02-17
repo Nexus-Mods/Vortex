@@ -1,6 +1,6 @@
 import React, { type FC } from "react";
 
-import type { PropsCallback } from "../../types/IExtensionContext";
+import type { PropsCallback } from "../types/IExtensionContext";
 
 import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";

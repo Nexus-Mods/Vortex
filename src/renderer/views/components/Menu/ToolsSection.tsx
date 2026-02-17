@@ -2,9 +2,9 @@ import { mdiPlay } from "@mdi/js";
 import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "../../../../tailwind/components/next/button";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { useWindowContext } from "../../../contexts";
+import { Button } from "../../../tailwind/components/next/button";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 import { ToolButton } from "./ToolButton";
 import { useToolsContext } from "./ToolsContext";
 

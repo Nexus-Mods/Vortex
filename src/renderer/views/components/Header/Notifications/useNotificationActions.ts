@@ -4,13 +4,13 @@ import { useDispatch } from "react-redux";
 import type {
   INotification,
   INotificationAction,
-} from "../../../../../types/INotification";
+} from "../../../../types/INotification";
 
 import {
   dismissNotification,
   fireNotificationAction,
-} from "../../../../../actions/notifications";
-import { suppressNotification } from "../../../../../actions/notificationSettings";
+} from "../../../../actions/notifications";
+import { suppressNotification } from "../../../../actions/notificationSettings";
 import { useExtensionContext } from "../../../../ExtensionProvider";
 
 interface UseNotificationActionsProps {

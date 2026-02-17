@@ -10,30 +10,30 @@ import numeral from "numeral";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 
-import MainPage from "../../../renderer/views/MainPage";
-import { Listing } from "../../../tailwind/components/listing";
-import { Button } from "../../../tailwind/components/next/button";
+import { Listing } from "../../../renderer/tailwind/components/listing";
+import { Button } from "../../../renderer/tailwind/components/next/button";
 import {
   CollectionTile,
   CollectionTileSkeleton,
-} from "../../../tailwind/components/next/collectiontile";
-import { Input } from "../../../tailwind/components/next/form";
+} from "../../../renderer/tailwind/components/next/collectiontile";
+import { Input } from "../../../renderer/tailwind/components/next/form";
 import {
   TabBar,
   TabButton,
   TabPanel,
   TabProvider,
-} from "../../../tailwind/components/next/tabs";
-import { Typography } from "../../../tailwind/components/next/typography";
-import { NoResults } from "../../../tailwind/components/no_results";
-import { Pagination } from "../../../tailwind/components/pagination/Pagination";
-import { Picker } from "../../../tailwind/components/picker";
-import { UserCanceled } from "../../../util/api";
-import { getPreloadApi } from "../../../util/preloadAccess";
-import { activeGameId } from "../../../util/selectors";
+} from "../../../renderer/tailwind/components/next/tabs";
+import { Typography } from "../../../renderer/tailwind/components/next/typography";
+import { NoResults } from "../../../renderer/tailwind/components/no_results";
+import { Pagination } from "../../../renderer/tailwind/components/pagination/Pagination";
+import { Picker } from "../../../renderer/tailwind/components/picker";
+import { UserCanceled } from "../../../renderer/util/api";
+import { getPreloadApi } from "../../../renderer/util/preloadAccess";
+import { activeGameId } from "../../../renderer/util/selectors";
+import MainPage from "../../../renderer/views/MainPage";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";

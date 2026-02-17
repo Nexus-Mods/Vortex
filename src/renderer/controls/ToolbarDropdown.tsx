@@ -1,4 +1,4 @@
-import type { IActionDefinition } from "../../types/IActionDefinition";
+import type { IActionDefinition } from "../types/IActionDefinition";
 import Icon from "./Icon";
 import type { ButtonType } from "./IconBar";
 

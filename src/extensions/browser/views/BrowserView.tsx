@@ -1,4 +1,4 @@
-import { addNotification } from "../../../actions";
+import { addNotification } from "../../../renderer/actions";
 import Modal from "../../../renderer/controls/Modal";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
@@ -6,18 +6,17 @@ import {
   WebviewEmbed,
   WebviewOverlay,
 } from "../../../renderer/controls/Webview";
-import type { INotification } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
+import type { INotification } from "../../../renderer/types/INotification";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
+import Debouncer from "../../../renderer/util/Debouncer";
+import { log } from "../../../renderer/util/log";
+import { truthy } from "../../../renderer/util/util";
 import { Notification } from "../../../renderer/views/Notification";
-
 import { closeBrowser } from "../actions";
 
 import PromiseBB from "bluebird";

@@ -1,6 +1,6 @@
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "./types/IExtensionContext";
 
-import { getSafe } from "../util/storeHelper";
+import { getSafe } from "./util/storeHelper";
 
 /**
  * Interface for objects that can be updated when Redux state changes.

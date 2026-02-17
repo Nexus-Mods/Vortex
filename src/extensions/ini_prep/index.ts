@@ -1,18 +1,18 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
-import { UserCanceled } from "../../util/CustomErrors";
-import deepMerge from "../../util/deepMerge";
-import { disableErrorReport } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { installPathForGame } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { objDiff, setdefault } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import deepMerge from "../../renderer/util/deepMerge";
+import { disableErrorReport } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { installPathForGame } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { objDiff, setdefault } from "../../renderer/util/util";
 
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";

@@ -13,10 +13,10 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IModifiers } from "../../types/IModifiers";
-import type { IState } from "../../types/IState";
+import type { IModifiers } from "../types/IModifiers";
+import type { IState } from "../types/IState";
 
-import { setTabsMinimized } from "../../actions/window";
+import { setTabsMinimized } from "../actions/window";
 
 export interface IWindowContext {
   isFocused: boolean;

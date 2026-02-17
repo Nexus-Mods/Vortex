@@ -1,8 +1,8 @@
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
-import { truthy } from "../../util/util";
+import { truthy } from "../util/util";
 
 export const useSwitchingProfile = () => {
   const activeProfileId = useSelector(

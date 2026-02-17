@@ -1,6 +1,6 @@
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDownload } from "../../download_management/types/IDownload";
 

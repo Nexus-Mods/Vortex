@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
+import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
 export const minimize = () => {
   const api = getPreloadApi();

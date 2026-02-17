@@ -9,9 +9,9 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
-import { setOpenMainPage } from "../../../../actions";
+import { setOpenMainPage } from "../../../actions";
 import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";

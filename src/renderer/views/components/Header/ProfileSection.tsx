@@ -14,28 +14,28 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
-import { setDialogVisible } from "../../../../actions/session";
 import {
   clearOAuthCredentials,
   setUserAPIKey,
 } from "../../../../extensions/nexus_integration/actions/account";
 import { NEXUS_BASE_URL } from "../../../../extensions/nexus_integration/constants";
+import { setDialogVisible } from "../../../actions/session";
+import { useExtensionContext } from "../../../ExtensionProvider";
 import {
   Dropdown,
   DropdownDivider,
   DropdownItem,
   DropdownItems,
-} from "../../../../tailwind/components/dropdown";
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { useExtensionContext } from "../../../ExtensionProvider";
+} from "../../../tailwind/components/dropdown";
+import { Icon } from "../../../tailwind/components/next/icon";
 import {
   hasNexusConfidential,
   hasNexusPersistent,
-} from "../../../../util/nexusState";
-import opn from "../../../../util/opn";
-import { truthy } from "../../../../util/util";
+} from "../../../util/nexusState";
+import opn from "../../../util/opn";
+import { truthy } from "../../../util/util";
 
 interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   imageSrc?: string;

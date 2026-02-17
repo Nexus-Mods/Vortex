@@ -3,19 +3,14 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
 import { PREMIUM_PATH } from "../../../../extensions/nexus_integration/constants";
-import { Button } from "../../../../tailwind/components/next/button";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { hasNexusPersistent } from "../../../../util/nexusState";
-import opn from "../../../../util/opn";
-import {
-  Campaign,
-  Content,
-  nexusModsURL,
-  Section,
-} from "../../../../util/util";
+import { Button } from "../../../tailwind/components/next/button";
+import { Typography } from "../../../tailwind/components/next/typography";
+import { hasNexusPersistent } from "../../../util/nexusState";
+import opn from "../../../util/opn";
+import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 
 export const PremiumIndicator: FC = () => {
   const { t } = useTranslation();

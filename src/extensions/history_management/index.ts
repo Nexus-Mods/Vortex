@@ -1,14 +1,17 @@
 import type { Action } from "redux";
 import { generate as shortid } from "shortid";
-import { showDialog } from "../../actions";
+import { showDialog } from "../../renderer/actions";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import local from "../../util/local";
-import { batchDispatch } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import local from "../../renderer/util/local";
+import { batchDispatch } from "../../renderer/util/util";
 
 import {
   addHistoryEvent,

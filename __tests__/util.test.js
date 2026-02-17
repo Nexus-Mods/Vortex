@@ -1,4 +1,4 @@
-import * as util from '../src/util/util';
+import * as util from '../src/renderer/util/util';
 import { isMajorDowngrade } from "../src/main/Application";
 
 // for the tests regarding invalid filename detection/sanitation we need a consistent

@@ -1,4 +1,4 @@
-import * as actions from '../src/actions/session';
+import * as actions from '../src/renderer/actions/session';
 
 describe('displayGroup', () => {
   it('generates an action', () => {

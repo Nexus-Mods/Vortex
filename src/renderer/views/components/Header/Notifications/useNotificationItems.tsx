@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { INotification } from "../../../../../types/INotification";
+import type { INotification } from "../../../../types/INotification";
 
 const sortValue = (noti: INotification): number => {
   let value = noti.createdTime;

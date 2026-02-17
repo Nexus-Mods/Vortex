@@ -1,4 +1,4 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
 
 import * as reduxAct from "redux-act";
 

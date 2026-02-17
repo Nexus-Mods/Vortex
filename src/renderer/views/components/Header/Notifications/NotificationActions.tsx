@@ -1,9 +1,9 @@
 import React, { type FC, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { INotificationAction } from "../../../../../types/INotification";
+import type { INotificationAction } from "../../../../types/INotification";
 
-import { Button } from "../../../../../tailwind/components/next/button";
+import { Button } from "../../../../tailwind/components/next/button";
 
 interface NotificationActionsProps {
   actions?: INotificationAction[];

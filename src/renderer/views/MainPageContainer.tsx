@@ -10,12 +10,8 @@ import React, {
 import { Alert, Button, Jumbotron } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type { IMainPage } from "../../types/IMainPage";
+import type { IMainPage } from "../types/IMainPage";
 
-import { getApplication } from "../../util/application";
-import { didIgnoreError, isOutdated } from "../../util/errorHandling";
-import { genHash } from "../../util/genHash";
-import { log } from "../../util/log";
 import { useMainContext } from "../contexts";
 import {
   PageHeaderProvider,
@@ -24,6 +20,10 @@ import {
 } from "../contexts/MainPageHeaderContext";
 import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
+import { getApplication } from "../util/application";
+import { didIgnoreError, isOutdated } from "../util/errorHandling";
+import { genHash } from "../util/genHash";
+import { log } from "../util/log";
 
 // Backward compatibility export
 export { type IPageHeaderContext, PageHeaderContext };

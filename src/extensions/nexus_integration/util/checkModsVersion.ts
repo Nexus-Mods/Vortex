@@ -1,7 +1,7 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
-import { batchDispatch, truthy } from "../../../util/util";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../../renderer/util/util";
 import { nexusGameId } from "./convertGameId";
 
 import { gameById } from "../../gamemode_management/selectors";

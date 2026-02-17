@@ -1,4 +1,4 @@
-import type { IModRule } from "../../types/api";
+import type { IModRule } from "../../renderer/types/api";
 
 /**
  * Status of an individual mod within a collection installation

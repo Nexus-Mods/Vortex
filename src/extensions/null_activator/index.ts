@@ -2,8 +2,8 @@ import PromiseBB from "bluebird";
 import type {
   IDeploymentMethod,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
 import { getGame } from "../gamemode_management/util/getGame";
 
 class DeploymentMethod implements IDeploymentMethod {

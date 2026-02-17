@@ -3,9 +3,9 @@ import { Button, Checkbox } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { Modal } from "../../../renderer/controls/api";
 
-import { activeGameId } from "../../../util/selectors";
+import { activeGameId } from "../../../renderer/util/selectors";
 import { useSelector } from "react-redux";
-import { renderModName } from "../../../util/api";
+import { renderModName } from "../../../renderer/util/api";
 
 export interface IDuplicatesMap {
   duplicates: { [modName: string]: string[] };

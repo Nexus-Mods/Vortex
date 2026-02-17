@@ -8,10 +8,10 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IMainPage } from "../../types/IMainPage";
-import type { IState } from "../../types/IState";
+import type { IMainPage } from "../types/IMainPage";
+import type { IState } from "../types/IState";
 
-import { setOpenMainPage } from "../../actions/session";
+import { setOpenMainPage } from "../actions/session";
 import { useMainPages } from "../hooks/useMainPages";
 import { GameSettings } from "../views/GameSettings";
 import { Settings } from "../views/Settings";

@@ -1,5 +1,5 @@
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import { log } from "../util/log";
+import { truthy } from "../util/util";
 import { Icon } from "./TooltipControls";
 
 import * as _ from "lodash";

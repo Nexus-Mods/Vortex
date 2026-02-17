@@ -5,7 +5,7 @@ const fs = require('fs');
 const Bluebird = require('bluebird');
 
 // We need to mock the util object with storeHelper functions
-const storeHelper = require('../src/util/storeHelper');
+const storeHelper = require('../src/renderer/util/storeHelper');
 
 global.modsInstalled = 0;
 global.suppressLogging = false;

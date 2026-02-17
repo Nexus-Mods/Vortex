@@ -14206,7 +14206,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     lodash "^4.17.21"
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
-"vortex-run@file:src/util/vortex-run":
+"vortex-run@file:src/renderer/util/vortex-run":
   version "0.0.13"
 
 vortexmt@Nexus-Mods/node-vortexmt:

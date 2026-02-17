@@ -1,6 +1,6 @@
 import { activeGameId } from "../../extensions/profile_management/selectors";
-import type { IDownload, IState } from "../../types/IState";
-import { log } from "../../util/log";
+import type { IDownload, IState } from "../../renderer/types/IState";
+import { log } from "../../renderer/util/log";
 import getDownloadPath from "./util/getDownloadPath";
 import type { OutputParametricSelector } from "re-reselect";
 import { createCachedSelector } from "re-reselect";

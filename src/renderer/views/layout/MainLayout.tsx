@@ -1,7 +1,7 @@
 import React, { type FC, useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-import { setOpenMainPage } from "../../../actions/session";
+import { setOpenMainPage } from "../../actions/session";
 import { usePagesContext, useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
 import { usePageRendering } from "../../hooks";

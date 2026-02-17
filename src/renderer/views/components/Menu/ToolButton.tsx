@@ -2,12 +2,12 @@ import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 import { pathToFileURL } from "url";
 
-import type { IStarterInfo } from "../../../../util/StarterInfo";
+import type { IStarterInfo } from "../../../util/StarterInfo";
 
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
-import StarterInfo from "../../../../util/StarterInfo";
+import { Icon } from "../../../tailwind/components/next/icon";
+import { Typography } from "../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../tailwind/components/next/utils";
+import StarterInfo from "../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   starter: IStarterInfo;

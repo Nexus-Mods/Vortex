@@ -3,12 +3,12 @@ import React, { type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { DownloadState } from "../../../../extensions/download_management/types/IDownload";
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
-import { setOpenMainPage } from "../../../../actions/session";
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { Typography } from "../../../../tailwind/components/next/typography";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
+import { setOpenMainPage } from "../../../actions/session";
+import { Icon } from "../../../tailwind/components/next/icon";
+import { Typography } from "../../../tailwind/components/next/typography";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 import { useSpineContext } from "./SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [

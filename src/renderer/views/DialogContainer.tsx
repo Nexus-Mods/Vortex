@@ -1,6 +1,6 @@
 import React, { type FC } from "react";
 
-import type { PropsCallbackTyped } from "../../types/IExtensionContext";
+import type { PropsCallbackTyped } from "../types/IExtensionContext";
 
 import ErrorBoundary, {
   type IBaseProps as IErrorBoundaryProps,

@@ -1,27 +1,36 @@
-import { setNextProfile } from "../../actions";
-import { addNotification, showDialog } from "../../actions/notifications";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
-import type { IState } from "../../types/IState";
-import type { ITool } from "../../types/ITool";
-import { getNormalizeFunc } from "../../util/api";
+import { setNextProfile } from "../../renderer/actions";
+import {
+  addNotification,
+  showDialog,
+} from "../../renderer/actions/notifications";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import type {
+  GameEntryNotFound,
+  IGameStore,
+} from "../../renderer/types/IGameStore";
+import type { IState } from "../../renderer/types/IState";
+import type { ITool } from "../../renderer/types/ITool";
+import { getNormalizeFunc } from "../../renderer/util/api";
 import {
   ProcessCanceled,
   SetupError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import EpicGamesLauncher from "../../util/EpicGamesLauncher";
-import * as fs from "../../util/fs";
-import GameStoreHelper from "../../util/GameStoreHelper";
-import { log } from "../../util/log";
-import { activeProfile, discoveryByGame } from "../../util/selectors";
-import Steam from "../../util/Steam";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import EpicGamesLauncher from "../../renderer/util/EpicGamesLauncher";
+import * as fs from "../../renderer/util/fs";
+import GameStoreHelper from "../../renderer/util/GameStoreHelper";
+import { log } from "../../renderer/util/log";
+import { activeProfile, discoveryByGame } from "../../renderer/util/selectors";
+import Steam from "../../renderer/util/Steam";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
 
-import type { IExtensionDownloadInfo } from "../../types/extensions";
+import type { IExtensionDownloadInfo } from "../../renderer/types/extensions";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 
 import {

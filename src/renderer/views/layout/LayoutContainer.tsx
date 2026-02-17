@@ -1,11 +1,11 @@
 import React, { type ReactNode, type FC, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../types/IState";
 
-import { joinClasses } from "../../../tailwind/components/next/utils";
-import startupSettings from "../../../util/startupSettings";
 import { useMenuLayerContext, useWindowContext } from "../../contexts";
+import { joinClasses } from "../../tailwind/components/next/utils";
+import startupSettings from "../../util/startupSettings";
 
 export interface ILayoutContainerProps {
   children: ReactNode;

@@ -11,10 +11,10 @@ import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
 
 import type { DiffOperation } from "../../shared/types/ipc";
 import type { PersistedHive } from "../../shared/types/state";
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
 import { getErrorMessageOrDefault } from "../../shared/errors";
-import { log } from "../../util/log";
+import { log } from "../util/log";
 import { computeStateDiff } from "./stateDiff";
 
 /**

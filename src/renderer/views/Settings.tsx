@@ -4,20 +4,19 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IBaseProps } from "../../extensions/settings_interface/SettingsInterface";
-import type { PropsCallbackTyped } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import type startupSettingsT from "../../util/startupSettings";
+import type { PropsCallbackTyped } from "../types/IExtensionContext";
+import type { IState } from "../types/IState";
+import type startupSettingsT from "../util/startupSettings";
 
-import { setSettingsPage } from "../../actions/session";
-import lazyRequire from "../../util/lazyRequire";
-import makeReactive from "../../util/makeReactive";
+import { setSettingsPage } from "../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import { useExtensionObjects } from "../ExtensionProvider";
+import lazyRequire from "../util/lazyRequire";
+import makeReactive from "../util/makeReactive";
 import MainPage from "./MainPage";
 
-const startupSettings = lazyRequire(
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  () => require("../../util/startupSettings") as typeof startupSettingsT,
+const startupSettings = lazyRequire<typeof startupSettingsT>(
+  () => require("../util/startupSettings"),
   "default",
 );
 

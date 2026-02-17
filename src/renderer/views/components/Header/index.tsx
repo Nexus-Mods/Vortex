@@ -3,10 +3,10 @@ import React, { type FC, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
+import type { IState } from "../../../types/IState";
 
-import { Typography } from "../../../../tailwind/components/next/typography";
 import { useWindowContext } from "../../../contexts";
+import { Typography } from "../../../tailwind/components/next/typography";
 import { useSpineContext } from "../Spine/SpineContext";
 import { HelpSection } from "./HelpSection";
 import { IconButton } from "./IconButton";

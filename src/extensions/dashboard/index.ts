@@ -2,7 +2,7 @@ import type {
   IDashletOptions,
   IExtensionContext,
   PropsCallback,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 
 import type { IDashletProps } from "./types/IDashletProps";
 import Dashboard from "./views/Dashboard";

@@ -6,14 +6,14 @@ import {
 } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
 import {
   close,
   minimize,
   toggleMaximize,
   useIsMaximized,
 } from "../../../hooks";
+import { Icon } from "../../../tailwind/components/next/icon";
+import { joinClasses } from "../../../tailwind/components/next/utils";
 
 interface WindowControlButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {

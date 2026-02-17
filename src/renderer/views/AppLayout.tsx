@@ -3,11 +3,9 @@ import { Button as ReactButton } from "react-bootstrap";
 import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
-import { setUseModernLayout } from "../../actions/window";
-import { Button } from "../../tailwind/components/next/button";
-import { MutexProvider } from "../../util/MutexContext";
+import { setUseModernLayout } from "../actions/window";
 import {
   MainProvider,
   MenuLayerProvider,
@@ -15,6 +13,8 @@ import {
   WindowProvider,
 } from "../contexts";
 import Spinner from "../controls/Spinner";
+import { Button } from "../tailwind/components/next/button";
+import { MutexProvider } from "../util/MutexContext";
 import { ClassicLayout, ModernLayout } from "./layout";
 
 addStyle(ReactButton, "secondary");

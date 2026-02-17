@@ -1,4 +1,4 @@
-import createAction from "../../../actions/safeCreateAction";
+import createAction from "../../../renderer/actions/safeCreateAction";
 import type { IItemRendererOptions } from "../types/types";
 
 // Can be used to store game specific load order options

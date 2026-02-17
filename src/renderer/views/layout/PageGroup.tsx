@@ -2,7 +2,7 @@ import React, { memo, useMemo, type FC } from "react";
 import { Nav } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type { IMainPage } from "../../../types/IMainPage";
+import type { IMainPage } from "../../types/IMainPage";
 
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 import { NavItem } from "../../controls/TooltipControls";

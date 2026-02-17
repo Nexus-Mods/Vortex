@@ -1,4 +1,4 @@
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 
 import type { IGameLoadOrderEntry } from "./types/types";
 

@@ -1,4 +1,4 @@
-import safeCreateAction from "../../actions/safeCreateAction";
+import safeCreateAction from "../../renderer/actions/safeCreateAction";
 
 export const setPrimaryTool = safeCreateAction(
   "SET_PRIMARY_TOOL",

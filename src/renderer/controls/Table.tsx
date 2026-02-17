@@ -5,20 +5,20 @@ import {
   setAttributeVisible,
   setCollapsedGroups,
   setGroupingAttribute,
-} from "../../actions/tables";
-import type { IActionDefinition } from "../../types/IActionDefinition";
-import type { IAttributeState } from "../../types/IAttributeState";
-import type { IExtensibleProps } from "../../types/IExtensionProvider";
-import type { II18NProps } from "../../types/II18NProps";
-import type { IRowState, IState, ITableState } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import type { SortDirection } from "../../types/SortDirection";
+} from "../actions/tables";
+import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IAttributeState } from "../types/IAttributeState";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
+import type { II18NProps } from "../types/II18NProps";
+import type { IRowState, IState, ITableState } from "../types/IState";
+import type { ITableAttribute } from "../types/ITableAttribute";
+import type { SortDirection } from "../types/SortDirection";
 import { ComponentEx, connect, extend, translate } from "./ComponentEx";
-import Debouncer from "../../util/Debouncer";
-import { log } from "../../util/log";
+import Debouncer from "../util/Debouncer";
+import { log } from "../util/log";
 import smoothScroll from "../smoothScroll";
-import { getSafe, setSafe } from "../../util/storeHelper";
-import { makeUnique, sanitizeCSSId, truthy } from "../../util/util";
+import { getSafe, setSafe } from "../util/storeHelper";
+import { makeUnique, sanitizeCSSId, truthy } from "../util/util";
 
 import IconBar from "./IconBar";
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";

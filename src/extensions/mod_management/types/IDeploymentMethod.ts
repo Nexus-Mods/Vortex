@@ -1,6 +1,6 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { Normalize } from "../../../util/getNormalizeFunc";
-import type { TFunction } from "../../../util/i18n";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { Normalize } from "../../../renderer/util/getNormalizeFunc";
+import type { TFunction } from "../../../renderer/util/i18n";
 
 import type PromiseBB from "bluebird";
 

@@ -2,9 +2,9 @@ import { createHash } from "crypto";
 import type {
   IErrorOptions,
   IExtensionApi,
-} from "../../types/IExtensionContext";
-import type { INotificationAction } from "../../types/INotification";
-import { log } from "../../util/log";
+} from "../../renderer/types/IExtensionContext";
+import type { INotificationAction } from "../../renderer/types/INotification";
+import { log } from "../../renderer/util/log";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 // In test environment, use synchronous execution to avoid timing issues with Jest fake timers

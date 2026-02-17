@@ -18,19 +18,19 @@ import type { IParameters } from "../../shared/types/cli";
 import type {
   IAvailableExtension,
   IExtensionDownloadInfo,
-} from "../../types/extensions";
+} from "../../renderer/types/extensions";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IDialog";
+import type { IState } from "../../renderer/types/IState";
 
-import { getPreloadApi } from "../..//util/preloadAccess";
-import { showDialog } from "../../actions/notifications";
-import { resetSuppression } from "../../actions/notificationSettings";
-import { setCustomTitlebar } from "../../actions/window";
+import { getPreloadApi } from "../../renderer/util/preloadAccess";
+import { showDialog } from "../../renderer/actions/notifications";
+import { resetSuppression } from "../../renderer/actions/notificationSettings";
+import { setCustomTitlebar } from "../../renderer/actions/window";
 import {
   ComponentEx,
   connect,
@@ -38,10 +38,10 @@ import {
 } from "../../renderer/controls/ComponentEx";
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
-import { relaunch } from "../../util/commandLine";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import { relaunch } from "../../renderer/util/commandLine";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { truthy } from "../../renderer/util/util";
 import { readExtensibleDir } from "../extension_manager/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";

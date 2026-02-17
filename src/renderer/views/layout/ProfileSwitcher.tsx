@@ -2,9 +2,9 @@ import React, { useCallback, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../types/IState";
 
-import { setDialogVisible } from "../../../actions/session";
+import { setDialogVisible } from "../../actions/session";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
 import { Dialog } from "../Dialog";

@@ -1,6 +1,6 @@
-import type { IExtensionApi } from "../../../types/api";
-import lazyRequire from "../../../util/lazyRequire";
-import { log } from "../../../util/log";
+import type { IExtensionApi } from "../../../renderer/types/api";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import { log } from "../../../renderer/util/log";
 import { DialogManager } from "./DialogManager";
 import { SharedDelegates } from "../../installer_fomod_shared/delegates/SharedDelegates";
 

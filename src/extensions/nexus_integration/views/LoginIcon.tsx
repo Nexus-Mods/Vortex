@@ -1,16 +1,16 @@
-import { setDialogVisible } from "../../../actions/session";
+import { setDialogVisible } from "../../../renderer/actions/session";
 import Icon from "../../../renderer/controls/Icon";
 import Image from "../../../renderer/controls/Image";
 import * as tooltip from "../../../renderer/controls/TooltipControls";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import opn from "../../../renderer/util/opn";
+import { truthy } from "../../../renderer/util/util";
 
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
@@ -27,7 +27,7 @@ import { pathToFileURL } from "url";
 import { isLoggedIn } from "../selectors";
 
 import { setOauthPending } from "../actions/session";
-import { showError } from "../../../util/message";
+import { showError } from "../../../renderer/util/message";
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;

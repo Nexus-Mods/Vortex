@@ -2,7 +2,7 @@ import React, { type FC, type ReactNode, useContext } from "react";
 import { Portal } from "react-overlays";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
 import { PageHeaderContext } from "./MainPageContainer";
 

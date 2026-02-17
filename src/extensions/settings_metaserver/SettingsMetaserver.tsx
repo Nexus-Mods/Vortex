@@ -7,10 +7,10 @@ import {
   connect,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { setSafe } from "../../util/storeHelper";
-import { DNDContainer } from "../../renderer/views/DNDContainer";
+import type { TFunction } from "../../renderer/util/i18n";
+import { log } from "../../renderer/util/log";
+import { setSafe } from "../../renderer/util/storeHelper";
+import DNDContainer from "../../renderer/views/DNDContainer";
 
 import { addMetaserver, removeMetaserver, setPriorities } from "./actions";
 import getText from "./texts";

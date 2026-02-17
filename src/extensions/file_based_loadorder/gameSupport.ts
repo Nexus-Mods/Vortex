@@ -1,8 +1,8 @@
 import path from "path";
 
-import { COMPANY_ID } from "../../util/constants";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
+import { COMPANY_ID } from "../../renderer/util/constants";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
 import type { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from "./types/types";
 
 const gameSupport: ILoadOrderGameInfoExt[] = [];

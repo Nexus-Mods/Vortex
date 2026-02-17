@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useReducer, type FC } from "react";
 import { Badge } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 
-import type { IMainPage } from "../../types/IMainPage";
 import type { IUpdateable } from "../ReduxProp";
+import type { IMainPage } from "../types/IMainPage";
 
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";

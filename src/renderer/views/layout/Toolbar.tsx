@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import * as semver from "semver";
 
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IState } from "../../../types/IState";
+import type { IActionDefinition } from "../../types/IActionDefinition";
+import type { IState } from "../../types/IState";
 
 import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";

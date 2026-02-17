@@ -3,8 +3,8 @@
  * Provides browsing functionality for Nexus Mods collections and mods
  */
 
-import { activeGameId } from "../../util/selectors";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import { activeGameId } from "../../renderer/util/selectors";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import BrowseNexusPage from "./views/BrowseNexusPage";
 
 function init(context: IExtensionContext): boolean {

@@ -9,10 +9,10 @@ import React, { type FC, useCallback } from "react";
 import type {
   INotification,
   NotificationType,
-} from "../../../../../types/INotification";
+} from "../../../../types/INotification";
 
-import { Icon } from "../../../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../../../tailwind/components/next/utils";
+import { Icon } from "../../../../tailwind/components/next/icon";
+import { joinClasses } from "../../../../tailwind/components/next/utils";
 import { NotificationActions } from "./NotificationActions";
 import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";

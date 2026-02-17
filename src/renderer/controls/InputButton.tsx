@@ -1,7 +1,7 @@
-import { displayGroup } from "../../actions/session";
-import type { IState } from "../../types/IState";
+import { displayGroup } from "../actions/session";
+import type { IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "./ComponentEx";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../util/storeHelper";
 
 import Icon from "./Icon";
 import ToolbarIcon from "./ToolbarIcon";

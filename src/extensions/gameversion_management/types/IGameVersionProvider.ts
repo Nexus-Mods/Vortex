@@ -1,4 +1,4 @@
-import type { IGame } from "../../../types/IGame";
+import type { IGame } from "../../../renderer/types/IGame";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 
 export type GameVersionProviderFunc = (

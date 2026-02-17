@@ -1,6 +1,6 @@
 // Renderer-only webview utilities
 
-import { getPreloadApi } from "../util/preloadAccess";
+import { getPreloadApi } from "./util/preloadAccess";
 
 export const makeBrowserView = (
   src: string,

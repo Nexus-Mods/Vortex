@@ -8,8 +8,8 @@ import React, {
   type MouseEventHandler,
 } from "react";
 
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
+import getVortexPath from "../util/getVortexPath";
+import { log } from "../util/log";
 
 // Use window-scoped map so all code bundles (including extensions) share it.
 // This prevents race conditions where one bundle starts loading an icon set
