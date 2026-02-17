@@ -321,7 +321,7 @@ export interface InvokeChannels {
 
   // Query system: execute a named query
   "query:execute": (
-    queryName: string,
+    queryName: QueryName,
     params?: Record<string, Serializable>,
   ) => Promise<Serializable[]>;
 
