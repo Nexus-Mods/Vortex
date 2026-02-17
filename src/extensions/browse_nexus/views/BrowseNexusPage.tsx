@@ -19,8 +19,8 @@ import { useSelector } from "react-redux";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 
+import Tailwind from "../../../renderer/tailwind";
 import MainPage from "../../../renderer/views/MainPage";
-import Tailwind from "../../../tailwind";
 import { UserCanceled } from "../../../util/api";
 import opn from "../../../util/opn";
 import { activeGameId, isCollectionModPresent } from "../../../util/selectors";

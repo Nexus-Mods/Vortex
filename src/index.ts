@@ -17,4 +17,4 @@ export { actions, PromiseBB as Promise, fs, log, selectors, types, util };
 export { ComponentEx, PureComponentEx } from "./renderer/controls/ComponentEx";
 
 // Tailwind component library (namespaced to avoid conflicts)
-export { Tailwind } from "./tailwind";
+export { Tailwind } from "./renderer/tailwind";
