@@ -29,7 +29,6 @@ import {
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import { prettifyNodeErrorMessage } from "../util/message";
 import startupSettings from "../util/startupSettings";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
@@ -421,18 +420,7 @@ class Application {
         }
 
         const error = unknownToError(err);
-
-        const pretty = prettifyNodeErrorMessage(error);
-        const details = pretty.message.replace(
-          /{{ *([a-zA-Z]+) *}}/g,
-          (_, key) => pretty.replace?.[key] || key,
-        );
-
-        error.message = "Startup failed";
-        error["details"] = details;
-        error["code"] = pretty.code;
-
-        terminate(error, pretty.allowReport);
+        terminate(error);
       }
     } finally {
       try {
