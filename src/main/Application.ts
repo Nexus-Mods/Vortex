@@ -52,7 +52,7 @@ import TrayIcon from "./TrayIcon";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
 / everything except a patch) compared to what was running last */
-function isMajorDowngrade(previous: string, current: string): boolean {
+export function isMajorDowngrade(previous: string, current: string): boolean {
   const majorL = semver.major(previous);
   const majorR = semver.major(current);
 
