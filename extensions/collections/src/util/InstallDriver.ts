@@ -171,7 +171,8 @@ class InstallDriver {
       if ((mod !== undefined) && (dependent !== undefined)) {
         const isMarkedInstalled = this.mInstalledMods.find(m => m.id === mod.id) !== undefined;
         if (isMarkedInstalled) {
-          // Been here, done that.
+          // Been here, done that. Update progress and return
+          this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
           return;
         }
         if (dependent.type === 'requires') {

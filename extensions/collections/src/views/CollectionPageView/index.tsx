@@ -373,13 +373,13 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public async componentDidMount() {
-    const { collection, userInfo } = this.props;
+    const { collection, driver, userInfo } = this.props;
 
     const { attributes } = collection ?? {};
     const { revisionId, collectionSlug, revisionNumber } = attributes ?? {};
     if (((revisionId !== undefined) || (collectionSlug !== undefined))
         && (userInfo !== undefined)) {
-      const { infoCache } = this.props.driver;
+      const { infoCache } = driver;
       try {
         await infoCache.getRevisionInfo(revisionId, collectionSlug, revisionNumber);
       } catch (err) {
@@ -392,6 +392,24 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
 
     const modsEx = this.initModsEx(this.props);
     this.nextState.modsEx = modsEx;
+
+    driver.onUpdate(() => {
+      const state: types.IState = this.context.api.getState();
+      const gameId = this.props.profile?.gameId;
+      if (gameId === undefined) {
+        return;
+      }
+      const currentMods = state.persistent.mods[gameId] ?? {};
+      const currentDownloads = state.persistent.downloads.files;
+      if ((currentMods !== this.props.mods)
+          || (currentDownloads !== this.props.downloads)) {
+        this.nextState.modsEx = this.updateModsEx(this.props, {
+          ...this.props,
+          mods: currentMods,
+          downloads: currentDownloads,
+        });
+      }
+    });
   }
 
   public async UNSAFE_componentWillReceiveProps(newProps: ICollectionPageProps) {
@@ -1002,13 +1020,19 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           };
         }
       } else {
-        const match = pendingFinish.find(iter =>
+        let match = pendingFinish.find(iter =>
           util.testModReference(mod, modsEx[iter].collectionRule.reference));
+        // fallback: if the download finished and the mod installed in the same update
+        // cycle, the entry may still be in pendingInstall (at 'downloading'/'downloaded')
+        if (match === undefined) {
+          match = pendingInstall.find(iter =>
+            util.testModReference(mod, modsEx[iter].collectionRule.reference));
+        }
         if (match !== undefined) {
           result[match] = {
             ...mod,
             ...(profile.modState || {})[mod.id],
-            collectionRule: modsEx[match].collectionRule,
+            collectionRule: (result[match] ?? modsEx[match]).collectionRule,
           };
         }
       }
@@ -1053,7 +1077,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           };
 
           const dl = newProps.downloads[result[ruleId]?.archiveId];
-          if (['finished', 'failed'].includes(dl.state) && !pendingFinish.includes(ruleId)) {
+          if (['finished', 'failed'].includes(dl?.state) && !pendingFinish.includes(ruleId)) {
             result[ruleId].state = 'downloaded';
           }
         }
