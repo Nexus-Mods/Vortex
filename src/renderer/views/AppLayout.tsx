@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import type { IState } from "../types/IState";
 
+import { mdiMonitor, mdiMonitorShimmer } from "@mdi/js";
 import { setUseModernLayout } from "../actions/window";
 import {
   MainProvider,
@@ -33,11 +34,11 @@ const LayoutSwitcher = () => {
     <Button
       buttonType="primary"
       className="fixed right-4 bottom-4 z-toast"
+      leftIconPath={useModernLayout ? mdiMonitor : mdiMonitorShimmer}
       size="sm"
+      title={useModernLayout ? "Switch to Classic" : "Switch to Modern"}
       onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
-    >
-      {useModernLayout ? "Switch to Classic" : "Switch to Modern"}
-    </Button>
+    />
   );
 };
 
