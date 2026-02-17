@@ -15,8 +15,8 @@ import PortalMenu from "../../renderer/controls/PortalMenu";
 
 import { setToolVisible } from "../gamemode_management/actions/settings";
 
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IState } from "../../types/IState";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type { IState } from "../../renderer/types/IState";
 import * as selectors from "../../util/selectors";
 
 import type { IGameStored } from "../gamemode_management/types/IGameStored";

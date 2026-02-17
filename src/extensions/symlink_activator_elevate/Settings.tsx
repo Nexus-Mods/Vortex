@@ -5,8 +5,8 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IDialog";
+import type { IState } from "../../renderer/types/IState";
 import { ComponentEx } from "../../renderer/controls/ComponentEx";
 
 import { enableUserSymlinks } from "./actions";

@@ -5,8 +5,8 @@ import { fs } from "../..";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import type { IStarterInfo } from "../../util/StarterInfo";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";

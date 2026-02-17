@@ -1,6 +1,6 @@
 import safeCreateAction from "../../actions/safeCreateAction";
 
-import type { IOverlayOptions, IPosition } from "../../types/api";
+import type { IOverlayOptions, IPosition } from "../../renderer/types/api";
 
 export const showOverlay = safeCreateAction(
   "SHOW_INSTRUCTIONS",

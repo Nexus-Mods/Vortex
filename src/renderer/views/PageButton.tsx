@@ -1,6 +1,6 @@
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";
-import type { IMainPage } from "../../types/IMainPage";
+import type { IMainPage } from "../types/IMainPage";
 import type { TFunction } from "../../util/i18n";
 
 import * as React from "react";

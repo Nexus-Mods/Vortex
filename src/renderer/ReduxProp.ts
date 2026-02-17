@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "./types/IExtensionContext";
 import { getSafe } from "../util/storeHelper";
 import type * as React from "react";
 

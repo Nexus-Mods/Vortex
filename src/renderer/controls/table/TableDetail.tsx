@@ -2,7 +2,7 @@ import type {
   IEditChoice,
   ITableAttribute,
   ValidationState,
-} from "../../../types/ITableAttribute";
+} from "../../types/ITableAttribute";
 import { ComponentEx } from "../ComponentEx";
 import type { TFunction } from "../../../util/i18n";
 import { preT } from "../../../util/i18n";

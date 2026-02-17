@@ -1,4 +1,4 @@
-import type { IArchiveHandler } from "../types/IExtensionContext";
+import type { IArchiveHandler } from "../renderer/types/IExtensionContext";
 
 import type PromiseBB from "bluebird";
 

@@ -1,8 +1,8 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { installPathForGame } from "../../util/selectors";

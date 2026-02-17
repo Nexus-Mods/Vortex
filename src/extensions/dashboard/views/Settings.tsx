@@ -1,5 +1,5 @@
 import Toggle from "../../../renderer/controls/Toggle";
-import type { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

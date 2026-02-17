@@ -1,5 +1,5 @@
 import Modal from "../../../renderer/controls/Modal";
-import type { IDeploymentMethod } from "../../../types/api";
+import type { IDeploymentMethod } from "../../../renderer/types/api";
 import {
   ComponentEx,
   connect,

@@ -6,7 +6,7 @@ import type { IGameStored } from "../extensions/gamemode_management/types/IGameS
 
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
-import type { IProfile } from "../types/api";
+import type { IProfile } from "../renderer/types/api";
 
 function clone<T>(input: T): T {
   return Array.isArray(input) ? ([...input] as T) : { ...(input as any) };

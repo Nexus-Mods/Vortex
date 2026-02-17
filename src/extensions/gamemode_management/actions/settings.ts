@@ -1,5 +1,5 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 

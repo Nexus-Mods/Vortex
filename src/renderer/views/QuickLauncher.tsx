@@ -12,9 +12,9 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IRunningTool, IState } from "../../types/IState";
+} from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
+import type { IRunningTool, IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import Debouncer from "../../util/Debouncer";
 import type { TFunction } from "../../util/i18n";

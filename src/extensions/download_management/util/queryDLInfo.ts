@@ -3,8 +3,8 @@ import type { Action } from "redux";
 import type {
   IExtensionApi,
   ILookupResult,
-} from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+} from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 import { log } from "../../../util/log";
 import { batchDispatch } from "../../../util/util";
 import * as selectors from "../../gamemode_management/selectors";

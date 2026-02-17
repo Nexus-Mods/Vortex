@@ -4,7 +4,7 @@ import type {
   IDialogContent,
 } from "../../../actions/notifications";
 import { showDialog } from "../../../actions/notifications";
-import type { IMod, IState } from "../../../types/IState";
+import type { IMod, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

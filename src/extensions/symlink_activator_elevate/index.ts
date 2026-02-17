@@ -2,9 +2,9 @@ import { clearUIBlocker, setUIBlocker } from "../../actions";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import type { IState } from "../../renderer/types/IState";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";

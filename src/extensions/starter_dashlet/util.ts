@@ -7,7 +7,7 @@ import path from "path";
 import extractExeIcon from "../../util/exeIcon";
 import { ProcessCanceled } from "../../util/CustomErrors";
 
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type { IEditStarterInfo } from "./types";
 
 import type { IStarterInfo } from "../../util/StarterInfo";

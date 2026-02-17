@@ -1,6 +1,6 @@
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Spinner from "../../../renderer/controls/Spinner";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

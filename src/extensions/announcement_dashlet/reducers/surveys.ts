@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
 
 import * as actions from "../actions";

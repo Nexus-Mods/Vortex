@@ -7,8 +7,8 @@ import type {
 import { addNotification, showDialog } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { INotificationAction } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
+import type { INotificationAction } from "../../../renderer/types/INotification";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

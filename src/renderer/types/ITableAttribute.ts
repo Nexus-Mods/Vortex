@@ -1,4 +1,4 @@
-import type { ITString, TFunction } from "../util/i18n";
+import type { ITString, TFunction } from "../../util/i18n";
 
 export type AttributeRenderer = "progress";
 

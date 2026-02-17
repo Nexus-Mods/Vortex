@@ -1,7 +1,7 @@
 import { SITE_GAME_NAME } from "../../../renderer/controls/constants";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IGameStored } from "../../../types/IState";
+import type { IGameStored } from "../../../renderer/types/IState";
 import { PureComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";
 

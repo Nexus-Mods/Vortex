@@ -1,4 +1,4 @@
-import type { SortDirection } from "../../../types/SortDirection";
+import type { SortDirection } from "../../types/SortDirection";
 
 import Icon from "../Icon";
 

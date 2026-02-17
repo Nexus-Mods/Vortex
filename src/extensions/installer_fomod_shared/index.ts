@@ -2,7 +2,7 @@ import InstallerDialog from "./views/InstallerDialog";
 import { installerUIReducer } from "./reducers/installerUI";
 import { initGameSupport } from "./utils/gameSupport";
 import type { IChoiceType } from "./types/interface";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import type { IMod } from "../mod_management/types/IMod";
 import { getSafe } from "../../util/storeHelper";
 

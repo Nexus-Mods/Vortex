@@ -1,5 +1,5 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";
 import { ParserError } from "../announcement_dashlet/types";

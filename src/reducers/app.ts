@@ -1,5 +1,5 @@
 import * as actions from "../actions/app";
-import type { IReducerSpec } from "../types/IExtensionContext";
+import type { IReducerSpec } from "../renderer/types/IExtensionContext";
 import { deleteOrNop, pushSafe, setSafe } from "../util/storeHelper";
 
 import { app } from "electron";

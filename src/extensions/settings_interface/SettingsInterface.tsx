@@ -18,14 +18,14 @@ import type { IParameters } from "../../shared/types/cli";
 import type {
   IAvailableExtension,
   IExtensionDownloadInfo,
-} from "../../types/extensions";
+} from "../../renderer/types/extensions";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IDialog";
+import type { IState } from "../../renderer/types/IState";
 
 import { showDialog } from "../../actions/notifications";
 import { resetSuppression } from "../../actions/notificationSettings";

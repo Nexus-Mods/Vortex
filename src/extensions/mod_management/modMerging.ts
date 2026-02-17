@@ -1,8 +1,8 @@
 import type {
   IDeployedFile,
   IExtensionApi,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
 import * as fs from "../../util/fs";
 import type { IFileEntry } from "../../util/getFileList";
 import getFileList from "../../util/getFileList";

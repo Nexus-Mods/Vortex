@@ -1,4 +1,4 @@
-import type * as types from "../../types/api";
+import type * as types from "../../renderer/types/api";
 import * as util from "../../util/api";
 import type { ILoadOrder, ILoadOrderEntry } from "./types/types";
 

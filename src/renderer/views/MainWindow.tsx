@@ -12,24 +12,19 @@ import IconBar from "../controls/IconBar";
 import ProgressBar from "../controls/ProgressBar";
 import Spinner from "../controls/Spinner";
 import { Button, NavItem } from "../controls/TooltipControls";
-import type { IActionDefinition } from "../../types/IActionDefinition";
-import type { IComponentContext } from "../../types/IComponentContext";
+import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IComponentContext } from "../types/IComponentContext";
 import type {
   IExtensionApi,
   IMainPageOptions,
-} from "../../types/IExtensionContext";
-import type { II18NProps } from "../../types/II18NProps";
-import type { IMainPage } from "../../types/IMainPage";
-import type { IModifiers } from "../../types/IModifiers";
-import type { INotification } from "../../types/INotification";
-import type {
-  IProfile,
-  IProgress,
-  IState,
-  IUIBlocker,
-} from "../../types/IState";
+} from "../types/IExtensionContext";
+import type { II18NProps } from "../types/II18NProps";
+import type { IMainPage } from "../types/IMainPage";
+import type { IModifiers } from "../types/IModifiers";
+import type { INotification } from "../types/INotification";
+import type { IProfile, IProgress, IState, IUIBlocker } from "../types/IState";
 import { connect, extend } from "../controls/ComponentEx";
-import type { IRegisteredExtension } from "../../types/extensions";
+import type { IRegisteredExtension } from "../types/extensions";
 import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { createQueue, MutexProvider } from "../../util/MutexContext";

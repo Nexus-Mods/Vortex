@@ -7,7 +7,7 @@ import { IconButton } from "../../renderer/controls/TooltipControls";
 import ZoomableImage from "../../renderer/controls/ZoomableImage";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import bbcode from "../../renderer/controls/bbcode";
 import {
   ComponentEx,
@@ -21,7 +21,7 @@ import type {
   IAvailableExtension,
   IExtension,
   ISelector,
-} from "../../types/extensions";
+} from "../../renderer/types/extensions";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 
 import * as React from "react";

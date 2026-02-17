@@ -2,7 +2,7 @@
 // that should be available to extensions
 
 import * as actions from "./actions/index";
-import * as types from "./types/api";
+import * as types from "./renderer/types/api";
 import * as util from "./util/api";
 import * as fs from "./util/fs";
 import { log } from "./util/log";

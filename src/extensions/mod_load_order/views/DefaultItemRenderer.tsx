@@ -13,7 +13,7 @@ import type {
 } from "../types/types";
 
 import { Icon } from "../../../renderer/controls/api";
-import type { IProfile, IState } from "../../../types/api";
+import type { IProfile, IState } from "../../../renderer/types/api";
 
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";

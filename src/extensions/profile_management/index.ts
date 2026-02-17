@@ -27,9 +27,12 @@ import type {
   IExtensionApi,
   IExtensionContext,
   ThunkStore,
-} from "../../types/IExtensionContext";
-import type { IGameStored, IState } from "../../types/IState";
-import type { IExtension, IRegisteredExtension } from "../../types/extensions";
+} from "../../renderer/types/IExtensionContext";
+import type { IGameStored, IState } from "../../renderer/types/IState";
+import type {
+  IExtension,
+  IRegisteredExtension,
+} from "../../renderer/types/extensions";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 

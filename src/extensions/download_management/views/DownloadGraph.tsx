@@ -1,6 +1,6 @@
 import { setSettingsPage } from "../../../actions/session";
 import ErrorBoundary from "../../../renderer/controls/ErrorBoundary";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
 import { bytesToString, truthy } from "../../../util/util";
 

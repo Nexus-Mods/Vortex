@@ -1,6 +1,6 @@
 import { setMultiUser } from "../../actions/user";
 import More from "../../renderer/controls/More";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import { relaunch } from "../../util/commandLine";
 import {
   ComponentEx,

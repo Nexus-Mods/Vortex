@@ -1,7 +1,7 @@
 import { removeExtension } from "../../actions";
 import { unknownToError } from "../../shared/errors";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
@@ -14,7 +14,10 @@ import {
   languageExists,
 } from "../settings_interface/languagemap";
 
-import type { ExtensionType, IExtension } from "../../types/extensions";
+import type {
+  ExtensionType,
+  IExtension,
+} from "../../renderer/types/extensions";
 import { readExtensionInfo } from "./util";
 
 import PromiseBB from "bluebird";

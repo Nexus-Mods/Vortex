@@ -1,7 +1,7 @@
 import { startActivity, stopActivity } from "../../actions/session";
-import type { IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IModTable, IProfile, IState } from "../../types/IState";
+import type { IDialogResult } from "../../renderer/types/IDialog";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IModTable, IProfile, IState } from "../../renderer/types/IState";
 import { getApplication } from "../../util/application";
 import {
   DataInvalid,

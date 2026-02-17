@@ -2,7 +2,7 @@ import DropdownButton from "../../../renderer/controls/DropdownButton";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

@@ -15,8 +15,8 @@ import * as semver from "semver";
 import { inspect } from "util";
 import {} from "uuid";
 
-import type { IErrorOptions, IExtensionApi } from "../types/api";
-import type { IError } from "../types/IError";
+import type { IErrorOptions, IExtensionApi } from "../renderer/types/api";
+import type { IError } from "../renderer/types/IError";
 
 import {
   NEXUS_BASE_URL,

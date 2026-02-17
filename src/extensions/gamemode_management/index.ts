@@ -7,12 +7,19 @@ import type {
   GameInfoQuery,
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import isIGame from "../../types/IGame.validator";
-import type { IGameStore } from "../../types/IGameStore";
-import type { IProfile, IRunningTool, IState } from "../../types/IState";
-import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import isIGame from "../../renderer/types/IGame.validator";
+import type { IGameStore } from "../../renderer/types/IGameStore";
+import type {
+  IProfile,
+  IRunningTool,
+  IState,
+} from "../../renderer/types/IState";
+import type {
+  IEditChoice,
+  ITableAttribute,
+} from "../../renderer/types/ITableAttribute";
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import {
   DataInvalid,
@@ -33,7 +40,7 @@ import { getSafe } from "../../util/storeHelper";
 
 import { batchDispatch } from "../../util/util";
 
-import type { IExtensionDownloadInfo } from "../../types/extensions";
+import type { IExtensionDownloadInfo } from "../../renderer/types/extensions";
 import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";

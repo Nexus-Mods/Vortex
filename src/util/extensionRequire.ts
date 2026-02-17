@@ -1,6 +1,6 @@
 import * as reactSelect from "../renderer/controls/ReactSelectWrap";
 
-import type { IRegisteredExtension } from "../types/extensions";
+import type { IRegisteredExtension } from "../renderer/types/extensions";
 import ExtensionManager from "../renderer/ExtensionManager";
 
 import {} from "module";

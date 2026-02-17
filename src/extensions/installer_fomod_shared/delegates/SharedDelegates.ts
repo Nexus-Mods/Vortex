@@ -1,6 +1,6 @@
 import { discoveryByGame } from "../../gamemode_management/selectors";
-import type { IState } from "../../../types/IState";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import { getApplication } from "../../../util/application";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { hasLoadOrder, hasSessionPlugins } from "../utils/guards";

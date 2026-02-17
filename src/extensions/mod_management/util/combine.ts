@@ -3,7 +3,7 @@ import { generate as shortid } from "shortid";
 import type {
   IDeploymentMethod,
   IExtensionApi,
-} from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";

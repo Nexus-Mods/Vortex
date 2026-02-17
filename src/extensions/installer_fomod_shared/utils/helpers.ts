@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import { hasSessionFOMOD } from "./guards";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import type { IChoices, IGroupList } from "../types/interface";

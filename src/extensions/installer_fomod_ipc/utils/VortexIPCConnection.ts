@@ -3,7 +3,7 @@ import { BaseIPCConnection } from "fomod-installer-ipc";
 import type { ISupportedResult } from "../../mod_management/types/TestSupported";
 import type { IInstallResult } from "../../mod_management/types/IInstallResult";
 import { statAsync } from "../../../util/fs";
-import type { IExtensionApi } from "../../../types/api";
+import type { IExtensionApi } from "../../../renderer/types/api";
 import { log } from "../../../util/log";
 import type { IChoices } from "../../installer_fomod_shared/types/interface";
 import path from "path";

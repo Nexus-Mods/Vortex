@@ -8,7 +8,7 @@ import {
 import { bytesToString } from "../../../util/util";
 
 import * as React from "react";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import type { DownloadState, IDownload } from "../types/IDownload";
 
 import { setAttributeFilter } from "../../../actions/tables";

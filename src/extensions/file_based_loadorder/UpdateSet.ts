@@ -1,4 +1,4 @@
-import type { IExtensionApi, IMod } from "../../types/api";
+import type { IExtensionApi, IMod } from "../../renderer/types/api";
 import { getSafe } from "../../util/storeHelper";
 
 import * as _ from "lodash";

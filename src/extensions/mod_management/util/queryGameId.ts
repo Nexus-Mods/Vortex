@@ -1,6 +1,6 @@
 import { showDialog } from "../../../actions";
-import type { ThunkStore } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import type { ThunkStore } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";
 import {
   activeGameId,

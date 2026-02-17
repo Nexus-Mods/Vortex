@@ -1,9 +1,9 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import { UserCanceled } from "../../util/CustomErrors";
 import deepMerge from "../../util/deepMerge";
 import { disableErrorReport } from "../../util/errorHandling";

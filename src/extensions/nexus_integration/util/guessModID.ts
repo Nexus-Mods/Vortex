@@ -2,7 +2,7 @@ import type {
   IExtensionApi,
   ILookupResult,
   IModInfo,
-} from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IExtensionContext";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import { batchDispatch, truthy } from "../../../util/util";
 import { setDownloadModInfo } from "../../download_management/actions/state";

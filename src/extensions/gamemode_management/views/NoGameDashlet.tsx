@@ -1,5 +1,5 @@
-import type { IState } from "../../../types/IState";
-import { IDiscoveryState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
+import { IDiscoveryState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

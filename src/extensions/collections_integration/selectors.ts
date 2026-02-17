@@ -10,7 +10,7 @@ import * as path from "path";
 
 import { modsForActiveGame } from "../mod_management/selectors";
 
-import type { IDownload, IMod, IState } from "../../types/IState";
+import type { IDownload, IMod, IState } from "../../renderer/types/IState";
 import { activeDownloads } from "../download_management/selectors";
 
 /**

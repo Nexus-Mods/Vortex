@@ -1,4 +1,4 @@
-import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
 import type { IActionControlProps } from "./ActionControl";
 import ActionControl from "./ActionControl";
 import type { IContextMenuProps } from "./ContextMenu";

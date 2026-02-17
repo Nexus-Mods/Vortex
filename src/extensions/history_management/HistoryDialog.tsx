@@ -4,7 +4,7 @@ import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import Usage from "../../renderer/controls/Usage";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import type { TFunction } from "../../util/i18n";
 import relativeTime from "../../util/relativeTime";
 import { getGame } from "../gamemode_management/util/getGame";

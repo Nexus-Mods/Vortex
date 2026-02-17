@@ -13,7 +13,7 @@ import {
 } from "../installer_fomod_shared/utils/gameSupport";
 import { getGame } from "../gamemode_management/util/getGame";
 import { log } from "../../util/log";
-import type { IExtensionApi, IInstallResult } from "../../types/api";
+import type { IExtensionApi, IInstallResult } from "../../renderer/types/api";
 import { UserCanceled } from "../../util/CustomErrors";
 
 /**

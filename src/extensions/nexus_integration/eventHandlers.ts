@@ -2,8 +2,13 @@ import { setDownloadModInfo } from "../../actions";
 import type {
   IExtensionApi,
   StateChangeCallback,
-} from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type {
+  IDownload,
+  IMod,
+  IModTable,
+  IState,
+} from "../../renderer/types/IState";
 import {
   DataInvalid,
   ProcessCanceled,

@@ -4,7 +4,7 @@ import { showDialog } from "../../actions";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import local from "../../util/local";

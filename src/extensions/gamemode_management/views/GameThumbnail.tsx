@@ -2,8 +2,8 @@ import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
 import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IActionDefinition } from "../../../types/api";
-import type { IMod, IProfile, IState } from "../../../types/IState";
+import type { IActionDefinition } from "../../../renderer/types/api";
+import type { IMod, IProfile, IState } from "../../../renderer/types/IState";
 import {
   connect,
   PureComponentEx,

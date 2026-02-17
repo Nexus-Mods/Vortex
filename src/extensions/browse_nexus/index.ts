@@ -4,7 +4,7 @@
  */
 
 import { activeGameId } from "../../util/selectors";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import BrowseNexusPage from "./views/BrowseNexusPage";
 
 function init(context: IExtensionContext): boolean {

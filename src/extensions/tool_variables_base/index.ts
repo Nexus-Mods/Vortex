@@ -3,8 +3,8 @@ import * as path from "path";
 import type {
   IExtensionContext,
   IRunParameters,
-} from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { activeProfile } from "../../util/selectors";

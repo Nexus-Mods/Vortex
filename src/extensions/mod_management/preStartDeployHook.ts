@@ -1,8 +1,8 @@
 import type {
   IExtensionApi,
   IRunParameters,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 import onceCB from "../../util/onceCB";
 
 import { needToDeploy } from "./selectors";

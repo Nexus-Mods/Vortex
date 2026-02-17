@@ -13,12 +13,12 @@ import type {
   IExecInfo,
   IGameStore,
   IGameStoreEntry,
-} from "../types/api";
+} from "../renderer/types/api";
 
 import opn from "./opn";
 
-import type { IExtensionApi } from "../types/IExtensionContext";
-import { GameEntryNotFound } from "../types/IGameStore";
+import type { IExtensionApi } from "../renderer/types/IExtensionContext";
+import { GameEntryNotFound } from "../renderer/types/IGameStore";
 import getVortexPath from "./getVortexPath";
 import { getErrorMessageOrDefault } from "../shared/errors";
 import { findLinuxSteamPath } from "./linux/steamPaths";

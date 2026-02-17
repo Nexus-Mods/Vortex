@@ -2,7 +2,7 @@ import * as reduxAct from "redux-act";
 
 import safeCreateAction from "./safeCreateAction";
 
-import type { VortexInstallType } from "../types/VortexInstallType";
+import type { VortexInstallType } from "../renderer/types/VortexInstallType";
 
 const id = (input) => input;
 

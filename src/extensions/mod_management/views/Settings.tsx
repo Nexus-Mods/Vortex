@@ -11,9 +11,9 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { InstallPathMode, IState } from "../../../types/IState";
-import type { ValidationState } from "../../../types/ITableAttribute";
+} from "../../../renderer/types/IDialog";
+import type { InstallPathMode, IState } from "../../../renderer/types/IState";
+import type { ValidationState } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,

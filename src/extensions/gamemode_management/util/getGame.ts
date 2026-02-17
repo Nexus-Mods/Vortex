@@ -1,5 +1,5 @@
-import type { IGame } from "../../../types/IGame";
-import type { IGameStore } from "../../../types/IGameStore";
+import type { IGame } from "../../../renderer/types/IGame";
+import type { IGameStore } from "../../../renderer/types/IGameStore";
 import local from "../../../util/local";
 import type GameVersionManager from "../../gameversion_management/GameVersionManager";
 import type { IGameStub } from "../GameModeManager";

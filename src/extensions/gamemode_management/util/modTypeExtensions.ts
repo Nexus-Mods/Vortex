@@ -1,8 +1,8 @@
 import type {
   IInstruction,
   IModTypeOptions,
-} from "../../../types/IExtensionContext";
-import type { IGame, IModType } from "../../../types/IGame";
+} from "../../../renderer/types/IExtensionContext";
+import type { IGame, IModType } from "../../../renderer/types/IGame";
 
 import type PromiseBB from "bluebird";
 

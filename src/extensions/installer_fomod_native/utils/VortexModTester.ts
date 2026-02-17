@@ -1,4 +1,4 @@
-import type { ISupportedResult } from "../../../types/api";
+import type { ISupportedResult } from "../../../renderer/types/api";
 import lazyRequire from "../../../util/lazyRequire";
 
 import type * as fomodT from "fomod-installer-native";

@@ -6,7 +6,7 @@ import type {
   INotification,
   INotificationAction,
   NotificationType,
-} from "../../types/INotification";
+} from "../types/INotification";
 import { ComponentEx } from "../controls/ComponentEx";
 
 import type { TFunction } from "../../util/i18n";

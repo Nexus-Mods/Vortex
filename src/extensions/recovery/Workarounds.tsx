@@ -14,7 +14,7 @@ import type {
   IDialogResult,
 } from "../../actions";
 import { showDialog } from "../../actions";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import { getApplication } from "../../util/application";
 import { ComponentEx } from "../../renderer/controls/ComponentEx";
 import * as fs from "../../util/fs";

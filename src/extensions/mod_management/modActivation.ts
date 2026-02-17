@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import * as fs from "../../util/fs";
 import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";

@@ -1,4 +1,4 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import local from "../../util/local";
 import { wrapExtCBAsync } from "../../util/util";
 

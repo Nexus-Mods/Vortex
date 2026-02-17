@@ -1,5 +1,5 @@
 import * as os from "os";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import { analyticsLog } from "./utils/analyticsLog";
 import { getCPUArch } from "./../../util/nativeArch";
 import { setAnalytics } from "./actions/analytics.action";

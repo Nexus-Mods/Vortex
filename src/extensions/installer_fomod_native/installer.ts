@@ -17,7 +17,7 @@ import type {
   IInstallResult,
   IInstruction,
   InstructionType,
-} from "../../types/api";
+} from "../../renderer/types/api";
 import { getGame } from "../gamemode_management/util/getGame";
 import { UserCanceled } from "../../util/CustomErrors";
 

@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IDownloadsAPIExtension } from "../types/IDownloadsAPIExtension";
 import type { IDownloadRemoveOptions } from "../types/IDownloadRemoveOptions";
 import type { IDownloadResult } from "../types/IDownloadResult";

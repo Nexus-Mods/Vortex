@@ -34,8 +34,11 @@ import {
   setModAttribute,
   setOAuthCredentials,
 } from "../../actions";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IMod, IState } from "../../types/IState";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IMod, IState } from "../../renderer/types/IState";
 import {
   DataInvalid,
   HTTPError,

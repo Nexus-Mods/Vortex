@@ -1,4 +1,4 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import opn from "../../util/opn";
 import { currentGame } from "../../util/storeHelper";
 import { dismissOverlay } from "../instructions_overlay/actions";

@@ -1,6 +1,6 @@
 import FormInput from "../../../renderer/controls/FormInput";
 import More from "../../../renderer/controls/More";
-import type { ValidationState } from "../../../types/ITableAttribute";
+import type { ValidationState } from "../../../renderer/types/ITableAttribute";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import { truthy } from "../../../util/util";
 

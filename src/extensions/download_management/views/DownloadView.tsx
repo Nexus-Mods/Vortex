@@ -7,18 +7,18 @@ import FlexLayout from "../../../renderer/controls/FlexLayout";
 import IconBar from "../../../renderer/controls/IconBar";
 import type { ITableRowAction } from "../../../renderer/controls/Table";
 import SuperTable from "../../../renderer/controls/Table";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
+import type { IComponentContext } from "../../../renderer/types/IComponentContext";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { IAttachment } from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IDialog";
+import type { IAttachment } from "../../../renderer/types/IExtensionContext";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
-import type { IState } from "../../../types/IState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IState } from "../../../renderer/types/IState";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,

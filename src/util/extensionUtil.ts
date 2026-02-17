@@ -1,4 +1,7 @@
-import type { IAvailableExtension, IExtension } from "../types/extensions";
+import type {
+  IAvailableExtension,
+  IExtension,
+} from "../renderer/types/extensions";
 
 /**
  * Check if an installed extension matches a remote available extension

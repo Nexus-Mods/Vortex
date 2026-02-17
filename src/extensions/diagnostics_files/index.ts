@@ -1,5 +1,5 @@
 import { setDialogVisible } from "../../actions/session";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 
 import DiagnosticsFilesDialog from "./views/DiagnosticsFilesDialog";
 

@@ -3,7 +3,7 @@ import type {
   IDeploymentMethod,
   IExtensionApi,
   IFileChange,
-} from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IExtensionContext";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { log } from "../../../util/log";

@@ -1,14 +1,14 @@
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "../../../shared/errors";
-import { GameEntryNotFound } from "../../../types/IGameStore";
-import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
-import type { ITool } from "../../../types/ITool";
+import { GameEntryNotFound } from "../../../renderer/types/IGameStore";
+import type { IGameStoreEntry } from "../../../renderer/types/IGameStoreEntry";
+import type { ITool } from "../../../renderer/types/ITool";
 import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
 import extractExeIcon from "../../../util/exeIcon";
 import * as fs from "../../../util/fs";

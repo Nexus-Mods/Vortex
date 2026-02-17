@@ -1,4 +1,4 @@
-import type { ToDoType } from "../../types/IExtensionContext";
+import type { ToDoType } from "../../renderer/types/IExtensionContext";
 
 import type { TFunction } from "i18next";
 

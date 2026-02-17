@@ -11,7 +11,7 @@ import {
   Spinner,
   ToolbarIcon,
 } from "../../../renderer/controls/api";
-import type * as types from "../../../types/api";
+import type * as types from "../../../renderer/types/api";
 import * as util from "../../../util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import * as selectors from "../../../util/selectors";

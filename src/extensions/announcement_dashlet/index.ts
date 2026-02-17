@@ -9,8 +9,8 @@ import { addNotification } from "../../actions/notifications";
 import type {
   IExtensionContext,
   ThunkStore,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 import { getApplication } from "../../util/application";
 import { DataInvalid } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";

@@ -3,11 +3,11 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../types/IDialog";
+} from "../renderer/types/IDialog";
 import type {
   INotification,
   NotificationDismiss,
-} from "../types/INotification";
+} from "../renderer/types/INotification";
 import local from "../util/local";
 import { log } from "../util/log";
 import { getErrorMessageOrDefault } from "../shared/errors";
@@ -19,7 +19,7 @@ import { ipcMain, ipcRenderer } from "electron";
 
 import { generate as shortid } from "shortid";
 
-export * from "../types/IDialog";
+export * from "../renderer/types/IDialog";
 
 const identity = (input) => input;
 

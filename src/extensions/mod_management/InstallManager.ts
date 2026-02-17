@@ -51,9 +51,12 @@ import {
   showDialog,
   dismissNotification,
 } from "../../actions/notifications";
-import type { ICheckbox, IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
+import type { ICheckbox, IDialogResult } from "../../renderer/types/IDialog";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
 import { NotificationAggregator } from "./NotificationAggregator";

@@ -11,7 +11,7 @@ import type {
 } from "../types/types";
 
 import { Icon, tooltip } from "../../../renderer/controls/api";
-import type { IProfile, IState } from "../../../types/api";
+import type { IProfile, IState } from "../../../renderer/types/api";
 
 import * as selectors from "../../../util/selectors";
 

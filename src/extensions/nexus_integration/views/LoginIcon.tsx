@@ -2,7 +2,7 @@ import { setDialogVisible } from "../../../actions/session";
 import Icon from "../../../renderer/controls/Icon";
 import Image from "../../../renderer/controls/Image";
 import * as tooltip from "../../../renderer/controls/TooltipControls";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

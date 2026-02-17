@@ -3,7 +3,7 @@ import type {
   IExtensionApi,
   IExtensionContext,
   IPreviewFile,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
 import opn from "../../util/opn";

@@ -13,15 +13,15 @@ import OptionsFilter from "../../../renderer/controls/table/OptionsFilter";
 import TextFilter from "../../../renderer/controls/table/TextFilter";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import ZoomableImage from "../../../renderer/controls/ZoomableImage";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { IState } from "../../../types/IState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
+} from "../../../renderer/types/IDialog";
+import type { IState } from "../../../renderer/types/IState";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
 import { withBatchContext } from "../../../util/BatchContext";
 import {
   ComponentEx,

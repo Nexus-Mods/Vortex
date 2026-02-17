@@ -7,7 +7,7 @@ import type {
   ITestResult,
   IExtensionApi,
   IExtensionContext,
-} from "../../types/api";
+} from "../../renderer/types/api";
 
 import { getVortexPath, UserCanceled } from "../../util/api";
 import { log } from "../../util/log";

@@ -6,9 +6,9 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IMod, IRunningTool } from "../../types/IState";
+} from "../../renderer/types/IDialog";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type { IMod, IRunningTool } from "../../renderer/types/IState";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";

@@ -14,8 +14,8 @@ import type {
   IDialog,
   IDialogContent,
   IInput,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
+} from "../types/IDialog";
+import type { IState } from "../types/IState";
 import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 import type { TFunction } from "../../util/i18n";

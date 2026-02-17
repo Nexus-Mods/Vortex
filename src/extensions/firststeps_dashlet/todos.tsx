@@ -1,7 +1,10 @@
 import { setSettingsPage } from "../../actions/session";
 import Icon from "../../renderer/controls/Icon";
 import Spinner from "../../renderer/controls/Spinner";
-import type { IExtensionApi, ToDoType } from "../../types/IExtensionContext";
+import type {
+  IExtensionApi,
+  ToDoType,
+} from "../../renderer/types/IExtensionContext";
 import * as selectors from "../../util/selectors";
 
 import { setProfilesVisible } from "../settings_interface/actions/interface";

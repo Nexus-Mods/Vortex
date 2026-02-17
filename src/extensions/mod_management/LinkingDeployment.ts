@@ -1,7 +1,7 @@
 import { addNotification } from "../../actions/notifications";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { DirectoryCleaningMode, IGame } from "../../types/IGame";
-import type { IState } from "../../types/IState";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { DirectoryCleaningMode, IGame } from "../../renderer/types/IGame";
+import type { IState } from "../../renderer/types/IState";
 import { getGame, UserCanceled } from "../../util/api";
 import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";

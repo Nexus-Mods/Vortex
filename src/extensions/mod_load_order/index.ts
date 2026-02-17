@@ -1,5 +1,5 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IMod, IState } from "../../types/IState";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import type { IMod, IState } from "../../renderer/types/IState";
 import { activeGameId, installPathForGame } from "../../util/selectors";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { loadOrderSettingsReducer } from "./reducers/settings";

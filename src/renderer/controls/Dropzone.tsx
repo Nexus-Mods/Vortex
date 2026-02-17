@@ -8,7 +8,7 @@ import type {
 } from "../../actions/notifications";
 import { showDialog } from "../../actions/notifications";
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "./ComponentEx";
 import { truthy } from "../../util/util";
 

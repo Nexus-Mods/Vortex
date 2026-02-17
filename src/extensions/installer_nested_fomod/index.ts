@@ -11,7 +11,7 @@ import type {
   IExtensionContext,
   ISupportedResult,
   ProgressDelegate,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import { log } from "../../util/log";
 
 function testSupported(files: string[]): PromiseBB<ISupportedResult> {

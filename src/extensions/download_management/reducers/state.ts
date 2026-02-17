@@ -1,6 +1,6 @@
 import { objDiff, flatten } from "../../../util/util";
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { VerifierDropParent } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
+import { VerifierDropParent } from "../../../renderer/types/IExtensionContext";
 import { terminate } from "../../../util/errorHandling";
 import {
   deleteOrNop,

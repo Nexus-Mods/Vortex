@@ -1,7 +1,7 @@
 import { showDialog } from "../../../actions/notifications";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
-import type { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
+import type { IState } from "../../../renderer/types/IState";
 import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";

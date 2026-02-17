@@ -1,11 +1,17 @@
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
-import type { IState } from "../../types/IState";
-import type { ITool } from "../../types/ITool";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import type {
+  GameEntryNotFound,
+  IGameStore,
+} from "../../renderer/types/IGameStore";
+import type { IState } from "../../renderer/types/IState";
+import type { ITool } from "../../renderer/types/ITool";
 import { getNormalizeFunc } from "../../util/api";
 import {
   ProcessCanceled,
@@ -21,7 +27,7 @@ import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
 
-import type { IExtensionDownloadInfo } from "../../types/extensions";
+import type { IExtensionDownloadInfo } from "../../renderer/types/extensions";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 
 import {

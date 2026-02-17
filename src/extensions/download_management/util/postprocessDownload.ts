@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import { delayed, toPromise } from "../../../util/util";
 import { log } from "../../../util/log";
 import {

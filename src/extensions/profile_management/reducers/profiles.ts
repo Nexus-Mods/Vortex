@@ -1,4 +1,4 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 import { log } from "../../../util/log";
 import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
 

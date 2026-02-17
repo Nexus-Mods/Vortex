@@ -1,4 +1,4 @@
-import type { IDiscoveryResult, IState } from "../../../types/IState";
+import type { IDiscoveryResult, IState } from "../../../renderer/types/IState";
 import type { Option } from "react-select";
 import Select from "react-select";
 import React from "react";

@@ -1,4 +1,4 @@
-import type { IError } from "../types/IError";
+import type { IError } from "../renderer/types/IError";
 
 // remove the file names from stack lines because they contain local paths
 function removeFileNames(input: string): string {

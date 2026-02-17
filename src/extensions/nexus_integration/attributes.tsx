@@ -4,7 +4,7 @@ import type {
   IMod,
   IState,
   ITableAttribute,
-} from "../../types/api";
+} from "../../renderer/types/api";
 import { laterT } from "../../util/i18n";
 import {
   activeGameId,

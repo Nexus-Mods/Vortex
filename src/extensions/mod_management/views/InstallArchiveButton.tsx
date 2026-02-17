@@ -1,6 +1,6 @@
 import type { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import { fileMD5 } from "../../../util/checksum";
 import {
   ComponentEx,

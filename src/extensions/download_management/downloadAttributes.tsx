@@ -6,8 +6,8 @@ import GameFilter from "../../renderer/controls/table/GameFilter";
 import TextFilter from "../../renderer/controls/table/TextFilter";
 import { Icon } from "../../renderer/controls/TooltipControls";
 
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { ITableAttribute } from "../../types/ITableAttribute";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
 import * as fs from "../../util/fs";
 import { getCurrentLanguage } from "../../util/i18n";
 import { getSafe } from "../../util/storeHelper";

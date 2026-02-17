@@ -1,5 +1,5 @@
 import type InstallManager from "../InstallManager";
-import type { IExtensionApi } from "../../../types/api";
+import type { IExtensionApi } from "../../../renderer/types/api";
 import {
   getCollectionActiveSession,
   getCollectionCurrentPhase,

@@ -1,5 +1,5 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 import type { TFunction } from "../../util/i18n";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";

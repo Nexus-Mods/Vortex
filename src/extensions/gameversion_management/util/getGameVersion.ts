@@ -1,4 +1,4 @@
-import type { IGame } from "../../../types/IGame";
+import type { IGame } from "../../../renderer/types/IGame";
 import { statAsync } from "../../../util/fs";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";

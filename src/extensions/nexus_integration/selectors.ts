@@ -1,4 +1,4 @@
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import { getSafe } from "../../util/storeHelper";
 
 import { createSelector } from "reselect";

@@ -1,5 +1,5 @@
-import type { IGameDetail } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
+import type { IGameDetail } from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
 import type * as fs from "../../../util/fs";
 import { log } from "../../../util/log";
 import walk from "../../../util/walk";

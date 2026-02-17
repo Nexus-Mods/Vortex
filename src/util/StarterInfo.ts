@@ -1,6 +1,6 @@
 import { setToolRunning } from "../actions";
-import type { IDiscoveredTool } from "../types/IDiscoveredTool";
-import type { IGame } from "../types/IGame";
+import type { IDiscoveredTool } from "../renderer/types/IDiscoveredTool";
+import type { IGame } from "../renderer/types/IGame";
 import { log } from "../util/log";
 
 import GameStoreHelper from "./GameStoreHelper";
@@ -12,7 +12,7 @@ import type { IGameStored } from "../extensions/gamemode_management/types/IGameS
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IExtensionApi } from "../renderer/types/IExtensionContext";
 
 import { getApplication } from "./application";
 import {
@@ -26,7 +26,10 @@ import getVortexPath from "./getVortexPath";
 import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
-import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
+import {
+  GameEntryNotFound,
+  GameStoreNotFound,
+} from "../renderer/types/IGameStore";
 import { getErrorCode, unknownToError } from "../shared/errors";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";

@@ -2,7 +2,7 @@ import getDownloadPath from "../extensions/download_management/util/getDownloadP
 import resolvePath, {
   pathDefaults,
 } from "../extensions/mod_management/util/resolvePath";
-import type { IState } from "../types/IState";
+import type { IState } from "../renderer/types/IState";
 
 import {
   clearOAuthCredentials,

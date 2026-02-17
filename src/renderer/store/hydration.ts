@@ -5,7 +5,7 @@
  * via the preload API and constructing the initial Redux state.
  */
 
-import type { IState } from "../../types/IState";
+import type { IState } from "../types/IState";
 
 import { log } from "../logging";
 import { addPersistedHives } from "./persistDiffMiddleware";

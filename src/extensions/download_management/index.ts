@@ -11,9 +11,9 @@ import winapi from "winapi-bindings";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import type { Normalize } from "../../util/getNormalizeFunc";
 import type DownloadManager from "./DownloadManager";
 import type { DownloadObserver } from "./DownloadObserver";

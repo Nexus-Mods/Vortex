@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import type { TFunction } from "../../../util/i18n";
 

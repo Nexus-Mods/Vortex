@@ -35,9 +35,9 @@ import type {
   CheckFunction,
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { INotificationAction } from "../../types/INotification";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { INotificationAction } from "../../renderer/types/INotification";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import { getApplication } from "../../util/application";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";

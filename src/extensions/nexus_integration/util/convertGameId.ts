@@ -1,5 +1,5 @@
 import { inspect } from "util";
-import type { IGame } from "../../../types/IGame";
+import type { IGame } from "../../../renderer/types/IGame";
 import { log } from "../../../util/log";
 import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";

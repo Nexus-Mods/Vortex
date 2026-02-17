@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import type { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../types/IComponentContext";
 
 import { deleteOrNop, setSafe } from "../../util/storeHelper";
 

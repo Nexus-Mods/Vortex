@@ -8,8 +8,12 @@ import { getSafe } from "./storeHelper";
 
 import opn from "./opn";
 
-import type { IExtensionApi, IGameStore, IGameStoreEntry } from "../types/api";
-import { GameEntryNotFound } from "../types/api";
+import type {
+  IExtensionApi,
+  IGameStore,
+  IGameStoreEntry,
+} from "../renderer/types/api";
+import { GameEntryNotFound } from "../renderer/types/api";
 import lazyRequire from "./lazyRequire";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));

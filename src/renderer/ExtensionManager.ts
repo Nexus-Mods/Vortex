@@ -19,7 +19,7 @@ import type {
   IAvailableExtension,
   IExtension,
   IRegisteredExtension,
-} from "../types/extensions";
+} from "./types/extensions";
 import type {
   ArchiveHandlerCreator,
   IArchiveHandler,
@@ -37,18 +37,18 @@ import type {
   StateChangeCallback,
   ThunkStore,
   ToolParameterCB,
-} from "../types/IExtensionContext";
+} from "./types/IExtensionContext";
 import type {
   ILookupOptions,
   IModLookupResult,
-} from "../types/IModLookupResult";
-import type { INotification } from "../types/INotification";
+} from "./types/IModLookupResult";
+import type { INotification } from "./types/INotification";
 import type {
   IExtensionLoadFailure,
   IExtensionOptional,
   IExtensionState,
   IState,
-} from "../types/IState";
+} from "./types/IState";
 import type { i18n } from "../util/i18n";
 
 import PromiseBB from "bluebird";

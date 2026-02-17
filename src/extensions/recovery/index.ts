@@ -1,10 +1,10 @@
 // features to help restore vortex to a working state
 
-import type { IDialogResult } from "../../types/IDialog";
+import type { IDialogResult } from "../../renderer/types/IDialog";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import { activeProfile, currentGameDiscovery } from "../../util/selectors";
 
 import { getGame } from "../gamemode_management/util/getGame";
@@ -12,7 +12,7 @@ import { getGame } from "../gamemode_management/util/getGame";
 import { createFullStateBackup } from "../../renderer/store/store";
 
 import { setModEnabled } from "../../actions";
-import type { IDeploymentManifest } from "../../types/api";
+import type { IDeploymentManifest } from "../../renderer/types/api";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { log } from "../../util/log";

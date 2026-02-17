@@ -1,4 +1,4 @@
-import type { IMainPageOptions } from "../types/IExtensionContext";
+import type { IMainPageOptions } from "./types/IExtensionContext";
 import type { SerializableMenuItem } from "../shared/types/preload";
 
 import type ExtensionManager from "../renderer/ExtensionManager";

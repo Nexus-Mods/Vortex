@@ -6,7 +6,7 @@
 
 import * as React from "react";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 
 import { ButtonDemo } from "../../../renderer/tailwind/components/next/button/ButtonDemo";
 import { CollectionTileDemo } from "../../../renderer/tailwind/components/next/collectiontile/CollectionTileDemo";

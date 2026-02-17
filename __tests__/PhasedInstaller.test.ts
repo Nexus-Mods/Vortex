@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import InstallManager from '../src/extensions/mod_management/InstallManager';
-import { IExtensionApi, IState } from '../src/types/api';
+import { IExtensionApi, IState } from '../src/renderer/types/api';
 import { IDependency } from '../src/extensions/mod_management/types/IDependency';
 import { IModRule } from '../src/extensions/mod_management/types/IMod';
 

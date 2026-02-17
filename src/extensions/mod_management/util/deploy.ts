@@ -3,9 +3,9 @@ import type {
   IDeployedFile,
   IDeploymentMethod,
   IExtensionApi,
-} from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
-import type { IProfile } from "../../../types/IState";
+} from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
+import type { IProfile } from "../../../renderer/types/IState";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import {

@@ -1,7 +1,7 @@
 import { setDeploymentNecessary } from "../../actions";
 import Spinner from "../../renderer/controls/Spinner";
 import Toggle from "../../renderer/controls/Toggle";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

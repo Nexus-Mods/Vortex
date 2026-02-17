@@ -4,7 +4,7 @@ import * as React from "react";
 import type {
   IExtendedProps,
   IExtensibleProps,
-} from "../types/IExtensionProvider";
+} from "./types/IExtensionProvider";
 
 import ExtensionManager from "./ExtensionManager";
 

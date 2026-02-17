@@ -1,4 +1,4 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 
 import * as actions from "../actions/session";
 

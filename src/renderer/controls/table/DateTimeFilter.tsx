@@ -1,8 +1,5 @@
 import { Button } from "../TooltipControls";
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 import { ComponentEx } from "../ComponentEx";
 import { getDateFormat, getLocale } from "../../datelocales";
 import { truthy } from "../../../util/util";

@@ -8,9 +8,9 @@ import {
 import type { TFunction } from "i18next";
 import React from "react";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGameStored, IMod } from "../../../types/IState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGameStored, IMod } from "../../../renderer/types/IState";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
 import { ProcessCanceled } from "../../../util/CustomErrors";
 import { laterT } from "../../../util/i18n";
 import { log } from "../../../util/log";

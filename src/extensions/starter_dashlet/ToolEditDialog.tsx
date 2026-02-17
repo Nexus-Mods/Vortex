@@ -4,7 +4,7 @@ import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
 import { Button } from "../../renderer/controls/TooltipControls";
 import type { ThunkDispatch } from "redux-thunk";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type StarterInfo from "../../util/StarterInfo";
 
 import {

@@ -1,4 +1,4 @@
-import type ReduxProp from "../renderer/ReduxProp";
+import type ReduxProp from "../ReduxProp";
 
 import type * as React from "react";
 

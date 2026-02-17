@@ -1,7 +1,4 @@
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 import { truthy } from "../../../util/util";
 
 import * as React from "react";

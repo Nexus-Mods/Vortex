@@ -77,8 +77,8 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
-import type { ThunkStore } from "./types/IExtensionContext";
-import type { IState } from "./types/IState";
+import type { ThunkStore } from "./renderer/types/IExtensionContext";
+import type { IState } from "./renderer/types/IState";
 
 import { setLanguage, setNetworkConnected } from "./actions";
 import {

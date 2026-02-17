@@ -15,8 +15,8 @@ import type {
   IExtensionLoadFailure,
   IExtensionState,
   IState,
-} from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
+} from "../../renderer/types/IState";
+import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
 import { relaunch } from "../../util/commandLine";
 import {
   ComponentEx,
@@ -33,7 +33,10 @@ import { SITE_ID } from "../gamemode_management/constants";
 
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
-import type { IExtension, IExtensionWithState } from "../../types/extensions";
+import type {
+  IExtension,
+  IExtensionWithState,
+} from "../../renderer/types/extensions";
 
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";

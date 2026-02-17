@@ -1,4 +1,4 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 import {
   deleteOrNop,
   getSafe,
@@ -9,8 +9,8 @@ import * as actions from "../actions/settings";
 
 import * as _ from "lodash";
 import { log } from "../../../util/log";
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { ISettingsGameMode } from "../../../types/IState";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
+import type { ISettingsGameMode } from "../../../renderer/types/IState";
 
 /**
  * reducer for changes to the window state

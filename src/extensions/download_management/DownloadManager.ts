@@ -33,7 +33,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import type * as stream from "stream";
 import * as zlib from "zlib";
-import type { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../renderer/types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";

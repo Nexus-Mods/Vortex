@@ -1,5 +1,5 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IDownload } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IDownload } from "../../../renderer/types/IState";
 import {
   NotFound,
   ProcessCanceled,

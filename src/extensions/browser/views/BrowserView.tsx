@@ -6,8 +6,8 @@ import {
   WebviewEmbed,
   WebviewOverlay,
 } from "../../../renderer/controls/Webview";
-import type { INotification } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
+import type { INotification } from "../../../renderer/types/INotification";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,

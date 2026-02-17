@@ -1,9 +1,12 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { NotificationDismiss } from "../../types/INotification";
-import type { IExtensionLoadFailure, IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { NotificationDismiss } from "../../renderer/types/INotification";
+import type {
+  IExtensionLoadFailure,
+  IState,
+} from "../../renderer/types/IState";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
 import { isExtSame } from "../../renderer/ExtensionManager";
@@ -22,7 +25,7 @@ import type {
   IAvailableExtension,
   IExtension,
   IExtensionDownloadInfo,
-} from "../../types/extensions";
+} from "../../renderer/types/extensions";
 import {
   downloadAndInstallExtension,
   fetchAvailableExtensions,

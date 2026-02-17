@@ -1,5 +1,5 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IDownload, IState } from "../../types/IState";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IDownload, IState } from "../../renderer/types/IState";
 import {
   DataInvalid,
   ProcessCanceled,
@@ -30,7 +30,7 @@ import type {
   IExtensionDownloadInfo,
   IExtensionManifest,
   ISelector,
-} from "../../types/extensions";
+} from "../../renderer/types/extensions";
 
 import PromiseBB from "bluebird";
 import * as _ from "lodash";

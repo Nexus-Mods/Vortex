@@ -14,12 +14,12 @@ import type {
   IInstallResult,
   MergeFunc,
   MergeTest,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { INotification } from "../../types/INotification";
-import type { IDiscoveryResult, IState } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import type { INotification } from "../../renderer/types/INotification";
+import type { IDiscoveryResult, IState } from "../../renderer/types/IState";
+import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import type { IDeployOptions } from "./types/IDeployOptions";
 import {
   ProcessCanceled,

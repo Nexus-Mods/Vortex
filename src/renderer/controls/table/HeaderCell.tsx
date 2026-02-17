@@ -1,6 +1,6 @@
-import type { IAttributeState } from "../../../types/IAttributeState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
-import type { SortDirection } from "../../../types/SortDirection";
+import type { IAttributeState } from "../../types/IAttributeState";
+import type { ITableAttribute } from "../../types/ITableAttribute";
+import type { SortDirection } from "../../types/SortDirection";
 import type { TFunction } from "../../../util/i18n";
 import { preT } from "../../../util/i18n";
 

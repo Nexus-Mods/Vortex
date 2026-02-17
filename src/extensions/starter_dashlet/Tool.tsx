@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { activeGameId } from "../../util/selectors";
 
-import type { IRunningTool } from "../../types/IState";
+import type { IRunningTool } from "../../renderer/types/IState";
 
 import { useDebouncedCallback } from "./useDebouncedCallback";
 

@@ -11,8 +11,11 @@ import { file as tmpFile, tmpName } from "tmp";
 
 /* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
-import type { IAttachment, IErrorOptions } from "../types/IExtensionContext";
-import type { IState } from "../types/IState";
+import type {
+  IAttachment,
+  IErrorOptions,
+} from "../renderer/types/IExtensionContext";
+import type { IState } from "../renderer/types/IState";
 import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";

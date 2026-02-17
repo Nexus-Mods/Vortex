@@ -1,5 +1,5 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
 import { ProcessCanceled } from "../../util/CustomErrors";
 import { truthy } from "../../util/util";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";

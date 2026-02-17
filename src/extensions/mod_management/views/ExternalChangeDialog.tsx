@@ -2,7 +2,7 @@ import Modal from "../../../renderer/controls/Modal";
 import Table from "../../../renderer/controls/Table";
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,

@@ -4,7 +4,7 @@ import * as path from "path";
 
 import { setValidationResult } from "./actions/session";
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import {
   type ILoadOrderGameInfo,
   type ILoadOrderGameInfoExt,
@@ -23,7 +23,7 @@ import FileBasedLoadOrderPage from "./views/FileBasedLoadOrderPage";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { sessionReducer } from "./reducers/session";
 
-import type * as types from "../../types/api";
+import type * as types from "../../renderer/types/api";
 import * as util from "../../util/api";
 import * as selectors from "../../util/selectors";
 

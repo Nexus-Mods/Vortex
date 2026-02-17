@@ -10,10 +10,13 @@ import { makeExeId } from "../reducers/session";
 import { getGameStores } from "../extensions/gamemode_management/util/getGame";
 
 import { ProcessCanceled, UserCanceled } from "../util/CustomErrors";
-import type { IGameStore } from "../types/IGameStore";
-import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
-import type { IGameStoreEntry } from "../types/IGameStoreEntry";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGameStore } from "../renderer/types/IGameStore";
+import {
+  GameEntryNotFound,
+  GameStoreNotFound,
+} from "../renderer/types/IGameStore";
+import type { IGameStoreEntry } from "../renderer/types/IGameStoreEntry";
+import type { IExtensionApi } from "../renderer/types/IExtensionContext";
 import getNormalizeFunc from "./getNormalizeFunc";
 import { toBlue } from "./util";
 

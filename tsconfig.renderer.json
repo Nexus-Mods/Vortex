@@ -13,7 +13,7 @@
     "src/reducers/**/*",
     "src/store/**/*",
     "src/tailwind/**/*",
-    "src/types/**/*",
+    "src/renderer/types/**/*",
     "src/util/**/*"
   ],
   "exclude": ["src/util/vortex-run/**/*"],

@@ -8,8 +8,8 @@ import type {
   DialogActions,
   DialogType,
   IDialogContent,
-} from "../../../types/IDialog";
-import type { IErrorOptions } from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IDialog";
+import type { IErrorOptions } from "../../../renderer/types/IExtensionContext";
 import {
   ComponentEx,
   connect,

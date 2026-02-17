@@ -8,9 +8,9 @@ import { showDialog } from "../../actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IModLookupResult } from "../../types/IModLookupResult";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IModLookupResult } from "../../renderer/types/IModLookupResult";
+import type { IState } from "../../renderer/types/IState";
 import { getApplication } from "../../util/application";
 import {
   DataInvalid,
@@ -145,7 +145,7 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
-import type { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../../renderer/types/IComponentContext";
 import { MainContext } from "../../renderer/views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
 import { selectors } from "vortex-api";
