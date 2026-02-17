@@ -62,7 +62,6 @@ import type { IReference } from 'modmeta-db';
 import type { IRevision } from '@nexusmods/nexus-api';
 import type { IRule } from 'modmeta-db';
 import type { IServer } from 'modmeta-db';
-import { JSX as JSX_2 } from 'react';
 import type { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { linkSync } from 'original-fs';
 import { Modal as Modal_2 } from 'react-bootstrap';
@@ -83,7 +82,6 @@ import { ParametricSelector } from 're-reselect';
 import { default as Promise_2 } from 'bluebird';
 import type * as Promise_3 from 'bluebird';
 import * as React_2 from 'react';
-import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
 import type { ReactSelectProps } from 'react-select';
 import type { Readable } from 'stream';
@@ -117,7 +115,7 @@ import { writeSync } from 'original-fs';
 // @public (undocumented)
 export class ActionContextMenu extends React_2.Component<ExportType> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ExportType_2" needs to be exported by the entry point index.d.ts
@@ -471,7 +469,7 @@ function bundleAttachment(options?: IErrorOptions): Promise_2<string | undefined
 // @public
 class Button_3 extends React_2.PureComponent<ButtonProps_2, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -810,7 +808,7 @@ function deepMerge(lhs: any, rhs: any): any;
 const _default: GitHub;
 
 // @public (undocumented)
-function <T>(load: () => any): (props: any) => React_2.JSX.Element;
+function <T>(load: () => any): (props: any) => JSX.Element;
 
 // @public (undocumented)
 function <T>(delayed: () => T, exportId?: string): T;
@@ -917,7 +915,7 @@ const downloadsForGame: (state: IState, gameId: string) => {
 // Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function DraggableList(props: IDraggableListProps): React_2.JSX.Element;
+export function DraggableList(props: IDraggableListProps): JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point index.d.ts
 //
@@ -939,7 +937,7 @@ export class Dropdown extends React_2.Component<IProps, {
 // Warning: (ae-forgotten-export) The symbol "IProps_2" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function DropdownButton(props: IProps_2): React_2.JSX.Element;
+export function DropdownButton(props: IProps_2): JSX.Element;
 
 // Warning: (ae-forgotten-export) The symbol "IBaseProps_5" needs to be exported by the entry point index.d.ts
 //
@@ -1026,11 +1024,11 @@ function fireNotificationAction(notiId: string, notiProcess: string, action: num
 // @public (undocumented)
 export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
     // (undocumented)
-    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
+    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
     // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
+    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
     // (undocumented)
     render(): JSX.Element;
 }
@@ -1052,7 +1050,7 @@ const forgetMod: reduxAct.ComplexActionCreator2<string, string, {
 // @public (undocumented)
 export class FormCheckboxItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "IFormFeedbackProps" needs to be exported by the entry point index.d.ts
@@ -1085,7 +1083,7 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
 // @public (undocumented)
 export class FormTextItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 declare namespace fs {
@@ -1731,7 +1729,7 @@ export class Icon extends React_2.Component<IIconProps, {
 // @public
 class Icon_3 extends React_2.Component<IconProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ExportType_4" needs to be exported by the entry point index.d.ts
@@ -1742,7 +1740,7 @@ export const IconBar: React_2.ComponentClass<ExportType_4>;
 // @public (undocumented)
 class IconButton extends React_2.Component<IconButtonProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4094,7 +4092,7 @@ type LoadOrder = ILoadOrderEntry_2[];
 // Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function LoadOrderIndexInput(props: IProps_5): React_3.JSX.Element;
+export function LoadOrderIndexInput(props: IProps_5): JSX.Element;
 
 // @public
 function local<T>(id: string, init: T): T;
@@ -4265,7 +4263,7 @@ function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void
 // @public (undocumented)
 class NavItem_2 extends React_2.Component<NavItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4382,7 +4380,7 @@ export class Overlay extends React_2.Component<IProps_6, {
 }> {
     constructor(props: any);
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4410,7 +4408,7 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
     // (undocumented)
     componentDidMount(): void;
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4450,7 +4448,7 @@ export class PortalMenu extends React_2.Component<IPortalMenuProps, {
     // (undocumented)
     static contextTypes: React_2.ValidationMap<any>;
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -5366,7 +5364,7 @@ type SortType = "ascending" | "descending";
 // Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function Spinner(props: ISpinnerProps): React_2.JSX.Element;
+export function Spinner(props: ISpinnerProps): JSX.Element;
 
 // @public (undocumented)
 const startActivity: reduxAct.ComplexActionCreator2<string, string, {
@@ -5574,27 +5572,27 @@ export const Tailwind: {
     TabBar: ({ children, className, }: {
         children: ReactNode;
         className?: string;
-    }) => JSX_2.Element;
-    TabButton: ({ className, count, disabled, name, ...props }: tabs.TabButtonProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabButton: ({ className, count, disabled, name, ...props }: tabs.TabButtonProps) => JSX.Element;
     TabContent: ({ count, label, }: {
         count?: number;
         label: string;
-    }) => JSX_2.Element;
-    TabLink: ({ className, count, name, ...props }: tabs.TabLinkProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabLink: ({ className, count, name, ...props }: tabs.TabLinkProps) => JSX.Element;
     TabPanel: ({ children, name, }: {
         children: ReactNode;
         name: string;
-    }) => JSX_2.Element;
-    TabProvider: ({ children, onSetSelectedTab, tab, tabListId, }: tabs.TabProviderProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabProvider: ({ children, onSetSelectedTab, tab, tabListId, }: tabs.TabProviderProps) => JSX.Element;
     useTabContext: () => tabs.TabsState;
-    FormField: ({ children, className, disabled, errorMessage, hideLabel, hints, hintsTypographyType, id, inputLength, label, maxLength, ref, showRequiredLabel, }: form.FormFieldProps) => JSX_2.Element;
+    FormField: ({ children, className, disabled, errorMessage, hideLabel, hints, hintsTypographyType, id, inputLength, label, maxLength, ref, showRequiredLabel, }: form.FormFieldProps) => JSX.Element;
     FormFieldWrap: ({ children }: {
         children: ReactNode;
-    }) => JSX_2.Element;
-    Input: ({ className, defaultValue, disabled, errorMessage, fieldClassName, hideLabel, hints, hintsTypographyType, id, label, maxLength, onChange, readOnly, required, showRequiredLabel, type, value, ...props }: form.InputProps) => JSX_2.Element;
-    InputDemo: () => JSX_2.Element;
-    Select: ({ children, className, disabled, errorMessage, hideLabel, hints, id, label, ref, required, showRequiredLabel, ...props }: form.SelectProps) => JSX_2.Element;
-    SelectDemo: () => JSX_2.Element;
+    }) => JSX.Element;
+    Input: ({ className, defaultValue, disabled, errorMessage, fieldClassName, hideLabel, hints, hintsTypographyType, id, label, maxLength, onChange, readOnly, required, showRequiredLabel, type, value, ...props }: form.InputProps) => JSX.Element;
+    InputDemo: () => JSX.Element;
+    Select: ({ children, className, disabled, errorMessage, hideLabel, hints, id, label, ref, required, showRequiredLabel, ...props }: form.SelectProps) => JSX.Element;
+    SelectDemo: () => JSX.Element;
     CollectionTile: ComponentType<collectiontile.CollectionTileProps & {
     api: IExtensionApi;
     }>;
@@ -5604,7 +5602,7 @@ export const Tailwind: {
         path: string;
         size?: icon.IconSize;
         title?: string;
-    }) => JSX_2.Element;
+    }) => JSX.Element;
     Button: (all: (ButtonHTMLAttributes<HTMLButtonElement> & ({
         as?: "button";
         disabled?: boolean;
@@ -5670,7 +5668,7 @@ export const Tailwind: {
         rightIconPath?: string;
     } & Partial<Record<"rightIcon", never>>) | ({
         rightIcon?: ReactNode;
-    } & Partial<Record<"rightIconPath", never>>))))))) => JSX_2.Element;
+    } & Partial<Record<"rightIconPath", never>>))))))) => JSX.Element;
     ButtonDemo: ComponentType<    {}>;
     Typography: ComponentType<typography.TypographyProps>;
 };
@@ -5714,7 +5712,7 @@ interface ThunkStore<S> extends Redux.Store<S> {
 // Warning: (ae-forgotten-export) The symbol "ITimerProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function Timer(props: ITimerProps): React_2.JSX.Element;
+export function Timer(props: ITimerProps): JSX.Element;
 
 // @public (undocumented)
 function toBlue<T, ArgsT extends any[]>(func: (...args: ArgsT) => Promise<T>): (...args: ArgsT) => Bluebird<T>;
@@ -5733,7 +5731,7 @@ export class Toggle extends React_2.PureComponent<IProps_10, {}> {
 // @public (undocumented)
 class ToggleButton extends React_2.Component<ToggleButtonProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -5750,7 +5748,7 @@ export class ToolbarIcon extends React_2.PureComponent<IToolbarIconProps, {}> {
 // Warning: (ae-forgotten-export) The symbol "IToolIconProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export const ToolIcon: (props: IToolIconProps) => React_2.JSX.Element;
+export const ToolIcon: (props: IToolIconProps) => JSX.Element;
 
 // @public
 type ToolParameterCB = (options: IRunParameters) => {
