@@ -645,6 +645,13 @@ export function getInfoGraphQL(
     nexus
       .modFilesByUid(fileQuery, [uid])
       .then((fileResult) => {
+        if (!fileResult?.[0]) {
+          return reject(
+            new Error(
+              `File not found on Nexus: game "${domain}", mod ${modId}, file ${fileId}`,
+            ),
+          );
+        }
         const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
         const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
         return resolve({ modInfo, fileInfo });
