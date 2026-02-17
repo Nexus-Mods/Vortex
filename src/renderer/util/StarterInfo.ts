@@ -1,4 +1,4 @@
-import { setToolRunning } from "../actions";
+import { setToolRunning, setToolStopped } from "../actions";
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IGame } from "../types/IGame";
 import { log } from "./log";
@@ -188,6 +188,14 @@ class StarterInfo implements IStarterInfo {
       api.store.dispatch(
         setToolRunning(info.exePath, Date.now(), info.exclusive),
       );
+
+      // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
+      // for now. We'll come up with a better solution/design in the future.
+      if (process.platform === "linux" && process.env.IS_FLATPAK === "true") {
+        setTimeout(() => {
+          api.store.dispatch(setToolStopped(info.exePath));
+        }, 2000);
+      }
     };
 
     return launcherPromise.then((res) => {
@@ -202,12 +210,12 @@ class StarterInfo implements IStarterInfo {
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
-            // On Linux with Steam, we can't track when the game exits (ProcessMonitor
-            // only works on Windows), so don't set tool as running to avoid stuck spinner
-            if (!(process.platform !== "win32" && res.launcher === "steam")) {
-              api.store.dispatch(
-                setToolRunning(info.exePath, Date.now(), info.exclusive),
-              );
+            const isLinuxSteamLauncher =
+              process.platform !== "win32" && res.launcher === "steam";
+            // Keep existing Linux Steam behavior unless running under Flatpak, where we now
+            // emulate stop events to avoid stale running state.
+            if (!isLinuxSteamLauncher || process.env.IS_FLATPAK === "true") {
+              onSpawned();
             }
             if (["hide", "hide_recover"].includes(info.onStart)) {
               void hideWindow();

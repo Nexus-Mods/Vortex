@@ -15,6 +15,7 @@
     "node_modules/opn/xdg-open",
     "node_modules/json-socket",
     "assets/*.exe",
+    "assets/dotnetprobe",
     "assets/css/**",
     "**/*.node"
   ],
