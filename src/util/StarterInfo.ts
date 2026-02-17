@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { setToolRunning } from "../actions";
+import { setToolRunning, setToolStopped } from "../actions";
 import { IDiscoveredTool } from "../types/IDiscoveredTool";
 import { IGame } from "../types/IGame";
 import { log } from "../util/log";
@@ -137,6 +137,14 @@ class StarterInfo implements IStarterInfo {
       api.store.dispatch(
         setToolRunning(info.exePath, Date.now(), info.exclusive),
       );
+
+      // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
+      // for now. We'll come up with a better solution/design in the future.
+      if (process.platform === "linux" && process.env.IS_FLATPAK === "true") {
+        setTimeout(() => {
+          api.store.dispatch(setToolStopped(info.exePath));
+        }, 2000);
+      }
     };
 
     return launcherPromise.then((res) => {
@@ -151,9 +159,7 @@ class StarterInfo implements IStarterInfo {
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
-            api.store.dispatch(
-              setToolRunning(info.exePath, Date.now(), info.exclusive),
-            );
+            onSpawned();
             if (["hide", "hide_recover"].includes(info.onStart)) {
               getCurrentWindow().hide();
             } else if (info.onStart === "close") {
