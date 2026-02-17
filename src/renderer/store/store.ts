@@ -3,14 +3,14 @@ import type * as Redux from "redux";
 import _ from "lodash";
 import * as path from "path";
 
-import type { IState } from "../types/IState";
+import type { IState } from "../../types/IState";
 
-import { DataInvalid } from "../util/CustomErrors";
-import * as fs from "../util/fs";
-import { writeFileAtomic } from "../util/fsAtomic";
-import getVortexPath from "../util/getVortexPath";
-import { log } from "../util/log";
-export { currentStatePath } from "../shared/types/state";
+import { DataInvalid } from "../../util/CustomErrors";
+import * as fs from "../../util/fs";
+import { writeFileAtomic } from "../../util/fsAtomic";
+import getVortexPath from "../../util/getVortexPath";
+import { log } from "../../util/log";
+export { currentStatePath } from "../../shared/types/state";
 
 export const FULL_BACKUP_PATH = "state_backups_full";
 

@@ -39,7 +39,7 @@ import type {
 } from "../extensions/mod_management/types/TestSupported";
 import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../renderer/ReduxProp";
-import type { SanityCheck } from "../store/reduxSanity";
+import type { SanityCheck } from "../renderer/store/reduxSanity";
 import type { Archive } from "../util/archives";
 import type { i18n, TFunction } from "../util/i18n";
 import type {

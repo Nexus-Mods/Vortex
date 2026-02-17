@@ -14,7 +14,7 @@ import type {
   IModReference,
   IModRepoId,
 } from "../extensions/mod_management/types/IMod";
-import type { SanityCheck } from "../store/reduxSanity";
+import type { SanityCheck } from "./store/reduxSanity";
 import type {
   IAvailableExtension,
   IExtension,
@@ -87,7 +87,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
-import { registerSanityCheck } from "../store/reduxSanity";
+import { registerSanityCheck } from "./store/reduxSanity";
 import { Archive } from "../util/archives";
 import { getApplication } from "../util/application";
 import { COMPANY_ID } from "../util/constants";

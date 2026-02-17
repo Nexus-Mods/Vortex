@@ -4,7 +4,7 @@ import * as actions from "../actions/installerUI";
 import type { IFOMODStateDialog } from "../types/interface";
 
 import type { IReducerSpec } from "../../../types/api";
-import { createReducer } from "../../../store/reducers";
+import { createReducer } from "../../../renderer/store/reducers";
 
 const defaults: IFOMODStateDialog = {
   activeInstanceId: null,

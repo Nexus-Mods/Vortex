@@ -1,4 +1,4 @@
-import { objDiff } from "../util/util";
+import { objDiff } from "../../util/util";
 
 import type * as Redux from "redux";
 

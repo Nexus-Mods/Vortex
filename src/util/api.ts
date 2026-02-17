@@ -106,7 +106,7 @@ import local from "./local";
 import makeReactive from "./makeReactive";
 import onceCB from "./onceCB";
 import opn from "./opn";
-import { getReduxLog } from "../store/reduxLogger";
+import { getReduxLog } from "../renderer/store/reduxLogger";
 import ReduxProp from "../renderer/ReduxProp";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
