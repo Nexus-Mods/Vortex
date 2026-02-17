@@ -13,6 +13,7 @@ from _flatpak_nuget_hash import (
     write_stored_hash as write_nuget_stored_hash,
 )
 from _flatpak_yarn_hash import (
+    collect_lockfiles,
     compute_sources_hash,
     read_stored_hash as read_sources_stored_hash,
     write_stored_hash as write_sources_stored_hash,
@@ -31,7 +32,12 @@ DEFAULT_DESTDIR = "flatpak-nuget-sources"
 DEFAULT_RUNTIME = "linux-x64"
 
 
-def generate_sources(lockfile: Path, output: Path, recursive: bool) -> None:
+def generate_sources(
+    lockfile: Path,
+    output: Path,
+    recursive: bool,
+    lockfiles: Optional[List[Path]] = None,
+) -> None:
     info = ensure_venv(install_packages=True)
 
     root = repo_root()
@@ -44,7 +50,11 @@ def generate_sources(lockfile: Path, output: Path, recursive: bool) -> None:
         str(output),
     ]
     if recursive:
+        if lockfiles is None:
+            lockfiles = collect_lockfiles(lockfile=lockfile, recursive=True)
         cmd.append("-r")
+        for lockfile_path in lockfiles:
+            cmd.extend(["-R", str(lockfile_path)])
 
     run_command(cmd, cwd=root)
 
@@ -64,7 +74,9 @@ def sync_generated_sources(
     if not hash_file.is_absolute():
         hash_file = root / hash_file
 
-    source_hash, _ = compute_sources_hash(lockfile=lockfile, recursive=recursive)
+    source_hash, lockfiles = compute_sources_hash(
+        lockfile=lockfile, recursive=recursive
+    )
     stored_hash = read_sources_stored_hash(hash_file)
 
     if not force and output.exists() and stored_hash == source_hash:
@@ -80,7 +92,12 @@ def sync_generated_sources(
     else:
         print("Regenerating flatpak sources (lockfile hash changed).")
 
-    generate_sources(lockfile=lockfile, output=output, recursive=recursive)
+    generate_sources(
+        lockfile=lockfile,
+        output=output,
+        recursive=recursive,
+        lockfiles=lockfiles,
+    )
     write_sources_stored_hash(hash_file=hash_file, value=source_hash)
     print(f"Updated Flatpak sources hash: {hash_file}")
     return True

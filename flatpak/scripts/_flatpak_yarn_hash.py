@@ -20,21 +20,38 @@ IGNORED_RECURSIVE_DIRS = {
     "out",
 }
 
+ALLOWED_RECURSIVE_DIRS = {
+    "api",
+    "app",
+    "extensions",
+}
+
 
 def _collect_recursive_lockfiles(root: Path) -> List[Path]:
-    lockfiles: List[Path] = []
-    for current_root, dirnames, filenames in os.walk(root):
-        current = Path(current_root)
+    lockfiles: set[Path] = set()
 
-        # Keep traversal fast and avoid generated/cache directories.
-        dirnames[:] = [
-            dirname
-            for dirname in dirnames
-            if dirname not in IGNORED_RECURSIVE_DIRS and not dirname.startswith(".venv")
-        ]
+    root_lockfile = root / "yarn.lock"
+    if root_lockfile.exists():
+        lockfiles.add(root_lockfile)
 
-        if "yarn.lock" in filenames:
-            lockfiles.append(current / "yarn.lock")
+    for top_level in sorted(ALLOWED_RECURSIVE_DIRS):
+        search_root = root / top_level
+        if not search_root.exists():
+            continue
+
+        for current_root, dirnames, filenames in os.walk(search_root):
+            current = Path(current_root)
+
+            # Keep traversal fast and avoid generated/cache directories.
+            dirnames[:] = [
+                dirname
+                for dirname in dirnames
+                if dirname not in IGNORED_RECURSIVE_DIRS
+                and not dirname.startswith(".venv")
+            ]
+
+            if "yarn.lock" in filenames:
+                lockfiles.add(current / "yarn.lock")
 
     return sorted(lockfiles, key=lambda path: path.relative_to(root).as_posix())
 
