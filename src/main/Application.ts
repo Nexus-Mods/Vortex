@@ -763,7 +763,7 @@ class Application {
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon(null);
+    this.mTray = new TrayIcon();
   }
 
   private connectTrayAndWindow() {
