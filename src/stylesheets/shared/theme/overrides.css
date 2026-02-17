@@ -31,6 +31,8 @@
         input,
         select,
         textarea {
+            outline-color: var(--color-info-subdued);
+
             &:focus-visible {
                 outline: var(--color-info-subdued) solid
                     calc(var(--spacing) * 0.5);

@@ -62,7 +62,7 @@ const MenuContent: FC = () => {
   return (
     <div
       className={joinClasses([
-        "relative flex shrink-0 flex-col pr-0.5 transition-[width]",
+        "relative -mt-1 flex shrink-0 flex-col pr-0.5 transition-[width]",
         menuIsCollapsed ? "w-16" : "w-56",
       ])}
     >
@@ -73,7 +73,7 @@ const MenuContent: FC = () => {
       <div className="mr-1 min-h-0 w-full overflow-y-auto pl-3" ref={scrollRef}>
         <div
           className={joinClasses([
-            "flex flex-col gap-y-0.5 transition-[width]",
+            "flex flex-col gap-y-0.5 pt-1 transition-[width]",
             menuIsCollapsed ? `w-10 ${toolPadding[toolCount]}` : "w-50 pb-28",
           ])}
         >

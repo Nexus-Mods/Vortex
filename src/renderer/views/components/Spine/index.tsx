@@ -73,7 +73,7 @@ export const Spine: FC = () => {
   }, [scrollRef]);
 
   return (
-    <div className="box-content flex w-18 shrink-0 flex-col items-center justify-between gap-y-3 border-r border-stroke-weak py-3">
+    <div className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3">
       <SpineButton
         className="border-2"
         iconPath={mdiHome}
@@ -81,12 +81,15 @@ export const Spine: FC = () => {
         onClick={selectHome}
       />
 
-      <div className="relative flex min-h-0 w-full grow">
+      <div className="relative mt-2 mb-3 flex min-h-0 w-full grow">
         {canScrollUp && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
         )}
 
-        <div className="min-h-0 w-full overflow-y-auto pl-3" ref={scrollRef}>
+        <div
+          className="min-h-0 w-full overflow-y-auto pt-1 pl-3"
+          ref={scrollRef}
+        >
           <div className="flex flex-col gap-y-3 pb-6">
             {managedGames.map((game) => (
               <GameButton
