@@ -552,12 +552,9 @@ export class DownloadObserver {
       if (callback !== undefined && !callbacked) {
         callback(err, id);
       } else {
-        showError(
-          this.mApi.store.dispatch,
-          "Download failed",
-          err.message,
-          { allowReport: false },
-        );
+        showError(this.mApi.store.dispatch, "Download failed", err.message, {
+          allowReport: false,
+        });
       }
     });
   }
