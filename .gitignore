@@ -81,3 +81,13 @@ playwright/.run-counter
 
 # api-extractor
 temp/
+
+# ESLint
+.eslintcache
+
+# Flatpak
+.flatpak-builder/
+flatpak/.venv-flatpak/
+flatpak/flatpak-repo/
+
+flatpak/scripts/__pycache__/

@@ -1326,9 +1326,9 @@ mkdirp@^1.0.4:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.9.1"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/62fae057a2fe04f5dbc8f69c988ec6b046016a60"
+modmeta-db@Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336:
+  version "0.9.3"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.5"

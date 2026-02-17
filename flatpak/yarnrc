@@ -1,0 +1,4 @@
+child-concurrency 1
+yarn-offline-mirror "/run/build/vortex/flatpak-node/yarn-mirror"
+yarn-offline-mirror-pruning false
+cache-folder "/run/build/vortex/flatpak-node/yarn-cache"

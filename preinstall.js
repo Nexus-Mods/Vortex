@@ -6,6 +6,22 @@ const path = require("path");
 
 const packageManager = "yarn";
 
+// Detect if we're running in an offline build environment (e.g., Flatpak)
+const isOfflineBuild = () => {
+  return (
+    process.env.YARN_OFFLINE_MIRROR || process.env.npm_config_offline === "true"
+  );
+};
+
+// Get yarn install arguments based on environment
+const getInstallArgs = () => {
+  const args = ["install"];
+  if (isOfflineBuild()) {
+    args.push("--offline");
+  }
+  return args;
+};
+
 /**
  * Runs a command and returns a promise that resolves when the command completes
  * @param {string} command - The command to run
@@ -77,7 +93,7 @@ async function buildFomodIPC() {
       process.platform === "win32" ? `${packageManager}.cmd` : packageManager;
 
     // Install dependencies
-    await runCommand(pkgcli, ["install"], { cwd: fomodIPCPath });
+    await runCommand(pkgcli, getInstallArgs(), { cwd: fomodIPCPath });
 
     // Build project
     await runCommand(pkgcli, ["build", buildConfig], { cwd: fomodIPCPath });
@@ -114,7 +130,7 @@ async function buildFomodNative() {
     });
 
     // Install dependencies
-    await runCommand(pkgcli, ["install"], { cwd: fomodNativePath });
+    await runCommand(pkgcli, getInstallArgs(), { cwd: fomodNativePath });
 
     // Build project with configuration
     await runCommand(pkgcli, ["build", buildConfig], { cwd: fomodNativePath });
@@ -126,7 +142,6 @@ async function buildFomodNative() {
   }
 }
 
-
 /**
  * Main preinstall routine
  */
@@ -134,8 +149,12 @@ async function main() {
   console.log("Starting preinstall script...");
 
   try {
-    // Update git submodules
-    await updateSubmodules();
+    // Update git submodules (can be skipped for offline builds like Flatpak)
+    if (process.env.VORTEX_SKIP_SUBMODULES === "1") {
+      console.log("Skipping git submodules (VORTEX_SKIP_SUBMODULES=1)");
+    } else {
+      await updateSubmodules();
+    }
 
     // Build FOMOD IPC
     await buildFomodIPC();
