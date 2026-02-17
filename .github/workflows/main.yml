@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-      branches: [ master ]
+      branches: [ master, v1.16 ]
   pull_request:
-      branches: [ master ]
+      branches: [ master, v1.16 ]
   workflow_dispatch:
 
 concurrency:
