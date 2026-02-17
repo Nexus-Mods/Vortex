@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.3] - 2026-02-17
+
+  - Fixed collection react components not rerendering correctly
+  - Fixed history events causing crash if failed to set light flag
+  - Added error handling for unhandled errors when starting/resuming download
+  ([#20306](https://github.com/Nexus-Mods/Vortex/issues/20306), [#20036](https://github.com/Nexus-Mods/Vortex/issues/20036))
+  - Added protective code to validate potentially invalid download entries
+  - Fixed race condition causing file assembler to close file prematurely
+  - Fixed installerChoices potentially not persisting on collection clone
+  - Fixed myCollections query potentially returning unowned results ([#20257](https://github.com/Nexus-Mods/Vortex/issues/20257))
+  - Fixed deleting custom themes ([#19324](https://github.com/Nexus-Mods/Vortex/issues/19324))
+  - Populate pluginList on collection installation
+  - Fixed mod installations not working for SkyrimVR/FalloutVR ([#19808](https://github.com/Nexus-Mods/Vortex/issues/19808))
+
 ## [1.16.2] - 2026-02-12
 
 - Fixed race condition when attempting to generate file UIDs ([#19602](https://github.com/Nexus-Mods/Vortex/issues/19602) and several others)
@@ -1409,6 +1423,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.3
 [1.16.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.2
 [1.16.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1
 [1.16.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1-beta.5
