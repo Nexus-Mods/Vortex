@@ -1,7 +1,7 @@
-import type { ILink } from "../../actions";
-import { triggerDialogLink } from "../../actions";
-import type { DialogContentItem } from "../../actions/notifications";
-import { closeDialog, closeDialogs } from "../../actions/notifications";
+import type { ILink } from "../actions";
+import { triggerDialogLink } from "../actions";
+import type { DialogContentItem } from "../actions/notifications";
+import { closeDialog, closeDialogs } from "../actions/notifications";
 import Collapse from "../controls/Collapse";
 import ErrorBoundary, { ErrorContext } from "../controls/ErrorBoundary";
 import Icon from "../controls/Icon";

@@ -1,4 +1,4 @@
-import { showDialog } from "../../actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import Dashlet from "../../renderer/controls/Dashlet";
 import EmptyPlaceholder from "../../renderer/controls/EmptyPlaceholder";
 import type {

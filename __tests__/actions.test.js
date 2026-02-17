@@ -1,6 +1,6 @@
-import * as actions from '../src/actions/index';
+import * as actions from '../src/renderer/actions/index';
 
-import safeCreateAction from '../src/actions/safeCreateAction';
+import safeCreateAction from '../src/renderer/actions/safeCreateAction';
 
 describe('safeCreateAction', () => {
   it('creates the action creator', () => {

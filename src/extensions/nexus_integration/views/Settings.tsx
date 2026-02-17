@@ -1,5 +1,5 @@
-import { addNotification } from "../../../actions";
-import { showDialog } from "../../../actions/notifications";
+import { addNotification } from "../../../renderer/actions";
+import { showDialog } from "../../../renderer/actions/notifications";
 import Icon from "../../../renderer/controls/Icon";
 import More from "../../../renderer/controls/More";
 import Toggle from "../../../renderer/controls/Toggle";

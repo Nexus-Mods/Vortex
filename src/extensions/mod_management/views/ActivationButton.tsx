@@ -1,5 +1,5 @@
-import { addNotification } from "../../../actions/notifications";
-import { setSettingsPage } from "../../../actions/session";
+import { addNotification } from "../../../renderer/actions/notifications";
+import { setSettingsPage } from "../../../renderer/actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
 import type { INotificationAction } from "../../../renderer/types/INotification";
 import type { IState } from "../../../renderer/types/IState";

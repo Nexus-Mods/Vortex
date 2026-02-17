@@ -22,7 +22,7 @@ import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 
-import type { IDialogResult } from "../../actions/notifications";
+import type { IDialogResult } from "../../renderer/actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -36,12 +36,15 @@ import type {
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 
-import { addNotification, showDialog } from "../../actions/notifications";
+import {
+  addNotification,
+  showDialog,
+} from "../../renderer/actions/notifications";
 import {
   clearUIBlocker,
   setProgress,
   setUIBlocker,
-} from "../../actions/session";
+} from "../../renderer/actions/session";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,

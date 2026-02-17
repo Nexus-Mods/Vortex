@@ -2,8 +2,8 @@ import type {
   DialogActions,
   DialogType,
   IDialogContent,
-} from "../../../actions/notifications";
-import { showDialog } from "../../../actions/notifications";
+} from "../../../renderer/actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import type { IMod, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,

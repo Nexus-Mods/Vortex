@@ -35,7 +35,7 @@ import {
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
-import { setDialogVisible, setExtensionEnabled } from "../../actions";
+import { setDialogVisible, setExtensionEnabled } from "../../renderer/actions";
 import { getGame } from "../../util/api";
 
 interface ILocalState {

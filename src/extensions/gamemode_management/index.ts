@@ -1,5 +1,5 @@
-import { showDialog } from "../../actions/notifications";
-import { setDialogVisible } from "../../actions/session";
+import { showDialog } from "../../renderer/actions/notifications";
+import { setDialogVisible } from "../../renderer/actions/session";
 import OptionsFilter, {
   type ISelectOption,
 } from "../../renderer/controls/table/OptionsFilter";

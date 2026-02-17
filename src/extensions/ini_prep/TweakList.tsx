@@ -1,4 +1,4 @@
-import { setDeploymentNecessary } from "../../actions";
+import { setDeploymentNecessary } from "../../renderer/actions";
 import Spinner from "../../renderer/controls/Spinner";
 import Toggle from "../../renderer/controls/Toggle";
 import type { IState } from "../../renderer/types/IState";

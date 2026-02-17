@@ -5,7 +5,7 @@ import * as path from "path";
 import type * as Redux from "redux";
 import * as url from "url";
 
-import { addNotification } from "../../actions/notifications";
+import { addNotification } from "../../renderer/actions/notifications";
 import type {
   IExtensionContext,
   ThunkStore,

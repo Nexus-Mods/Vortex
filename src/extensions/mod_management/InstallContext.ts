@@ -2,8 +2,8 @@ import {
   addNotification,
   dismissNotification,
   updateNotification,
-} from "../../actions/notifications";
-import { startActivity, stopActivity } from "../../actions/session";
+} from "../../renderer/actions/notifications";
+import { startActivity, stopActivity } from "../../renderer/actions/session";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { INotification } from "../../renderer/types/INotification";
 import type { IState } from "../../renderer/types/IState";

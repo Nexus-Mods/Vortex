@@ -9,7 +9,7 @@ import type {
   DialogActions,
   DialogType,
   IDialogContent,
-} from "../actions/notifications";
+} from "./actions/notifications";
 import type {
   IModReference,
   IModRepoId,
@@ -70,16 +70,16 @@ import {
   forgetExtension,
   setExtensionEnabled,
   setExtensionVersion,
-} from "../actions/app";
+} from "./actions/app";
 import {
   addNotification,
   closeDialog,
   dismissAllNotifications,
   dismissNotification,
   showDialog,
-} from "../actions/notifications";
-import { suppressNotification } from "../actions/notificationSettings";
-import { setExtensionLoadFailures } from "../actions/session";
+} from "./actions/notifications";
+import { suppressNotification } from "./actions/notificationSettings";
+import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "../extensions/extension_manager/actions";
 import { VCREDIST_URL } from "../shared/constants";
 import {

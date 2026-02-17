@@ -3,7 +3,7 @@ import { Button } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import { setOpenMainPage } from "../../actions";
+import { setOpenMainPage } from "../../renderer/actions";
 import Dashlet from "../../renderer/controls/Dashlet";
 import Icon from "../../renderer/controls/Icon";
 import type { IState } from "../../renderer/types/api";

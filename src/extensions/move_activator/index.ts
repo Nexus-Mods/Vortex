@@ -1,4 +1,4 @@
-import { setSettingsPage } from "../../actions/session";
+import { setSettingsPage } from "../../renderer/actions/session";
 import type {
   IExtensionApi,
   IExtensionContext,

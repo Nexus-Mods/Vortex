@@ -5,7 +5,7 @@ import {
   setAttributeVisible,
   setCollapsedGroups,
   setGroupingAttribute,
-} from "../../actions/tables";
+} from "../actions/tables";
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IAttributeState } from "../types/IAttributeState";
 import type { IExtensibleProps } from "../types/IExtensionProvider";

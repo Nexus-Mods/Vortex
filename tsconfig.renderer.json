@@ -8,12 +8,8 @@
     "src/splash.ts",
     "typings.custom/*.d.ts",
     // TODO: to be removed after main/renderer separation:
-    "src/actions/**/*",
     "src/extensions/**/*",
     "src/reducers/**/*",
-    "src/store/**/*",
-    "src/tailwind/**/*",
-    "src/renderer/types/**/*",
     "src/util/**/*"
   ],
   "exclude": ["src/util/vortex-run/**/*"],

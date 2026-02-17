@@ -10,7 +10,10 @@ import * as path from "path";
 import { file as tmpFile, tmpName } from "tmp";
 
 /* disable-eslint */
-import type { IDialogAction, IDialogContent } from "../actions/notifications";
+import type {
+  IDialogAction,
+  IDialogContent,
+} from "../renderer/actions/notifications";
 import type {
   IAttachment,
   IErrorOptions,
@@ -18,7 +21,7 @@ import type {
 import type { IState } from "../renderer/types/IState";
 import type { HTTPError } from "./CustomErrors";
 
-import { addNotification, showDialog } from "../actions/notifications";
+import { addNotification, showDialog } from "../renderer/actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
 import { getErrorMessageOrDefault } from "../shared/errors";
 import { jsonRequest } from "../util/network";

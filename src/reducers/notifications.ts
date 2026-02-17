@@ -1,4 +1,4 @@
-import * as actions from "../actions/notifications";
+import * as actions from "../renderer/actions/notifications";
 import type { IReducerSpec } from "../renderer/types/IExtensionContext";
 import type { INotification } from "../renderer/types/INotification";
 

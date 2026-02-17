@@ -1,6 +1,6 @@
 import type { Action } from "redux";
 import { generate as shortid } from "shortid";
-import { showDialog } from "../../actions";
+import { showDialog } from "../../renderer/actions";
 import type {
   IExtensionApi,
   IExtensionContext,

@@ -1,4 +1,4 @@
-import { setDownloadModInfo } from "../../actions";
+import { setDownloadModInfo } from "../../renderer/actions";
 import type {
   IExtensionApi,
   StateChangeCallback,

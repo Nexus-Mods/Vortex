@@ -1,4 +1,4 @@
-import { addNotification } from "../../../actions";
+import { addNotification } from "../../../renderer/actions";
 import Modal from "../../../renderer/controls/Modal";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";

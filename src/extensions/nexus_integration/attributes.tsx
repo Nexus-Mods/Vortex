@@ -1,4 +1,4 @@
-import { setModAttribute } from "../../actions";
+import { setModAttribute } from "../../renderer/actions";
 import type {
   IExtensionApi,
   IMod,

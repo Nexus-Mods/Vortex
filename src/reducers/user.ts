@@ -1,4 +1,4 @@
-import * as actions from "../actions/user";
+import * as actions from "../renderer/actions/user";
 import type { IReducerSpec } from "../renderer/types/IExtensionContext";
 import { setSafe } from "../util/storeHelper";
 

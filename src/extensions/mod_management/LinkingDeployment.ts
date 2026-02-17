@@ -1,4 +1,4 @@
-import { addNotification } from "../../actions/notifications";
+import { addNotification } from "../../renderer/actions/notifications";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { DirectoryCleaningMode, IGame } from "../../renderer/types/IGame";
 import type { IState } from "../../renderer/types/IState";

@@ -1,5 +1,8 @@
-import { setNextProfile } from "../../actions";
-import { addNotification, showDialog } from "../../actions/notifications";
+import { setNextProfile } from "../../renderer/actions";
+import {
+  addNotification,
+  showDialog,
+} from "../../renderer/actions/notifications";
 import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type {
   IExtensionApi,

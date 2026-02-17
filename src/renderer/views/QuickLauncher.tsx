@@ -1,5 +1,5 @@
 import { util } from "../..";
-import { showDialog } from "../../actions/notifications";
+import { showDialog } from "../actions/notifications";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";

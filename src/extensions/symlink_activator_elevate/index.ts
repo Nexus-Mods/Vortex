@@ -1,4 +1,4 @@
-import { clearUIBlocker, setUIBlocker } from "../../actions";
+import { clearUIBlocker, setUIBlocker } from "../../renderer/actions";
 import type {
   IExtensionApi,
   IExtensionContext,

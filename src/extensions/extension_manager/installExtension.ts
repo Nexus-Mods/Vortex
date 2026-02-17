@@ -1,4 +1,4 @@
-import { removeExtension } from "../../actions";
+import { removeExtension } from "../../renderer/actions";
 import { unknownToError } from "../../shared/errors";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";

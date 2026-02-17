@@ -7,7 +7,7 @@ import { log } from "../util/log";
 
 import { webFrame } from "electron";
 import * as path from "path";
-import { setZoomFactor } from "../actions/window";
+import { setZoomFactor } from "./actions/window";
 import { getApplication } from "../util/application";
 import getVortexPath from "../util/getVortexPath";
 import { getWindowId } from "../util/preloadAccess";

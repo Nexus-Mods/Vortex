@@ -1,4 +1,4 @@
-import { setDialogVisible } from "../../../actions/session";
+import { setDialogVisible } from "../../../renderer/actions/session";
 import Image from "../../../renderer/controls/Image";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";

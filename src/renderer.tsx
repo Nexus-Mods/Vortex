@@ -80,22 +80,22 @@ import { generate as shortid } from "shortid";
 import type { ThunkStore } from "./renderer/types/IExtensionContext";
 import type { IState } from "./renderer/types/IState";
 
-import { setLanguage, setNetworkConnected } from "./actions";
+import { setLanguage, setNetworkConnected } from "./renderer/actions";
 import {
   setApplicationVersion,
   setInstallType,
   setInstanceId,
   setWarnedAdmin,
-} from "./actions/app";
+} from "./renderer/actions/app";
 import {
   addNotification,
   setupNotificationSuppression,
-} from "./actions/notifications";
+} from "./renderer/actions/notifications";
 import {
   setMaximized,
   setWindowPosition,
   setWindowSize,
-} from "./actions/window";
+} from "./renderer/actions/window";
 import reducer, { Decision } from "./reducers/index";
 import ExtensionManager from "./renderer/ExtensionManager";
 import { ExtensionContext } from "./renderer/ExtensionProvider";

@@ -10,7 +10,7 @@ import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type * as Redux from "redux";
-import { setGameSearchPaths } from "../../../actions";
+import { setGameSearchPaths } from "../../../renderer/actions";
 import Icon from "../../../renderer/controls/Icon";
 import Modal from "../../../renderer/controls/Modal";
 import { IconButton } from "../../../renderer/controls/TooltipControls";

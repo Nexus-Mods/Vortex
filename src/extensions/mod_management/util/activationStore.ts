@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IGame } from "../../../renderer/types/IGame";
 import type { IState } from "../../../renderer/types/IState";

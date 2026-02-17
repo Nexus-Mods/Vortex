@@ -1,4 +1,4 @@
-import * as actions from "../actions/loadOrder";
+import * as actions from "../renderer/actions/loadOrder";
 import type { IReducerSpec } from "../renderer/types/IExtensionContext";
 import { setSafe } from "../util/storeHelper";
 

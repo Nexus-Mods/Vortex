@@ -12,7 +12,7 @@ import {
   setInstallPath,
   setUserAPIKey,
   setUserInfo,
-} from "../actions";
+} from "../renderer/actions";
 import * as fs from "../util/fs";
 import makeCI from "../util/makeCaseInsensitive";
 

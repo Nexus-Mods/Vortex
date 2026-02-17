@@ -1,8 +1,8 @@
 import {
   dismissNotification,
   fireNotificationAction,
-} from "../../actions/notifications";
-import { suppressNotification } from "../../actions/notificationSettings";
+} from "../actions/notifications";
+import { suppressNotification } from "../actions/notificationSettings";
 import type {
   INotification,
   INotificationAction,

@@ -28,8 +28,8 @@
  * Further event types can be triggered by extensions
  */
 
-import type { DialogActions } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+import type { DialogActions } from "../../renderer/actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 import type {
   CheckFunction,

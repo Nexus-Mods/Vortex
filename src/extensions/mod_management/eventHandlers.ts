@@ -1,4 +1,4 @@
-import { startActivity, stopActivity } from "../../actions/session";
+import { startActivity, stopActivity } from "../../renderer/actions/session";
 import type { IDialogResult } from "../../renderer/types/IDialog";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IModTable, IProfile, IState } from "../../renderer/types/IState";

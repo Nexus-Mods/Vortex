@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import Banner from "../../../renderer/controls/Banner";
 import CollapseIcon from "../../../renderer/controls/CollapseIcon";
 import type { DropType } from "../../../renderer/controls/Dropzone";

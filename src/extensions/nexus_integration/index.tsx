@@ -2,9 +2,9 @@ import {
   setDownloadModInfo,
   setForcedLogout,
   setModAttribute,
-} from "../../actions";
-import type { IDialogResult } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+} from "../../renderer/actions";
+import type { IDialogResult } from "../../renderer/actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,

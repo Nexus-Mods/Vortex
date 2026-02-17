@@ -1,4 +1,4 @@
-import { displayGroup } from "../../actions/session";
+import { displayGroup } from "../../renderer/actions/session";
 import { FormPathItem, FormTextItem } from "../../renderer/controls/FormFields";
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";

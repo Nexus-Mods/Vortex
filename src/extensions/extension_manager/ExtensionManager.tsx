@@ -1,9 +1,9 @@
-import { setDialogVisible } from "../../actions";
+import { setDialogVisible } from "../../renderer/actions";
 import {
   removeExtension,
   setExtensionEnabled,
   setExtensionEndorsed,
-} from "../../actions/app";
+} from "../../renderer/actions/app";
 import type { DropType } from "../../renderer/controls/Dropzone";
 import Dropzone from "../../renderer/controls/Dropzone";
 import FlexLayout from "../../renderer/controls/FlexLayout";

@@ -1,4 +1,4 @@
-import { setToolRunning } from "../actions";
+import { setToolRunning } from "../renderer/actions";
 import type { IDiscoveredTool } from "../renderer/types/IDiscoveredTool";
 import type { IGame } from "../renderer/types/IGame";
 import { log } from "../util/log";

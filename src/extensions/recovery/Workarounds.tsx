@@ -12,8 +12,8 @@ import type {
   ICheckbox,
   IDialogContent,
   IDialogResult,
-} from "../../actions";
-import { showDialog } from "../../actions";
+} from "../../renderer/actions";
+import { showDialog } from "../../renderer/actions";
 import type { IState } from "../../renderer/types/IState";
 import { getApplication } from "../../util/application";
 import { ComponentEx } from "../../renderer/controls/ComponentEx";

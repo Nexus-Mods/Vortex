@@ -1,4 +1,4 @@
-import { setToolPid, setToolStopped } from "../../../actions";
+import { setToolPid, setToolStopped } from "../../../renderer/actions";
 import { makeExeId } from "../../../reducers/session";
 import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";

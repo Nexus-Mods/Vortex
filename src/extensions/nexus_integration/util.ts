@@ -33,7 +33,7 @@ import {
   setExtensionEndorsed,
   setModAttribute,
   setOAuthCredentials,
-} from "../../actions";
+} from "../../renderer/actions";
 import type {
   IExtensionApi,
   ThunkStore,

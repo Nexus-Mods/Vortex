@@ -22,7 +22,7 @@ import * as path from "path";
 import turbowalk from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
-import { setSettingsPage } from "../../actions/session";
+import { setSettingsPage } from "../../renderer/actions/session";
 import { getErrorCode } from "../../shared/errors";
 
 export class FileFound extends Error {

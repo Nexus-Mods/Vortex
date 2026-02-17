@@ -1,4 +1,4 @@
-import * as actions from "../actions/notificationSettings";
+import * as actions from "../renderer/actions/notificationSettings";
 import type { IReducerSpec } from "../renderer/types/IExtensionContext";
 import { setSafe } from "../util/storeHelper";
 

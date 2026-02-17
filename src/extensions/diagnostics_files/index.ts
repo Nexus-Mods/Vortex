@@ -1,4 +1,4 @@
-import { setDialogVisible } from "../../actions/session";
+import { setDialogVisible } from "../../renderer/actions/session";
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 
 import DiagnosticsFilesDialog from "./views/DiagnosticsFilesDialog";

@@ -1,4 +1,4 @@
-import { setSettingsPage } from "../../actions/session";
+import { setSettingsPage } from "../../renderer/actions/session";
 import Icon from "../../renderer/controls/Icon";
 import Spinner from "../../renderer/controls/Spinner";
 import type {

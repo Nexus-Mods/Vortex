@@ -2,8 +2,8 @@ import {
   clearUIBlocker,
   setDialogVisible,
   setOpenMainPage,
-} from "../../actions/session";
-import { setTabsMinimized } from "../../actions/window";
+} from "../actions/session";
+import { setTabsMinimized } from "../actions/window";
 import Banner from "../controls/Banner";
 import DynDiv from "../controls/DynDiv";
 import FlexLayout from "../controls/FlexLayout";

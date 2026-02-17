@@ -1,4 +1,4 @@
-import { setSettingsPage } from "../../actions/session";
+import { setSettingsPage } from "../actions/session";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import type { PropsCallback } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";

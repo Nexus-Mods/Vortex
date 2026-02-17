@@ -2,12 +2,12 @@ import {
   dismissNotification,
   type ICheckbox,
   updateNotification,
-} from "../../actions/notifications";
+} from "../../renderer/actions/notifications";
 import {
   setSettingsPage,
   startActivity,
   stopActivity,
-} from "../../actions/session";
+} from "../../renderer/actions/session";
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -57,7 +57,7 @@ import {
 } from "../../util/util";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 
-import { setDialogVisible } from "../../actions";
+import { setDialogVisible } from "../../renderer/actions";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";

@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import FormInput from "../../../renderer/controls/FormInput";
 import Icon from "../../../renderer/controls/Icon";

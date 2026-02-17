@@ -27,9 +27,9 @@ import type {
 } from "../../renderer/types/IDialog";
 import type { IState } from "../../renderer/types/IState";
 
-import { showDialog } from "../../actions/notifications";
-import { resetSuppression } from "../../actions/notificationSettings";
-import { setCustomTitlebar } from "../../actions/window";
+import { showDialog } from "../../renderer/actions/notifications";
+import { resetSuppression } from "../../renderer/actions/notificationSettings";
+import { setCustomTitlebar } from "../../renderer/actions/window";
 import {
   ComponentEx,
   connect,

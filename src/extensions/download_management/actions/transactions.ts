@@ -1,4 +1,4 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
 
 /**
  * Used to track transfer attempts and correctly recover if it gets interrupted.

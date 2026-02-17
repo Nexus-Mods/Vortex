@@ -11,7 +11,7 @@ import { getGame } from "../gamemode_management/util/getGame";
 
 import { createFullStateBackup } from "../../renderer/store/store";
 
-import { setModEnabled } from "../../actions";
+import { setModEnabled } from "../../renderer/actions";
 import type { IDeploymentManifest } from "../../renderer/types/api";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";

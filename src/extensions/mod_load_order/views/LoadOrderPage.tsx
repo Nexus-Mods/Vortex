@@ -4,7 +4,7 @@ import { Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import * as actions from "../../../actions/index";
+import * as actions from "../../../renderer/actions/index";
 import {
   FlexLayout,
   IconBar,

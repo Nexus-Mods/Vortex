@@ -1,6 +1,6 @@
 import * as reduxAct from "redux-act";
 
-import type { IParameters } from "../shared/types/cli";
+import type { IParameters } from "../../shared/types/cli";
 
 import safeCreateAction from "./safeCreateAction";
 

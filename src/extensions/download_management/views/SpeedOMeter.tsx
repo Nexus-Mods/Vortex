@@ -11,7 +11,7 @@ import * as React from "react";
 import type { IState } from "../../../renderer/types/IState";
 import type { DownloadState, IDownload } from "../types/IDownload";
 
-import { setAttributeFilter } from "../../../actions/tables";
+import { setAttributeFilter } from "../../../renderer/actions/tables";
 
 export interface IBaseProps {
   slim: boolean;

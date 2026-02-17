@@ -3,7 +3,7 @@ import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import { showUsageInstruction } from "../../actions";
+import { showUsageInstruction } from "../actions";
 import type { IState } from "../types/IState";
 import { connect, PureComponentEx, translate } from "./ComponentEx";
 import { IconButton } from "./TooltipControls";

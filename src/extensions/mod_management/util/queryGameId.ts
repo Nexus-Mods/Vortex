@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions";
+import { showDialog } from "../../../renderer/actions";
 import type { ThunkStore } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";

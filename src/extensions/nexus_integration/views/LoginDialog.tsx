@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import ContextMenu from "../../../renderer/controls/ContextMenu";
 import FormFeedback from "../../../renderer/controls/FormFeedback";
 import Icon from "../../../renderer/controls/Icon";

@@ -1,4 +1,4 @@
-import { showDialog } from "../../actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import Toggle from "../../renderer/controls/Toggle";
 import type {
   DialogActions,

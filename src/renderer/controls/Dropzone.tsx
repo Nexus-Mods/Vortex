@@ -5,8 +5,8 @@ import type {
   IDialogContent,
   IDialogResult,
   IInput,
-} from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+} from "../actions/notifications";
+import { showDialog } from "../actions/notifications";
 
 import type { IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "./ComponentEx";

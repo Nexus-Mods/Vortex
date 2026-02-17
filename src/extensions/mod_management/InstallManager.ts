@@ -44,13 +44,13 @@ import {
   setDownloadModInfo,
   startActivity,
   stopActivity,
-} from "../../actions";
+} from "../../renderer/actions";
 import {
   type IConditionResult,
   type IDialogContent,
   showDialog,
   dismissNotification,
-} from "../../actions/notifications";
+} from "../../renderer/actions/notifications";
 import type { ICheckbox, IDialogResult } from "../../renderer/types/IDialog";
 import type {
   IExtensionApi,

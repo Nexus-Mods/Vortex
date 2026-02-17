@@ -1,4 +1,4 @@
-import { startActivity, stopActivity } from "../../../actions/session";
+import { startActivity, stopActivity } from "../../../renderer/actions/session";
 import type {
   IDeployedFile,
   IDeploymentMethod,
