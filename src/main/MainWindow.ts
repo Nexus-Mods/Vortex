@@ -6,7 +6,6 @@ import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
 
 import { getErrorMessageOrDefault } from "../shared/errors";
-import { parseBool } from "../util/util";
 import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
@@ -59,6 +58,14 @@ function intersect(lhs: IRect, rhs: IRect): IRect {
 
 function reactArea(input: IRect): number {
   return (input.x2 - input.x1) * (input.y2 - input.y1);
+}
+
+function isEnvSet(key: string): boolean {
+  let value = process.env[key];
+  if (!value) return false;
+
+  value = value.toLowerCase();
+  return value === "true" || value === "yes" || value === "1";
 }
 
 class MainWindow {
@@ -127,10 +134,7 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (
-      this.mInspector ||
-      (process.env.START_DEVTOOLS && parseBool(process.env.START_DEVTOOLS))
-    ) {
+    if (this.mInspector || isEnvSet("START_DEVTOOLS")) {
       // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }
