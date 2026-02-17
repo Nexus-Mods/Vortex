@@ -96,7 +96,7 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "./renderer/actions/window";
-import reducer, { Decision } from "./reducers/index";
+import reducer, { Decision } from "./renderer/reducers/index";
 import ExtensionManager from "./renderer/ExtensionManager";
 import { ExtensionContext } from "./renderer/ExtensionProvider";
 import { log } from "./renderer/logging";

@@ -1,8 +1,13 @@
-import * as actions from "../renderer/actions/notifications";
-import type { IReducerSpec } from "../renderer/types/IExtensionContext";
-import type { INotification } from "../renderer/types/INotification";
+import * as actions from "../actions/notifications";
+import type { IReducerSpec } from "../types/IExtensionContext";
+import type { INotification } from "../types/INotification";
 
-import { getSafe, pushSafe, removeValueIf, setSafe } from "../util/storeHelper";
+import {
+  getSafe,
+  pushSafe,
+  removeValueIf,
+  setSafe,
+} from "../../util/storeHelper";
 
 import update from "immutability-helper";
 import { generate as shortid } from "shortid";

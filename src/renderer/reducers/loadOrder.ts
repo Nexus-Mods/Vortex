@@ -1,6 +1,6 @@
-import * as actions from "../renderer/actions/loadOrder";
-import type { IReducerSpec } from "../renderer/types/IExtensionContext";
-import { setSafe } from "../util/storeHelper";
+import * as actions from "../actions/loadOrder";
+import type { IReducerSpec } from "../types/IExtensionContext";
+import { setSafe } from "../../util/storeHelper";
 
 export const loReducer: IReducerSpec = {
   reducers: {

@@ -5,20 +5,19 @@
 /**
  * dummy comment
  */
-import type { IExtensionReducer } from "../renderer/types/extensions";
-import type {
-  IReducerSpec,
-  IStateVerifier,
-} from "../renderer/types/IExtensionContext";
+import type { IExtensionReducer } from "../types/extensions";
+import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
+import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
+import { UserCanceled } from "../../util/CustomErrors";
+import deepMerge from "../../util/deepMerge";
+import * as fs from "../../util/fs";
+import { log } from "../../util/log";
 import {
-  VerifierDrop,
-  VerifierDropParent,
-} from "../renderer/types/IExtensionContext";
-import { UserCanceled } from "../util/CustomErrors";
-import deepMerge from "../util/deepMerge";
-import * as fs from "../util/fs";
-import { log } from "../util/log";
-import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
+  deleteOrNop,
+  getSafe,
+  rehydrate,
+  setSafe,
+} from "../../util/storeHelper";
 
 import { appReducer } from "./app";
 import { loReducer } from "./loadOrder";
@@ -37,8 +36,8 @@ import type { Reducer, ReducersMapObject } from "redux";
 import { combineReducers } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
-import type { IState } from "../renderer/types/IState";
-import { unknownToError } from "../shared/errors";
+import type { IState } from "../types/IState";
+import { unknownToError } from "../../shared/errors";
 
 export const STATE_BACKUP_PATH = "state_backups";
 

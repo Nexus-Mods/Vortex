@@ -1,7 +1,7 @@
 import { BoxWithHandle } from "./BoxWithHandle";
 import ToolButton from "./ToolButton";
 import type { IStarterInfo } from "../../util/StarterInfo";
-import { makeExeId } from "../../reducers/session";
+import { makeExeId } from "../../renderer/reducers/session";
 
 import { getSafe } from "../../util/storeHelper";
 

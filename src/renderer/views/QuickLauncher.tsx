@@ -6,7 +6,7 @@ import { IconButton } from "../controls/TooltipControls";
 import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
 import type { IProfile } from "../../extensions/profile_management/types/IProfile";
-import { makeExeId } from "../../reducers/session";
+import { makeExeId } from "../reducers/session";
 import type {
   DialogActions,
   DialogType,

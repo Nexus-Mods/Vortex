@@ -1,7 +1,7 @@
-import * as actions from "../renderer/actions/tables";
-import type { IReducerSpec } from "../renderer/types/IExtensionContext";
+import * as actions from "../actions/tables";
+import type { IReducerSpec } from "../types/IExtensionContext";
 
-import { pushSafe, removeValue, setSafe } from "../util/storeHelper";
+import { pushSafe, removeValue, setSafe } from "../../util/storeHelper";
 
 /**
  * reducer for changes to the window state

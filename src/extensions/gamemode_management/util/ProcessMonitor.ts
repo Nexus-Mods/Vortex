@@ -1,5 +1,5 @@
 import { setToolPid, setToolStopped } from "../../../renderer/actions";
-import { makeExeId } from "../../../reducers/session";
+import { makeExeId } from "../../../renderer/reducers/session";
 import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";

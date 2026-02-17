@@ -2,7 +2,7 @@ import * as path from "path";
 import ProcessMonitor from "../util/ProcessMonitor";
 import type { IProcessInfo, IProcessProvider } from "../util/processProvider";
 import { setToolPid, setToolStopped } from "../../../renderer/actions";
-import { makeExeId } from "../../../reducers/session";
+import { makeExeId } from "../../../renderer/reducers/session";
 import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";

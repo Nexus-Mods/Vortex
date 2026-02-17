@@ -5,7 +5,7 @@ import * as fs from "../util/fs";
 import { log } from "../util/log";
 
 import * as winapi from "winapi-bindings";
-import { makeExeId } from "../reducers/session";
+import { makeExeId } from "../renderer/reducers/session";
 
 import { getGameStores } from "../extensions/gamemode_management/util/getGame";
 
