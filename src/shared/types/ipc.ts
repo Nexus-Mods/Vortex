@@ -165,7 +165,7 @@ export interface MainChannels {
   "menu:click": (menuItemId: string) => void;
 
   // Query system: notify renderer that queries have been invalidated
-  "query:invalidated": (queryNames: string[]) => void;
+  "query:invalidated": (queryNames: QueryName[]) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
