@@ -146,6 +146,7 @@ import mergeMods, { MERGED_PATH } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import getText from "./texts";
 import { findModByRef } from "./util/dependencies";
+import * as profileCommands from "../../renderer/profiles/profileCommands";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 
 import Bluebird from "bluebird";
@@ -667,12 +668,7 @@ function reportRedundant(
                   const modsToDisable = Object.keys(result.input)
                     .filter((modId) => result.input[modId]);
                   if (modsToDisable.length > 0) {
-                    window.api.profile.executeCommand({
-                      type: 'profile:set-mods-enabled',
-                      profileId,
-                      modIds: modsToDisable,
-                      enabled: false,
-                    });
+                    profileCommands.disableMods(profileId, modsToDisable);
                   }
                   dismiss();
                 }
@@ -2328,7 +2324,7 @@ function init(context: IExtensionContext): boolean {
         const modIds = Object.keys(dupMap);
 
         // Build profile commands to execute after mod removal
-        const profileCommands: Array<() => void> = [];
+        const deferredCommands: Array<() => void> = [];
         for (const modId of modIds) {
           for (const profileId in profiles) {
             const enabled = getSafe(
@@ -2336,23 +2332,23 @@ function init(context: IExtensionContext): boolean {
               ["modState", modId, "enabled"],
               false,
             );
-            profileCommands.push(() =>
-              window.api.profile.executeCommand({ type: 'profile:forget-mod', profileId, modId }),
+            deferredCommands.push(() =>
+              profileCommands.forgetMod(profileId, modId),
             );
             if (enabled && dupMap[modId] !== undefined) {
               const replacementId = dupMap[modId];
-              profileCommands.push(() =>
-                window.api.profile.executeCommand({ type: 'profile:set-mod-enabled', profileId, modId: replacementId, enabled: true }),
+              deferredCommands.push(() =>
+                profileCommands.enableMod(profileId, replacementId),
               );
             }
           }
         }
         context.api.closeDialog("duplicates-dialog");
-        if (profileCommands.length > 0) {
+        if (deferredCommands.length > 0) {
           context.api.events.emit("remove-mods", gameMode, modIds, (err) => {
             if (!err) {
               context.api.events.emit("duplicates-removed");
-              profileCommands.forEach(cmd => cmd());
+              deferredCommands.forEach(cmd => cmd());
             } else if (
               !(err instanceof UserCanceled) &&
               !(err instanceof ProcessCanceled)

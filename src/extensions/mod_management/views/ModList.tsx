@@ -38,6 +38,7 @@ import {
   toPromise,
   truthy,
 } from "../../../util/util";
+import * as profileCommands from "../../../renderer/profiles/profileCommands";
 import MainPage from "../../../renderer/views/MainPage";
 
 import calculateFolderSize from "../../../util/calculateFolderSize";
@@ -1340,7 +1341,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModsEnabled(modIds: string[], enabled: boolean) {
     const { profileId } = this.props;
-    return window.api.profile.executeCommand({ type: 'profile:set-mods-enabled', profileId, modIds, enabled });
+    return enabled
+      ? profileCommands.enableMods(profileId, modIds)
+      : profileCommands.disableMods(profileId, modIds);
   }
 
   private installIfNecessary(modId: string): PromiseBB<string> {
@@ -1885,7 +1888,9 @@ function mapDispatchToProps(
       modIds: string[],
       enabled: boolean,
     ) => {
-      window.api.profile.executeCommand({ type: 'profile:set-mods-enabled', profileId, modIds, enabled });
+      enabled
+        ? profileCommands.enableMods(profileId, modIds)
+        : profileCommands.disableMods(profileId, modIds);
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),

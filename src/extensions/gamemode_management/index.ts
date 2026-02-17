@@ -85,6 +85,7 @@ import React from "react";
 
 import { clipboard } from "electron";
 import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
+import * as profileCommands from "../../renderer/profiles/profileCommands";
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -563,7 +564,7 @@ function removeDisappearedGames(
           }
 
           if (gameId === gameMode) {
-            window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+            profileCommands.switchProfile(undefined);
           }
 
           api.store.dispatch(clearDiscoveredGame(gameId));
@@ -579,7 +580,7 @@ function removeDisappearedGames(
           activeGame: gameMode ?? "none",
           known,
         });
-        window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+        profileCommands.switchProfile(undefined);
       }
 
       if (gameStubs !== undefined) {
@@ -1184,7 +1185,7 @@ function init(context: IExtensionContext): boolean {
             }
           }
           // unset profile
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+          profileCommands.switchProfile(undefined);
         })
         .finally(() => {
           context.api.dismissNotification(id);
@@ -1273,7 +1274,7 @@ function init(context: IExtensionContext): boolean {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);
         } else {
           // if the game is no longer discovered we can't keep this profile as active
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+          profileCommands.switchProfile(undefined);
         }
       }
     }

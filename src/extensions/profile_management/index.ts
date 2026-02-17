@@ -74,6 +74,7 @@ import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
 import { getErrorMessageOrDefault } from "../../shared/errors";
+import * as profileCommands from "../../renderer/profiles/profileCommands";
 
 const profileFiles: {
   [gameId: string]: Array<string | (() => PromiseLike<string[]>)>;
@@ -186,7 +187,7 @@ function activateGame(
     log("info", "unselecting profile because game no longer discovered", {
       gameId,
     });
-    window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+    profileCommands.switchProfile(undefined);
     return PromiseBB.resolve();
   }
 
@@ -229,7 +230,7 @@ function activateGame(
             (id: string) => dialogResult.input[id],
           );
           log("info", "user selected profile", { selectedId });
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: selectedId });
+          profileCommands.switchProfile(selectedId);
         }
       });
   } else {
@@ -239,9 +240,9 @@ function activateGame(
     const fbProfile = state.persistent.profiles?.[profileId];
     const discovery = state.settings.gameMode.discovered?.[fbProfile?.gameId];
     if (discovery?.path !== undefined) {
-      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
+      profileCommands.switchProfile(profileId);
     } else {
-      window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+      profileCommands.switchProfile(undefined);
     }
     return PromiseBB.resolve();
   }
@@ -257,17 +258,14 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   return ensureStagingDirectory(api, undefined, gameId)
     .then(() => {
       log("info", "user managing game for the first time", { gameId });
-      window.api.profile.executeCommand({
-        type: 'profile:create',
-        profile: {
-          id: profileId,
-          gameId,
-          name: "Default",
-          modState: {},
-          lastActivated: undefined,
-        },
+      profileCommands.createProfile({
+        id: profileId,
+        gameId,
+        name: "Default",
+        modState: {},
+        lastActivated: undefined,
       });
-      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
+      profileCommands.switchProfile(profileId);
     })
     .catch((err) => {
       const instPath = installPathForGame(api.store.getState(), gameId);
@@ -486,7 +484,7 @@ function unmanageGame(
           .then(() =>
             PromiseBB.map(profileIds, (profileId) =>
               PromiseBB.resolve(
-                window.api.profile.executeCommand({ type: 'profile:remove', profileId }),
+                profileCommands.removeProfile(profileId),
               ),
             ),
           )
@@ -775,7 +773,7 @@ function init(context: IExtensionContext): boolean {
           );
 
           if (profile !== undefined) {
-            window.api.profile.executeCommand({ type: 'profile:switch', profileId: profile.id });
+            profileCommands.switchProfile(profile.id);
           } else {
             log(
               "warn",
@@ -843,7 +841,7 @@ function init(context: IExtensionContext): boolean {
             });
           }
           store.dispatch(setCurrentProfile(undefined, undefined));
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+          profileCommands.switchProfile(undefined);
         });
 
       const { activeProfileId, nextProfileId } = state.settings.profiles;
@@ -859,12 +857,12 @@ function init(context: IExtensionContext): boolean {
           const profile = state.persistent.profiles[activeProfileId];
           const discovery = discoveryByGame(state, profile.gameId);
           if (discovery?.path !== undefined) {
-            window.api.profile.executeCommand({ type: 'profile:switch', profileId: activeProfileId });
+            profileCommands.switchProfile(activeProfileId);
           } else {
-            window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+            profileCommands.switchProfile(undefined);
           }
         } else {
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+          profileCommands.switchProfile(undefined);
         }
       }
 
@@ -878,7 +876,7 @@ function init(context: IExtensionContext): boolean {
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         if (discovery === undefined || discovery.path === undefined) {
           log("info", "active game no longer discovered, deactivate");
-          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+          profileCommands.switchProfile(undefined);
         }
       }
     }

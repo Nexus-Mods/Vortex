@@ -63,6 +63,8 @@ import type InstallManager from "./InstallManager";
 import { currentActivator, installPath, installPathForGame } from "./selectors";
 import { ensureStagingDirectory } from "./stagingDirectory";
 
+import * as profileCommands from "../../renderer/profiles/profileCommands";
+
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
@@ -887,15 +889,9 @@ export function onRemoveMods(
     // Disable automatic deployment if it's active, a deployment
     //  event will occur once the mods have been successfully removed
     //  anyway.
-    window.api.profile.executeCommand({
-      type: 'profile:set-mods-enabled',
-      profileId,
-      modIds,
-      enabled: false,
-      options: {
-        installed: options?.incomplete,
-        allowAutoDeploy: false,
-      },
+    profileCommands.disableMods(profileId, modIds, {
+      installed: options?.incomplete,
+      allowAutoDeploy: false,
     });
   }
 

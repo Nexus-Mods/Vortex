@@ -28,6 +28,7 @@ import { profilePath, removeProfile } from "../util/manage";
 import ProfileEdit from "./ProfileEdit";
 import ProfileItem from "./ProfileItem";
 
+import * as profileCommands from "../../../renderer/profiles/profileCommands";
 import { shell } from "electron";
 import update from "immutability-helper";
 import * as path from "path";
@@ -448,13 +449,13 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => {
-      window.api.profile.executeCommand({ type: 'profile:create', profile });
+      profileCommands.createProfile(profile);
     },
     onSetNextProfile: (profileId: string) => {
-      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
+      profileCommands.switchProfile(profileId);
     },
     onSetFeature: (profileId: string, featureId: string, value: any) => {
-      window.api.profile.executeCommand({ type: 'profile:set-feature', profileId, featureId, value });
+      profileCommands.setFeature(profileId, featureId, value);
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),

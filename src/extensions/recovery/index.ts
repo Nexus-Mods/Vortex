@@ -20,6 +20,7 @@ import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
 
 import { getErrorMessageOrDefault } from "../../shared/errors";
+import * as profileCommands from "../../renderer/profiles/profileCommands";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
@@ -120,20 +121,10 @@ async function resetToManifest(api: IExtensionApi) {
       }
     });
     if (modsToEnable.length > 0) {
-      window.api.profile.executeCommand({
-        type: 'profile:set-mods-enabled',
-        profileId: profile.id,
-        modIds: modsToEnable,
-        enabled: true,
-      });
+      profileCommands.enableMods(profile.id, modsToEnable);
     }
     if (modsToDisable.length > 0) {
-      window.api.profile.executeCommand({
-        type: 'profile:set-mods-enabled',
-        profileId: profile.id,
-        modIds: modsToDisable,
-        enabled: false,
-      });
+      profileCommands.disableMods(profile.id, modsToDisable);
     }
   } catch (err) {
     if (!(err instanceof UserCanceled)) {

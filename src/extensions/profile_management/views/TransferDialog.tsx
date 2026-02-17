@@ -9,6 +9,8 @@ import type { IMod } from "../../mod_management/types/IMod";
 import { closeDialog } from "../actions/transferSetup";
 import type { IProfile } from "../types/IProfile";
 
+import * as profileCommands from "../../../renderer/profiles/profileCommands";
+
 import * as React from "react";
 import { Button, Checkbox, FormControl, Modal } from "react-bootstrap";
 import { connect } from "react-redux";
@@ -142,7 +144,9 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
     onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
-      window.api.profile.executeCommand({ type: 'profile:set-mod-enabled', profileId, modId, enabled });
+      enabled
+        ? profileCommands.enableMod(profileId, modId)
+        : profileCommands.disableMod(profileId, modId);
     },
   };
 }

@@ -182,6 +182,8 @@ import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
 
+import * as profileCommands from "../../renderer/profiles/profileCommands";
+
 import { HTTPError } from "@nexusmods/nexus-api";
 import Bluebird, { method as toBluebird } from "bluebird";
 import * as _ from "lodash";
@@ -1649,15 +1651,9 @@ class InstallManager {
                       if (action === INSTALL_ACTION) {
                         enable = enable || wasEnabled;
                         if (wasEnabled) {
-                          window.api.profile.executeCommand({
-                            type: 'profile:set-mods-enabled',
-                            profileId: installProfile.id,
-                            modIds: [existingMod.id],
-                            enabled: false,
-                            options: {
-                              allowAutoDeploy,
-                              installed: true,
-                            },
+                          profileCommands.disableMods(installProfile.id, [existingMod.id], {
+                            allowAutoDeploy,
+                            installed: true,
                           });
                         }
                         rules = existingMod.rules || [];
@@ -1848,15 +1844,9 @@ class InstallManager {
                 );
                 if (installProfile !== undefined) {
                   if (enable) {
-                    window.api.profile.executeCommand({
-                      type: 'profile:set-mods-enabled',
-                      profileId: installProfile.id,
-                      modIds: [modId],
-                      enabled: true,
-                      options: {
-                        allowAutoDeploy,
-                        installed: true,
-                      },
+                    profileCommands.enableMods(installProfile.id, [modId], {
+                      allowAutoDeploy,
+                      installed: true,
                     });
                   }
                 }
@@ -2588,19 +2578,9 @@ class InstallManager {
                 downloadId,
               );
               if (otherModIds.length > 0) {
-                window.api.profile.executeCommand({
-                  type: 'profile:set-mods-enabled',
-                  profileId: targetProfile.id,
-                  modIds: otherModIds,
-                  enabled: false,
-                });
+                profileCommands.disableMods(targetProfile.id, otherModIds);
               }
-              window.api.profile.executeCommand({
-                type: 'profile:set-mod-enabled',
-                profileId: targetProfile.id,
-                modId,
-                enabled: true,
-              });
+              profileCommands.enableMod(targetProfile.id, modId);
             } else {
               // Fallback: enable in profiles where source mod is enabled (original behavior)
               const profiles = Object.values(
@@ -2617,19 +2597,9 @@ class InstallManager {
                   downloadId,
                 );
                 if (otherModIds.length > 0) {
-                  window.api.profile.executeCommand({
-                    type: 'profile:set-mods-enabled',
-                    profileId: prof.id,
-                    modIds: otherModIds,
-                    enabled: false,
-                  });
+                  profileCommands.disableMods(prof.id, otherModIds);
                 }
-                window.api.profile.executeCommand({
-                  type: 'profile:set-mod-enabled',
-                  profileId: prof.id,
-                  modId,
-                  enabled: true,
-                });
+                profileCommands.enableMod(prof.id, modId);
               });
             }
 
@@ -5189,12 +5159,7 @@ class InstallManager {
                 context?.set?.("replace-or-variant", "variant");
               }
               if (currentProfile !== undefined && modIds.length > 0) {
-                window.api.profile.executeCommand({
-                  type: 'profile:set-mods-enabled',
-                  profileId: currentProfile.id,
-                  modIds,
-                  enabled: false,
-                });
+                profileCommands.disableMods(currentProfile.id, modIds);
               }
               // We want the shortest possible modId paired against this archive
               //  before adding the variant name to it.
@@ -5719,7 +5684,6 @@ class InstallManager {
               }
 
               const state = api.getState();
-              const batchedActions = [];
               // Enable the mod only for the target profile to avoid affecting other profiles
               const batchContext = getBatchContext(
                 [
@@ -5744,19 +5708,9 @@ class InstallManager {
                   downloadId,
                 );
                 if (otherModIds.length > 0) {
-                  window.api.profile.executeCommand({
-                    type: 'profile:set-mods-enabled',
-                    profileId: targetProfile.id,
-                    modIds: otherModIds,
-                    enabled: false,
-                  });
+                  profileCommands.disableMods(targetProfile.id, otherModIds);
                 }
-                window.api.profile.executeCommand({
-                  type: 'profile:set-mod-enabled',
-                  profileId: targetProfile.id,
-                  modId,
-                  enabled: true,
-                });
+                profileCommands.enableMod(targetProfile.id, modId);
               } else {
                 // Fallback: enable in profiles where source mod is enabled (original behavior)
                 const profiles = Object.values(
@@ -5773,24 +5727,10 @@ class InstallManager {
                     downloadId,
                   );
                   if (otherModIds.length > 0) {
-                    window.api.profile.executeCommand({
-                      type: 'profile:set-mods-enabled',
-                      profileId: prof.id,
-                      modIds: otherModIds,
-                      enabled: false,
-                    });
+                    profileCommands.disableMods(prof.id, otherModIds);
                   }
-                  window.api.profile.executeCommand({
-                    type: 'profile:set-mod-enabled',
-                    profileId: prof.id,
-                    modId,
-                    enabled: true,
-                  });
+                  profileCommands.enableMod(prof.id, modId);
                 });
-              }
-
-              if (batchedActions.length > 0) {
-                batchDispatch(api.store, batchedActions);
               }
 
               this.applyExtraFromRule(api, gameId, modId, {

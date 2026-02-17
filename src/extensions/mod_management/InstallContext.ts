@@ -37,6 +37,8 @@ import type { IInstallContext, InstallOutcome } from "./types/IInstallContext";
 import type { IMod, ModState } from "./types/IMod";
 import getModName from "./util/modName";
 
+import * as profileCommands from "../../renderer/profiles/profileCommands";
+
 import PromiseBB from "bluebird";
 import * as path from "path";
 
@@ -153,12 +155,7 @@ class InstallContext implements IInstallContext {
     this.mEnableMod = (modId: string) => {
       const state: IState = store.getState();
       const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
-      return window.api.profile.executeCommand({
-        type: 'profile:set-mods-enabled',
-        profileId,
-        modIds: [modId],
-        enabled: true,
-      });
+      return profileCommands.enableMods(profileId, [modId]);
     };
     this.mIsEnabled = (modId) => {
       const state: IState = store.getState();

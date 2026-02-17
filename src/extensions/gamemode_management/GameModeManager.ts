@@ -50,6 +50,8 @@ import {
 } from "./util/discovery";
 import { getGame } from "./util/getGame";
 
+import * as profileCommands from "../../renderer/profiles/profileCommands";
+
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as path from "path";
@@ -534,7 +536,7 @@ class GameModeManager {
     if (result === undefined) {
       const currentProfile = activeProfile(this.mStore.getState());
       if (currentProfile?.gameId === gameId) {
-        window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+        profileCommands.switchProfile(undefined);
       }
       this.mStore.dispatch(clearDiscoveredGame(gameId));
     } else {
