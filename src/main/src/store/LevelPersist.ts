@@ -19,7 +19,10 @@ export class DatabaseLocked extends Error {
 function repairDB(dbPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     log("warn", "repairing database", dbPath);
-    const leveldown: typeof import("leveldown") = require("leveldown");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const leveldown = require("leveldown") as {
+      repair: (path: string, cb: (err: Error) => void) => void;
+    };
     leveldown.repair(dbPath, (err: Error) => {
       if (err !== null) {
         reject(err);

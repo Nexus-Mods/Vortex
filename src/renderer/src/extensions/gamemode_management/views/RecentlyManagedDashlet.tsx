@@ -1,5 +1,6 @@
 import Dashlet from "../../../controls/Dashlet";
 import Placeholder from "../../../controls/EmptyPlaceholder";
+import Spinner from "../../../controls/Spinner";
 import { MainContext } from "../../../views/MainWindow";
 import { useQuery } from "../../../hooks/useQuery";
 import type { IState } from "../../../types/IState";
@@ -29,9 +30,11 @@ function RecentlyManagedDashlet() {
     { [id: string]: IDiscoveryResult }
   >((state) => state.settings.gameMode.discovered);
 
-  const { data: recentGames } = useQuery("recently_managed_games", {
-    current_game_id: gameMode ?? "",
-  });
+  const {
+    data: recentGames,
+    loading,
+    error,
+  } = useQuery("recently_managed_games", { current_game_id: gameMode ?? "" });
 
   const games = React.useMemo(() => {
     if (recentGames === undefined) {
@@ -65,7 +68,17 @@ function RecentlyManagedDashlet() {
   );
 
   let content: JSX.Element;
-  if (games.length === 0) {
+  if (loading) {
+    content = <Spinner />;
+  } else if (error !== undefined) {
+    content = (
+      <Placeholder
+        icon="feedback-warning"
+        text={t("Failed to load recently managed games")}
+        fill
+      />
+    );
+  } else if (games.length === 0) {
     content = (
       <Placeholder
         icon="game"
