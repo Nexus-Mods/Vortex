@@ -5912,7 +5912,7 @@ class InstallManager {
                 return Bluebird.resolve(undefined);
               }
               log("debug", "done installing dependency", {
-                ref: dep.reference.logicalFileName,
+                ref: dep.reference?.logicalFileName,
               });
               return Bluebird.resolve(updatedDependency);
             })
