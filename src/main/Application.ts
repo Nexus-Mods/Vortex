@@ -28,12 +28,12 @@ import {
   UserCanceled,
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
+import getVortexPath, { setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
