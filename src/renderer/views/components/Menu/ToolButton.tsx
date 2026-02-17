@@ -72,6 +72,7 @@ export const ToolButton: FC<ToolButtonProps> = ({
           [
             "absolute inset-0 z-1 flex items-center justify-center rounded-sm border border-stroke-moderate transition-colors",
             "group-hover/tool-button:border-stroke-strong group-hover/tool-button:bg-translucent-600",
+            "group-focus-visible/tool-button:border-stroke-strong group-focus-visible/tool-button:bg-translucent-600",
           ],
           { "border-stroke-strong bg-translucent-600": isRunning },
         )}
@@ -81,6 +82,7 @@ export const ToolButton: FC<ToolButtonProps> = ({
             [
               "relative text-neutral-inverted opacity-0 transition-opacity",
               "group-hover/tool-button:opacity-100",
+              "group-focus-visible/tool-button:opacity-100",
             ],
             { "animate-spin opacity-100": isRunning },
           )}

@@ -4,23 +4,27 @@
  * Adapted from Figma design for collection browsing
  */
 
+import { mdiCheck, mdiOpenInNew, mdiStar, mdiThumbUp } from "@mdi/js";
+import { type ICollection } from "@nexusmods/nexus-api";
+import numeral from "numeral";
 import React, {
   type ComponentType,
-  Fragment,
+  type PropsWithChildren,
   useCallback,
   useEffect,
   useState,
 } from "react";
-import { Button } from "../button/Button";
-import { Typography } from "../typography/Typography";
-import { Icon } from "../icon";
-import { nxmFileSize, nxmMod } from "../../../lib/icon-paths";
-import numeral from "numeral";
+
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
-import { isCollectionModPresent } from "../../../../util/selectors";
+
 import Debouncer from "../../../../util/Debouncer";
+import { isCollectionModPresent } from "../../../../util/selectors";
 import { delayed } from "../../../../util/util";
-import { mdiOpenInNew, mdiStar, mdiThumbUp } from "@mdi/js";
+import { nxmFileSize, nxmMod } from "../../../lib/icon-paths";
+import { Button } from "../button";
+import { Icon } from "../icon";
+import { Typography } from "../typography";
+import { joinClasses } from "../utils";
 
 const debouncer = new Debouncer(
   (func: () => void) => {
@@ -43,93 +47,64 @@ const userInfoDebouncer = new Debouncer(
 );
 
 export interface CollectionTileProps {
-  // Data
-  id: string;
-  slug: string;
-  gameId: string;
-  title: string;
-  author: {
-    name: string;
-    avatar?: string;
-  };
-  coverImage: string;
-  tags: string[]; // Max 2 tags
-  stats: {
-    endorsements: number;
-    modCount: number;
-    size: number; // e.g., '540MB'
-  };
-  description: string;
-  version?: string;
-  badges?: Array<{
-    name: string;
-    description: string;
-  }>;
-
-  // Actions
+  api: IExtensionApi;
+  collection: ICollection;
   onAddCollection?: () => void;
   onViewPage?: () => void;
-
-  // Style
   className?: string;
 }
 
-export const CollectionTile: ComponentType<
-  CollectionTileProps & { api: IExtensionApi }
-> = ({
+const Stat = ({
+  children,
+  iconPath,
+}: PropsWithChildren<{ iconPath: string }>) => (
+  <div className="flex items-center gap-x-1">
+    <Icon className="text-neutral-subdued" path={iconPath} size="sm" />
+
+    <Typography
+      appearance="moderate"
+      className="leading-5"
+      typographyType="body-sm"
+    >
+      {children}
+    </Typography>
+  </div>
+);
+
+export const CollectionTile: ComponentType<CollectionTileProps> = ({
   api,
-  slug,
-  title,
-  author,
-  coverImage,
-  tags,
-  stats,
-  description,
-  badges,
+  collection,
   onAddCollection,
   onViewPage,
   className,
 }) => {
+  const revision = collection.latestPublishedRevision;
+
   const [isHovered, setIsHovered] = useState(false);
   const [canBeAdded, setCanBeAdded] = useState(true);
-  const [tooltip, setTooltip] = useState<string>("Add this collection");
   const [pending, setPending] = useState(false);
-  // Helper to extract tag text from string or object
-  const getTagText = (tag: any): string => {
-    if (typeof tag === "string") {
-      return tag;
-    }
-    if (tag && typeof tag === "object" && "name" in tag) {
-      return String(tag.name);
-    }
-    return String(tag);
-  };
 
-  const addCollectionDebounced = () => {
+  const addCollectionDebounced = () =>
     debouncer.schedule(
       () => setPending(false),
-      () => {
-        onAddCollection?.();
-      },
+      () => onAddCollection?.(),
     );
-  };
 
   useEffect(() => {
     const state = api?.getState?.();
+
     if (!state) {
       // No state available means we're likely in demo mode, so skip checks.
       //  Need a better mock for the api.
       return;
     }
-    const collectionModInstalled = isCollectionModPresent(state, slug);
 
-    setCanBeAdded(!collectionModInstalled);
-    setTooltip(
-      collectionModInstalled || pending
-        ? "Collection already added"
-        : "Add this collection",
+    const collectionModInstalled = isCollectionModPresent(
+      state,
+      collection.slug,
     );
-  }, [api, slug, pending, isHovered]);
+    setCanBeAdded(!collectionModInstalled);
+  }, [api, collection.slug, pending, isHovered]);
 
   // Refresh user info when user hovers on the tile, debounced to once per 5 seconds
   useEffect(() => {
@@ -140,207 +115,146 @@ export const CollectionTile: ComponentType<
     }
   }, [isHovered]);
 
-  // Take max 2 tags
-  const displayTags = tags.slice(0, 2);
   const addCollection = useCallback(() => {
     if (!pending && canBeAdded) {
       setPending(true);
       addCollectionDebounced();
     }
   }, [onAddCollection, canBeAdded, pending]);
-  const mouseEnter = useCallback(() => {
-    setIsHovered(true);
-  }, []);
-  const mouseLeave = useCallback(() => {
-    setIsHovered(false);
-  }, []);
 
   // Find the "Easy install" badge (if it exists)
-  const easyInstallBadge = badges?.find(
+  const easyInstallBadge = collection.badges?.find(
     (badge) => badge.name.toLowerCase() === "easy install",
   );
 
   return (
     <div
-      className={`w-full max-w-[465px] h-[283px] bg-surface-mid flex flex-col justify-start items-start ${className || ""}`}
-      onMouseEnter={mouseEnter}
-      onMouseLeave={mouseLeave}
+      className={joinClasses(["w-full rounded-md bg-surface-mid", className])}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Main content area */}
-      <div className="self-stretch flex-1 px-3 pt-3 rounded-tl rounded-tr flex flex-col justify-start items-start gap-2 overflow-hidden">
-        <div className="self-stretch flex flex-1 justify-between items-start">
-          {/* Left: Image */}
-          <div className="w-[175px] h-[219px] relative shrink-0">
-            <div className="absolute top-0 left-0">
-              <img
-                className="w-[166px] h-52 rounded-sm object-cover"
-                src={coverImage}
-                alt={title}
-              />
+      <div className="flex items-start gap-x-3.5 p-3">
+        <div className="relative flex aspect-4/5 w-full max-w-35 shrink-0 items-center justify-center overflow-hidden rounded-xs bg-surface-translucent-low">
+          <img
+            alt={collection.name}
+            className="absolute z-1 h-full max-w-none"
+            src={collection.tileImage?.thumbnailUrl}
+          />
 
-              {/* Easy Install Badge - conditionally shown */}
-              {easyInstallBadge && (
-                <div className="absolute rounded-b-sm inset-x-0 bottom-0 z-10">
-                  <Typography
-                    as="p"
-                    typographyType="title-xs"
-                    appearance="none"
-                    className="flex items-center gap-x-0.5 px-1.5 py-0.5 bg-info-weak text-info-50"
-                  >
-                    <Icon path={mdiStar} size="xs" />
-                    <span
-                      className="px-0.5 leading-5"
-                      title={easyInstallBadge.description}
-                    >
-                      {easyInstallBadge.name}
-                    </span>
-                  </Typography>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Details */}
-          <div className="flex-1 self-stretch flex flex-col justify-start items-start">
-            {/* Header: Title + Author */}
-            <div className="self-stretch pl-3 pb-2 flex flex-col justify-start items-start gap-0">
+          {easyInstallBadge && (
+            <div className="absolute inset-x-0 bottom-0 z-2">
               <Typography
-                as="div"
-                className="line-clamp-1 font-semibold wrap-break-word"
-                appearance="strong"
-                typographyType="body-xl"
+                appearance="none"
+                className="flex h-7 items-center gap-x-1 bg-info-weak px-1.5 leading-5 text-info-50"
+                typographyType="title-xs"
               >
-                {title}
-              </Typography>
+                <Icon path={mdiStar} size="xs" />
 
-              <div className="flex items-center gap-1">
-                {author.avatar && (
+                <span title={easyInstallBadge.description}>
+                  {easyInstallBadge.name}
+                </span>
+              </Typography>
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-0 grow flex-col gap-y-1.5">
+          <div className="flex flex-col gap-y-1">
+            <Typography
+              className="truncate font-semibold wrap-break-word"
+              typographyType="body-lg"
+            >
+              {collection.name}
+            </Typography>
+
+            <Typography
+              appearance="moderate"
+              className="flex items-center gap-x-1 leading-5"
+              typographyType="body-sm"
+            >
+              <div className="size-4 overflow-hidden rounded-full bg-surface-translucent-low">
+                {collection.user?.avatar && (
                   <img
-                    src={author.avatar}
-                    alt={author.name}
-                    className="w-4 h-4 rounded-full bg-zinc-300"
+                    alt={collection.user?.name}
+                    className="size-4"
+                    src={collection.user.avatar}
                   />
                 )}
-                {!author.avatar && (
-                  <div className="w-4 h-4 bg-zinc-300 rounded-full" />
-                )}
-                <Typography
-                  as="div"
-                  typographyType="body-sm"
-                  appearance="moderate"
-                  className="justify-center tracking-tight"
-                >
-                  {author.name}
-                </Typography>
               </div>
-            </div>
 
-            {/* Tags section */}
-            {displayTags.length > 0 && (
-              <div className="self-stretch pl-3 flex flex-col justify-start items-start gap-2">
-                <div className="self-stretch py-1.5 border-t border-b border-stroke-weak inline-flex justify-start items-center gap-1.5 flex-wrap content-center">
-                  {displayTags.map((tag, index) => {
-                    const tagText = getTagText(tag);
-                    return (
-                      <Fragment key={index}>
-                        <Typography
-                          as="div"
-                          typographyType="body-sm"
-                          appearance="none"
-                          className={`justify-center tracking-tight ${
-                            tagText.toLowerCase() === "adult"
-                              ? "text-danger-strong"
-                              : "text-neutral-moderate"
-                          }`}
-                        >
-                          {tagText}
-                        </Typography>
-                        {index < displayTags.length - 1 && (
-                          <div className="w-1 h-1 rotate-45 bg-neutral-subdued" />
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Stats section */}
-            <div className="self-stretch pl-3 inline-flex justify-start items-center gap-5">
-              <div className="flex-1 py-1.5 border-b border-stroke-weak flex justify-start items-center gap-5">
-                {/* Endorsements */}
-                <div className="flex justify-start items-center gap-1 overflow-hidden">
-                  <Icon path={mdiThumbUp} size="sm" />
-                  <Typography
-                    as="div"
-                    typographyType="body-sm"
-                    appearance="moderate"
-                    className="justify-start tracking-tight"
-                  >
-                    {numeral(stats.endorsements).format("0 a")}
-                  </Typography>
-                </div>
-
-                {/* Size */}
-                <div className="flex justify-center items-center gap-1 overflow-hidden">
-                  <Icon path={nxmFileSize} size="sm" />
-                  <Typography
-                    as="div"
-                    typographyType="body-sm"
-                    appearance="moderate"
-                    className="justify-start tracking-tight"
-                  >
-                    {numeral(stats.size).format("0.0 b")}
-                  </Typography>
-                </div>
-
-                {/* Mod count */}
-                <div className="flex justify-center items-center gap-1 overflow-hidden">
-                  <Icon path={nxmMod} size="sm" />
-                  <Typography
-                    as="div"
-                    typographyType="body-sm"
-                    appearance="moderate"
-                    className="justify-start tracking-tight"
-                  >
-                    {numeral(stats.modCount).format("0,0")}
-                  </Typography>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="self-stretch flex-1 pl-3 py-1 flex flex-col justify-start items-start gap-2">
-              <Typography
-                as="div"
-                typographyType="body-md"
-                appearance="subdued"
-                className="line-clamp-4 wrap-break-word"
-              >
-                {description}
-              </Typography>
-            </div>
+              {collection.user?.name}
+            </Typography>
           </div>
+
+          <div className="flex items-center gap-x-1.5 border-t border-stroke-weak pt-1.5">
+            <Typography
+              appearance="none"
+              className="text-info-strong"
+              typographyType="body-sm"
+            >
+              {collection.category.name}
+            </Typography>
+
+            {revision.adultContent && (
+              <>
+                <div className="size-1 rotate-45 bg-neutral-subdued" />
+
+                <Typography
+                  appearance="none"
+                  className="text-danger-strong"
+                  typographyType="body-sm"
+                >
+                  Adult
+                </Typography>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-x-5 border-t border-stroke-weak pt-1.5">
+            <Stat iconPath={mdiThumbUp}>
+              {numeral(collection.endorsements).format("0 a")}
+            </Stat>
+
+            <Stat iconPath={nxmFileSize}>
+              {numeral(revision.totalSize).format("0.0 b")}
+            </Stat>
+
+            <Stat iconPath={nxmMod}>
+              {numeral(revision.modCount).format("0,0")}
+            </Stat>
+          </div>
+
+          <Typography
+            appearance="subdued"
+            className="line-clamp-3 border-t border-stroke-weak pt-1.5 wrap-break-word"
+            typographyType="body-sm"
+          >
+            {collection.summary}
+          </Typography>
         </div>
       </div>
 
-      {/* Action bar */}
-      <div className="self-stretch p-3 bg-surface-high rounded-bl rounded-br inline-flex justify-start items-center gap-2">
-        <Button
-          title={tooltip}
-          disabled={!canBeAdded || pending}
-          buttonType="primary"
-          size="sm"
-          onClick={addCollection}
-        >
-          Add collection
-        </Button>
+      <div className="flex shrink-0 items-center gap-x-2 rounded-b bg-surface-translucent-low px-3 py-2">
+        {!canBeAdded || pending ? (
+          <Button
+            buttonType="tertiary"
+            disabled={true}
+            leftIconPath={mdiCheck}
+            size="xs"
+          >
+            Added
+          </Button>
+        ) : (
+          <Button buttonType="primary" size="xs" onClick={addCollection}>
+            Add collection
+          </Button>
+        )}
 
         <Button
           buttonType="tertiary"
-          size="sm"
-          onClick={onViewPage}
           leftIconPath={mdiOpenInNew}
+          size="xs"
+          onClick={onViewPage}
         >
           View page
         </Button>

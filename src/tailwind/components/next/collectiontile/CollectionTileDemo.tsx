@@ -3,16 +3,21 @@
  * Demonstrates the CollectionTile component with mock data
  */
 
-import * as React from "react";
+import type { ICollection } from "@nexusmods/nexus-api";
+
+import React, { type ComponentType } from "react";
+
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+
+import { Typography } from "../typography";
 import { CollectionTile } from "./CollectionTile";
-import { Typography } from "../typography/Typography";
 
 export interface ICollectionTileDemoProps {
-  api: any;
+  api: IExtensionApi;
 }
-export const CollectionTileDemo: React.ComponentType<
-  ICollectionTileDemoProps
-> = ({ api }) => {
+export const CollectionTileDemo: ComponentType<ICollectionTileDemoProps> = ({
+  api,
+}) => {
   const handleAddCollection = (title: string) => {
     console.log("Add collection:", title);
   };
@@ -21,86 +26,95 @@ export const CollectionTileDemo: React.ComponentType<
     console.log("View page:", title);
   };
 
-  const gameId = "stardewvalley";
+  const createMockTag = ({ id, name }: { id: string; name: string }) => ({
+    adult: false,
+    discardedAt: null,
+    global: false,
+    id,
+    name,
+    updatedAt: "",
+    createdAt: "",
+  });
 
   const mockCollections = [
     {
-      id: "1",
-      gameId,
+      id: 1,
+      gameId: 1303,
       slug: "ultimate-civil-war-reloaded",
-      title: "Ultimate Civil War Reloaded",
-      author: {
+      name: "Ultimate Civil War Reloaded",
+      user: {
         name: "RyukanoHi",
         avatar: undefined,
       },
       coverImage: "https://placehold.co/166x207/1f1f1f/ffffff?text=Collection",
-      tags: ["Total Overhaul", "Adult"],
+      tags: [
+        createMockTag({ id: "1", name: "Total Overhaul" }),
+        createMockTag({ id: "2", name: "Adult" }),
+      ],
       stats: {
         endorsements: 320,
         size: 540000000,
         modCount: 320,
       },
-      description:
+      summary:
         "1.6.8 The story of Stardew Valley expands outside of Pelican Town with this expanded collection designed to stay true to the original game. Created with co-op in mind, perfect for experienced solo-players. Easy install, includes configuration.",
       version: "1.6.8",
     },
     {
-      id: "2",
-      gameId,
+      id: 2,
+      gameId: 1303,
       slug: "immersive-graphics-overhaul",
-      title: "Immersive Graphics Overhaul",
-      author: {
+      name: "Immersive Graphics Overhaul",
+      user: {
         name: "GraphicsMod",
         avatar: undefined,
       },
       coverImage: "https://placehold.co/166x207/2a2a2a/ffffff?text=Graphics",
-      tags: ["Graphics", "Performance"],
+      tags: [
+        createMockTag({ id: "3", name: "Graphics" }),
+        createMockTag({ id: "4", name: "Performance" }),
+      ],
       stats: {
         endorsements: 890,
         size: 21000000,
         modCount: 1520,
       },
-      description:
+      summary:
         "Complete graphics overhaul with enhanced textures, lighting, and weather effects. Optimized for performance with minimal FPS impact. Includes ENB preset and configuration tool.",
     },
     {
-      id: "3",
-      gameId,
-      title: "Quest Expansion Pack",
+      id: 3,
+      gameId: 1303,
+      name: "Quest Expansion Pack",
       slug: "quest-expansion-pack",
-      author: {
+      user: {
         name: "QuestMaster",
         avatar: undefined,
       },
       coverImage: "https://placehold.co/166x207/1a1a1a/ffffff?text=Quests",
-      tags: ["Quests"],
+      tags: [createMockTag({ id: "5", name: "Quests" })],
       stats: {
         endorsements: 425,
         size: 1200004,
         modCount: 650,
       },
-      description:
+      summary:
         "Adds 50+ new quests with unique storylines, characters, and rewards. Fully voice-acted with professional cast. Compatible with all major mods.",
     },
-  ];
+  ] as unknown as ICollection[];
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8 p-6">
       <Typography
-        as="h1"
-        typographyType="heading-2xl"
         appearance="strong"
+        as="h1"
         className="mb-6"
+        typographyType="heading-2xl"
       >
         Collection Tile Component
       </Typography>
 
-      <Typography
-        as="p"
-        typographyType="body-md"
-        appearance="subdued"
-        className="mb-8"
-      >
+      <Typography appearance="subdued" className="mb-8">
         Collection tiles for browsing and managing mod collections. Based on
         Figma design specifications. Maximum 2 tags shown, no icons
         (placeholders only), with primary and tertiary action buttons.
@@ -109,10 +123,10 @@ export const CollectionTileDemo: React.ComponentType<
       {/* Collections grid */}
       <div className="space-y-6">
         <Typography
-          as="h2"
-          typographyType="heading-xl"
           appearance="strong"
+          as="h2"
           className="mb-4"
+          typographyType="heading-xl"
         >
           Sample Collections
         </Typography>
@@ -120,19 +134,19 @@ export const CollectionTileDemo: React.ComponentType<
         <div className="flex flex-col gap-6">
           {mockCollections.map((collection) => (
             <CollectionTile
-              key={collection.id}
-              {...collection}
-              onAddCollection={() => handleAddCollection(collection.title)}
-              onViewPage={() => handleViewPage(collection.title)}
               api={api}
+              collection={collection}
+              key={collection.id}
+              onAddCollection={() => handleAddCollection(collection.name)}
+              onViewPage={() => handleViewPage(collection.name)}
             />
           ))}
         </div>
       </div>
 
       {/* Feature notes */}
-      <div className="p-4 bg-yellow-50 rounded border border-yellow-200 mt-8">
-        <Typography as="p" typographyType="body-sm" appearance="moderate">
+      <div className="mt-8 rounded-sm border border-yellow-200 bg-yellow-50 p-4">
+        <Typography appearance="moderate" as="p" typographyType="body-sm">
           <strong>Design Notes:</strong> Fixed dimensions (465x288px), max 2
           tags displayed, "Adult" tag uses danger-400 color (#F87171), no hover
           effects on card (only buttons), icons are placeholder divs (no actual

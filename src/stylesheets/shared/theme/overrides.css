@@ -1,0 +1,41 @@
+/* Style overrides applied when the modern layout is active.
+   The .modern-layout class is set on the LayoutContainer root element. */
+
+@layer base {
+    .modern-layout {
+        .dropdown-menu > li > a {
+            &:hover,
+            &:focus {
+                background-color: var(--color-surface-mid) !important;
+            }
+        }
+
+        .main-page-inner {
+            inset: 0 !important;
+        }
+
+        .mainpage-header-container {
+            background-color: var(--color-surface-high) !important;
+
+            .btn-default {
+                background-color: var(--color-surface-high) !important;
+
+                &:hover {
+                    background-color: var(--color-zinc-600) !important;
+                }
+            }
+        }
+
+        a,
+        button,
+        input,
+        select,
+        textarea {
+            &:focus-visible {
+                outline: var(--color-info-subdued) solid
+                    calc(var(--spacing) * 0.5);
+                outline-offset: calc(var(--spacing) * 0.5);
+            }
+        }
+    }
+}

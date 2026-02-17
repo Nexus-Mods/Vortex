@@ -1,8 +1,12 @@
-"use client";
-
-import * as React from "react";
-import type { KeyboardEvent, MutableRefObject, ReactNode } from "react";
-import { createContext, useContext, useCallback, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  type KeyboardEvent,
+  type MutableRefObject,
+  type ReactNode,
+} from "react";
 
 import { getTabId } from "../utils";
 
@@ -15,6 +19,8 @@ type RegisterTabArgs = {
   type: "link" | "button";
 };
 
+type TabType = "primary" | "secondary";
+
 /**
  * State for the TabContext
  */
@@ -24,6 +30,7 @@ export interface TabsState {
   registerTab: (args: RegisterTabArgs) => void;
   selectedTab: string;
   tabListId: string;
+  tabType: TabType;
 }
 
 /**
@@ -34,6 +41,7 @@ export interface TabProviderProps {
   onSetSelectedTab?: (tab: string) => void;
   tab: string;
   tabListId: string;
+  tabType?: TabType;
 }
 
 /**
@@ -49,6 +57,7 @@ export const TabProvider = ({
   onSetSelectedTab,
   tab,
   tabListId,
+  tabType = "primary",
 }: TabProviderProps) => {
   // Handles callback for tab select behaviour (e.g. scrolling)
   const setSelectedTab = (tabToSet: string) => {
@@ -131,6 +140,7 @@ export const TabProvider = ({
         registerTab,
         selectedTab,
         tabListId,
+        tabType,
       }}
     >
       {children}
