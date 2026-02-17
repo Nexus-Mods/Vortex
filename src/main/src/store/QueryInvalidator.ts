@@ -12,22 +12,22 @@ import type QueryWatcher from "./QueryWatcher";
  * invalidation events to all renderer windows.
  */
 class QueryInvalidator {
-  private mRegistry: QueryRegistry;
-  private mWatcher: QueryWatcher | undefined;
-  private mPendingTables: Set<string> = new Set();
-  private mDebounceTimer: ReturnType<typeof setTimeout> | undefined;
-  private mDebounceMs: number;
+  #mRegistry: QueryRegistry;
+  #mWatcher: QueryWatcher | undefined;
+  #mPendingTables: Set<string> = new Set();
+  #mDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+  #mDebounceMs: number;
 
   constructor(registry: QueryRegistry, debounceMs: number = 16) {
-    this.mRegistry = registry;
-    this.mDebounceMs = debounceMs;
+    this.#mRegistry = registry;
+    this.#mDebounceMs = debounceMs;
   }
 
   /**
    * Set a QueryWatcher to be notified when queries are invalidated.
    */
   public setWatcher(watcher: QueryWatcher): void {
-    this.mWatcher = watcher;
+    this.#mWatcher = watcher;
   }
 
   /**
@@ -37,35 +37,35 @@ class QueryInvalidator {
   public notifyDirtyTables(
     dirtyTables: Array<{ database: string; table: string; type: string }>,
   ): void {
-    if (!this.mRegistry.hasQueries) {
+    if (!this.#mRegistry.hasQueries) {
       return;
     }
 
     for (const dt of dirtyTables) {
       // Add both qualified (db.table) and unqualified (table) names
-      this.mPendingTables.add(`${dt.database}.${dt.table}`);
-      this.mPendingTables.add(dt.table);
+      this.#mPendingTables.add(`${dt.database}.${dt.table}`);
+      this.#mPendingTables.add(dt.table);
     }
 
-    if (this.mDebounceTimer !== undefined) {
-      clearTimeout(this.mDebounceTimer);
+    if (this.#mDebounceTimer !== undefined) {
+      clearTimeout(this.#mDebounceTimer);
     }
 
-    this.mDebounceTimer = setTimeout(() => {
-      this.flush();
-    }, this.mDebounceMs);
+    this.#mDebounceTimer = setTimeout(() => {
+      this.#flush();
+    }, this.#mDebounceMs);
   }
 
-  private flush(): void {
-    if (this.mPendingTables.size === 0) {
+  #flush(): void {
+    if (this.#mPendingTables.size === 0) {
       return;
     }
 
-    const tables = [...this.mPendingTables];
-    this.mPendingTables.clear();
-    this.mDebounceTimer = undefined;
+    const tables = [...this.#mPendingTables];
+    this.#mPendingTables.clear();
+    this.#mDebounceTimer = undefined;
 
-    const affectedQueries = this.mRegistry.getAffectedQueries(tables);
+    const affectedQueries = this.#mRegistry.getAffectedQueries(tables);
     if (affectedQueries.length === 0) {
       return;
     }
@@ -83,7 +83,7 @@ class QueryInvalidator {
     }
 
     // Notify watcher (fire-and-forget)
-    this.mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {
+    this.#mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {
       log("warn", "QueryWatcher notification failed", err);
     });
   }

@@ -1,4 +1,4 @@
-import type { DuckDBConnection, DuckDBInstance } from "@duckdb/node-api";
+import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
 
 import { log } from "../logging";
 
@@ -7,20 +7,20 @@ import { log } from "../logging";
  * All LevelPersist instances attach their databases to this shared instance.
  */
 class DuckDBSingleton {
-  private static sInstance: DuckDBSingleton | undefined;
+  static #sInstance: DuckDBSingleton | undefined;
 
-  private mDuckDB: DuckDBInstance | undefined;
-  private mInitialized: boolean = false;
-  private mAttachedDatabases: Map<string, string> = new Map(); // alias -> path
-  private mConnections: DuckDBConnection[] = [];
+  #mDuckDB: DuckDBInstance | undefined;
+  #mInitialized: boolean = false;
+  #mAttachedDatabases: Map<string, string> = new Map(); // alias -> path
+  #mConnections: DuckDBConnection[] = [];
 
   private constructor() {}
 
   public static getInstance(): DuckDBSingleton {
-    if (DuckDBSingleton.sInstance === undefined) {
-      DuckDBSingleton.sInstance = new DuckDBSingleton();
+    if (DuckDBSingleton.#sInstance === undefined) {
+      DuckDBSingleton.#sInstance = new DuckDBSingleton();
     }
-    return DuckDBSingleton.sInstance;
+    return DuckDBSingleton.#sInstance;
   }
 
   /**
@@ -28,17 +28,16 @@ class DuckDBSingleton {
    * Safe to call multiple times -- only initializes once.
    */
   public async initialize(): Promise<void> {
-    if (this.mInitialized) {
+    if (this.#mInitialized) {
       return;
     }
 
-    const { DuckDBInstance: DuckDBInstanceCtor } = require("@duckdb/node-api");
     log("debug", "duckdb-singleton: creating shared instance");
-    this.mDuckDB = await DuckDBInstanceCtor.create(":memory:", {
+    this.#mDuckDB = await DuckDBInstance.create(":memory:", {
       allow_unsigned_extensions: "true",
     });
 
-    const connection = await this.mDuckDB.connect();
+    const connection = await this.#mDuckDB.connect();
     try {
       log("debug", "duckdb-singleton: installing level_pivot");
       await connection.run(
@@ -50,7 +49,7 @@ class DuckDBSingleton {
       connection.closeSync();
     }
 
-    this.mInitialized = true;
+    this.#mInitialized = true;
     log("debug", "duckdb-singleton: initialized");
   }
 
@@ -62,16 +61,16 @@ class DuckDBSingleton {
     persistPath: string,
     alias: string,
   ): Promise<DuckDBConnection> {
-    if (!this.mInitialized || this.mDuckDB === undefined) {
+    if (!this.#mInitialized || this.#mDuckDB === undefined) {
       throw new Error("DuckDBSingleton not initialized");
     }
 
-    if (this.mAttachedDatabases.has(alias)) {
+    if (this.#mAttachedDatabases.has(alias)) {
       throw new Error(`Database alias '${alias}' already attached`);
     }
 
-    const connection = await this.mDuckDB.connect();
-    this.mConnections.push(connection);
+    const connection = await this.#mDuckDB.connect();
+    this.#mConnections.push(connection);
 
     const escapedPath = persistPath.replace(/'/g, "''");
     log("debug", "duckdb-singleton: attaching database", {
@@ -85,7 +84,7 @@ class DuckDBSingleton {
       `CALL level_pivot_create_table('${alias}', 'kv', NULL, ['key', 'value'], table_mode := 'raw')`,
     );
 
-    this.mAttachedDatabases.set(alias, persistPath);
+    this.#mAttachedDatabases.set(alias, persistPath);
     log("debug", "duckdb-singleton: database attached", { alias });
 
     return connection;
@@ -95,22 +94,22 @@ class DuckDBSingleton {
    * Detach a previously attached database.
    */
   public async detachDatabase(alias: string): Promise<void> {
-    if (!this.mInitialized || this.mDuckDB === undefined) {
+    if (!this.#mInitialized || this.#mDuckDB === undefined) {
       return;
     }
 
-    if (!this.mAttachedDatabases.has(alias)) {
+    if (!this.#mAttachedDatabases.has(alias)) {
       return;
     }
 
-    const connection = await this.mDuckDB.connect();
+    const connection = await this.#mDuckDB.connect();
     try {
       await connection.run(`DETACH ${alias}`);
     } finally {
       connection.closeSync();
     }
 
-    this.mAttachedDatabases.delete(alias);
+    this.#mAttachedDatabases.delete(alias);
     log("debug", "duckdb-singleton: database detached", { alias });
   }
 
@@ -119,12 +118,12 @@ class DuckDBSingleton {
    * Useful for query execution separate from the persistence connection.
    */
   public async createConnection(): Promise<DuckDBConnection> {
-    if (!this.mInitialized || this.mDuckDB === undefined) {
+    if (!this.#mInitialized || this.#mDuckDB === undefined) {
       throw new Error("DuckDBSingleton not initialized");
     }
 
-    const connection = await this.mDuckDB.connect();
-    this.mConnections.push(connection);
+    const connection = await this.#mDuckDB.connect();
+    this.#mConnections.push(connection);
     return connection;
   }
 
@@ -132,36 +131,36 @@ class DuckDBSingleton {
    * Close all connections and the shared instance.
    */
   public close(): void {
-    for (const conn of this.mConnections) {
+    for (const conn of this.#mConnections) {
       try {
         conn.closeSync();
       } catch {
         // connection may already be closed
       }
     }
-    this.mConnections = [];
+    this.#mConnections = [];
 
-    if (this.mDuckDB !== undefined) {
+    if (this.#mDuckDB !== undefined) {
       try {
-        this.mDuckDB.closeSync();
+        this.#mDuckDB.closeSync();
       } catch {
         // instance may already be closed
       }
-      this.mDuckDB = undefined;
+      this.#mDuckDB = undefined;
     }
 
-    this.mAttachedDatabases.clear();
-    this.mInitialized = false;
-    DuckDBSingleton.sInstance = undefined;
+    this.#mAttachedDatabases.clear();
+    this.#mInitialized = false;
+    DuckDBSingleton.#sInstance = undefined;
     log("debug", "duckdb-singleton: closed");
   }
 
   public get isInitialized(): boolean {
-    return this.mInitialized;
+    return this.#mInitialized;
   }
 
   public get attachedDatabases(): ReadonlyMap<string, string> {
-    return this.mAttachedDatabases;
+    return this.#mAttachedDatabases;
   }
 }
 
