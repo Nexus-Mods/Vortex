@@ -4983,13 +4983,13 @@ class InstallManager {
           "Select Variant to Replace",
           {
             text: '"{{modName}}" has several variants installed - please choose which one to replace:',
-            choices: modIds.map((id, idx) => {
-              const modAttributes = mods[idx].attributes;
+            choices: mods.map((mod, idx) => {
+              const modAttributes = mod.attributes;
               const variant = getSafe(modAttributes, ["variant"], "");
               return {
-                id,
+                id: mod.id,
                 value: idx === 0,
-                text: `modId: ${id}`,
+                text: `modId: ${mod.id}`,
                 subText: api.translate(
                   "Version: {{version}}; InstallTime: {{installTime}}; Variant: {{variant}}",
                   {
