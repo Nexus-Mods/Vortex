@@ -1,20 +1,23 @@
-import { removeExtension } from "../../actions";
+import { removeExtension } from "../../renderer/actions";
 import { unknownToError } from "../../shared/errors";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import { DataInvalid } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../util/log";
-import { INVALID_FILENAME_RE } from "../../util/util";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import { DataInvalid } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import lazyRequire from "../../renderer/util/lazyRequire";
+import { log } from "../../renderer/util/log";
+import { INVALID_FILENAME_RE } from "../../renderer/util/util";
 
 import {
   countryExists,
   languageExists,
 } from "../settings_interface/languagemap";
 
-import type { ExtensionType, IExtension } from "../../types/extensions";
+import type {
+  ExtensionType,
+  IExtension,
+} from "../../renderer/types/extensions";
 import { readExtensionInfo } from "./util";
 
 import PromiseBB from "bluebird";

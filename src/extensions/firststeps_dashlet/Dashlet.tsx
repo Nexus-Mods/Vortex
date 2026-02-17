@@ -1,7 +1,7 @@
 import Dashlet from "../../renderer/controls/Dashlet";
 import Icon from "../../renderer/controls/Icon";
 import { IconButton } from "../../renderer/controls/TooltipControls";
-import type { II18NProps } from "../../types/II18NProps";
+import type { II18NProps } from "../../renderer/types/II18NProps";
 import {
   ComponentEx,
   connect,

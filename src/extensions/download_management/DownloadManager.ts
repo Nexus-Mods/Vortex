@@ -3,10 +3,10 @@ import {
   ProcessCanceled,
   StalledError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { delayed, INVALID_FILENAME_RE, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { delayed, INVALID_FILENAME_RE, truthy } from "../../renderer/util/util";
 import type { IChunk } from "./types/IChunk";
 import type { IDownloadOptions } from "./types/IDownload";
 import type { IDownloadJob } from "./types/IDownloadJob";
@@ -33,11 +33,11 @@ import * as _ from "lodash";
 import * as path from "path";
 import type * as stream from "stream";
 import * as zlib from "zlib";
-import type { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../renderer/types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
-import { getPreloadApi } from "../../util/preloadAccess";
+import { getPreloadApi } from "../../renderer/util/preloadAccess";
 
 function getCookies(
   filter: Electron.CookiesGetFilter,

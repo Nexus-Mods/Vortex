@@ -1,11 +1,11 @@
 import Toggle from "../../../renderer/controls/Toggle";
-import type { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import { setDashletEnabled } from "../actions";
 import type { IDashletProps } from "../types/IDashletProps";

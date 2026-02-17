@@ -1,4 +1,4 @@
-import { tableReducer } from '../src/reducers/tables';
+import { tableReducer } from '../src/renderer/reducers/tables';
 
 describe('setAttributeVisible', () => {
   it('marks attribute visible', () => {

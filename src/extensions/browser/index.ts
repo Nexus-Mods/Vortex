@@ -1,10 +1,10 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import { UserCanceled } from "../../util/CustomErrors";
-import { getSafe } from "../../util/storeHelper";
-import { makeQueue, setdefault } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { makeQueue, setdefault } from "../../renderer/util/util";
 
 import type { SubscriptionResult } from "./views/BrowserView";
 import BrowserView from "./views/BrowserView";
@@ -16,7 +16,7 @@ import PromiseBB from "bluebird";
 import { ipcRenderer } from "electron";
 import { generate as shortid } from "shortid";
 import * as url from "url";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 
 type SubscriptionFunction = (eventId: string, value: any) => SubscriptionResult;
 

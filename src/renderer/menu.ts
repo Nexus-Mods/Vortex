@@ -1,16 +1,16 @@
-import type { IMainPageOptions } from "../types/IExtensionContext";
+import type { IMainPageOptions } from "./types/IExtensionContext";
 import type { SerializableMenuItem } from "../shared/types/preload";
 
 import type ExtensionManager from "../renderer/ExtensionManager";
-import { debugTranslations, getMissingTranslations } from "../util/i18n";
-import { log } from "../util/log";
+import { debugTranslations, getMissingTranslations } from "./util/i18n";
+import { log } from "./util/log";
 
 import { webFrame } from "electron";
 import * as path from "path";
-import { setZoomFactor } from "../actions/window";
-import { getApplication } from "../util/application";
-import getVortexPath from "../util/getVortexPath";
-import { getWindowId } from "../util/preloadAccess";
+import { setZoomFactor } from "./actions/window";
+import { getApplication } from "./util/application";
+import getVortexPath from "./util/getVortexPath";
+import { getWindowId } from "./util/preloadAccess";
 
 // Map to store click handlers by menu item ID
 const menuClickHandlers: Map<string, () => void> = new Map();

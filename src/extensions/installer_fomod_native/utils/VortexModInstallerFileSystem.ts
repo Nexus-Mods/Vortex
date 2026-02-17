@@ -3,7 +3,7 @@ import type { Dirent } from "node:fs";
 import { readdirSync, readFileSync } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import { open, readdir } from "node:fs/promises";
-import lazyRequire from "../../../util/lazyRequire";
+import lazyRequire from "../../../renderer/util/lazyRequire";
 import type * as fomodT from "fomod-installer-native";
 
 export class VortexModInstallerFileSystem {

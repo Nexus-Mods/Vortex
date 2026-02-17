@@ -1,4 +1,7 @@
-import type { IMergeFilter, MergeFunc } from "../../../types/IExtensionContext";
+import type {
+  IMergeFilter,
+  MergeFunc,
+} from "../../../renderer/types/IExtensionContext";
 
 export interface IResolvedMerger {
   match: IMergeFilter;

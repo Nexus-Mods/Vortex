@@ -1,6 +1,6 @@
 import { Button, IconButton } from "../../../renderer/controls/TooltipControls";
-import type { TFunction } from "../../../util/i18n";
-import { truthy } from "../../../util/util";
+import type { TFunction } from "../../../renderer/util/i18n";
+import { truthy } from "../../../renderer/util/util";
 import { setModAttributes } from "../actions/mods";
 import type { IModWithState } from "../types/IModProps";
 

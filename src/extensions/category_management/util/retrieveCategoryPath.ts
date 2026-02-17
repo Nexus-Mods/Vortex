@@ -1,7 +1,7 @@
-import type { IState } from "../../../types/IState";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import type { IState } from "../../../renderer/types/IState";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import type { ICategoryDictionary } from "../types/ICategoryDictionary";
 
 function createCategoryDetailPath(

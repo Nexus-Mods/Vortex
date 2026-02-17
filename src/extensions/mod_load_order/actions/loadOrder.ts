@@ -1,4 +1,4 @@
-import createAction from "../../../actions/safeCreateAction";
+import createAction from "../../../renderer/actions/safeCreateAction";
 import type { ILoadOrderEntry } from "../types/types";
 
 // Change a specific load order entry.

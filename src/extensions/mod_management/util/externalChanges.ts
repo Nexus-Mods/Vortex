@@ -3,18 +3,18 @@ import type {
   IDeploymentMethod,
   IExtensionApi,
   IFileChange,
-} from "../../../types/IExtensionContext";
-import { ProcessCanceled } from "../../../util/CustomErrors";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
+} from "../../../renderer/types/IExtensionContext";
+import { ProcessCanceled } from "../../../renderer/util/CustomErrors";
+import * as fs from "../../../renderer/util/fs";
+import { log } from "../../../renderer/util/log";
 import {
   activeGameId,
   activeProfile,
   getCollectionActiveSession,
   profileById,
-} from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { setdefault, truthy } from "../../../util/util";
+} from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { setdefault, truthy } from "../../../renderer/util/util";
 
 import { showExternalChanges } from "../actions/session";
 import type { FileAction, IFileEntry } from "../types/IFileEntry";

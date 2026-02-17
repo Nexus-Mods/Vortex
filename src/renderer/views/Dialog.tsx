@@ -1,7 +1,7 @@
-import type { ILink } from "../../actions";
-import { triggerDialogLink } from "../../actions";
-import type { DialogContentItem } from "../../actions/notifications";
-import { closeDialog, closeDialogs } from "../../actions/notifications";
+import type { ILink } from "../actions";
+import { triggerDialogLink } from "../actions";
+import type { DialogContentItem } from "../actions/notifications";
+import { closeDialog, closeDialogs } from "../actions/notifications";
 import Collapse from "../controls/Collapse";
 import ErrorBoundary, { ErrorContext } from "../controls/ErrorBoundary";
 import Icon from "../controls/Icon";
@@ -14,13 +14,13 @@ import type {
   IDialog,
   IDialogContent,
   IInput,
-} from "../../types/IDialog";
-import type { IState } from "../../types/IState";
+} from "../types/IDialog";
+import type { IState } from "../types/IState";
 import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-import type { TFunction } from "../../util/i18n";
-import { MutexWrapper } from "../../util/MutexContext";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
+import type { TFunction } from "../util/i18n";
+import { MutexWrapper } from "../util/MutexContext";
+import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
 import update from "immutability-helper";
 import * as React from "react";

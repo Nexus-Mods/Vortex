@@ -6,10 +6,10 @@ import type {
   INotification,
   INotificationAction,
   NotificationType,
-} from "../../types/INotification";
+} from "../types/INotification";
 import { ComponentEx } from "../controls/ComponentEx";
 
-import type { TFunction } from "../../util/i18n";
+import type { TFunction } from "../util/i18n";
 
 import * as React from "react";
 import { Button, MenuItem } from "react-bootstrap";

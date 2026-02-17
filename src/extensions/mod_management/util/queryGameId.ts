@@ -1,13 +1,13 @@
-import { showDialog } from "../../../actions";
-import type { ThunkStore } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import { UserCanceled } from "../../../util/CustomErrors";
+import { showDialog } from "../../../renderer/actions";
+import type { ThunkStore } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
 import {
   activeGameId,
   discoveryByGame,
   gameName,
   knownGames,
-} from "../../../util/selectors";
+} from "../../../renderer/util/selectors";
 import { SITE_ID } from "../../gamemode_management/constants";
 import {
   convertGameIdReverse,

@@ -8,7 +8,7 @@ import type {
   ModalTitle,
 } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
-import { MutexWrapper } from "../../util/MutexContext";
+import { MutexWrapper } from "../util/MutexContext";
 
 class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
   public static Header: typeof ModalHeader = Modal.Header;

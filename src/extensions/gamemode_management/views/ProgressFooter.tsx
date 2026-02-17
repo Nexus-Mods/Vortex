@@ -1,13 +1,13 @@
 import Icon from "../../../renderer/controls/Icon";
 import ProgressBar from "../../../renderer/controls/ProgressBar";
 import RadialProgress from "../../../renderer/controls/RadialProgress";
-import type { IDiscoveryState } from "../../../types/IState";
+import type { IDiscoveryState } from "../../../renderer/types/IState";
 import {
   connect,
   PureComponentEx,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { sum } from "../../../util/util";
+import { sum } from "../../../renderer/util/util";
 
 import * as React from "react";
 

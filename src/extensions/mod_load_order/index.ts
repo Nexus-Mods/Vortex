@@ -1,6 +1,9 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import type { IMod, IState } from "../../types/IState";
-import { activeGameId, installPathForGame } from "../../util/selectors";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import type { IMod, IState } from "../../renderer/types/IState";
+import {
+  activeGameId,
+  installPathForGame,
+} from "../../renderer/util/selectors";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { loadOrderSettingsReducer } from "./reducers/settings";
 import type { IGameLoadOrderEntry } from "./types/types";
@@ -8,7 +11,7 @@ import LoadOrderPage from "./views/LoadOrderPage";
 
 import type { ICollection } from "./types/collections";
 
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import { generate, Interface, parser } from "./collections/loadOrder";
 

@@ -1,8 +1,8 @@
-import { setSettingsPage } from "../../../actions/session";
+import { setSettingsPage } from "../../../renderer/actions/session";
 import ErrorBoundary from "../../../renderer/controls/ErrorBoundary";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
-import { bytesToString, truthy } from "../../../util/util";
+import { bytesToString, truthy } from "../../../renderer/util/util";
 
 import { NUM_SPEED_DATA_POINTS } from "../reducers/state";
 

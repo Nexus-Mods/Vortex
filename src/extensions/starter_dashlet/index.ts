@@ -5,12 +5,12 @@ import { fs } from "../..";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { ITestResult } from "../../types/ITestResult";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 
 import memoize from "memoize-one";
 

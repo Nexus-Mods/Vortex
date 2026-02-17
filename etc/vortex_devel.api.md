@@ -6301,17 +6301,17 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 // Warnings were encountered during analysis:
 //
 // api/lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:71:5 - (ae-forgotten-export) The symbol "tabs" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:88:5 - (ae-forgotten-export) The symbol "form" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:103:9 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
-// api/lib/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:329:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:359:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:71:5 - (ae-forgotten-export) The symbol "tabs" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:88:5 - (ae-forgotten-export) The symbol "form" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:103:9 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/types/IState.d.ts:329:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
+// api/lib/renderer/types/IState.d.ts:359:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

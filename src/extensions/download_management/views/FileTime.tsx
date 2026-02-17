@@ -1,6 +1,6 @@
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import * as fs from "../../../util/fs";
-import { userFriendlyTime } from "../../../util/relativeTime";
+import * as fs from "../../../renderer/util/fs";
+import { userFriendlyTime } from "../../../renderer/util/relativeTime";
 
 import type { IDownload } from "../types/IDownload";
 

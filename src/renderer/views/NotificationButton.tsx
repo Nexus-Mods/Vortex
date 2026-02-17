@@ -1,19 +1,19 @@
 import {
   dismissNotification,
   fireNotificationAction,
-} from "../../actions/notifications";
-import { suppressNotification } from "../../actions/notificationSettings";
+} from "../actions/notifications";
+import { suppressNotification } from "../actions/notificationSettings";
 import type {
   INotification,
   INotificationAction,
-} from "../../types/INotification";
-import type { IState } from "../../types/IState";
+} from "../types/INotification";
+import type { IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
 
 import Icon from "../controls/Icon";
 import type { IBar } from "../controls/RadialProgress";
 import RadialProgress from "../controls/RadialProgress";
-import Debouncer from "../../util/Debouncer";
+import Debouncer from "../util/Debouncer";
 import Notification from "./Notification";
 
 import * as _ from "lodash";

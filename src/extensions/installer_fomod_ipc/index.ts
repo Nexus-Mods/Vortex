@@ -4,7 +4,7 @@ import { testSupported } from "./tester";
 import { install } from "./installer";
 import type { ITestSupportedDetails } from "../mod_management/types/TestSupported";
 import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import { settingsReducer } from "./reducers/sandbox";
 import Sandbox from "./views/Sandbox";
 

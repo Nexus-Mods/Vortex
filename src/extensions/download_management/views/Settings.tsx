@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import FormInput from "../../../renderer/controls/FormInput";
 import Icon from "../../../renderer/controls/Icon";
@@ -11,9 +11,9 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { IDownload, IState } from "../../../types/IState";
-import type { ValidationState } from "../../../types/ITableAttribute";
+} from "../../../renderer/types/IDialog";
+import type { IDownload, IState } from "../../../renderer/types/IState";
+import type { ValidationState } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -26,20 +26,20 @@ import {
   ProcessCanceled,
   UnsupportedOperatingSystem,
   UserCanceled,
-} from "../../../util/CustomErrors";
-import { withContext } from "../../../util/errorHandling";
-import * as fs from "../../../util/fs";
-import getNormalizeFunc from "../../../util/getNormalizeFunc";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+} from "../../../renderer/util/CustomErrors";
+import { withContext } from "../../../renderer/util/errorHandling";
+import * as fs from "../../../renderer/util/fs";
+import getNormalizeFunc from "../../../renderer/util/getNormalizeFunc";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import {
   cleanFailedTransfer,
   testPathTransfer,
   transferPath,
-} from "../../../util/transferPath";
+} from "../../../renderer/util/transferPath";
 import {
   Campaign,
   ciEqual,
@@ -49,7 +49,7 @@ import {
   nexusModsURL,
   Section,
   Content,
-} from "../../../util/util";
+} from "../../../renderer/util/util";
 import getTextMod from "../../mod_management/texts";
 import { PREMIUM_PATH } from "../../nexus_integration/constants";
 import {
@@ -87,7 +87,7 @@ import {
 } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import getVortexPath from "../../../util/getVortexPath";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 import Image from "../../../renderer/controls/Image";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 

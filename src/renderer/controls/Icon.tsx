@@ -1,4 +1,4 @@
-import { log } from "../../util/log";
+import { log } from "../util/log";
 import IconBase from "./Icon.base";
 
 import PromiseBB from "bluebird";
@@ -8,7 +8,7 @@ import * as fs from "fs";
 import update from "immutability-helper";
 import * as path from "path";
 import * as React from "react";
-import getVortexPath from "../../util/getVortexPath";
+import getVortexPath from "../util/getVortexPath";
 
 export interface IIconProps {
   id?: string;

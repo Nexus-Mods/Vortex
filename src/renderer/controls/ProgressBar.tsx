@@ -1,5 +1,5 @@
 import * as React from "react";
-import { timeToString } from "../../util/util";
+import { timeToString } from "../util/util";
 
 export interface IBaseProps {
   className?: string;

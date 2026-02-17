@@ -1,5 +1,5 @@
 import { ComponentEx } from "../ComponentEx";
-import type { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../util/i18n";
 import type { IActionDefinitionEx } from "../ActionControl";
 import ContextMenu from "../ContextMenu";
 import Icon from "../Icon";

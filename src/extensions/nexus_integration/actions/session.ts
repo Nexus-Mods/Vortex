@@ -1,4 +1,4 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
 
 import type { IUpdateEntry } from "@nexusmods/nexus-api";
 import * as reduxAct from "redux-act";

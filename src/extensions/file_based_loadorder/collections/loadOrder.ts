@@ -1,6 +1,6 @@
 import * as React from "react";
-import type * as types from "../../../types/api";
-import * as selectors from "../../../util/selectors";
+import type * as types from "../../../renderer/types/api";
+import * as selectors from "../../../renderer/util/selectors";
 
 import { setFBLoadOrder } from "../actions/loadOrder";
 

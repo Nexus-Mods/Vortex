@@ -1,11 +1,11 @@
 import * as path from "path";
 import ProcessMonitor from "../util/ProcessMonitor";
 import type { IProcessInfo, IProcessProvider } from "../util/processProvider";
-import { setToolPid, setToolStopped } from "../../../actions";
-import { makeExeId } from "../../../reducers/session";
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import { setToolPid, setToolStopped } from "../../../renderer/actions";
+import { makeExeId } from "../../../renderer/reducers/session";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 
 const gameId = "test-game";
 const profileId = "profile-1";

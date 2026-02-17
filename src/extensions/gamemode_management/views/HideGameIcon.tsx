@@ -1,7 +1,7 @@
 import type { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 

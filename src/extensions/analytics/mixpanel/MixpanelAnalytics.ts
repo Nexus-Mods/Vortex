@@ -1,6 +1,6 @@
 import mixpanel from "mixpanel-browser";
 import { MIXPANEL_PROD_TOKEN, MIXPANEL_DEV_TOKEN } from "../constants";
-import { getApplication } from "../../../util/application";
+import { getApplication } from "../../../renderer/util/application";
 import type { IValidateKeyDataV2 } from "../../nexus_integration/types/IValidateKeyData";
 import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";

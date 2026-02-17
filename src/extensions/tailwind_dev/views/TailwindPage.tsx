@@ -5,14 +5,19 @@
  */
 
 import * as React from "react";
+
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+
+import { ButtonDemo } from "../../../renderer/tailwind/components/next/button/ButtonDemo";
+import { CollectionTileDemo } from "../../../renderer/tailwind/components/next/collectiontile/CollectionTileDemo";
+import {
+  InputDemo,
+  SelectDemo,
+} from "../../../renderer/tailwind/components/next/form";
+import { TabsDemo } from "../../../renderer/tailwind/components/next/tabs/TabsDemo";
+import { TypographyDemo } from "../../../renderer/tailwind/components/next/typography/TypographyDemo";
+import { TailwindTest } from "../../../renderer/tailwind/components/TailwindTest";
 import MainPage from "../../../renderer/views/MainPage";
-import { TailwindTest } from "../../../tailwind/components/TailwindTest";
-import { TypographyDemo } from "../../../tailwind/components/next/typography/TypographyDemo";
-import { ButtonDemo } from "../../../tailwind/components/next/button/ButtonDemo";
-import { CollectionTileDemo } from "../../../tailwind/components/next/collectiontile/CollectionTileDemo";
-import { InputDemo, SelectDemo } from "../../../tailwind/components/next/form";
-import { TabsDemo } from "../../../tailwind/components/next/tabs/TabsDemo";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
 
 interface ITailwindPageProps {
   // Props passed from extension context
@@ -41,6 +46,7 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
               >
                 🧪 Tailwind v4 Component Testing
               </h3>
+
               <p style={{ marginBottom: "20px", color: "#666" }}>
                 This page is only visible in development mode and provides a
                 testing ground for Tailwind components adapted from the web
@@ -59,27 +65,27 @@ class TailwindPage extends React.Component<ITailwindPageProps> {
 
             {/* Hover overlays */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-primary-moderate p-4 rounded hover-overlay">
+              <div className="hover-overlay rounded-sm bg-primary-moderate p-4">
                 div overlay light
               </div>
 
-              <a className="block bg-primary-moderate p-4 rounded hover-overlay">
+              <a className="hover-overlay block rounded-sm bg-primary-moderate p-4">
                 link overlay light
               </a>
 
-              <button className="block bg-primary-moderate p-4 rounded hover-overlay">
+              <button className="hover-overlay block rounded-sm bg-primary-moderate p-4">
                 button overlay light
               </button>
 
-              <div className="bg-primary-moderate p-4 rounded hover-dark-overlay">
+              <div className="hover-dark-overlay rounded-sm bg-primary-moderate p-4">
                 div overlay dark
               </div>
 
-              <a className="block bg-primary-moderate p-4 rounded hover-dark-overlay">
+              <a className="hover-dark-overlay block rounded-sm bg-primary-moderate p-4">
                 link overlay dark
               </a>
 
-              <button className="block bg-primary-moderate p-4 rounded hover-dark-overlay">
+              <button className="hover-dark-overlay block rounded-sm bg-primary-moderate p-4">
                 button overlay dark
               </button>
             </div>

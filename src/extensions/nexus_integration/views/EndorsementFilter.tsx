@@ -1,7 +1,7 @@
 import type {
   IFilterProps,
   ITableFilter,
-} from "../../../types/ITableAttribute";
+} from "../../../renderer/types/ITableAttribute";
 
 import * as React from "react";
 import Select from "react-select";

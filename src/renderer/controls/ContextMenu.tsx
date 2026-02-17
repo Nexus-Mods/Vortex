@@ -1,5 +1,5 @@
 import { ComponentEx } from "./ComponentEx";
-import type { TFunction } from "../../util/i18n";
+import type { TFunction } from "../util/i18n";
 
 import type { IActionDefinitionEx } from "./ActionControl";
 import { HOVER_DELAY } from "./constants";

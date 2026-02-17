@@ -18,7 +18,7 @@ import * as ReactDOM from "react-dom";
 
 import { ContextMenu } from "../../../renderer/controls/api";
 
-import * as util from "../../../util/api";
+import * as util from "../../../renderer/util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import type {
   IDnDConditionResult,

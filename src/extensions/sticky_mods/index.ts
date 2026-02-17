@@ -6,8 +6,8 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
 
 import renderModName from "../mod_management/util/modName";
 import type { IProfile } from "../profile_management/types/IProfile";

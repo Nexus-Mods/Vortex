@@ -1,10 +1,10 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import ActionDropdown from "../../../renderer/controls/ActionDropdown";
 import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
+import type { IComponentContext } from "../../../renderer/types/IComponentContext";
 import type {
   DialogActions,
   DialogType,
@@ -12,17 +12,17 @@ import type {
   IDialogContent,
   IDialogResult,
   IInput,
-} from "../../../types/IDialog";
-import type { IErrorOptions } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+} from "../../../renderer/types/IDialog";
+import type { IErrorOptions } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import lazyRequire from "../../../util/lazyRequire";
-import { showError } from "../../../util/message";
-import { activeGameId } from "../../../util/selectors";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import { showError } from "../../../renderer/util/message";
+import { activeGameId } from "../../../renderer/util/selectors";
 
 import type { IMod } from "../../mod_management/types/IMod";
 

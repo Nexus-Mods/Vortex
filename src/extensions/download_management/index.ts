@@ -11,10 +11,10 @@ import winapi from "winapi-bindings";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
-import type { Normalize } from "../../util/getNormalizeFunc";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
 import type DownloadManager from "./DownloadManager";
 import type { DownloadObserver } from "./DownloadObserver";
 import type observe from "./DownloadObserver";
@@ -24,20 +24,25 @@ import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../renderer/ReduxProp";
 import { unknownToError } from "../../shared/errors";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import * as selectors from "../../util/selectors";
-import { knownGames } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import * as selectors from "../../renderer/util/selectors";
+import { knownGames } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import {
+  batchDispatch,
+  sum,
+  toPromise,
+  truthy,
+} from "../../renderer/util/util";
 import NXMUrl from "../nexus_integration/NXMUrl";
 import { ensureLoggedIn } from "../nexus_integration/util";
 import {

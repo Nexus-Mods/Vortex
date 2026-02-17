@@ -1,9 +1,9 @@
-import getVortexPath from "../../util/getVortexPath";
+import getVortexPath from "../../renderer/util/getVortexPath";
 
 import * as path from "path";
 import format from "string-template";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import { makeOverlayableDictionary } from "../../util/util";
+import { makeOverlayableDictionary } from "../../renderer/util/util";
 
 interface IGameSupport {
   iniFiles: string[];

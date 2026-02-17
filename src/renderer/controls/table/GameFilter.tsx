@@ -1,12 +1,9 @@
 import { SITE_ID } from "../../../extensions/gamemode_management/constants";
 import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
-import type { IDiscoveryResult, IState } from "../../../types/IState";
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import type { IDiscoveryResult, IState } from "../../types/IState";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
+import { activeGameId } from "../../util/selectors";
+import { getSafe } from "../../util/storeHelper";
 import { SITE_GAME_NAME } from "../constants";
 
 import * as React from "react";
