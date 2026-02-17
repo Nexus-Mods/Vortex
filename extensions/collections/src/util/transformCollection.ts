@@ -76,13 +76,13 @@ function deduceSource(
     sourceInfo !== undefined ? { ...sourceInfo } : { type: "nexus" };
 
   // "manual" with a URL is functionally identical to "browse"
-  if ((res.type === 'manual') && res.url) {
-    res.type = 'browse';
+  if (res.type === "manual" && res.url) {
+    res.type = "browse";
   }
 
   // "manual" with a URL is functionally identical to "browse"
-  if ((res.type === 'manual') && res.url) {
-    res.type = 'browse';
+  if (res.type === "manual" && res.url) {
+    res.type = "browse";
   }
 
   const assign = (obj: any, key: string, value: any) => {
@@ -692,9 +692,9 @@ export function collectionModToRule(
       name: mod.name,
       instructions: !!mod.instructions
         ? mod.instructions
-        : (mod.source.type === "manual")
-        ? mod.source.instructions
-        : undefined,
+        : mod.source.type === "manual"
+          ? mod.source.instructions
+          : undefined,
       phase: mod.phase ?? 0,
       patches: mod.patches,
       fileOverrides: mod.fileOverrides,
@@ -931,9 +931,6 @@ function deduceCollectionAttributes(
   collection: ICollection,
   mods: { [modId: string]: types.IMod },
 ): ICollectionAttributes {
-  const existingInstallMode: { [modId: string]: string } =
-    collectionMod.attributes?.collection?.installMode ?? {};
-
   const existingInstallMode: { [modId: string]: string } =
     collectionMod.attributes?.collection?.installMode ?? {};
 
