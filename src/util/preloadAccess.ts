@@ -16,7 +16,7 @@ import { ApplicationData } from "../shared/applicationData";
  * This is only available in the renderer process.
  */
 export function getPreloadWindow(): PreloadWindow {
-  return window as unknown as PreloadWindow;
+  return window;
 }
 
 /**

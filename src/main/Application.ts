@@ -3,47 +3,37 @@ import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
+import { mkdirSync, statSync } from "node:fs";
 import { writeFile, rm, stat } from "node:fs/promises";
-import * as path from "path";
+import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
+import type { IParameters, ISetItem } from "../shared/types/cli";
 import type { AppInitMetadata } from "../shared/types/ipc";
 import type { IWindow } from "../shared/types/state";
-import type { IParameters, ISetItem } from "../util/commandLine";
 
-import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "../shared/errors";
-import { currentStatePath } from "../shared/types/state";
-import commandLine from "../util/commandLine";
 import {
   DataInvalid,
   DocumentsPathMissing,
   ProcessCanceled,
   UserCanceled,
-} from "../util/CustomErrors";
-import {
-  didIgnoreError,
-  disableErrorReport,
-  getVisibleWindow,
-  setWindow,
-  terminate,
-  toError,
-} from "../util/errorHandling";
-import * as fs from "../util/fs";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import { prettifyNodeErrorMessage } from "../util/message";
-import startupSettings from "../util/startupSettings";
-import { isMajorDowngrade } from "../util/util";
+} from "../shared/types/errors";
+import { currentStatePath } from "../shared/types/state";
+import { parseCommandline, updateStartupSettings } from "./cli";
+import { terminate } from "./errorHandling";
+import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
+import getVortexPath, { setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -56,6 +46,19 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import TrayIcon from "./TrayIcon";
+
+/** test if the running version is a major downgrade (downgrading by a major or minor version,
+/ everything except a patch) compared to what was running last */
+export function isMajorDowngrade(previous: string, current: string): boolean {
+  const majorL = semver.major(previous);
+  const majorR = semver.major(current);
+
+  if (majorL !== majorR) {
+    return majorL > majorR;
+  } else {
+    return semver.minor(previous) > semver.minor(current);
+  }
+}
 
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
@@ -161,15 +164,15 @@ class Application {
     );
 
     this.mBasePath = app.getPath("userData");
-    fs.ensureDirSync(this.mBasePath);
+    mkdirSync(this.mBasePath, { recursive: true });
 
     setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
-    fs.ensureDirSync(path.join(tempPath, "dumps"));
+    mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
     try {
-      fs.statSync(this.mStartupLogPath);
+      statSync(this.mStartupLogPath);
       process.env.CRASH_REPORTING = Math.random() > 0.5 ? "vortex" : "electron";
     } catch {
       // nop, this is the expected case
@@ -223,16 +226,11 @@ class Application {
     // Send app initialization metadata to renderer
     // Renderer will dispatch Redux actions based on this
     webContents.send("app:init", this.mAppMetadata);
-
-    if (didIgnoreError()) {
-      webContents.send("did-ignore-error", true);
-    }
   }
 
   private async startSplash(): Promise<SplashScreen> {
     const splash = new SplashScreen();
     await splash.create(this.mArgs.disableGPU);
-    setWindow(splash.getHandle());
     return splash;
   }
 
@@ -263,7 +261,7 @@ class Application {
 
     app.on("second-instance", (_event: Event, secondaryArgv: string[]) => {
       log("debug", "getting arguments from second instance", secondaryArgv);
-      this.applyArguments(commandLine(secondaryArgv, true)).catch(
+      this.applyArguments(parseCommandline(secondaryArgv, true)).catch(
         (err: unknown) => log("error", "error applying arguments", err),
       );
     });
@@ -350,13 +348,12 @@ class Application {
   };
 
   private genHandleError() {
-    return (error: unknown, promise?: unknown) => {
+    return (error: Error, promise?: unknown) => {
       if (Application.shouldIgnoreError(error, promise)) {
         return;
       }
 
-      // Store is now in renderer, so we can't access state from main process
-      terminate(toError(error), {});
+      terminate(error);
     };
   }
 
@@ -377,21 +374,24 @@ class Application {
       } else if (err instanceof ProcessCanceled) {
         app.quit();
       } else if (err instanceof DocumentsPathMissing) {
-        const response = await dialog.showMessageBox(getVisibleWindow(), {
-          type: "error",
-          buttons: ["Close", "More info"],
-          defaultId: 1,
-          title: "Error",
-          message: "Startup failed",
-          detail:
-            'Your "My Documents" folder is missing or is ' +
-            "misconfigured. Please ensure that the folder is properly " +
-            "configured and accessible, then try again.",
-        });
+        const response = await dialog.showMessageBox(
+          this.mMainWindow.getHandle(),
+          {
+            type: "error",
+            buttons: ["Close", "More info"],
+            defaultId: 1,
+            title: "Error",
+            message: "Startup failed",
+            detail:
+              'Your "My Documents" folder is missing or is ' +
+              "misconfigured. Please ensure that the folder is properly " +
+              "configured and accessible, then try again.",
+          },
+        );
 
         if (response.response === 1) {
           await shell.openExternal(
-            `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
+            `https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder`,
           );
         }
 
@@ -419,22 +419,7 @@ class Application {
         }
 
         const error = unknownToError(err);
-
-        const pretty = prettifyNodeErrorMessage(error);
-        const details = pretty.message.replace(
-          /{{ *([a-zA-Z]+) *}}/g,
-          (_, key) => pretty.replace?.[key] || key,
-        );
-        terminate(
-          {
-            message: "Startup failed",
-            details,
-            code: pretty.code,
-            stack: error.stack,
-          },
-          {},
-          pretty.allowReport,
-        );
+        terminate(error);
       }
     } finally {
       try {
@@ -468,7 +453,7 @@ class Application {
       if (err instanceof DataInvalid) {
         log("error", "persistence data invalid", getErrorMessageOrDefault(err));
 
-        await dialog.showMessageBox(getVisibleWindow(), {
+        await dialog.showMessageBox(this.mMainWindow.getHandle(), {
           type: "error",
           buttons: ["Continue"],
           title: "Error",
@@ -616,7 +601,7 @@ class Application {
     }
 
     const uacEnabled = this.isUACEnabled();
-    const result = await dialog.showMessageBox(getVisibleWindow(), {
+    const result = await dialog.showMessageBox(this.mMainWindow.getHandle(), {
       title: "Admin rights detected",
       message:
         `Vortex has detected that it is being run with administrator rights. It is strongly
@@ -659,7 +644,7 @@ class Application {
     }
 
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      const res = dialog.showMessageBoxSync(getVisibleWindow(), {
+      const res = dialog.showMessageBoxSync(this.mMainWindow.getHandle(), {
         type: "warning",
         title: "Downgrade detected",
         message: `You're using a version of Vortex that is older than the version you ran previously.
@@ -778,7 +763,7 @@ class Application {
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon(null);
+    this.mTray = new TrayIcon();
   }
 
   private connectTrayAndWindow() {
@@ -791,7 +776,7 @@ class Application {
     if (process.platform === "win32" && process.env.ProgramData !== undefined) {
       const muPath = path.join(process.env.ProgramData, "vortex");
       try {
-        fs.ensureDirSync(muPath);
+        mkdirSync(muPath, { recursive: true });
       } catch (err) {
         const code = getErrorCode(err);
         // not sure why this would happen, ensureDir isn't supposed to report a problem if
@@ -816,7 +801,10 @@ class Application {
    */
   private async setupPersistence(repair?: boolean): Promise<void> {
     // storing the last version that ran in the startup.json settings file.
-    startupSettings.storeVersion = app.getVersion();
+    updateStartupSettings((startupSettings) => {
+      startupSettings.storeVersion = app.getVersion();
+      return startupSettings;
+    });
 
     // Initialize app metadata that will be sent to renderer
     this.mAppMetadata = {
@@ -855,15 +843,15 @@ class Application {
 
       let created = false;
       try {
-        fs.statSync(dataPath);
+        statSync(dataPath);
       } catch {
-        fs.ensureDirSync(dataPath);
+        mkdirSync(dataPath, { recursive: true });
         created = true;
       }
       if (multiUser && created) {
         permissions.allow(dataPath, "group", "rwx");
       }
-      fs.ensureDirSync(path.join(dataPath, "temp"));
+      mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 
       log("info", `using ${dataPath} as the storage directory`);
 
@@ -960,7 +948,6 @@ class Application {
             throw err;
           }
         }
-        setWindow(this.mMainWindow?.getHandle() ?? null);
       })
       .catch((err) => {
         log(
@@ -970,7 +957,6 @@ class Application {
         );
         // Fall back to non-maximized
         this.mMainWindow?.show(false, startMinimized);
-        setWindow(this.mMainWindow?.getHandle() ?? null);
       });
   }
 
@@ -1008,7 +994,7 @@ class Application {
     if (response === 0) {
       app.quit();
     } else {
-      disableErrorReport();
+      disableErrorReporting();
     }
   }
 

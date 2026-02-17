@@ -6,12 +6,11 @@ import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
 
 import { getErrorMessageOrDefault } from "../shared/errors";
-import Debouncer from "../util/Debouncer";
-import { terminate } from "../util/errorHandling";
-import opn from "../util/opn";
-import { parseBool } from "../util/util";
+import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";
+import Debouncer from "./NodeDebouncer";
+import { openUrl } from "./open";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
@@ -59,6 +58,14 @@ function intersect(lhs: IRect, rhs: IRect): IRect {
 
 function reactArea(input: IRect): number {
   return (input.x2 - input.x1) * (input.y2 - input.y1);
+}
+
+function isEnvSet(key: string): boolean {
+  let value = process.env[key];
+  if (!value) return false;
+
+  value = value.toLowerCase();
+  return value === "true" || value === "yes" || value === "1";
 }
 
 class MainWindow {
@@ -127,10 +134,7 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (
-      this.mInspector ||
-      (process.env.START_DEVTOOLS && parseBool(process.env.START_DEVTOOLS))
-    ) {
+    if (this.mInspector || isEnvSet("START_DEVTOOLS")) {
       // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }
@@ -149,12 +153,7 @@ class MainWindow {
           // this isn't ideal as we don't have a stack trace of the error message here
           cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate(
-                { message: "Vortex failed to start", details: message },
-                {},
-                true,
-                "renderer",
-              );
+              terminate(new Error("Vortex failed to start"), true);
             }
           }, 15000);
         }
@@ -246,13 +245,13 @@ class MainWindow {
         return { action: "deny" };
       }
       // Open in external browser (for links with target="_blank")
-      opn(details.url).catch(() => null);
+      openUrl(new URL(details.url));
       return { action: "deny" };
     });
 
     this.mWindow.webContents.on("will-navigate", (event, url) => {
       log("debug", "navigating to page", url);
-      opn(url).catch(() => null);
+      openUrl(new URL(url));
       event.preventDefault();
     });
 

@@ -156,7 +156,7 @@ export function readThemeVariables(
 export function removeTheme(api: types.IExtensionApi, themeName: string) {
   selectTheme(api, "default");
   const currentThemePath = themePath(themeName);
-  this.nextState.themes = themes.filter((iter) => iter !== currentThemePath);
+  themes.splice(themes.indexOf(currentThemePath), 1);
   return fs
     .removeAsync(currentThemePath)
     .then(() => {

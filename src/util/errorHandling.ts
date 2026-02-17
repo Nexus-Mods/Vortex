@@ -61,9 +61,7 @@ function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
-interface IErrorContext {
-  [id: string]: string;
-}
+type IErrorContext = Record<string, string>;
 
 const globalContext: IErrorContext = {};
 

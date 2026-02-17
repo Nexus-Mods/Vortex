@@ -41,6 +41,12 @@ try {
       ping: () => betterIpcRenderer.invoke("example:ping"),
     },
 
+    shell: {
+      openUrl: (url) => betterIpcRenderer.send("shell:openUrl", url),
+      openFile: (filePath) =>
+        betterIpcRenderer.send("shell:openFile", filePath),
+    },
+
     persist: {
       sendDiff: (hive, operations) =>
         betterIpcRenderer.send("persist:diff", hive, operations),
@@ -118,6 +124,7 @@ try {
         betterIpcRenderer.invoke("dialog:showErrorBox", title, content),
     },
     app: {
+      relaunch: (args) => betterIpcRenderer.send("app:relaunch", args),
       onInit: (callback: (metadata: AppInitMetadata) => void) =>
         betterIpcRenderer.on("app:init", (_, metadata) => callback(metadata)),
       setProtocolClient: (protocol: string, udPath: string) =>

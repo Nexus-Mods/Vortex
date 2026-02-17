@@ -167,7 +167,10 @@ function lookupDownloadHint(
       );
     }
     return Bluebird.resolve({ url: urlNorm });
-  } else if (input.mode === "browse") {
+  } else if (
+    input.mode === "browse" ||
+    (input.mode === "manual" && input.url)
+  ) {
     let urlNorm: string = "";
     try {
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
@@ -352,6 +355,9 @@ export function findDownloadByRef(
   reference: IReference,
   downloads: { [dlId: string]: IDownload },
 ): string {
+  if (!reference) {
+    return undefined;
+  }
   if (reference["md5Hint"] !== undefined) {
     const result = Object.keys(downloads).find(
       (dlId) => downloads[dlId].fileMD5 === reference["md5Hint"],
@@ -537,7 +543,10 @@ async function gatherDependenciesGraph(
           },
         },
       });
-      if (rule.downloadHint?.mode === "browse") {
+      if (
+        rule.downloadHint?.mode === "browse" ||
+        (rule.downloadHint?.mode === "manual" && rule.downloadHint?.url)
+      ) {
         node.reresolveDownloadHint = () =>
           lookupDownloadHint(api, rule.downloadHint).then((dlHintRes) => {
             node.lookupResults[0].value = {

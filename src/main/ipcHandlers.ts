@@ -23,15 +23,16 @@ import {
   Menu,
   powerSaveBlocker,
 } from "electron";
-import * as path from "path";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import type { SerializableMenuItem } from "../shared/types/preload";
-import type { AppPath } from "../util/getVortexPath";
 
 import { ApplicationData } from "../shared/applicationData";
-import * as fs from "../util/fs";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
+import { relaunch } from "./cli";
+import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
+import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
 
 // Type-safe interface for global Redux state accessors
@@ -160,9 +161,22 @@ export function init() {
     },
   );
 
+  // Shell
+  betterIpcMain.on("shell:openUrl", (_event, url) => {
+    openUrl(new URL(url));
+  });
+
+  betterIpcMain.on("shell:openFile", (_event, filePath) => {
+    openFile(filePath);
+  });
+
   // ============================================================================
   // App info handlers
   // ============================================================================
+
+  betterIpcMain.on("app:relaunch", (_event, args) => {
+    relaunch(args);
+  });
 
   betterIpcMain.handle("app:getName", () => {
     return ApplicationData.name ?? app.getName();
@@ -188,7 +202,7 @@ export function init() {
     "app:extractFileIcon",
     async (_event: IpcMainInvokeEvent, exePath: string, iconPath: string) => {
       const icon = await app.getFileIcon(exePath, { size: "normal" });
-      await fs.writeFileAsync(iconPath, icon.toPNG());
+      await writeFile(iconPath, icon.toPNG());
     },
   );
 

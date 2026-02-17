@@ -58,6 +58,9 @@ export interface Api {
   /** App APIs */
   app: App;
 
+  /** Shell APIs */
+  shell: Shell;
+
   /** BrowserView APIs */
   browserView: BrowserView;
 
@@ -88,6 +91,14 @@ export interface Example {
   ping(): Promise<string>;
 }
 
+export interface Shell {
+  /** Opens the URL using the default application registered for the protocol */
+  openUrl(url: string): void;
+
+  /** Opens the file using the default application for the file extension */
+  openFile(filePath: string): void;
+}
+
 export interface Dialog {
   /** Show open file/folder dialog */
   showOpen(options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
@@ -103,6 +114,9 @@ export interface Dialog {
 }
 
 export interface App {
+  /** Relaunches the application with the given arguments */
+  relaunch(args?: string[]): void;
+
   /**
    * Register a callback for app initialization metadata from main.
    * Called once during startup with all app metadata.

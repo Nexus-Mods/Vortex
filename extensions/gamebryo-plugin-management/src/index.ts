@@ -21,7 +21,7 @@ import userlistEditReducer from "./reducers/userlistEdit";
 import { ILoadOrder } from "./types/ILoadOrder";
 import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
 import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
-import { IStateEx } from "./types/IStateEx";
+import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
   gameSupported,
@@ -927,7 +927,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
 
 function testMissingGroupsImpl(
   t: TranslationFunction,
-  store: Redux.Store<IStateEx>,
+  store: Redux.Store<IStateWithGamebryo>,
 ): Promise<types.ITestResult> {
   const state = store.getState();
   const gameMode = selectors.activeGameId(state);
@@ -1005,7 +1005,7 @@ function testMissingGroupsImpl(
 
 function testMissingGroups(
   t: TranslationFunction,
-  store: Redux.Store<IStateEx>,
+  store: Redux.Store<IStateWithGamebryo>,
   tries: number = 10,
 ): Promise<types.ITestResult> {
   return Promise.delay(100 * (10 - tries)).then(() => {
@@ -1020,7 +1020,7 @@ function testMissingGroups(
 
 function testUserlistInvalid(
   t: TranslationFunction,
-  state: IStateEx,
+  state: IStateWithGamebryo,
 ): Promise<types.ITestResult> {
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
@@ -1667,7 +1667,7 @@ function sanitizeForIPC(obj: any) {
 
 function init(context: IExtensionContextExt) {
   const setPluginLight = (id: string, enable: boolean) => {
-    const state: IStateEx = context.api.getState();
+    const state: IStateWithGamebryo = context.api.getState();
     const profile = selectors.activeProfile(state);
     const plugin: IPlugin = state.session.plugins.pluginList[id];
     if (plugin === undefined) {
@@ -1733,6 +1733,87 @@ function init(context: IExtensionContextExt) {
               //  time the dependencies are installed.
               testMasterlistOutdated(context.api).catch((err) => null);
             }
+          },
+        );
+
+        // When a mod is installed during a collection install, scan its staging folder
+        // for plugin files and merge them into the real plugin list. This ensures
+        // FOMOD prerequisite checks in subsequent installs can see plugins from
+        // earlier-phase mods that haven't been deployed yet.
+        context.api.events.on(
+          "did-install-mod",
+          (gameId: string, _archiveId: string, modId: string) => {
+            if (!gameSupported(gameId)) {
+              return;
+            }
+
+            const state = context.api.getState<IStateWithGamebryo>();
+
+            // Only during collection dependency installation
+            const activeSession = selectors.getCollectionActiveSession(state);
+            if (activeSession === undefined) {
+              return;
+            }
+
+            const mod = state.persistent.mods[gameId]?.[modId];
+            if (mod?.installationPath === undefined) {
+              return;
+            }
+
+            const installBasePath = selectors.installPathForGame(state, gameId);
+            if (installBasePath === undefined) {
+              return;
+            }
+
+            const modInstPath = path.join(
+              installBasePath,
+              mod.installationPath,
+            );
+            const activator = util.getCurrentActivator(state, gameId, true);
+
+            fs.readdirAsync(modInstPath)
+              .map((fileName: string) =>
+                activator ? activator.getDeployedPath(fileName) : fileName,
+              )
+              .filter((fileName: string) =>
+                isPlugin(modInstPath, fileName, gameId),
+              )
+              .then((pluginFileNames: string[]) => {
+                if (pluginFileNames.length === 0) {
+                  return;
+                }
+
+                // Read fresh state and merge new entries into existing plugin list
+                const currentState = context.api.getState<IStateWithGamebryo>();
+                const existingPlugins: IPlugins = util.getSafe(
+                  currentState,
+                  ["session", "plugins", "pluginList"],
+                  {},
+                );
+                const merged = { ...existingPlugins };
+
+                for (const fileName of pluginFileNames) {
+                  const pluginId = toPluginId(fileName);
+                  if (!merged[pluginId]) {
+                    merged[pluginId] = {
+                      modId: mod.id,
+                      filePath: path.join(modInstPath, fileName),
+                      isNative: isNativePlugin(gameId, fileName),
+                      warnings: {},
+                      deployed: false,
+                    };
+                  }
+                }
+
+                context.api.store?.dispatch(setPluginList(merged));
+              })
+              .catch((err: Error) => {
+                log(
+                  "warn",
+                  "failed to update plugin list for collection install",
+                  { modId, error: err.message },
+                );
+              });
           },
         );
 

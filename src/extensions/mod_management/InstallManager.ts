@@ -351,8 +351,8 @@ function nop() {
 }
 
 function findDownloadByReferenceTag(
-  downloads: { [downloadId: string]: any },
-  reference: any,
+  downloads: Record<string, IDownload>,
+  reference: IModReference,
 ): string | null {
   const dlId = findDownloadByRef(reference, downloads);
   if (dlId) {
@@ -373,7 +373,7 @@ function findDownloadByReferenceTag(
 }
 
 function getReadyDownloadId(
-  downloads: { [downloadId: string]: any },
+  downloads: Record<string, IDownload>,
   reference: { tag?: string; md5Hint?: string },
   hasActiveOrPendingCheck: (downloadId: string) => boolean,
 ): string | null {
@@ -1085,11 +1085,18 @@ class InstallManager {
     return extractProm
       .then(({ code, errors }: { code: number; errors: string[] }) => {
         log("debug", "extraction completed");
-        if (code !== 0) {
-          log("warn", "extraction reported error", {
+        if (errors.length > 0) {
+          const message =
+            code > 1
+              ? `Extraction completed with ${errors.length} error(s)`
+              : `Extraction completed with ${errors.length} warning(s)`;
+          const logLevel = code > 1 ? "error" : "warn";
+          log(logLevel, message, {
             code,
             errors: errors.join("; "),
           });
+        }
+        if (code !== 0) {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
@@ -3616,6 +3623,23 @@ class InstallManager {
     const attemptExtract = (
       retriesLeft: number,
     ): Bluebird<{ code: number; errors: string[] }> => {
+      const retryIfFileInUse = (errorMessages: string[]) => {
+        if (
+          retriesLeft > 0 &&
+          errorMessages.some((msg) => this.isFileInUse(msg))
+        ) {
+          log("info", "archive file in use, retrying extraction", {
+            archivePath: path.basename(archivePath),
+            retriesLeft,
+            retryDelayMs,
+          });
+          return delay(retryDelayMs).then(() =>
+            attemptExtract(retriesLeft - 1),
+          );
+        }
+        return undefined;
+      };
+
       // clean up any stale temp directory from a previous failed attempt
       return fs.removeAsync(tempPath).then(() =>
         zip
@@ -3626,28 +3650,28 @@ class InstallManager {
             progress,
             queryPassword as any,
           )
+          .then((result: { code: number; errors: string[] }) => {
+            // 7z can resolve (not reject) with a non-zero exit code and
+            // file-in-use errors. Retry in that case instead of proceeding
+            // with a partial extraction.
+            if (result.code !== 0) {
+              return retryIfFileInUse(result.errors ?? []) ?? result;
+            }
+            return result;
+          })
           .catch((err) => {
             const error = unknownToError(err);
-            const code = getErrorCode(err);
-            if (this.isFileInUse(error.message, code) && retriesLeft > 0) {
-              log("info", "archive file in use, retrying extraction", {
-                archivePath: path.basename(archivePath),
-                retriesLeft,
-                retryDelayMs,
-              });
-              return delay(retryDelayMs).then(() =>
-                attemptExtract(retriesLeft - 1),
-              );
-            }
-            if (this.isCritical(error.message)) {
-              return Bluebird.reject(
-                new ArchiveBrokenError(
-                  path.basename(archivePath),
-                  error.message,
-                ),
-              );
-            }
-            return Bluebird.reject(error);
+            return (
+              retryIfFileInUse([error.message]) ??
+              (this.isCritical(error.message)
+                ? Bluebird.reject(
+                    new ArchiveBrokenError(
+                      path.basename(archivePath),
+                      error.message,
+                    ),
+                  )
+                : Bluebird.reject(error))
+            );
           }),
       );
     };
@@ -3715,6 +3739,9 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
+          // 7z exit codes: 0=OK, 1=Warning, 2=Fatal, 7=CLI error, 8=OOM,
+          // 255=User stopped. Note that 2 can also be raised for file-in-use
+          // which is retryable so we can't treat it as critical.
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
@@ -6415,20 +6442,22 @@ class InstallManager {
             // instead we update the rule in the collection. This has to happen immediately,
             // otherwise the installation might have weird issues around the mod
             // being installed having a different tag than the rule
-            dep.reference = this.updateModRule(
-              api,
-              gameId,
-              sourceModId,
-              dep,
-              {
-                ...dep.reference,
-                fileList: dep.fileList,
-                patches: dep.patches,
-                installerChoices: dep.installerChoices,
-                tag: downloads[downloadId].modInfo.referenceTag,
-              },
-              recommended,
-            )?.reference;
+            const reference: IModReference = {
+              ...dep.reference,
+              fileList: dep.fileList,
+              patches: dep.patches,
+              installerChoices: dep.installerChoices,
+              tag: downloads[downloadId].modInfo.referenceTag,
+            };
+            dep.reference =
+              this.updateModRule(
+                api,
+                gameId,
+                sourceModId,
+                dep,
+                reference,
+                recommended,
+              )?.reference ?? reference;
 
             dep.mod = findModByRef(
               dep.reference,
@@ -6628,7 +6657,7 @@ class InstallManager {
     dep: IDependency,
     reference: IModReference,
     recommended: boolean,
-  ) {
+  ): IModRule | undefined {
     const state: IState = api.store.getState();
     const rules: IModRule[] = getSafe(
       state.persistent.mods,
@@ -6639,15 +6668,17 @@ class InstallManager {
       referenceEqual(iter.reference, dep.reference),
     );
 
+    const type = recommended ? "recommends" : "requires";
+
     if (oldRule === undefined) {
       return undefined;
     }
 
-    const updatedRule: IRule = {
-      ...(oldRule || {}),
-      type: recommended ? "recommends" : "requires",
-      reference,
-    };
+    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
+      return oldRule;
+    }
+
+    const updatedRule: IModRule = { ...oldRule, type, reference };
 
     api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
     api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));

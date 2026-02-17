@@ -1,13 +1,14 @@
 import * as path from "path";
-import { getApplication } from "./application";
 
-import type { IParameters } from "./commandLine";
+import type { IParameters } from "../shared/types/cli";
+
+import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
+import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";
 import { writeFileAtomic } from "./fsAtomic";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
-import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
 
 const startupPath = () =>
   path.join(getVortexPath("appData"), getApplication().name, "startup.json");

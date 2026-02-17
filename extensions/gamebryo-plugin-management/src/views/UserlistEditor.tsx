@@ -18,7 +18,7 @@ import Select, { SingleValue } from "react-select";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, Icon, tooltip, types } from "vortex-api";
-import { IStateEx } from "../types/IStateEx";
+import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 type RuleType = "after" | "requires" | "incompatible";
 
@@ -341,7 +341,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 const emptyObject = {};
 const emptyList = [];
 
-function mapStateToProps(state: IStateEx): IConnectedProps {
+function mapStateToProps(state: IStateWithGamebryo): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,

@@ -75,6 +75,11 @@ function deduceSource(
   const res: Partial<ICollectionSourceInfo> =
     sourceInfo !== undefined ? { ...sourceInfo } : { type: "nexus" };
 
+  // "manual" with a URL is functionally identical to "browse"
+  if (res.type === "manual" && res.url) {
+    res.type = "browse";
+  }
+
   const assign = (obj: any, key: string, value: any) => {
     if (obj[key] === undefined) {
       obj[key] = value;
@@ -680,7 +685,11 @@ export function collectionModToRule(
       version: mod.version,
       url: mod.source.url,
       name: mod.name,
-      instructions: !!mod.instructions ? mod.instructions : undefined,
+      instructions: !!mod.instructions
+        ? mod.instructions
+        : mod.source.type === "manual"
+          ? mod.source.instructions
+          : undefined,
       phase: mod.phase ?? 0,
       patches: mod.patches,
       fileOverrides: mod.fileOverrides,
@@ -917,6 +926,9 @@ function deduceCollectionAttributes(
   collection: ICollection,
   mods: { [modId: string]: types.IMod },
 ): ICollectionAttributes {
+  const existingInstallMode: { [modId: string]: string } =
+    collectionMod.attributes?.collection?.installMode ?? {};
+
   const res: ICollectionAttributes = {
     collectionConfig: collection["collectionConfig"],
     installInstructions: collection.info?.installInstructions,
@@ -938,7 +950,7 @@ function deduceCollectionAttributes(
         ? "choices"
         : rule.fileList !== undefined
           ? "clone"
-          : "fresh";
+          : (existingInstallMode[mod.id] ?? "fresh");
 
     res.instructions[mod.id] = rule.extra?.instructions;
     res.source[mod.id] = {

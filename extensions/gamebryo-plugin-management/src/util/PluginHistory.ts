@@ -3,7 +3,7 @@ import { selectors, types } from "vortex-api";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { GHOST_EXT } from "../statics";
 import { ILoadOrder } from "../types/ILoadOrder";
-import { IStateEx } from "../types/IStateEx";
+import { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
 export type EventTypes =
   | "plugin-enabled"
@@ -58,7 +58,7 @@ class PluginHistory implements types.IHistoryStack {
               },
             }),
           possible: (evt) => {
-            const state: IStateEx = this.mApi.getState();
+            const state: IStateWithGamebryo = this.mApi.getState();
             const profile = selectors.activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
@@ -67,7 +67,7 @@ class PluginHistory implements types.IHistoryStack {
           },
           do: (evt) => {
             if (evt.data.wasGhost) {
-              const state: IStateEx = this.mApi.getState();
+              const state: IStateWithGamebryo = this.mApi.getState();
               const profile = selectors.activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
@@ -93,7 +93,7 @@ class PluginHistory implements types.IHistoryStack {
               },
             }),
           possible: (evt) => {
-            const state: IStateEx = this.mApi.getState();
+            const state: IStateWithGamebryo = this.mApi.getState();
             const profile = selectors.activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
@@ -102,7 +102,7 @@ class PluginHistory implements types.IHistoryStack {
           },
           do: (evt) => {
             if (evt.data.wasGhost) {
-              const state: IStateEx = this.mApi.getState();
+              const state: IStateWithGamebryo = this.mApi.getState();
               const profile = selectors.activeProfile(state);
               setPluginGhost(evt.data.id, profile.gameId, true, false);
             } else {
@@ -128,7 +128,7 @@ class PluginHistory implements types.IHistoryStack {
               },
             }),
           possible: (evt) => {
-            const state: IStateEx = this.mApi.getState();
+            const state: IStateWithGamebryo = this.mApi.getState();
             const profile = selectors.activeProfile(state);
             if (profile.id !== evt.data.profileId) {
               return false;
@@ -140,7 +140,7 @@ class PluginHistory implements types.IHistoryStack {
             return path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
           },
           do: (evt) => {
-            const state: IStateEx = this.mApi.getState();
+            const state: IStateWithGamebryo = this.mApi.getState();
             const profile = selectors.activeProfile(state);
             setPluginGhost(evt.data.id, profile.gameId, false, true);
             return Promise.resolve();
@@ -166,7 +166,7 @@ class PluginHistory implements types.IHistoryStack {
               },
             }),
           possible: (evt) => {
-            const state: IStateEx = this.mApi.getState();
+            const state: IStateWithGamebryo = this.mApi.getState();
             const plugin = state.session.plugins.pluginList[evt.data.id];
             if (plugin === undefined) {
               return false;
@@ -215,7 +215,7 @@ class PluginHistory implements types.IHistoryStack {
           new Set<string>([].concat(Object.keys(prev), Object.keys(current))),
         );
 
-        const state: IStateEx = this.mApi.getState();
+        const state: IStateWithGamebryo = this.mApi.getState();
         const gameMode = selectors.activeGameId(state);
         const profile = selectors.activeProfile(state);
 
@@ -253,7 +253,7 @@ class PluginHistory implements types.IHistoryStack {
     );
 
     this.mApi.events.on("autosort-plugins", () => {
-      const state: IStateEx = this.mApi.getState();
+      const state: IStateWithGamebryo = this.mApi.getState();
       const gameMode = selectors.activeGameId(state);
 
       addToHistory("plugins", {

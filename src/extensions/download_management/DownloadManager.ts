@@ -828,6 +828,7 @@ class DownloadWorker {
     // Reset network retry counter on successful chunk completion
     this.mNetworkRetries = 0;
     this.writeBuffer(str)
+      .then(() => this.waitForInFlightWrites())
       .then(() => {
         if (this.mJob.completionCB !== undefined) {
           this.mJob.completionCB();
@@ -837,6 +838,20 @@ class DownloadWorker {
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch((err) => this.handleError(err));
+  };
+
+  private waitForInFlightWrites = (): Bluebird<void> => {
+    if (this.mInFlightWrites <= 0) {
+      return Bluebird.resolve();
+    }
+    return new Bluebird<void>((resolve) => {
+      const check = setInterval(() => {
+        if (this.mInFlightWrites <= 0) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 10);
+    });
   };
 
   private handleResponse = (response: http.IncomingMessage, jobUrl: string) => {
@@ -1017,14 +1032,7 @@ class DownloadWorker {
           this.mInFlightWrites = 0;
         }
 
-        // If the worker has ended, a new worker may already be using this job.
-        // Don't update confirmed fields or the new worker's offset tracking
-        // will be corrupted by this stale confirmation.
-        if (this.mEnded) {
-          return;
-        }
-
-        // Write confirmed - update confirmed received counter
+        // Write confirmed - update job fields from confirmed state only
         this.mJob.confirmedReceived += len;
 
         // Recalculate confirmed-based fields
@@ -2582,7 +2590,7 @@ class DownloadManager {
         .then(() => {
           // If file has no extension, detect it from magic header and rename
           const currentExt = path.extname(download.tempName);
-          if (currentExt === "") {
+          if (currentExt === "" && !download.error) {
             log(
               "info",
               "download has no extension, detecting from magic header",

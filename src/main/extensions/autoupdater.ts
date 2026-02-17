@@ -17,7 +17,6 @@ import * as semver from "semver";
 import type { UpdateStatus } from "../../shared/types/ipc";
 
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
-import { getVisibleWindow } from "../../util/errorHandling";
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
 
@@ -26,7 +25,7 @@ import { log } from "../logging";
  * Prevents users from turning off computer during installation.
  */
 function showUpdateWarning() {
-  dialog.showMessageBoxSync(getVisibleWindow(), {
+  dialog.showMessageBoxSync({
     type: "info",
     title: "Vortex update",
     message:
