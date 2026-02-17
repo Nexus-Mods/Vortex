@@ -29,8 +29,7 @@ import {
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
 import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import startupSettings from "../util/startupSettings";
-import { parseCommandline } from "./cli";
+import { parseCommandline, updateStartupSettings } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
@@ -802,7 +801,10 @@ class Application {
    */
   private async setupPersistence(repair?: boolean): Promise<void> {
     // storing the last version that ran in the startup.json settings file.
-    startupSettings.storeVersion = app.getVersion();
+    updateStartupSettings((startupSettings) => {
+      startupSettings.storeVersion = app.getVersion();
+      return startupSettings;
+    });
 
     // Initialize app metadata that will be sent to renderer
     this.mAppMetadata = {

@@ -1,6 +1,6 @@
 import program from "commander";
 import { app } from "electron";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import type { IParameters, ISetItem } from "../shared/types/cli";
@@ -150,12 +150,12 @@ function collect(value: string, prev: string[]): string[] {
   return (prev ?? []).concat([value]);
 }
 
-function getStartupSettings(): IParameters {
-  const filePath = path.join(
-    getVortexPath("appData"),
-    app.name,
-    "startup.json",
-  );
+function getStartupSettingsPath(): string {
+  return path.join(getVortexPath("appData"), app.name, "startup.json");
+}
+
+export function getStartupSettings(): IParameters {
+  const filePath = getStartupSettingsPath();
 
   try {
     const contents = readFileSync(filePath, "utf-8");
@@ -167,6 +167,16 @@ function getStartupSettings(): IParameters {
     });
     return {};
   }
+}
+
+export function updateStartupSettings(
+  updater: (current: IParameters) => IParameters,
+): void {
+  const filePath = getStartupSettingsPath();
+  const current = getStartupSettings();
+  const updated = updater(current);
+  const json = JSON.stringify(updated);
+  writeFileSync(filePath, json);
 }
 
 export function parseCommandline(
