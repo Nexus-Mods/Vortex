@@ -1046,9 +1046,9 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     if (driver.step === 'review') {  
 
       // this is called a few times so we need to check if collection is undefined or not so we only write timestamp once 
-      if(driver.collection === undefined) return;
+      if(!driver.collection?.id) return;
 
-      const gameId = driver.profile.gameId;
+      const gameId = driver.profile?.gameId ?? selectors.activeGameId(api.getState());
       const modId = driver.collection.id;
 
       api.store.dispatch(actions.setModAttribute(gameId, modId, 'installCompleted', Date.now()));
@@ -1379,13 +1379,25 @@ function once(api: types.IExtensionApi, collectionsCB: () => ICallbackMap) {
     api.emitAndAwait('get-my-collections', gameId)
       .then(result => {
         localState.ownCollections = result[0] ?? [];
+      })
+      .catch(err => {
+        log('warn', 'failed to get own collections', { gameId, error: err.message });
+        localState.ownCollections = [];
       });
 
-  api.events.on('gamemode-activated', updateOwnCollectionsCB);
+  const onGameModeChange = (gameMode: string) => {
+    if (driver.profile?.gameId && driver.profile.gameId !== gameMode) {
+      pauseCollection(api, driver.profile?.gameId, driver.collection?.id, false);
+    }
+
+    updateOwnCollectionsCB(gameMode);
+  };
+
+  api.events.on('gamemode-activated', onGameModeChange);
 
   api.onStateChange(['persistent', 'nexus', 'userInfo'], (prev, cur) => {
     const gameMode = selectors.activeGameId(api.getState());
-    updateOwnCollectionsCB(gameMode)
+    updateOwnCollectionsCB(gameMode);
     if (prev?.isPremium !== cur?.isPremium) {
       restartDebouncer.schedule();
     }
