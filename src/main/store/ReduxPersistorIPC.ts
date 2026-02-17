@@ -221,8 +221,10 @@ class ReduxPersistorIPC {
       if (useTransaction) {
         try {
           await this.mLevelPersist!.rollbackTransaction();
-        } catch {
-          // rollback may fail if transaction was already rolled back
+        } catch (rollbackErr) {
+          log("warn", "Failed to rollback transaction", {
+            error: unknownToError(rollbackErr).message,
+          });
         }
       }
 

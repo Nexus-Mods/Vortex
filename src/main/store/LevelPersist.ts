@@ -1,5 +1,3 @@
-import type leveldownT from "leveldown";
-
 import type { DuckDBConnection } from "@duckdb/node-api";
 
 import type { IPersistor } from "../../shared/types/state";
@@ -21,7 +19,10 @@ export class DatabaseLocked extends Error {
 function repairDB(dbPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     log("warn", "repairing database", dbPath);
-    const leveldown: typeof leveldownT = require("leveldown");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const leveldown = require("leveldown") as {
+      repair: (path: string, cb: (err: Error) => void) => void;
+    };
     leveldown.repair(dbPath, (err: Error) => {
       if (err !== null) {
         reject(err);

@@ -25,7 +25,7 @@ class DuckDBSingleton {
 
   /**
    * Initialize the shared DuckDB instance, installing and loading level_pivot.
-   * Safe to call multiple times — only initializes once.
+   * Safe to call multiple times -- only initializes once.
    */
   public async initialize(): Promise<void> {
     if (this.mInitialized) {

@@ -115,18 +115,6 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
   const queryWatcher = new QueryWatcher(queryRegistry);
   queryInvalidator.setWatcher(queryWatcher);
 
-  // Demo watch: log when recently_managed_games results change
-  queryWatcher.watch(
-    "recently_managed_games",
-    { current_game_id: "" },
-    (diff) => {
-      log("info", "recently-managed-changed", {
-        previous: diff.previous?.map((r) => r.game_id),
-        current: diff.current.map((r) => r.game_id),
-      });
-    },
-  );
-
   // Set up IPC handlers
   setupQueryIPC(queryRegistry);
 
