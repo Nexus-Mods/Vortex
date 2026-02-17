@@ -32,7 +32,7 @@ import { NoResults } from "../../../tailwind/components/no_results";
 import { Pagination } from "../../../tailwind/components/pagination/Pagination";
 import { Picker } from "../../../tailwind/components/picker";
 import { UserCanceled } from "../../../util/api";
-import opn from "../../../util/opn";
+import { getPreloadApi } from "../../../util/preloadAccess";
 import { activeGameId } from "../../../util/selectors";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../gamemode_management/util/getGame";
@@ -154,7 +154,9 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     ) {
       adultContentDialog(api, collection, false).then((proceed) => {
         if (proceed) {
-          handleViewNexusAdultPreferences();
+          getPreloadApi().shell.openUrl(
+            "https://next.nexusmods.com/settings/content-blocking",
+          );
         }
       });
     } else {
@@ -173,11 +175,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
         { allowInstall: "force" },
       );
     }
-  };
-
-  const handleViewNexusAdultPreferences = () => {
-    const nexusUrl = `https://next.nexusmods.com/settings/content-blocking`;
-    opn(nexusUrl).catch(() => undefined);
   };
 
   useEffect(() => {
@@ -342,11 +339,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     filled="weak"
                     leftIconPath={mdiOpenInNew}
                     size="sm"
-                    onClick={() => {
-                      opn(
+                    onClick={() =>
+                      getPreloadApi().shell.openUrl(
                         `https://www.nexusmods.com/games/${gameDomainName}/mods`,
-                      ).catch(() => undefined);
-                    }}
+                      )
+                    }
                   >
                     {t("collection:browse.modsComingSoon.openWebsite")}
                   </Button>
@@ -362,11 +359,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     collection={collection}
                     key={collection.id}
                     onAddCollection={() => handleAddCollection(collection)}
-                    onViewPage={() => {
-                      opn(
+                    onViewPage={() =>
+                      getPreloadApi().shell.openUrl(
                         `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
-                      ).catch(() => undefined);
-                    }}
+                      )
+                    }
                   />
                 ))}
               </Listing>
@@ -393,11 +390,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 filled="weak"
                 leftIconPath={mdiOpenInNew}
                 size="sm"
-                onClick={() => {
-                  opn(
+                onClick={() =>
+                  getPreloadApi().shell.openUrl(
                     `https://www.nexusmods.com/games/${gameDomainName}/mods`,
-                  ).catch(() => undefined);
-                }}
+                  )
+                }
               >
                 {t("collection:browse.modsComingSoon.openWebsite")}
               </Button>

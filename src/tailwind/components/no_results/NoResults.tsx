@@ -1,7 +1,7 @@
 import { mdiAlertCircleOutline, mdiOpenInNew } from "@mdi/js";
 import React, { type PropsWithChildren } from "react";
 
-import opn from "../../../util/opn";
+import { getPreloadApi } from "../../../util/preloadAccess";
 import { Button } from "../next/button";
 import { Icon } from "../next/icon";
 import { Typography } from "../next/typography";
@@ -75,11 +75,11 @@ export const NoResults = ({
             filled="weak"
             leftIconPath={mdiOpenInNew}
             size="sm"
-            onClick={() => {
-              opn("https://help.nexusmods.com/article/125-contact-us").catch(
-                () => undefined,
-              );
-            }}
+            onClick={() =>
+              getPreloadApi().shell.openUrl(
+                "https://help.nexusmods.com/article/125-contact-us",
+              )
+            }
           >
             Contact support
           </Button>
