@@ -8,14 +8,12 @@ export default {
       description: "disallow specific cross-directory imports",
     },
     messages: {
-      importRendererInMain:
-        "Importing {{ source }} from the renderer project is not allowed in the main project",
       importMainInRenderer:
         "Importing {{ source }} from the main project is not allowed in the renderer project",
-      importMainInShared:
-        "Importing {{ source }} from the main project is not allowed in the shared project",
-      importRendererInShared:
-        "Importing {{ source }} from the renderer project is not allowed in the shared project",
+      importNonMain:
+        "Importing {{ source }} from outside the main and shared project is not allowed in the main project",
+      importNonShared:
+        "Importing {{ source }} from outside the shared project is not allowed",
     },
     schema: [],
   },
@@ -38,10 +36,15 @@ export default {
 
         const importsFromMain = toImport.startsWith(mainDirectory);
         const importsFromRenderer = toImport.startsWith(rendererDirectory);
+        const importsFromShared = toImport.startsWith(sharedDirectory);
 
-        if (filename.startsWith(mainDirectory) && importsFromRenderer) {
+        if (
+          filename.startsWith(mainDirectory) &&
+          !importsFromMain &&
+          !importsFromShared
+        ) {
           context.report({
-            messageId: "importRendererInMain",
+            messageId: "importNonMain",
             node: node,
             data: {
               source,
@@ -55,24 +58,14 @@ export default {
               source,
             },
           });
-        } else if (filename.startsWith(sharedDirectory)) {
-          if (importsFromMain) {
-            context.report({
-              messageId: "importMainInShared",
-              node: node,
-              data: {
-                source,
-              },
-            });
-          } else if (importsFromRenderer) {
-            context.report({
-              messageId: "importRendererInShared",
-              node: node,
-              data: {
-                source,
-              },
-            });
-          }
+        } else if (filename.startsWith(sharedDirectory) && !importsFromShared) {
+          context.report({
+            messageId: "importNonShared",
+            node: node,
+            data: {
+              source,
+            },
+          });
         }
       },
     };
