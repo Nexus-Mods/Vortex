@@ -29,11 +29,8 @@ import path from "node:path";
 import type { SerializableMenuItem } from "../shared/types/preload";
 
 import { ApplicationData } from "../shared/applicationData";
-import getVortexPath, {
-  setVortexPath,
-  type AppPath,
-} from "../util/getVortexPath";
 import { relaunch } from "./cli";
+import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";

@@ -15,7 +15,6 @@ import type { IParameters, ISetItem } from "../shared/types/cli";
 import type { AppInitMetadata } from "../shared/types/ipc";
 import type { IWindow } from "../shared/types/state";
 
-import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
 import {
   getErrorCode,
@@ -29,14 +28,12 @@ import {
   UserCanceled,
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import { prettifyNodeErrorMessage } from "../util/message";
-import startupSettings from "../util/startupSettings";
-import { parseCommandline } from "./cli";
+import { parseCommandline, updateStartupSettings } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
+import getVortexPath, { setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -394,7 +391,7 @@ class Application {
 
         if (response.response === 1) {
           await shell.openExternal(
-            `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
+            `https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder`,
           );
         }
 
@@ -422,18 +419,7 @@ class Application {
         }
 
         const error = unknownToError(err);
-
-        const pretty = prettifyNodeErrorMessage(error);
-        const details = pretty.message.replace(
-          /{{ *([a-zA-Z]+) *}}/g,
-          (_, key) => pretty.replace?.[key] || key,
-        );
-
-        error.message = "Startup failed";
-        error["details"] = details;
-        error["code"] = pretty.code;
-
-        terminate(error, pretty.allowReport);
+        terminate(error);
       }
     } finally {
       try {
@@ -777,7 +763,7 @@ class Application {
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon(null);
+    this.mTray = new TrayIcon();
   }
 
   private connectTrayAndWindow() {
@@ -815,7 +801,10 @@ class Application {
    */
   private async setupPersistence(repair?: boolean): Promise<void> {
     // storing the last version that ran in the startup.json settings file.
-    startupSettings.storeVersion = app.getVersion();
+    updateStartupSettings((startupSettings) => {
+      startupSettings.storeVersion = app.getVersion();
+      return startupSettings;
+    });
 
     // Initialize app metadata that will be sent to renderer
     this.mAppMetadata = {

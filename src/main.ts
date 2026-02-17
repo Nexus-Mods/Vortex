@@ -39,7 +39,6 @@ import { init as initIpcHandlers } from "./main/ipcHandlers";
 import StylesheetCompiler from "./main/stylesheetCompiler";
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 import { VORTEX_VERSION } from "./shared/constants";
-import "./util/application.electron";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
