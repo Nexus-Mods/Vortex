@@ -797,7 +797,9 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     }
     const { collection } = this.props;
     const { modsEx } = this.state;
-    const rules = modIds.map(modId => modsEx[modId].collectionRule);
+    const rules = modIds
+      .filter(modId => modsEx[modId] !== undefined)
+      .map(modId => modsEx[modId].collectionRule);
     this.props.onInstallManually(collection.id, rules);
   }
 
