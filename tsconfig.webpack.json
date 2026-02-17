@@ -16,7 +16,7 @@
     "./src/preload/index.ts",
     "./src/index.ts",
     "./src/renderer.tsx",
-    "./src/renderer/preload.d.ts",
+    "./src/renderer/preload.ts",
     "./src/splash.ts",
     "./src/extensions/index.ts"
   ]

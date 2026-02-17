@@ -102,7 +102,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/tsconfig.json"
      */
-    "tsconfigFilePath": "<projectFolder>/api/tsconfig.json"
+    "tsconfigFilePath": "<projectFolder>/tsconfig.api.json"
     /**
      * Provides a compiler configuration that will be used instead of reading the tsconfig.json file from disk.
      * The object must conform to the TypeScript tsconfig schema:
