@@ -80,11 +80,6 @@ function deduceSource(
     res.type = "browse";
   }
 
-  // "manual" with a URL is functionally identical to "browse"
-  if (res.type === "manual" && res.url) {
-    res.type = "browse";
-  }
-
   const assign = (obj: any, key: string, value: any) => {
     if (obj[key] === undefined) {
       obj[key] = value;
