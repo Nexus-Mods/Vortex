@@ -16,7 +16,7 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
-import type {
+export type {
   QueryName,
   QueryParamsMap,
   QueryResultMap,
