@@ -84,9 +84,7 @@ class QueryInvalidator {
 
     // Notify watcher (fire-and-forget)
     this.mWatcher?.onQueriesInvalidated(affectedQueries).catch((err) => {
-      log("warn", "QueryWatcher notification failed", {
-        error: (err as Error).message,
-      });
+      log("warn", "QueryWatcher notification failed", err);
     });
   }
 }
