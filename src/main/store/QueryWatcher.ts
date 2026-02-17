@@ -22,12 +22,12 @@ export interface WatchDiff {
  * affected watched queries and compares JSON of old vs new results.
  */
 class QueryWatcher {
-  private mRegistry: QueryRegistry;
-  private mWatches: Map<number, WatchEntry> = new Map();
-  private mNextId: number = 0;
+  #mRegistry: QueryRegistry;
+  #mWatches: Map<number, WatchEntry> = new Map();
+  #mNextId: number = 0;
 
   constructor(registry: QueryRegistry) {
-    this.mRegistry = registry;
+    this.#mRegistry = registry;
   }
 
   /**
@@ -41,21 +41,21 @@ class QueryWatcher {
     params: Record<string, unknown>,
     callback: (diff: WatchDiff) => void,
   ): () => void {
-    const id = this.mNextId++;
+    const id = this.#mNextId++;
     const entry: WatchEntry = {
       queryName,
       params,
       callback,
       previous: undefined,
     };
-    this.mWatches.set(id, entry);
+    this.#mWatches.set(id, entry);
 
     // Initial fetch for baseline (fire-and-forget)
-    this.mRegistry
+    this.#mRegistry
       .executeQuery(queryName, params)
       .then((result) => {
         // Only set baseline if still subscribed
-        const current = this.mWatches.get(id);
+        const current = this.#mWatches.get(id);
         if (current !== undefined) {
           current.previous = result;
         }
@@ -68,7 +68,7 @@ class QueryWatcher {
       });
 
     return () => {
-      this.mWatches.delete(id);
+      this.#mWatches.delete(id);
     };
   }
 
@@ -79,13 +79,13 @@ class QueryWatcher {
   public async onQueriesInvalidated(affectedQueries: string[]): Promise<void> {
     const affected = new Set(affectedQueries);
 
-    for (const [id, entry] of this.mWatches) {
+    for (const [id, entry] of this.#mWatches) {
       if (!affected.has(entry.queryName)) {
         continue;
       }
 
       try {
-        const current = await this.mRegistry.executeQuery(
+        const current = await this.#mRegistry.executeQuery(
           entry.queryName,
           entry.params,
         );

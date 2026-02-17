@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import leveldown from "leveldown";
 
 import type { IPersistor } from "../../shared/types/state";
 
@@ -19,10 +20,6 @@ export class DatabaseLocked extends Error {
 function repairDB(dbPath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     log("warn", "repairing database", dbPath);
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const leveldown = require("leveldown") as {
-      repair: (path: string, cb: (err: Error) => void) => void;
-    };
     leveldown.repair(dbPath, (err: Error) => {
       if (err !== null) {
         reject(err);
@@ -81,34 +78,34 @@ class LevelPersist implements IPersistor {
     }
   }
 
-  private mConnection: DuckDBConnection;
-  private mAlias: string;
+  #mConnection: DuckDBConnection;
+  #mAlias: string;
 
   constructor(connection: DuckDBConnection, alias: string) {
-    this.mConnection = connection;
-    this.mAlias = alias;
+    this.#mConnection = connection;
+    this.#mAlias = alias;
   }
 
   public get alias(): string {
-    return this.mAlias;
+    return this.#mAlias;
   }
 
   public get connection(): DuckDBConnection {
-    return this.mConnection;
+    return this.#mConnection;
   }
 
-  public close = this.restackingFunc(async (): Promise<void> => {
-    await DuckDBSingleton.getInstance().detachDatabase(this.mAlias);
+  public close = this.#restackingFunc(async (): Promise<void> => {
+    await DuckDBSingleton.getInstance().detachDatabase(this.#mAlias);
   });
 
   public setResetCallback(cb: () => PromiseLike<void>): void {
     return undefined;
   }
 
-  public getItem = this.restackingFunc(
+  public getItem = this.#restackingFunc(
     async (key: string[]): Promise<string> => {
-      const reader = await this.mConnection.runAndReadAll(
-        `SELECT value FROM ${this.mAlias}.kv WHERE key = $1`,
+      const reader = await this.#mConnection.runAndReadAll(
+        `SELECT value FROM ${this.#mAlias}.kv WHERE key = $1`,
         [key.join(SEPARATOR)],
       );
       const rows = reader.getRows();
@@ -122,8 +119,8 @@ class LevelPersist implements IPersistor {
   );
 
   public async getAllKeys(): Promise<string[][]> {
-    const reader = await this.mConnection.runAndReadAll(
-      `SELECT key FROM ${this.mAlias}.kv`,
+    const reader = await this.#mConnection.runAndReadAll(
+      `SELECT key FROM ${this.#mAlias}.kv`,
     );
     const rows = reader.getRows();
     return rows.map((row) => (row[0] as string).split(SEPARATOR));
@@ -134,8 +131,8 @@ class LevelPersist implements IPersistor {
    * Extracts the first segment of each key to find all hives.
    */
   public async getPersistedHives(): Promise<string[]> {
-    const reader = await this.mConnection.runAndReadAll(
-      `SELECT DISTINCT key FROM ${this.mAlias}.kv`,
+    const reader = await this.#mConnection.runAndReadAll(
+      `SELECT DISTINCT key FROM ${this.#mAlias}.kv`,
     );
     const rows = reader.getRows();
     const hives = new Set<string>();
@@ -153,12 +150,12 @@ class LevelPersist implements IPersistor {
   ): Promise<Array<{ key: string[]; value: string }>> {
     let reader;
     if (prefix === undefined) {
-      reader = await this.mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.mAlias}.kv`,
+      reader = await this.#mConnection.runAndReadAll(
+        `SELECT key, value FROM ${this.#mAlias}.kv`,
       );
     } else {
-      reader = await this.mConnection.runAndReadAll(
-        `SELECT key, value FROM ${this.mAlias}.kv WHERE key > $1 AND key < $2`,
+      reader = await this.#mConnection.runAndReadAll(
+        `SELECT key, value FROM ${this.#mAlias}.kv WHERE key > $1 AND key < $2`,
         [`${prefix}${SEPARATOR}`, `${prefix}${SEPARATOR}zzzzzzzzzzz`],
       );
     }
@@ -169,19 +166,19 @@ class LevelPersist implements IPersistor {
     }));
   }
 
-  public setItem = this.restackingFunc(
+  public setItem = this.#restackingFunc(
     async (statePath: string[], newState: string): Promise<void> => {
-      await this.mConnection.run(
-        `INSERT INTO ${this.mAlias}.kv VALUES ($1, $2)`,
+      await this.#mConnection.run(
+        `INSERT INTO ${this.#mAlias}.kv VALUES ($1, $2)`,
         [statePath.join(SEPARATOR), newState],
       );
     },
   );
 
-  public removeItem = this.restackingFunc(
+  public removeItem = this.#restackingFunc(
     async (statePath: string[]): Promise<void> => {
-      await this.mConnection.run(
-        `DELETE FROM ${this.mAlias}.kv WHERE key = $1`,
+      await this.#mConnection.run(
+        `DELETE FROM ${this.#mAlias}.kv WHERE key = $1`,
         [statePath.join(SEPARATOR)],
       );
     },
@@ -191,21 +188,21 @@ class LevelPersist implements IPersistor {
    * Begin a transaction on this connection.
    */
   public async beginTransaction(): Promise<void> {
-    await this.mConnection.run("BEGIN TRANSACTION");
+    await this.#mConnection.run("BEGIN TRANSACTION");
   }
 
   /**
    * Commit the current transaction.
    */
   public async commitTransaction(): Promise<void> {
-    await this.mConnection.run("COMMIT");
+    await this.#mConnection.run("COMMIT");
   }
 
   /**
    * Rollback the current transaction.
    */
   public async rollbackTransaction(): Promise<void> {
-    await this.mConnection.run("ROLLBACK");
+    await this.#mConnection.run("ROLLBACK");
   }
 
   /**
@@ -215,7 +212,7 @@ class LevelPersist implements IPersistor {
   public async getDirtyTables(): Promise<
     Array<{ database: string; table: string; type: string }>
   > {
-    const reader = await this.mConnection.runAndReadAll(
+    const reader = await this.#mConnection.runAndReadAll(
       "SELECT * FROM level_pivot_dirty_tables()",
     );
     const rows = reader.getRows();
@@ -226,7 +223,7 @@ class LevelPersist implements IPersistor {
     }));
   }
 
-  private restackingFunc<T extends (...args: any[]) => Promise<any>>(
+  #restackingFunc<T extends (...args: any[]) => Promise<any>>(
     cb: T,
   ): (...args: Parameters<T>) => ReturnType<T> {
     return ((...args: Parameters<T>): ReturnType<T> => {

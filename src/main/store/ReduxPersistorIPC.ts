@@ -71,11 +71,11 @@ export type PersistorFactory = (hive: string) => IPersistor | undefined;
  * Receives diff operations from renderer and persists them to LevelDB.
  */
 class ReduxPersistorIPC {
-  private mPersistors: { [hive: string]: IPersistor } = {};
-  private mUpdateQueue: Promise<void> = Promise.resolve();
-  private mPersistorFactory: PersistorFactory | undefined;
-  private mLevelPersist: LevelPersist | undefined;
-  private mInvalidator: QueryInvalidator | undefined;
+  #mPersistors: { [hive: string]: IPersistor } = {};
+  #mUpdateQueue: Promise<void> = Promise.resolve();
+  #mPersistorFactory: PersistorFactory | undefined;
+  #mLevelPersist: LevelPersist | undefined;
+  #mInvalidator: QueryInvalidator | undefined;
 
   constructor() {
     // No store dependency - we receive diffs via IPC
@@ -88,8 +88,8 @@ class ReduxPersistorIPC {
     levelPersist: LevelPersist,
     invalidator: QueryInvalidator,
   ): void {
-    this.mLevelPersist = levelPersist;
-    this.mInvalidator = invalidator;
+    this.#mLevelPersist = levelPersist;
+    this.#mInvalidator = invalidator;
   }
 
   /**
@@ -98,14 +98,14 @@ class ReduxPersistorIPC {
    * (e.g., extension-registered hives).
    */
   public setPersistorFactory(factory: PersistorFactory): void {
-    this.mPersistorFactory = factory;
+    this.#mPersistorFactory = factory;
   }
 
   /**
    * Wait for all pending persistence operations to complete.
    */
   public finalizeWrite(): Promise<void> {
-    return this.mUpdateQueue;
+    return this.#mUpdateQueue;
   }
 
   /**
@@ -116,10 +116,10 @@ class ReduxPersistorIPC {
     hive: string,
     persistor: IPersistor,
   ): Promise<{ [key: string]: Serializable }> {
-    return this.loadHydrationData(hive, persistor).then((data) => {
-      this.mPersistors[hive] = persistor;
+    return this.#loadHydrationData(hive, persistor).then((data) => {
+      this.#mPersistors[hive] = persistor;
       persistor.setResetCallback(() =>
-        this.loadHydrationData(hive, persistor).then(() => undefined),
+        this.#loadHydrationData(hive, persistor).then(() => undefined),
       );
       return data;
     });
@@ -134,9 +134,9 @@ class ReduxPersistorIPC {
   }> {
     const result: { [hive: string]: Serializable } = {};
 
-    for (const [hive, persistor] of Object.entries(this.mPersistors)) {
+    for (const [hive, persistor] of Object.entries(this.#mPersistors)) {
       try {
-        result[hive] = await this.loadHydrationData(hive, persistor);
+        result[hive] = await this.#loadHydrationData(hive, persistor);
       } catch (err) {
         log("error", "Failed to load hydration data for hive", {
           hive,
@@ -154,14 +154,14 @@ class ReduxPersistorIPC {
    * This is the main entry point for IPC-based persistence.
    */
   public applyDiffOperations(hive: string, operations: DiffOperation[]): void {
-    let persistor = this.mPersistors[hive];
+    let persistor = this.#mPersistors[hive];
 
     // If we don't have a persistor for this hive, try to create one on demand
-    if (persistor === undefined && this.mPersistorFactory !== undefined) {
-      const newPersistor = this.mPersistorFactory(hive);
+    if (persistor === undefined && this.#mPersistorFactory !== undefined) {
+      const newPersistor = this.#mPersistorFactory(hive);
       if (newPersistor !== undefined) {
         log("info", "Created persistor on demand for hive", { hive });
-        this.mPersistors[hive] = newPersistor;
+        this.#mPersistors[hive] = newPersistor;
         persistor = newPersistor;
       }
     }
@@ -173,8 +173,8 @@ class ReduxPersistorIPC {
       return;
     }
 
-    this.mUpdateQueue = this.mUpdateQueue
-      .then(() => this.processOperations(hive, persistor, operations))
+    this.#mUpdateQueue = this.#mUpdateQueue
+      .then(() => this.#processOperations(hive, persistor, operations))
       .catch((unknownError) => {
         // Ensure errors don't break the queue
         const err = unknownToError(unknownError);
@@ -189,38 +189,38 @@ class ReduxPersistorIPC {
    * Process a batch of diff operations for a hive.
    * Operations are processed sequentially to maintain order.
    */
-  private async processOperations(
+  async #processOperations(
     hive: string,
     persistor: IPersistor,
     operations: DiffOperation[],
   ): Promise<void> {
     const useTransaction =
-      this.mLevelPersist !== undefined && this.mInvalidator !== undefined;
+      this.#mLevelPersist !== undefined && this.#mInvalidator !== undefined;
 
     try {
       if (useTransaction) {
-        await this.mLevelPersist!.beginTransaction();
+        await this.#mLevelPersist!.beginTransaction();
       }
 
       // Process operations sequentially to maintain order
       for (const op of operations) {
-        await this.applyOperation(persistor, op);
+        await this.#applyOperation(persistor, op);
       }
 
       if (useTransaction) {
         // Check dirty tables BEFORE commit (while transaction is active)
-        const dirtyTables = await this.mLevelPersist!.getDirtyTables();
-        await this.mLevelPersist!.commitTransaction();
+        const dirtyTables = await this.#mLevelPersist!.getDirtyTables();
+        await this.#mLevelPersist!.commitTransaction();
 
         // Notify after commit
         if (dirtyTables.length > 0) {
-          this.mInvalidator!.notifyDirtyTables(dirtyTables);
+          this.#mInvalidator!.notifyDirtyTables(dirtyTables);
         }
       }
     } catch (unknownError) {
       if (useTransaction) {
         try {
-          await this.mLevelPersist!.rollbackTransaction();
+          await this.#mLevelPersist!.rollbackTransaction();
         } catch (rollbackErr) {
           log("warn", "Failed to rollback transaction", {
             error: unknownToError(rollbackErr).message,
@@ -243,7 +243,7 @@ class ReduxPersistorIPC {
           ),
         );
         // Retry on user ignore
-        return this.processOperations(hive, persistor, operations);
+        return this.#processOperations(hive, persistor, operations);
       } else {
         terminate(
           new Error(`Failed to store application state: ${err.message}`),
@@ -256,13 +256,13 @@ class ReduxPersistorIPC {
   /**
    * Apply a single diff operation to the persistor.
    */
-  private applyOperation(
+  async #applyOperation(
     persistor: IPersistor,
     operation: DiffOperation,
   ): Promise<void> {
     if (operation.type === "set") {
       return Promise.resolve(
-        persistor.setItem(operation.path, this.serialize(operation.value)),
+        persistor.setItem(operation.path, this.#serialize(operation.value)),
       );
     } else {
       return Promise.resolve(persistor.removeItem(operation.path));
@@ -273,7 +273,7 @@ class ReduxPersistorIPC {
    * Load all persisted data for a hive.
    * Returns a nested object structure reconstructed from the flat key-value store.
    */
-  private async loadHydrationData(
+  async #loadHydrationData(
     hive: string,
     persistor: IPersistor,
   ): Promise<{ [key: string]: Serializable }> {
@@ -284,7 +284,7 @@ class ReduxPersistorIPC {
       const allKvs = await persistor.getAllKVs();
       kvPairs = allKvs.map((kv: { key: PersistorKey; value: string }) => ({
         key: kv.key,
-        value: this.deserialize(kv.value),
+        value: this.#deserialize(kv.value),
       }));
     } else {
       // Slow path: get all keys first, then fetch values individually
@@ -293,7 +293,7 @@ class ReduxPersistorIPC {
         keys.map(async (key) => {
           try {
             const value = await persistor.getItem(key);
-            return { key, value: this.deserialize(value) };
+            return { key, value: this.#deserialize(value) };
           } catch (unknownError) {
             const err = unknownToError(unknownError);
             if (err.name === "NotFoundError") {
@@ -319,7 +319,7 @@ class ReduxPersistorIPC {
     return result;
   }
 
-  private deserialize(input: string): Serializable {
+  #deserialize(input: string): Serializable {
     if (input === undefined || input.length === 0) {
       return "";
     }
@@ -331,7 +331,7 @@ class ReduxPersistorIPC {
     }
   }
 
-  private serialize<T>(input: T): string {
+  #serialize<T>(input: T): string {
     return JSON.stringify(input);
   }
 }

@@ -22,12 +22,12 @@ interface RegisteredQuery {
  * - Executes named queries with parameter binding
  */
 class QueryRegistry {
-  private mConnection: DuckDBConnection;
-  private mQueries: Map<string, RegisteredQuery> = new Map();
-  private mTableToQueries: Map<string, Set<string>> = new Map();
+  #mConnection: DuckDBConnection;
+  #mQueries: Map<string, RegisteredQuery> = new Map();
+  #mTableToQueries: Map<string, Set<string>> = new Map();
 
   constructor(connection: DuckDBConnection) {
-    this.mConnection = connection;
+    this.#mConnection = connection;
   }
 
   /**
@@ -42,13 +42,13 @@ class QueryRegistry {
     // Execute setup queries (pivot table creation)
     for (const q of setupQueries) {
       log("debug", "query-registry: running setup query", { name: q.name });
-      await this.mConnection.run(q.sql);
+      await this.#mConnection.run(q.sql);
     }
 
     // Execute view queries
     for (const q of viewQueries) {
       log("debug", "query-registry: running view query", { name: q.name });
-      await this.mConnection.run(q.sql);
+      await this.#mConnection.run(q.sql);
     }
 
     // Register select queries and build dependency index
@@ -60,7 +60,7 @@ class QueryRegistry {
       // Extract table references from the query SQL
       let referencedTables: string[];
       try {
-        referencedTables = [...this.mConnection.getTableNames(q.sql, true)];
+        referencedTables = [...this.#mConnection.getTableNames(q.sql, true)];
       } catch {
         // Fallback: if getTableNames fails, use empty list
         referencedTables = [];
@@ -76,22 +76,22 @@ class QueryRegistry {
         referencedTables,
       };
 
-      this.mQueries.set(q.name, registered);
+      this.#mQueries.set(q.name, registered);
 
       // Build reverse index
       for (const table of referencedTables) {
-        let querySet = this.mTableToQueries.get(table);
+        let querySet = this.#mTableToQueries.get(table);
         if (querySet === undefined) {
           querySet = new Set();
-          this.mTableToQueries.set(table, querySet);
+          this.#mTableToQueries.set(table, querySet);
         }
         querySet.add(q.name);
       }
     }
 
     log("info", "query-registry: initialized", {
-      queries: this.mQueries.size,
-      trackedTables: this.mTableToQueries.size,
+      queries: this.#mQueries.size,
+      trackedTables: this.#mTableToQueries.size,
     });
   }
 
@@ -103,7 +103,7 @@ class QueryRegistry {
     name: string,
     params?: Record<string, unknown>,
   ): Promise<Record<string, Serializable>[]> {
-    const query = this.mQueries.get(name);
+    const query = this.#mQueries.get(name);
     if (query === undefined) {
       throw new Error(`Unknown query: '${name}'`);
     }
@@ -120,7 +120,7 @@ class QueryRegistry {
       }
     }
 
-    const reader = await this.mConnection.runAndReadAll(
+    const reader = await this.#mConnection.runAndReadAll(
       query.sql,
       values as Record<string, DuckDBValue>,
     );
@@ -133,7 +133,7 @@ class QueryRegistry {
   public getAffectedQueries(dirtyTables: string[]): string[] {
     const affected = new Set<string>();
     for (const table of dirtyTables) {
-      const queries = this.mTableToQueries.get(table);
+      const queries = this.#mTableToQueries.get(table);
       if (queries !== undefined) {
         for (const q of queries) {
           affected.add(q);
@@ -147,14 +147,14 @@ class QueryRegistry {
    * Get all registered select query names.
    */
   public getQueryNames(): string[] {
-    return [...this.mQueries.keys()];
+    return [...this.#mQueries.keys()];
   }
 
   /**
    * Check if any queries are registered.
    */
   public get hasQueries(): boolean {
-    return this.mQueries.size > 0;
+    return this.#mQueries.size > 0;
   }
 }
 
