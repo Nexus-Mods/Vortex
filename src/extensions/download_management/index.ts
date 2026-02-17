@@ -317,8 +317,8 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
 
   const incomplete = Object.keys(downloads).filter(
     (dlId) =>
-      ["finished", "paused"].includes(downloads[dlId].state) &&
-      (!truthy(downloads[dlId].localPath) ||
+      ["finished", "paused", "failed"].includes(downloads[dlId].state) &&
+      (!downloads[dlId].localPath ||
         downloads[dlId].received === 0 ||
         downloads[dlId].size === 0),
   );
@@ -328,20 +328,33 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
-  const array = Array.from(removeSet);
+  const toRemove: string[] = [];
+  const repairActions: Array<ReturnType<typeof downloadProgress>> = [];
+
   await Promise.all(
-    array.map(async (dlId) => {
-      if (downloads[dlId].localPath !== undefined) {
-        await fs
-          .removeAsync(path.join(downloadPath, downloads[dlId].localPath))
-          .catch(() => null);
+    Array.from(removeSet).map(async (dlId) => {
+      if (downloads[dlId].localPath === undefined) {
+        toRemove.push(dlId);
+        return;
+      }
+      const filePath = path.join(downloadPath, downloads[dlId].localPath);
+      const stats = await fs.statAsync(filePath).catch(() => undefined);
+      if (stats?.size > 0) {
+        // file exists and is valid on disk - repair the state instead of deleting
+        repairActions.push(
+          downloadProgress(dlId, stats.size, stats.size, [], undefined),
+        );
+      } else {
+        // file genuinely missing or empty - safe to clean up
+        await fs.removeAsync(filePath).catch(() => null);
+        toRemove.push(dlId);
       }
     }),
   );
-  batchDispatch(
-    api.store,
-    array.map((dlId) => removeDownloadSilent(dlId)),
-  );
+  batchDispatch(api.store, [
+    ...repairActions,
+    ...toRemove.map((dlId) => removeDownloadSilent(dlId)),
+  ]);
 }
 
 function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
