@@ -15,7 +15,6 @@ import type { IParameters, ISetItem } from "../shared/types/cli";
 import type { AppInitMetadata } from "../shared/types/ipc";
 import type { IWindow } from "../shared/types/state";
 
-import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
 import {
   getErrorCode,
@@ -394,7 +393,7 @@ class Application {
 
         if (response.response === 1) {
           await shell.openExternal(
-            `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
+            `https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder`,
           );
         }
 
