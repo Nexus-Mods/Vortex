@@ -29,7 +29,7 @@
     "i18next": "^10.5.0",
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
-    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "modmeta-db": "Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336",
     "react": "^16.8.6",
     "react-bootstrap": "^0.30.6",
     "react-dom": "^16.8.6",

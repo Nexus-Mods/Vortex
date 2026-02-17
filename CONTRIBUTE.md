@@ -111,8 +111,6 @@ sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
 - Start: `yarn start`
     - Wayland: `yarn start --ozone-platform-hint=auto`
 
-To get `nxm` protocol handler to work you need to run the script `./scripts/linux-protocol-registration.sh`. This script only needs to be run once.
-
 ### Notes
 
 - In unlikely event you can't run `volta` after install; add it to `$PATH` manually
@@ -148,7 +146,31 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Build: `yarn build`
 - Start: `yarn start`
 
+Python is included in the dev shell (with `setuptools`) for node-gyp and the Flatpak helper scripts.
+
 **Debugging (Nix):** start VS Code from `nix develop` (or via direnv), then use `Debug Electron (System Electron)` to launch the system Electron from your Nix shell `PATH`.
+
+## Flatpak Basics (Linux Packaging)
+
+These dependencies are only required if you are building the Flatpak package.
+
+### Requirements
+
+- `flatpak`
+- `flatpak-builder`
+- `appstream` (for AppStream metadata validation - `appstreamcli`)
+
+### Example installs (Linux)
+
+- Ubuntu/Debian: `sudo apt install flatpak flatpak-builder appstream`
+- Fedora: `sudo dnf install flatpak flatpak-builder appstream`
+- Arch: `sudo pacman -S flatpak flatpak-builder appstream`
+- NixOS: Included in `nix develop` (via `flake.nix`)
+
+> [!note]
+> There is an additional Python-based dependency `flatpak-node-generator`, but the scripts in `flatpak/scripts/` automatically install it for you. The Flathub remote is also added automatically if missing.
+
+For the full Flatpak workflow, see `docs/flatpak-maintenance.md`.
 
 ## Editor Setup
 
