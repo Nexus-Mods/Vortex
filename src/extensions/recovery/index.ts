@@ -11,7 +11,6 @@ import { getGame } from "../gamemode_management/util/getGame";
 
 import { createFullStateBackup } from "../../store/store";
 
-import { setModEnabled } from "../../actions";
 import type { IDeploymentManifest } from "../../types/api";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
@@ -109,13 +108,33 @@ async function resetToManifest(api: IExtensionApi) {
     const mods = getSafe(state, ["persistent", "mods", profile.gameId], {});
     const isEnabled = (modId) =>
       getSafe(profile, ["modState", modId, "enabled"], false);
+    const modsToEnable: string[] = [];
+    const modsToDisable: string[] = [];
     Object.keys(mods).forEach((modId) => {
       if (isEnabled(modId) !== enabledMods.has(modId)) {
-        api.store.dispatch(
-          setModEnabled(profile.id, modId, enabledMods.has(modId)),
-        );
+        if (enabledMods.has(modId)) {
+          modsToEnable.push(modId);
+        } else {
+          modsToDisable.push(modId);
+        }
       }
     });
+    if (modsToEnable.length > 0) {
+      window.api.profile.executeCommand({
+        type: 'profile:set-mods-enabled',
+        profileId: profile.id,
+        modIds: modsToEnable,
+        enabled: true,
+      });
+    }
+    if (modsToDisable.length > 0) {
+      window.api.profile.executeCommand({
+        type: 'profile:set-mods-enabled',
+        profileId: profile.id,
+        modIds: modsToDisable,
+        enabled: false,
+      });
+    }
   } catch (err) {
     if (!(err instanceof UserCanceled)) {
       api.showErrorNotification("Failed to reset mod", err);

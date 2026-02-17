@@ -49,7 +49,6 @@ import {
 import getDownloadGames from "../download_management/util/getDownloadGames";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
-import { setModsEnabled } from "../profile_management/actions/profiles";
 
 import { setInstallPath } from "./actions/settings";
 import type { IInstallOptions } from "./types/IInstallOptions";
@@ -888,10 +887,15 @@ export function onRemoveMods(
     // Disable automatic deployment if it's active, a deployment
     //  event will occur once the mods have been successfully removed
     //  anyway.
-    setModsEnabled(api, profileId, modIds, false, {
-      installed: options?.incomplete,
-      allowAutoDeploy: false,
-      willBeReplaced: options?.willBeReplaced,
+    window.api.profile.executeCommand({
+      type: 'profile:set-mods-enabled',
+      profileId,
+      modIds,
+      enabled: false,
+      options: {
+        installed: options?.incomplete,
+        allowAutoDeploy: false,
+      },
     });
   }
 

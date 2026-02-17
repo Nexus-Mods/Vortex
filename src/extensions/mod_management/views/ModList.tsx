@@ -43,10 +43,6 @@ import MainPage from "../../../renderer/views/MainPage";
 import calculateFolderSize from "../../../util/calculateFolderSize";
 
 import getDownloadGames from "../../download_management/util/getDownloadGames";
-import {
-  setModEnabled,
-  setModsEnabled,
-} from "../../profile_management/actions/profiles";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 
 import { removeMod, setModAttribute } from "../actions/mods";
@@ -1344,7 +1340,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModsEnabled(modIds: string[], enabled: boolean) {
     const { profileId } = this.props;
-    return setModsEnabled(this.context.api, profileId, modIds, enabled);
+    return window.api.profile.executeCommand({ type: 'profile:set-mods-enabled', profileId, modIds, enabled });
   }
 
   private installIfNecessary(modId: string): PromiseBB<string> {
@@ -1889,10 +1885,7 @@ function mapDispatchToProps(
       modIds: string[],
       enabled: boolean,
     ) => {
-      batchDispatch(
-        dispatch,
-        modIds.map((modId) => setModEnabled(profileId, modId, enabled)),
-      );
+      window.api.profile.executeCommand({ type: 'profile:set-mods-enabled', profileId, modIds, enabled });
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),

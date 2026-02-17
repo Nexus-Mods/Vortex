@@ -21,8 +21,6 @@ import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscover
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { getGame } from "../../gamemode_management/util/getGame";
 
-import { setFeature, setProfile } from "../actions/profiles";
-import { setNextProfile } from "../actions/settings";
 import type { IProfile } from "../types/IProfile";
 import type { IProfileFeature } from "../types/IProfileFeature";
 import { profilePath, removeProfile } from "../util/manage";
@@ -449,11 +447,15 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetNextProfile: (profileId: string) =>
-      dispatch(setNextProfile(profileId)),
-    onSetFeature: (profileId: string, featureId: string, value: any) =>
-      dispatch(setFeature(profileId, featureId, value)),
+    onAddProfile: (profile: IProfile) => {
+      window.api.profile.executeCommand({ type: 'profile:create', profile });
+    },
+    onSetNextProfile: (profileId: string) => {
+      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
+    },
+    onSetFeature: (profileId: string, featureId: string, value: any) => {
+      window.api.profile.executeCommand({ type: 'profile:set-feature', profileId, featureId, value });
+    },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };

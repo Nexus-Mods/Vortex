@@ -6,7 +6,6 @@ import { truthy } from "../../../util/util";
 
 import type { IMod } from "../../mod_management/types/IMod";
 
-import { setModEnabled } from "../actions/profiles";
 import { closeDialog } from "../actions/transferSetup";
 import type { IProfile } from "../types/IProfile";
 
@@ -142,8 +141,9 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onCloseDialog: () => dispatch(closeDialog()),
-    onSetModEnabled: (profileId: string, modId: string, enabled: boolean) =>
-      dispatch(setModEnabled(profileId, modId, enabled)),
+    onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
+      window.api.profile.executeCommand({ type: 'profile:set-mod-enabled', profileId, modId, enabled });
+    },
   };
 }
 

@@ -9,7 +9,6 @@ import type {
   IHistoryStack,
   Revertability,
 } from "../../history_management/types";
-import { setModEnabled } from "../../profile_management/actions/profiles";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setDeploymentNecessary } from "../actions/deployment";
 import { setModAttribute } from "../actions/mods";
@@ -84,13 +83,15 @@ class ModHistory implements IHistoryStack {
               profile.modState?.[id]?.enabled
             );
           },
-          do: (evt) => {
+          do: async (evt) => {
             const profile = profileById(api.getState(), evt.data.profileId);
-            api.store.dispatch(
-              setModEnabled(evt.data.profileId, evt.data.id, false),
-            );
+            await window.api.profile.executeCommand({
+              type: 'profile:set-mod-enabled',
+              profileId: evt.data.profileId,
+              modId: evt.data.id,
+              enabled: false,
+            });
             api.store.dispatch(setDeploymentNecessary(profile.gameId, true));
-            return Promise.resolve();
           },
         },
       },
@@ -115,13 +116,15 @@ class ModHistory implements IHistoryStack {
               !profile.modState?.[id]?.enabled
             );
           },
-          do: (evt) => {
+          do: async (evt) => {
             const profile = profileById(api.getState(), evt.data.profileId);
-            api.store.dispatch(
-              setModEnabled(evt.data.profileId, evt.data.id, true),
-            );
+            await window.api.profile.executeCommand({
+              type: 'profile:set-mod-enabled',
+              profileId: evt.data.profileId,
+              modId: evt.data.id,
+              enabled: true,
+            });
             api.store.dispatch(setDeploymentNecessary(profile.gameId, true));
-            return Promise.resolve();
           },
         },
       },

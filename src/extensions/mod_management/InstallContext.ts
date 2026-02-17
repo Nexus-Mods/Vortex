@@ -24,7 +24,6 @@ import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import NXMUrl from "../nexus_integration/NXMUrl";
 import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
 import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
-import { setModsEnabled } from "../profile_management/actions/profiles";
 
 import {
   addMod,
@@ -154,7 +153,12 @@ class InstallContext implements IInstallContext {
     this.mEnableMod = (modId: string) => {
       const state: IState = store.getState();
       const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
-      return setModsEnabled(api, profileId, [modId], true);
+      return window.api.profile.executeCommand({
+        type: 'profile:set-mods-enabled',
+        profileId,
+        modIds: [modId],
+        enabled: true,
+      });
     };
     this.mIsEnabled = (modId) => {
       const state: IState = store.getState();

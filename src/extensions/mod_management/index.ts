@@ -61,10 +61,8 @@ import { setDialogVisible } from "../../actions";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
-import {
-  type IEnableOptions,
-  setModEnabled,
-  forgetMod,
+import type {
+  IEnableOptions,
 } from "../profile_management/actions/profiles";
 import type {
   IProfile,
@@ -666,13 +664,16 @@ function reportRedundant(
               )
               .then((result) => {
                 if (result.action === "Disable selected") {
-                  Object.keys(result.input)
-                    .filter((modId) => result.input[modId])
-                    .forEach((modId) => {
-                      api.store.dispatch(
-                        setModEnabled(profileId, modId, false),
-                      );
+                  const modsToDisable = Object.keys(result.input)
+                    .filter((modId) => result.input[modId]);
+                  if (modsToDisable.length > 0) {
+                    window.api.profile.executeCommand({
+                      type: 'profile:set-mods-enabled',
+                      profileId,
+                      modIds: modsToDisable,
+                      enabled: false,
                     });
+                  }
                   dismiss();
                 }
               });
@@ -2324,8 +2325,10 @@ function init(context: IExtensionContext): boolean {
         const state = context.api.getState();
         const gameMode = activeGameId(state);
         const profiles = getSafe(state, ["persistent", "profiles"], {});
-        const batchedActions = [];
         const modIds = Object.keys(dupMap);
+
+        // Build profile commands to execute after mod removal
+        const profileCommands: Array<() => void> = [];
         for (const modId of modIds) {
           for (const profileId in profiles) {
             const enabled = getSafe(
@@ -2333,22 +2336,23 @@ function init(context: IExtensionContext): boolean {
               ["modState", modId, "enabled"],
               false,
             );
-            batchedActions.push(forgetMod(profileId, modId));
-            if (enabled) {
-              if (dupMap[modId] !== undefined) {
-                batchedActions.push(
-                  setModEnabled(profileId, dupMap[modId], enabled),
-                );
-              }
+            profileCommands.push(() =>
+              window.api.profile.executeCommand({ type: 'profile:forget-mod', profileId, modId }),
+            );
+            if (enabled && dupMap[modId] !== undefined) {
+              const replacementId = dupMap[modId];
+              profileCommands.push(() =>
+                window.api.profile.executeCommand({ type: 'profile:set-mod-enabled', profileId, modId: replacementId, enabled: true }),
+              );
             }
           }
         }
         context.api.closeDialog("duplicates-dialog");
-        if (batchedActions.length > 0) {
+        if (profileCommands.length > 0) {
           context.api.events.emit("remove-mods", gameMode, modIds, (err) => {
             if (!err) {
               context.api.events.emit("duplicates-removed");
-              batchDispatch(context.api.store.dispatch, batchedActions);
+              profileCommands.forEach(cmd => cmd());
             } else if (
               !(err instanceof UserCanceled) &&
               !(err instanceof ProcessCanceled)

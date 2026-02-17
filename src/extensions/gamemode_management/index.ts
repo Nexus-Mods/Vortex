@@ -31,13 +31,11 @@ import ReduxProp from "../../renderer/ReduxProp";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 
-import { batchDispatch } from "../../util/util";
 
 import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";
-import { setNextProfile } from "../profile_management/actions/settings";
 
 import { setGameInfo } from "./actions/persistent";
 import {
@@ -564,13 +562,11 @@ function removeDisappearedGames(
             });
           }
 
-          const batchedActions = [];
           if (gameId === gameMode) {
-            batchedActions.push(setNextProfile(undefined));
+            window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
           }
 
-          batchedActions.push(clearDiscoveredGame(gameId));
-          batchDispatch(api.store, batchedActions);
+          api.store.dispatch(clearDiscoveredGame(gameId));
         });
     },
   )
@@ -583,7 +579,7 @@ function removeDisappearedGames(
           activeGame: gameMode ?? "none",
           known,
         });
-        api.store.dispatch(setNextProfile(undefined));
+        window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
       }
 
       if (gameStubs !== undefined) {
@@ -1188,7 +1184,7 @@ function init(context: IExtensionContext): boolean {
             }
           }
           // unset profile
-          store.dispatch(setNextProfile(undefined));
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
         })
         .finally(() => {
           context.api.dismissNotification(id);
@@ -1277,7 +1273,7 @@ function init(context: IExtensionContext): boolean {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);
         } else {
           // if the game is no longer discovered we can't keep this profile as active
-          store.dispatch(setNextProfile(undefined));
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
         }
       }
     }

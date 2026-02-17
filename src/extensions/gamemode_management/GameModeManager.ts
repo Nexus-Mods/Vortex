@@ -1,4 +1,3 @@
-import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
@@ -19,7 +18,7 @@ import { log } from "../../util/log";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+import { truthy } from "../../util/util";
 
 import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setPrimaryTool } from "../starter_dashlet/actions";
@@ -534,11 +533,10 @@ class GameModeManager {
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
       const currentProfile = activeProfile(this.mStore.getState());
-      const batchedActions =
-        currentProfile?.gameId === gameId
-          ? [setNextProfile(undefined), clearDiscoveredGame(gameId)]
-          : [clearDiscoveredGame(gameId)];
-      batchDispatch(this.mStore, batchedActions);
+      if (currentProfile?.gameId === gameId) {
+        window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
+      }
+      this.mStore.dispatch(clearDiscoveredGame(gameId));
     } else {
       this.mStore.dispatch(addDiscoveredGame(gameId, result));
     }

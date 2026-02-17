@@ -121,10 +121,6 @@ import { discoveryByGame } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
 import modName, { renderModReference } from "../mod_management/util/modName";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
-import {
-  setModEnabled,
-  setModsEnabled,
-} from "../profile_management/actions/profiles";
 
 import {
   addModRule,
@@ -1653,16 +1649,16 @@ class InstallManager {
                       if (action === INSTALL_ACTION) {
                         enable = enable || wasEnabled;
                         if (wasEnabled) {
-                          setModsEnabled(
-                            api,
-                            installProfile.id,
-                            [existingMod.id],
-                            false,
-                            {
+                          window.api.profile.executeCommand({
+                            type: 'profile:set-mods-enabled',
+                            profileId: installProfile.id,
+                            modIds: [existingMod.id],
+                            enabled: false,
+                            options: {
                               allowAutoDeploy,
                               installed: true,
                             },
-                          );
+                          });
                         }
                         rules = existingMod.rules || [];
                         overrides = existingMod.fileOverrides;
@@ -1852,9 +1848,15 @@ class InstallManager {
                 );
                 if (installProfile !== undefined) {
                   if (enable) {
-                    setModsEnabled(api, installProfile.id, [modId], true, {
-                      allowAutoDeploy,
-                      installed: true,
+                    window.api.profile.executeCommand({
+                      type: 'profile:set-mods-enabled',
+                      profileId: installProfile.id,
+                      modIds: [modId],
+                      enabled: true,
+                      options: {
+                        allowAutoDeploy,
+                        installed: true,
+                      },
                     });
                   }
                 }
@@ -2585,12 +2587,20 @@ class InstallManager {
                 gameId,
                 downloadId,
               );
-              for (const otherModId of otherModIds) {
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, otherModId, false),
-                );
+              if (otherModIds.length > 0) {
+                window.api.profile.executeCommand({
+                  type: 'profile:set-mods-enabled',
+                  profileId: targetProfile.id,
+                  modIds: otherModIds,
+                  enabled: false,
+                });
               }
-              batchedActions.push(setModEnabled(targetProfile.id, modId, true));
+              window.api.profile.executeCommand({
+                type: 'profile:set-mod-enabled',
+                profileId: targetProfile.id,
+                modId,
+                enabled: true,
+              });
             } else {
               // Fallback: enable in profiles where source mod is enabled (original behavior)
               const profiles = Object.values(
@@ -2606,12 +2616,20 @@ class InstallManager {
                   gameId,
                   downloadId,
                 );
-                for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(prof.id, otherModId, false),
-                  );
+                if (otherModIds.length > 0) {
+                  window.api.profile.executeCommand({
+                    type: 'profile:set-mods-enabled',
+                    profileId: prof.id,
+                    modIds: otherModIds,
+                    enabled: false,
+                  });
                 }
-                batchedActions.push(setModEnabled(prof.id, modId, true));
+                window.api.profile.executeCommand({
+                  type: 'profile:set-mod-enabled',
+                  profileId: prof.id,
+                  modId,
+                  enabled: true,
+                });
               });
             }
 
@@ -5170,11 +5188,13 @@ class InstallManager {
               if (result.remember === true) {
                 context?.set?.("replace-or-variant", "variant");
               }
-              if (currentProfile !== undefined) {
-                const actions = modIds.map((id) =>
-                  setModEnabled(currentProfile.id, id, false),
-                );
-                batchDispatch(api.store.dispatch, actions);
+              if (currentProfile !== undefined && modIds.length > 0) {
+                window.api.profile.executeCommand({
+                  type: 'profile:set-mods-enabled',
+                  profileId: currentProfile.id,
+                  modIds,
+                  enabled: false,
+                });
               }
               // We want the shortest possible modId paired against this archive
               //  before adding the variant name to it.
@@ -5723,14 +5743,20 @@ class InstallManager {
                   gameId,
                   downloadId,
                 );
-                for (const otherModId of otherModIds) {
-                  batchedActions.push(
-                    setModEnabled(targetProfile.id, otherModId, false),
-                  );
+                if (otherModIds.length > 0) {
+                  window.api.profile.executeCommand({
+                    type: 'profile:set-mods-enabled',
+                    profileId: targetProfile.id,
+                    modIds: otherModIds,
+                    enabled: false,
+                  });
                 }
-                batchedActions.push(
-                  setModEnabled(targetProfile.id, modId, true),
-                );
+                window.api.profile.executeCommand({
+                  type: 'profile:set-mod-enabled',
+                  profileId: targetProfile.id,
+                  modId,
+                  enabled: true,
+                });
               } else {
                 // Fallback: enable in profiles where source mod is enabled (original behavior)
                 const profiles = Object.values(
@@ -5746,16 +5772,26 @@ class InstallManager {
                     gameId,
                     downloadId,
                   );
-                  for (const otherModId of otherModIds) {
-                    batchedActions.push(
-                      setModEnabled(prof.id, otherModId, false),
-                    );
+                  if (otherModIds.length > 0) {
+                    window.api.profile.executeCommand({
+                      type: 'profile:set-mods-enabled',
+                      profileId: prof.id,
+                      modIds: otherModIds,
+                      enabled: false,
+                    });
                   }
-                  batchedActions.push(setModEnabled(prof.id, modId, true));
+                  window.api.profile.executeCommand({
+                    type: 'profile:set-mod-enabled',
+                    profileId: prof.id,
+                    modId,
+                    enabled: true,
+                  });
                 });
               }
 
-              batchDispatch(api.store, batchedActions);
+              if (batchedActions.length > 0) {
+                batchDispatch(api.store, batchedActions);
+              }
 
               this.applyExtraFromRule(api, gameId, modId, {
                 ...dep.extra,

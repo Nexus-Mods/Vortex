@@ -1,19 +1,15 @@
 /**
  * Manages profiles
  *
- * New API:
+ * API:
  *  registerProfileFile(gameId: string, filePath: string) - registers a file to be
  *    included in the profile so it gets stored in the profile and switched when the
  *    profile gets changed
- * State:
- *   settings.profiles.activeProfileId: string - currently active profile id
- *   persistent.profiles: { [gameId: string]: { [profileId: string]: IProfile } } -
- *      dictionary of all profiles
- * Actions:
- *   setProfile(gameId: string, profile: IProfile) - adds a new profile or changes an existing one
- *   setNextProfile(gameId: string, profileId: string) - activates a profile
- *   setModEnabled(gameId: string, profileId: string, modId: string, enabled: boolean) -
- *      enables or disables a mod in the current profile
+ *
+ * Commands (via window.api.profile.executeCommand):
+ *   profile:create, profile:remove, profile:switch,
+ *   profile:set-mod-enabled, profile:set-mods-enabled,
+ *   profile:set-feature, profile:forget-mod, profile:set-activated
  */
 
 import type * as Redux from "redux";
@@ -36,14 +32,12 @@ import type { IProfileFeature } from "./types/IProfileFeature";
 import { addNotification, showDialog } from "../../actions/notifications";
 import {
   clearUIBlocker,
-  setProgress,
   setUIBlocker,
 } from "../../actions/session";
 import { relaunch } from "../../util/commandLine";
 import {
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
-  SetupError,
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
@@ -51,40 +45,27 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
-import onceCB from "../../util/onceCB";
 import {
   discoveryByGame,
   gameById,
   installPathForGame,
-  needToDeployForGame,
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+import { truthy } from "../../util/util";
 import { readExtensions } from "../extension_manager/util";
 import { getGame } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
 import {
-  forgetMod,
-  removeProfile,
-  setProfile,
-  setProfileActivated,
-  willRemoveProfile,
-} from "./actions/profiles";
-import {
-  clearLastActiveProfile,
   setCurrentProfile,
-  setNextProfile,
 } from "./actions/settings";
-import { STUCK_TIMEOUT } from "./constants";
 import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
 import {
   activeGameId,
   activeProfile,
-  lastActiveProfileForGame,
   profileById,
 } from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
@@ -116,26 +97,6 @@ function checkProfile(
   return fs.ensureDirAsync(profilePath(currentProfile));
 }
 
-function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
-  const state: IState = store.getState();
-  const batched = [];
-  Object.keys(profile.modState || {}).forEach((modId) => {
-    if (
-      getSafe(state.persistent.mods, [profile.gameId, modId], undefined) ===
-      undefined
-    ) {
-      log("debug", "removing info of missing mod from profile", {
-        profile: profile.id,
-        game: profile.gameId,
-        modId,
-      });
-      batched.push(forgetMod(profile.id, modId));
-    }
-  });
-  if (batched.length > 0) {
-    batchDispatch(store, batched);
-  }
-}
 
 function refreshProfile(
   store: Redux.Store<any>,
@@ -225,7 +186,7 @@ function activateGame(
     log("info", "unselecting profile because game no longer discovered", {
       gameId,
     });
-    store.dispatch(setNextProfile(undefined));
+    window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
     return PromiseBB.resolve();
   }
 
@@ -268,7 +229,7 @@ function activateGame(
             (id: string) => dialogResult.input[id],
           );
           log("info", "user selected profile", { selectedId });
-          store.dispatch(setNextProfile(selectedId));
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: selectedId });
         }
       });
   } else {
@@ -278,282 +239,12 @@ function activateGame(
     const fbProfile = state.persistent.profiles?.[profileId];
     const discovery = state.settings.gameMode.discovered?.[fbProfile?.gameId];
     if (discovery?.path !== undefined) {
-      store.dispatch(setNextProfile(profileId));
+      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
     } else {
-      store.dispatch(setNextProfile(undefined));
+      window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
     }
     return PromiseBB.resolve();
   }
-}
-
-function deploy(api: IExtensionApi, profileId: string): PromiseBB<void> {
-  const state: IState = api.store.getState();
-  if (
-    profileId === undefined ||
-    state.persistent.profiles[profileId] === undefined
-  ) {
-    return PromiseBB.resolve();
-  }
-
-  const profile = profileById(state, profileId);
-  if (
-    profileId === lastActiveProfileForGame(state, profile.gameId) &&
-    !needToDeployForGame(state, profile.gameId)
-  ) {
-    return PromiseBB.resolve();
-  }
-
-  const gameDiscovery = getSafe(
-    state,
-    ["settings", "gameMode", "discovered", profile.gameId],
-    undefined,
-  );
-  if (gameDiscovery?.path === undefined) {
-    // can't deploy a game that hasn't been discovered
-    return PromiseBB.resolve();
-  }
-
-  let lastProgress: number = Date.now();
-
-  const watchdog = setInterval(() => {
-    if (Date.now() - lastProgress > STUCK_TIMEOUT) {
-      api.store.dispatch(
-        setProgress(
-          "profile",
-          "deploying",
-          api.translate("Stuck? Please check your vortex.log file."),
-          0,
-        ),
-      );
-    }
-  }, 1000);
-
-  return new PromiseBB((resolve, reject) => {
-    api.events.emit(
-      "deploy-mods",
-      onceCB((err: Error) => {
-        clearInterval(watchdog);
-        if (err === null) {
-          resolve();
-        } else {
-          reject(err);
-        }
-      }),
-      profileId,
-      (text: string, percent: number) => {
-        lastProgress = Date.now();
-        api.store.dispatch(setProgress("profile", "deploying", text, percent));
-      },
-    );
-  });
-}
-
-/* generates a profile change handler.
- * that is: it reacts to the "next profile" being changed, which triggers the
- * "active profile" being updated. "onFinishProfileSwitch" registers a callback
- * which will signal when the active profile has been updated, only then will the
- * next profile switch be allowed.
- */
-function genOnProfileChange(
-  api: IExtensionApi,
-  onFinishProfileSwitch: (callback: () => void) => void,
-) {
-  let finishProfileSwitchPromise: PromiseBB<void> = PromiseBB.resolve();
-  const { store } = api;
-
-  let cancelPromise: () => void;
-
-  const invokeCancel = () => {
-    if (cancelPromise !== undefined) {
-      onFinishProfileSwitch(undefined);
-      cancelPromise();
-      cancelPromise = undefined;
-    }
-  };
-
-  const cancelSwitch = () => {
-    invokeCancel();
-    store.dispatch(setCurrentProfile(undefined, undefined));
-    store.dispatch(setNextProfile(undefined));
-  };
-
-  const confirmProfile = (gameId: string, current: string) => {
-    store.dispatch(setCurrentProfile(gameId, current));
-    if (current !== undefined) {
-      store.dispatch(setProfileActivated(current));
-    }
-    const confirmPromise = cancelPromise;
-    setTimeout(() => {
-      if (confirmPromise === cancelPromise && cancelPromise !== undefined) {
-        log("warn", "active profile switch didn't get confirmed?");
-        invokeCancel();
-      }
-    }, 2000);
-  };
-
-  return (prev: string, current: string) => {
-    log("debug", "profile change", { from: prev, to: current });
-    finishProfileSwitchPromise
-      .then(() => {
-        const state: IState = store.getState();
-        if (state.settings.profiles.nextProfileId !== current) {
-          // cancel if there was another profile switch while we waited
-          return null;
-        }
-
-        if (state.settings.profiles.activeProfileId === current) {
-          // also do nothing if we're actually resetting the nextprofile
-          return null;
-        }
-
-        const profile = state.persistent.profiles[current];
-        if (profile === undefined && current !== undefined) {
-          return PromiseBB.reject(new Error("Tried to set invalid profile"));
-        }
-
-        if (profile !== undefined) {
-          const { gameId } = profile;
-          const game = getGame(gameId);
-          if (game === undefined) {
-            showError(
-              store.dispatch,
-              "Game no longer supported, please install the game extension",
-              undefined,
-              { message: profile.gameId, allowReport: false },
-            );
-            return PromiseBB.reject(
-              new ProcessCanceled("Game no longer supported"),
-            );
-          }
-
-          const discovery = state.settings.gameMode.discovered[profile.gameId];
-          if (discovery?.path === undefined) {
-            showError(
-              store.dispatch,
-              "Game is no longer discoverable, please go to the games page and scan for, or " +
-                "manually select the game folder.",
-              profile.gameId,
-              { allowReport: false },
-            );
-            return PromiseBB.reject(
-              new ProcessCanceled("Game no longer discovered"),
-            );
-          }
-        }
-
-        finishProfileSwitchPromise = new PromiseBB<void>((resolve, reject) => {
-          cancelPromise = resolve;
-          onFinishProfileSwitch(() => {
-            cancelPromise = undefined;
-            resolve();
-          });
-        }).catch((err) => {
-          showError(store.dispatch, "Profile switch failed", err);
-          return PromiseBB.resolve();
-        });
-
-        // IMPORTANT: After this point we expect an external signal to tell
-        //   us when the active profile has been updated, otherwise we will not
-        //   allow the next profile switch
-        //   any error handler *has* to cancel this confirmation!
-
-        let queue: PromiseBB<void> = PromiseBB.resolve();
-        // emit an event notifying about the impending profile change.
-        // every listener can return a cb returning a promise which will be
-        // awaited before continuing.
-        // It would be fun if we could cancel the profile change if one of
-        // these promises is rejected but that would only work if we could roll back
-        // changes that happened.
-        const enqueue = (cb: () => PromiseBB<void>) => {
-          queue = queue.then(cb).catch((err) => {
-            const message = getErrorMessageOrDefault(err);
-            log("error", "error in profile-will-change handler", message);
-            PromiseBB.resolve();
-          });
-        };
-
-        const oldProfile = state.persistent.profiles[prev];
-        // changes to profile files are only saved back to the profile at this point
-        queue = queue.then(() => refreshProfile(store, oldProfile, "import"));
-
-        api.events.emit("profile-will-change", current, enqueue);
-
-        if (current === undefined) {
-          log("info", "switched to no profile");
-          confirmProfile(undefined, undefined);
-          return queue;
-        }
-
-        sanitizeProfile(store, profile);
-
-        return (
-          queue
-            .then(() => {
-              log("debug", "starting refresh profile export");
-              return refreshProfile(store, profile, "export");
-            })
-            // ensure the old profile is synchronised before we switch, otherwise me might
-            // revert some changes
-            .then(() => {
-              log("info", "will deploy previously active profile", prev);
-              return deploy(api, prev);
-            })
-            .then(() => {
-              log("info", "did deploy previously active profile", prev);
-              log("info", "will deploy next active profile", current);
-              return deploy(api, current);
-            })
-            .then(() => {
-              log("info", "did deploy next active profile", current);
-              const prof = profileById(api.store.getState() as IState, current);
-              if (prof === undefined) {
-                return PromiseBB.reject(
-                  new ProcessCanceled(
-                    "Profile was deleted during deployment. " +
-                      "Why would you do something like that???",
-                  ),
-                );
-              }
-
-              api.store.dispatch(
-                setProgress("profile", "deploying", undefined, undefined),
-              );
-              const gameId = profile !== undefined ? profile.gameId : undefined;
-              log("info", "switched to profile", { gameId, current });
-              confirmProfile(gameId, current);
-              return null;
-            })
-        );
-      })
-      .catch((err) => {
-        cancelSwitch();
-        return PromiseBB.reject(err);
-      })
-      .catch(ProcessCanceled, (err) => {
-        showError(store.dispatch, "Failed to set profile", err.message, {
-          allowReport: false,
-        });
-      })
-      .catch(SetupError, (err) => {
-        showError(store.dispatch, "Failed to set profile", err.message, {
-          allowReport: false,
-        });
-      })
-      .catch(CorruptActiveProfile, (err) => {
-        // AFAICT the only way for this error to pop up is when upgrading from
-        //  an ancient version of Vortex which probably had a bug in it which we
-        //  fixed a long time ago. Corrupt profiles are automatically removed by
-        //  our verifiers and the user will just have to create a new profile for
-        //  their game - not much we can do to help him with that.
-        showError(store.dispatch, "Failed to set profile", err, {
-          allowReport: false,
-        });
-      })
-      .catch(UserCanceled, () => null)
-      .catch((err) => {
-        showError(store.dispatch, "Failed to set profile", err);
-      });
-  };
 }
 
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
@@ -566,16 +257,17 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   return ensureStagingDirectory(api, undefined, gameId)
     .then(() => {
       log("info", "user managing game for the first time", { gameId });
-      api.store.dispatch(
-        setProfile({
+      window.api.profile.executeCommand({
+        type: 'profile:create',
+        profile: {
           id: profileId,
           gameId,
           name: "Default",
           modState: {},
           lastActivated: undefined,
-        }),
-      );
-      api.store.dispatch(setNextProfile(profileId));
+        },
+      });
+      window.api.profile.executeCommand({ type: 'profile:switch', profileId });
     })
     .catch((err) => {
       const instPath = installPathForGame(api.store.getState(), gameId);
@@ -727,44 +419,6 @@ function manageGame(api: IExtensionApi, gameId: string): PromiseBB<void> {
   }
 }
 
-function removeProfileImpl(api: IExtensionApi, profileId: string) {
-  const { store } = api;
-  const state = api.getState();
-  const { profiles } = state.persistent;
-  log("info", "user removing profile", { id: profileId });
-
-  if (profiles[profileId] === undefined) {
-    // nothing to do
-    return PromiseBB.resolve();
-  }
-
-  const currentProfile = activeProfile(state);
-
-  store.dispatch(willRemoveProfile(profileId));
-  if (profileId === currentProfile?.id) {
-    store.dispatch(setNextProfile(undefined));
-  }
-
-  return fs
-    .removeAsync(profilePath(profiles[profileId]))
-    .catch((err) =>
-      err.code === "ENOENT" ? PromiseBB.resolve() : PromiseBB.reject(err),
-    )
-    .then(() => {
-      const gameMode = profiles[profileId].gameId;
-      const lastProfileId = lastActiveProfileForGame(state, gameMode);
-      if (profileId === lastProfileId) {
-        store.dispatch(clearLastActiveProfile(gameMode));
-      }
-      store.dispatch(removeProfile(profileId));
-    })
-    .catch((err) => {
-      api.showErrorNotification("Failed to remove profile", err, {
-        allowReport: err.code !== "EPERM",
-      });
-    });
-}
-
 function removeMod(
   api: IExtensionApi,
   gameId: string,
@@ -831,7 +485,9 @@ function unmanageGame(
           )
           .then(() =>
             PromiseBB.map(profileIds, (profileId) =>
-              removeProfileImpl(api, profileId),
+              PromiseBB.resolve(
+                window.api.profile.executeCommand({ type: 'profile:remove', profileId }),
+              ),
             ),
           )
           .then(() => PromiseBB.resolve())
@@ -1100,28 +756,6 @@ function init(context: IExtensionContext): boolean {
       activateGame(store, gameId);
     });
 
-    // promise used to ensure a new profile switch can't be started before the last one
-    // is complete
-    let finishProfileSwitch: () => void;
-
-    context.api.onStateChange(
-      ["settings", "profiles", "nextProfileId"],
-      genOnProfileChange(
-        context.api,
-        (callback: () => void) => (finishProfileSwitch = callback),
-      ),
-    );
-
-    context.api.onStateChange(
-      ["settings", "profiles", "activeProfileId"],
-      (prev: string, current: string) => {
-        context.api.events.emit("profile-did-change", current);
-        if (finishProfileSwitch !== undefined) {
-          finishProfileSwitch();
-        }
-      },
-    );
-
     let first = true;
     context.api.onStateChange(
       ["session", "gameMode", "known"],
@@ -1141,7 +775,7 @@ function init(context: IExtensionContext): boolean {
           );
 
           if (profile !== undefined) {
-            context.api.store.dispatch(setNextProfile(profile.id));
+            window.api.profile.executeCommand({ type: 'profile:switch', profileId: profile.id });
           } else {
             log(
               "warn",
@@ -1185,44 +819,6 @@ function init(context: IExtensionContext): boolean {
       },
     );
 
-    context.api.onStateChange(
-      ["persistent", "profiles"],
-      (
-        prev: { [profileId: string]: IProfile },
-        current: { [profileId: string]: IProfile },
-      ) => {
-        Object.keys(current).forEach((profileId) => {
-          if (prev[profileId] === current[profileId]) {
-            return;
-          }
-
-          const profile = current[profileId];
-
-          const prevState = getSafe(prev, [profileId, "modState"], {});
-          const currentState = getSafe(current, [profileId, "modState"], {});
-
-          if (prevState !== currentState) {
-            const mods = context.api.getState().persistent.mods[profile.gameId];
-            Object.keys(currentState).forEach((modId) => {
-              const isEnabled = getSafe(
-                currentState,
-                [modId, "enabled"],
-                false,
-              );
-              const wasEnabled = getSafe(prevState, [modId, "enabled"], false);
-
-              if (isEnabled !== wasEnabled && mods[modId] !== undefined) {
-                context.api.events.emit(
-                  isEnabled ? "mod-enabled" : "mod-disabled",
-                  profileId,
-                  modId,
-                );
-              }
-            });
-          }
-        });
-      },
-    );
     {
       const state: IState = store.getState();
 
@@ -1247,10 +843,7 @@ function init(context: IExtensionContext): boolean {
             });
           }
           store.dispatch(setCurrentProfile(undefined, undefined));
-          store.dispatch(setNextProfile(undefined));
-          if (finishProfileSwitch !== undefined) {
-            finishProfileSwitch();
-          }
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
         });
 
       const { activeProfileId, nextProfileId } = state.settings.profiles;
@@ -1266,12 +859,12 @@ function init(context: IExtensionContext): boolean {
           const profile = state.persistent.profiles[activeProfileId];
           const discovery = discoveryByGame(state, profile.gameId);
           if (discovery?.path !== undefined) {
-            store.dispatch(setNextProfile(activeProfileId));
+            window.api.profile.executeCommand({ type: 'profile:switch', profileId: activeProfileId });
           } else {
-            store.dispatch(setNextProfile(undefined));
+            window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
           }
         } else {
-          store.dispatch(setNextProfile(undefined));
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
         }
       }
 
@@ -1285,7 +878,7 @@ function init(context: IExtensionContext): boolean {
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         if (discovery === undefined || discovery.path === undefined) {
           log("info", "active game no longer discovered, deactivate");
-          store.dispatch(setNextProfile(undefined));
+          window.api.profile.executeCommand({ type: 'profile:switch', profileId: undefined });
         }
       }
     }
