@@ -219,6 +219,7 @@ export const stateReducer: IReducerSpec = {
         game: [payload.game],
         localPath: payload.localPath,
         size: payload.fileSize,
+        received: payload.fileSize,
         fileTime: Date.now(),
         urls: [],
         modInfo: {},

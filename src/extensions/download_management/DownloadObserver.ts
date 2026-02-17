@@ -544,7 +544,19 @@ export class DownloadObserver {
             callback,
           ),
         ),
-    );
+    ).catch((err) => {
+      log("error", "unhandled error starting download", {
+        id,
+        error: err.message,
+      });
+      if (callback !== undefined && !callbacked) {
+        callback(err, id);
+      } else {
+        showError(this.mApi.store.dispatch, "Download failed", err.message, {
+          allowReport: false,
+        });
+      }
+    });
   }
 
   private handleDownloadFinished(
@@ -1008,7 +1020,22 @@ export class DownloadObserver {
                 );
             }
           },
-        );
+        ).catch((err) => {
+          log("error", "unhandled error resuming download", {
+            downloadId,
+            error: err.message,
+          });
+          if (callback !== undefined) {
+            callback(err, downloadId);
+          } else {
+            showError(
+              this.mApi.store.dispatch,
+              "Download failed",
+              err.message,
+              { allowReport: false },
+            );
+          }
+        });
       }
     } catch (err) {
       if (callback !== undefined) {
@@ -1036,7 +1063,7 @@ export class DownloadObserver {
         id: downloadId,
         state: download.state,
       });
-      return this.handleResumeDownload(downloadId, callback);
+      this.handleResumeDownload(downloadId, callback);
     }
     log("debug", "not resuming download", {
       id: downloadId,

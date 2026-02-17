@@ -16,7 +16,7 @@ describe('addLocalDownload', () => {
 
     _.unset(result, ['files', 'newid', 'fileTime']);
     expect(result).toEqual({ files: { newid:
-      { state: 'finished', game: ['game'], localPath: 'localPath', size: 42, chunks: [], urls: [], modInfo: {} }
+      { state: 'finished', game: ['game'], localPath: 'localPath', size: 42, received: 42, chunks: [], urls: [], modInfo: {} }
     } });
   });
 });

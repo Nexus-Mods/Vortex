@@ -1670,11 +1670,21 @@ function init(context: IExtensionContextExt) {
     const profile = selectors.activeProfile(state);
     const plugin: IPlugin = state.session.plugins.pluginList[id];
     if (plugin === undefined) {
-      return false;
+      return;
     }
 
-    const esp = new ESPFile(plugin.filePath, profile.gameId);
-    esp.setLightFlag(enable);
+    try {
+      const esp = new ESPFile(plugin.filePath, profile.gameId);
+      esp.setLightFlag(enable);
+    } catch (err) {
+      if (err.nativeCode !== 0) {
+        context.api.showErrorNotification("Failed to set light flag", err, {
+          message: plugin.filePath,
+          allowReport: true,
+        });
+        return;
+      }
+    }
     context.api.ext.addToHistory("plugins", {
       type: "plugin-eslified",
       gameId: profile.gameId,
