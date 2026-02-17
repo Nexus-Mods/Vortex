@@ -11,7 +11,7 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
 // Set up requireRemap first, BEFORE any other requires
 // IMPORTANT: Use require() not import, because imports are hoisted to the top
 // tslint:disable-next-line:no-var-requires
-const requireRemap = require("./util/requireRemap").default;
+const requireRemap = require("./renderer/util/requireRemap").default;
 requireRemap();
 
 const earlyErrHandler = (evt: ErrorEvent) => {
@@ -59,7 +59,7 @@ if (SetProcessPreferredUILanguages !== undefined) {
 import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
-import "./util/application.electron";
+import "./renderer/util/application.electron";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -69,7 +69,7 @@ import * as path from "path";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
-import "./util/monkeyPatching";
+import "./renderer/util/monkeyPatching";
 import * as ReactDOM from "react-dom";
 import { I18nextProvider } from "react-i18next";
 import { Provider } from "react-redux";
@@ -109,21 +109,21 @@ import MainWindow from "./renderer/views/MainWindow";
 import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
 import { reduxLogger } from "./renderer/store/reduxLogger";
 import { reduxSanity, type StateError } from "./renderer/store/reduxSanity";
-import { relaunch } from "./util/commandLine";
-import { UserCanceled } from "./util/CustomErrors";
-import { setOutdated, terminate, toError } from "./util/errorHandling";
-import {} from "./util/extensionRequire";
-import { setTFunction } from "./util/fs";
-import getVortexPath, { setVortexPath } from "./util/getVortexPath";
-import GlobalNotifications from "./util/GlobalNotifications";
+import { relaunch } from "./renderer/util/commandLine";
+import { UserCanceled } from "./renderer/util/CustomErrors";
+import { setOutdated, terminate, toError } from "./renderer/util/errorHandling";
+import {} from "./renderer/util/extensionRequire";
+import { setTFunction } from "./renderer/util/fs";
+import getVortexPath, { setVortexPath } from "./renderer/util/getVortexPath";
+import GlobalNotifications from "./renderer/util/GlobalNotifications";
 import getI18n, {
   changeLanguage,
   fallbackTFunc,
   type TFunction,
-} from "./util/i18n";
-import { showError } from "./util/message";
-import { getSafe } from "./util/storeHelper";
-import { bytesToString, getAllPropertyNames } from "./util/util";
+} from "./renderer/util/i18n";
+import { showError } from "./renderer/util/message";
+import { getSafe } from "./renderer/util/storeHelper";
+import { bytesToString, getAllPropertyNames } from "./renderer/util/util";
 
 log("debug", "renderer process started", { pid: process["pid"] });
 

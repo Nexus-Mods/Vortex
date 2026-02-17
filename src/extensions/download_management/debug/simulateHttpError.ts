@@ -1,4 +1,4 @@
-import { HTTPError } from '../../../util/CustomErrors';
+import { HTTPError } from '../../../renderer/util/CustomErrors';
 
 /**
  * Generates fake HTTP errors for testing error handling.

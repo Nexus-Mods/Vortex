@@ -11,29 +11,29 @@ import type {
 } from "../../renderer/types/IExtensionContext";
 import type { IModLookupResult } from "../../renderer/types/IModLookupResult";
 import type { IState } from "../../renderer/types/IState";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   HTTPError,
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import type { LogLevel } from "../../util/log";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import opn from "../../util/opn";
+import type { LogLevel } from "../../renderer/util/log";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import opn from "../../renderer/util/opn";
 import {
   activeGameId,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { currentGame, getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { currentGame, getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   decodeHTML,
@@ -42,7 +42,7 @@ import {
   truthy,
   Content,
   Campaign,
-} from "../../util/util";
+} from "../../renderer/util/util";
 
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import { DownloadIsHTML } from "../download_management/DownloadManager";

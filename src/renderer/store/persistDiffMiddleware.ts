@@ -14,7 +14,7 @@ import type { PersistedHive } from "../../shared/types/state";
 import type { IState } from "../types/IState";
 
 import { getErrorMessageOrDefault } from "../../shared/errors";
-import { log } from "../../util/log";
+import { log } from "../util/log";
 import { computeStateDiff } from "./stateDiff";
 
 /**

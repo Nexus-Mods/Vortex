@@ -3,7 +3,7 @@ import FlexLayout from "../../../renderer/controls/FlexLayout";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import type { IGameStored } from "../../../renderer/types/IState";
 import { PureComponentEx } from "../../../renderer/controls/ComponentEx";
-import * as selectors from "../../../util/selectors";
+import * as selectors from "../../../renderer/util/selectors";
 
 import { SITE_ID } from "../../gamemode_management/constants";
 

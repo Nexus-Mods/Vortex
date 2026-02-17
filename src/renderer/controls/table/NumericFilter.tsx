@@ -1,6 +1,6 @@
 import { Button } from "../TooltipControls";
 import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
-import { truthy } from "../../../util/util";
+import { truthy } from "../../util/util";
 
 import * as React from "react";
 import { FormControl, InputGroup } from "react-bootstrap";

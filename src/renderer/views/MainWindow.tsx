@@ -25,12 +25,12 @@ import type { INotification } from "../types/INotification";
 import type { IProfile, IProgress, IState, IUIBlocker } from "../types/IState";
 import { connect, extend } from "../controls/ComponentEx";
 import type { IRegisteredExtension } from "../types/extensions";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { createQueue, MutexProvider } from "../../util/MutexContext";
-import startupSettings from "../../util/startupSettings";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+import type { TFunction } from "../util/i18n";
+import { log } from "../util/log";
+import { createQueue, MutexProvider } from "../util/MutexContext";
+import startupSettings from "../util/startupSettings";
+import { getSafe } from "../util/storeHelper";
+import { truthy } from "../util/util";
 import Dialog from "./Dialog";
 import DialogContainer from "./DialogContainer";
 import DNDContainer from "./DNDContainer";
@@ -44,7 +44,7 @@ import Settings from "./Settings";
 import WindowControls from "./WindowControls";
 import * as semver from "semver";
 
-import { profileById } from "../../util/selectors";
+import { profileById } from "../util/selectors";
 import { getGame } from "../../extensions/gamemode_management/util/getGame";
 
 import update from "immutability-helper";

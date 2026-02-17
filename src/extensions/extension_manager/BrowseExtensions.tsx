@@ -14,8 +14,8 @@ import {
   connect,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import opn from "../../util/opn";
-import { largeNumToString } from "../../util/util";
+import opn from "../../renderer/util/opn";
+import { largeNumToString } from "../../renderer/util/util";
 
 import type {
   IAvailableExtension,
@@ -33,7 +33,7 @@ import {
   ModalHeader,
 } from "react-bootstrap";
 import * as semver from "semver";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 
 const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 const GITHUB_BASE_URL: string = "https://www.github.com";

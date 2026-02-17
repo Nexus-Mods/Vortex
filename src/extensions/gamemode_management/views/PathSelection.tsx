@@ -15,7 +15,7 @@ import Icon from "../../../renderer/controls/Icon";
 import Modal from "../../../renderer/controls/Modal";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import type { IState } from "../../../renderer/types/IState";
-import type { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../renderer/util/i18n";
 
 export interface IGameSelectionDialogProps {
   visible: boolean;

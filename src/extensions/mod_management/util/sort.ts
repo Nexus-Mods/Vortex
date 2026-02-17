@@ -1,6 +1,6 @@
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import { downloadPathForGame } from "../../download_management/selectors";
 

@@ -13,9 +13,9 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
+import Debouncer from "../../../renderer/util/Debouncer";
+import { log } from "../../../renderer/util/log";
+import { truthy } from "../../../renderer/util/util";
 import Notification from "../../../renderer/views/Notification";
 
 import { closeBrowser } from "../actions";

@@ -1,7 +1,7 @@
 import * as React from "react";
 import type * as types from "../../../renderer/types/api";
-import * as util from "../../../util/api";
-import * as selectors from "../../../util/selectors";
+import * as util from "../../../renderer/util/api";
+import * as selectors from "../../../renderer/util/selectors";
 
 import { setLoadOrder } from "../../../renderer/actions/loadOrder";
 

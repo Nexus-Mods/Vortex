@@ -3,14 +3,14 @@ import type {
   IExtensionApi,
 } from "../../renderer/types/IExtensionContext";
 import type { IGame } from "../../renderer/types/IGame";
-import * as fs from "../../util/fs";
-import type { IFileEntry } from "../../util/getFileList";
-import getFileList from "../../util/getFileList";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import { setdefault, truthy } from "../../util/util";
-import walk from "../../util/walk";
+import * as fs from "../../renderer/util/fs";
+import type { IFileEntry } from "../../renderer/util/getFileList";
+import getFileList from "../../renderer/util/getFileList";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
+import getNormalizeFunc from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import { setdefault, truthy } from "../../renderer/util/util";
+import walk from "../../renderer/util/walk";
 
 import type { IMod } from "./types/IMod";
 import type { IResolvedMerger } from "./types/IResolvedMerger";

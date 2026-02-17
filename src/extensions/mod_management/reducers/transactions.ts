@@ -1,5 +1,5 @@
 import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
-import { deleteOrNop, setSafe } from "../../../util/storeHelper";
+import { deleteOrNop, setSafe } from "../../../renderer/util/storeHelper";
 import * as actions from "../actions/transactions";
 
 export const transactionsReducer: IReducerSpec = {

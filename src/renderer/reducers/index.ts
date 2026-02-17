@@ -8,16 +8,11 @@
 import type { IExtensionReducer } from "../types/extensions";
 import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
-import { UserCanceled } from "../../util/CustomErrors";
-import deepMerge from "../../util/deepMerge";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import {
-  deleteOrNop,
-  getSafe,
-  rehydrate,
-  setSafe,
-} from "../../util/storeHelper";
+import { UserCanceled } from "../util/CustomErrors";
+import deepMerge from "../util/deepMerge";
+import * as fs from "../util/fs";
+import { log } from "../util/log";
+import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
 
 import { appReducer } from "./app";
 import { loReducer } from "./loadOrder";

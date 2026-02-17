@@ -7,7 +7,7 @@ import {
   PureComponentEx,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { sum } from "../../../util/util";
+import { sum } from "../../../renderer/util/util";
 
 import * as React from "react";
 

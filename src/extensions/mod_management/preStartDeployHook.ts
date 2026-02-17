@@ -3,13 +3,13 @@ import type {
   IRunParameters,
 } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";
-import onceCB from "../../util/onceCB";
+import onceCB from "../../renderer/util/onceCB";
 
 import { needToDeploy } from "./selectors";
 
 import PromiseBB from "bluebird";
 import getText from "./texts";
-import { UserCanceled } from "../../util/CustomErrors";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
 
 type DeployResult = "auto" | "yes" | "skip" | "cancel";
 

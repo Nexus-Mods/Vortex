@@ -5,7 +5,7 @@ import type {
   IExtensionApi,
   ToDoType,
 } from "../../renderer/types/IExtensionContext";
-import * as selectors from "../../util/selectors";
+import * as selectors from "../../renderer/util/selectors";
 
 import { setProfilesVisible } from "../settings_interface/actions/interface";
 

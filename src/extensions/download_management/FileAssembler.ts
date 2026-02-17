@@ -1,9 +1,12 @@
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { getVisibleWindow } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { makeQueue } from "../../util/util";
-import { getPreloadApi } from "../../util/preloadAccess";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import { getVisibleWindow } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { makeQueue } from "../../renderer/util/util";
+import { getPreloadApi } from "../../renderer/util/preloadAccess";
 
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";

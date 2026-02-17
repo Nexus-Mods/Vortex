@@ -1,5 +1,5 @@
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";

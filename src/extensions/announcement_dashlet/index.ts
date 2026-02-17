@@ -11,14 +11,14 @@ import type {
   ThunkStore,
 } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";
-import { getApplication } from "../../util/application";
-import { DataInvalid } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import opn from "../../util/opn";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import { getApplication } from "../../renderer/util/application";
+import { DataInvalid } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import opn from "../../renderer/util/opn";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import sessionReducer from "./reducers/announcements";
 import persistentReducer from "./reducers/persistent";

@@ -1,4 +1,4 @@
-import * as fs from "../../../util/fs";
+import * as fs from "../../../renderer/util/fs";
 
 import type { IFeedbackResponse } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";

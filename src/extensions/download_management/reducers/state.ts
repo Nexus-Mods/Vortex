@@ -1,14 +1,14 @@
-import { objDiff, flatten } from "../../../util/util";
+import { objDiff, flatten } from "../../../renderer/util/util";
 import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 import { VerifierDropParent } from "../../../renderer/types/IExtensionContext";
-import { terminate } from "../../../util/errorHandling";
+import { terminate } from "../../../renderer/util/errorHandling";
 import {
   deleteOrNop,
   getSafe,
   merge,
   setOrNop,
   setSafe,
-} from "../../../util/storeHelper";
+} from "../../../renderer/util/storeHelper";
 
 import * as action from "../actions/state";
 

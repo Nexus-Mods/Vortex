@@ -1,7 +1,7 @@
 import * as os from "os";
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import { analyticsLog } from "./utils/analyticsLog";
-import { getCPUArch } from "./../../util/nativeArch";
+import { getCPUArch } from "../../renderer/util/nativeArch";
 import { setAnalytics } from "./actions/analytics.action";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";

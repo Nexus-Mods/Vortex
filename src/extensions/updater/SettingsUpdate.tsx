@@ -6,7 +6,7 @@ import {
   connect,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 import { setUpdateChannel } from "./actions";
 
 import * as React from "react";

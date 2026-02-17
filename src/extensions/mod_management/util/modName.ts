@@ -1,4 +1,4 @@
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IMod, IModReference } from "../types/IMod";
 

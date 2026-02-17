@@ -12,9 +12,9 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import { log } from "../../../util/log";
-import opn from "../../../util/opn";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import { log } from "../../../renderer/util/log";
+import opn from "../../../renderer/util/opn";
 
 import { setUserAPIKey } from "../actions/account";
 import { setLoginId, setOauthPending } from "../actions/session";

@@ -1,7 +1,7 @@
 import PromiseBB from "bluebird";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { INotification } from "../../../renderer/types/INotification";
-import { toPromise } from "../../../util/util";
+import { toPromise } from "../../../renderer/util/util";
 
 export function removeMod(
   api: IExtensionApi,

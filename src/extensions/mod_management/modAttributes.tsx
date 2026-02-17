@@ -1,9 +1,9 @@
 import DateTimeFilter from "../../renderer/controls/table/DateTimeFilter";
 import ZoomableImage from "../../renderer/controls/ZoomableImage";
 import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
-import { getCurrentLanguage } from "../../util/i18n";
-import { userFriendlyTime } from "../../util/relativeTime";
-import { getSafe } from "../../util/storeHelper";
+import { getCurrentLanguage } from "../../renderer/util/i18n";
+import { userFriendlyTime } from "../../renderer/util/relativeTime";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import type { IModWithState } from "./types/IModProps";
 

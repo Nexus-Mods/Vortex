@@ -5,7 +5,7 @@ import {
   pushSafe,
   setDefaultArray,
   setSafe,
-} from "../../util/storeHelper";
+} from "../../renderer/util/storeHelper";
 
 import * as actions from "./actions";
 import type { IHistoryEvent } from "./types";

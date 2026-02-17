@@ -4,7 +4,7 @@ import { initGameSupport } from "./utils/gameSupport";
 import type { IChoiceType } from "./types/interface";
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import type { IMod } from "../mod_management/types/IMod";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 function init(context: IExtensionContext): boolean {
   initGameSupport(context.api);

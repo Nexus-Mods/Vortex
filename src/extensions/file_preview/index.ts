@@ -4,9 +4,12 @@ import type {
   IExtensionContext,
   IPreviewFile,
 } from "../../renderer/types/IExtensionContext";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { log } from "../../util/log";
-import opn from "../../util/opn";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import { log } from "../../renderer/util/log";
+import opn from "../../renderer/util/opn";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 interface IPreviewHandler {

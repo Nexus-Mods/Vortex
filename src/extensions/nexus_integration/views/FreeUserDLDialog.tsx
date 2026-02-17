@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { util } from "../../..";
 import Modal from "../../../renderer/controls/Modal";
 import type { IState } from "../../../renderer/types/IState";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
 import { makeFileUID } from "../util/UIDs";
@@ -15,8 +15,13 @@ import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
 import { MainContext } from "../../../renderer/views/MainWindow";
 import type { IComponentContext } from "../../../renderer/types/IComponentContext";
-import opn from "../../../util/opn";
-import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
+import opn from "../../../renderer/util/opn";
+import {
+  Campaign,
+  Content,
+  nexusModsURL,
+  Section,
+} from "../../../renderer/util/util";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 interface IFreeUserDLDialogProps {

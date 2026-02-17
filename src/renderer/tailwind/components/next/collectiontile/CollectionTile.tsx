@@ -17,9 +17,9 @@ import { Icon } from "../icon";
 import { nxmFileSize, nxmMod } from "../../../lib/icon-paths";
 import numeral from "numeral";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
-import { isCollectionModPresent } from "../../../../../util/selectors";
-import Debouncer from "../../../../../util/Debouncer";
-import { delayed } from "../../../../../util/util";
+import { isCollectionModPresent } from "../../../../util/selectors";
+import Debouncer from "../../../../util/Debouncer";
+import { delayed } from "../../../../util/util";
 import { mdiOpenInNew, mdiStar, mdiThumbUp } from "@mdi/js";
 
 const debouncer = new Debouncer(

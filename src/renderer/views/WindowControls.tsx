@@ -1,6 +1,6 @@
 import * as React from "react";
 import { IconButton } from "../controls/TooltipControls";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
+import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
 class WindowControls extends React.Component<{}, { isMaximized: boolean }> {
   private mClosed: boolean = false;

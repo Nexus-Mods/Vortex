@@ -1,10 +1,10 @@
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import type { TFunction } from "../../renderer/util/i18n";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { setModAttribute } from "../mod_management/actions/mods";

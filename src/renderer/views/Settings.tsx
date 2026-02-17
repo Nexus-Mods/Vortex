@@ -8,9 +8,9 @@ import {
   extend,
   translate,
 } from "../controls/ComponentEx";
-import lazyRequire from "../../util/lazyRequire";
-import makeReactive from "../../util/makeReactive";
-import type startupSettingsT from "../../util/startupSettings";
+import lazyRequire from "../util/lazyRequire";
+import makeReactive from "../util/makeReactive";
+import type startupSettingsT from "../util/startupSettings";
 
 import MainPage from "./MainPage";
 
@@ -20,7 +20,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
 const startupSettings = lazyRequire<typeof startupSettingsT>(
-  () => require("../../util/startupSettings"),
+  () => require("../util/startupSettings"),
   "default",
 );
 

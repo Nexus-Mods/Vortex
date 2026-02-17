@@ -29,14 +29,14 @@ import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../../util/CustomErrors";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+} from "../../../renderer/util/CustomErrors";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
@@ -60,7 +60,7 @@ import { Button, Panel } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import { getCollectionModByReference } from "../../../util/selectors";
+import { getCollectionModByReference } from "../../../renderer/util/selectors";
 
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;

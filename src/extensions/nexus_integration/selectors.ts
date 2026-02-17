@@ -1,8 +1,8 @@
 import type { IState } from "../../renderer/types/IState";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import { createSelector } from "reselect";
-import { truthy } from "../../util/util";
+import { truthy } from "../../renderer/util/util";
 
 import { nexusGames } from "../nexus_integration/util";
 

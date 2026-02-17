@@ -1,15 +1,15 @@
 import { BoxWithHandle } from "./BoxWithHandle";
 import ToolButton from "./ToolButton";
-import type { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
 import { makeExeId } from "../../renderer/reducers/session";
 
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import { activeGameId } from "../../util/selectors";
+import { activeGameId } from "../../renderer/util/selectors";
 
 import type { IRunningTool } from "../../renderer/types/IState";
 

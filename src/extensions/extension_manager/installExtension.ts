@@ -2,12 +2,12 @@ import { removeExtension } from "../../renderer/actions";
 import { unknownToError } from "../../shared/errors";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";
-import { DataInvalid } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../util/log";
-import { INVALID_FILENAME_RE } from "../../util/util";
+import { DataInvalid } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import lazyRequire from "../../renderer/util/lazyRequire";
+import { log } from "../../renderer/util/log";
+import { INVALID_FILENAME_RE } from "../../renderer/util/util";
 
 import {
   countryExists,

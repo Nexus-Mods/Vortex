@@ -8,8 +8,8 @@ import {
   connect,
   PureComponentEx,
 } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { countIf } from "../../../util/util";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { countIf } from "../../../renderer/util/util";
 
 import type { IGameStored } from "../types/IGameStored";
 

@@ -1,6 +1,6 @@
 import type { IState } from "../../../renderer/types/IState";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { activeGameId } from "../../profile_management/selectors";
 

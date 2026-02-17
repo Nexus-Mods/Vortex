@@ -7,7 +7,7 @@ import {
   pushSafe,
   removeValue,
   setSafe,
-} from "../../util/storeHelper";
+} from "../util/storeHelper";
 
 import * as path from "path";
 

@@ -8,7 +8,7 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { setdefault } from "../../../util/util";
+import { setdefault } from "../../../renderer/util/util";
 
 import {
   confirmExternalChanges,
@@ -28,7 +28,7 @@ import type { ThunkDispatch } from "redux-thunk";
 //  to deduct what is happening in reports such as:
 //  https://github.com/Nexus-Mods/Vortex/issues/7629
 import path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 import { getReduxLog } from "../../../renderer/store/reduxLogger";
 
 export interface IBaseProps {}

@@ -3,7 +3,7 @@ import safeCreateAction from "../../../renderer/actions/safeCreateAction";
 import Bluebird from "bluebird";
 import * as reduxAct from "redux-act";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import { batchDispatch } from "../../../util/util";
+import { batchDispatch } from "../../../renderer/util/util";
 import type { IProfile } from "../types/IProfile";
 
 /**

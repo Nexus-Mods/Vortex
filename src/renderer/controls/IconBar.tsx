@@ -1,7 +1,7 @@
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
-import type { TFunction } from "../../util/i18n";
-import { setdefault } from "../../util/util";
+import type { TFunction } from "../util/i18n";
+import { setdefault } from "../util/util";
 
 import type { IActionControlProps, IActionDefinitionEx } from "./ActionControl";
 import ActionControl from "./ActionControl";

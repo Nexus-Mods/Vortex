@@ -7,11 +7,11 @@ import type {
   IExtensionLoadFailure,
   IState,
 } from "../../renderer/types/IState";
-import { relaunch } from "../../util/commandLine";
-import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
+import { relaunch } from "../../renderer/util/commandLine";
+import { DataInvalid, ProcessCanceled } from "../../renderer/util/CustomErrors";
 import { isExtSame } from "../../renderer/ExtensionManager";
-import { log } from "../../util/log";
-import makeReactive from "../../util/makeReactive";
+import { log } from "../../renderer/util/log";
+import makeReactive from "../../renderer/util/makeReactive";
 
 import {
   setAvailableExtensions,
@@ -36,7 +36,7 @@ import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
 import { setDialogVisible, setExtensionEnabled } from "../../renderer/actions";
-import { getGame } from "../../util/api";
+import { getGame } from "../../renderer/util/api";
 
 interface ILocalState {
   reloadNecessary: boolean;

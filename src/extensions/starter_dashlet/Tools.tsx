@@ -9,13 +9,13 @@ import type {
 } from "../../renderer/types/IDialog";
 import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type { IMod, IRunningTool } from "../../renderer/types/IState";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import { activeGameId } from "../../util/selectors";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import StarterInfo from "../../util/StarterInfo";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import { activeGameId } from "../../renderer/util/selectors";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import StarterInfo from "../../renderer/util/StarterInfo";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 
 import AddToolButton from "./AddToolButton";
 

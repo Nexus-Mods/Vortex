@@ -8,9 +8,9 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { getWindowId } from "../../../util/preloadAccess";
-import { getSafe } from "../../../util/storeHelper";
+import Debouncer from "../../../renderer/util/Debouncer";
+import { getWindowId } from "../../../renderer/util/preloadAccess";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
 import {

@@ -1,6 +1,6 @@
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
 
 import type { IDialogManager } from "../../installer_fomod_shared/utils/DialogQueue";
 import { DialogQueue } from "../../installer_fomod_shared/utils/DialogQueue";

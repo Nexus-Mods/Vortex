@@ -1,4 +1,4 @@
-import { setdefault } from "../../util/util";
+import { setdefault } from "../util/util";
 
 import type * as Redux from "redux";
 

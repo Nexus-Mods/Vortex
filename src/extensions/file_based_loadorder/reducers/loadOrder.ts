@@ -1,5 +1,5 @@
 import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
-import { getSafe, setSafe } from "../../../util/storeHelper";
+import { getSafe, setSafe } from "../../../renderer/util/storeHelper";
 
 import type { ILoadOrderEntry } from "../types/types";
 

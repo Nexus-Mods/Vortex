@@ -1,4 +1,4 @@
-import { sum } from "../../util/util";
+import { sum } from "../../renderer/util/util";
 
 interface ISpeedEntry {
   lastMeasure: number;

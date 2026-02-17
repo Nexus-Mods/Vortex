@@ -5,14 +5,14 @@ import {
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
   UserCanceled,
-} from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import { writeFileAtomic } from "../../util/fsAtomic";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { jsonRequest, rawRequest } from "../../util/network";
-import { getSafe } from "../../util/storeHelper";
-import { INVALID_FILENAME_RE, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { writeFileAtomic } from "../../renderer/util/fsAtomic";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { jsonRequest, rawRequest } from "../../renderer/util/network";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { INVALID_FILENAME_RE, truthy } from "../../renderer/util/util";
 
 import {
   addLocalDownload,

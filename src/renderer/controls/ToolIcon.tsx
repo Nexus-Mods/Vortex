@@ -4,7 +4,7 @@ import * as React from "react";
 import { Image } from "react-bootstrap";
 import { pathToFileURL } from "url";
 import { IconButton } from "./TooltipControls";
-import type { TFunction } from "../../util/i18n";
+import type { TFunction } from "../util/i18n";
 
 export interface IItemProps {
   name: string;

@@ -37,10 +37,10 @@ import {
 } from "../../renderer/controls/ComponentEx";
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
-import { relaunch } from "../../util/commandLine";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import { relaunch } from "../../renderer/util/commandLine";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { truthy } from "../../renderer/util/util";
 import { readExtensibleDir } from "../extension_manager/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";

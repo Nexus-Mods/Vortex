@@ -12,7 +12,7 @@ import type {
   ISupportedResult,
   ProgressDelegate,
 } from "../../renderer/types/IExtensionContext";
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 
 function testSupported(files: string[]): PromiseBB<ISupportedResult> {
   return new PromiseBB((resolve, reject) => {

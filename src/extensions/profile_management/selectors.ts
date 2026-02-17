@@ -1,4 +1,4 @@
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 import type { IProfile } from "./types/IProfile";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";

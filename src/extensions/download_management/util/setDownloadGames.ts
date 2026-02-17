@@ -8,11 +8,14 @@
 import path from "path";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
-import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import * as fs from "../../../util/fs";
-import getNormalizeFunc from "../../../util/getNormalizeFunc";
-import { log } from "../../../util/log";
-import { batchDispatch, truthy } from "../../../util/util";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import * as fs from "../../../renderer/util/fs";
+import getNormalizeFunc from "../../../renderer/util/getNormalizeFunc";
+import { log } from "../../../renderer/util/log";
+import { batchDispatch, truthy } from "../../../renderer/util/util";
 import { setCompatibleGames, setDownloadFilePath } from "../actions/state";
 import { downloadPath, downloadPathForGame } from "../selectors";
 

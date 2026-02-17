@@ -8,11 +8,11 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import { showError } from "../../../util/message";
-import onceCB from "../../../util/onceCB";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import { showError } from "../../../renderer/util/message";
+import onceCB from "../../../renderer/util/onceCB";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";

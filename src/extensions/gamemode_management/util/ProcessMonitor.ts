@@ -3,10 +3,13 @@ import { makeExeId } from "../../../renderer/reducers/session";
 import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
-import { log } from "../../../util/log";
-import { currentGame, currentGameDiscovery } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { setdefault } from "../../../util/util";
+import { log } from "../../../renderer/util/log";
+import {
+  currentGame,
+  currentGameDiscovery,
+} from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { setdefault } from "../../../renderer/util/util";
 
 import * as path from "path";
 import type * as Redux from "redux";

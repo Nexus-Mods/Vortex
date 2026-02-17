@@ -8,9 +8,9 @@ import {
   PureComponentEx,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import * as fs from "../../util/fs";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+import * as fs from "../../renderer/util/fs";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 
 import { setINITweakEnabled } from "../mod_management/actions/mods";
 import { INI_TWEAKS_PATH } from "../mod_management/InstallManager";

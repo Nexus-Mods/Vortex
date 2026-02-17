@@ -5,8 +5,8 @@ import type {
   ILookupResult,
 } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
-import { log } from "../../../util/log";
-import { batchDispatch } from "../../../util/util";
+import { log } from "../../../renderer/util/log";
+import { batchDispatch } from "../../../renderer/util/util";
 import * as selectors from "../../gamemode_management/selectors";
 import metaLookupMatch from "../../mod_management/util/metaLookupMatch";
 import NXMUrl from "../../nexus_integration/NXMUrl";

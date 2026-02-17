@@ -5,7 +5,7 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";

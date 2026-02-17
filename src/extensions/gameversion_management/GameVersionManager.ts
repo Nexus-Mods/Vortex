@@ -1,11 +1,11 @@
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IGame } from "../../renderer/types/IGame";
-import { ProcessCanceled } from "../../util/CustomErrors";
-import { truthy } from "../../util/util";
+import { ProcessCanceled } from "../../renderer/util/CustomErrors";
+import { truthy } from "../../renderer/util/util";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import type { IGameVersionProvider } from "./types/IGameVersionProvider";
 
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 
 import { getExecGameVersion } from "./util/getGameVersion";
 import { unknownToError } from "../../shared/errors";

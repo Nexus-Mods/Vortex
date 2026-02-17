@@ -10,11 +10,11 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";

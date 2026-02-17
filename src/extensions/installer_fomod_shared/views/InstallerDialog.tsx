@@ -9,8 +9,8 @@ import {
   PureComponentEx,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { pushSafe, removeValue } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { pushSafe, removeValue } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 
 import type {
   GroupType,

@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 // Jest doesn't support setImmediate, so we provide a polyfill

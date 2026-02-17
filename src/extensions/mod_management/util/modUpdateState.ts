@@ -1,5 +1,5 @@
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod } from "../types/IMod";
 import type { IModSource } from "../types/IModSource";

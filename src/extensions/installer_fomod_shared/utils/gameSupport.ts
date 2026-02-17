@@ -2,8 +2,8 @@ import type { IGame } from "../../../renderer/types/IGame";
 
 import * as path from "path";
 import type { IDiscoveryResult, IState } from "../../../renderer/types/IState";
-import getVortexPath from "../../../util/getVortexPath";
-import { makeOverlayableDictionary } from "../../../util/util";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { makeOverlayableDictionary } from "../../../renderer/util/util";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 
 function bethIni(gamePath: string, iniName: string) {

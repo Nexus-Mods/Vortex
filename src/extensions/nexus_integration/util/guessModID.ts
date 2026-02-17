@@ -3,8 +3,8 @@ import type {
   ILookupResult,
   IModInfo,
 } from "../../../renderer/types/IExtensionContext";
-import { ProcessCanceled } from "../../../util/CustomErrors";
-import { batchDispatch, truthy } from "../../../util/util";
+import { ProcessCanceled } from "../../../renderer/util/CustomErrors";
+import { batchDispatch, truthy } from "../../../renderer/util/util";
 import { setDownloadModInfo } from "../../download_management/actions/state";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setModAttribute } from "../../mod_management/actions/mods";

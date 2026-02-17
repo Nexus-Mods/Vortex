@@ -20,9 +20,9 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import lazyRequire from "../../../util/lazyRequire";
-import { showError } from "../../../util/message";
-import { activeGameId } from "../../../util/selectors";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import { showError } from "../../../renderer/util/message";
+import { activeGameId } from "../../../renderer/util/selectors";
 
 import type { IMod } from "../../mod_management/types/IMod";
 

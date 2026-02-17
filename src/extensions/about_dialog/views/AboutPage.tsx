@@ -1,7 +1,7 @@
 import More from "../../../renderer/controls/More";
 import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
-import github from "../../../util/github";
-import { log } from "../../../util/log";
+import github from "../../../renderer/util/github";
+import { log } from "../../../renderer/util/log";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type { ILicense } from "../types/ILicense";
@@ -12,8 +12,8 @@ import * as path from "path";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import { getApplication } from "../../../util/application";
-import getVortexPath from "../../../util/getVortexPath";
+import { getApplication } from "../../../renderer/util/application";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 let modules = {};

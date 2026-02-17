@@ -1,9 +1,9 @@
 import type { IExtensionApi, IMod } from "../../renderer/types/api";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import * as _ from "lodash";
 import type { ILoadOrderEntry, ILoadOrderEntryExt } from "./types/types";
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 import {
   activeGameId,
   lastActiveProfileForGame,

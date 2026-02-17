@@ -1,8 +1,8 @@
 import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
 import type { IGameInfoEntry, IState } from "../../../renderer/types/IState";
 import { ComponentEx, connect } from "../../../renderer/controls/ComponentEx";
-import opn from "../../../util/opn";
-import { bytesToString } from "../../../util/util";
+import opn from "../../../renderer/util/opn";
+import { bytesToString } from "../../../renderer/util/util";
 
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";

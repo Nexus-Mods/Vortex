@@ -15,8 +15,8 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
 import { setAssociatedWithNXMURLs } from "../actions/settings";
 
 import chromeAllowScheme from "../util/chromeAllowScheme";

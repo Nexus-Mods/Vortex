@@ -3,12 +3,12 @@ import type {
   IExtensionContext,
 } from "../../renderer/types/IExtensionContext";
 import type { IGame } from "../../renderer/types/IGame";
-import { UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { activeGameId, gameName } from "../../util/selectors";
-import walk from "../../util/walk";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import type { TFunction } from "../../renderer/util/i18n";
+import { log } from "../../renderer/util/log";
+import { activeGameId, gameName } from "../../renderer/util/selectors";
+import walk from "../../renderer/util/walk";
 
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -20,7 +20,7 @@ import type {
 
 import PromiseBB from "bluebird";
 import * as path from "path";
-import getVortexPath from "../../util/getVortexPath";
+import getVortexPath from "../../renderer/util/getVortexPath";
 import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 class DeploymendMethod extends LinkingDeployment {

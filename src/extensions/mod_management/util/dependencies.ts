@@ -4,7 +4,7 @@ import {
   NotFound,
   ProcessCanceled,
   UserCanceled,
-} from "../../../util/CustomErrors";
+} from "../../../renderer/util/CustomErrors";
 
 import type { IDependency, ILookupResultEx } from "../types/IDependency";
 import type {
@@ -15,11 +15,11 @@ import type {
   IModRule,
 } from "../types/IMod";
 
-import ConcurrencyLimiter from "../../../util/ConcurrencyLimiter";
-import { log } from "../../../util/log";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { semverCoerce, truthy } from "../../../util/util";
+import ConcurrencyLimiter from "../../../renderer/util/ConcurrencyLimiter";
+import { log } from "../../../renderer/util/log";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { semverCoerce, truthy } from "../../../renderer/util/util";
 
 import Bluebird from "bluebird";
 import * as _ from "lodash";

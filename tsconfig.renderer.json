@@ -8,12 +8,9 @@
     "src/splash.ts",
     "typings.custom/*.d.ts",
     // TODO: to be removed after main/renderer separation:
-    "src/extensions/**/*",
-    "src/util/**/*"
+    "src/extensions/**/*"
   ],
-  "exclude": [
-    "src/util/vortex-run/**/*"
-  ],
+  "exclude": ["src/renderer/util/vortex-run/**/*"],
   "compilerOptions": {
     "composite": true,
     "target": "esnext",
@@ -21,11 +18,7 @@
     "moduleResolution": "node", // TODO: change to bundler
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "outDir": "./out",
     "rootDir": "./src",
     "inlineSourceMap": true,

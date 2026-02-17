@@ -2,12 +2,12 @@ import { addNotification } from "../../renderer/actions/notifications";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { DirectoryCleaningMode, IGame } from "../../renderer/types/IGame";
 import type { IState } from "../../renderer/types/IState";
-import { getGame, UserCanceled } from "../../util/api";
-import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import { activeGameId } from "../../util/selectors";
-import { truthy } from "../../util/util";
+import { getGame, UserCanceled } from "../../renderer/util/api";
+import * as fs from "../../renderer/util/fs";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import { activeGameId } from "../../renderer/util/selectors";
+import { truthy } from "../../renderer/util/util";
 
 import type {
   IDeployedFile,

@@ -5,7 +5,10 @@ import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../renderer/types/IExtensionContext";
-import { activeProfile, currentGameDiscovery } from "../../util/selectors";
+import {
+  activeProfile,
+  currentGameDiscovery,
+} from "../../renderer/util/selectors";
 
 import { getGame } from "../gamemode_management/util/getGame";
 
@@ -13,10 +16,10 @@ import { createFullStateBackup } from "../../renderer/store/store";
 
 import { setModEnabled } from "../../renderer/actions";
 import type { IDeploymentManifest } from "../../renderer/types/api";
-import { UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { getSafe } from "../../util/storeHelper";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { getSafe } from "../../renderer/util/storeHelper";
 import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
 

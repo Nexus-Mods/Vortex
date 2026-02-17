@@ -4,9 +4,9 @@ import type {
   IExtensionContext,
 } from "../../renderer/types/IExtensionContext";
 import type { IGame } from "../../renderer/types/IGame";
-import { UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
 
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";

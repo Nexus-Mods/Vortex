@@ -16,19 +16,19 @@ import type {
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IRunningTool, IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-import Debouncer from "../../util/Debouncer";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
+import Debouncer from "../util/Debouncer";
+import type { TFunction } from "../util/i18n";
+import { log } from "../util/log";
+import { showError } from "../util/message";
 import {
   activeGameId,
   currentGame,
   currentGameDiscovery,
   activeProfile,
-} from "../../util/selectors";
-import StarterInfo from "../../util/StarterInfo";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../util/selectors";
+import StarterInfo from "../util/StarterInfo";
+import { getSafe } from "../util/storeHelper";
+import { truthy } from "../util/util";
 
 import PromiseBB from "bluebird";
 import * as React from "react";

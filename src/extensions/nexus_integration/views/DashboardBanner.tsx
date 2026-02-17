@@ -7,10 +7,10 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import opn from "../../../renderer/util/opn";
+import { truthy } from "../../../renderer/util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 

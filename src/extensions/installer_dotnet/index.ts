@@ -9,9 +9,9 @@ import type {
   IExtensionContext,
 } from "../../renderer/types/api";
 
-import { getVortexPath, UserCanceled } from "../../util/api";
-import { log } from "../../util/log";
-import { delayed, toPromise } from "../../util/util";
+import { getVortexPath, UserCanceled } from "../../renderer/util/api";
+import { log } from "../../renderer/util/log";
+import { delayed, toPromise } from "../../renderer/util/util";
 import { downloadPathForGame } from "../download_management/selectors";
 import { SITE_ID } from "../gamemode_management/constants";
 import { NET_CORE_DOWNLOAD } from "./constants";

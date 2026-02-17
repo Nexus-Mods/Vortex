@@ -20,25 +20,25 @@ import type {
   IEditChoice,
   ITableAttribute,
 } from "../../renderer/types/ITableAttribute";
-import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
+import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../renderer/util/constants";
 import {
   DataInvalid,
   ProcessCanceled,
   SetupError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import GameStoreHelper from "../../util/GameStoreHelper";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import GameStoreHelper from "../../renderer/util/GameStoreHelper";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import local from "../../util/local";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import opn from "../../util/opn";
+import local from "../../renderer/util/local";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import opn from "../../renderer/util/opn";
 import ReduxProp from "../../renderer/ReduxProp";
-import { activeGameId, activeProfile } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import { activeGameId, activeProfile } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 
-import { batchDispatch } from "../../util/util";
+import { batchDispatch } from "../../renderer/util/util";
 
 import type { IExtensionDownloadInfo } from "../../renderer/types/extensions";
 import { setModType } from "../mod_management/actions/mods";

@@ -1,6 +1,6 @@
 import * as actions from "../actions/window";
 import type { IReducerSpec } from "../types/IExtensionContext";
-import { setSafe } from "../../util/storeHelper";
+import { setSafe } from "../util/storeHelper";
 
 /**
  * reducer for changes to the window state

@@ -1,8 +1,10 @@
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
-import * as fs from "../../util/fs";
-import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc, {
+  type Normalize,
+} from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import { truthy } from "../../renderer/util/util";
 
 import type BlacklistSet from "./util/BlacklistSet";
 import type {
@@ -16,7 +18,7 @@ import { MERGED_PATH } from "./modMerging";
 
 import PromiseBB from "bluebird";
 import * as path from "path";
-import { UserCanceled } from "../../util/CustomErrors";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 function ensureWritable(api: IExtensionApi, modPath: string): PromiseBB<void> {

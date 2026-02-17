@@ -5,14 +5,17 @@ import type {
 } from "../../renderer/types/IExtensionContext";
 import type { IGame } from "../../renderer/types/IGame";
 import type { IState } from "../../renderer/types/IState";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import makeReactive from "../../util/makeReactive";
-import { activeGameId, gameName } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import makeReactive from "../../renderer/util/makeReactive";
+import { activeGameId, gameName } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import { getGame } from "../gamemode_management/util/getGame";
 import LinkingDeployment from "../mod_management/LinkingDeployment";

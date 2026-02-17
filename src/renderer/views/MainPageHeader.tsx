@@ -1,7 +1,7 @@
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import { connect } from "../controls/ComponentEx";
-import { truthy } from "../../util/util";
+import { truthy } from "../util/util";
 
 import * as PropTypes from "prop-types";
 import * as React from "react";

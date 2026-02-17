@@ -4,11 +4,11 @@ import {
   getSafe,
   merge,
   setSafe,
-} from "../../../util/storeHelper";
+} from "../../../renderer/util/storeHelper";
 import * as actions from "../actions/settings";
 
 import * as _ from "lodash";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 import type { ISettingsGameMode } from "../../../renderer/types/IState";
 

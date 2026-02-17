@@ -49,7 +49,7 @@ import type {
   IExtensionState,
   IState,
 } from "./types/IState";
-import type { i18n } from "../util/i18n";
+import type { i18n } from "./util/i18n";
 
 import PromiseBB from "bluebird";
 import { spawn } from "child_process";
@@ -88,9 +88,9 @@ import {
   unknownToError,
 } from "../shared/errors";
 import { registerSanityCheck } from "./store/reduxSanity";
-import { Archive } from "../util/archives";
-import { getApplication } from "../util/application";
-import { COMPANY_ID } from "../util/constants";
+import { Archive } from "./util/archives";
+import { getApplication } from "./util/application";
+import { COMPANY_ID } from "./util/constants";
 import {
   MissingDependency,
   NotSupportedError,
@@ -98,17 +98,17 @@ import {
   ThirdPartyError,
   TimeoutError,
   UserCanceled,
-} from "../util/CustomErrors";
-import { disableErrorReport, isOutdated } from "../util/errorHandling";
-import * as fsVortex from "../util/fs";
-import getVortexPath from "../util/getVortexPath";
-import { TString } from "../util/i18n";
-import lazyRequire from "../util/lazyRequire";
-import { log } from "../util/log";
-import { showError } from "../util/message";
-import runElevatedCustomTool from "../util/runElevatedCustomTool";
-import { activeGameId } from "../util/selectors";
-import { getSafe } from "../util/storeHelper";
+} from "./util/CustomErrors";
+import { disableErrorReport, isOutdated } from "./util/errorHandling";
+import * as fsVortex from "./util/fs";
+import getVortexPath from "./util/getVortexPath";
+import { TString } from "./util/i18n";
+import lazyRequire from "./util/lazyRequire";
+import { log } from "./util/log";
+import { showError } from "./util/message";
+import runElevatedCustomTool from "./util/runElevatedCustomTool";
+import { activeGameId } from "./util/selectors";
+import { getSafe } from "./util/storeHelper";
 import {
   filteredEnvironment,
   isFunction,
@@ -118,9 +118,9 @@ import {
   truthy,
   wrapExtCBAsync,
   wrapExtCBSync,
-} from "../util/util";
+} from "./util/util";
 import ReduxWatcher from "./store/ReduxWatcher";
-import { getPreloadApi } from "../util/preloadAccess";
+import { getPreloadApi } from "./util/preloadAccess";
 import { computeStateDiff } from "./store/stateDiff";
 import type { PreloadWindow } from "../shared/types/preload";
 
@@ -3145,7 +3145,7 @@ class ExtensionManager {
       "installer_fomod_native",
     ];
 
-    require("../util/extensionRequire").default(() => this.extensions);
+    require("./util/extensionRequire").default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();

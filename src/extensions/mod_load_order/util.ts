@@ -1,5 +1,5 @@
 import type * as types from "../../renderer/types/api";
-import * as util from "../../util/api";
+import * as util from "../../renderer/util/api";
 import type { ILoadOrder, ILoadOrderEntry } from "./types/types";
 
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {

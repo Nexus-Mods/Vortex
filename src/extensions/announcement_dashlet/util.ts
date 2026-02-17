@@ -1,6 +1,6 @@
 import minimatch from "minimatch";
 import * as semver from "semver";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 export function matchesGameMode<T>(
   entry: T,

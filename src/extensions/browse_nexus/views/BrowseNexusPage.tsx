@@ -21,9 +21,12 @@ import type { IState } from "../../../renderer/types/IState";
 
 import Tailwind from "../../../renderer/tailwind";
 import MainPage from "../../../renderer/views/MainPage";
-import { UserCanceled } from "../../../util/api";
-import opn from "../../../util/opn";
-import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
+import { UserCanceled } from "../../../renderer/util/api";
+import opn from "../../../renderer/util/opn";
+import {
+  activeGameId,
+  isCollectionModPresent,
+} from "../../../renderer/util/selectors";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";

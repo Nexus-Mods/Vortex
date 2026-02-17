@@ -3,8 +3,8 @@ import type {
   IMod,
   IState,
 } from "../../renderer/types/IState";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import * as path from "path";
 

@@ -2,23 +2,23 @@ import { startActivity, stopActivity } from "../../renderer/actions/session";
 import type { IDialogResult } from "../../renderer/types/IDialog";
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IModTable, IProfile, IState } from "../../renderer/types/IState";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import { setErrorContext } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import { downloadPathForGame } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-import { knownGames } from "../../util/selectors";
+} from "../../renderer/util/CustomErrors";
+import { setErrorContext } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
+import getNormalizeFunc from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import { downloadPathForGame } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
+import { knownGames } from "../../renderer/util/selectors";
 
 import type { IDownload } from "../download_management/types/IDownload";
 import { activeGameId, activeProfile } from "../profile_management/selectors";

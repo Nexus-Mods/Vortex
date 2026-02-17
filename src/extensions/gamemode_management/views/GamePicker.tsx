@@ -12,10 +12,10 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import opn from "../../../util/opn";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import opn from "../../../renderer/util/opn";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type {

@@ -10,7 +10,7 @@ import { getGame } from "../util/getGame";
 import type { IModWithState } from "../../mod_management/types/IModProps";
 import { useTranslation } from "react-i18next";
 import { activeGameId } from "../../profile_management/selectors";
-import { midClip, truthy } from "../../../util/util";
+import { midClip, truthy } from "../../../renderer/util/util";
 import { util } from "../../..";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 

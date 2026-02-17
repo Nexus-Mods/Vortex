@@ -1,9 +1,9 @@
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
-import type { TFunction } from "../../../util/i18n";
-import { log } from "../../../util/log";
-import { profileById } from "../../../util/selectors";
-import { midClip } from "../../../util/util";
+import type { TFunction } from "../../../renderer/util/i18n";
+import { log } from "../../../renderer/util/log";
+import { profileById } from "../../../renderer/util/selectors";
+import { midClip } from "../../../renderer/util/util";
 import type {
   IHistoryEvent,
   IHistoryStack,

@@ -1,11 +1,11 @@
-import * as fs from "../../../util/fs";
-import type { LogLevel } from "../../../util/log";
+import * as fs from "../../../renderer/util/fs";
+import type { LogLevel } from "../../../renderer/util/log";
 
 import type { ILog, ISession } from "../types/ISession";
 
 import PromiseBB from "bluebird";
 import * as path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 
 // New format: timestamp [LEVEL] [PROCESS] message
 const lineRE = /^(\S+) \[([A-Z]*)\] \[([A-Z]*)\] (.*)\r?/;

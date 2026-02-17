@@ -1,19 +1,19 @@
 import PromiseBB from "bluebird";
 import _ from "lodash";
-import Debouncer from "../../util/Debouncer";
+import Debouncer from "../../renderer/util/Debouncer";
 import { nativeImage } from "electron";
-import * as fs from "../../util/fs";
+import * as fs from "../../renderer/util/fs";
 import path from "path";
-import extractExeIcon from "../../util/exeIcon";
-import { ProcessCanceled } from "../../util/CustomErrors";
+import extractExeIcon from "../../renderer/util/exeIcon";
+import { ProcessCanceled } from "../../renderer/util/CustomErrors";
 
 import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type { IEditStarterInfo } from "./types";
 
-import type { IStarterInfo } from "../../util/StarterInfo";
-import StarterInfo from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import StarterInfo from "../../renderer/util/StarterInfo";
 
-import { truthy } from "../../util/util";
+import { truthy } from "../../renderer/util/util";
 
 export const propOf = <T>(name: keyof T) => name;
 

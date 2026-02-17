@@ -1,4 +1,4 @@
-import relativeTime from '../src/util/relativeTime';
+import relativeTime from '../src/renderer/util/relativeTime';
 
 const t = (key) => {
   return key;

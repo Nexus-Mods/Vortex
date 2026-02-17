@@ -1,7 +1,7 @@
 import type { IReducerSpec } from "../../renderer/types/IExtensionContext";
 import { addReducer } from "../../renderer/types/IExtensionContext";
 import type { IOverlaysState } from "../../renderer/types/IState";
-import { deleteOrNop, setSafe } from "../../util/storeHelper";
+import { deleteOrNop, setSafe } from "../../renderer/util/storeHelper";
 import * as actions from "./actions";
 
 const sessionReducer: IReducerSpec<IOverlaysState> = {

@@ -12,9 +12,9 @@ import {
   uniPatterns,
 } from "../installer_fomod_shared/utils/gameSupport";
 import { getGame } from "../gamemode_management/util/getGame";
-import { log } from "../../util/log";
+import { log } from "../../renderer/util/log";
 import type { IExtensionApi, IInstallResult } from "../../renderer/types/api";
-import { UserCanceled } from "../../util/CustomErrors";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
 
 /**
  * Install a FOMOD mod

@@ -4,7 +4,7 @@ import {
   unknownToError,
 } from "../../../shared/errors";
 
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 
 const attributeExtractors: Array<{
   priority: number;

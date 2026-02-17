@@ -17,15 +17,15 @@ import type {
   IState,
 } from "../../renderer/types/IState";
 import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
-import { relaunch } from "../../util/commandLine";
+import { relaunch } from "../../renderer/util/commandLine";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import { log } from "../../util/log";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import { log } from "../../renderer/util/log";
+import * as selectors from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import MainPage from "../../renderer/views/MainPage";
 
 import type { IDownload } from "../download_management/types/IDownload";

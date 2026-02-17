@@ -1,8 +1,8 @@
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import type { IState } from "../../../renderer/types/IState";
 import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 
 import type { IMod } from "../../mod_management/types/IMod";
 

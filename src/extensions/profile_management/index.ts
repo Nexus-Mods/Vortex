@@ -45,27 +45,27 @@ import {
   setProgress,
   setUIBlocker,
 } from "../../renderer/actions/session";
-import { relaunch } from "../../util/commandLine";
+import { relaunch } from "../../renderer/util/commandLine";
 import {
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
   SetupError,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import onceCB from "../../util/onceCB";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import onceCB from "../../renderer/util/onceCB";
 import {
   discoveryByGame,
   gameById,
   installPathForGame,
   needToDeployForGame,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
 import { readExtensions } from "../extension_manager/util";
 import { getGame } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";

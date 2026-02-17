@@ -18,9 +18,9 @@ import type {
 import type { IState } from "../types/IState";
 import bbcode from "../controls/bbcode";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-import type { TFunction } from "../../util/i18n";
-import { MutexWrapper } from "../../util/MutexContext";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
+import type { TFunction } from "../util/i18n";
+import { MutexWrapper } from "../util/MutexContext";
+import { getPreloadApi, getWindowId } from "../util/preloadAccess";
 
 import update from "immutability-helper";
 import * as React from "react";

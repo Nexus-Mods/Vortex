@@ -6,8 +6,8 @@ import { IModRule } from '../src/extensions/mod_management/types/IMod';
 
 // Mock dependencies
 jest.mock('../src/extensions/mod_management/util/dependencies');
-jest.mock('../src/util/api');
-jest.mock('../src/util/log');
+jest.mock('../src/renderer/util/api');
+jest.mock('../src/renderer/util/log');
 
 describe('Phased Installer', () => {
   let installManager: any;

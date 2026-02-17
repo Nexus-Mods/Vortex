@@ -8,9 +8,9 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import opn from "../../../renderer/util/opn";
+import { truthy } from "../../../renderer/util/util";
 
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
@@ -27,7 +27,7 @@ import { pathToFileURL } from "url";
 import { isLoggedIn } from "../selectors";
 
 import { setOauthPending } from "../actions/session";
-import { showError } from "../../../util/message";
+import { showError } from "../../../renderer/util/message";
 
 export interface IBaseProps extends WithTranslation {
   nexus: NexusT;

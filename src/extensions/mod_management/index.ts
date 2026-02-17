@@ -25,17 +25,19 @@ import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import { waitForCondition } from "../../util/waitForCondition";
-import * as fs from "../../util/fs";
-import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
-import getVortexPath from "../../util/getVortexPath";
-import { laterT, type TFunction } from "../../util/i18n";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import { waitForCondition } from "../../renderer/util/waitForCondition";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc, {
+  type Normalize,
+} from "../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { laterT, type TFunction } from "../../renderer/util/i18n";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import onceCB from "../../util/onceCB";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import onceCB from "../../renderer/util/onceCB";
 import ReduxProp from "../../renderer/ReduxProp";
 import {
   activeGameId,
@@ -47,14 +49,14 @@ import {
   installPathForGame,
   modPathsForGame,
   profileById,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   isChildPath,
   truthy,
   wrapExtCBAsync,
-} from "../../util/util";
+} from "../../renderer/util/util";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 
 import { setDialogVisible } from "../../renderer/actions";
@@ -131,7 +133,7 @@ import URLInput from "./views/URLInput";
 import Workarounds from "./views/Workarounds";
 
 import extendApi from "./util/extendAPI";
-import { opn } from "../../util/api";
+import { opn } from "../../renderer/util/api";
 
 import {
   onAddMod,

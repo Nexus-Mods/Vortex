@@ -4,14 +4,14 @@ import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import { withContext } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { renderError, showError } from "../../util/message";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { flatten, setdefault, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import { withContext } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { renderError, showError } from "../../renderer/util/message";
+import * as selectors from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { flatten, setdefault, truthy } from "../../renderer/util/util";
 
 import { showURL } from "../browser/actions";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";

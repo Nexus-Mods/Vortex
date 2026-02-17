@@ -1,13 +1,18 @@
 import Dashlet from "../../../renderer/controls/Dashlet";
 import { ComponentEx, translate } from "../../../renderer/controls/ComponentEx";
-import opn from "../../../util/opn";
+import opn from "../../../renderer/util/opn";
 
 import { PREMIUM_PATH } from "../constants";
 
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
-import { Campaign, nexusModsURL, Section, Content } from "../../../util/util";
+import {
+  Campaign,
+  nexusModsURL,
+  Section,
+  Content,
+} from "../../../renderer/util/util";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Image from "../../../renderer/controls/Image";
 

@@ -1,6 +1,6 @@
 import minimatch from "minimatch";
 import { DEPLOY_BLACKLIST } from "../constants";
-import type { Normalize } from "../../../util/getNormalizeFunc";
+import type { Normalize } from "../../../renderer/util/getNormalizeFunc";
 import type { IGame } from "../../../renderer/types/IGame";
 
 export default class BlacklistSet extends Set<string> {

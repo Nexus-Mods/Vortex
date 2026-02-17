@@ -3,7 +3,7 @@ import OverlayTrigger from "../../../renderer/controls/OverlayTrigger";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
 import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import opn from "../../../util/opn";
+import opn from "../../../renderer/util/opn";
 
 import type { IMod } from "../../mod_management/types/IMod";
 

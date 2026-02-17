@@ -1,6 +1,6 @@
 import type { ValidationState } from "../types/ITableAttribute";
-import Debouncer from "../../util/Debouncer";
-import { isFunction } from "../../util/util";
+import Debouncer from "../util/Debouncer";
+import { isFunction } from "../util/util";
 
 import { IconButton } from "./TooltipControls";
 

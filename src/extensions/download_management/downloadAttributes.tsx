@@ -8,10 +8,10 @@ import { Icon } from "../../renderer/controls/TooltipControls";
 
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
-import * as fs from "../../util/fs";
-import { getCurrentLanguage } from "../../util/i18n";
-import { getSafe } from "../../util/storeHelper";
-import { bytesToString, truthy } from "../../util/util";
+import * as fs from "../../renderer/util/fs";
+import { getCurrentLanguage } from "../../renderer/util/i18n";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { bytesToString, truthy } from "../../renderer/util/util";
 
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameName } from "../gamemode_management/selectors";

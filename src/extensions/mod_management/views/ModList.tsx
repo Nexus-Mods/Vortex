@@ -22,25 +22,28 @@ import type {
 } from "../../../renderer/types/IDialog";
 import type { IState } from "../../../renderer/types/IState";
 import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
-import { withBatchContext } from "../../../util/BatchContext";
+import { withBatchContext } from "../../../renderer/util/BatchContext";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import Debouncer from "../../../util/Debouncer";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import Debouncer from "../../../renderer/util/Debouncer";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import {
   batchDispatch,
   bytesToString,
   toPromise,
   truthy,
-} from "../../../util/util";
+} from "../../../renderer/util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
-import calculateFolderSize from "../../../util/calculateFolderSize";
+import calculateFolderSize from "../../../renderer/util/calculateFolderSize";
 
 import getDownloadGames from "../../download_management/util/getDownloadGames";
 import {

@@ -16,10 +16,10 @@ export * from "./SortDirection";
 
 export type { ITool } from "./ITool";
 
-export type { TFunction } from "../../util/i18n";
+export type { TFunction } from "../util/i18n";
 export type { IDiscoveredTool } from "./IDiscoveredTool";
 export type { IExecInfo } from "./IExecInfo";
-export type { IStoreQuery } from "../../util/GameStoreHelper";
+export type { IStoreQuery } from "../util/GameStoreHelper";
 export type { IGameStoreEntry } from "./IGameStoreEntry";
 export { GameEntryNotFound, GameStoreNotFound } from "./IGameStore";
 export type {
@@ -27,7 +27,7 @@ export type {
   IGameStore,
   GameLaunchType,
 } from "./IGameStore.ts";
-export type { IStarterInfo } from "../../util/StarterInfo";
+export type { IStarterInfo } from "../util/StarterInfo";
 
 export type { IRegisteredExtension } from "./extensions";
 

@@ -5,10 +5,13 @@ import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../renderer/types/IExtensionContext";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import local from "../../util/local";
-import { batchDispatch } from "../../util/util";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import local from "../../renderer/util/local";
+import { batchDispatch } from "../../renderer/util/util";
 
 import {
   addHistoryEvent,

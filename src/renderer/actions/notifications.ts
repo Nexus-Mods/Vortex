@@ -8,8 +8,8 @@ import type {
   INotification,
   NotificationDismiss,
 } from "../types/INotification";
-import local from "../../util/local";
-import { log } from "../../util/log";
+import local from "../util/local";
+import { log } from "../util/log";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 
 import safeCreateAction from "./safeCreateAction";

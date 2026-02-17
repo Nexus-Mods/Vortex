@@ -3,7 +3,7 @@ import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
 import * as actions from "../actions/account";
 
 import update from "immutability-helper";
-import { setSafe } from "../../../util/storeHelper";
+import { setSafe } from "../../../renderer/util/storeHelper";
 
 /**
  * reducer for changes to the authentication

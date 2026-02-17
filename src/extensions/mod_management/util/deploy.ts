@@ -6,16 +6,19 @@ import type {
 } from "../../../renderer/types/IExtensionContext";
 import type { IGame } from "../../../renderer/types/IGame";
 import type { IProfile } from "../../../renderer/types/IState";
-import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
-import { log } from "../../../util/log";
+import {
+  ProcessCanceled,
+  TemporaryError,
+} from "../../../renderer/util/CustomErrors";
+import { log } from "../../../renderer/util/log";
 import {
   activeProfile,
   discoveryByGame,
   lastActiveProfileForGame,
   profileById,
-} from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+} from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { installPath, installPathForGame } from "../selectors";

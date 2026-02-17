@@ -13,22 +13,22 @@ import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { calcDuration, showError } from "../../util/message";
-import { upload } from "../../util/network";
-import opn from "../../util/opn";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { calcDuration, showError } from "../../renderer/util/message";
+import { upload } from "../../renderer/util/network";
+import opn from "../../renderer/util/opn";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
 
 import { resolveCategoryName } from "../category_management";
 import {

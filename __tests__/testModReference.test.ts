@@ -23,7 +23,7 @@ import { testModReference, isFuzzyVersion, sanitizeExpression, coerceToSemver } 
 import { IMod, IModReference } from '../src/extensions/mod_management/types/IMod';
 
 // Mock the log function to avoid console output during tests
-jest.mock('../src/util/log', () => ({
+jest.mock('../src/renderer/util/log', () => ({
   log: jest.fn(),
 }));
 

@@ -1,6 +1,6 @@
 import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
-import { log } from "../../../util/log";
-import { removeValue } from "../../../util/storeHelper";
+import { log } from "../../../renderer/util/log";
+import { removeValue } from "../../../renderer/util/storeHelper";
 import {
   deleteOrNop,
   getSafe,
@@ -8,7 +8,7 @@ import {
   pushSafe,
   removeValueIf,
   setSafe,
-} from "../../../util/storeHelper";
+} from "../../../renderer/util/storeHelper";
 
 import * as actions from "../actions/mods";
 import type { IMod } from "../types/IMod";

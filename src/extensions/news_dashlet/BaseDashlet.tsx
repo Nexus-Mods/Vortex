@@ -4,8 +4,8 @@ import Dashlet from "../../renderer/controls/Dashlet";
 import EmptyPlaceholder from "../../renderer/controls/EmptyPlaceholder";
 import Icon from "../../renderer/controls/Icon";
 import { IconButton } from "../../renderer/controls/TooltipControls";
-import type { TFunction } from "../../util/i18n";
-import opn from "../../util/opn";
+import type { TFunction } from "../../renderer/util/i18n";
+import opn from "../../renderer/util/opn";
 import { MainContext } from "../../renderer/views/MainWindow";
 import type { IExtra, IListItem } from "./types";
 

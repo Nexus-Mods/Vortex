@@ -5,7 +5,7 @@ import {
   getCollectionCurrentPhase,
 } from "../../collections_integration/selectors";
 import type { IModsAPIExtension } from "../types/IModsAPIExtension";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import type { IDeployOptions } from "../types/IDeployOptions";
 
 function extendAPI(

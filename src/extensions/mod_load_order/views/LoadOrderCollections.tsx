@@ -11,9 +11,9 @@ import {
   Usage,
 } from "../../../renderer/controls/api";
 import type * as types from "../../../renderer/types/api";
-import * as util from "../../../util/api";
+import * as util from "../../../renderer/util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import * as selectors from "../../../util/selectors";
+import * as selectors from "../../../renderer/util/selectors";
 
 import type { IGameSpecificInterfaceProps } from "../types/collections";
 import type { ILoadOrder, ILoadOrderEntry } from "../types/types";

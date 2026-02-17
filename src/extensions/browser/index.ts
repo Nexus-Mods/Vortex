@@ -2,9 +2,9 @@ import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../renderer/types/IExtensionContext";
-import { UserCanceled } from "../../util/CustomErrors";
-import { getSafe } from "../../util/storeHelper";
-import { makeQueue, setdefault } from "../../util/util";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { makeQueue, setdefault } from "../../renderer/util/util";
 
 import type { SubscriptionResult } from "./views/BrowserView";
 import BrowserView from "./views/BrowserView";
