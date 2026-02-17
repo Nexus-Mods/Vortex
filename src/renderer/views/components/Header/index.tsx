@@ -1,4 +1,3 @@
-import { mdiMenuOpen, mdiMenuClose } from "@mdi/js";
 import React, { type FC, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -6,6 +5,10 @@ import { useSelector } from "react-redux";
 import type { IState } from "../../../../types/IState";
 
 import { Typography } from "../../../../tailwind/components/next/typography";
+import {
+  nxmPanelClose,
+  nxmPanelOpen,
+} from "../../../../tailwind/lib/icon-paths";
 import { useWindowContext } from "../../../contexts";
 import { useSpineContext } from "../Spine/SpineContext";
 import { HelpSection } from "./HelpSection";
@@ -46,7 +49,7 @@ export const Header: FC = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between pl-5"
+      className="flex h-11 items-center justify-between pl-4.5"
       style={{ WebkitAppRegion: "drag" }}
     >
       <div
@@ -54,7 +57,7 @@ export const Header: FC = () => {
         style={{ WebkitAppRegion: "no-drag" }}
       >
         <IconButton
-          iconPath={menuIsCollapsed ? mdiMenuClose : mdiMenuOpen}
+          iconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
           title={menuIsCollapsed ? "Open menu" : "Collapse menu"}
           onClick={handleToggleMenu}
         />
