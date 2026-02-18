@@ -1,0 +1,262 @@
+/**
+ * BaseResolver - Abstract base class for all resolvers
+ *
+ * Provides:
+ * - Generic type parameter for type-safe anchors
+ * - Parent delegation pattern
+ * - Type-safe PathFor<A>() implementation
+ * - Common resolution logic
+ */
+
+// eslint-disable-next-line vortex/no-module-imports
+import * as path from 'path';
+
+import type { IResolver } from '../IResolver';
+import type { Anchor, RelativePath, ResolvedPath } from '../types';
+
+import { FilePath } from '../FilePath';
+import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
+
+/**
+ * Abstract base resolver with type-safe anchor support
+ *
+ * @template ValidAnchors - Union of string literals for valid anchor names
+ */
+export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
+  constructor(
+    public readonly name: string,
+    public readonly parent?: IResolver,
+  ) {}
+
+  // ========================================================================
+  // Resolution (with parent delegation)
+  // ========================================================================
+
+  /**
+   * Async resolution with parent delegation
+   */
+  async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
+    // Try this resolver first
+    if (this.canResolve(anchor)) {
+      const basePath = await this.resolveAnchor(anchor);
+      return this.joinPaths(basePath, relative);
+    }
+
+    // Delegate to parent if available
+    if (this.parent) {
+      return this.parent.resolve(anchor, relative);
+    }
+
+    // No resolver can handle this anchor
+    throw new Error(`No resolver can handle anchor: ${AnchorNS.name(anchor)}`);
+  }
+
+  // ========================================================================
+  // Abstract Methods (subclasses must implement)
+  // ========================================================================
+
+  /**
+   * Resolve anchor to base path (async)
+   * Subclasses implement this to provide anchor-specific resolution
+   */
+  protected abstract resolveAnchor(anchor: Anchor): Promise<ResolvedPath>;
+
+  /**
+   * Check if this resolver (not including parent) handles this anchor
+   */
+  abstract canResolve(anchor: Anchor): boolean;
+
+  /**
+   * List all anchors supported by this resolver (not including parent)
+   */
+  abstract supportedAnchors(): Anchor[];
+
+  // ========================================================================
+  // Path Joining
+  // ========================================================================
+
+  /**
+   * Join base path with relative path (OS-specific)
+   */
+  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
+    if (relative === RelativePathNS.EMPTY || relative === '') {
+      return base;
+    }
+    const joined = path.join(base as string, relative as string);
+    return ResolvedPathNS.make(joined);
+  }
+
+  // ========================================================================
+  // Type-Safe PathFor Implementation
+  // ========================================================================
+
+  /**
+   * Type-safe convenience method for creating FilePath objects
+   *
+   * @template A - Anchor name (constrained to ValidAnchors)
+   * @param anchorName - The anchor name (type-checked at compile time)
+   * @param relative - Optional relative path from anchor
+   * @returns FilePath instance configured with this resolver
+   *
+   * @throws Error if this resolver cannot handle the anchor
+   *
+   * @example
+   * ```typescript
+   * class VortexResolver extends BaseResolver<'userData' | 'temp'> {
+   *   // PathFor is automatically type-safe
+   * }
+   *
+   * const resolver = new VortexResolver();
+   * resolver.PathFor('userData');  // ✓ Valid
+   * resolver.PathFor('temp');      // ✓ Valid
+   * resolver.PathFor('drive_c');   // ✗ TypeScript error!
+   * ```
+   */
+  PathFor<A extends ValidAnchors>(
+    anchorName: A,
+    relative: string = ''
+  ): FilePath {
+    const anchor = AnchorNS.make(anchorName);
+    const relativePath = relative === '' ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
+
+    // Note: We don't check canResolve here to allow parent delegation
+    // The FilePath constructor will validate that some resolver in the chain can handle it
+    return new FilePath(relativePath, anchor, this);
+  }
+}
+
+// ============================================================================
+// CachingResolver - TTL-based caching wrapper
+// ============================================================================
+
+interface CacheEntry {
+  value: Promise<ResolvedPath>;
+  expiresAt: number;
+}
+
+/**
+ * Caching wrapper for resolvers with TTL
+ *
+ * Caches resolution results for a configurable time period to reduce
+ * repeated filesystem or IO operations.
+ */
+export class CachingResolver implements IResolver {
+  private cache = new Map<string, CacheEntry>();
+
+  constructor(
+    private readonly inner: IResolver,
+    private readonly ttlMs: number = 60000, // 1 minute default
+  ) {}
+
+  get name(): string {
+    return `caching(${this.inner.name})`;
+  }
+
+  get parent(): IResolver | undefined {
+    return this.inner.parent;
+  }
+
+  // ========================================================================
+  // Resolution with Caching
+  // ========================================================================
+
+  async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
+    const key = this.makeCacheKey(anchor, relative);
+    const now = Date.now();
+
+    // Check cache
+    const cached = this.cache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.value;
+    }
+
+    // Resolve and cache
+    const promise = this.inner.resolve(anchor, relative);
+    this.cache.set(key, {
+      value: promise,
+      expiresAt: now + this.ttlMs,
+    });
+
+    // Clean up expired entries periodically
+    this.cleanupExpired();
+
+    return promise;
+  }
+
+  // ========================================================================
+  // Delegation
+  // ========================================================================
+
+  canResolve(anchor: Anchor): boolean {
+    return this.inner.canResolve(anchor);
+  }
+
+  supportedAnchors(): Anchor[] {
+    return this.inner.supportedAnchors();
+  }
+
+  PathFor<A extends string>(anchorName: A, relative?: string): FilePath {
+    // Delegate to inner resolver but use this caching resolver
+    const anchor = AnchorNS.make(anchorName);
+    if (!this.canResolve(anchor)) {
+      throw new Error(`Resolver ${this.name} cannot resolve anchor: ${anchorName}`);
+    }
+
+    const relativePath = relative ? RelativePathNS.make(relative) : RelativePathNS.EMPTY;
+    return new FilePath(relativePath, anchor, this);
+  }
+
+  // ========================================================================
+  // Cache Management
+  // ========================================================================
+
+  /**
+   * Clear all cached entries
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Clear entries for a specific anchor
+   */
+  clearAnchor(anchor: Anchor): void {
+    const anchorName = AnchorNS.name(anchor);
+    const prefix = `${anchorName}:`;
+
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number } {
+    return {
+      size: this.cache.size,
+    };
+  }
+
+  // ========================================================================
+  // Private Helpers
+  // ========================================================================
+
+  private makeCacheKey(anchor: Anchor, relative: RelativePath): string {
+    const anchorName = AnchorNS.name(anchor);
+    return `${anchorName}:${relative}`;
+  }
+
+  private cleanupExpired(): void {
+    const now = Date.now();
+
+    // Cleanup cache
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
