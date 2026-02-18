@@ -50,7 +50,7 @@ import type {
   IState,
 } from "./types/IState";
 import type { i18n } from "./util/i18n";
-import StyleManager from "./StyleManager"
+import StyleManager from "./StyleManager";
 
 import PromiseBB from "bluebird";
 import { spawn } from "child_process";
