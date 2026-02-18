@@ -21,17 +21,17 @@
       "target": ["out", "app"]
     },
     {
-      "srcPath": "src/index.dev.html",
+      "srcPath": "src/renderer/index.dev.html",
       "outPath": "",
       "rename": "index.html",
       "target": ["out"],
-      "skipPaths": 1
+      "skipPaths": 2
     },
     {
-      "srcPath": "src/index.html",
+      "srcPath": "src/renderer/index.html",
       "outPath": "",
       "target": ["app"],
-      "skipPaths": 1
+      "skipPaths": 2
     },
     {
       "srcPath": "src/renderer/splash.html",

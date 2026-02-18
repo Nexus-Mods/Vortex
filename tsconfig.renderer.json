@@ -4,7 +4,6 @@
   "include": [
     "src/renderer/**/*",
     "src/shared/**/*",
-    "src/renderer.tsx",
     "typings.custom/*.d.ts",
     // TODO: to be removed after main/renderer separation:
     "src/extensions/**/*"

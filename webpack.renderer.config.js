@@ -29,7 +29,7 @@ if (
 
 module.exports = {
   entry: {
-    renderer: "./src/renderer.tsx",
+    renderer: "./src/renderer/renderer.tsx",
     splash: "./src/renderer/splash.ts",
   },
   target: "electron-renderer",
