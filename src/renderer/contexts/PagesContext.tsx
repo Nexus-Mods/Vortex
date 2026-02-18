@@ -55,6 +55,14 @@ export interface IPagesProviderProps {
   children: ReactNode;
 }
 
+const isPageVisible = (page: IMainPage): boolean => {
+  try {
+    return page.visible();
+  } catch {
+    return false;
+  }
+};
+
 export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   const dispatch = useDispatch();
   const mainPages = useMainPages();
@@ -84,10 +92,10 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   // Redirect to first visible page when current page becomes invisible
   useEffect(() => {
     const page = sortedPages.find((iter) => iter.id === mainPage);
-    if (page !== undefined && !page.visible()) {
-      const firstVisible = sortedPages.find((iter) => iter.visible());
+    if (page !== undefined && !isPageVisible(page)) {
+      const firstVisible = sortedPages.find((iter) => isPageVisible(iter));
       if (firstVisible !== undefined) {
-        dispatch(setOpenMainPage(firstVisible.title, false));
+        dispatch(setOpenMainPage(firstVisible.id, false));
       }
     }
   }, [mainPage, sortedPages, dispatch]);

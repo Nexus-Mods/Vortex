@@ -32,7 +32,7 @@ export const MainLayout: FC = () => {
     initializedRef.current = true;
 
     if (mainPages.length > 0) {
-      dispatch(setOpenMainPage(mainPages[0].title, false));
+      dispatch(setOpenMainPage(mainPages[0].id, false));
     }
   }, [mainPages, dispatch]);
 
