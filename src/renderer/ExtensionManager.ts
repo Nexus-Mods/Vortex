@@ -50,6 +50,7 @@ import type {
   IState,
 } from "./types/IState";
 import type { i18n } from "./util/i18n";
+import StyleManager from "./StyleManager"
 
 import PromiseBB from "bluebird";
 import { spawn } from "child_process";
@@ -788,7 +789,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
-  private mStyleManager: any;
+  private mStyleManager: StyleManager;
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: {
@@ -957,8 +958,7 @@ class ExtensionManager {
       });
 
     // Dynamic require to prevent TypeScript from analyzing StyleManager during api build
-    const StyleManagerClass = require("./StyleManager").default;
-    this.mStyleManager = new StyleManagerClass();
+    this.mStyleManager = new StyleManager();
     this.mExtensions = this.prepareExtensions();
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
