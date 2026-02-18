@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IMainPage } from "../../types/IMainPage";
-import type { IState } from "../../types/IState";
 
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import { useWindowContext } from "../../contexts";
@@ -13,6 +12,7 @@ import { Button } from "../../controls/TooltipControls";
 import {
   activeProfile as activeProfileSelector,
   mainPage as mainPageSelector,
+  secondaryPage as secondaryPageSelector,
 } from "../../util/selectors";
 import { MainFooter } from "../MainFooter";
 import { PageGroup } from "./PageGroup";
@@ -35,9 +35,7 @@ export const Sidebar: FC<ISidebarProps> = (props) => {
   const { menuIsCollapsed } = useWindowContext();
 
   const mainPage = useSelector(mainPageSelector);
-  const secondaryPage = useSelector(
-    (state: IState) => state.session.base.secondaryPage,
-  );
+  const secondaryPage = useSelector(secondaryPageSelector);
   const profile = useSelector(activeProfileSelector);
 
   const pageGroups = useMemo(() => {

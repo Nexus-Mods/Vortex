@@ -2,15 +2,16 @@ import React, { useCallback, useEffect, useReducer } from "react";
 import { useSelector } from "react-redux";
 
 import type { IMainPage } from "../types/IMainPage";
-import type { IState } from "../types/IState";
 
+import {
+  mainPage as mainPageSelector,
+  secondaryPage as secondaryPageSelector,
+} from "../util/selectors";
 import { MainPageContainer } from "../views/MainPageContainer";
 
 export const usePageRendering = () => {
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
-  const secondaryPage = useSelector(
-    (state: IState) => state.session.base.secondaryPage,
-  );
+  const mainPage = useSelector(mainPageSelector);
+  const secondaryPage = useSelector(secondaryPageSelector);
 
   const [loadedPages, setLoadedPages] = useReducer(
     (prev: string[], pageId: string) =>

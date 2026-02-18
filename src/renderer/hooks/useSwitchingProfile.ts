@@ -1,16 +1,14 @@
 import { useSelector } from "react-redux";
 
-import type { IState } from "../types/IState";
-
+import {
+  activeProfileId as activeProfileIdSelector,
+  nextProfileId as nextProfileIdSelector,
+} from "../util/selectors";
 import { truthy } from "../util/util";
 
 export const useSwitchingProfile = () => {
-  const activeProfileId = useSelector(
-    (state: IState) => state.settings.profiles.activeProfileId,
-  );
-  const nextProfileId = useSelector(
-    (state: IState) => state.settings.profiles.nextProfileId,
-  );
+  const activeProfileId = useSelector(activeProfileIdSelector);
+  const nextProfileId = useSelector(nextProfileIdSelector);
 
   return activeProfileId !== nextProfileId && truthy(nextProfileId);
 };

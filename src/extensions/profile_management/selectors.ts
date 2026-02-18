@@ -26,6 +26,9 @@ export const gameProfiles = createSelector(
 export const activeProfileId = (state: IState): string | undefined =>
   state.settings.profiles.activeProfileId;
 
+export const nextProfileId = (state: IState): string | undefined =>
+  state.settings.profiles.nextProfileId;
+
 export const activeProfile = (state: IState): IProfile | undefined => {
   const profileId = activeProfileId(state);
   if (profileId === undefined) {

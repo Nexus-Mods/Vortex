@@ -7,7 +7,10 @@ import type { IState } from "../../types/IState";
 import { setDialogVisible } from "../../actions/session";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
-import { profileById as profileByIdSelector } from "../../util/selectors";
+import {
+  nextProfileId as nextProfileIdSelector,
+  profileById as profileByIdSelector,
+} from "../../util/selectors";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
 
@@ -19,9 +22,7 @@ export const ProfileSwitcher: FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const nextProfileId = useSelector(
-    (state: IState) => state.settings.profiles.nextProfileId,
-  );
+  const nextProfileId = useSelector(nextProfileIdSelector);
   const progressProfile = useSelector(
     (state: IState) => state.session.base.progress?.profile,
   );

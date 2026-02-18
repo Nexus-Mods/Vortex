@@ -13,6 +13,7 @@ import type { IState } from "../types/IState";
 
 import { setOpenMainPage } from "../actions/session";
 import { useMainPages } from "../hooks/useMainPages";
+import { mainPage as mainPageSelector } from "../util/selectors";
 import { GameSettings } from "../views/GameSettings";
 import { Settings } from "../views/Settings";
 
@@ -66,7 +67,7 @@ const isPageVisible = (page: IMainPage): boolean => {
 export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
   const dispatch = useDispatch();
   const mainPages = useMainPages();
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPage = useSelector(mainPageSelector);
   const useModernLayout = useSelector(
     (state: IState) => state.settings.window.useModernLayout,
   );
