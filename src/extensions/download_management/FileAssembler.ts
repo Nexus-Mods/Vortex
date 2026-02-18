@@ -1,3 +1,8 @@
+import PromiseBB from "bluebird";
+import { dialog as dialogIn } from "electron";
+import * as fsFast from "fs-extra";
+import * as path from "path";
+
 import {
   ProcessCanceled,
   UserCanceled,
@@ -5,23 +10,13 @@ import {
 import { getVisibleWindow } from "../../renderer/util/errorHandling";
 import * as fs from "../../renderer/util/fs";
 import { log } from "../../renderer/util/log";
-import { makeQueue } from "../../renderer/util/util";
 import { getPreloadApi } from "../../renderer/util/preloadAccess";
-
-import PromiseBB from "bluebird";
-import { dialog as dialogIn } from "electron";
-import * as fsFast from "fs-extra";
-import * as path from "path";
+import { makeQueue } from "../../renderer/util/util";
 
 const showMessageBox = async (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
-  if (process.type === "renderer") {
-    return getPreloadApi().dialog.showMessageBox(options);
-  } else {
-    const win = getVisibleWindow();
-    return dialogIn.showMessageBox(win, options);
-  }
+  return window.api.dialog.showMessageBox(options);
 };
 
 /**
