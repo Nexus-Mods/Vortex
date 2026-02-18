@@ -1,22 +1,5 @@
-import FlexLayout from "../../../renderer/controls/FlexLayout";
-import Spinner from "../../../renderer/controls/Spinner";
-import type { IState } from "../../../renderer/types/IState";
-import {
-  ComponentEx,
-  connect,
-  translate,
-} from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../renderer/util/CustomErrors";
-import {
-  didIgnoreError,
-  isOutdated,
-} from "../../../renderer/util/errorHandling";
-import * as fs from "../../../renderer/util/fs";
-import getVortexPath from "../../../renderer/util/getVortexPath";
-import { showError } from "../../../renderer/util/message";
-
-import type { ILog, ISession } from "../types/ISession";
-import { loadVortexLogs } from "../util/loadVortexLogs";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import PromiseBB from "bluebird";
 import update from "immutability-helper";
@@ -31,9 +14,26 @@ import {
   ListGroupItem,
   Modal,
 } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { util } from "../../..";
+
+import type { IState } from "../../../renderer/types/IState";
+import type { ILog, ISession } from "../types/ISession";
+
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
+import FlexLayout from "../../../renderer/controls/FlexLayout";
+import Spinner from "../../../renderer/controls/Spinner";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import {
+  didIgnoreError,
+  isOutdated,
+} from "../../../renderer/util/errorHandling";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { showError } from "../../../renderer/util/message";
+import { loadVortexLogs } from "../util/loadVortexLogs";
 
 export interface IBaseProps {
   visible: boolean;
@@ -121,6 +121,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
                 {sessionsSorted.map(this.renderSession)}
               </ListGroup>
             </FlexLayout.Flex>
+
             <FlexLayout.Flex>{this.renderLog()}</FlexLayout.Flex>
           </Modal.Body>
         );
@@ -140,11 +141,14 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         <Modal.Header>
           <Modal.Title>{t("View Logs")}</Modal.Title>
         </Modal.Header>
+
         {body}
+
         <Modal.Footer>
           <Button id="open-log-folder" onClick={this.openLogFolder}>
             {t("Open Log Folder")}
           </Button>
+
           <Button id="close" onClick={this.props.onHide}>
             {t("Close")}
           </Button>
@@ -179,14 +183,19 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const sessionText = (
       <div style={{ width: "90%" }}>
         <span>{t("From") + " "}</span>
+
         <span className="session-from">{from.toLocaleString(language)}</span>
+
         <span>{" " + t("to") + " "}</span>
+
         <span className="session-to">{to.toLocaleString(language)}</span>
+
         {errors.length > 0 ? (
           <span>
             {" - " + t("{{ count }} error", { count: errors.length })}
           </span>
         ) : null}
+
         <span className="session-crashed">{isCrashed}</span>
       </div>
     );
@@ -195,8 +204,8 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       <ListGroupItem
         className={classes.join(" ")}
         key={index}
-        onClick={this.selectSession}
         value={index}
+        onClick={this.selectSession}
       >
         {sessionText}
       </ListGroupItem>
@@ -217,18 +226,21 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         {["debug", "info", "warn", "error"].map((type) => (
           <div key={type}>
             <Checkbox
-              key={`checkbox-${type}`}
-              className={`log-filter-${type}`}
               checked={show[type]}
-              onChange={this.toggleFilter}
+              className={`log-filter-${type}`}
+              key={`checkbox-${type}`}
               value={type}
+              onChange={this.toggleFilter}
             >
               {t(type.toUpperCase())}
             </Checkbox>
           </div>
         ))}
+
         <FlexLayout.Flex />
+
         <Button onClick={this.copyToClipboard}>{t("Copy to Clipboard")}</Button>
+
         {!isOutdated() && !didIgnoreError() && errors.length > 0 ? (
           <Button id={`report-log-${sessionIdx}`} onClick={this.reportLog}>
             {t("Report")}
@@ -240,13 +252,17 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   private renderLogLine(line: ILog): JSX.Element {
     return (
-      <li key={line.lineno} className={`log-line-${line.type}`}>
+      <li className={`log-line-${line.type}`} key={line.lineno}>
         <span className="log-time">{line.time}</span>
+
         {" - "}
+
         <span className={`log-type-${line.type}`}>
           {line.type.toUpperCase()}
         </span>
+
         {" - "}
+
         <span className="log-text">{line.text}</span>
       </li>
     );
@@ -266,8 +282,9 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       .map(this.renderLogLine);
 
     return (
-      <FlexLayout type="column" className="diagnostics-files-log-panel">
+      <FlexLayout className="diagnostics-files-log-panel" type="column">
         <FlexLayout.Fixed>{this.renderFilterButtons()}</FlexLayout.Fixed>
+
         <FlexLayout.Flex>
           <ul className="log-list">{filteredLog}</ul>
         </FlexLayout.Flex>
@@ -317,7 +334,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   private openLogFolder = () => {
     const logPath = getVortexPath("userData");
-    util.opn(logPath);
+    window.api.shell.openFile(logPath);
   };
 
   private reportLog = (evt) => {

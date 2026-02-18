@@ -198,6 +198,7 @@ export const QuickLauncher: React.FC = () => {
     const state = api.getState();
     const profile = activeProfile(state);
     const currentModsState = profile?.modState ?? {};
+    // Get total number of enabled mods (this includes collections)
     const enabledMods = Object.keys(currentModsState).filter(
       (modId) => currentModsState?.[modId]?.enabled ?? false,
     );

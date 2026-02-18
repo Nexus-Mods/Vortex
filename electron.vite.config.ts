@@ -6,7 +6,7 @@ export default defineConfig({
     build: {
       target: "node22",
       lib: {
-        entry: "./src/main.ts",
+        entry: "./src/main/main.ts",
         formats: ["cjs"],
       },
       rollupOptions: {

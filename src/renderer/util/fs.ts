@@ -44,7 +44,6 @@ import {
   getErrorMessageOrDefault,
   isErrorWithSystemCode,
 } from "../../shared/errors";
-import type { Api } from "../../shared/types/preload";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
@@ -52,20 +51,10 @@ const permission: typeof permissionT = lazyRequire(() =>
 const vortexRun: typeof vortexRunT = lazyRequire(() => require("vortex-run"));
 const wholocks: typeof whoLocksT = lazyRequire(() => require("wholocks"));
 
-// Helper to access preload API - only available in renderer process
-const getPreloadApi = (): Api => (window as unknown as { api: Api }).api;
-
-// For renderer process, we use the preload API for dialogs
-// For main process, we use the electron dialog module directly
 const showMessageBox = async (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
-  if (process.type === "renderer") {
-    return getPreloadApi().dialog.showMessageBox(options);
-  } else {
-    const win = getVisibleWindow();
-    return dialogIn.showMessageBox(win, options);
-  }
+  return window.api.dialog.showMessageBox(options);
 };
 
 export { constants, Stats, WriteStream } from "fs";

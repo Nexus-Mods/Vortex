@@ -1,17 +1,15 @@
-import * as reactSelect from "../controls/ReactSelectWrap";
-
-import type { IRegisteredExtension } from "../types/extensions";
-import ExtensionManager from "../ExtensionManager";
-
 import {} from "module";
+// tslint:disable-next-line:no-var-requires
+const Module = require("module");
 import * as reduxAct from "redux-act";
 import { dynreq } from "vortex-run";
 
-// tslint:disable-next-line:no-var-requires
-const Module = require("module");
-
-import * as api from "../../index";
+import type { IRegisteredExtension } from "../types/extensions";
 import type { LogLevel } from "./log";
+
+import * as api from "../api";
+import * as reactSelect from "../controls/ReactSelectWrap";
+import ExtensionManager from "../ExtensionManager";
 
 const identity = (input) => input;
 
@@ -162,6 +160,6 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
 }
 
 export default function (getExtensions: () => IRegisteredExtension[]) {
-  const orig = (Module as any).prototype.require;
-  (Module as any).prototype.require = extensionRequire(orig, getExtensions);
+  const orig = Module.prototype.require;
+  Module.prototype.require = extensionRequire(orig, getExtensions);
 }

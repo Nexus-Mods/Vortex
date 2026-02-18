@@ -1,13 +1,15 @@
-import * as React from "react";
-import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import { Toggle } from "../../..";
+
+import * as React from "react";
+import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
+import Toggle from "../../../renderer/controls/Toggle";
 import { setAnalytics } from "../actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "../constants";
 
@@ -29,26 +31,28 @@ class SettingsAnalytics extends ComponentEx<IProps, {}> {
       <form>
         <FormGroup controlId="analytics">
           <ControlLabel>{t("Data & Privacy")}</ControlLabel>
+
           <Toggle
             checked={analytics}
-            onToggle={this.toggleAnalytics}
             disabled={!userInfo}
+            onToggle={this.toggleAnalytics}
           >
             {t(
               "Allow this app to collect usage data to improve your experience",
             )}
           </Toggle>
+
           <HelpBlock>
             {t(
               "Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party.",
             )}
             <br />
             <br />
-            <a style={{ marginLeft: "0.25rem" }} href={HELP_ARTICLE}>
+            <a href={HELP_ARTICLE} style={{ marginLeft: "0.25rem" }}>
               {t("More about the data we track")}
             </a>{" "}
             |{" "}
-            <a style={{ marginLeft: "0.25rem" }} href={PRIVACY_POLICY}>
+            <a href={PRIVACY_POLICY} style={{ marginLeft: "0.25rem" }}>
               {t("Privacy Policy")}
             </a>
           </HelpBlock>

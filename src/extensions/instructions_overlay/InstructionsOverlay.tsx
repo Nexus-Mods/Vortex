@@ -3,15 +3,20 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
-import type { types } from "vortex-api";
-import { FlexLayout, Icon, MainContext, tooltip } from "vortex-api";
+
 import type { IOverlay, IPosition } from "../../renderer/types/IState";
+
+import { tooltip } from "../../renderer/controls/api";
+import FlexLayout from "../../renderer/controls/FlexLayout";
+import Icon from "../../renderer/controls/Icon";
+import { type TFunction } from "../../renderer/util/i18n";
+import { MainContext } from "../../renderer/views/api";
 import { getOverlayComponent } from "./index";
 
 const BORDER = 8;
 
 interface IInstructionsOverlayProps {
-  t: types.TFunction;
+  t: TFunction;
   overlayId: string;
   overlay: IOverlay;
   onClose: (id: string) => void;
@@ -160,7 +165,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
   };
 
   return ReactDOM.createPortal(
-    <div ref={ref} className={className} style={{ left: pos.x, top: pos.y }}>
+    <div className={className} ref={ref} style={{ left: pos.x, top: pos.y }}>
       <FlexLayout type="column">
         <FlexLayout.Fixed style={{ height: "5%" }}>
           <FlexLayout className="instructions-overlay-header" type="row">
@@ -170,13 +175,15 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             </FlexLayout.Fixed>
             */}
             <FlexLayout.Flex
-              draggable
-              onDragStart={startDrag}
               className="instructions-overlay-title"
+              draggable={true}
+              onDragStart={startDrag}
             >
               {overlay?.options?.showIcon ? <Icon name="dialog-info" /> : null}
+
               <h4>{t(overlay?.options?.containerTitle ?? "Instructions")}</h4>
             </FlexLayout.Flex>
+
             <FlexLayout.Fixed className="instructions-overlay-buttons">
               <tooltip.IconButton
                 className="btn-embed"
@@ -184,6 +191,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
                 tooltip={open ? t("Collapse") : t("Expand")}
                 onClick={toggleOpen}
               />
+
               <tooltip.IconButton
                 className="btn-embed"
                 icon="close"
@@ -193,9 +201,11 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
             </FlexLayout.Fixed>
           </FlexLayout>
         </FlexLayout.Fixed>
+
         <FlexLayout.Fixed className="instructions-overlay-mod-name">
           {overlay.title ? <h3>{overlay.title}</h3> : null}
         </FlexLayout.Fixed>
+
         <FlexLayout.Fixed style={{ overflowY: "auto" }}>
           {open ? (
             (() => {
@@ -237,8 +247,8 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
                 // Handle text/markdown content
                 return (
                   <ReactMarkdown
-                    className="instructions-overlay-content"
                     allowedElements={["p", "br", "a", "em", "strong"]}
+                    className="instructions-overlay-content"
                     unwrapDisallowed={true}
                   >
                     {overlay.content}

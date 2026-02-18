@@ -30,15 +30,15 @@ import os from "os";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
 
-import Application from "./main/Application";
-import { parseCommandline } from "./main/cli";
-import { terminate } from "./main/errorHandling";
-import { sendReportFile } from "./main/errorReporting";
-import getVortexPath from "./main/getVortexPath";
-import { init as initIpcHandlers } from "./main/ipcHandlers";
-import StylesheetCompiler from "./main/stylesheetCompiler";
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
-import { VORTEX_VERSION } from "./shared/constants";
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "../shared/constants";
+import { VORTEX_VERSION } from "../shared/constants";
+import Application from "./Application";
+import { parseCommandline } from "./cli";
+import { terminate } from "./errorHandling";
+import { sendReportFile } from "./errorReporting";
+import getVortexPath from "./getVortexPath";
+import { init as initIpcHandlers } from "./ipcHandlers";
+import StylesheetCompiler from "./stylesheetCompiler";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;

@@ -64,34 +64,6 @@ try {
     extensions: {
       initializeAllMain: (installType: string) =>
         betterIpcRenderer.send("extensions:init-all-main", installType),
-
-      requestMainInit: (extensionName: string) =>
-        new Promise<{ success: boolean; error?: string }>((resolve) => {
-          // Set up one-time response listener
-          const responseHandler = (
-            _: Electron.IpcRendererEvent,
-            response: {
-              extensionName: string;
-              success: boolean;
-              error?: string;
-            },
-          ) => {
-            if (response.extensionName === extensionName) {
-              betterIpcRenderer.off(
-                "extensions:init-main-response",
-                responseHandler,
-              );
-              resolve(response);
-            }
-          };
-          betterIpcRenderer.on(
-            "extensions:init-main-response",
-            responseHandler,
-          );
-
-          // Send the request
-          betterIpcRenderer.send("extensions:init-main", extensionName);
-        }),
     },
 
     updater: {

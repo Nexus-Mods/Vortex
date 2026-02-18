@@ -50,6 +50,7 @@ import type {
   IState,
 } from "./types/IState";
 import type { i18n } from "./util/i18n";
+import StyleManager from "./StyleManager";
 
 import PromiseBB from "bluebird";
 import { spawn } from "child_process";
@@ -788,7 +789,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
-  private mStyleManager: any;
+  private mStyleManager: StyleManager;
   private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: {
@@ -957,8 +958,7 @@ class ExtensionManager {
       });
 
     // Dynamic require to prevent TypeScript from analyzing StyleManager during api build
-    const StyleManagerClass = require("./StyleManager").default;
-    this.mStyleManager = new StyleManagerClass();
+    this.mStyleManager = new StyleManager();
     this.mExtensions = this.prepareExtensions();
 
     log("info", "outdated extensions", { numOutdated: this.mOutdated.length });
@@ -1527,6 +1527,11 @@ class ExtensionManager {
       log("debug", isMainCall ? "onceMain" : "once", {
         extension: call.extension,
       });
+
+      if (isMainCall) {
+        log("warn", "onceMain is deprecated and won't work as expected");
+      }
+
       const ext = this.mExtensions.find((iter) => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -1535,26 +1540,7 @@ class ExtensionManager {
         });
 
         let prom: PromiseBB<void>;
-        if (isMainCall) {
-          // For onceMain, request main process initialization via IPC
-          log("debug", "Requesting main process initialization", {
-            extension: call.extension,
-          });
-          prom = PromiseBB.resolve(
-            (window as unknown as PreloadWindow).api.extensions.requestMainInit(
-              call.extension,
-            ),
-          ).then((result) => {
-            if (!result.success) {
-              throw new Error(
-                result.error || "Main process initialization failed",
-              );
-            }
-          });
-        } else {
-          // For once, execute the callback directly in renderer
-          prom = call.arguments[0]() || PromiseBB.resolve();
-        }
+        prom = call.arguments[0]() || PromiseBB.resolve();
 
         const start = Date.now();
         return timeout(prom, 60000, {

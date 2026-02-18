@@ -28,7 +28,7 @@ if (
 
 module.exports = {
   entry: {
-    main: "./src/main.ts",
+    main: "./src/main/main.ts",
     preload: "./src/preload/index.ts",
   },
   target: "electron-main",

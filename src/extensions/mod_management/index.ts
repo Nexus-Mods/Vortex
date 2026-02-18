@@ -158,7 +158,6 @@ import * as path from "path";
 import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
-import type { types } from "../..";
 import { getErrorCode } from "../../shared/errors";
 import { nxmMod } from "../../renderer/tailwind/lib/icon-paths/icon-paths";
 
@@ -1602,7 +1601,7 @@ function once(api: IExtensionApi) {
       options: {
         silent?: boolean;
         willBeReplaced?: boolean;
-        modData?: types.IMod;
+        modData?: IMod;
       },
     ) => {
       if (options?.silent !== true && options?.willBeReplaced !== true) {
@@ -1716,8 +1715,11 @@ function once(api: IExtensionApi) {
   );
 
   api.events.on("mod-enabled", (profileId: string, modId: string) => {
-    const state: IState = api.store.getState();
+    const state = api.getState();
     const profile = profileById(state, profileId);
+    if (profile === undefined) {
+      return;
+    }
     const mod = state.persistent.mods[profile.gameId]?.[modId];
     if (mod === undefined) {
       return;

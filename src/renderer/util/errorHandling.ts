@@ -41,20 +41,11 @@ import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 const showMessageBox = async (
   options: Electron.MessageBoxOptions,
 ): Promise<Electron.MessageBoxReturnValue> => {
-  if (process.type === "renderer") {
-    return getPreloadApi().dialog.showMessageBox(options);
-  } else {
-    const win = getVisibleWindow();
-    return dialogIn.showMessageBox(win, options);
-  }
+  return window.api.dialog.showMessageBox(options);
 };
 
 const showErrorBox = async (title: string, content: string): Promise<void> => {
-  if (process.type === "renderer") {
-    return getPreloadApi().dialog.showErrorBox(title, content);
-  } else {
-    dialogIn.showErrorBox(title, content);
-  }
+  return window.api.dialog.showErrorBox(title, content);
 };
 
 function createTitle(type: string, error: IError, hash: string) {

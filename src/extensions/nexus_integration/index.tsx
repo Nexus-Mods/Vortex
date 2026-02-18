@@ -148,7 +148,6 @@ import {} from "uuid";
 import type { IComponentContext } from "../../renderer/types/IComponentContext";
 import { MainContext } from "../../renderer/views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
-import { selectors } from "vortex-api";
 import { app } from "electron";
 import Icon from "../../renderer/controls/Icon";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";

@@ -12,12 +12,11 @@
   },
   "files": [
     "./typings.custom/index.d.ts",
-    "./src/main.ts",
+    "./src/main/main.ts",
     "./src/preload/index.ts",
-    "./src/index.ts",
-    "./src/renderer.tsx",
+    "./src/renderer/renderer.tsx",
     "./src/renderer/preload.ts",
-    "./src/splash.ts",
+    "./src/renderer/splash.ts",
     "./src/extensions/index.ts"
   ]
 }

@@ -1,11 +1,24 @@
-import { showDialog } from "../../../renderer/actions/notifications";
-import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
-import FlexLayout from "../../../renderer/controls/FlexLayout";
-import Icon from "../../../renderer/controls/Icon";
-import More from "../../../renderer/controls/More";
-import Spinner from "../../../renderer/controls/Spinner";
-import Toggle from "../../../renderer/controls/Toggle";
-import { Button } from "../../../renderer/controls/TooltipControls";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import PromiseBB from "bluebird";
+import * as path from "path";
+import * as React from "react";
+import {
+  Alert,
+  Button as BSButton,
+  ControlLabel,
+  FormControl,
+  FormGroup,
+  HelpBlock,
+  InputGroup,
+  Jumbotron,
+  Modal,
+  Panel,
+  ProgressBar,
+} from "react-bootstrap";
+import * as winapi from "winapi-bindings";
+
 import type {
   DialogActions,
   DialogType,
@@ -14,11 +27,23 @@ import type {
 } from "../../../renderer/types/IDialog";
 import type { InstallPathMode, IState } from "../../../renderer/types/IState";
 import type { ValidationState } from "../../../renderer/types/ITableAttribute";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
+
+import { showDialog } from "../../../renderer/actions/notifications";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
+import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
+import FlexLayout from "../../../renderer/controls/FlexLayout";
+import Icon from "../../../renderer/controls/Icon";
+import More from "../../../renderer/controls/More";
+import Spinner from "../../../renderer/controls/Spinner";
+import Toggle from "../../../renderer/controls/Toggle";
+import { Button } from "../../../renderer/controls/TooltipControls";
 import {
   CleanupFailedException,
   InsufficientDiskSpace,
@@ -48,13 +73,11 @@ import {
   isPathValid,
   isReservedDirectory,
 } from "../../../renderer/util/util";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 import {
   currentGame,
   currentGameDiscovery,
 } from "../../gamemode_management/selectors";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-
 import { setDeploymentNecessary } from "../actions/deployment";
 import {
   setActivator,
@@ -62,37 +85,12 @@ import {
   setInstallPathMode,
 } from "../actions/settings";
 import { setTransferMods } from "../actions/transactions";
-
-import type { IDeploymentMethod } from "../types/IDeploymentMethod";
-import { getSupportedActivators } from "../util/deploymentMethods";
-import { NoDeployment } from "../util/exceptions";
-import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
-
 import { modPathsForGame } from "../selectors";
 import { STAGING_DIR_TAG } from "../stagingDirectory";
 import getText from "../texts";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import * as React from "react";
-import {
-  Alert,
-  Button as BSButton,
-  ControlLabel,
-  FormControl,
-  FormGroup,
-  HelpBlock,
-  InputGroup,
-  Jumbotron,
-  Modal,
-  Panel,
-  ProgressBar,
-} from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import * as winapi from "winapi-bindings";
-import { ProvidePlugin } from "webpack";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getSupportedActivators } from "../util/deploymentMethods";
+import { NoDeployment } from "../util/exceptions";
+import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -214,11 +212,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <Panel key="defaults">
         <Panel.Body>
           <ControlLabel>{t("Defaults")}</ControlLabel>
+
           <Toggle
             checked={installPathMode === "suggested"}
             onToggle={this.toggleInstallPathMode}
           >
             {t("Automatically use suggested path for staging folder")}
+
             <More id="staging_path_mode" name="Staging Path Mode">
               {t(
                 "Usually, when you first manage a game, the staging folder is initially set to be in " +
@@ -261,13 +261,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               }),
               supportedActivators,
             )}
+
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
                   <div className="container">
                     <h2>{this.state.busy}</h2>
+
                     {progressFile !== undefined ? <p>{progressFile}</p> : null}
-                    <ProgressBar style={{ height: "1.5em" }} now={progress} />
+
+                    <ProgressBar now={progress} style={{ height: "1.5em" }} />
                   </div>
                 </Jumbotron>
               </Modal.Body>
@@ -278,10 +281,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <Panel.Body>
             <ControlLabel>
               {t("Deployment Method")}
+
               <More id="more-deploy" name={t("Deployment")}>
                 {getText("deployment", t)}
               </More>
             </ControlLabel>
+
             {this.renderActivators(supportedActivators, currentActivator)}
           </Panel.Body>
         </Panel>,
@@ -290,11 +295,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       panels.push(
         <EmptyPlaceholder
           icon="settings"
-          text={t(
-            "This screen will have more options once you start managing a game.",
-          )}
           subtext={t(
             "Most settings here can be configured for each game individually.",
+          )}
+          text={t(
+            "This screen will have more options once you start managing a game.",
           )}
         />,
       );
@@ -1021,17 +1026,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup id="install-path-form" validationState={validationState.state}>
         <ControlLabel>
           {label}
+
           <More id="more-paths" name={t("Mod Staging Folder")}>
             {getText("modspath", t)}
           </More>
         </ControlLabel>
+
         <FlexLayout type="row">
           <FlexLayout.Fixed>
             <InputGroup>
               <FormControl
                 className="install-path-input"
-                value={getInstallPathPattern(installPath)}
                 placeholder={label}
+                value={getInstallPathPattern(installPath)}
                 onChange={this.changePathEvt}
                 onKeyPress={
                   this.pathsChanged() && validationState.state !== "error"
@@ -1039,6 +1046,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     : null
                 }
               />
+
               <InputGroup.Button className="inset-btn">
                 <Button tooltip={t("Browse")} onClick={this.browsePath}>
                   <Icon name="browse" />
@@ -1046,27 +1054,31 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </InputGroup.Button>
             </InputGroup>
           </FlexLayout.Fixed>
+
           <FlexLayout.Fixed>
             <InputGroup.Button>
               <Button
-                onClick={this.suggestPath}
                 tooltip={t(
                   "This will suggest a path that puts the mods on the same drive as the game",
                 )}
+                onClick={this.suggestPath}
               >
                 {t("Suggest")}
               </Button>
+
               <BSButton disabled={applyDisabled} onClick={this.onApply}>
                 {hasModActivity ? <Spinner /> : t("Apply")}
               </BSButton>
             </InputGroup.Button>
           </FlexLayout.Fixed>
         </FlexLayout>
+
         <HelpBlock>
           <a data-url={pathPreview} onClick={this.openUrl}>
             {pathPreview}
           </a>
         </HelpBlock>
+
         {validationState.reason ? (
           <ControlLabel>{t(validationState.reason)}</ControlLabel>
         ) : null}
@@ -1170,6 +1182,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <h4 style={{ marginBottom: 0 }}>
               {t("No deployment method available.")}
             </h4>
+
             <p style={{ marginTop: 0 }}>
               {t("See notification for more information.")}
             </p>
@@ -1184,6 +1197,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       >
         <InputGroup>
           {content}
+
           <InputGroup.Button>
             <BSButton
               disabled={!changed || changingActivator}
@@ -1193,9 +1207,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </BSButton>
           </InputGroup.Button>
         </InputGroup>
+
         {activatorIdx !== -1 ? (
           <HelpBlock>
             {t(activators[activatorIdx].description)}
+
             <More
               id="more-activator-detail"
               name={activators[activatorIdx].name}
