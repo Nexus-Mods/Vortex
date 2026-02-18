@@ -172,6 +172,7 @@ export interface IMainPageOptions {
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
   onReset?: () => void;
+  mdi?: string;
 }
 
 export type RegisterMainPage = (

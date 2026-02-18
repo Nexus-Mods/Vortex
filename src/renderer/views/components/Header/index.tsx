@@ -28,6 +28,7 @@ export const Header: FC = () => {
   const activeProfile = useSelector(
     (state: IState) => state.persistent.profiles[activeProfileId],
   );
+  const profiles = useSelector((state: IState) => state.persistent.profiles);
 
   const title = useMemo(() => {
     if (selection.type === "home") {
@@ -41,8 +42,15 @@ export const Header: FC = () => {
     setMenuIsCollapsed((prev) => !prev);
   }, [setMenuIsCollapsed]);
 
-  const profileName =
-    selection.type !== "home" ? activeProfile?.name : undefined;
+  const profileName = useMemo(() => {
+    if (selection.type === "home" || !activeProfile) {
+      return undefined;
+    }
+    const gameProfiles = Object.values(profiles).filter(
+      (p) => p.gameId === activeProfile.gameId,
+    );
+    return gameProfiles.length > 1 ? activeProfile.name : undefined;
+  }, [selection, activeProfile, profiles]);
 
   return (
     <div

@@ -36,6 +36,13 @@ export const Spine: FC = () => {
   );
   const mainPage = useSelector((state: IState) => state.session.base.mainPage);
 
+  // Whether a standalone spine button (Downloads, Games) owns the current page,
+  // so the context buttons (Home / Game) should not appear active.
+  const isStandalonePageActive =
+    mainPage === "Downloads" ||
+    mainPage === "game-downloads" ||
+    mainPage === "Games";
+
   const handleGlobalPageClick = useCallback(
     (pageId: string) => {
       // Global pages need Home to be selected first
@@ -77,7 +84,7 @@ export const Spine: FC = () => {
       <SpineButton
         className="border-2"
         iconPath={mdiHome}
-        isActive={selection.type === "home"}
+        isActive={selection.type === "home" && !isStandalonePageActive}
         onClick={selectHome}
       />
 
@@ -95,7 +102,9 @@ export const Spine: FC = () => {
               <GameButton
                 imageSrc={getGameImageUrl(game, discoveredGames[game.id])}
                 isActive={
-                  selection.type === "game" && selection.gameId === game.id
+                  selection.type === "game" &&
+                  selection.gameId === game.id &&
+                  !isStandalonePageActive
                 }
                 key={game.id}
                 store={discoveredGames[game.id]?.store}

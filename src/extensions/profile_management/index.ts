@@ -920,7 +920,7 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.registerMainPage("profile", "Profiles", ProfileView, {
-    priority: 45,
+    priority: 35,
     id: "game-profiles",
     hotkey: "P",
     group: "per-game",

@@ -8,6 +8,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -84,20 +85,35 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     [mainPages, isPageVisible, activeGameId],
   );
 
+  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+
   const defaultHomePage = homePages[0]?.id;
   const defaultGamePage = gamePages[0]?.id;
 
   const visiblePages = selection.type === "home" ? homePages : gamePages;
 
+  // Track the last active page per spine context (home / per game)
+  const lastPageRef = useRef<Record<string, string>>({});
+
+  // Save the current page whenever it changes
+  useEffect(() => {
+    if (!mainPage) return;
+    const key = selection.type === "game" ? selection.gameId : "home";
+    lastPageRef.current[key] = mainPage;
+  }, [mainPage, selection]);
+
   useEffect(() => {
     if (selection.type === "game" && defaultGamePage !== undefined) {
       dispatch(setOpenMainPage(defaultGamePage, false));
+    } else if (selection.type === "home" && defaultHomePage !== undefined) {
+      dispatch(setOpenMainPage(defaultHomePage, false));
     }
   }, []);
 
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
-    const actions: Action[] = [setOpenMainPage(defaultHomePage, false)];
+    const targetPage = lastPageRef.current["home"] || defaultHomePage;
+    const actions: Action[] = [setOpenMainPage(targetPage, false)];
     if (activeProfileId !== undefined) {
       actions.push(setNextProfile(undefined));
     }
@@ -107,16 +123,17 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const selectGame = useCallback(
     (gameId: string) => {
       if (defaultGamePage === undefined) return;
+      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
       if (profileId !== undefined && profileId !== activeProfileId) {
         // Profile needs to change - wait for activation before navigating
         dispatch(setNextProfile(profileId));
         api?.events.once("profile-did-change", () => {
-          dispatch(setOpenMainPage(defaultGamePage, false));
+          dispatch(setOpenMainPage(targetPage, false));
         });
       } else {
         // Profile is already active
-        dispatch(setOpenMainPage(defaultGamePage, false));
+        dispatch(setOpenMainPage(targetPage, false));
       }
     },
     [lastActiveProfile, activeProfileId, dispatch, api, defaultGamePage],

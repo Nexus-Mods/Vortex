@@ -160,6 +160,7 @@ import type * as Redux from "redux";
 import shortid from "shortid";
 import type { types } from "../..";
 import { getErrorCode } from "../../shared/errors";
+import { nxmMod } from "../../renderer/tailwind/lib/icon-paths/icon-paths";
 
 interface IAppContext {
   isProfileChanging: boolean;
@@ -2199,12 +2200,13 @@ function init(context: IExtensionContext): boolean {
     "Mods",
     LazyComponent(() => require("./views/ModList")),
     {
-      priority: 50,
+      priority: 40,
       hotkey: "M",
       group: "per-game",
       visible: () => activeGameId(context.api.store.getState()) !== undefined,
       activity: modsActivity,
       props: () => ({ modSources: getModSources() }),
+      mdi: nxmMod,
     },
   );
 

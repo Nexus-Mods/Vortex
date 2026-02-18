@@ -79,7 +79,7 @@ const MenuContent: FC = () => {
         >
           {visiblePages.map((page) => (
             <MenuButton
-              iconPath={getIconPath(page.icon)}
+              iconPath={page.mdi ?? getIconPath(page.icon)}
               isActive={mainPage === page.id}
               key={page.id}
               onClick={() => dispatch(setOpenMainPage(page.id, false))}

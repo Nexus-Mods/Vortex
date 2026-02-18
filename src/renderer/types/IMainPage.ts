@@ -13,6 +13,7 @@ import type * as React from "react";
 export interface IMainPage {
   id: string;
   icon: string;
+  mdi?: string;
   title: string;
   component: React.ComponentClass<any> | React.StatelessComponent<any>;
   propsFunc: () => any;

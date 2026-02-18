@@ -37,7 +37,7 @@ export default function init(context: types.IExtensionContext) {
   context.registerReducer(["session", "tutorials"], sessionReducer);
 
   context.registerMainPage("details", "Knowledge base", DocumentationView, {
-    priority: 25,
+    priority: 15,
     hotkeyRaw: "F1",
     group: "global",
     isClassicOnly: true,
