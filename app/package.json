@@ -105,7 +105,7 @@
     "universal-analytics": "^0.4.23",
     "uuid": "^3.3.3",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "vortex-run": "file:../src/util/vortex-run",
+    "vortex-run": "file:../src/renderer/util/vortex-run",
     "vortexmt": "Nexus-Mods/node-vortexmt",
     "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
