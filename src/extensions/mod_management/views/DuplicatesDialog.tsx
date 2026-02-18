@@ -51,8 +51,11 @@ export default function DuplicatesDialog(props: IBaseProps) {
   const removeMods = React.useCallback(() => {
     const removeMap = checked.reduce((accum, iter) => {
       const modName = Object.keys(duplicates).find((id) =>
-        duplicates[id].includes(iter),
+        duplicates[id]?.includes(iter),
       );
+      if (modName === undefined) {
+        return accum;
+      }
       accum[iter] = duplicates[modName].find((id) => !checked.includes(id));
       return accum;
     }, {});
