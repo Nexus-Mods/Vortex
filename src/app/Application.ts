@@ -110,7 +110,7 @@ function last(array: any[]): any {
 
 class Application {
   public static shouldIgnoreError(error: any, promise?: any): boolean {
-    if (error instanceof UserCanceled) {
+    if (error instanceof UserCanceled || error instanceof ProcessCanceled) {
       return true;
     }
 
