@@ -12,7 +12,7 @@
   },
   "files": [
     "./typings.custom/index.d.ts",
-    "./src/main.ts",
+    "./src/main/main.ts",
     "./src/preload/index.ts",
     "./src/index.ts",
     "./src/renderer.tsx",
