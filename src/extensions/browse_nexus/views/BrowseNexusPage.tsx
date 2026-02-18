@@ -262,7 +262,10 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
             <div className="space-y-3 p-6">
               <form
                 className="flex items-center gap-x-2"
-                onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearch();
+                }}
               >
                 <Input
                   errorMessage={searchValidationError || undefined}

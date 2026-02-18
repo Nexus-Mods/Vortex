@@ -33,9 +33,7 @@ export function useExtensionObjects<T>(
 
   // Register the UI API on first use
   React.useEffect(() => {
-    const ExtensionManagerImpl: typeof ExtensionManager =
-      require("./ExtensionManager").default;
-    ExtensionManagerImpl.registerUIAPI(registerFunc.name);
+    ExtensionManager.registerUIAPI(registerFunc.name);
   }, [registerFunc.name]);
 
   return React.useMemo(() => {
