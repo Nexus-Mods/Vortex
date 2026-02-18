@@ -115,6 +115,7 @@ import {
   AlreadyDownloaded,
   DownloadIsHTML,
 } from "../download_management/DownloadManager";
+import { finishDownload } from "../download_management/actions/state";
 import { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 
@@ -1896,6 +1897,7 @@ class InstallManager {
                       api.translate(pretty.message, {
                         replace: pretty.replace,
                       }),
+                      pretty,
                     ),
                   );
                 }
@@ -1910,6 +1912,13 @@ class InstallManager {
                   });
                 } else if (err instanceof ArchiveBrokenError) {
                   return prom.then(() => {
+                    if (archiveId) {
+                      api.store.dispatch(
+                        finishDownload(archiveId, "failed", {
+                          message: err.message,
+                        }),
+                      );
+                    }
                     if (unattended) {
                       promiseCallback?.(err, null);
                       return Promise.resolve();
@@ -3622,6 +3631,22 @@ class InstallManager {
         return undefined;
       };
 
+      // DEBUG: Force random errors at 10% rate for testing
+      // if (Math.random() < 0.1) {
+      //   const errors = [
+      //     () =>
+      //       new ArchiveBrokenError(
+      //         path.basename(archivePath),
+      //         "debug test error",
+      //       ),
+      //     () => { const e = new Error("EPERM: operation not permitted"); (e as any).code = "EPERM"; (e as any).path = archivePath; return e; },
+      //     () => new ProcessCanceled("debug canceled"),
+      //     () => { const e = new Error("ENOENT: no such file or directory"); (e as any).code = "ENOENT"; (e as any).path = archivePath; return e; },
+      //   ];
+      //   return Bluebird.reject(
+      //     errors[Math.floor(Math.random() * errors.length)](),
+      //   );
+      // }
       // clean up any stale temp directory from a previous failed attempt
       return fs.removeAsync(tempPath).then(() =>
         zip
@@ -5897,7 +5922,7 @@ class InstallManager {
                   api,
                   sourceModId,
                   "Failed to install dependency",
-                  pretty as Error,
+                  err,
                   refName,
                   {
                     allowReport: pretty.allowReport,
