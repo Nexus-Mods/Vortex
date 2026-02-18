@@ -2,12 +2,12 @@ import type {
   IEditChoice,
   ITableAttribute,
   ValidationState,
-} from "../../../types/ITableAttribute";
+} from "../../types/ITableAttribute";
 import { ComponentEx } from "../ComponentEx";
-import type { TFunction } from "../../../util/i18n";
-import { preT } from "../../../util/i18n";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
+import type { TFunction } from "../../util/i18n";
+import { preT } from "../../util/i18n";
+import { log } from "../../util/log";
+import { getSafe } from "../../util/storeHelper";
 
 import ExtensionGate from "../ExtensionGate";
 import FormInput from "../FormInput";

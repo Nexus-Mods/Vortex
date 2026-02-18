@@ -2,15 +2,15 @@ import DropdownButton from "../../../renderer/controls/DropdownButton";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Icon from "../../../renderer/controls/Icon";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IDashletSettings, IState } from "../../../types/IState";
+import type { IDashletSettings, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import Debouncer from "../../../util/Debouncer";
-import { getWindowId } from "../../../util/preloadAccess";
-import { getSafe } from "../../../util/storeHelper";
+import Debouncer from "../../../renderer/util/Debouncer";
+import { getWindowId } from "../../../renderer/util/preloadAccess";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
 import {

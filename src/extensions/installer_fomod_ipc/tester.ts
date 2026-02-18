@@ -1,8 +1,8 @@
 import { VortexIPCConnection } from "./utils/VortexIPCConnection";
 import { createConnectionStrategies } from "./utils/connectionStrategy";
 import type { ITestSupportedDetails } from "../mod_management/types/TestSupported";
-import { log } from "../../util/log";
-import type { IExtensionApi, ISupportedResult } from "../../types/api";
+import { log } from "../../renderer/util/log";
+import type { IExtensionApi, ISupportedResult } from "../../renderer/types/api";
 
 /**
  * Test if files are supported by the FOMOD installer

@@ -1,16 +1,19 @@
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import Spinner from "../../../renderer/controls/Spinner";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import { didIgnoreError, isOutdated } from "../../../util/errorHandling";
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { showError } from "../../../util/message";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import {
+  didIgnoreError,
+  isOutdated,
+} from "../../../renderer/util/errorHandling";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { showError } from "../../../renderer/util/message";
 
 import type { ILog, ISession } from "../types/ISession";
 import { loadVortexLogs } from "../util/loadVortexLogs";

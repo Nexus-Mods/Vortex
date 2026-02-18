@@ -2,15 +2,15 @@ import {
   addNotification,
   dismissNotification,
   updateNotification,
-} from "../../actions/notifications";
-import { startActivity, stopActivity } from "../../actions/session";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { INotification } from "../../types/INotification";
-import type { IState } from "../../types/IState";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import { getSafe } from "../../util/storeHelper";
+} from "../../renderer/actions/notifications";
+import { startActivity, stopActivity } from "../../renderer/actions/session";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { INotification } from "../../renderer/types/INotification";
+import type { IState } from "../../renderer/types/IState";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   ModsInstallationCancelledEvent,
   ModsInstallationCompletedEvent,

@@ -1,8 +1,8 @@
 import Icon from "../../../renderer/controls/Icon";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import type { TFunction } from "../../../util/i18n";
-import lazyRequire from "../../../util/lazyRequire";
-import { log } from "../../../util/log";
+import type { TFunction } from "../../../renderer/util/i18n";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import { log } from "../../../renderer/util/log";
 
 import type * as DraggabillyT from "draggabilly";
 import type * as PackeryT from "packery";

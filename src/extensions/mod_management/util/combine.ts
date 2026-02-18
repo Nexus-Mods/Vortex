@@ -3,12 +3,15 @@ import { generate as shortid } from "shortid";
 import type {
   IDeploymentMethod,
   IExtensionApi,
-} from "../../../types/IExtensionContext";
-import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
-import { toPromise } from "../../../util/util";
+} from "../../../renderer/types/IExtensionContext";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import * as fs from "../../../renderer/util/fs";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { toPromise } from "../../../renderer/util/util";
 import { onAddMod } from "../eventHandlers";
 import { installPathForGame } from "../selectors";
 import allTypesSupported from "./allTypesSupported";

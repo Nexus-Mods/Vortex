@@ -1,6 +1,6 @@
 import type * as Promise from "bluebird";
 import type { IActionDefinitionEx } from "../../../renderer/controls/ActionControl";
-import type { IMod } from "../../../types/IState";
+import type { IMod } from "../../../renderer/types/IState";
 
 export type SortType = "ascending" | "descending";
 

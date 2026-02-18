@@ -4,15 +4,15 @@ import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
 import IniParser, { WinapiFormat } from "vortex-parse-ini";
 import { getIniFilePath } from "../../installer_fomod_shared/utils/gameSupport";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { statAsync, readFileAsync } from "../../../util/fs";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import { statAsync, readFileAsync } from "../../../renderer/util/fs";
 import {
   currentGame,
   currentGameDiscovery,
 } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { showError } from "../../../util/message";
-import { isNullOrWhitespace } from "../../../util/util";
+import { showError } from "../../../renderer/util/message";
+import { isNullOrWhitespace } from "../../../renderer/util/util";
 
 const extenderForGame = (gameId: string) => {
   return {

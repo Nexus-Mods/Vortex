@@ -35,7 +35,7 @@ jest.mock('original-fs', () => {
   };
 }, { virtual: true });
 
-const actualFs = jest.requireActual('../src/util/fs');
+const actualFs = jest.requireActual('../src/renderer/util/fs');
 
 // Provide a mock for readFileBOM that works with the test's fs-extra mock
 const readFileBOM = (filePath, fallbackEncoding = 'utf8') => {

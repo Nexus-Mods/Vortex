@@ -1,17 +1,17 @@
 import type { ButtonType } from "../../../renderer/controls/IconBar";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { IState } from "../../../types/IState";
-import { fileMD5 } from "../../../util/checksum";
+import type { IState } from "../../../renderer/types/IState";
+import { fileMD5 } from "../../../renderer/util/checksum";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
+import * as fs from "../../../renderer/util/fs";
+import { log } from "../../../renderer/util/log";
 
-import { activeGameId } from "../../../util/selectors";
-import { batchDispatch } from "../../../util/util";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { batchDispatch } from "../../../renderer/util/util";
 
 import { setModAttribute } from "../../mod_management/actions/mods";
 import metaLookupMatch from "../../mod_management/util/metaLookupMatch";

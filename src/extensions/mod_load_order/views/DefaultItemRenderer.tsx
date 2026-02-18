@@ -13,10 +13,10 @@ import type {
 } from "../types/types";
 
 import { Icon } from "../../../renderer/controls/api";
-import type { IProfile, IState } from "../../../types/api";
+import type { IProfile, IState } from "../../../renderer/types/api";
 
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import { setLoadOrderEntry } from "../actions/loadOrder";
 

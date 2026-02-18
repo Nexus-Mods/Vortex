@@ -5,7 +5,7 @@ import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
 import type { types } from "vortex-api";
 import { FlexLayout, Icon, MainContext, tooltip } from "vortex-api";
-import type { IOverlay, IPosition } from "../../types/IState";
+import type { IOverlay, IPosition } from "../../renderer/types/IState";
 import { getOverlayComponent } from "./index";
 
 const BORDER = 8;

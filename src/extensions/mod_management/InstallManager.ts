@@ -44,18 +44,24 @@ import {
   setDownloadModInfo,
   startActivity,
   stopActivity,
-} from "../../actions";
+} from "../../renderer/actions";
 import {
   type IConditionResult,
   type IDialogContent,
   showDialog,
   dismissNotification,
-} from "../../actions/notifications";
-import type { ICheckbox, IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
-import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
+} from "../../renderer/actions/notifications";
+import type { ICheckbox, IDialogResult } from "../../renderer/types/IDialog";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
+import {
+  getBatchContext,
+  type IBatchContext,
+} from "../../renderer/util/BatchContext";
+import ConcurrencyLimiter from "../../renderer/util/ConcurrencyLimiter";
 import { NotificationAggregator } from "./NotificationAggregator";
 import {
   DataInvalid,
@@ -66,17 +72,17 @@ import {
   TemporaryError,
   UserCanceled,
   ArchiveBrokenError,
-} from "../../util/CustomErrors";
+} from "../../renderer/util/CustomErrors";
 import {
   createErrorReport,
   didIgnoreError,
   isOutdated,
   withContext,
-} from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { prettifyNodeErrorMessage } from "../../util/message";
+} from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import type { TFunction } from "../../renderer/util/i18n";
+import { log } from "../../renderer/util/log";
+import { prettifyNodeErrorMessage } from "../../renderer/util/message";
 import {
   activeGameId,
   activeProfile,
@@ -86,8 +92,8 @@ import {
   knownGames,
   lastActiveProfileForGame,
   profileById,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   delay,
@@ -95,10 +101,10 @@ import {
   setdefault,
   toPromise,
   truthy,
-} from "../../util/util";
-import walk from "../../util/walk";
+} from "../../renderer/util/util";
+import walk from "../../renderer/util/walk";
 
-import calculateFolderSize from "../../util/calculateFolderSize";
+import calculateFolderSize from "../../renderer/util/calculateFolderSize";
 
 import {
   getCollectionActiveSession,
@@ -5001,13 +5007,13 @@ class InstallManager {
           "Select Variant to Replace",
           {
             text: '"{{modName}}" has several variants installed - please choose which one to replace:',
-            choices: modIds.map((id, idx) => {
-              const modAttributes = mods[idx].attributes;
+            choices: mods.map((mod, idx) => {
+              const modAttributes = mod.attributes;
               const variant = getSafe(modAttributes, ["variant"], "");
               return {
-                id,
+                id: mod.id,
                 value: idx === 0,
-                text: `modId: ${id}`,
+                text: `modId: ${mod.id}`,
                 subText: api.translate(
                   "Version: {{version}}; InstallTime: {{installTime}}; Variant: {{variant}}",
                   {
@@ -5931,7 +5937,7 @@ class InstallManager {
                 return Bluebird.resolve(undefined);
               }
               log("debug", "done installing dependency", {
-                ref: dep.reference.logicalFileName,
+                ref: dep.reference?.logicalFileName,
               });
               return Bluebird.resolve(updatedDependency);
             })

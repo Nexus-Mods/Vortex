@@ -1,12 +1,12 @@
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 
 const gameNum = (() => {
   let cache: { [gameId: string]: number };
-  return (gameId: string): number => {
+  return (gameId: string): number | undefined => {
     if (cache === undefined) {
       const games = nexusGames();
       if (games.length > 0) {
@@ -15,6 +15,10 @@ const gameNum = (() => {
           return prev;
         }, {});
       }
+    }
+
+    if (cache === undefined) {
+      return undefined;
     }
 
     const game = getGame(gameId);

@@ -1,17 +1,23 @@
 import Bluebird from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
-import type { IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import lazyRequire from "../../util/lazyRequire";
-import { log } from "../../util/log";
-import { activeGameId, installPathForGame } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+import type { IDialogResult } from "../../renderer/types/IDialog";
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import { getApplication } from "../../renderer/util/application";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import lazyRequire from "../../renderer/util/lazyRequire";
+import { log } from "../../renderer/util/log";
+import {
+  activeGameId,
+  installPathForGame,
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 
 import { suggestStagingPath } from "../gamemode_management/util/discovery";
 

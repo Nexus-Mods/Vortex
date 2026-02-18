@@ -2,40 +2,42 @@ import {
   dismissNotification,
   type ICheckbox,
   updateNotification,
-} from "../../actions/notifications";
+} from "../../renderer/actions/notifications";
 import {
   setSettingsPage,
   startActivity,
   stopActivity,
-} from "../../actions/session";
+} from "../../renderer/actions/session";
 import type {
   IExtensionApi,
   IExtensionContext,
   IInstallResult,
   MergeFunc,
   MergeTest,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { INotification } from "../../types/INotification";
-import type { IDiscoveryResult, IState } from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import type { ITestResult } from "../../types/ITestResult";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import type { INotification } from "../../renderer/types/INotification";
+import type { IDiscoveryResult, IState } from "../../renderer/types/IState";
+import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
+import type { ITestResult } from "../../renderer/types/ITestResult";
 import type { IDeployOptions } from "./types/IDeployOptions";
 import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import { waitForCondition } from "../../util/waitForCondition";
-import * as fs from "../../util/fs";
-import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
-import getVortexPath from "../../util/getVortexPath";
-import { laterT, type TFunction } from "../../util/i18n";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import { waitForCondition } from "../../renderer/util/waitForCondition";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc, {
+  type Normalize,
+} from "../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { laterT, type TFunction } from "../../renderer/util/i18n";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import onceCB from "../../util/onceCB";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import onceCB from "../../renderer/util/onceCB";
 import ReduxProp from "../../renderer/ReduxProp";
 import {
   activeGameId,
@@ -47,17 +49,17 @@ import {
   installPathForGame,
   modPathsForGame,
   profileById,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   isChildPath,
   truthy,
   wrapExtCBAsync,
-} from "../../util/util";
+} from "../../renderer/util/util";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 
-import { setDialogVisible } from "../../actions";
+import { setDialogVisible } from "../../renderer/actions";
 import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
@@ -131,7 +133,7 @@ import URLInput from "./views/URLInput";
 import Workarounds from "./views/Workarounds";
 
 import extendApi from "./util/extendAPI";
-import { opn } from "../../util/api";
+import { opn } from "../../renderer/util/api";
 
 import {
   onAddMod,
@@ -1713,8 +1715,11 @@ function once(api: IExtensionApi) {
   );
 
   api.events.on("mod-enabled", (profileId: string, modId: string) => {
-    const state: IState = api.store.getState();
+    const state = api.getState();
     const profile = profileById(state, profileId);
+    if (profile === undefined) {
+      return;
+    }
     const mod = state.persistent.mods[profile.gameId]?.[modId];
     if (mod === undefined) {
       return;

@@ -1,4 +1,4 @@
-import type { IOverlay, IState } from "../../types/IState";
+import type { IOverlay, IState } from "../../renderer/types/IState";
 
 import InstructionsOverlay from "./InstructionsOverlay";
 

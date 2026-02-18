@@ -1,5 +1,5 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { setSafe } from "../../util/storeHelper";
+import type { IReducerSpec } from "../../renderer/types/IExtensionContext";
+import { setSafe } from "../../renderer/util/storeHelper";
 
 import * as actions from "./actions";
 

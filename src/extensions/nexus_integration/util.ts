@@ -33,28 +33,35 @@ import {
   setExtensionEndorsed,
   setModAttribute,
   setOAuthCredentials,
-} from "../../actions";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IMod, IState } from "../../types/IState";
+} from "../../renderer/actions";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IMod, IState } from "../../renderer/types/IState";
 import {
   DataInvalid,
   HTTPError,
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import { contextify, setApiKey, setOauthToken } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
-import { RateLimitExceeded } from "../../util/github";
-import { log } from "../../util/log";
-import { calcDuration, showError } from "../../util/message";
-import { jsonRequest } from "../../util/network";
-import opn from "../../util/opn";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, toPromise, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import {
+  contextify,
+  setApiKey,
+  setOauthToken,
+} from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { getPreloadApi, getWindowId } from "../../renderer/util/preloadAccess";
+import { RateLimitExceeded } from "../../renderer/util/github";
+import { log } from "../../renderer/util/log";
+import { calcDuration, showError } from "../../renderer/util/message";
+import { jsonRequest } from "../../renderer/util/network";
+import opn from "../../renderer/util/opn";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, toPromise, truthy } from "../../renderer/util/util";
 import type { RedownloadMode } from "../download_management/DownloadManager";
 import {
   AlreadyDownloaded,

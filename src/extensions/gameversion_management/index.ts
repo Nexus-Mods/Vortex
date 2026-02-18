@@ -1,6 +1,6 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
-import local from "../../util/local";
-import { wrapExtCBAsync } from "../../util/util";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import local from "../../renderer/util/local";
+import { wrapExtCBAsync } from "../../renderer/util/util";
 
 import GameVersionManager from "./GameVersionManager";
 import type {

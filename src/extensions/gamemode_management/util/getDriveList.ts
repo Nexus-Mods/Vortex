@@ -1,5 +1,5 @@
 import type { list as listT } from "drivelist";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 
 function getDriveList(api: IExtensionApi): Promise<string[]> {
   let list: typeof listT;

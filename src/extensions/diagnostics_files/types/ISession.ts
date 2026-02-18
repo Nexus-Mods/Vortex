@@ -1,4 +1,4 @@
-import type { LogLevel } from "../../../util/log";
+import type { LogLevel } from "../../../renderer/util/log";
 
 export interface ISession {
   from: Date;

@@ -1,20 +1,20 @@
-import { setModAttribute } from "../../actions";
+import { setModAttribute } from "../../renderer/actions";
 import type {
   IExtensionApi,
   IMod,
   IState,
   ITableAttribute,
-} from "../../types/api";
-import { laterT } from "../../util/i18n";
+} from "../../renderer/types/api";
+import { laterT } from "../../renderer/util/i18n";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 import type { IModWithState } from "../mod_management/types/IModProps";
 import NXMUrl from "./NXMUrl";
 import { nexusGames } from "./util";

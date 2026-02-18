@@ -1,5 +1,5 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-import { UserCanceled } from "../../../util/CustomErrors";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
 
 import type { IFileChange } from "../types/IDeploymentMethod";
 import type { IFileEntry } from "../types/IFileEntry";

@@ -1,7 +1,7 @@
 import type {
   IExtensionContext,
   ToDoType,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import Dashlet from "./Dashlet";
 import type { IToDo } from "./IToDo";
 import settingsReducer from "./reducers";

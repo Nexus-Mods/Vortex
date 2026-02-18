@@ -1,25 +1,28 @@
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGame } from "../../../renderer/types/IGame";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
 } from "../../../shared/errors";
-import { GameEntryNotFound } from "../../../types/IGameStore";
-import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
-import type { ITool } from "../../../types/ITool";
-import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
-import extractExeIcon from "../../../util/exeIcon";
-import * as fs from "../../../util/fs";
-import GameStoreHelper from "../../../util/GameStoreHelper";
-import type { Normalize } from "../../../util/getNormalizeFunc";
-import getNormalizeFunc from "../../../util/getNormalizeFunc";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import StarterInfo from "../../../util/StarterInfo";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { GameEntryNotFound } from "../../../renderer/types/IGameStore";
+import type { IGameStoreEntry } from "../../../renderer/types/IGameStoreEntry";
+import type { ITool } from "../../../renderer/types/ITool";
+import {
+  ProcessCanceled,
+  SetupError,
+} from "../../../renderer/util/CustomErrors";
+import extractExeIcon from "../../../renderer/util/exeIcon";
+import * as fs from "../../../renderer/util/fs";
+import GameStoreHelper from "../../../renderer/util/GameStoreHelper";
+import type { Normalize } from "../../../renderer/util/getNormalizeFunc";
+import getNormalizeFunc from "../../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import StarterInfo from "../../../renderer/util/StarterInfo";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 
 import { modPathsForGame } from "../../mod_management/selectors";
 

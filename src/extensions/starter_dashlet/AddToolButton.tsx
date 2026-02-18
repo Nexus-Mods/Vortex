@@ -1,9 +1,9 @@
-import type { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
 
 import { useTranslation } from "react-i18next";
 
 import Icon from "../../renderer/controls/Icon";
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 
 import React from "react";
 import * as ReactDOM from "react-dom";
@@ -15,9 +15,9 @@ import PortalMenu from "../../renderer/controls/PortalMenu";
 
 import { setToolVisible } from "../gamemode_management/actions/settings";
 
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IState } from "../../types/IState";
-import * as selectors from "../../util/selectors";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type { IState } from "../../renderer/types/IState";
+import * as selectors from "../../renderer/util/selectors";
 
 import type { IGameStored } from "../gamemode_management/types/IGameStored";
 

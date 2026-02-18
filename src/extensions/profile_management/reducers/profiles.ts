@@ -1,6 +1,10 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { log } from "../../../util/log";
-import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
+import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
+import { log } from "../../../renderer/util/log";
+import {
+  deleteOrNop,
+  getSafe,
+  setSafe,
+} from "../../../renderer/util/storeHelper";
 
 import * as actions from "../actions/profiles";
 import type { IProfile } from "../types/IProfile";

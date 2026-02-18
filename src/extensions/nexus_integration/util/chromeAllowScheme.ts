@@ -1,7 +1,7 @@
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
-import { getSafe, setSafe } from "../../../util/storeHelper";
-import { deBOM } from "../../../util/util";
+import * as fs from "../../../renderer/util/fs";
+import { log } from "../../../renderer/util/log";
+import { getSafe, setSafe } from "../../../renderer/util/storeHelper";
+import { deBOM } from "../../../renderer/util/util";
 
 import chromePath from "./chromePath";
 

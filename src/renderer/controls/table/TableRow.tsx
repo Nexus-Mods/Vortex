@@ -1,9 +1,6 @@
-import type {
-  IEditChoice,
-  ITableAttribute,
-} from "../../../types/ITableAttribute";
-import type { TFunction } from "../../../util/i18n";
-import { preT } from "../../../util/i18n";
+import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
+import type { TFunction } from "../../util/i18n";
+import { preT } from "../../util/i18n";
 
 import ContextMenu from "../ActionContextMenu";
 import ActionDropdown from "../ActionDropdown";

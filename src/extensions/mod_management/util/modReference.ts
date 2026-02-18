@@ -1,4 +1,4 @@
-import { truthy } from "../../../util/util";
+import { truthy } from "../../../renderer/util/util";
 import type { IMod, IReference } from "../types/IMod";
 import { sanitizeExpression, coerceToSemver } from "./testModReference";
 

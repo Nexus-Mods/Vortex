@@ -1,4 +1,4 @@
-import type { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../types/api";
 import { ComponentEx, translate } from "./ComponentEx";
 
 import Icon from "./Icon";

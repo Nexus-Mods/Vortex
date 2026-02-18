@@ -1,6 +1,6 @@
 import Icon from "../../../renderer/controls/Icon";
 import bbcode from "../../../renderer/controls/bbcode";
-import { truthy } from "../../../util/util";
+import { truthy } from "../../../renderer/util/util";
 
 import type { TFunction } from "i18next";
 import memoizeOne from "memoize-one";

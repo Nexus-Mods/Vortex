@@ -1,4 +1,4 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
 
 function id(input) {
   return input;

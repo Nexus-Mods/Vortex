@@ -1,6 +1,6 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { delayed, toPromise } from "../../../util/util";
-import { log } from "../../../util/log";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import { delayed, toPromise } from "../../../renderer/util/util";
+import { log } from "../../../renderer/util/log";
 import {
   finalizingDownload,
   finalizingProgress,
@@ -9,7 +9,7 @@ import {
   setDownloadHashByFile,
 } from "../actions/state";
 import queryInfo from "./queryDLInfo";
-import { batchDispatch } from "../../../util/util";
+import { batchDispatch } from "../../../renderer/util/util";
 import path from "path";
 import type { IHashResult } from "modmeta-db";
 import { getErrorMessageOrDefault } from "../../../shared/errors";

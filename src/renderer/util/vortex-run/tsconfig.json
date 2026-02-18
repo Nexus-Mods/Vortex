@@ -1,0 +1,21 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "rootDir": "./src",
+    "outDir": "./lib",
+    "sourceMap": false,
+    "jsx": "react",
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "files": [
+    "./src/index.ts"
+  ]
+}

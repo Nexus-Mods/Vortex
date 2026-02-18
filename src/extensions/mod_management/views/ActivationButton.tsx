@@ -1,18 +1,18 @@
-import { addNotification } from "../../../actions/notifications";
-import { setSettingsPage } from "../../../actions/session";
+import { addNotification } from "../../../renderer/actions/notifications";
+import { setSettingsPage } from "../../../renderer/actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { INotificationAction } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
+import type { INotificationAction } from "../../../renderer/types/INotification";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import { showError } from "../../../util/message";
-import onceCB from "../../../util/onceCB";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import { showError } from "../../../renderer/util/message";
+import onceCB from "../../../renderer/util/onceCB";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";

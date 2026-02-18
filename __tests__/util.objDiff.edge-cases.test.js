@@ -1,4 +1,4 @@
-import * as util from '../src/util/util';
+import * as util from '../src/renderer/util/util';
 
 describe('objDiff edge cases that could cause TypeError', () => {
   describe('type safety for Object.keys calls', () => {

@@ -1,4 +1,4 @@
-import { windowReducer } from '../src/reducers/window';
+import { windowReducer } from '../src/renderer/reducers/window';
 
 describe('setWindowSize', () => {
   it('sets the size', () => {

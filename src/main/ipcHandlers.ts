@@ -23,16 +23,14 @@ import {
   Menu,
   powerSaveBlocker,
 } from "electron";
-import * as path from "path";
-import { file } from "tmp";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import type { SerializableMenuItem } from "../shared/types/preload";
-import type { AppPath } from "../util/getVortexPath";
 
 import { ApplicationData } from "../shared/applicationData";
-import * as fs from "../util/fs";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
 import { relaunch } from "./cli";
+import getVortexPath, { setVortexPath, type AppPath } from "./getVortexPath";
 import { betterIpcMain } from "./ipc";
 import { openUrl, openFile } from "./open";
 import { extraWebViews } from "./webview";
@@ -204,7 +202,7 @@ export function init() {
     "app:extractFileIcon",
     async (_event: IpcMainInvokeEvent, exePath: string, iconPath: string) => {
       const icon = await app.getFileIcon(exePath, { size: "normal" });
-      await fs.writeFileAsync(iconPath, icon.toPNG());
+      await writeFile(iconPath, icon.toPNG());
     },
   );
 

@@ -1,6 +1,6 @@
-import lazyRequire from "../../../util/lazyRequire";
-import type { LogLevel } from "../../../util/log";
-import { log } from "../../../util/log";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import type { LogLevel } from "../../../renderer/util/log";
+import { log } from "../../../renderer/util/log";
 
 import type * as fomodT from "fomod-installer-native";
 

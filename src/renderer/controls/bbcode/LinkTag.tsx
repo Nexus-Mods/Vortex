@@ -1,5 +1,5 @@
 import { ErrorContext } from "../ErrorBoundary";
-import opn from "../../../util/opn";
+import opn from "../../util/opn";
 
 import { Tag } from "bbcode-to-react";
 import * as React from "react";

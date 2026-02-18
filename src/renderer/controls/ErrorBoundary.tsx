@@ -1,7 +1,7 @@
 import { ComponentEx, translate } from "./ComponentEx";
-import { didIgnoreError, isOutdated } from "../../util/errorHandling";
-import { genHash } from "../../util/genHash";
-import { renderError } from "../../util/message";
+import { didIgnoreError, isOutdated } from "../util/errorHandling";
+import { genHash } from "../util/genHash";
+import { renderError } from "../util/message";
 
 import Icon from "./Icon";
 import { IconButton } from "./TooltipControls";
@@ -10,7 +10,7 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Alert, Button } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../util/application";
 import { unknownToError } from "../../shared/errors";
 
 export type CBFunction = (...args: any[]) => void;

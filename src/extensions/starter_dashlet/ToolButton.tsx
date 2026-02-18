@@ -1,9 +1,9 @@
 import IconBar from "../../renderer/controls/IconBar";
-import type { TFunction } from "../../util/i18n";
-import StarterInfo from "../../util/StarterInfo";
+import type { TFunction } from "../../renderer/util/i18n";
+import StarterInfo from "../../renderer/util/StarterInfo";
 import ToolIcon from "../../renderer/controls/ToolIcon";
 
-import type { IStarterInfo } from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
 
 import React from "react";
 import { useDrop } from "react-dnd";

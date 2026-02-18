@@ -2,22 +2,15 @@
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "./tsconfig.base.json",
   "include": [
-    "src/renderer/preload.d.ts",
     "src/renderer/**/*",
     "src/shared/**/*",
     "src/renderer.tsx",
     "src/splash.ts",
     "typings.custom/*.d.ts",
     // TODO: to be removed after main/renderer separation:
-    "src/actions/**/*",
-    "src/extensions/**/*",
-    "src/reducers/**/*",
-    "src/store/**/*",
-    "src/tailwind/**/*",
-    "src/types/**/*",
-    "src/util/**/*"
+    "src/extensions/**/*"
   ],
-  "exclude": ["src/util/vortex-run/**/*"],
+  "exclude": ["src/renderer/util/vortex-run/**/*"],
   "compilerOptions": {
     "composite": true,
     "target": "esnext",

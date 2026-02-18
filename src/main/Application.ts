@@ -3,8 +3,9 @@ import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
 import isAdmin from "is-admin";
 import * as _ from "lodash";
+import { mkdirSync, statSync } from "node:fs";
 import { writeFile, rm, stat } from "node:fs/promises";
-import * as path from "path";
+import path from "node:path";
 import permissions from "permissions";
 import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
@@ -14,7 +15,6 @@ import type { IParameters, ISetItem } from "../shared/types/cli";
 import type { AppInitMetadata } from "../shared/types/ipc";
 import type { IWindow } from "../shared/types/state";
 
-import { NEXUS_DOMAIN } from "../extensions/nexus_integration/constants";
 import { ApplicationData } from "../shared/applicationData";
 import {
   getErrorCode,
@@ -28,16 +28,12 @@ import {
   UserCanceled,
 } from "../shared/types/errors";
 import { currentStatePath } from "../shared/types/state";
-import * as fs from "../util/fs";
-import getVortexPath, { setVortexPath } from "../util/getVortexPath";
-import { prettifyNodeErrorMessage } from "../util/message";
-import startupSettings from "../util/startupSettings";
-import { isMajorDowngrade } from "../util/util";
-import { parseCommandline } from "./cli";
+import { parseCommandline, updateStartupSettings } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { validateFiles } from "./fileValidation";
+import getVortexPath, { setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
@@ -51,6 +47,19 @@ import {
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
 import TrayIcon from "./TrayIcon";
+
+/** test if the running version is a major downgrade (downgrading by a major or minor version,
+/ everything except a patch) compared to what was running last */
+export function isMajorDowngrade(previous: string, current: string): boolean {
+  const majorL = semver.major(previous);
+  const majorR = semver.major(current);
+
+  if (majorL !== majorR) {
+    return majorL > majorR;
+  } else {
+    return semver.minor(previous) > semver.minor(current);
+  }
+}
 
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
@@ -156,15 +165,15 @@ class Application {
     );
 
     this.mBasePath = app.getPath("userData");
-    fs.ensureDirSync(this.mBasePath);
+    mkdirSync(this.mBasePath, { recursive: true });
 
     setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
     const tempPath = getVortexPath("temp");
-    fs.ensureDirSync(path.join(tempPath, "dumps"));
+    mkdirSync(path.join(tempPath, "dumps"), { recursive: true });
 
     this.mStartupLogPath = path.join(tempPath, "startup.log");
     try {
-      fs.statSync(this.mStartupLogPath);
+      statSync(this.mStartupLogPath);
       process.env.CRASH_REPORTING = Math.random() > 0.5 ? "vortex" : "electron";
     } catch {
       // nop, this is the expected case
@@ -384,7 +393,7 @@ class Application {
 
         if (response.response === 1) {
           await shell.openExternal(
-            `https://wiki.${NEXUS_DOMAIN}/index.php/Misconfigured_Documents_Folder`,
+            `https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder`,
           );
         }
 
@@ -412,18 +421,7 @@ class Application {
         }
 
         const error = unknownToError(err);
-
-        const pretty = prettifyNodeErrorMessage(error);
-        const details = pretty.message.replace(
-          /{{ *([a-zA-Z]+) *}}/g,
-          (_, key) => pretty.replace?.[key] || key,
-        );
-
-        error.message = "Startup failed";
-        error["details"] = details;
-        error["code"] = pretty.code;
-
-        terminate(error, pretty.allowReport);
+        terminate(error);
       }
     } finally {
       try {
@@ -767,7 +765,7 @@ class Application {
   private createTray(): void {
     // Pass null api since ExtensionManager is now renderer-only
     //  and TrayIcon used to receive the api from there.
-    this.mTray = new TrayIcon(null);
+    this.mTray = new TrayIcon();
   }
 
   private connectTrayAndWindow() {
@@ -780,7 +778,7 @@ class Application {
     if (process.platform === "win32" && process.env.ProgramData !== undefined) {
       const muPath = path.join(process.env.ProgramData, "vortex");
       try {
-        fs.ensureDirSync(muPath);
+        mkdirSync(muPath, { recursive: true });
       } catch (err) {
         const code = getErrorCode(err);
         // not sure why this would happen, ensureDir isn't supposed to report a problem if
@@ -805,7 +803,10 @@ class Application {
    */
   private async setupPersistence(repair?: boolean): Promise<void> {
     // storing the last version that ran in the startup.json settings file.
-    startupSettings.storeVersion = app.getVersion();
+    updateStartupSettings((startupSettings) => {
+      startupSettings.storeVersion = app.getVersion();
+      return startupSettings;
+    });
 
     // Initialize app metadata that will be sent to renderer
     this.mAppMetadata = {
@@ -844,15 +845,15 @@ class Application {
 
       let created = false;
       try {
-        fs.statSync(dataPath);
+        statSync(dataPath);
       } catch {
-        fs.ensureDirSync(dataPath);
+        mkdirSync(dataPath, { recursive: true });
         created = true;
       }
       if (multiUser && created) {
         permissions.allow(dataPath, "group", "rwx");
       }
-      fs.ensureDirSync(path.join(dataPath, "temp"));
+      mkdirSync(path.join(dataPath, "temp"), { recursive: true });
 
       log("info", `using ${dataPath} as the storage directory`);
 

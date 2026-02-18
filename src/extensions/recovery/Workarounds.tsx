@@ -12,17 +12,17 @@ import type {
   ICheckbox,
   IDialogContent,
   IDialogResult,
-} from "../../actions";
-import { showDialog } from "../../actions";
-import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+} from "../../renderer/actions";
+import { showDialog } from "../../renderer/actions";
+import type { IState } from "../../renderer/types/IState";
+import { getApplication } from "../../renderer/util/application";
 import { ComponentEx } from "../../renderer/controls/ComponentEx";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import relativeTime from "../../util/relativeTime";
-import { FULL_BACKUP_PATH } from "../../store/store";
-import { spawnSelf } from "../../util/util";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import relativeTime from "../../renderer/util/relativeTime";
+import { FULL_BACKUP_PATH } from "../../renderer/store/store";
+import { spawnSelf } from "../../renderer/util/util";
 import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
 
 export interface IBaseProps {

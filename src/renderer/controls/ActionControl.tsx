@@ -3,8 +3,8 @@ import type {
   ActionFunc,
   IActionDefinition,
   IActionOptions,
-} from "../../types/IActionDefinition";
-import type { IRegisteredExtension } from "../../types/extensions";
+} from "../types/IActionDefinition";
+import type { IRegisteredExtension } from "../types/extensions";
 import { extend } from "../ExtensionProvider";
 
 import * as _ from "lodash";

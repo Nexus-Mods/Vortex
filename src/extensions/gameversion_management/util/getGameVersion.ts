@@ -1,7 +1,7 @@
-import type { IGame } from "../../../types/IGame";
-import { statAsync } from "../../../util/fs";
-import lazyRequire from "../../../util/lazyRequire";
-import { log } from "../../../util/log";
+import type { IGame } from "../../../renderer/types/IGame";
+import { statAsync } from "../../../renderer/util/fs";
+import lazyRequire from "../../../renderer/util/lazyRequire";
+import { log } from "../../../renderer/util/log";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 
 import type * as exeVersionT from "exe-version";

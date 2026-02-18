@@ -1,9 +1,9 @@
-import type { IDynDivOptions } from "../../types/IDynDivOptions";
+import type { IDynDivOptions } from "../types/IDynDivOptions";
 import { connect } from "./ComponentEx";
 import { extend } from "../ExtensionProvider";
 
 import * as React from "react";
-import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
 
 interface IDynDivDefinition {
   component: React.ComponentClass<any>;

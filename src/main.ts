@@ -22,20 +22,26 @@ if (process.send) {
   });
 }
 
-/**
- * entry point for the main process
- */
+import { app, dialog } from "electron";
+import child_process from "node:child_process";
+import { stat } from "node:fs/promises";
+import path from "node:path";
 import os from "os";
+import * as sourceMapSupport from "source-map-support";
+import winapi from "winapi-bindings";
 
+import Application from "./main/Application";
+import { parseCommandline } from "./main/cli";
+import { terminate } from "./main/errorHandling";
+import { sendReportFile } from "./main/errorReporting";
+import getVortexPath from "./main/getVortexPath";
+import { init as initIpcHandlers } from "./main/ipcHandlers";
+import StylesheetCompiler from "./main/stylesheetCompiler";
+import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 import { VORTEX_VERSION } from "./shared/constants";
+
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
-import "./util/application.electron";
-
-import { app, dialog } from "electron";
-import * as path from "path";
-
-import getVortexPath from "./main/getVortexPath";
 
 const earlyErrHandler = (error: Error) => {
   if (error.stack.includes("[as dlopen]")) {
@@ -70,13 +76,7 @@ process.on("unhandledRejection", earlyErrHandler);
 // dlls will not be able to load vc-runtime files shipped with Vortex.
 process.chdir(getVortexPath("application"));
 
-import * as sourceMapSupport from "source-map-support";
-
-import { DEBUG_PORT, HTTP_HEADER_SIZE } from "./shared/constants";
 sourceMapSupport.install();
-
-import requireRemap from "./util/requireRemap";
-requireRemap();
 
 function setEnv(key: string, value: string, force?: boolean) {
   if (process.env[key] === undefined || force) {
@@ -118,26 +118,11 @@ if (process.platform === "win32" && process.env.NODE_ENV !== "development") {
     .join(";");
 }
 
-// Produce english error messages (windows only atm), otherwise they don't get
-// grouped correctly when reported through our feedback system
-import type * as winapiT from "winapi-bindings";
-
 try {
-  const winapi: typeof winapiT = require("winapi-bindings");
   winapi?.SetProcessPreferredUILanguages?.(["en-US"]);
 } catch {
   // nop
 }
-
-import type * as child_processT from "child_process";
-
-import Application from "./main/Application";
-import { parseCommandline } from "./main/cli";
-import { terminate } from "./main/errorHandling";
-import { sendReportFile } from "./main/errorReporting";
-import { init as initIpcHandlers } from "./main/ipcHandlers";
-import StylesheetCompiler from "./main/stylesheetCompiler";
-import * as fs from "./util/fs";
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -181,51 +166,56 @@ async function main(): Promise<void> {
 
   // --run has to be evaluated *before* we request the single instance lock!
   if (mainArgs.run !== undefined) {
-    // Vortex here acts only as a trampoline (probably elevated) to start
-    // some other process
-    const cp: typeof child_processT = require("child_process");
-    cp.spawn(process.execPath, [mainArgs.run], {
-      env: {
-        ...process.env,
-        ELECTRON_RUN_AS_NODE: "1",
-        ELECTRON_USERDATA: app.getPath("userData"),
-        ELECTRON_TEMP: app.getPath("temp"),
-        ELECTRON_APPDATA: app.getPath("appData"),
-        ELECTRON_HOME: app.getPath("home"),
-        ELECTRON_DOCUMENTS: app.getPath("documents"),
-        ELECTRON_EXE: app.getPath("exe"),
-        ELECTRON_DESKTOP: app.getPath("desktop"),
-        ELECTRON_APP_PATH: app.getAppPath(),
-        ELECTRON_ASSETS: path.join(app.getAppPath(), "assets"),
-        ELECTRON_ASSETS_UNPACKED: path.join(
-          app.getAppPath() + ".unpacked",
-          "assets",
-        ),
-        ELECTRON_MODULES: path.join(app.getAppPath(), "node_modules"),
-        ELECTRON_MODULES_UNPACKED: path.join(
-          app.getAppPath() + ".unpacked",
-          "node_modules",
-        ),
-        ELECTRON_BUNDLEDPLUGINS: path.join(
-          app.getAppPath() + ".unpacked",
-          "bundledPlugins",
-        ),
-        ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
-        ELECTRON_BASE: app.getAppPath(),
-        ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
-        ELECTRON_PACKAGE: app.getAppPath(),
-        ELECTRON_PACKAGE_UNPACKED: path.join(
-          path.dirname(app.getAppPath()),
-          "app.asar.unpacked",
-        ),
-      },
-      stdio: "inherit",
-      detached: true,
-    }).on("error", (err) => {
-      // TODO: In practice we have practically no information about what we're running
-      //       at this point
-      dialog.showErrorBox("Failed to run script", err.message);
-    });
+    const appAsar = `${path.sep}app.asar${path.sep}`;
+    const execPath = process.execPath.replace(
+      appAsar,
+      `${path.sep}app.asar.unpacked${path.sep}`,
+    );
+
+    child_process
+      .spawn(execPath, [mainArgs.run], {
+        env: {
+          ...process.env,
+          ELECTRON_RUN_AS_NODE: "1",
+          ELECTRON_USERDATA: app.getPath("userData"),
+          ELECTRON_TEMP: app.getPath("temp"),
+          ELECTRON_APPDATA: app.getPath("appData"),
+          ELECTRON_HOME: app.getPath("home"),
+          ELECTRON_DOCUMENTS: app.getPath("documents"),
+          ELECTRON_EXE: app.getPath("exe"),
+          ELECTRON_DESKTOP: app.getPath("desktop"),
+          ELECTRON_APP_PATH: app.getAppPath(),
+          ELECTRON_ASSETS: path.join(app.getAppPath(), "assets"),
+          ELECTRON_ASSETS_UNPACKED: path.join(
+            app.getAppPath() + ".unpacked",
+            "assets",
+          ),
+          ELECTRON_MODULES: path.join(app.getAppPath(), "node_modules"),
+          ELECTRON_MODULES_UNPACKED: path.join(
+            app.getAppPath() + ".unpacked",
+            "node_modules",
+          ),
+          ELECTRON_BUNDLEDPLUGINS: path.join(
+            app.getAppPath() + ".unpacked",
+            "bundledPlugins",
+          ),
+          ELECTRON_LOCALES: path.resolve(app.getAppPath(), "..", "locales"),
+          ELECTRON_BASE: app.getAppPath(),
+          ELECTRON_APPLICATION: path.resolve(app.getAppPath(), ".."),
+          ELECTRON_PACKAGE: app.getAppPath(),
+          ELECTRON_PACKAGE_UNPACKED: path.join(
+            path.dirname(app.getAppPath()),
+            "app.asar.unpacked",
+          ),
+        },
+        stdio: "inherit",
+        detached: true,
+      })
+      .on("error", (err) => {
+        // TODO: In practice we have practically no information about what we're running
+        //       at this point
+        dialog.showErrorBox("Failed to run script", err.message);
+      });
     // quit this process, the new one is detached
     app.quit();
     return;
@@ -242,7 +232,7 @@ async function main(): Promise<void> {
   // async code only allowed from here on out
 
   try {
-    await fs.statAsync(getVortexPath("userData"));
+    await stat(getVortexPath("userData"));
   } catch {
     // no-op
   }

@@ -1,18 +1,18 @@
-import { displayGroup } from "../../actions/session";
+import { displayGroup } from "../../renderer/actions/session";
 import { FormPathItem, FormTextItem } from "../../renderer/controls/FormFields";
 import More from "../../renderer/controls/More";
 import Toggle from "../../renderer/controls/Toggle";
 import { Button } from "../../renderer/controls/TooltipControls";
 import type { ThunkDispatch } from "redux-thunk";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type StarterInfo from "../../util/StarterInfo";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type StarterInfo from "../../renderer/util/StarterInfo";
 
 import {
   addDiscoveredTool,
   setGameParameters,
 } from "../gamemode_management/actions/settings";
 
-import * as selectors from "../../util/selectors";
+import * as selectors from "../../renderer/util/selectors";
 
 import ToolIcon from "../../renderer/controls/ToolIcon";
 
@@ -42,7 +42,10 @@ import {
   resolveToolName,
 } from "./util";
 import { MainContext } from "../../renderer/views/MainWindow";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
 import { useSelector } from "react-redux";
 
 import Environment from "./Environment";

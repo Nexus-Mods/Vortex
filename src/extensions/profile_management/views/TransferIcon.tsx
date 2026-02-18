@@ -1,5 +1,5 @@
 import * as tooltip from "../../../renderer/controls/TooltipControls";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
 import {
   setCreateTransfer,

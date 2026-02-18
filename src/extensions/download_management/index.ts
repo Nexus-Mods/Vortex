@@ -11,10 +11,10 @@ import winapi from "winapi-bindings";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
-import type { Normalize } from "../../util/getNormalizeFunc";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
 import type DownloadManager from "./DownloadManager";
 import type { DownloadObserver } from "./DownloadObserver";
 import type observe from "./DownloadObserver";
@@ -24,20 +24,25 @@ import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../renderer/ReduxProp";
 import { unknownToError } from "../../shared/errors";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import * as selectors from "../../util/selectors";
-import { knownGames } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import * as selectors from "../../renderer/util/selectors";
+import { knownGames } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import {
+  batchDispatch,
+  sum,
+  toPromise,
+  truthy,
+} from "../../renderer/util/util";
 import NXMUrl from "../nexus_integration/NXMUrl";
 import { ensureLoggedIn } from "../nexus_integration/util";
 import {
@@ -315,8 +320,8 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
 
   const incomplete = Object.keys(downloads).filter(
     (dlId) =>
-      ["finished", "paused"].includes(downloads[dlId].state) &&
-      (!truthy(downloads[dlId].localPath) ||
+      ["finished", "paused", "failed"].includes(downloads[dlId].state) &&
+      (!downloads[dlId].localPath ||
         downloads[dlId].received === 0 ||
         downloads[dlId].size === 0),
   );
@@ -326,20 +331,33 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
-  const array = Array.from(removeSet);
-  await PromiseBB.all(
-    array.map(async (dlId) => {
-      if (downloads[dlId].localPath !== undefined) {
-        await fs
-          .removeAsync(path.join(downloadPath, downloads[dlId].localPath))
-          .catch(() => null);
+  const toRemove: string[] = [];
+  const repairActions: Array<ReturnType<typeof downloadProgress>> = [];
+
+  await Promise.all(
+    Array.from(removeSet).map(async (dlId) => {
+      if (downloads[dlId].localPath === undefined) {
+        toRemove.push(dlId);
+        return;
+      }
+      const filePath = path.join(downloadPath, downloads[dlId].localPath);
+      const stats = await fs.statAsync(filePath).catch(() => undefined);
+      if (stats?.size > 0) {
+        // file exists and is valid on disk - repair the state instead of deleting
+        repairActions.push(
+          downloadProgress(dlId, stats.size, stats.size, [], undefined),
+        );
+      } else {
+        // file genuinely missing or empty - safe to clean up
+        await fs.removeAsync(filePath).catch(() => null);
+        toRemove.push(dlId);
       }
     }),
   );
-  batchDispatch(
-    api.store,
-    array.map((dlId) => removeDownloadSilent(dlId)),
-  );
+  batchDispatch(api.store, [
+    ...repairActions,
+    ...toRemove.map((dlId) => removeDownloadSilent(dlId)),
+  ]);
 }
 
 function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {

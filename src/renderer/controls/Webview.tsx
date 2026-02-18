@@ -12,8 +12,8 @@
  * the download button on google drive. (as of Electron 15.1.1)
  */
 
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import { log } from "../util/log";
+import { truthy } from "../util/util";
 import {
   closeBrowserView,
   makeBrowserView,

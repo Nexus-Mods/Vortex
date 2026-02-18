@@ -1,8 +1,8 @@
-import { testPathTransfer, transferPath } from '../src/util/transferPath';
+import { testPathTransfer, transferPath } from '../src/renderer/util/transferPath';
 import * as path from 'path';
 const walk = require('turbowalk');
 const du = require('diskusage');
-import * as fs from '../src/util/fs';
+import * as fs from '../src/renderer/util/fs';
 
 require("@babel/register");
 require("@babel/polyfill");
@@ -12,7 +12,7 @@ const MB = 1024 * 1024;
 const baseA = path.sep + 'drivea';
 const baseB = path.sep + 'driveb';
 
-jest.mock('../src/util/fs', () => {
+jest.mock('../src/renderer/util/fs', () => {
   const path = require('path');
   let fakeFS = {};
   const Promise = require('bluebird');

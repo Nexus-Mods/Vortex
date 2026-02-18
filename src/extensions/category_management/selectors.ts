@@ -1,4 +1,4 @@
-import { activeGameId } from "../../util/selectors";
+import { activeGameId } from "../../renderer/util/selectors";
 
 export function allCategories(state: any) {
   const gameMode = activeGameId(state);

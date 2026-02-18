@@ -1,5 +1,5 @@
 import Icon from "../../../renderer/controls/Icon";
-import type { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../renderer/util/i18n";
 
 import * as React from "react";
 import { Button } from "react-bootstrap";

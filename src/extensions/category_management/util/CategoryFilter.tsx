@@ -1,11 +1,11 @@
-import type { IDownload, IState } from "../../../types/IState";
+import type { IDownload, IState } from "../../../renderer/types/IState";
 import type {
   IFilterProps,
   ITableFilter,
-} from "../../../types/ITableAttribute";
+} from "../../../renderer/types/ITableAttribute";
 import { connect } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 
 import type { ICategoryDictionary } from "../../category_management/types/ICategoryDictionary";
 import getDownloadGames from "../../download_management/util/getDownloadGames";

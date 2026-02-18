@@ -1,7 +1,7 @@
 import Toggle from "../../../renderer/controls/Toggle";
 import { Button } from "../../../renderer/controls/TooltipControls";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import { getSafe, setSafe } from "../../../util/storeHelper";
+import { getSafe, setSafe } from "../../../renderer/util/storeHelper";
 
 import type { IProfile } from "../types/IProfile";
 import type { IProfileFeature } from "../types/IProfileFeature";

@@ -1,34 +1,34 @@
 import { util } from "../..";
-import { showDialog } from "../../actions/notifications";
+import { showDialog } from "../actions/notifications";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";
 import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
 import type { IProfile } from "../../extensions/profile_management/types/IProfile";
-import { makeExeId } from "../../reducers/session";
+import { makeExeId } from "../reducers/session";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IRunningTool, IState } from "../../types/IState";
+} from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
+import type { IRunningTool, IState } from "../types/IState";
 import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-import Debouncer from "../../util/Debouncer";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
+import Debouncer from "../util/Debouncer";
+import type { TFunction } from "../util/i18n";
+import { log } from "../util/log";
+import { showError } from "../util/message";
 import {
   activeGameId,
   currentGame,
   currentGameDiscovery,
   activeProfile,
-} from "../../util/selectors";
-import StarterInfo from "../../util/StarterInfo";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../util/selectors";
+import StarterInfo from "../util/StarterInfo";
+import { getSafe } from "../util/storeHelper";
+import { truthy } from "../util/util";
 
 import PromiseBB from "bluebird";
 import * as React from "react";

@@ -3,14 +3,14 @@ import * as https from "node:https";
 import type { AddressInfo } from "node:net";
 import * as querystring from "node:querystring";
 import * as url from "node:url";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import {
   OAUTH_REDIRECT_URL,
   OAUTH_REDIRECT_BASE,
   getOAuthRedirectUrl,
 } from "../constants";
 import NEXUSMODS_LOGO from "./nexusmodslogo";
-import { ArgumentInvalid } from "../../../util/CustomErrors";
+import { ArgumentInvalid } from "../../../renderer/util/CustomErrors";
 import { unknownToError } from "../../../shared/errors";
 
 type TokenType = "Bearer";

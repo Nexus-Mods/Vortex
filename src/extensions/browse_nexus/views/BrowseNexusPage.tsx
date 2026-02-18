@@ -16,14 +16,17 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 
+import Tailwind from "../../../renderer/tailwind";
 import MainPage from "../../../renderer/views/MainPage";
-import Tailwind from "../../../tailwind";
-import { UserCanceled } from "../../../util/api";
-import opn from "../../../util/opn";
-import { activeGameId, isCollectionModPresent } from "../../../util/selectors";
+import { UserCanceled } from "../../../renderer/util/api";
+import opn from "../../../renderer/util/opn";
+import {
+  activeGameId,
+  isCollectionModPresent,
+} from "../../../renderer/util/selectors";
 import { CollectionsDownloadClickedEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
