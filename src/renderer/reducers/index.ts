@@ -23,8 +23,7 @@ import { tableReducer } from "./tables";
 import { userReducer } from "./user";
 import { windowReducer } from "./window";
 
-import getVortexPath from "../util/getVortexPath";
-import { getPreloadApi } from "../util/preloadAccess";
+import { app } from "electron";
 import update from "immutability-helper";
 import { pick } from "lodash";
 import * as path from "path";
@@ -216,7 +215,7 @@ function hydrateRed(
       }
       const decision = querySanitize(errors);
       if (decision === Decision.SANITIZE) {
-        const backupPath = path.join(getVortexPath("temp"), STATE_BACKUP_PATH);
+        const backupPath = path.join(app.getPath("temp"), STATE_BACKUP_PATH);
         log("info", "sanitizing application state");
         let backupData;
         if (backupTime !== undefined) {
@@ -236,7 +235,7 @@ function hydrateRed(
         );
         payload = setSafe(payload, pathArray, sanitized);
       } else if (decision === Decision.QUIT) {
-        void getPreloadApi().app.exit();
+        app.exit();
         throw new UserCanceled();
       } // in case of ignore we just continue with the original payload
     }
