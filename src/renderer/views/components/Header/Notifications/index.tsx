@@ -3,9 +3,8 @@ import { mdiBell, mdiBellOutline } from "@mdi/js";
 import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../../types/IState";
-
 import { useExtensionContext } from "../../../../ExtensionProvider";
+import { notifications as notificationsSelector } from "../../../../util/selectors";
 import { IconButton } from "../IconButton";
 import { NotificationItem } from "./NotificationItem";
 import { useNotificationActions } from "./useNotificationActions";
@@ -16,9 +15,7 @@ export const Notifications = () => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
 
-  const notifications = useSelector(
-    (state: IState) => state.session.notifications.notifications,
-  );
+  const notifications = useSelector(notificationsSelector);
 
   const [expand, setExpand] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);

@@ -2,8 +2,7 @@ import React, { type FC, type ReactNode, useContext } from "react";
 import { Portal } from "react-overlays";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../types/IState";
-
+import { mainPage as mainPageSelector } from "../util/selectors";
 import { PageHeaderContext } from "./MainPageContainer";
 
 export interface IProps {
@@ -11,7 +10,7 @@ export interface IProps {
 }
 
 export const MainPageHeader: FC<IProps> = ({ children }) => {
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPage = useSelector(mainPageSelector);
   const { headerPortal, page } = useContext(PageHeaderContext);
 
   if (!headerPortal?.()) {

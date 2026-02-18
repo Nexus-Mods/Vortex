@@ -9,9 +9,13 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
-
 import { setOpenMainPage } from "../../../actions";
+import {
+  discovered as discoveredGamesSelector,
+  knownGames as knownGamesSelector,
+  lastActiveProfiles as lastActiveProfilesSelector,
+  mainPage as mainPageSelector,
+} from "../../../util/selectors";
 import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
 import { SpineButton } from "./SpineButton";
@@ -25,16 +29,10 @@ export const Spine: FC = () => {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const knownGames = useSelector(
-    (state: IState) => state.session.gameMode.known,
-  );
-  const discoveredGames = useSelector(
-    (state: IState) => state.settings.gameMode.discovered,
-  );
-  const lastActiveProfile = useSelector(
-    (state: IState) => state.settings.profiles.lastActiveProfile,
-  );
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const knownGames = useSelector(knownGamesSelector);
+  const discoveredGames = useSelector(discoveredGamesSelector);
+  const lastActiveProfile = useSelector(lastActiveProfilesSelector);
+  const mainPage = useSelector(mainPageSelector);
 
   // Whether a standalone spine button (Downloads, Games) owns the current page,
   // so the context buttons (Home / Game) should not appear active.

@@ -5,7 +5,7 @@ import { createSelector } from "reselect";
 import type { IState } from "../../renderer/types/IState";
 
 const profilesBase = (state: IState) => state.persistent.profiles;
-const lastActiveProfiles = (state: IState) =>
+export const lastActiveProfiles = (state: IState) =>
   state.settings.profiles.lastActiveProfile;
 
 export const activeGameId = (state: IState): string => {
@@ -23,13 +23,15 @@ export const gameProfiles = createSelector(
   },
 );
 
-export const activeProfile = (state): IProfile | undefined => {
-  const profileId = getSafe(
-    state,
-    ["settings", "profiles", "activeProfileId"],
-    undefined,
-  );
-  return getSafe(state, ["persistent", "profiles", profileId], undefined);
+export const activeProfileId = (state: IState): string | undefined =>
+  state.settings.profiles.activeProfileId;
+
+export const activeProfile = (state: IState): IProfile | undefined => {
+  const profileId = activeProfileId(state);
+  if (profileId === undefined) {
+    return undefined;
+  }
+  return state.persistent.profiles[profileId];
 };
 
 const profileByIdImpl = createCachedSelector(

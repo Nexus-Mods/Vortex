@@ -1,5 +1,5 @@
-import type { IValidateKeyDataV2 } from "../../extensions/nexus_integration/types/IValidateKeyData";
-import type { IState } from "../types/IState";
+import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
+import type { IState } from "../../renderer/types/IState";
 
 type IStatePersistent = IState["persistent"];
 type IStateConfidential = IState["confidential"];
@@ -19,7 +19,7 @@ export interface IStateConfidentialWithNexus extends IStateConfidential {
   };
 }
 
-export const hasNexusPersistent = (
+export const hasPersistentWithNexus = (
   statePersistent: IStatePersistent,
 ): statePersistent is IStatePersistentWithNexus => {
   return (
@@ -29,7 +29,7 @@ export const hasNexusPersistent = (
   );
 };
 
-export const hasNexusConfidential = (
+export const hasConfidentialWithNexus = (
   stateConfidential: IStateConfidential,
 ): stateConfidential is IStateConfidentialWithNexus => {
   return (

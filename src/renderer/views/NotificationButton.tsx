@@ -13,7 +13,6 @@ import type {
   INotification,
   INotificationAction,
 } from "../types/INotification";
-import type { IState } from "../types/IState";
 
 import {
   dismissNotification,
@@ -24,6 +23,7 @@ import Icon from "../controls/Icon";
 import RadialProgress from "../controls/RadialProgress";
 import { useExtensionContext } from "../ExtensionProvider";
 import Debouncer from "../util/Debouncer";
+import { notifications as notificationsSelector } from "../util/selectors";
 import { Notification } from "./Notification";
 
 export interface IBaseProps {
@@ -67,9 +67,7 @@ export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
   const api = extensions.getApi();
 
   // Redux state
-  const notifications = useSelector(
-    (state: IState) => state.session.notifications.notifications,
-  );
+  const notifications = useSelector(notificationsSelector);
 
   // Local state
   const [expand, setExpand] = React.useState<string | undefined>(undefined);

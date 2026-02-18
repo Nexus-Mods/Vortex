@@ -10,7 +10,10 @@ import { useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
 import { Button } from "../../controls/TooltipControls";
-import { profileById } from "../../util/selectors";
+import {
+  activeProfile as activeProfileSelector,
+  mainPage as mainPageSelector,
+} from "../../util/selectors";
 import { MainFooter } from "../MainFooter";
 import { PageGroup } from "./PageGroup";
 
@@ -31,13 +34,11 @@ export const Sidebar: FC<ISidebarProps> = (props) => {
   const { t } = useTranslation();
   const { menuIsCollapsed } = useWindowContext();
 
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPage = useSelector(mainPageSelector);
   const secondaryPage = useSelector(
     (state: IState) => state.session.base.secondaryPage,
   );
-  const profile = useSelector((state: IState) =>
-    profileById(state, state.settings.profiles.activeProfileId),
-  );
+  const profile = useSelector(activeProfileSelector);
 
   const pageGroups = useMemo(() => {
     const game = profile !== undefined ? getGame(profile.gameId) : undefined;

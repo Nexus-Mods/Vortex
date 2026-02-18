@@ -13,11 +13,17 @@ import React, {
 import { useDispatch, useSelector } from "react-redux";
 
 import type { IMainPage } from "../../../types/IMainPage";
-import type { IState } from "../../../types/IState";
 
 import { setNextProfile } from "../../../../extensions/profile_management/actions/settings";
 import { setOpenMainPage } from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
+import {
+  activeGameId as activeGameIdSelector,
+  activeProfileId as activeProfileIdSelector,
+  lastActiveProfiles as lastActiveProfilesSelector,
+  mainPage as mainPageSelector,
+  profileById as profileByIdSelector,
+} from "../../../util/selectors";
 import { batchDispatch } from "../../../util/util";
 
 export type SpineSelection =
@@ -38,16 +44,9 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
   const { mainPages } = usePagesContext();
   const dispatch = useDispatch();
 
-  const lastActiveProfile = useSelector(
-    (state: IState) => state.settings.profiles.lastActiveProfile,
-  );
-  const activeProfileId = useSelector(
-    (state: IState) => state.settings.profiles.activeProfileId,
-  );
-  const activeGameId = useSelector((state: IState) => {
-    if (activeProfileId === undefined) return undefined;
-    return state.persistent.profiles[activeProfileId]?.gameId;
-  });
+  const lastActiveProfile = useSelector(lastActiveProfilesSelector);
+  const activeProfileId = useSelector(activeProfileIdSelector);
+  const activeGameId = useSelector(activeGameIdSelector);
 
   const selection: SpineSelection = useMemo(() => {
     if (activeGameId !== undefined) {
@@ -85,7 +84,7 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
     [mainPages, isPageVisible, activeGameId],
   );
 
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPage = useSelector(mainPageSelector);
 
   const defaultHomePage = homePages[0]?.id;
   const defaultGamePage = gamePages[0]?.id;
@@ -125,14 +124,18 @@ export const SpineProvider: FC = ({ children }: { children: ReactNode }) => {
       if (defaultGamePage === undefined) return;
       const targetPage = lastPageRef.current[gameId] || defaultGamePage;
       const profileId = lastActiveProfile[gameId];
-      if (profileId !== undefined && profileId !== activeProfileId) {
+      if (
+        profileId !== undefined &&
+        profileId !== activeProfileId &&
+        profileByIdSelector(api.getState(), profileId) !== undefined
+      ) {
         // Profile needs to change - wait for activation before navigating
         dispatch(setNextProfile(profileId));
         api?.events.once("profile-did-change", () => {
           dispatch(setOpenMainPage(targetPage, false));
         });
       } else {
-        // Profile is already active
+        // Profile is already active or last profile no longer exists
         dispatch(setOpenMainPage(targetPage, false));
       }
     },

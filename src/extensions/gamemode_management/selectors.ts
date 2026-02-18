@@ -7,11 +7,11 @@ import { SITE_ID } from "./constants";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
-export function knownGames(state): IGameStored[] {
-  return getSafe(state, ["session", "gameMode", "known"], []);
+export function knownGames(state: IState): IGameStored[] {
+  return state.session.gameMode.known ?? [];
 }
 
-function discovered(state: IState): { [id: string]: IDiscoveryResult } {
+export function discovered(state: IState): { [id: string]: IDiscoveryResult } {
   return state.settings.gameMode.discovered;
 }
 

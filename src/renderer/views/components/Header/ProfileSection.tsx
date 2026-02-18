@@ -14,8 +14,6 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
-
 import {
   clearOAuthCredentials,
   setUserAPIKey,
@@ -30,12 +28,11 @@ import {
   DropdownItems,
 } from "../../../tailwind/components/dropdown";
 import { Icon } from "../../../tailwind/components/next/icon";
-import {
-  hasNexusConfidential,
-  hasNexusPersistent,
-} from "../../../util/nexusState";
 import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
+import {
+  isLoggedIn as isLoggedInSelector,
+  userInfo as userInfoSelector,
+} from "../../../util/selectors";
 
 interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   imageSrc?: string;
@@ -68,20 +65,9 @@ export const ProfileSection: FC = () => {
   const api = extensions.getApi();
   const { t } = useTranslation();
 
-  const loggedIn = useSelector((state: IState) => {
-    if (!hasNexusConfidential(state.confidential)) {
-      return false;
-    }
-    const { nexus } = state.confidential.account;
-    return truthy(nexus?.APIKey) || truthy(nexus?.OAuthCredentials);
-  });
+  const loggedIn = useSelector(isLoggedInSelector);
 
-  const userInfo = useSelector((state: IState) => {
-    if (!hasNexusPersistent(state.persistent)) {
-      return undefined;
-    }
-    return state.persistent.nexus.userInfo;
-  });
+  const userInfo = useSelector(userInfoSelector);
 
   const handleRefreshUserInfo = useCallback(() => {
     api.events.emit("refresh-user-info");

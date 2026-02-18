@@ -1,3 +1,4 @@
+import { mdiMonitor, mdiMonitorShimmer } from "@mdi/js";
 import React, { type FC, Suspense } from "react";
 import { Button as ReactButton } from "react-bootstrap";
 import { addStyle } from "react-bootstrap/lib/utils/bootstrapUtils";
@@ -5,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 
 import type { IState } from "../types/IState";
 
-import { mdiMonitor, mdiMonitorShimmer } from "@mdi/js";
 import { setUseModernLayout } from "../actions/window";
 import {
   MainProvider,

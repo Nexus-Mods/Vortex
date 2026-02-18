@@ -3,24 +3,17 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IState } from "../../../types/IState";
-
 import { PREMIUM_PATH } from "../../../../extensions/nexus_integration/constants";
 import { Button } from "../../../tailwind/components/next/button";
 import { Typography } from "../../../tailwind/components/next/typography";
-import { hasNexusPersistent } from "../../../util/nexusState";
 import opn from "../../../util/opn";
+import { isPremium as isPremiumSelector } from "../../../util/selectors";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 
 export const PremiumIndicator: FC = () => {
   const { t } = useTranslation();
 
-  const isPremium = useSelector((state: IState) => {
-    if (!hasNexusPersistent(state.persistent)) {
-      return false;
-    }
-    return state.persistent.nexus.userInfo?.isPremium ?? false;
-  });
+  const isPremium = useSelector(isPremiumSelector);
 
   const handleGoPremium = useCallback(() => {
     opn(

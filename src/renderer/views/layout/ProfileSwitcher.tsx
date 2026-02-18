@@ -7,6 +7,7 @@ import type { IState } from "../../types/IState";
 import { setDialogVisible } from "../../actions/session";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
+import { profileById as profileByIdSelector } from "../../util/selectors";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
 
@@ -21,7 +22,6 @@ export const ProfileSwitcher: FC = () => {
   const nextProfileId = useSelector(
     (state: IState) => state.settings.profiles.nextProfileId,
   );
-  const profiles = useSelector((state: IState) => state.persistent.profiles);
   const progressProfile = useSelector(
     (state: IState) => state.session.base.progress?.profile,
   );
@@ -34,8 +34,11 @@ export const ProfileSwitcher: FC = () => {
   }, [dispatch]);
 
   const deploying = progressProfile?.deploying;
-  const profile =
-    nextProfileId !== undefined ? profiles[nextProfileId] : undefined;
+  const profile = useSelector((state: IState) =>
+    nextProfileId !== undefined
+      ? profileByIdSelector(state, nextProfileId)
+      : undefined,
+  );
 
   const control = deploying ? (
     <ProgressBar

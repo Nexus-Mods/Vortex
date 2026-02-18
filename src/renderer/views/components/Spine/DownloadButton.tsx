@@ -9,6 +9,7 @@ import { setOpenMainPage } from "../../../actions/session";
 import { Icon } from "../../../tailwind/components/next/icon";
 import { Typography } from "../../../tailwind/components/next/typography";
 import { joinClasses } from "../../../tailwind/components/next/utils";
+import { mainPage as mainPageSelector } from "../../../util/selectors";
 import { useSpineContext } from "./SpineContext";
 
 const ACTIVE_DOWNLOAD_STATES: DownloadState[] = [
@@ -134,7 +135,7 @@ export const DownloadButton: FC = () => {
   const dispatch = useDispatch();
   const { selection } = useSpineContext();
 
-  const mainPage = useSelector((state: IState) => state.session.base.mainPage);
+  const mainPage = useSelector(mainPageSelector);
   const targetPage = selection.type === "game" ? "game-downloads" : "Downloads";
   const isActive = mainPage === targetPage;
 

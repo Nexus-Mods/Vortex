@@ -18,9 +18,11 @@ import { log } from "../util/log";
 import { showError } from "../util/message";
 import {
   activeGameId,
+  activeProfile,
   currentGame,
   currentGameDiscovery,
-  activeProfile,
+  knownGames as knownGamesSelector,
+  lastActiveProfiles as lastActiveProfilesSelector,
 } from "../util/selectors";
 import StarterInfo from "../util/StarterInfo";
 import { truthy } from "../util/util";
@@ -35,11 +37,9 @@ export const QuickLauncher: React.FC = () => {
   const { t } = useTranslation(["common"]);
 
   // Redux state
-  const gameMode = useSelector((state: IState) => activeGameId(state));
-  const game = useSelector((state: IState) => currentGame(state));
-  const gameDiscovery = useSelector((state: IState) =>
-    currentGameDiscovery(state),
-  );
+  const gameMode = useSelector(activeGameId);
+  const game = useSelector(currentGame);
+  const gameDiscovery = useSelector(currentGameDiscovery);
   const discoveredTools = useSelector(
     (state: IState) =>
       state.settings?.gameMode?.discovered?.[gameMode ?? ""]?.tools ?? {},
@@ -48,10 +48,7 @@ export const QuickLauncher: React.FC = () => {
   const primaryToolId = useSelector(
     (state: IState) => state.settings?.interface?.primaryTool?.[gameMode ?? ""],
   );
-  const knownGames = useSelector(
-    (state: IState) => state.session?.gameMode?.known ?? [],
-    shallowEqual,
-  );
+  const knownGames = useSelector(knownGamesSelector);
   const profiles = useSelector(
     (state: IState) => state.persistent?.profiles ?? {},
     shallowEqual,
@@ -63,10 +60,7 @@ export const QuickLauncher: React.FC = () => {
   const profilesVisible = useSelector(
     (state: IState) => state.settings?.interface?.profilesVisible ?? false,
   );
-  const lastActiveProfile = useSelector(
-    (state: IState) => state.settings?.profiles?.lastActiveProfile ?? {},
-    shallowEqual,
-  );
+  const lastActiveProfile = useSelector(lastActiveProfilesSelector);
   const toolsRunning = useSelector(
     (state: IState) => state.session?.base?.toolsRunning ?? {},
     shallowEqual,
