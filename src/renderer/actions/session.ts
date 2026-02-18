@@ -4,10 +4,7 @@ import type { IParameters } from "../../shared/types/cli";
 
 import safeCreateAction from "./safeCreateAction";
 
-const uiOnlyMeta =
-  process.type === "renderer"
-    ? () => ({ forward: false, scope: "local" })
-    : undefined;
+const uiOnlyMeta = () => ({ forward: false, scope: "local" });
 
 /**
  * action to choose which item in a group to display (all other items in the

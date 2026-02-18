@@ -14,6 +14,7 @@ import { ApplicationData } from "../../shared/applicationData";
 /**
  * Get the entire preload window object.
  * This is only available in the renderer process.
+ * @deprecated Use window directly
  */
 export function getPreloadWindow(): PreloadWindow {
   return window;
@@ -22,6 +23,7 @@ export function getPreloadWindow(): PreloadWindow {
 /**
  * Get the preload API from the window object.
  * This is only available in the renderer process.
+ * @deprecated Use window.api directly
  */
 export function getPreloadApi(): Api {
   return getPreloadWindow().api;
