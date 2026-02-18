@@ -13,8 +13,8 @@ import { setOpenMainPage } from "../../../actions";
 import {
   discovered as discoveredGamesSelector,
   knownGames as knownGamesSelector,
-  lastActiveProfiles as lastActiveProfilesSelector,
   mainPage as mainPageSelector,
+  profiles as profilesSelector,
 } from "../../../util/selectors";
 import { DownloadButton } from "./DownloadButton";
 import { GameButton } from "./GameButton";
@@ -31,7 +31,7 @@ export const Spine: FC = () => {
 
   const knownGames = useSelector(knownGamesSelector);
   const discoveredGames = useSelector(discoveredGamesSelector);
-  const lastActiveProfile = useSelector(lastActiveProfilesSelector);
+  const allProfiles = useSelector(profilesSelector);
   const mainPage = useSelector(mainPageSelector);
 
   // Whether a standalone spine button (Downloads, Games) owns the current page,
@@ -51,18 +51,25 @@ export const Spine: FC = () => {
     [selectHome, dispatch],
   );
 
+  const profileGameIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const profile of Object.values(allProfiles)) {
+      set.add(profile.gameId);
+    }
+    return set;
+  }, [allProfiles]);
+
   // Filter to only managed games (have a profile and are discovered)
   const managedGames = useMemo(() => {
     return knownGames.filter((game) => {
       const discovery = discoveredGames[game.id];
-      const hasProfile = lastActiveProfile[game.id] !== undefined;
       return (
-        hasProfile &&
+        profileGameIds.has(game.id) &&
         discovery?.path !== undefined &&
         discovery?.hidden !== true
       );
     });
-  }, [knownGames, discoveredGames, lastActiveProfile]);
+  }, [knownGames, discoveredGames, profileGameIds]);
 
   const onScroll = (event: Event) =>
     setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
