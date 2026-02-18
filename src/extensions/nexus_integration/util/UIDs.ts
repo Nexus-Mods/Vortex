@@ -6,7 +6,7 @@ import { nexusGames } from "../util";
 
 const gameNum = (() => {
   let cache: { [gameId: string]: number };
-  return (gameId: string): number => {
+  return (gameId: string): number | undefined => {
     if (cache === undefined) {
       const games = nexusGames();
       if (games.length > 0) {
@@ -15,6 +15,10 @@ const gameNum = (() => {
           return prev;
         }, {});
       }
+    }
+
+    if (cache === undefined) {
+      return undefined;
     }
 
     const game = getGame(gameId);

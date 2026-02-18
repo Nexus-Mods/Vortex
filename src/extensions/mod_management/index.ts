@@ -1709,6 +1709,9 @@ function once(api: IExtensionApi) {
   api.events.on("mod-enabled", (profileId: string, modId: string) => {
     const state: IState = api.store.getState();
     const profile = profileById(state, profileId);
+    if (profile === undefined) {
+      return;
+    }
     const mod = state.persistent.mods[profile.gameId]?.[modId];
     if (mod === undefined) {
       return;
