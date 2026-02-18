@@ -3,12 +3,11 @@
  * Showcases the tabs system with various features
  */
 
-import * as React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 import { Typography } from "../typography";
-import { TabBar } from "./tab-bar";
 import { TabButton } from "./tab";
+import { TabBar } from "./tab-bar";
 import { TabPanel } from "./tab-panel";
 import { TabProvider } from "./tabs.context";
 
@@ -18,13 +17,20 @@ export const TabsDemo = () => {
 
   return (
     <div className="space-y-8">
-      <Typography as="h2" typographyType="heading-lg" appearance="strong">
-        Tabs Component System
-      </Typography>
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h2" typographyType="heading-sm">
+          Tabs
+        </Typography>
+
+        <Typography appearance="subdued">
+          A tabbed interface system with context-based state management,
+          keyboard navigation, and accessibility support.
+        </Typography>
+      </div>
 
       <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md" appearance="strong">
-          Basic Tabs with Count Badges
+        <Typography as="h3" typographyType="heading-xs">
+          Primary Tabs
         </Typography>
 
         <TabProvider
@@ -34,74 +40,72 @@ export const TabsDemo = () => {
         >
           <TabBar>
             <TabButton name="Overview" />
-            <TabButton name="Files" count={42} />
-            <TabButton name="Comments" count={156} />
+
+            <TabButton count={42} name="Files" />
+
+            <TabButton count={156} name="Comments" />
+
             <TabButton name="Settings" />
+
             <TabButton disabled={true} name="Disabled" />
           </TabBar>
 
           <div className="mt-6">
             <TabPanel name="Overview">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Overview Tab Content</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Overview Tab Content</p>
+
+                <p>
                   This is the overview panel. Click other tabs to see different
                   content.
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Files">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Files Tab Content (42 files)</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Files Tab Content (42 files)</p>
+
+                <p>
                   Notice the count badge showing 42 files. This tab demonstrates
                   count badges.
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Comments">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Comments Tab Content (156 comments)</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">
+                  Comments Tab Content (156 comments)
+                </p>
+
+                <p>
                   The count badge uses the numeral library for proper formatting
                   (e.g., 1,234).
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Settings">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Settings Tab Content</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
-                  This tab has no count badge, which is optional.
-                </Typography>
-              </div>
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Settings Tab Content</p>
+
+                <p>This tab has no count badge, which is optional.</p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Disabled">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Disabled</strong>
-                </Typography>
-              </div>
+              <Typography appearance="subdued" as="div">
+                <p className="font-semibold">Disabled</p>
+              </Typography>
             </TabPanel>
           </div>
         </TabProvider>
       </div>
 
       <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md" appearance="strong">
-          Basic Secondary Tabs
+        <Typography as="h3" typographyType="heading-xs">
+          Secondary Tabs
         </Typography>
 
         <TabProvider
@@ -112,109 +116,121 @@ export const TabsDemo = () => {
         >
           <TabBar>
             <TabButton name="Overview" />
-            <TabButton name="Files" count={42} />
-            <TabButton name="Comments" count={156} />
+
+            <TabButton count={42} name="Files" />
+
+            <TabButton count={156} name="Comments" />
+
             <TabButton name="Settings" />
+
             <TabButton disabled={true} name="Disabled" />
           </TabBar>
 
           <div className="mt-6">
             <TabPanel name="Overview">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Overview Tab Content</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Overview Tab Content</p>
+
+                <p>
                   This is the overview panel. Click other tabs to see different
                   content.
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Files">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Files Tab Content (42 files)</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Files Tab Content (42 files)</p>
+
+                <p>
                   Notice the count badge showing 42 files. This tab demonstrates
                   count badges.
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Comments">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Comments Tab Content (156 comments)</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">
+                  Comments Tab Content (156 comments)
+                </p>
+
+                <p>
                   The count badge uses the numeral library for proper formatting
                   (e.g., 1,234).
-                </Typography>
-              </div>
+                </p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Settings">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Settings Tab Content</strong>
-                </Typography>
-                <Typography typographyType="body-md" appearance="subdued">
-                  This tab has no count badge, which is optional.
-                </Typography>
-              </div>
+              <Typography appearance="subdued" as="div" className="space-y-4">
+                <p className="font-semibold">Settings Tab Content</p>
+
+                <p>This tab has no count badge, which is optional.</p>
+              </Typography>
             </TabPanel>
 
             <TabPanel name="Disabled">
-              <div className="space-y-4">
-                <Typography typographyType="body-lg" appearance="moderate">
-                  <strong>Disabled</strong>
-                </Typography>
-              </div>
+              <Typography appearance="subdued" as="div">
+                <p className="font-semibold">Disabled</p>
+              </Typography>
             </TabPanel>
           </div>
         </TabProvider>
       </div>
 
       <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md" appearance="strong">
+        <Typography as="h3" typographyType="heading-xs">
           Keyboard Navigation
         </Typography>
 
-        <div className="bg-surface-mid p-4 rounded space-y-2">
-          <Typography typographyType="body-sm" appearance="subdued">
-            <strong>Arrow Left/Right:</strong> Navigate between tabs
-          </Typography>
-          <Typography typographyType="body-sm" appearance="subdued">
-            <strong>Home:</strong> Jump to first tab
-          </Typography>
-          <Typography typographyType="body-sm" appearance="subdued">
-            <strong>End:</strong> Jump to last tab
-          </Typography>
-          <Typography typographyType="body-sm" appearance="subdued">
-            <strong>Tab wrapping:</strong> Last tab → First tab (and vice versa)
-          </Typography>
-        </div>
+        <Typography
+          appearance="subdued"
+          as="ul"
+          className="list-inside list-disc space-y-2"
+        >
+          <li>
+            <span className="font-semibold">Arrow Left/Right:</span> Navigate
+            between tabs
+          </li>
+
+          <li>
+            <span className="font-semibold">Home:</span> Jump to first tab
+          </li>
+
+          <li>
+            <span className="font-semibold">End:</span> Jump to last tab
+          </li>
+
+          <li>
+            <span className="font-semibold">Tab wrapping:</span> Last tab →
+            First tab (and vice versa)
+          </li>
+        </Typography>
       </div>
 
       <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-md" appearance="strong">
+        <Typography as="h3" typographyType="heading-xs">
           Features
         </Typography>
 
         <Typography
-          as="ul"
-          typographyType="body-md"
           appearance="subdued"
-          className="list-disc list-inside space-y-2"
+          as="ul"
+          className="list-inside list-disc space-y-2"
         >
           <li>Context-based state management with TabProvider</li>
-          <li>Button tabs (selectable) and Link tabs (focusable only)</li>
+
+          <li>Primary and secondary tab styles</li>
+
           <li>Optional count badges with number formatting</li>
+
           <li>Full keyboard navigation (Arrow keys, Home, End)</li>
+
           <li>Complete ARIA accessibility support</li>
+
           <li>Horizontal scrolling for many tabs with custom scrollbar</li>
+
           <li>Focus visible indicators for keyboard users</li>
         </Typography>
       </div>

@@ -9,29 +9,23 @@ import { useTabContext } from "../tabs.context";
 export const TabBar = ({
   children,
   className,
-  size = "md",
 }: {
   children: ReactNode;
   className?: string;
-  size?: "sm" | "md";
 }) => {
   const { tabType } = useTabContext();
 
   return (
     <div
-      className={joinClasses(
-        [
-          "nxm-tab-bar",
-          tabType === "primary"
-            ? "nxm-tab-bar-primary"
-            : "nxm-tab-bar-secondary",
-          className,
-        ],
-        { "nxm-tab-bar-sm": size === "sm" },
-      )}
-      role="tablist"
+      className={joinClasses([
+        "nxm-tab-bar",
+        tabType === "primary" ? "nxm-tab-bar-primary" : "nxm-tab-bar-secondary",
+        className,
+      ])}
     >
-      {children}
+      <div className="nxm-tab-bar-scroller" role="tablist">
+        {children}
+      </div>
     </div>
   );
 };

@@ -9,7 +9,7 @@ export const DropdownItems = ({
   ...props
 }: ComponentProps<typeof Menu.Items>) => (
   <Menu.Items
-    className={joinClasses(["nxm-dropdown-items scrollbar", className])}
+    className={joinClasses(["nxm-dropdown-items", className])}
     {...props}
   />
 );

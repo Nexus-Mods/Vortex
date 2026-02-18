@@ -1,76 +1,54 @@
 /**
  * Button Demo Component
- * Demonstrates the Button component from the web team's "next" project
+ * Demonstrates the Button component variants and features
  */
 
 import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
-import * as React from "react";
+import React, { useState } from "react";
 
-import { Typography } from "../typography/Typography";
+import { Typography } from "../typography";
 import { Button } from "./Button";
 
-export const ButtonDemo: React.ComponentType = () => {
-  const [loadingStates, setLoadingStates] = React.useState<
-    Record<string, boolean>
-  >({});
+export const ButtonDemo = () => {
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const handleLoadingClick = (key: string) => {
     setLoadingStates({ ...loadingStates, [key]: true });
-    setTimeout(() => {
-      setLoadingStates({ ...loadingStates, [key]: false });
-    }, 2000);
+    setTimeout(
+      () => setLoadingStates({ ...loadingStates, [key]: false }),
+      2000,
+    );
   };
 
   return (
-    <div className="space-y-8 p-6">
-      <Typography
-        appearance="strong"
-        as="h1"
-        className="mb-6"
-        typographyType="heading-2xl"
-      >
-        Button System from Web Team
-      </Typography>
+    <div className="space-y-8">
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h2" typographyType="heading-sm">
+          Button
+        </Typography>
 
-      <Typography
-        appearance="subdued"
-        as="p"
-        className="mb-8"
-        typographyType="body-md"
-      >
-        This component is adapted from the web team's "next" project. It
-        provides a consistent button system with multiple types, sizes, and
-        states. Note: Icon support is pending implementation.
-      </Typography>
+        <Typography appearance="subdued">
+          A consistent button system with multiple types, sizes, and states
+          including icon support.
+        </Typography>
+      </div>
 
-      {/* Primary Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Primary Buttons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="primary" size="md">
-            Primary Medium
-          </Button>
+          <Button>Primary Medium</Button>
 
-          <Button buttonType="primary" size="sm">
-            Primary Small
-          </Button>
+          <Button size="sm">Primary Small</Button>
 
-          <Button buttonType="primary" disabled={true} size="md">
-            Disabled
-          </Button>
+          <Button disabled={true}>Disabled</Button>
 
           <Button
-            buttonType="primary"
             isLoading={loadingStates.primary}
-            size="md"
             onClick={() => handleLoadingClick("primary")}
           >
             Click for Loading
@@ -78,197 +56,115 @@ export const ButtonDemo: React.ComponentType = () => {
         </div>
       </div>
 
-      {/* Secondary Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Secondary Buttons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="secondary" size="md">
-            Secondary Medium
-          </Button>
+          <Button buttonType="secondary">Secondary Medium</Button>
 
           <Button buttonType="secondary" size="sm">
             Secondary Small
           </Button>
 
-          <Button buttonType="secondary" filled="strong" size="md">
+          <Button buttonType="secondary" filled="strong">
             Filled Strong
           </Button>
 
-          <Button buttonType="secondary" filled="weak" size="md">
+          <Button buttonType="secondary" filled="weak">
             Filled Weak
           </Button>
 
-          <Button buttonType="secondary" disabled={true} size="md">
+          <Button buttonType="secondary" disabled={true}>
             Disabled
           </Button>
         </div>
       </div>
 
-      {/* Tertiary Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Tertiary Buttons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="tertiary" size="md">
-            Tertiary Medium
-          </Button>
+          <Button buttonType="tertiary">Tertiary Medium</Button>
 
           <Button buttonType="tertiary" size="sm">
             Tertiary Small
           </Button>
 
-          <Button buttonType="tertiary" filled="strong" size="md">
+          <Button buttonType="tertiary" filled="strong">
             Filled Strong
           </Button>
 
-          <Button buttonType="tertiary" filled="weak" size="md">
+          <Button buttonType="tertiary" filled="weak">
             Filled Weak
           </Button>
         </div>
       </div>
 
-      {/* Success Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Success Buttons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="success" size="md">
-            Success Medium
-          </Button>
+          <Button buttonType="success">Success Medium</Button>
 
           <Button buttonType="success" size="sm">
             Success Small
           </Button>
 
-          <Button buttonType="success" disabled={true} size="md">
+          <Button buttonType="success" disabled={true}>
             Disabled
           </Button>
         </div>
       </div>
 
-      {/* Premium Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Premium Buttons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="premium" size="md">
-            Premium Medium
-          </Button>
+          <Button buttonType="premium">Premium Medium</Button>
 
           <Button buttonType="premium" size="sm">
             Premium Small
           </Button>
 
-          <Button buttonType="premium" disabled={true} size="md">
+          <Button buttonType="premium" disabled={true}>
             Disabled
           </Button>
         </div>
       </div>
 
-      {/* Link Buttons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
-          Button as Link
-        </Typography>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <Button
-            as="link"
-            buttonType="primary"
-            href="https://nexusmods.com"
-            isExternal={true}
-            size="md"
-          >
-            External Link
-          </Button>
-
-          <Button as="a" buttonType="secondary" href="#demo" size="md">
-            Anchor Link
-          </Button>
-        </div>
-      </div>
-
-      {/* Custom Content */}
-      <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Custom Content
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
           <Button
-            buttonType="primary"
             customContent={
               <span className="flex items-center gap-2">
-                <span>🎮</span>
-
                 <span>Custom Content Button</span>
               </span>
             }
-            size="md"
           />
         </div>
       </div>
 
-      {/* Buttons with Icons */}
       <div className="space-y-4">
-        <Typography
-          appearance="strong"
-          as="h2"
-          className="mb-4"
-          typographyType="heading-xl"
-        >
+        <Typography as="h3" typographyType="heading-xs">
           Buttons with Icons
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button buttonType="primary" leftIconPath={mdiDownload} size="md">
-            Download
-          </Button>
+          <Button leftIconPath={mdiDownload}>Download</Button>
 
-          <Button
-            buttonType="secondary"
-            rightIconPath={mdiChevronRight}
-            size="md"
-          >
+          <Button buttonType="secondary" rightIconPath={mdiChevronRight}>
             Next
           </Button>
 
@@ -276,7 +172,7 @@ export const ButtonDemo: React.ComponentType = () => {
             Confirm
           </Button>
 
-          <Button buttonType="tertiary" leftIconPath={mdiCog} size="md">
+          <Button buttonType="tertiary" leftIconPath={mdiCog}>
             Settings
           </Button>
         </div>

@@ -8,16 +8,13 @@
 
 import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 import React, {
-  type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
-  type ComponentProps,
   type MutableRefObject,
   type ReactNode,
   type Ref,
 } from "react";
 
 import { Icon } from "../icon";
-import { Link } from "../link";
 import { type XOr, joinClasses } from "../utils";
 
 export type ButtonType =
@@ -37,30 +34,12 @@ type BaseButtonProps = {
 } & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
   XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
 
-type ButtonButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  as?: "button";
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   disabled?: boolean;
   href?: never;
   isExternal?: never;
   ref?: Ref<HTMLButtonElement>;
 } & BaseButtonProps;
-
-type ButtonLinkProps = Omit<ComponentProps<typeof Link>, "as"> & {
-  as: "link";
-  className?: string;
-  disabled?: never;
-  isExternal?: boolean;
-  ref?: Ref<HTMLAnchorElement>;
-} & BaseButtonProps;
-
-type ButtonLinkAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
-  as: "a";
-  disabled?: never;
-  isExternal?: boolean;
-  ref?: Ref<HTMLAnchorElement>;
-} & BaseButtonProps;
-
-type ButtonProps = ButtonButtonProps | ButtonLinkProps | ButtonLinkAnchorProps;
 
 const getButtonClasses = ({
   buttonType,
@@ -156,111 +135,49 @@ const ButtonIcon = ({
   return null;
 };
 
-export const Button = (all: ButtonProps) => {
-  const {
-    "aria-disabled": ariaDisabled,
-    buttonType = "primary",
-    children,
-    className,
-    customContent,
-    disabled,
-    filled,
-    isExternal,
-    isLoading = false,
-    leftIcon,
-    leftIconPath,
-    ref,
-    rightIcon,
-    rightIconPath,
-    size = "md",
-    ...rest
-  } = all;
+export const Button = ({
+  "aria-disabled": ariaDisabled,
+  buttonType = "primary",
+  children,
+  className,
+  customContent,
+  disabled,
+  filled,
+  isExternal,
+  isLoading = false,
+  leftIcon,
+  leftIconPath,
+  ref,
+  rightIcon,
+  rightIconPath,
+  size = "md",
+  ...props
+}: ButtonProps) => (
+  <button
+    aria-disabled={ariaDisabled}
+    className={joinClasses([
+      ...getButtonClasses({
+        buttonType,
+        disabled: !!disabled || !!ariaDisabled || isLoading,
+        filled,
+        iconOnly: !customContent && !children,
+        size,
+      }),
+      className || "",
+    ])}
+    disabled={disabled || isLoading}
+    ref={ref as MutableRefObject<HTMLButtonElement>}
+    type={props.type ?? "button"}
+    {...props}
+  >
+    {customContent ?? (
+      <>
+        <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
 
-  const isDisabled = !!disabled || !!ariaDisabled || isLoading;
-  const iconOnly = !customContent && !children;
+        {!!children && <span>{children}</span>}
 
-  const content = customContent ?? (
-    <>
-      <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
-
-      {!!children && <span>{children}</span>}
-
-      <ButtonIcon icon={rightIcon} path={rightIconPath} />
-    </>
-  );
-
-  if (rest.as === "link") {
-    const { as, href, ...props } = rest as ButtonLinkProps;
-
-    return (
-      <Link
-        aria-disabled={ariaDisabled ? true : undefined}
-        className={joinClasses([
-          ...getButtonClasses({
-            buttonType,
-            disabled: isDisabled,
-            filled,
-            iconOnly,
-            size,
-          }),
-          className || "",
-        ])}
-        href={href}
-        isExternal={isExternal}
-        ref={ref as MutableRefObject<HTMLAnchorElement>}
-        {...props}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  if (rest.as === "a") {
-    const { as, ...props } = rest;
-
-    return (
-      <a
-        aria-disabled={ariaDisabled}
-        className={joinClasses([
-          ...getButtonClasses({
-            buttonType,
-            disabled: isDisabled,
-            filled,
-            iconOnly,
-            size,
-          }),
-          className || "",
-        ])}
-        ref={ref as MutableRefObject<HTMLAnchorElement>}
-        {...(isExternal ? { rel: "noreferrer", target: "_blank" } : {})}
-        {...props}
-      >
-        {content}
-      </a>
-    );
-  }
-
-  const { href, ...props } = rest;
-
-  return (
-    <button
-      aria-disabled={ariaDisabled}
-      className={joinClasses([
-        ...getButtonClasses({
-          buttonType,
-          disabled: isDisabled,
-          filled,
-          iconOnly,
-          size,
-        }),
-        className || "",
-      ])}
-      disabled={disabled || isLoading}
-      ref={ref as MutableRefObject<HTMLButtonElement>}
-      type={props.type ?? "button"}
-      {...props}
-    >
-      {content}
-    </button>
-  );
-};
+        <ButtonIcon icon={rightIcon} path={rightIconPath} />
+      </>
+    )}
+  </button>
+);

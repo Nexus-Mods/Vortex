@@ -249,7 +249,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           tabListId="browse-nexus-tabs"
           onSetSelectedTab={setSelectedTab}
         >
-          <TabBar className="pl-6" size="sm">
+          <TabBar className="pl-6">
             <TabButton
               count={allCollectionsTotal}
               name={t("collection:browse.tabs.collections")}
@@ -286,7 +286,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 />
 
                 <Button
-                  as="button"
                   buttonType="tertiary"
                   filled="weak"
                   leftIconPath={mdiMagnify}

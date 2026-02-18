@@ -45,11 +45,12 @@ export const DropdownItem = ({
 }: ComponentProps<typeof Menu.Item> &
   DropdownItemProps & { onClick?: () => void }) => (
   <Menu.Item {...props}>
-    {({ active }) => (
+    {({ active, disabled }) => (
       <button
         className={joinClasses(["nxm-dropdown-item", className], {
           "nxm-dropdown-item-active": active,
         })}
+        disabled={disabled}
         onClick={onClick}
       >
         {customContent ?? (

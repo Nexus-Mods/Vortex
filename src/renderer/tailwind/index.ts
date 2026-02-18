@@ -14,7 +14,6 @@ import * as button from "./components/next/button";
 import * as collectiontile from "./components/next/collectiontile";
 import * as form from "./components/next/form";
 import * as icon from "./components/next/icon";
-import * as link from "./components/next/link";
 import * as tabs from "./components/next/tabs";
 // Import all components and utilities
 import * as typography from "./components/next/typography";
@@ -27,7 +26,6 @@ import * as iconPaths from "./lib/icon-paths";
  * - Typography: Typography component with design system styles
  * - Button: Button component with multiple types and states
  * - Icon: Icon component supporting MDI and Nexus custom icons
- * - Link: Link wrapper component for Electron
  * - CollectionTile: Collection card component
  * - FormField: Form field wrapper with labels, hints, and validation
  * - Input: Input component with validation and accessibility features
@@ -50,16 +48,13 @@ export const Tailwind = {
   // Icon component and types
   ...icon,
 
-  // Link component
-  ...link,
-
   // Collection tile component
   ...collectiontile,
 
   // Form components (FormField, Input, Select)
   ...form,
 
-  // Tabs components (TabProvider, TabBar, TabButton, TabLink, TabPanel)
+  // Tabs components (TabProvider, TabBar, TabButton, TabPanel)
   ...tabs,
 
   // Icon paths (nxm* icons)

@@ -4,7 +4,7 @@
  *
  * A complete tabbed interface system with:
  * - Context-based state management
- * - Button tabs (selectable) and Link tabs (focusable only)
+ * - Primary and secondary tab styles
  * - Full keyboard navigation (Arrow keys, Home, End)
  * - ARIA accessibility support
  * - Optional count badges

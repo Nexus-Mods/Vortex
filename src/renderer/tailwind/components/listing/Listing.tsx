@@ -24,8 +24,8 @@ export const Listing = ({
   noResultsClassName = "py-16",
   noResultsIconPath,
   noResultsChildren,
-  noResultsMessage,
-  noResultsTitle,
+  noResultsMessage = "Try adjusting your filters or search terms.",
+  noResultsTitle = "No items found",
   skeletonCount = 4,
   SkeletonTile,
 }: PropsWithChildren<{

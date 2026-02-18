@@ -5,10 +5,10 @@
  * Provides a consistent typography system with predefined sizes and appearances.
  */
 
-import type * as React from "react";
-import type { AllHTMLAttributes, Ref } from "react";
-import { createElement } from "react";
+import { createElement, type AllHTMLAttributes, type Ref } from "react";
+
 import type { ResponsiveScreenSizes } from "../utils";
+
 import { joinClasses } from "../utils";
 
 export type TypographyTypes =
@@ -85,7 +85,7 @@ const getTypographyStyles = ({
       `typography-${
         typeof typographyType === "string"
           ? typographyType
-          : (typeFallbacks[as as keyof typeof typeFallbacks] as TypographyTypes)
+          : (typeFallbacks[as] as TypographyTypes)
       }`,
     );
   } else {
@@ -104,7 +104,7 @@ const getTypographyStyles = ({
   return styles;
 };
 
-export const Typography: React.ComponentType<TypographyProps> = ({
+export const Typography = ({
   appearance = "strong",
   as = "p",
   children,
@@ -112,8 +112,7 @@ export const Typography: React.ComponentType<TypographyProps> = ({
   isTranslucent = false,
   typographyType,
   ...props
-}) => {
-  /* eslint-disable sort-keys */
+}: TypographyProps) => {
   const appearanceClasses: Record<
     Exclude<TypographyProps["appearance"], undefined>,
     string
@@ -133,7 +132,6 @@ export const Typography: React.ComponentType<TypographyProps> = ({
       : "text-neutral-subdued",
     weak: isTranslucent ? "text-neutral-translucent-weak" : "text-neutral-weak",
   };
-  /* eslint-enable sort-keys */
 
   return createElement(
     as,

@@ -35,8 +35,8 @@ export const TabButton = ({
 
   // Register the tab ref with the parent tab bar to set focus on keydown
   useEffect(
-    () => registerTab({ name: tabId, ref, type: "button" }),
-    [tabId, registerTab],
+    () => registerTab({ disabled, name: tabId, ref }),
+    [disabled, tabId, registerTab],
   );
 
   return (

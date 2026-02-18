@@ -60,7 +60,6 @@ export const JumpToPage = ({
 
       <Button
         aria-disabled={!isValid}
-        as="button"
         buttonType="secondary"
         filled="weak"
         size="sm"

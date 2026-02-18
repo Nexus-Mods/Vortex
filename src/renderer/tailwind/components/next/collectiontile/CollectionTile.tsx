@@ -192,7 +192,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
               className="text-info-strong"
               typographyType="body-sm"
             >
-              {collection.category.name}
+              {collection.category?.name}
             </Typography>
 
             {revision.adultContent && (
@@ -245,7 +245,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
             Added
           </Button>
         ) : (
-          <Button buttonType="primary" size="xs" onClick={addCollection}>
+          <Button size="xs" onClick={addCollection}>
             Add collection
           </Button>
         )}

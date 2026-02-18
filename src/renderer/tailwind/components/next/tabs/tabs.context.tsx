@@ -14,9 +14,9 @@ import { getTabId } from "../utils";
  * Arguments for the register tab method
  */
 type RegisterTabArgs = {
+  disabled?: boolean;
   name: string;
-  ref: MutableRefObject<HTMLButtonElement | HTMLAnchorElement>;
-  type: "link" | "button";
+  ref: MutableRefObject<HTMLButtonElement>;
 };
 
 type TabType = "primary" | "secondary";
@@ -77,10 +77,10 @@ export const TabProvider = ({
 
   // Registers tabs in the `tabs` state variable to manage keyboard focus
   const registerTab = useCallback(
-    ({ name, ref, type }: RegisterTabArgs) =>
+    ({ disabled, name, ref }: RegisterTabArgs) =>
       setTabs((currentTabs) => ({
         ...currentTabs,
-        [name]: { ref, type },
+        [name]: { disabled, ref },
       })),
     [],
   );
@@ -120,15 +120,24 @@ export const TabProvider = ({
     // Wrap the index around if it overflows using double modulo
     index = ((index % tabIds.length) + tabIds.length) % tabIds.length;
 
-    // Get the tab id of the new selected tab
-    const newTabId = tabIds[index];
-
-    // If new tab is a button, select the new tab
-    if (tabs[newTabId].type === "button") {
-      setSelectedTab(newTabId);
+    // Skip disabled tabs in the navigation direction
+    const startIndex = index;
+    while (tabs[tabIds[index]]?.disabled) {
+      if (event.key === "ArrowLeft") {
+        index -= 1;
+      } else {
+        index += 1;
+      }
+      index = ((index % tabIds.length) + tabIds.length) % tabIds.length;
+      // Prevent infinite loop if all tabs are disabled
+      if (index === startIndex) {
+        return;
+      }
     }
 
-    // Focus the new tab
+    // Select and focus the new tab
+    const newTabId = tabIds[index];
+    setSelectedTab(newTabId);
     tabs[newTabId].ref.current.focus();
   };
 

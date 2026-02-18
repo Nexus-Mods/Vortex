@@ -3,12 +3,10 @@
  * Demonstrates all Input component variants and features
  */
 
-import * as React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
+import { Typography } from "../../typography";
 import { Input } from "./Input";
-import { FormFieldWrap } from "../formfield";
-import { Typography } from "../../typography/Typography";
 
 export const InputDemo = () => {
   const [textValue, setTextValue] = useState("");
@@ -16,22 +14,29 @@ export const InputDemo = () => {
   const [passwordValue, setPasswordValue] = useState("");
 
   return (
-    <div className="p-8 bg-surface-base min-h-screen">
-      <Typography as="h1" typographyType="heading-xl" className="mb-8">
-        Input Component Demo
-      </Typography>
+    <div className="space-y-8">
+      <div className="rounded-sm bg-surface-mid p-4">
+        <Typography as="h3" typographyType="heading-xs">
+          Input
+        </Typography>
 
-      {/* Basic Input Types */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+        <Typography appearance="subdued">
+          Text inputs for various data types with validation, hints, and
+          character counting.
+        </Typography>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Input Types
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
             id="text-input"
             label="Text Input"
-            type="text"
             placeholder="Enter some text..."
+            type="text"
             value={textValue}
             onChange={(e) => setTextValue(e.target.value)}
           />
@@ -39,8 +44,8 @@ export const InputDemo = () => {
           <Input
             id="email-input"
             label="Email Input"
-            type="email"
             placeholder="user@example.com"
+            type="email"
             value={emailValue}
             onChange={(e) => setEmailValue(e.target.value)}
           />
@@ -48,8 +53,8 @@ export const InputDemo = () => {
           <Input
             id="password-input"
             label="Password Input"
-            type="password"
             placeholder="Enter password..."
+            type="password"
             value={passwordValue}
             onChange={(e) => setPasswordValue(e.target.value)}
           />
@@ -57,210 +62,233 @@ export const InputDemo = () => {
           <Input
             id="url-input"
             label="URL Input"
-            type="url"
             placeholder="https://example.com"
+            type="url"
           />
 
           <Input
+            defaultValue={42}
             id="number-input"
             label="Number Input"
-            type="number"
             placeholder="Enter a number..."
-            defaultValue={42}
+            type="number"
           />
 
           <Input id="date-input" label="Date Input" type="date" />
 
           <Input id="time-input" label="Time Input" type="time" />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* States */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
+          Sizes
+        </Typography>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <Input
+            id="size-md-input"
+            label="Medium (default)"
+            placeholder="Medium input..."
+            type="text"
+          />
+
+          <Input
+            id="size-sm-input"
+            label="Small"
+            placeholder="Small input..."
+            size="sm"
+            type="text"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Input States
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
             id="default-input"
             label="Default State"
-            type="text"
             placeholder="Default input..."
+            type="text"
           />
 
           <Input
+            defaultValue="Pre-filled value"
             id="with-value-input"
             label="With Value"
             type="text"
-            defaultValue="Pre-filled value"
           />
 
           <Input
+            disabled={true}
             id="disabled-input"
             label="Disabled State"
-            type="text"
             placeholder="Cannot edit..."
-            disabled
+            type="text"
           />
 
           <Input
+            defaultValue="Read-only value"
             id="readonly-input"
             label="Read-only State"
+            readOnly={true}
             type="text"
-            defaultValue="Read-only value"
-            readOnly
           />
 
           <Input
             id="required-input"
             label="Required Field"
-            type="text"
             placeholder="This field is required..."
-            required
+            required={true}
+            type="text"
           />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* Validation & Errors */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Validation & Error States
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
+            defaultValue="Invalid value"
+            errorMessage="This field has an error"
             id="error-input"
             label="Input with Error"
             type="text"
-            errorMessage="This field has an error"
-            defaultValue="Invalid value"
           />
 
           <Input
+            errorMessage="Please enter a valid email address"
             id="error-required-input"
             label="Required Field with Error"
+            required={true}
             type="email"
-            required
-            errorMessage="Please enter a valid email address"
           />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* Hints & Helper Text */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Hints & Helper Text
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
+            hints="Username must be at least 3 characters"
             id="single-hint-input"
             label="Input with Single Hint"
-            type="text"
             placeholder="Enter username..."
-            hints="Username must be at least 3 characters"
+            type="text"
           />
 
           <Input
-            id="multiple-hints-input"
-            label="Input with Multiple Hints"
-            type="password"
-            placeholder="Enter secure password..."
             hints={[
               "Must be at least 8 characters",
               "Must contain uppercase and lowercase letters",
               "Must contain at least one number",
             ]}
+            id="multiple-hints-input"
+            label="Input with Multiple Hints"
+            placeholder="Enter secure password..."
+            type="password"
           />
 
           <Input
+            defaultValue="ab"
+            errorMessage="Value is too short"
+            hints="This hint is shown along with the error"
             id="hint-error-input"
             label="Hints with Error State"
             type="text"
-            hints="This hint is shown along with the error"
-            errorMessage="Value is too short"
-            defaultValue="ab"
           />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* Character Counter */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Character Counter
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
+            hints="Character counter appears below"
             id="maxlength-input"
             label="Input with Character Counter"
-            type="text"
             maxLength={50}
             placeholder="Type up to 50 characters..."
-            hints="Character counter appears below"
+            type="text"
           />
 
           <Input
-            id="maxlength-warning-input"
-            label="Counter Warning (25% threshold)"
-            type="text"
-            maxLength={20}
             defaultValue="12345678901234"
             hints="Type more to see warning threshold (yellow at 25%, red at 10%)"
+            id="maxlength-warning-input"
+            label="Counter Warning (25% threshold)"
+            maxLength={20}
+            type="text"
           />
 
           <Input
-            id="maxlength-danger-input"
-            label="Counter Danger (10% threshold)"
-            type="text"
-            maxLength={20}
             defaultValue="12345678901234567"
             hints="Very close to character limit (red)"
+            id="maxlength-danger-input"
+            label="Counter Danger (10% threshold)"
+            maxLength={20}
+            type="text"
           />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* Hidden Labels (Accessibility) */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Hidden Labels (Screen Reader Only)
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
+            hideLabel={true}
             id="hidden-label-input"
             label="Hidden Label (SR only)"
-            type="text"
             placeholder="Label is visually hidden but accessible to screen readers"
-            hideLabel
+            type="text"
           />
-        </FormFieldWrap>
+        </div>
       </div>
 
-      {/* Combined Features */}
-      <div className="mb-12">
-        <Typography as="h2" typographyType="heading-md" className="mb-4">
+      <div className="space-y-4">
+        <Typography as="h4" typographyType="heading-xs">
           Combined Features
         </Typography>
-        <FormFieldWrap>
+
+        <div className="flex flex-wrap gap-4">
           <Input
-            id="full-featured-input"
-            label="Username"
-            type="text"
-            placeholder="Enter username..."
-            required
-            maxLength={30}
             hints={[
               "Username must be unique",
               "Only alphanumeric characters allowed",
             ]}
+            id="full-featured-input"
+            label="Username"
+            maxLength={30}
+            placeholder="Enter username..."
+            required={true}
+            type="text"
           />
 
           <Input
+            hints="Keep it short and sweet"
             id="bio-input"
             label="Bio"
-            type="text"
-            placeholder="Tell us about yourself..."
             maxLength={200}
-            hints="Keep it short and sweet"
+            placeholder="Tell us about yourself..."
+            type="text"
           />
-        </FormFieldWrap>
+        </div>
       </div>
     </div>
   );
