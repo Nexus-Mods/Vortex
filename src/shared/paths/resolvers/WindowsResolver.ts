@@ -19,10 +19,10 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { Anchor, RelativePath, ResolvedPath } from '../types';
+import type { RelativePath, ResolvedPath } from '../types';
 
-import { Anchor as AnchorNS, RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
+import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
 /**
  * All valid Windows drive letters (lowercase)
@@ -47,40 +47,24 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  *
  * @template ValidAnchors - WindowsDrive type (26 lowercase drive letters)
  */
-export class WindowsResolver extends BaseResolver<WindowsDrive> {
+export class WindowsResolver extends MappingResolver<WindowsDrive> {
   constructor() {
     super('windows');
   }
 
   // ========================================================================
-  // Anchor Support
+  // Mapping Strategy
   // ========================================================================
 
-  canResolve(anchor: Anchor): boolean {
-    const name = AnchorNS.name(anchor);
-    return DRIVE_LETTERS.includes(name as WindowsDrive);
-  }
-
-  supportedAnchors(): Anchor[] {
-    return DRIVE_LETTERS.map(AnchorNS.make);
-  }
-
-  // ========================================================================
-  // Resolution
-  // ========================================================================
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
-    const name = AnchorNS.name(anchor) as WindowsDrive;
-
-    // Validate drive letter
-    if (!DRIVE_LETTERS.includes(name)) {
-      throw new Error(`Invalid Windows drive letter: ${name}`);
-    }
-
-    // Convert to uppercase and create drive path (e.g., 'c' -> 'C:\')
-    const drivePath = `${name.toUpperCase()}:\\`;
-    return ResolvedPathNS.make(drivePath);
+  protected getStrategy(): MappingStrategy<WindowsDrive> {
+    return fromFunction(
+      DRIVE_LETTERS,
+      (letter) => {
+        // Convert to uppercase and create drive path (e.g., 'c' -> 'C:\')
+        const drivePath = `${letter.toUpperCase()}:\\`;
+        return ResolvedPathNS.make(drivePath);
+      }
+    );
   }
 
   // ========================================================================

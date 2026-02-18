@@ -15,10 +15,8 @@
  * ```
  */
 
-import type { Anchor, ResolvedPath } from '../types';
-
-import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { ResolvedPath as ResolvedPathNS } from '../types';
+import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
 /**
  * Valid Unix anchor (single 'root' anchor)
@@ -33,38 +31,20 @@ export type UnixAnchor = 'root';
  *
  * @template ValidAnchors - UnixAnchor type ('root' only)
  */
-export class UnixResolver extends BaseResolver<UnixAnchor> {
+export class UnixResolver extends MappingResolver<UnixAnchor> {
   constructor() {
     super('unix');
   }
 
   // ========================================================================
-  // Anchor Support
+  // Mapping Strategy
   // ========================================================================
 
-  canResolve(anchor: Anchor): boolean {
-    const name = AnchorNS.name(anchor);
-    return name === 'root';
-  }
-
-  supportedAnchors(): Anchor[] {
-    return [AnchorNS.make('root')];
-  }
-
-  // ========================================================================
-  // Resolution
-  // ========================================================================
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
-    const name = AnchorNS.name(anchor);
-
-    if (name !== 'root') {
-      throw new Error(`UnixResolver only supports 'root' anchor, got: ${name}`);
-    }
-
-    // Filesystem root on Unix-like systems
-    return ResolvedPathNS.make('/');
+  protected getStrategy(): MappingStrategy<UnixAnchor> {
+    return fromFunction(
+      ['root'] as const,
+      () => ResolvedPathNS.make('/')
+    );
   }
 
   // ========================================================================

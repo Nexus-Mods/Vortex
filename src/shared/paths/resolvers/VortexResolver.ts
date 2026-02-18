@@ -4,12 +4,10 @@
  * Supports all standard Vortex application paths with type-safe anchor names.
  */
 
-import type { Anchor, ResolvedPath } from '../types';
-
 // eslint-disable-next-line vortex/no-cross-imports -- VortexResolver requires getVortexPath from renderer
 import getVortexPath, { type AppPath } from '../../../renderer/util/getVortexPath';
-import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { ResolvedPath as ResolvedPathNS } from '../types';
+import { MappingResolver, fromRecord, type MappingStrategy } from './MappingResolver';
 
 /**
  * Define valid Vortex anchor names as a type
@@ -50,7 +48,7 @@ export type VortexAnchor =
  * resolver.PathFor('game');           // ✗ TypeScript error!
  * ```
  */
-export class VortexResolver extends BaseResolver<VortexAnchor> {
+export class VortexResolver extends MappingResolver<VortexAnchor> {
   /**
    * Mapping from anchor names to AppPath identifiers
    */
@@ -80,32 +78,14 @@ export class VortexResolver extends BaseResolver<VortexAnchor> {
   }
 
   // ========================================================================
-  // Anchor Support
+  // Mapping Strategy
   // ========================================================================
 
-  canResolve(anchor: Anchor): boolean {
-    const name = AnchorNS.name(anchor);
-    return name in VortexResolver.ANCHOR_TO_APP_PATH;
-  }
-
-  supportedAnchors(): Anchor[] {
-    return Object.keys(VortexResolver.ANCHOR_TO_APP_PATH).map(AnchorNS.make);
-  }
-
-  // ========================================================================
-  // Resolution
-  // ========================================================================
-
-  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
-    const name = AnchorNS.name(anchor) as VortexAnchor;
-    const appPath = VortexResolver.ANCHOR_TO_APP_PATH[name];
-
-    if (!appPath) {
-      throw new Error(`Unknown Vortex anchor: ${name}`);
-    }
-
-    const osPath = getVortexPath(appPath);
-    return ResolvedPathNS.make(osPath);
+  protected getStrategy(): MappingStrategy<VortexAnchor> {
+    return fromRecord(
+      VortexResolver.ANCHOR_TO_APP_PATH,
+      (appPath) => ResolvedPathNS.make(getVortexPath(appPath))
+    );
   }
 
   // ========================================================================

@@ -5,10 +5,8 @@
  */
 
 import type { FilePath } from '../FilePath';
-import type { Anchor, ResolvedPath } from '../types';
 
-import { Anchor as AnchorNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { MappingResolver, fromMap, type MappingStrategy } from './MappingResolver';
 
 /**
  * Resolves game-specific anchors using a simple path mapping
@@ -26,7 +24,7 @@ import { BaseResolver } from './BaseResolver';
  * gameResolver.PathFor('fallout4');   // ✓ Valid
  * ```
  */
-export class GameResolver extends BaseResolver<string> {
+export class GameResolver extends MappingResolver<string> {
   constructor(
     private readonly gamePaths: Map<string, FilePath>,
   ) {
@@ -34,31 +32,11 @@ export class GameResolver extends BaseResolver<string> {
   }
 
   // ========================================================================
-  // Anchor Support
+  // Mapping Strategy
   // ========================================================================
 
-  canResolve(anchor: Anchor): boolean {
-    const name = AnchorNS.name(anchor);
-    return this.gamePaths.has(name);
-  }
-
-  supportedAnchors(): Anchor[] {
-    return Array.from(this.gamePaths.keys()).map(AnchorNS.make);
-  }
-
-  // ========================================================================
-  // Resolution
-  // ========================================================================
-
-  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
-    const name = AnchorNS.name(anchor);
-    const filePath = this.gamePaths.get(name);
-
-    if (!filePath) {
-      throw new Error(`Unknown game anchor: ${name}`);
-    }
-
-    return filePath.resolve();
+  protected getStrategy(): MappingStrategy<string> {
+    return fromMap(this.gamePaths);
   }
 
   // ========================================================================

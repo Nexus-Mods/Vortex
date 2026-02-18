@@ -77,6 +77,14 @@ export {
 
 export { BaseResolver, CachingResolver } from './resolvers/BaseResolver';
 
+export {
+  MappingResolver,
+  fromRecord,
+  fromMap,
+  fromFunction,
+  type MappingStrategy,
+} from './resolvers/MappingResolver';
+
 // ============================================================================
 // Resolver Implementations
 // ============================================================================

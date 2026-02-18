@@ -89,7 +89,7 @@ describe('WindowsResolver', () => {
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         (resolver as any).resolveAnchor(invalidAnchor)
-      ).rejects.toThrow(/Invalid Windows drive letter/);
+      ).rejects.toThrow(/Unknown anchor/);
     });
   });
 

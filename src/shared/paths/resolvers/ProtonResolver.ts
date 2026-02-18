@@ -8,12 +8,12 @@
 import * as path from 'path';
 
 import type { FilePath } from '../FilePath';
-import type { Anchor, ResolvedPath } from '../types';
+import type { Anchor } from '../types';
 
 // eslint-disable-next-line vortex/no-cross-imports -- ProtonResolver requires getProtonInfo from renderer
 import { getProtonInfo, type IProtonInfo } from '../../../renderer/util/linux/proton';
-import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
-import { BaseResolver } from './BaseResolver';
+import { ResolvedPath as ResolvedPathNS } from '../types';
+import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
 /**
  * Define Proton-specific anchors
@@ -26,6 +26,19 @@ export type ProtonAnchor =
   | 'home'             // User profile directory
   | 'programFiles'     // Program Files
   | 'programFilesX86'; // Program Files (x86)
+
+/**
+ * Array of all Proton anchors for iteration
+ */
+const PROTON_ANCHORS: readonly ProtonAnchor[] = [
+  'drive_c',
+  'documents',
+  'appData',
+  'localAppData',
+  'home',
+  'programFiles',
+  'programFilesX86',
+] as const;
 
 /**
  * Translates Windows paths to Wine/Proton equivalents on Linux
@@ -43,7 +56,7 @@ export type ProtonAnchor =
  * protonResolver.PathFor('game');             // ✗ TypeScript error!
  * ```
  */
-export class ProtonResolver extends BaseResolver<ProtonAnchor> {
+export class ProtonResolver extends MappingResolver<ProtonAnchor> {
   /**
    * Cached proton info to avoid repeated async calls
    */
@@ -57,94 +70,82 @@ export class ProtonResolver extends BaseResolver<ProtonAnchor> {
   }
 
   // ========================================================================
-  // Anchor Support
+  // Platform-Specific Overrides
   // ========================================================================
 
+  /**
+   * Override canResolve to add platform check
+   * ProtonResolver only works on Linux
+   */
   canResolve(anchor: Anchor): boolean {
-    // Only works on Linux
     if (process.platform !== 'linux') {
       return false;
     }
-
-    const name = AnchorNS.name(anchor);
-    return [
-      'drive_c',
-      'documents',
-      'appData',
-      'localAppData',
-      'home',
-      'programFiles',
-      'programFilesX86',
-    ].includes(name);
+    return super.canResolve(anchor);
   }
 
+  /**
+   * Override supportedAnchors to add platform check
+   * Returns empty array on non-Linux platforms
+   */
   supportedAnchors(): Anchor[] {
-    // Only return anchors if on Linux
     if (process.platform !== 'linux') {
       return [];
     }
-
-    return [
-      'drive_c',
-      'documents',
-      'appData',
-      'localAppData',
-      'home',
-      'programFiles',
-      'programFilesX86',
-    ].map(AnchorNS.make);
+    return super.supportedAnchors();
   }
 
   // ========================================================================
-  // Resolution
+  // Mapping Strategy
   // ========================================================================
 
-  protected async resolveAnchor(anchor: Anchor): Promise<ResolvedPath> {
-    const protonInfo = await this.getProtonInfo();
+  protected getStrategy(): MappingStrategy<ProtonAnchor> {
+    return fromFunction(PROTON_ANCHORS, async (name) => {
+      const protonInfo = await this.getProtonInfo();
 
-    if (!protonInfo.usesProton || !protonInfo.compatDataPath) {
-      throw new Error(`Proton not configured for app ${this.appId}`);
-    }
+      if (!protonInfo.usesProton || !protonInfo.compatDataPath) {
+        throw new Error(`Proton not configured for app ${this.appId}`);
+      }
 
-    const pfxPath = path.join(protonInfo.compatDataPath, 'pfx');
-    const name = AnchorNS.name(anchor) as ProtonAnchor;
-    let osPath: string;
+      const pfxPath = path.join(protonInfo.compatDataPath, 'pfx');
+      let osPath: string;
 
-    switch (name) {
-      case 'drive_c':
-        osPath = path.join(pfxPath, 'drive_c');
-        break;
+      switch (name) {
+        case 'drive_c':
+          osPath = path.join(pfxPath, 'drive_c');
+          break;
 
-      case 'documents':
-        osPath = path.join(pfxPath, 'drive_c/users/steamuser/My Documents');
-        break;
+        case 'documents':
+          osPath = path.join(pfxPath, 'drive_c/users/steamuser/My Documents');
+          break;
 
-      case 'appData':
-        osPath = path.join(pfxPath, 'drive_c/users/steamuser/Application Data');
-        break;
+        case 'appData':
+          osPath = path.join(pfxPath, 'drive_c/users/steamuser/Application Data');
+          break;
 
-      case 'localAppData':
-        osPath = path.join(pfxPath, 'drive_c/users/steamuser/Local Settings/Application Data');
-        break;
+        case 'localAppData':
+          osPath = path.join(pfxPath, 'drive_c/users/steamuser/Local Settings/Application Data');
+          break;
 
-      case 'home':
-        osPath = path.join(pfxPath, 'drive_c/users/steamuser');
-        break;
+        case 'home':
+          osPath = path.join(pfxPath, 'drive_c/users/steamuser');
+          break;
 
-      case 'programFiles':
-        osPath = path.join(pfxPath, 'drive_c/Program Files');
-        break;
+        case 'programFiles':
+          osPath = path.join(pfxPath, 'drive_c/Program Files');
+          break;
 
-      case 'programFilesX86':
-        osPath = path.join(pfxPath, 'drive_c/Program Files (x86)');
-        break;
+        case 'programFilesX86':
+          osPath = path.join(pfxPath, 'drive_c/Program Files (x86)');
+          break;
 
-      default:
-        // This should never happen due to exhaustive type checking
-        throw new Error(`Unsupported Proton anchor: ${String(name)}`);
-    }
+        default:
+          // This should never happen due to exhaustive type checking
+          throw new Error(`Unsupported Proton anchor: ${String(name)}`);
+      }
 
-    return ResolvedPathNS.make(osPath);
+      return ResolvedPathNS.make(osPath);
+    });
   }
 
   // ========================================================================
