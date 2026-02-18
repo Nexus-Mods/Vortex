@@ -30,31 +30,18 @@ import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import { getErrorCode, unknownToError } from "../../shared/errors";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
-import type { Api, PreloadWindow } from "../../shared/types/preload";
-
-// TODO: remove this when separation is complete
-const getPreloadApi = (): Api =>
-  (window as unknown as PreloadWindow as { api: Api }).api;
-const getWindowId = (): number =>
-  (window as unknown as { windowId: number }).windowId;
+import { ApplicationData } from "../../shared/applicationData";
 
 async function hideWindow(): Promise<void> {
-  if (process.type === "renderer") {
-    await getPreloadApi().window.hide(getWindowId());
-  }
+  await window.api.window.hide(ApplicationData.windowId);
 }
 
 async function showWindow(): Promise<void> {
-  if (process.type === "renderer") {
-    await getPreloadApi().window.show(getWindowId());
-  }
+  await window.api.window.show(ApplicationData.windowId);
 }
 
 async function isWindowVisible(): Promise<boolean> {
-  if (process.type === "renderer") {
-    return getPreloadApi().window.isVisible(getWindowId());
-  }
-  return false;
+  return window.api.window.isVisible(ApplicationData.windowId);
 }
 
 export interface IStarterInfo {

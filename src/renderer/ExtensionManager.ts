@@ -1541,9 +1541,7 @@ class ExtensionManager {
             extension: call.extension,
           });
           prom = PromiseBB.resolve(
-            (window as unknown as PreloadWindow).api.extensions.requestMainInit(
-              call.extension,
-            ),
+            window.api.extensions.requestMainInit(call.extension),
           ).then((result) => {
             if (!result.success) {
               throw new Error(
