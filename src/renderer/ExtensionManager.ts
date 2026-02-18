@@ -1527,6 +1527,11 @@ class ExtensionManager {
       log("debug", isMainCall ? "onceMain" : "once", {
         extension: call.extension,
       });
+
+      if (isMainCall) {
+        log("warn", "onceMain is deprecated and won't work as expected");
+      }
+
       const ext = this.mExtensions.find((iter) => iter.name === call.extension);
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -1535,24 +1540,7 @@ class ExtensionManager {
         });
 
         let prom: PromiseBB<void>;
-        if (isMainCall) {
-          // For onceMain, request main process initialization via IPC
-          log("debug", "Requesting main process initialization", {
-            extension: call.extension,
-          });
-          prom = PromiseBB.resolve(
-            window.api.extensions.requestMainInit(call.extension),
-          ).then((result) => {
-            if (!result.success) {
-              throw new Error(
-                result.error || "Main process initialization failed",
-              );
-            }
-          });
-        } else {
-          // For once, execute the callback directly in renderer
-          prom = call.arguments[0]() || PromiseBB.resolve();
-        }
+        prom = call.arguments[0]() || PromiseBB.resolve();
 
         const start = Date.now();
         return timeout(prom, 60000, {

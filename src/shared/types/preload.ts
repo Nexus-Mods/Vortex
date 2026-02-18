@@ -367,14 +367,6 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
-
-  /**
-   * Request main process initialization for a specific extension.
-   * Returns a promise that resolves when the extension is initialized or fails.
-   */
-  requestMainInit(
-    extensionName: string,
-  ): Promise<{ success: boolean; error?: string }>;
 }
 
 /** API for querying update status from main process */

@@ -113,9 +113,6 @@ export interface RendererChannels {
   // Extensions: Initialize all main process extensions
   "extensions:init-all-main": (installType: string) => void;
 
-  // Extensions: Initialize specific extension in main process (per-extension)
-  "extensions:init-main": (extensionName: string) => void;
-
   // Updater: Set update channel
   "updater:set-channel": (channel: string, manual: boolean) => void;
 
