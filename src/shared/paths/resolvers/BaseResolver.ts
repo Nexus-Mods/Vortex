@@ -113,6 +113,143 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     // FilePath constructor will validate that this resolver can handle the anchor
     return new FilePath(relativePath, anchor, this);
   }
+
+  // ========================================================================
+  // Reverse Resolution
+  // ========================================================================
+
+  /**
+   * Cache of base paths (anchor → resolved path)
+   * Populated on first reverse resolution to avoid repeated async calls
+   */
+  private basePathCache?: Promise<Map<Anchor, ResolvedPath>>;
+
+  /**
+   * Get all base paths for this resolver (with caching)
+   */
+  async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
+    if (!this.basePathCache) {
+      this.basePathCache = this.computeBasePaths();
+    }
+    return this.basePathCache;
+  }
+
+  /**
+   * Compute base paths for all supported anchors
+   * Override in subclass if you have a more efficient implementation
+   */
+  protected async computeBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
+    const basePaths = new Map<Anchor, ResolvedPath>();
+    const anchors = this.supportedAnchors();
+
+    // Resolve all anchors to get their base paths
+    await Promise.all(
+      anchors.map(async (anchor) => {
+        try {
+          const basePath = await this.resolveAnchor(anchor);
+          basePaths.set(anchor, basePath);
+        } catch (err) {
+          // Anchor may not be resolvable (e.g., Proton on Windows)
+          // Skip it silently
+        }
+      })
+    );
+
+    return basePaths;
+  }
+
+  /**
+   * Try to reverse-resolve an OS path
+   *
+   * Strategy:
+   * 1. Get all base paths for this resolver
+   * 2. Find the longest matching base path (most specific)
+   * 3. Extract relative portion
+   * 4. Return anchor + relative
+   */
+  async tryReverse(resolvedPath: ResolvedPath): Promise<{
+    anchor: Anchor;
+    relative: RelativePath;
+  } | null> {
+    const basePaths = await this.getBasePaths();
+
+    // Normalize path for comparison (handle case sensitivity, separators)
+    const normalizedPath = this.normalizePath(resolvedPath);
+
+    // Find longest matching base path (most specific wins)
+    let bestMatch: { anchor: Anchor; basePath: ResolvedPath; relative: RelativePath } | null = null;
+
+    for (const [anchor, basePath] of basePaths) {
+      const normalizedBase = this.normalizePath(basePath);
+
+      // Check if path starts with this base
+      const isUnder = this.isUnder(normalizedPath, normalizedBase);
+
+      if (isUnder) {
+        const relative = this.extractRelative(normalizedPath, normalizedBase);
+
+        // Keep the longest matching base (most specific)
+        if (!bestMatch || normalizedBase.length > this.normalizePath(bestMatch.basePath).length) {
+          bestMatch = { anchor, basePath, relative };
+        }
+      }
+    }
+
+    return bestMatch
+      ? { anchor: bestMatch.anchor, relative: bestMatch.relative }
+      : null;
+  }
+
+  /**
+   * Clear cached base paths
+   * Call this when resolver configuration changes (e.g., game paths updated)
+   */
+  clearBasePathCache(): void {
+    this.basePathCache = undefined;
+  }
+
+  // ========================================================================
+  // Private Helpers for Reverse Resolution
+  // ========================================================================
+
+  /**
+   * Normalize path for comparison
+   * - Lowercase on case-insensitive platforms (Windows)
+   * - Normalize separators
+   */
+  private normalizePath(p: ResolvedPath): string {
+    let normalized = path.normalize(p as string);
+
+    // Windows is case-insensitive
+    if (process.platform === 'win32') {
+      normalized = normalized.toLowerCase();
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Check if path is under base path
+   */
+  private isUnder(childPath: string, basePath: string): boolean {
+    // Ensure base ends with separator for proper prefix matching
+    const sep = path.sep;
+    const baseWithSep = basePath.endsWith(sep) ? basePath : basePath + sep;
+    return childPath.startsWith(baseWithSep) || childPath === basePath;
+  }
+
+  /**
+   * Extract relative path from full path given base
+   */
+  private extractRelative(fullPath: string, basePath: string): RelativePath {
+    // Use path.relative for cross-platform correctness
+    const relative = path.relative(basePath, fullPath);
+
+    // Convert to forward slashes (RelativePath convention)
+    const normalized = relative.replace(/\\/g, '/');
+
+    return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
+  }
 }
 
 // ============================================================================
@@ -190,6 +327,21 @@ export class CachingResolver implements IResolver {
 
     const relativePath = relative ? RelativePathNS.make(relative) : RelativePathNS.EMPTY;
     return new FilePath(relativePath, anchor, this);
+  }
+
+  // ========================================================================
+  // Reverse Resolution (Delegated)
+  // ========================================================================
+
+  async tryReverse(resolvedPath: ResolvedPath): Promise<{
+    anchor: Anchor;
+    relative: RelativePath;
+  } | null> {
+    return this.inner.tryReverse(resolvedPath);
+  }
+
+  async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
+    return this.inner.getBasePaths();
   }
 
   // ========================================================================

@@ -11,10 +11,13 @@
  * ```
  */
 
+// eslint-disable-next-line vortex/no-module-imports
+import * as path from 'path';
+
 import type { IResolver, IResolverRegistry, SerializedFilePath } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
-import { RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
+import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from './types';
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver
@@ -284,5 +287,123 @@ export class FilePath {
   hashCode(): string {
     const anchorName = AnchorNS.name(this.anchor);
     return `${this.resolver.name}:${anchorName}:${this.relative}`;
+  }
+
+  // ========================================================================
+  // Reverse Resolution Helpers
+  // ========================================================================
+
+  /**
+   * Get relative path from this FilePath to a child OS path
+   *
+   * @param childPath - Absolute OS path that should be under this FilePath
+   * @returns Relative path from this FilePath to the child, or null if not under
+   *
+   * @example
+   * ```typescript
+   * const parent = resolver.PathFor('userData', 'mods');
+   * const childPath = 'C:\\...\\Vortex\\mods\\SkyUI\\interface\\skyui.swf';
+   * const relative = await parent.relativeTo(childPath);
+   * // → RelativePath('SkyUI/interface/skyui.swf')
+   *
+   * // To get the child as a FilePath:
+   * const child = parent.join(relative);
+   * ```
+   */
+  async relativeTo(childPath: string | ResolvedPath): Promise<RelativePath | null> {
+    // Resolve this FilePath to get the parent OS path
+    const parentPath = await this.resolve();
+
+    // Normalize for comparison
+    const normalizedParent = path.normalize(parentPath as string);
+    const normalizedChild = path.normalize(childPath as string);
+
+    // Check if child is under parent (case-insensitive on Windows)
+    const parentLower = process.platform === 'win32'
+      ? normalizedParent.toLowerCase()
+      : normalizedParent;
+    const childLower = process.platform === 'win32'
+      ? normalizedChild.toLowerCase()
+      : normalizedChild;
+
+    const parentWithSep = parentLower.endsWith(path.sep)
+      ? parentLower
+      : parentLower + path.sep;
+
+    if (!childLower.startsWith(parentWithSep) && childLower !== parentLower) {
+      return null; // Child is not under parent
+    }
+
+    // Extract relative path
+    const relative = path.relative(normalizedParent, normalizedChild);
+    const normalized = relative.replace(/\\/g, '/'); // Forward slashes
+
+    return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
+  }
+
+  /**
+   * Replace the base (anchor + base relative path) while preserving relative structure
+   *
+   * @param newBase - FilePath to use as new base
+   * @returns New FilePath with replaced base
+   *
+   * @example
+   * ```typescript
+   * const original = gameResolver.PathFor('skyrim', 'Data/Meshes/armor.nif');
+   * const backup = vortexResolver.PathFor('userData', 'backups/skyrim-backup');
+   * const moved = original.withBase(backup);
+   * // → FilePath('userData', 'backups/skyrim-backup/Data/Meshes/armor.nif')
+   * ```
+   */
+  withBase(newBase: FilePath): FilePath {
+    // Combine new base's relative path with this path's relative path
+    const combinedRelative = RelativePathNS.join(newBase.getRelativePath(), this.relative);
+
+    return new FilePath(combinedRelative, newBase.getAnchor(), newBase.getResolver());
+  }
+
+  /**
+   * Check if this path is an ancestor of another path
+   *
+   * @param childPath - Absolute OS path to check
+   * @returns True if childPath is under this FilePath
+   *
+   * @example
+   * ```typescript
+   * const mods = resolver.PathFor('userData', 'mods');
+   * const skyuiPath = 'C:\\...\\Vortex\\mods\\SkyUI\\skyui.esp';
+   * await mods.isAncestorOf(skyuiPath); // → true
+   * ```
+   */
+  async isAncestorOf(childPath: string | ResolvedPath): Promise<boolean> {
+    const relative = await this.relativeTo(childPath);
+    return relative !== null;
+  }
+
+  /**
+   * Get the anchor for this FilePath (for reverse resolution use cases)
+   *
+   * @returns The anchor
+   */
+  getAnchor(): Anchor {
+    return this.anchor;
+  }
+
+  /**
+   * Get the resolver for this FilePath
+   *
+   * @returns The resolver
+   */
+  getResolver(): IResolver {
+    return this.resolver;
+  }
+
+  /**
+   * Get the relative path component
+   *
+   * @returns The relative path
+   */
+  getRelativePath(): RelativePath {
+    return this.relative;
   }
 }

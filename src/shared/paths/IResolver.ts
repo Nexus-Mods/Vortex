@@ -80,6 +80,48 @@ export interface IResolver<ValidAnchors extends string = string> {
     anchorName: A,
     relative?: string
   ): FilePath;
+
+  // ========================================================================
+  // Reverse Resolution
+  // ========================================================================
+
+  /**
+   * Try to reverse-resolve an OS path to anchor + relative
+   * Returns null if this resolver cannot handle the path
+   *
+   * @param resolvedPath - Absolute OS path to parse
+   * @returns Object with anchor and relative path, or null if not handled
+   *
+   * @example
+   * ```typescript
+   * const osPath = ResolvedPath.make('C:\\Users\\...\\Vortex\\mods\\SkyUI');
+   * const result = await vortexResolver.tryReverse(osPath);
+   * // → { anchor: Anchor('userData'), relative: RelativePath('mods/SkyUI') }
+   * ```
+   */
+  tryReverse(resolvedPath: ResolvedPath): Promise<{
+    anchor: Anchor;
+    relative: RelativePath;
+  } | null>;
+
+  /**
+   * Get all base paths this resolver can resolve
+   * Used for efficient reverse resolution matching
+   *
+   * @returns Map of anchors to their resolved base paths
+   * @internal - Primarily for use by ResolverRegistry
+   *
+   * @example
+   * ```typescript
+   * const bases = await vortexResolver.getBasePaths();
+   * // → Map {
+   * //   Anchor('userData') → 'C:\\Users\\...\\Vortex',
+   * //   Anchor('temp') → 'C:\\Users\\...\\Temp',
+   * //   ...
+   * // }
+   * ```
+   */
+  getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
 }
 
 /**

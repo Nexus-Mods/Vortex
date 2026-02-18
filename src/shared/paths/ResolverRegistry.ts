@@ -6,6 +6,9 @@
  */
 
 import type { IResolver, IResolverRegistry } from './IResolver';
+import type { ResolvedPath, Anchor, RelativePath } from './types';
+
+import { FilePath } from './FilePath';
 
 /**
  * Registry for managing resolver instances
@@ -174,6 +177,108 @@ export class ResolverRegistry implements IResolverRegistry {
       hasDefault: this.hasDefault(),
       defaultName: this.defaultResolver?.name,
     };
+  }
+
+  // ========================================================================
+  // Reverse Resolution
+  // ========================================================================
+
+  /**
+   * Reverse resolve: Convert OS path to FilePath
+   *
+   * Strategy:
+   * 1. Try all registered resolvers in registration order
+   * 2. Return first match (first registered = highest priority)
+   * 3. Default resolver tried last
+   *
+   * @param resolvedPath - Absolute OS path to parse
+   * @param preferredResolver - Optional resolver name to try first
+   * @returns FilePath if any resolver can handle it, null otherwise
+   *
+   * @example
+   * ```typescript
+   * const osPath = ResolvedPath.make('C:\\Users\\...\\Vortex\\mods\\SkyUI');
+   * const filePath = await registry.fromResolved(osPath);
+   * // → FilePath with appropriate anchor and relative path
+   * ```
+   */
+  async fromResolved(
+    resolvedPath: ResolvedPath,
+    preferredResolver?: string
+  ): Promise<FilePath | null> {
+    // Try preferred resolver first
+    if (preferredResolver) {
+      const resolver = this.get(preferredResolver);
+      if (resolver) {
+        const result = await resolver.tryReverse(resolvedPath);
+        if (result) {
+          return new FilePath(result.relative, result.anchor, resolver);
+        }
+      }
+    }
+
+    // Try registered resolvers in order (first registered = highest priority)
+    for (const resolver of this.resolvers.values()) {
+      const result = await resolver.tryReverse(resolvedPath);
+      if (result) {
+        return new FilePath(result.relative, result.anchor, resolver);
+      }
+    }
+
+    // Try default resolver last
+    if (this.defaultResolver) {
+      const result = await this.defaultResolver.tryReverse(resolvedPath);
+      if (result) {
+        return new FilePath(result.relative, result.anchor, this.defaultResolver);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Find all resolvers that can handle this path
+   * Useful for debugging overlapping resolver ranges
+   *
+   * @param resolvedPath - OS path to check
+   * @returns Array of {resolver, anchor, relative} for all matches
+   */
+  async findAllMatches(resolvedPath: ResolvedPath): Promise<Array<{
+    resolver: IResolver;
+    anchor: Anchor;
+    relative: RelativePath;
+  }>> {
+    const matches: Array<{
+      resolver: IResolver;
+      anchor: Anchor;
+      relative: RelativePath;
+    }> = [];
+
+    for (const resolver of this.getAllResolvers()) {
+      const result = await resolver.tryReverse(resolvedPath);
+      if (result) {
+        matches.push({
+          resolver,
+          anchor: result.anchor,
+          relative: result.relative,
+        });
+      }
+    }
+
+    return matches;
+  }
+
+  /**
+   * Clear cached base paths for all resolvers
+   * Call this when resolver configuration changes (e.g., game paths updated)
+   */
+  clearReverseResolutionCache(): void {
+    for (const resolver of this.getAllResolvers()) {
+      // Check if resolver has clearBasePathCache method (from BaseResolver)
+      if ('clearBasePathCache' in resolver && typeof (resolver as any).clearBasePathCache === 'function') {
+        (resolver as any).clearBasePathCache();
+      }
+    }
   }
 }
 
