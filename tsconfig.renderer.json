@@ -5,7 +5,6 @@
     "src/renderer/**/*",
     "src/shared/**/*",
     "src/renderer.tsx",
-    "src/splash.ts",
     "typings.custom/*.d.ts",
     // TODO: to be removed after main/renderer separation:
     "src/extensions/**/*"

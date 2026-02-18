@@ -17,7 +17,7 @@
     "./src/index.ts",
     "./src/renderer.tsx",
     "./src/renderer/preload.ts",
-    "./src/splash.ts",
+    "./src/renderer/splash.ts",
     "./src/extensions/index.ts"
   ]
 }

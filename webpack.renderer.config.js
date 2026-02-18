@@ -30,7 +30,7 @@ if (
 module.exports = {
   entry: {
     renderer: "./src/renderer.tsx",
-    splash: "./src/splash.ts",
+    splash: "./src/renderer/splash.ts",
   },
   target: "electron-renderer",
   node: { __filename: false, __dirname: false },
