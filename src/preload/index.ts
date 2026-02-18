@@ -298,7 +298,7 @@ try {
         betterIpcRenderer.invoke("powerSaveBlocker:isStarted", id),
     },
     query: {
-      execute: ((name: string, params: Record<string, Serializable>) =>
+      execute: ((name: QueryName, params: Record<string, Serializable>) =>
         betterIpcRenderer.invoke(
           "query:execute",
           name,

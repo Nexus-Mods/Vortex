@@ -3,7 +3,7 @@ import Placeholder from "../../../renderer/controls/EmptyPlaceholder";
 import Spinner from "../../../renderer/controls/Spinner";
 import { MainContext } from "../../../renderer/views/MainWindow";
 import { useQuery } from "../../../renderer/hooks/useQuery";
-import type { IState } from "../../../types/IState";
+import type { IState } from "../../../renderer/types/IState";
 
 import { activeGameId } from "../../profile_management/selectors";
 
