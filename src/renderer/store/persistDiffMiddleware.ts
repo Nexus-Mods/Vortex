@@ -190,8 +190,12 @@ export function createPersistDiffMiddleware(
         return result;
       }
 
-      // Skip hydration actions - these come from persistence, don't re-persist
-      if (action.type === "__hydrate" || action.type === "__hydrate_replace") {
+      // Skip hydration and patch actions - these come from persistence, don't re-persist
+      if (
+        action.type === "__hydrate" ||
+        action.type === "__hydrate_replace" ||
+        action.type === "__apply_patch"
+      ) {
         // Update previous state without computing diff
         previousState = store.getState();
         return result;

@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { QueryName } from "../shared/types/generated/queryTypes";
 import type {
   AppInitMetadata,
+  DiffOperation,
   RendererChannels,
   InvokeChannels,
   MainChannels,
@@ -12,6 +13,7 @@ import type {
 } from "../shared/types/ipc";
 import type { PreloadWindow, QueryApi } from "../shared/types/preload";
 import type { PersistedHive } from "../shared/types/state";
+import type { ProfileLifecycleEvent } from "../shared/profiles/events";
 
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.
@@ -60,6 +62,18 @@ try {
         betterIpcRenderer.on("persist:hydrate", (_, hive, data) =>
           callback(hive, data),
         ),
+
+      onPatch: (
+        callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+      ) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          hive: PersistedHive,
+          operations: DiffOperation[],
+        ) => callback(hive, operations);
+        ipcRenderer.on("state:patch", listener);
+        return () => ipcRenderer.removeListener("state:patch", listener);
+      },
     },
 
     extensions: {
@@ -314,6 +328,20 @@ try {
         ipcRenderer.on("query:invalidated", listener);
         return () => ipcRenderer.removeListener("query:invalidated", listener);
       },
+    },
+    profile: {
+      executeCommand: (command) =>
+        betterIpcRenderer.invoke("profile:command", command),
+      onEvent: (callback: (event: ProfileLifecycleEvent) => void) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          event: ProfileLifecycleEvent,
+        ) => callback(event);
+        ipcRenderer.on("profile:event", listener);
+        return () => ipcRenderer.removeListener("profile:event", listener);
+      },
+      respondToEvent: (requestId: string, data?: unknown) =>
+        betterIpcRenderer.send("profile:event-response", requestId, data),
     },
   });
 } catch (err) {

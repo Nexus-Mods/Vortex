@@ -29,6 +29,11 @@ import type {
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+import type {
+  ProfileCommand,
+  ProfileCommandResult,
+} from "../profiles/commands";
+import type { ProfileLifecycleEvent } from "../profiles/events";
 
 /** Globals exposed by the preload script to the renderer */
 export interface PreloadWindow {
@@ -92,6 +97,9 @@ export interface Api {
 
   /** Query system APIs — typed reactive SQL queries over DuckDB/level_pivot */
   query: QueryApi;
+
+  /** Profile command/event API — CQRS profile management */
+  profile: ProfileApi;
 }
 
 export interface Example {
@@ -366,6 +374,15 @@ export interface PersistApi {
    * Used for incremental hydration updates after initial load.
    */
   onHydrate(callback: (hive: PersistedHive, data: Serializable) => void): void;
+
+  /**
+   * Register a callback for state patches from main process.
+   * Used by command handlers to push LevelDB changes back to Redux.
+   * Returns an unsubscribe function.
+   */
+  onPatch(
+    callback: (hive: PersistedHive, operations: DiffOperation[]) => void,
+  ): () => void;
 }
 
 /** API for requesting extension main process initialization */
@@ -398,6 +415,18 @@ export interface QueryApi {
 
   /** Subscribe to invalidation events. Returns unsubscribe function. */
   onInvalidated(callback: (queryNames: QueryName[]) => void): () => void;
+}
+
+/** API for CQRS profile management */
+export interface ProfileApi {
+  /** Execute a profile command in the main process */
+  executeCommand(command: ProfileCommand): Promise<ProfileCommandResult>;
+
+  /** Subscribe to profile lifecycle events from main. Returns unsubscribe function. */
+  onEvent(callback: (event: ProfileLifecycleEvent) => void): () => void;
+
+  /** Respond to a profile lifecycle event request (e.g., deploy, enqueue work) */
+  respondToEvent(requestId: string, data?: unknown): void;
 }
 
 /** API for querying update status from main process */

@@ -31,6 +31,8 @@ import type { Reducer, ReducersMapObject } from "redux";
 import { combineReducers } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
+import type { DiffOperation } from "../shared/types/ipc";
+import type { PersistedHive } from "../shared/types/state";
 import type { IState } from "../types/IState";
 import { unknownToError } from "../shared/errors";
 
@@ -281,6 +283,28 @@ function deriveReducer(
   }
 }
 
+/**
+ * Apply DiffOperation[] from a state:patch action to the Redux state.
+ * Operations are scoped to a hive (e.g. "persistent") and contain paths
+ * relative to that hive.
+ */
+function applyPatch(
+  state: IState,
+  hive: PersistedHive,
+  operations: DiffOperation[],
+): IState {
+  let result: any = state;
+  for (const op of operations) {
+    const fullPath: Array<string | number> = [hive, ...op.path];
+    if (op.type === "set") {
+      result = setSafe(result, fullPath, op.value);
+    } else {
+      result = deleteOrNop(result, fullPath);
+    }
+  }
+  return result;
+}
+
 function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
   if (statePath.length === 0) {
     if (tree.reducers === undefined) {
@@ -334,7 +358,21 @@ function reducers(
   extensionReducers.forEach((extensionReducer) => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return enableBatching(deriveReducer("", tree, querySanitize, onError));
+  const baseReducer = enableBatching(
+    deriveReducer("", tree, querySanitize, onError),
+  );
+
+  // Wrap with __apply_patch handler at the top level
+  return (state: IState, action: any): IState => {
+    if (action.type === "__apply_patch") {
+      const { hive, operations } = action.payload as {
+        hive: PersistedHive;
+        operations: DiffOperation[];
+      };
+      return applyPatch(state, hive, operations);
+    }
+    return baseReducer(state, action);
+  };
 }
 
 export default reducers;

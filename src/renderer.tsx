@@ -103,6 +103,7 @@ import { log } from "./renderer/logging";
 import { initApplicationMenu } from "./renderer/menu";
 import { fetchHydrationState } from "./renderer/store/hydration";
 import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
+import { setupStatePatchHandler } from "./renderer/store/statePatchHandler";
 import StyleManager from "./renderer/StyleManager";
 import LoadingScreen from "./renderer/views/LoadingScreen";
 import MainWindow from "./renderer/views/MainWindow";
@@ -482,6 +483,9 @@ async function init(): Promise<ExtensionManager | null> {
       payload: { [hive]: hydratedState[hive] },
     });
   }
+
+  // Set up state:patch handler to receive LevelDB changes from main process commands
+  setupStatePatchHandler(store);
 
   // Set up window event handlers from main process
   if (window.api?.window) {

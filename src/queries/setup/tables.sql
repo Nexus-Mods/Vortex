@@ -14,6 +14,6 @@ CALL level_pivot_create_table(
 CALL level_pivot_create_table(
   'db', 'profiles_pivot',
   'persistent###profiles###{profile_id}###{attr}',
-  ['profile_id', 'name', 'gameId', 'lastActivated'],
-  column_types := ['VARCHAR', 'JSON VARCHAR', 'JSON VARCHAR', 'JSON BIGINT']
+  ['profile_id', 'name', 'gameId', 'lastActivated', 'modState', 'features', 'pendingRemove'],
+  column_types := ['VARCHAR', 'JSON VARCHAR', 'JSON VARCHAR', 'JSON BIGINT', 'JSON VARCHAR', 'JSON VARCHAR', 'JSON BOOLEAN']
 );

@@ -20,6 +20,8 @@ import type {
 } from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+import type { ProfileCommand, ProfileCommandResult } from "../profiles/commands";
+import type { ProfileLifecycleEvent } from "../profiles/events";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -127,6 +129,9 @@ export interface RendererChannels {
 
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
+
+  // Profile event response: renderer responds to main's profile lifecycle events
+  "profile:event-response": (requestId: string, data?: unknown) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -166,6 +171,12 @@ export interface MainChannels {
 
   // Query system: notify renderer that queries have been invalidated
   "query:invalidated": (queryNames: QueryName[]) => void;
+
+  // State patch: broadcast LevelDB changes to renderer Redux store
+  "state:patch": (hive: PersistedHive, operations: DiffOperation[]) => void;
+
+  // Profile lifecycle events from main to renderer
+  "profile:event": (event: ProfileLifecycleEvent) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
@@ -327,6 +338,11 @@ export interface InvokeChannels {
 
   // Query system: list all available query names
   "query:list": () => Promise<string[]>;
+
+  // Profile commands: execute a profile command in main process
+  "profile:command": (
+    command: ProfileCommand,
+  ) => Promise<ProfileCommandResult>;
 }
 
 /** Represents all IPC-safe typed arrays */

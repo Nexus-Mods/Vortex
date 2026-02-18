@@ -23,6 +23,12 @@ import DuckDBSingleton from "./DuckDBSingleton";
 import QueryInvalidator from "./QueryInvalidator";
 import QueryRegistry from "./QueryRegistry";
 import QueryWatcher from "./QueryWatcher";
+import {
+  initProfileCommands,
+  setProfileInvalidator,
+} from "../profiles/index";
+import ProfileSwitchOrchestrator from "../profiles/ProfileSwitchOrchestrator";
+import { setProfileSwitchOrchestrator } from "../profiles/index";
 import { setupPersistenceIPC } from "./persistenceIPC";
 import { parseAllQueries } from "./queryParser";
 import { setupQueryIPC } from "./queryIPC";
@@ -60,6 +66,9 @@ export function initMainPersistence(
 
   // Set up IPC handlers to receive diffs from renderer
   setupPersistenceIPC(mainPersistor);
+
+  // Initialize profile command system (IPC handlers registered here)
+  initProfileCommands(levelPersistor);
 
   // Set up the query system (async, non-blocking)
   initQuerySystem(levelPersistor).catch((err) => {
@@ -117,6 +126,16 @@ async function initQuerySystem(levelPersistor: LevelPersist): Promise<void> {
 
   // Set up IPC handlers
   setupQueryIPC(queryRegistry);
+
+  // Wire invalidator to profile command system
+  setProfileInvalidator(queryInvalidator);
+
+  // Create and register profile switch orchestrator
+  const orchestrator = new ProfileSwitchOrchestrator(
+    levelPersistor,
+    queryInvalidator,
+  );
+  setProfileSwitchOrchestrator(orchestrator);
 
   log("info", "Query system initialized", {
     queryCount: queryRegistry.getQueryNames().length,
