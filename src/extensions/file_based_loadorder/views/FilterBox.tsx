@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from "react";
-import { FormInput } from "vortex-api";
 import { useTranslation } from "react-i18next";
+import FormInput from "../../../renderer/controls/FormInput";
 
 interface IProps {
   currentFilterValue: string;

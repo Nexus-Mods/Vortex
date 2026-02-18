@@ -1,13 +1,5 @@
-import More from "../../renderer/controls/More";
-import type { UpdateChannel, IState } from "../../renderer/types/IState";
-import { UPDATE_CHANNELS } from "../../renderer/types/IState";
-import {
-  ComponentEx,
-  connect,
-  translate,
-} from "../../renderer/controls/ComponentEx";
-import { log } from "../../renderer/util/log";
-import { setUpdateChannel } from "./actions";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
 import * as React from "react";
 import {
@@ -18,10 +10,20 @@ import {
   FormGroup,
   InputGroup,
 } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+
+import type { UpdateChannel, IState } from "../../renderer/types/IState";
 import type { VortexInstallType } from "../../renderer/types/VortexInstallType";
-import { MainContext, util } from "vortex-api";
+
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../renderer/controls/ComponentEx";
+import More from "../../renderer/controls/More";
+import { UPDATE_CHANNELS } from "../../renderer/types/IState";
+import Debouncer from "../../renderer/util/Debouncer";
+import { log } from "../../renderer/util/log";
+import { setUpdateChannel } from "./actions";
 
 interface IConnectedProps {
   updateChannel: UpdateChannel;
@@ -50,7 +52,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
     });
   }
 
-  private checkUpdateDebouncer = new util.Debouncer(
+  private checkUpdateDebouncer = new Debouncer(
     () => {
       this.checkNow();
 
@@ -136,6 +138,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
           <ControlLabel>
             {t("Update")}
+
             <More id="more-update-channel" name={t("Update Channel")}>
               {t(
                 "You can choose to either receive automatic updates only after they went through some " +
@@ -148,11 +151,13 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           <InputGroup>
             <FormControl
               componentClass="select"
-              onChange={this.selectChannel}
               value={updateChannel}
+              onChange={this.selectChannel}
             >
               <option value="stable">{t("Stable")}</option>
+
               <option value="beta">{t("Beta")}</option>
+
               <option value="none">{t("No automatic updates")}</option>
             </FormControl>
 
@@ -170,7 +175,7 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
           <div>
             <ControlLabel>
               {updateChannel === "none" ? (
-                <Alert key="manual-update-warning" bsStyle="warning">
+                <Alert bsStyle="warning" key="manual-update-warning">
                   {t(
                     "Very old versions of Vortex will be locked out of network features eventually " +
                       "so please do keep Vortex up-to-date.",
