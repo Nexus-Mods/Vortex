@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 
 export interface IPageHeaderContext {
-  headerPortal: () => HTMLElement;
+  headerPortal: () => HTMLElement | null;
   page: string;
 }
 

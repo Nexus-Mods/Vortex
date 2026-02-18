@@ -80,7 +80,7 @@ export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
         typeof value === "function" ? value(tabsMinimized) : value;
       dispatch(setTabsMinimized(newValue));
     },
-    [tabsMinimized, dispatch],
+    [dispatch],
   );
 
   // Window focus/blur and resize listeners

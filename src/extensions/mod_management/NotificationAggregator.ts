@@ -5,7 +5,7 @@ import type {
 } from "../../renderer/types/IExtensionContext";
 import type { INotificationAction } from "../../renderer/types/INotification";
 import { log } from "../../renderer/util/log";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
 // In test environment, use synchronous execution to avoid timing issues with Jest fake timers
 // Check for jest global or NODE_ENV to detect test environment reliably
@@ -365,14 +365,14 @@ export class NotificationAggregator {
       const errorNotification = group.find((n) => n.details instanceof Error);
       const stack =
         errorNotification !== undefined
-          ? (errorNotification.details as Error)?.stack
+          ? unknownToError(errorNotification.details)?.stack
           : undefined;
 
       const message = this.buildAggregatedMessage(first, uniqueItems);
 
       let details: string | Error = message;
       if (stack !== undefined) {
-        const originalError = errorNotification!.details as Error;
+        const originalError = unknownToError(errorNotification.details);
         const aggregatedError = new Error(message);
         aggregatedError.name = originalError.name;
         // Preserve the stack trace but with the aggregated error's name and message at the top

@@ -4,6 +4,7 @@ import React, {
   type FC,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -57,6 +58,14 @@ export const MenuLayerProvider: FC<IMenuLayerProviderProps> = ({
 
       menuObserverRef.current.observe(ref, { childList: true });
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (menuObserverRef.current !== undefined) {
+        menuObserverRef.current.disconnect();
+      }
+    };
   }, []);
 
   const contextValue = useMemo(

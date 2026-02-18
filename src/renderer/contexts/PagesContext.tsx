@@ -81,11 +81,14 @@ export const PagesProvider: FC<IPagesProviderProps> = ({ children }) => {
     [mainPages, useModernLayout],
   );
 
-  // Redirect to Dashboard when current page becomes invisible
+  // Redirect to first visible page when current page becomes invisible
   useEffect(() => {
     const page = sortedPages.find((iter) => iter.id === mainPage);
     if (page !== undefined && !page.visible()) {
-      dispatch(setOpenMainPage("Dashboard", false));
+      const firstVisible = sortedPages.find((iter) => iter.visible());
+      if (firstVisible !== undefined) {
+        dispatch(setOpenMainPage(firstVisible.title, false));
+      }
     }
   }, [mainPage, sortedPages, dispatch]);
 
