@@ -29,9 +29,8 @@ import { BaseResolver } from './BaseResolver';
 export class GameResolver extends BaseResolver<string> {
   constructor(
     private readonly gamePaths: Map<string, FilePath>,
-    parent?: BaseResolver,
   ) {
-    super('game', parent);
+    super('game');
   }
 
   // ========================================================================

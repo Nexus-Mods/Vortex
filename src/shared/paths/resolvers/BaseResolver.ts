@@ -3,7 +3,6 @@
  *
  * Provides:
  * - Generic type parameter for type-safe anchors
- * - Parent delegation pattern
  * - Type-safe PathFor<A>() implementation
  * - Common resolution logic
  */
@@ -25,30 +24,22 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
-    public readonly parent?: IResolver,
   ) {}
 
   // ========================================================================
-  // Resolution (with parent delegation)
+  // Resolution
   // ========================================================================
 
   /**
-   * Async resolution with parent delegation
+   * Async resolution - throws if anchor not supported
    */
   async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
-    // Try this resolver first
-    if (this.canResolve(anchor)) {
-      const basePath = await this.resolveAnchor(anchor);
-      return this.joinPaths(basePath, relative);
+    if (!this.canResolve(anchor)) {
+      throw new Error(`Resolver "${this.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`);
     }
 
-    // Delegate to parent if available
-    if (this.parent) {
-      return this.parent.resolve(anchor, relative);
-    }
-
-    // No resolver can handle this anchor
-    throw new Error(`No resolver can handle anchor: ${AnchorNS.name(anchor)}`);
+    const basePath = await this.resolveAnchor(anchor);
+    return this.joinPaths(basePath, relative);
   }
 
   // ========================================================================
@@ -119,8 +110,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     const anchor = AnchorNS.make(anchorName);
     const relativePath = relative === '' ? RelativePathNS.EMPTY : RelativePathNS.make(relative);
 
-    // Note: We don't check canResolve here to allow parent delegation
-    // The FilePath constructor will validate that some resolver in the chain can handle it
+    // FilePath constructor will validate that this resolver can handle the anchor
     return new FilePath(relativePath, anchor, this);
   }
 }
@@ -150,10 +140,6 @@ export class CachingResolver implements IResolver {
 
   get name(): string {
     return `caching(${this.inner.name})`;
-  }
-
-  get parent(): IResolver | undefined {
-    return this.inner.parent;
   }
 
   // ========================================================================

@@ -48,8 +48,8 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  * @template ValidAnchors - WindowsDrive type (26 lowercase drive letters)
  */
 export class WindowsResolver extends BaseResolver<WindowsDrive> {
-  constructor(parent?: BaseResolver) {
-    super('windows', parent);
+  constructor() {
+    super('windows');
   }
 
   // ========================================================================

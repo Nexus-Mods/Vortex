@@ -13,8 +13,8 @@ import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Test resolver implementations
 class AppResolver extends BaseResolver<'userData' | 'temp'> {
-  constructor(parent?: BaseResolver) {
-    super('app', parent);
+  constructor() {
+    super('app');
   }
 
   canResolve(anchor: Anchor): boolean {
@@ -43,8 +43,8 @@ class AppResolver extends BaseResolver<'userData' | 'temp'> {
 }
 
 class GameResolver extends BaseResolver<'game' | 'gameMods'> {
-  constructor(parent?: BaseResolver) {
-    super('game', parent);
+  constructor() {
+    super('game');
   }
 
   canResolve(anchor: Anchor): boolean {
@@ -79,33 +79,11 @@ describe('Integration Tests', () => {
 
   beforeEach(() => {
     appResolver = new AppResolver();
-    gameResolver = new GameResolver(appResolver);
+    gameResolver = new GameResolver();
     registry = new ResolverRegistry();
     registry.register(appResolver);
     registry.register(gameResolver);
     registry.setDefault(gameResolver);
-  });
-
-  describe('resolver chaining', () => {
-    test('game resolver delegates to app resolver', async () => {
-      // Game resolver handles 'game' anchor
-      const gamePath = gameResolver.PathFor('game');
-      expect(await gamePath.resolve()).toBe('/games/skyrim');
-
-      // Game resolver delegates 'userData' to app resolver
-      const userDataPath = gameResolver.PathFor('userData');
-      expect(await userDataPath.resolve()).toBe('/home/user/.local/share/app');
-    });
-
-    test('throws if no resolver can handle anchor', () => {
-      expect(() => {
-        new FilePath(
-          RelativePath.EMPTY,
-          Anchor.make('unknown'),
-          gameResolver,
-        );
-      }).toThrow(/No resolver in chain can handle anchor/);
-    });
   });
 
   describe('path operations', () => {
@@ -304,33 +282,6 @@ describe('Integration Tests', () => {
 
       const unixResolver = new UnixResolver();
       expect(unixResolver.supportedAnchors()).toHaveLength(1);
-    });
-
-    test('resolvers chain with parent resolver', async () => {
-      const { WindowsResolver } = await import('../resolvers/WindowsResolver');
-      const { UnixResolver } = await import('../resolvers/UnixResolver');
-
-      // Windows resolver with parent
-      const windowsResolver = new WindowsResolver(appResolver);
-
-      // Windows resolver handles drive letters
-      const cDrive = windowsResolver.PathFor('c', 'Games');
-      expect(await cDrive.resolve()).toMatch(/^C:\\Games/);
-
-      // Parent handles app anchors
-      const userData = windowsResolver.PathFor('userData' as any);
-      expect(await userData.resolve()).toMatch(/app/);
-
-      // Unix resolver with parent
-      const unixResolver = new UnixResolver(appResolver);
-
-      // Unix resolver handles root
-      const root = unixResolver.PathFor('root', 'etc');
-      expect(await root.resolve()).toBe('/etc');
-
-      // Parent handles app anchors
-      const userData2 = unixResolver.PathFor('userData' as any);
-      expect(await userData2.resolve()).toMatch(/app/);
     });
 
     test('WindowsResolver canResolve all 26 drive letters', async () => {

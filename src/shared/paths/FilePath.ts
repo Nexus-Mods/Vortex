@@ -35,25 +35,12 @@ export class FilePath {
     public readonly anchor: Anchor,
     public readonly resolver: IResolver,
   ) {
-    // Validate that some resolver in the chain can handle this anchor
-    if (!this.canResolverChainHandle(resolver, anchor)) {
+    // Validate that the resolver can handle this anchor
+    if (!resolver.canResolve(anchor)) {
       throw new Error(
-        `No resolver in chain can handle anchor: ${AnchorNS.name(anchor)}`
+        `Resolver "${resolver.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`
       );
     }
-  }
-
-  /**
-   * Check if resolver or any of its parents can handle the anchor
-   */
-  private canResolverChainHandle(resolver: IResolver, anchor: Anchor): boolean {
-    if (resolver.canResolve(anchor)) {
-      return true;
-    }
-    if (resolver.parent) {
-      return this.canResolverChainHandle(resolver.parent, anchor);
-    }
-    return false;
   }
 
   // ========================================================================

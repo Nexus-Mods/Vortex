@@ -92,6 +92,11 @@ export {
 } from './resolvers/ProtonResolver';
 
 export {
+  UnixResolver,
+  type UnixAnchor,
+} from './resolvers/UnixResolver';
+
+export {
   VortexResolver,
   type VortexAnchor,
 } from './resolvers/VortexResolver';
@@ -100,11 +105,6 @@ export {
   WindowsResolver,
   type WindowsDrive,
 } from './resolvers/WindowsResolver';
-
-export {
-  UnixResolver,
-  type UnixAnchor,
-} from './resolvers/UnixResolver';
 
 // ============================================================================
 // Resolver Registry

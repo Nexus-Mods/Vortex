@@ -134,44 +134,6 @@ describe('UnixResolver', () => {
     });
   });
 
-  describe('parent delegation', () => {
-    test('delegates unknown anchors to parent', async () => {
-      // Create mock parent resolver
-      class MockResolver extends UnixResolver {
-        constructor() {
-          super();
-          this.name = 'mock';
-        }
-
-        canResolve(anchor: Anchor): boolean {
-          return Anchor.name(anchor) === 'mock';
-        }
-
-        supportedAnchors(): Anchor[] {
-          return [Anchor.make('mock')];
-        }
-
-        // eslint-disable-next-line @typescript-eslint/require-await
-        protected async resolveAnchor(_anchor: Anchor) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-          return '/mock/path' as any;
-        }
-      }
-
-      const mockParent = new MockResolver();
-      const unixWithParent = new UnixResolver(mockParent);
-
-      // Root anchor handled by UnixResolver
-      const root = unixWithParent.PathFor('root');
-      expect(await root.resolve()).toBe('/');
-
-      // Mock anchor delegated to parent
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockPath = unixWithParent.PathFor('mock' as any);
-      expect(await mockPath.resolve()).toBe('/mock/path');
-    });
-  });
-
   describe('edge cases', () => {
     test('handles empty relative path', async () => {
       const root = resolver.PathFor('root', '');

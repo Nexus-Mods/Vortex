@@ -75,7 +75,7 @@ describe('FilePath', () => {
 
       expect(() => {
         new FilePath(RelativePath.EMPTY, anchor, badResolver);
-      }).toThrow(/No resolver in chain can handle anchor/);
+      }).toThrow(/cannot handle anchor/);
     });
   });
 

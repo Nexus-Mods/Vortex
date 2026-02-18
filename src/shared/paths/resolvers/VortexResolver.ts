@@ -75,8 +75,8 @@ export class VortexResolver extends BaseResolver<VortexAnchor> {
     exe: 'exe',
   };
 
-  constructor(parent?: BaseResolver) {
-    super('vortex', parent);
+  constructor() {
+    super('vortex');
   }
 
   // ========================================================================

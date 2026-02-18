@@ -2,12 +2,12 @@
  * IResolver interface with type-safe anchor support
  *
  * Resolvers map anchors to concrete OS paths. They support:
- * - Chainable parent delegation
  * - Type-safe anchor names via generic parameter
- * - Both async and optional sync resolution
+ * - Async resolution
  * - Introspection (canResolve, supportedAnchors)
  */
 
+import type { FilePath } from './FilePath';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
 /**
@@ -33,18 +33,12 @@ export interface IResolver<ValidAnchors extends string = string> {
   readonly name: string;
 
   /**
-   * Optional parent resolver for delegation
-   * If this resolver can't handle an anchor, it delegates to the parent
-   */
-  readonly parent?: IResolver;
-
-  /**
    * Primary resolution method (async - may require IO)
    *
    * @param anchor - The anchor to resolve
    * @param relative - The relative path from the anchor
    * @returns Promise resolving to the absolute OS path
-   * @throws Error if no resolver in the chain can handle this anchor
+   * @throws Error if this resolver cannot handle the anchor
    */
   resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath>;
 
@@ -117,23 +111,6 @@ export interface IResolverRegistry {
    * Get the default resolver (throws if not set)
    */
   getDefault(): IResolver;
-}
-
-/**
- * Forward declaration of FilePath class
- * Actual implementation is in FilePath.ts to avoid circular dependency
- */
-export interface FilePath {
-  readonly relative: RelativePath;
-  readonly anchor: Anchor;
-  readonly resolver: IResolver;
-
-  resolve(): Promise<ResolvedPath>;
-  join(...segments: string[]): FilePath;
-  withResolver(newResolver: IResolver): FilePath;
-  withAnchor(newAnchor: Anchor): FilePath;
-  toJSON(): SerializedFilePath;
-  toString(): string;
 }
 
 /**

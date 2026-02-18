@@ -52,9 +52,8 @@ export class ProtonResolver extends BaseResolver<ProtonAnchor> {
   constructor(
     private readonly steamPath: FilePath,
     private readonly appId: string,
-    parent?: BaseResolver,
   ) {
-    super('proton', parent);
+    super('proton');
   }
 
   // ========================================================================
@@ -141,7 +140,8 @@ export class ProtonResolver extends BaseResolver<ProtonAnchor> {
         break;
 
       default:
-        throw new Error(`Unsupported Proton anchor: ${name}`);
+        // This should never happen due to exhaustive type checking
+        throw new Error(`Unsupported Proton anchor: ${String(name)}`);
     }
 
     return ResolvedPathNS.make(osPath);
@@ -155,7 +155,7 @@ export class ProtonResolver extends BaseResolver<ProtonAnchor> {
    * Get Proton info with caching
    */
   private async getProtonInfo(): Promise<IProtonInfo> {
-    if (!this.protonInfoCache) {
+    if (this.protonInfoCache === null) {
       // Resolve steamPath to string
       const steamPathResolved = await this.steamPath.resolve();
       const steamPathStr = steamPathResolved as string;
