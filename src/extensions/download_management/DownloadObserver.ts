@@ -1,5 +1,20 @@
+import type * as Redux from "redux";
+
+import PromiseBB from "bluebird";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+
 import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
 import type { IState } from "../../renderer/types/IState";
+import type { RedownloadMode } from "./DownloadManager";
+import type DownloadManager from "./DownloadManager";
+import type { IChunk } from "./types/IChunk";
+import type { IDownload, IDownloadOptions } from "./types/IDownload";
+import type { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
+import type { IDownloadResult } from "./types/IDownloadResult";
+import type { IStartDownloadOptions } from "./types/IStartDownloadOptions";
+import type { ProgressCallback } from "./types/ProgressCallback";
+
 import {
   ProcessCanceled,
   TemporaryError,
@@ -11,12 +26,28 @@ import { log } from "../../renderer/util/log";
 import { renderError, showError } from "../../renderer/util/message";
 import * as selectors from "../../renderer/util/selectors";
 import { getSafe } from "../../renderer/util/storeHelper";
-import { flatten, setdefault, truthy } from "../../renderer/util/util";
-
+import {
+  flatten,
+  setdefault,
+  truthy,
+  batchDispatch,
+} from "../../renderer/util/util";
+import { unknownToError } from "../../shared/errors";
+import {
+  ModsDownloadStartedClientEvent,
+  ModsDownloadCompletedEvent,
+  ModsDownloadFailedEvent,
+  ModsDownloadCancelledEvent,
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsDownloadFailedEvent,
+} from "../analytics/mixpanel/MixpanelEvents";
 import { showURL } from "../browser/actions";
-import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import { knownGames } from "../gamemode_management/selectors";
-
+import { getGames } from "../gamemode_management/util/getGame";
+import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
+import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
+import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
 import {
   downloadProgress,
   finishDownload,
@@ -28,38 +59,10 @@ import {
   setDownloadModInfo,
   setDownloadPausable,
 } from "./actions/state";
-import type { IChunk } from "./types/IChunk";
-import type { IDownload, IDownloadOptions } from "./types/IDownload";
-import type { IDownloadResult } from "./types/IDownloadResult";
-import type { ProgressCallback } from "./types/ProgressCallback";
-import type { IStartDownloadOptions } from "./types/IStartDownloadOptions";
-import type { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
+import { AlreadyDownloaded, DownloadIsHTML } from "./DownloadManager";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
-
-import type { RedownloadMode } from "./DownloadManager";
-import type DownloadManager from "./DownloadManager";
-import { AlreadyDownloaded, DownloadIsHTML } from "./DownloadManager";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { getGames } from "../gamemode_management/util/getGame";
-import { util } from "../..";
-import {
-  ModsDownloadStartedClientEvent,
-  ModsDownloadCompletedEvent,
-  ModsDownloadFailedEvent,
-  ModsDownloadCancelledEvent,
-  CollectionsDownloadCompletedEvent,
-  CollectionsDownloadCancelledEvent,
-  CollectionsDownloadFailedEvent,
-} from "../analytics/mixpanel/MixpanelEvents";
-import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
-import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
-import { unknownToError } from "../../shared/errors";
 
 function progressUpdate(
   store: Redux.Store<any>,
@@ -95,7 +98,7 @@ function progressUpdate(
     updates.push(setDownloadPausable(dlId, chunkable));
   }
   if (updates.length > 0) {
-    util.batchDispatch(store.dispatch, updates);
+    batchDispatch(store.dispatch, updates);
   }
 }
 
@@ -615,7 +618,7 @@ export class DownloadObserver {
         downloadProgress(id, res.size, res.size, [], undefined),
         finishDownload(id, "redirect", { htmlFile: res.filePath }),
       ];
-      util.batchDispatch(this.mApi.store.dispatch, batched);
+      batchDispatch(this.mApi.store.dispatch, batched);
       this.mApi.events.emit("did-finish-download", id, "redirect");
       callback?.(new Error("html result"), id);
       return onceFinished();
@@ -627,7 +630,7 @@ export class DownloadObserver {
             (key) => setDownloadModInfo(id, key, flattened[key]),
           );
           if (batchedActions.length > 0) {
-            util.batchDispatch(this.mApi.store.dispatch, batchedActions);
+            batchDispatch(this.mApi.store.dispatch, batchedActions);
           }
 
           const state: IState = this.mApi.getState();

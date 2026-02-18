@@ -1,18 +1,20 @@
-import type { IDiscoveryResult, IState } from "../../../renderer/types/IState";
 import type { Option } from "react-select";
-import Select from "react-select";
+
 import React from "react";
-import { getModType, getModTypeExtensions } from "../util/modTypeExtensions";
-import type { IModType } from "../types/IModType";
-import { useDispatch, useSelector } from "react-redux";
-import { setModType } from "../../mod_management/actions/mods";
-import { getGame } from "../util/getGame";
-import type { IModWithState } from "../../mod_management/types/IModProps";
 import { useTranslation } from "react-i18next";
-import { activeGameId } from "../../profile_management/selectors";
-import { midClip, truthy } from "../../../renderer/util/util";
-import { util } from "../../..";
+import { useDispatch, useSelector } from "react-redux";
+import Select from "react-select";
+
+import type { IDiscoveryResult, IState } from "../../../renderer/types/IState";
+import type { IModWithState } from "../../mod_management/types/IModProps";
+import type { IModType } from "../types/IModType";
+
 import { IconButton } from "../../../renderer/controls/TooltipControls";
+import { midClip, truthy } from "../../../renderer/util/util";
+import { setModType } from "../../mod_management/actions/mods";
+import { activeGameId } from "../../profile_management/selectors";
+import { getGame } from "../util/getGame";
+import { getModType, getModTypeExtensions } from "../util/modTypeExtensions";
 
 export interface IModTypeWidget {
   mods: IModWithState | IModWithState[];
@@ -70,7 +72,7 @@ function ModTypeWidget(props: IModTypeWidget) {
   }, [modTypeId, props.copyToClipboard]);
 
   const openPath = React.useCallback(() => {
-    util.opn(modTypePath).catch(() => null);
+    window.api.shell.openFile(modTypePath);
   }, [modTypePath]);
 
   if (mods[0].state !== "installed") {
@@ -84,30 +86,32 @@ function ModTypeWidget(props: IModTypeWidget) {
   return (
     <div>
       <Select
+        labelKey="text"
         options={choices}
         value={modTypeId}
-        onChange={onChangeValue}
         valueKey="key"
-        labelKey="text"
+        onChange={onChangeValue}
       />
+
       {truthy(modTypePath) ? (
         <div>
           {t("Deploys to")}&nbsp;
-          <a onClick={openPath} title={modTypePath} className="modtype-path">
+          <a className="modtype-path" title={modTypePath} onClick={openPath}>
             {midClip(modTypePath, 40)}
           </a>
         </div>
       ) : (
         t("Does not deploy")
       )}
+
       <div>
         {t("ID:")}&nbsp;<span className="modtype-id">"{modTypeId}"</span>
         &nbsp;
         <IconButton
           className="btn-embed"
           icon="clipboard-copy"
-          onClick={toClipboard}
           tooltip={t("Copy ID to clipboard")}
+          onClick={toClipboard}
         />
       </div>
     </div>

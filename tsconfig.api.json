@@ -16,10 +16,6 @@
     "outDir": "./api/lib",
     "rootDir": "./src",
     "removeComments": false,
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
   }
 }
