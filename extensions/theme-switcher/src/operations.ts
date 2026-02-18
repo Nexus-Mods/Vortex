@@ -137,7 +137,8 @@ export function readThemeVariables(
         const variables = {};
         data
           .toString("utf-8")
-          .split("\r\n")
+          .replaceAll("\r\n", "\n")
+          .split("\n")
           .forEach((line) => {
             const [key, value] = line.split(":");
             if (value !== undefined) {
