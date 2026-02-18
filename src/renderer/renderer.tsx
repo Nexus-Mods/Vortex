@@ -11,7 +11,7 @@ if (process.env.DEBUG_REACT_RENDERS === "true") {
 // Set up requireRemap first, BEFORE any other requires
 // IMPORTANT: Use require() not import, because imports are hoisted to the top
 // tslint:disable-next-line:no-var-requires
-const requireRemap = require("./renderer/util/requireRemap").default;
+const requireRemap = require("./util/requireRemap").default;
 requireRemap();
 
 const earlyErrHandler = (evt: ErrorEvent) => {
@@ -59,7 +59,7 @@ if (SetProcessPreferredUILanguages !== undefined) {
 import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
-import "./renderer/util/application.electron";
+import "./util/application.electron";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -69,7 +69,7 @@ import * as path from "path";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
-import "./renderer/util/monkeyPatching";
+import "./util/monkeyPatching";
 import * as ReactDOM from "react-dom";
 import { I18nextProvider } from "react-i18next";
 import { Provider } from "react-redux";
@@ -77,53 +77,53 @@ import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { generate as shortid } from "shortid";
 
-import type { ThunkStore } from "./renderer/types/IExtensionContext";
-import type { IState } from "./renderer/types/IState";
+import type { ThunkStore } from "./types/IExtensionContext";
+import type { IState } from "./types/IState";
 
-import { setLanguage, setNetworkConnected } from "./renderer/actions";
+import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
+import { setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
   setInstallType,
   setInstanceId,
   setWarnedAdmin,
-} from "./renderer/actions/app";
+} from "./actions/app";
 import {
   addNotification,
   setupNotificationSuppression,
-} from "./renderer/actions/notifications";
+} from "./actions/notifications";
 import {
   setMaximized,
   setWindowPosition,
   setWindowSize,
-} from "./renderer/actions/window";
-import reducer, { Decision } from "./renderer/reducers/index";
-import ExtensionManager from "./renderer/ExtensionManager";
-import { ExtensionContext } from "./renderer/ExtensionProvider";
-import { log } from "./renderer/logging";
-import { initApplicationMenu } from "./renderer/menu";
-import { fetchHydrationState } from "./renderer/store/hydration";
-import { persistDiffMiddleware } from "./renderer/store/persistDiffMiddleware";
-import StyleManager from "./renderer/StyleManager";
-import LoadingScreen from "./renderer/views/LoadingScreen";
-import MainWindow from "./renderer/views/MainWindow";
-import { getErrorCode, getErrorMessageOrDefault } from "./shared/errors";
-import { reduxLogger } from "./renderer/store/reduxLogger";
-import { reduxSanity, type StateError } from "./renderer/store/reduxSanity";
-import { relaunch } from "./renderer/util/commandLine";
-import { UserCanceled } from "./renderer/util/CustomErrors";
-import { setOutdated, terminate, toError } from "./renderer/util/errorHandling";
-import {} from "./renderer/util/extensionRequire";
-import { setTFunction } from "./renderer/util/fs";
-import getVortexPath, { setVortexPath } from "./renderer/util/getVortexPath";
-import GlobalNotifications from "./renderer/util/GlobalNotifications";
+} from "./actions/window";
+import ExtensionManager from "./ExtensionManager";
+import { ExtensionContext } from "./ExtensionProvider";
+import { log } from "./logging";
+import { initApplicationMenu } from "./menu";
+import reducer, { Decision } from "./reducers/index";
+import { fetchHydrationState } from "./store/hydration";
+import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
+import { reduxLogger } from "./store/reduxLogger";
+import { reduxSanity, type StateError } from "./store/reduxSanity";
+import StyleManager from "./StyleManager";
+import { relaunch } from "./util/commandLine";
+import { UserCanceled } from "./util/CustomErrors";
+import { setOutdated, terminate, toError } from "./util/errorHandling";
+import {} from "./util/extensionRequire";
+import { setTFunction } from "./util/fs";
+import getVortexPath, { setVortexPath } from "./util/getVortexPath";
+import GlobalNotifications from "./util/GlobalNotifications";
 import getI18n, {
   changeLanguage,
   fallbackTFunc,
   type TFunction,
-} from "./renderer/util/i18n";
-import { showError } from "./renderer/util/message";
-import { getSafe } from "./renderer/util/storeHelper";
-import { bytesToString, getAllPropertyNames } from "./renderer/util/util";
+} from "./util/i18n";
+import { showError } from "./util/message";
+import { getSafe } from "./util/storeHelper";
+import { bytesToString, getAllPropertyNames } from "./util/util";
+import LoadingScreen from "./views/LoadingScreen";
+import MainWindow from "./views/MainWindow";
 
 log("debug", "renderer process started", { pid: process["pid"] });
 
@@ -433,7 +433,7 @@ let extensions: ExtensionManager;
 async function initGlobals(): Promise<void> {
   // Initialize application data asynchronously from main process cache
   // This replaces synchronous IPC calls that were in the preload script
-  const { ApplicationData } = await import("./shared/applicationData");
+  const { ApplicationData } = await import("../shared/applicationData");
   await ApplicationData.init();
 }
 

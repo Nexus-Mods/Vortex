@@ -1,4 +1,3 @@
-import { util } from "../..";
 import { showDialog } from "../actions/notifications";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
@@ -286,10 +285,10 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     );
     const state: IState = this.context.api.store.getState();
     const profile = activeProfile(state);
-    const currentModsState = util.getSafe(profile, ["modState"], false);
+    const currentModsState = getSafe(profile, ["modState"], false);
     // Get total number of enabled mods (this includes collections)
     const enabledMods = Object.keys(currentModsState).filter((modId) =>
-      util.getSafe(currentModsState, [modId, "enabled"], false),
+      getSafe(currentModsState, [modId, "enabled"], false),
     );
     // Get total number of collections for game
     const gameMods = state.persistent.mods[profile.gameId] || {};

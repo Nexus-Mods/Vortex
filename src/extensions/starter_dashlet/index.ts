@@ -1,6 +1,6 @@
 import PromiseBB from "bluebird";
+import memoize from "memoize-one";
 import path from "path";
-import { fs } from "../..";
 
 import type {
   IExtensionApi,
@@ -8,17 +8,16 @@ import type {
 } from "../../renderer/types/IExtensionContext";
 import type { ITestResult } from "../../renderer/types/ITestResult";
 import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+
+import * as fs from "../../renderer/util/fs";
 import { activeGameId } from "../../renderer/util/selectors";
 import { getSafe } from "../../renderer/util/storeHelper";
 import { truthy } from "../../renderer/util/util";
-
-import memoize from "memoize-one";
-
+import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 import { setPrimaryTool } from "./actions";
 import settingsReducer from "./reducers";
 import Tools from "./Tools";
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 
 function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   const state = api.store.getState();

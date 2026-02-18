@@ -158,7 +158,6 @@ import * as path from "path";
 import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
-import type { types } from "../..";
 import { getErrorCode } from "../../shared/errors";
 
 interface IAppContext {
@@ -1601,7 +1600,7 @@ function once(api: IExtensionApi) {
       options: {
         silent?: boolean;
         willBeReplaced?: boolean;
-        modData?: types.IMod;
+        modData?: IMod;
       },
     ) => {
       if (options?.silent !== true && options?.willBeReplaced !== true) {
