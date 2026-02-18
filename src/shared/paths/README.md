@@ -58,7 +58,7 @@ import {
   VortexResolver,
   FilePath,
   RelativePath,
-  globalResolverRegistry,
+  ResolverRegistry,
 } from './shared/paths';
 ```
 
@@ -67,11 +67,12 @@ import {
 ### 1. Initialize Resolvers
 
 ```typescript
-import { VortexResolver, globalResolverRegistry } from './shared/paths';
+import { VortexResolver, ResolverRegistry } from './shared/paths';
 
-// Create and register resolver
+// Create registry and resolver
+const registry = new ResolverRegistry();
 const resolver = new VortexResolver();
-globalResolverRegistry.setDefault(resolver);
+registry.setDefault(resolver);
 ```
 
 ### 2. Create Paths
@@ -168,7 +169,7 @@ const resolved = await path.resolve();
 ### IPC Serialization
 
 ```typescript
-import { FilePathIPC, globalResolverRegistry } from './shared/paths';
+import { FilePathIPC, ResolverRegistry } from './shared/paths';
 
 // Main process - serialize for IPC
 const filePath = resolver.PathFor('userData', 'mods');
@@ -178,10 +179,11 @@ const serialized = FilePathIPC.serialize(filePath);
 ipcMain.send('path-data', serialized);
 
 // Renderer process - deserialize
+// (Assuming you've set up a registry in the renderer process)
 ipcRenderer.on('path-data', (event, serialized) => {
   const filePath = FilePathIPC.deserialize(
     serialized,
-    globalResolverRegistry
+    rendererRegistry  // Use your renderer-side registry
   );
   const resolved = await filePath.resolve();
 });

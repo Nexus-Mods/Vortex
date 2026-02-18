@@ -281,9 +281,3 @@ export class ResolverRegistry implements IResolverRegistry {
     }
   }
 }
-
-/**
- * Global singleton registry instance
- * Use this for application-wide resolver management
- */
-export const globalResolverRegistry = new ResolverRegistry();

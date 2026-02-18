@@ -12,7 +12,6 @@ import { z } from 'zod';
 import type { IResolverRegistry, SerializedFilePath } from './IResolver';
 
 import { FilePath } from './FilePath';
-import { globalResolverRegistry } from './ResolverRegistry';
 import { RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
 import { RelativePathSchema } from './types';
 
@@ -61,7 +60,7 @@ export namespace FilePathIPC {
    * The resolver must be registered in the registry before deserialization.
    *
    * @param serialized - Serialized FilePath data
-   * @param registry - Resolver registry (defaults to global registry)
+   * @param registry - Resolver registry to look up resolvers
    * @returns Reconstructed FilePath instance
    * @throws Error if resolver not found in registry
    * @throws Error if serialized data is invalid
@@ -73,8 +72,8 @@ export namespace FilePathIPC {
    *   // Validate with Zod
    *   const validated = SerializedFilePathSchema.parse(serialized);
    *
-   *   // Recreate FilePath
-   *   const filePath = FilePathIPC.deserialize(validated);
+   *   // Recreate FilePath with explicit registry
+   *   const filePath = FilePathIPC.deserialize(validated, myRegistry);
    *
    *   // Use it
    *   const resolved = await filePath.resolve();
@@ -84,7 +83,7 @@ export namespace FilePathIPC {
    */
   export function deserialize(
     serialized: SerializedFilePath,
-    registry: IResolverRegistry = globalResolverRegistry,
+    registry: IResolverRegistry,
   ): FilePath {
     // Validate input
     const validated = SerializedFilePathSchema.parse(serialized);
@@ -154,20 +153,20 @@ export namespace FilePathIPC {
    * Deserialize an array of FilePath objects
    *
    * @param serialized - Array of serialized FilePath objects
-   * @param registry - Resolver registry (defaults to global registry)
+   * @param registry - Resolver registry to look up resolvers
    * @returns Array of reconstructed FilePath instances
    *
    * @example
    * ```typescript
    * ipcRenderer.on('paths', (event, serialized) => {
-   *   const filePaths = FilePathIPC.deserializeMany(serialized);
+   *   const filePaths = FilePathIPC.deserializeMany(serialized, myRegistry);
    *   // Use the paths...
    * });
    * ```
    */
   export function deserializeMany(
     serialized: SerializedFilePath[],
-    registry: IResolverRegistry = globalResolverRegistry,
+    registry: IResolverRegistry,
   ): FilePath[] {
     return serialized.map(s => deserialize(s, registry));
   }

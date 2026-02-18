@@ -9,12 +9,13 @@
  *   VortexResolver,
  *   FilePath,
  *   RelativePath,
- *   globalResolverRegistry,
+ *   ResolverRegistry,
  * } from './shared/paths';
  *
- * // Initialize resolver
+ * // Create registry and resolver
+ * const registry = new ResolverRegistry();
  * const resolver = new VortexResolver();
- * globalResolverRegistry.setDefault(resolver);
+ * registry.setDefault(resolver);
  *
  * // Create paths
  * const modsPath = resolver.PathFor('userData', 'mods');
@@ -68,7 +69,6 @@ export type {
 } from './IResolver';
 export {
   ResolverRegistry,
-  globalResolverRegistry,
 } from './ResolverRegistry';
 
 // ============================================================================

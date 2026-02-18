@@ -90,7 +90,7 @@ In `ResolverRegistry.fromResolved()`, resolvers are tried in registration order,
 ```typescript
 // User selects file via OS dialog
 const selectedPath = await dialog.showOpenDialog();
-const filePath = await registry.fromResolved(ResolvedPath.make(selectedPath));
+const filePath = await myRegistry.fromResolved(ResolvedPath.make(selectedPath));
 // Store portable FilePath in application state
 ```
 

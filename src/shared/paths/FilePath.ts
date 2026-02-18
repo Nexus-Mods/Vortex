@@ -214,7 +214,7 @@ export class FilePath {
    * @example
    * ```typescript
    * const json = { relative: 'mods', anchor: 'userData', resolverName: 'vortex' };
-   * const filePath = FilePath.fromJSON(json, globalResolverRegistry);
+   * const filePath = FilePath.fromJSON(json, myRegistry);
    * ```
    */
   static fromJSON(json: SerializedFilePath, registry: IResolverRegistry): FilePath {
