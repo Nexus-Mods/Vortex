@@ -96,6 +96,14 @@ export const MainLayout: FC = () => {
     }
   }, [menuIsCollapsed, setMenuIsCollapsed]);
 
+  useEffect(() => {
+    return () => {
+      if (sidebarTimer.current !== undefined) {
+        clearTimeout(sidebarTimer.current);
+      }
+    };
+  }, []);
+
   return (
     <FlexLayout.Flex>
       <FlexLayout style={{ overflow: "hidden" }} type="row">

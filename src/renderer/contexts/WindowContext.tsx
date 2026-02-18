@@ -57,6 +57,9 @@ export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
     shift: false,
   });
 
+  const tabsMinimizedRef = useRef(tabsMinimized);
+  tabsMinimizedRef.current = tabsMinimized;
+
   const getModifiers = useCallback(() => modifiersRef.current, []);
 
   const updateModifiers = useCallback((event: KeyboardEvent) => {
@@ -77,7 +80,7 @@ export const WindowProvider: FC<IWindowProviderProps> = ({ children }) => {
   const setMenuIsCollapsed = useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
       const newValue =
-        typeof value === "function" ? value(tabsMinimized) : value;
+        typeof value === "function" ? value(tabsMinimizedRef.current) : value;
       dispatch(setTabsMinimized(newValue));
     },
     [dispatch],
