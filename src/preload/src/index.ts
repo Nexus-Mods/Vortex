@@ -271,7 +271,7 @@ try {
         betterIpcRenderer.send("telemetry:forward-span", span),
     },
     query: {
-      execute: ((name: string, params: Record<string, Serializable>) =>
+      execute: ((name: QueryName, params: Record<string, Serializable>) =>
         betterIpcRenderer.invoke(
           "query:execute",
           name,
