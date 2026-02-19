@@ -613,9 +613,10 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setTitlebarRows(theme: { [name: string]: string }) {
-    if (theme["titlebar-rows"] !== undefined) {
-      this.nextState.titlebarRows = parseInt(theme["titlebar-rows"], 10);
-    }
+    this.nextState.titlebarRows =
+      theme["titlebar-rows"] !== undefined
+        ? parseInt(theme["titlebar-rows"], 10)
+        : defaultTheme.titlebarRows;
   }
 
   private setColors(theme: { [name: string]: string }) {
