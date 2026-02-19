@@ -17,8 +17,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   clearOAuthCredentials,
   setUserAPIKey,
-} from "../../../../extensions/nexus_integration/actions/account";
-import { NEXUS_BASE_URL } from "../../../../extensions/nexus_integration/constants";
+} from "../../../extensions/nexus_integration/actions/account";
+import { NEXUS_BASE_URL } from "../../../extensions/nexus_integration/constants";
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
 import { Dropdown } from "../../../ui/components/dropdown/Dropdown";

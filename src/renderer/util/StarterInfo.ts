@@ -7,10 +7,10 @@ import GameStoreHelper from "./GameStoreHelper";
 
 import { getSafe } from "./storeHelper";
 
-import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
-import type { IToolStored } from "../../extensions/gamemode_management/types/IToolStored";
-import { getGame } from "../../extensions/gamemode_management/util/getGame";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
 
 import type { IExtensionApi } from "../types/IExtensionContext";
 

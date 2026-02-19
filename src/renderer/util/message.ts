@@ -16,7 +16,7 @@ import type { IState } from "../types/IState";
 import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";
-import { NoDeployment } from "../../extensions/mod_management/util/exceptions";
+import { NoDeployment } from "../extensions/mod_management/util/exceptions";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 import { jsonRequest } from "./network";
 import {

@@ -17,7 +17,7 @@ import {
   NEXUS_NEXT_SUBDOMAIN,
   NEXUS_PROTOCOL,
   NEXUS_USERS_SUBDOMAIN,
-} from "../../extensions/nexus_integration/constants";
+} from "../extensions/nexus_integration/constants";
 import { TimeoutError } from "./CustomErrors";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";

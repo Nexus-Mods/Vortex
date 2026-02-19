@@ -1,4 +1,4 @@
-import { categoryReducer } from '../src/extensions/category_management/reducers/category';
+import { categoryReducer } from '../src/renderer/extensions/category_management/reducers/category';
 
 describe('loadCategories', () => {
   it('replaces existing categories', () => {

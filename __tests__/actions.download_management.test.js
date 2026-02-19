@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/download_management/actions/state';
+import * as actions from '../src/renderer/extensions/download_management/actions/state';
 
 describe('addLocalDownload', () => {
   it('creates the action', () => {

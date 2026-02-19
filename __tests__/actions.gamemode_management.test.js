@@ -1,5 +1,5 @@
-import * as discoveryActions from '../src/extensions/gamemode_management/actions/discovery';
-import * as actions from '../src/extensions/gamemode_management/actions/settings';
+import * as discoveryActions from '../src/renderer/extensions/gamemode_management/actions/discovery';
+import * as actions from '../src/renderer/extensions/gamemode_management/actions/settings';
 
 describe('discoveryProgress', () => {
   it('creates the correct action', () => {

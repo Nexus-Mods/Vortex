@@ -10,50 +10,48 @@ import { installIconSet } from "../controls/Icon";
 import {
   resolveCategoryName,
   resolveCategoryPath,
-} from "../../extensions/category_management/util/retrieveCategoryPath";
+} from "../extensions/category_management/util/retrieveCategoryPath";
 import {
   generateCollectionSessionId,
   modRuleId,
-} from "../../extensions/collections_integration/util";
-import { readExtensibleDir } from "../../extensions/extension_manager/util";
+} from "../extensions/collections_integration/util";
+import { readExtensibleDir } from "../extensions/extension_manager/util";
 import {
   getGame,
   getGames,
-} from "../../extensions/gamemode_management/util/getGame";
-import { getModType } from "../../extensions/gamemode_management/util/modTypeExtensions";
-import getDriveList from "../../extensions/gamemode_management/util/getDriveList";
-import deriveModInstallName from "../../extensions/mod_management/modIdManager";
-import { getManifest } from "../../extensions/mod_management/util/activationStore";
+} from "../extensions/gamemode_management/util/getGame";
+import { getModType } from "../extensions/gamemode_management/util/modTypeExtensions";
+import getDriveList from "../extensions/gamemode_management/util/getDriveList";
+import deriveModInstallName from "../extensions/mod_management/modIdManager";
+import { getManifest } from "../extensions/mod_management/util/activationStore";
 import {
   findDownloadByRef,
   findModByRef,
   lookupFromDownload,
-} from "../../extensions/mod_management/util/dependencies";
+} from "../extensions/mod_management/util/dependencies";
 import {
   getActivator,
   getCurrentActivator,
-} from "../../extensions/mod_management/util/deploymentMethods";
+} from "../extensions/mod_management/util/deploymentMethods";
 import renderModName, {
   renderModReference,
-} from "../../extensions/mod_management/util/modName";
-import { makeModReference } from "../../extensions/mod_management/util/modReference";
+} from "../extensions/mod_management/util/modName";
+import { makeModReference } from "../extensions/mod_management/util/modReference";
 import {
   getModSource,
   getModSources,
-} from "../../extensions/mod_management/util/modSource";
-import { removeMods } from "../../extensions/mod_management/util/removeMods";
-import sortMods, {
-  CycleError,
-} from "../../extensions/mod_management/util/sort";
+} from "../extensions/mod_management/util/modSource";
+import { removeMods } from "../extensions/mod_management/util/removeMods";
+import sortMods, { CycleError } from "../extensions/mod_management/util/sort";
 import testModReference, {
   coerceToSemver,
   testRefByIdentifiers,
   isFuzzyVersion,
-} from "../../extensions/mod_management/util/testModReference";
+} from "../extensions/mod_management/util/testModReference";
 import {
   convertGameIdReverse,
   nexusGameId,
-} from "../../extensions/nexus_integration/util/convertGameId";
+} from "../extensions/nexus_integration/util/convertGameId";
 import GameStoreHelper from "./GameStoreHelper";
 import { getApplication } from "./application";
 import { Archive } from "./archives";
@@ -144,8 +142,8 @@ import walk from "./walk";
 import SevenZip from "node-7z";
 import { runElevated, runThreaded } from "vortex-run";
 
-import getTextModManagement from "../../extensions/mod_management/texts";
-import getTextProfileManagement from "../../extensions/profile_management/texts";
+import getTextModManagement from "../extensions/mod_management/texts";
+import getTextProfileManagement from "../extensions/profile_management/texts";
 import {
   CollectionsDownloadCompletedEvent,
   CollectionsDownloadClickedEvent,
@@ -158,7 +156,7 @@ import {
   CollectionsDraftedEvent,
   CollectionsDraftUploadedEvent,
   CollectionsDraftUpdateUploadedEvent,
-} from "../../extensions/analytics/mixpanel/MixpanelEvents";
+} from "../extensions/analytics/mixpanel/MixpanelEvents";
 
 export * from "./network";
 export {

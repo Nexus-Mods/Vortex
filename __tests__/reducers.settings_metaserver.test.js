@@ -1,4 +1,4 @@
-import settingsReducer from '../src/extensions/settings_metaserver/reducers';
+import settingsReducer from '../src/renderer/extensions/settings_metaserver/reducers';
 
 describe('addMetaserver', () => {
   it('adds a Metaserver', () => {

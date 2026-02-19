@@ -1,4 +1,4 @@
-import { profilesReducer } from '../src/extensions/profile_management/reducers/profiles';
+import { profilesReducer } from '../src/renderer/extensions/profile_management/reducers/profiles';
 
 import * as _ from 'lodash';
 

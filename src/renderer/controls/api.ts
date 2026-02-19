@@ -47,7 +47,7 @@ import VisibilityProxy from "./VisibilityProxy";
 import Webview from "./Webview";
 import ZoomableImage from "./ZoomableImage";
 
-import { LoadOrderIndexInput } from "../../extensions/file_based_loadorder/views/loadOrderIndex";
+import { LoadOrderIndexInput } from "../extensions/file_based_loadorder/views/loadOrderIndex";
 
 export {
   ActionContextMenu,

@@ -3,7 +3,7 @@ import { Panel, Tab, Tabs } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IBaseProps } from "../../extensions/settings_interface/SettingsInterface";
+import type { IBaseProps } from "../extensions/settings_interface/SettingsInterface";
 import type { PropsCallbackTyped } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import type startupSettingsT from "../util/startupSettings";

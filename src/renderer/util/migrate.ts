@@ -1,7 +1,7 @@
-import getDownloadPath from "../../extensions/download_management/util/getDownloadPath";
+import getDownloadPath from "../extensions/download_management/util/getDownloadPath";
 import resolvePath, {
   pathDefaults,
-} from "../../extensions/mod_management/util/resolvePath";
+} from "../extensions/mod_management/util/resolvePath";
 import type { IState } from "../types/IState";
 
 import {

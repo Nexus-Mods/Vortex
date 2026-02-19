@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/starter_dashlet/actions';
+import * as actions from '../src/renderer/extensions/starter_dashlet/actions';
 
 describe('setPrimaryTool', () => {
   it('sets the Primary Tool', () => {

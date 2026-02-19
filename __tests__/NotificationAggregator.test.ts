@@ -1,4 +1,4 @@
-import { NotificationAggregator } from '../src/extensions/mod_management/NotificationAggregator';
+import { NotificationAggregator } from '../src/renderer/extensions/mod_management/NotificationAggregator';
 
 // Mock API for testing
 const mockApi = {

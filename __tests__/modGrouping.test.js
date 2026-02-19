@@ -1,4 +1,4 @@
-import group from '../src/extensions/mod_management/util/modGrouping';
+import group from '../src/renderer/extensions/mod_management/util/modGrouping';
 
 describe('modGrouping', () => {
   it('can group by mod id', () => {

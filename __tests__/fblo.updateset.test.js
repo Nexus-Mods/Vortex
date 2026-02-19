@@ -1,8 +1,8 @@
-import UpdateSet from "../src/extensions/file_based_loadorder/UpdateSet";
+import UpdateSet from "../src/renderer/extensions/file_based_loadorder/UpdateSet";
 import {
   activeGameId,
   lastActiveProfileForGame,
-} from "../src/extensions/profile_management/selectors";
+} from "../src/renderer/extensions/profile_management/selectors";
 
 const isFBLO = () => true;
 const isNotFBLO = () => false;
@@ -49,7 +49,7 @@ const basicMockState = {
   },
 };
 
-jest.mock("../src/extensions/profile_management/selectors", () => ({
+jest.mock("../src/renderer/extensions/profile_management/selectors", () => ({
   profileById: jest.fn(() => ({})), // TODO: mock this properly
   activeGameId: jest.fn(() => "gameId"),
   lastActiveProfileForGame: jest.fn(() => "profile1"),

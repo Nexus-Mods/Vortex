@@ -1,5 +1,5 @@
-import { DOWNLOADS_DIR_TAG } from "../../extensions/download_management/util/downloadDirectory";
-import { STAGING_DIR_TAG } from "../../extensions/mod_management/stagingDirectory";
+import { DOWNLOADS_DIR_TAG } from "../extensions/download_management/util/downloadDirectory";
+import { STAGING_DIR_TAG } from "../extensions/mod_management/stagingDirectory";
 import {
   getErrorCode,
   isErrorWithSystemCode,

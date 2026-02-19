@@ -2,7 +2,7 @@
  * Helper functions when working with immutable state (or immutable objects in general)
  */
 
-import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
