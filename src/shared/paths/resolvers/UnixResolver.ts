@@ -32,8 +32,8 @@ export type UnixAnchor = 'root';
  * @template ValidAnchors - UnixAnchor type ('root' only)
  */
 export class UnixResolver extends MappingResolver<UnixAnchor> {
-  constructor() {
-    super('unix');
+  constructor(parent?: import('../IResolver').IResolver) {
+    super('unix', parent);
   }
 
   // ========================================================================

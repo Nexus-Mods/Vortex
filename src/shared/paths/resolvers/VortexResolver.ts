@@ -73,8 +73,8 @@ export class VortexResolver extends MappingResolver<VortexAnchor> {
     exe: 'exe',
   };
 
-  constructor() {
-    super('vortex');
+  constructor(parent?: import('../IResolver').IResolver) {
+    super('vortex', parent);
   }
 
   // ========================================================================

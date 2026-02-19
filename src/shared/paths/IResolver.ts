@@ -33,6 +33,12 @@ export interface IResolver<ValidAnchors extends string = string> {
   readonly name: string;
 
   /**
+   * Optional parent resolver for delegation
+   * When this resolver cannot handle an anchor or path, it delegates to its parent
+   */
+  readonly parent?: IResolver;
+
+  /**
    * Primary resolution method (async - may require IO)
    *
    * @param anchor - The anchor to resolve
@@ -86,23 +92,20 @@ export interface IResolver<ValidAnchors extends string = string> {
   // ========================================================================
 
   /**
-   * Try to reverse-resolve an OS path to anchor + relative
-   * Returns null if this resolver cannot handle the path
+   * Try to reverse-resolve an OS path to a FilePath
+   * Returns null if this resolver (or its parent chain) cannot handle the path
    *
    * @param resolvedPath - Absolute OS path to parse
-   * @returns Object with anchor and relative path, or null if not handled
+   * @returns FilePath instance, or null if not handled
    *
    * @example
    * ```typescript
    * const osPath = ResolvedPath.make('C:\\Users\\...\\Vortex\\mods\\SkyUI');
-   * const result = await vortexResolver.tryReverse(osPath);
-   * // → { anchor: Anchor('userData'), relative: RelativePath('mods/SkyUI') }
+   * const filePath = await vortexResolver.tryReverse(osPath);
+   * // → FilePath with anchor='userData', relative='mods/SkyUI'
    * ```
    */
-  tryReverse(resolvedPath: ResolvedPath): Promise<{
-    anchor: Anchor;
-    relative: RelativePath;
-  } | null>;
+  tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null>;
 
   /**
    * Get all base paths this resolver can resolve

@@ -27,8 +27,9 @@ import { MappingResolver, fromMap, type MappingStrategy } from './MappingResolve
 export class GameResolver extends MappingResolver<string> {
   constructor(
     private readonly gamePaths: Map<string, FilePath>,
+    parent?: import('../IResolver').IResolver,
   ) {
-    super('game');
+    super('game', parent);
   }
 
   // ========================================================================

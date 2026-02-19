@@ -7,21 +7,22 @@
  * ```typescript
  * import {
  *   VortexResolver,
+ *   UnixResolver,
  *   FilePath,
  *   RelativePath,
- *   reverseResolve,
  * } from './shared/paths';
  *
- * // Create resolver
- * const resolver = new VortexResolver();
+ * // Create resolvers with parent delegation
+ * const unixResolver = new UnixResolver();
+ * const vortexResolver = new VortexResolver(unixResolver);
  *
  * // Create paths
- * const modsPath = resolver.PathFor('userData', 'mods');
+ * const modsPath = vortexResolver.PathFor('userData', 'mods');
  * const resolved = await modsPath.resolve();
  * console.log(resolved); // C:\Users\...\mods
  *
- * // Reverse resolve OS paths
- * const discovered = await reverseResolve(osPath, [resolver]);
+ * // Reverse resolve - vortex tries first, then unix
+ * const result = await vortexResolver.tryReverse(osPath);
  * ```
  */
 
@@ -110,15 +111,6 @@ export {
   WindowsResolver,
   type WindowsDrive,
 } from './resolvers/WindowsResolver';
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-export {
-  reverseResolve,
-  findAllMatches,
-} from './utils';
 
 // ============================================================================
 // Branded Types

@@ -73,6 +73,10 @@ export type MappingStrategy<ValidAnchors extends string> = {
 export abstract class MappingResolver<ValidAnchors extends string>
   extends BaseResolver<ValidAnchors> {
 
+  constructor(name: string, parent?: import('../IResolver').IResolver) {
+    super(name, parent);
+  }
+
   /**
    * Get the mapping strategy for this resolver
    *

@@ -24,6 +24,7 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
+    protected readonly parent?: IResolver,
   ) {}
 
   // ========================================================================
@@ -31,15 +32,22 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   // ========================================================================
 
   /**
-   * Async resolution - throws if anchor not supported
+   * Async resolution - delegates to parent if this resolver cannot handle the anchor
    */
   async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
-    if (!this.canResolve(anchor)) {
-      throw new Error(`Resolver "${this.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`);
+    // Try self first
+    if (this.canResolve(anchor)) {
+      const basePath = await this.resolveAnchor(anchor);
+      return this.joinPaths(basePath, relative);
     }
 
-    const basePath = await this.resolveAnchor(anchor);
-    return this.joinPaths(basePath, relative);
+    // Delegate to parent
+    if (this.parent) {
+      return this.parent.resolve(anchor, relative);
+    }
+
+    // No one in the chain can handle this anchor
+    throw new Error(`Resolver "${this.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`);
   }
 
   // ========================================================================
@@ -159,7 +167,46 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   }
 
   /**
-   * Try to reverse-resolve an OS path
+   * Try to reverse-resolve an OS path with parent delegation
+   *
+   * Tries to reverse resolve the path using this resolver first (most specific),
+   * then delegates to parent if this resolver cannot handle it.
+   *
+   * @returns FilePath instance using the appropriate resolver, or null if no resolver can handle it
+   */
+  async tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null> {
+    // Try self first (most specific)
+    const selfResult = await this.tryReverseSelf(resolvedPath);
+    if (selfResult !== null) {
+      // We handled it - create FilePath with this resolver
+      return new FilePath(selfResult.relative, selfResult.anchor, this);
+    }
+
+    // Delegate to parent
+    if (this.parent) {
+      const parentFilePath = await this.parent.tryReverse(resolvedPath);
+
+      if (parentFilePath !== null) {
+        // Check if parent returned an anchor that WE claim to handle
+        // If yes, this is a validation error (we should have handled it but failed)
+        const parentAnchor = parentFilePath.getAnchor();
+        if (this.canResolve(parentAnchor)) {
+          throw new Error(
+            `Path validation failed for resolver "${this.name}": ${resolvedPath}. ` +
+            `Parent returned anchor "${AnchorNS.name(parentAnchor)}" which this resolver claims to handle.`
+          );
+        }
+
+        // Parent returned an anchor we don't handle - return parent's FilePath
+        return parentFilePath;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Try to reverse-resolve an OS path using only this resolver (no parent delegation)
    *
    * Strategy:
    * 1. Get all base paths for this resolver
@@ -167,7 +214,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    * 3. Extract relative portion
    * 4. Return anchor + relative
    */
-  async tryReverse(resolvedPath: ResolvedPath): Promise<{
+  protected async tryReverseSelf(resolvedPath: ResolvedPath): Promise<{
     anchor: Anchor;
     relative: RelativePath;
   } | null> {
@@ -273,6 +320,7 @@ export class CachingResolver implements IResolver {
   constructor(
     private readonly inner: IResolver,
     private readonly ttlMs: number = 60000, // 1 minute default
+    public readonly parent?: IResolver,
   ) {}
 
   get name(): string {
@@ -333,10 +381,7 @@ export class CachingResolver implements IResolver {
   // Reverse Resolution (Delegated)
   // ========================================================================
 
-  async tryReverse(resolvedPath: ResolvedPath): Promise<{
-    anchor: Anchor;
-    relative: RelativePath;
-  } | null> {
+  async tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null> {
     return this.inner.tryReverse(resolvedPath);
   }
 

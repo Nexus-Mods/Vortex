@@ -65,8 +65,9 @@ export class ProtonResolver extends MappingResolver<ProtonAnchor> {
   constructor(
     private readonly steamPath: FilePath,
     private readonly appId: string,
+    parent?: import('../IResolver').IResolver,
   ) {
-    super('proton');
+    super('proton', parent);
   }
 
   // ========================================================================
