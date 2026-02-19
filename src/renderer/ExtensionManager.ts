@@ -3118,8 +3118,8 @@ class ExtensionManager {
       .map((name: string) => ({
         name,
         namespace: name,
-        path: path.resolve(__dirname, "..", "extensions", name),
-        initFunc: () => require(`../extensions/${name}/index`).default,
+        path: path.resolve(__dirname, "extensions", name),
+        initFunc: () => require(`./extensions/${name}/index`).default,
         dynamic: false,
       }))
       .concat(
