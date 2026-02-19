@@ -1,8 +1,8 @@
 import * as path from "path";
 import * as url from "url";
 
-import type { IDiscoveryResult } from "../../../../extensions/gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../../../extensions/gamemode_management/types/IGameStored";
+import type { IDiscoveryResult } from "../../../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
 
 export const getGameImageUrl = (
   game: IGameStored,

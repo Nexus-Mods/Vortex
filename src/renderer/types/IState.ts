@@ -1,14 +1,14 @@
-import type { ICategoryDictionary } from "../../extensions/category_management/types/ICategoryDictionary";
-import type { ICollectionInstallState } from "../../extensions/collections_integration/types";
-import type { IDownload } from "../../extensions/download_management/types/IDownload";
-import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
+import type { ICategoryDictionary } from "../extensions/category_management/types/ICategoryDictionary";
+import type { ICollectionInstallState } from "../extensions/collections_integration/types";
+import type { IDownload } from "../extensions/download_management/types/IDownload";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type {
   IHistoryPersistent,
   IHistoryState,
-} from "../../extensions/history_management/reducers";
-import type { IMod } from "../../extensions/mod_management/types/IMod";
-import type { IProfile } from "../../extensions/profile_management/types/IProfile";
+} from "../extensions/history_management/reducers";
+import type { IMod } from "../extensions/mod_management/types/IMod";
+import type { IProfile } from "../extensions/profile_management/types/IProfile";
 import type { IParameters } from "../../shared/types/cli";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";

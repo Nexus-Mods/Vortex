@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/category_management/actions/category';
+import * as actions from '../src/renderer/extensions/category_management/actions/category';
 
 
 describe('loadCategories', () => {

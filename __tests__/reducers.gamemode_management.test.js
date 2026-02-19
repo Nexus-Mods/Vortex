@@ -1,4 +1,4 @@
-import { settingsReducer } from '../src/extensions/gamemode_management/reducers/settings';
+import { settingsReducer } from '../src/renderer/extensions/gamemode_management/reducers/settings';
 import _ from 'lodash';
 
 describe('setToolVisible', () => {

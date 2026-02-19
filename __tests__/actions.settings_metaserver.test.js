@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/settings_metaserver/actions';
+import * as actions from '../src/renderer/extensions/settings_metaserver/actions';
 
 describe('addMetaserver', () => {
   it('creates the correct action', () => {

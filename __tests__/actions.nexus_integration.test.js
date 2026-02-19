@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/nexus_integration/actions/account';
+import * as actions from '../src/renderer/extensions/nexus_integration/actions/account';
 
 describe('setUserAPIKey', () => {
   it('creates the correct action', () => {

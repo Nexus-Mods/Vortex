@@ -1,4 +1,4 @@
-import { stateReducer } from '../src/extensions/download_management/reducers/state';
+import { stateReducer } from '../src/renderer/extensions/download_management/reducers/state';
 import * as _ from 'lodash';
 
 jest.mock('../src/renderer/util/errorHandling', () => ({

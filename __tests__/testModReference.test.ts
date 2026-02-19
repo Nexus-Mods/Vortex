@@ -19,8 +19,8 @@
  * robustness testing for invalid inputs and edge cases.
  */
 
-import { testModReference, isFuzzyVersion, sanitizeExpression, coerceToSemver } from '../src/extensions/mod_management/util/testModReference';
-import { IMod, IModReference } from '../src/extensions/mod_management/types/IMod';
+import { testModReference, isFuzzyVersion, sanitizeExpression, coerceToSemver } from '../src/renderer/extensions/mod_management/util/testModReference';
+import { IMod, IModReference } from '../src/renderer/extensions/mod_management/types/IMod';
 
 // Mock the log function to avoid console output during tests
 jest.mock('../src/renderer/util/log', () => ({

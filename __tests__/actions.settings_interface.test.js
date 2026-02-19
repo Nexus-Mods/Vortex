@@ -1,5 +1,5 @@
-import * as interfaceActions from '../src/extensions/settings_interface/actions/interface';
-import * as automationActions from '../src/extensions/settings_interface/actions/automation';
+import * as interfaceActions from '../src/renderer/extensions/settings_interface/actions/interface';
+import * as automationActions from '../src/renderer/extensions/settings_interface/actions/automation';
 
 describe('setLanguage', () => {
   it('creates the correct action', () => {

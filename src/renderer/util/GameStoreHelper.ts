@@ -7,7 +7,7 @@ import { log } from "./log";
 import * as winapi from "winapi-bindings";
 import { makeExeId } from "../reducers/session";
 
-import { getGameStores } from "../../extensions/gamemode_management/util/getGame";
+import { getGameStores } from "../extensions/gamemode_management/util/getGame";
 
 import { ProcessCanceled, UserCanceled } from "./CustomErrors";
 import type { IGameStore } from "../types/IGameStore";

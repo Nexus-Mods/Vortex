@@ -1,11 +1,11 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import InstallManager from '../src/extensions/mod_management/InstallManager';
+import InstallManager from '../src/renderer/extensions/mod_management/InstallManager';
 import { IExtensionApi, IState } from '../src/renderer/types/api';
-import { IDependency } from '../src/extensions/mod_management/types/IDependency';
-import { IModRule } from '../src/extensions/mod_management/types/IMod';
+import { IDependency } from '../src/renderer/extensions/mod_management/types/IDependency';
+import { IModRule } from '../src/renderer/extensions/mod_management/types/IMod';
 
 // Mock dependencies
-jest.mock('../src/extensions/mod_management/util/dependencies');
+jest.mock('../src/renderer/extensions/mod_management/util/dependencies');
 jest.mock('../src/renderer/util/api');
 jest.mock('../src/renderer/util/log');
 

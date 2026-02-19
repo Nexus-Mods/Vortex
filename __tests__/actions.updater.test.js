@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/updater/actions';
+import * as actions from '../src/renderer/extensions/updater/actions';
 
 describe('setUpdateChannel', () => {
   it('sets the Update Channel', () => {

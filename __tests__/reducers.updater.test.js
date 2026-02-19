@@ -1,4 +1,4 @@
-import reducer from '../src/extensions/updater/reducers';
+import reducer from '../src/renderer/extensions/updater/reducers';
 
 describe('setUpdateChannel', () => {
   it('sets the Update Channel', () => {

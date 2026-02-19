@@ -1,4 +1,4 @@
-import { currentGameDiscovery, gameName, knownGames } from '../src/extensions/gamemode_management/selectors';
+import { currentGameDiscovery, gameName, knownGames } from '../src/renderer/extensions/gamemode_management/selectors';
 
 describe('knownGames', () => {
   it('returns the known games', function () {

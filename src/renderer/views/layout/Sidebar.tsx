@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 import type { IMainPage } from "../../types/IMainPage";
 
-import { getGame } from "../../../extensions/gamemode_management/util/getGame";
+import { getGame } from "../../extensions/gamemode_management/util/getGame";
 import { useWindowContext } from "../../contexts";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";

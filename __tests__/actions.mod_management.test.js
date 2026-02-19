@@ -1,5 +1,5 @@
-import * as settingsActions from '../src/extensions/mod_management/actions/settings';
-import * as modsActions from '../src/extensions/mod_management/actions/mods';
+import * as settingsActions from '../src/renderer/extensions/mod_management/actions/settings';
+import * as modsActions from '../src/renderer/extensions/mod_management/actions/mods';
 
 describe('setPath', () => {
   it('creates the correct action', () => {

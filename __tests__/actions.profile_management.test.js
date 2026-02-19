@@ -1,4 +1,4 @@
-import * as actions from '../src/extensions/profile_management/actions/profiles';
+import * as actions from '../src/renderer/extensions/profile_management/actions/profiles';
 
 describe('setModEnabled', () => {
   it('creates the correct action', () => {

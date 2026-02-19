@@ -13,7 +13,7 @@ import type {
 import type {
   IModReference,
   IModRepoId,
-} from "../extensions/mod_management/types/IMod";
+} from "./extensions/mod_management/types/IMod";
 import type { SanityCheck } from "./store/reduxSanity";
 import type {
   IAvailableExtension,
@@ -81,7 +81,7 @@ import {
 } from "./actions/notifications";
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
-import { setOptionalExtensions } from "../extensions/extension_manager/actions";
+import { setOptionalExtensions } from "./extensions/extension_manager/actions";
 import { VCREDIST_URL } from "../shared/constants";
 import {
   getErrorCode,
@@ -3118,8 +3118,8 @@ class ExtensionManager {
       .map((name: string) => ({
         name,
         namespace: name,
-        path: path.resolve(__dirname, "..", "extensions", name),
-        initFunc: () => require(`../extensions/${name}/index`).default,
+        path: path.resolve(__dirname, "extensions", name),
+        initFunc: () => require(`./extensions/${name}/index`).default,
         dynamic: false,
       }))
       .concat(

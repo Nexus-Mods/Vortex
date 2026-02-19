@@ -1,4 +1,4 @@
-import NXMUrl from '../src/extensions/nexus_integration/NXMUrl';
+import NXMUrl from '../src/renderer/extensions/nexus_integration/NXMUrl';
 
 describe('NXMUrl', () => {
   it('parses correctly', () => {

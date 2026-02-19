@@ -1,4 +1,4 @@
-import { installerUIReducer } from '../src/extensions/installer_fomod_shared/reducers/installerUI';
+import { installerUIReducer } from '../src/renderer/extensions/installer_fomod_shared/reducers/installerUI';
 
 describe('startDialog', () => {
   it('starts the installer dialog', () => {

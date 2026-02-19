@@ -1,4 +1,4 @@
-import reducer from '../src/extensions/starter_dashlet/reducers';
+import reducer from '../src/renderer/extensions/starter_dashlet/reducers';
 
 describe('setPrimaryTool', () => {
   it('sets the Primary Tool', () => {

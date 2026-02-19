@@ -6,38 +6,38 @@ import type * as Redux from "redux";
 import type { ComplexActionCreator } from "redux-act";
 import type { ThunkDispatch } from "redux-thunk";
 
-import type { IDownloadsAPIExtension } from "../../extensions/download_management/types/IDownloadsAPIExtension";
-import type { ILoadOrderGameInfo } from "../../extensions/file_based_loadorder/types/types";
+import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
+import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
 import type {
   GameVersionProviderFunc,
   GameVersionProviderTest,
   IGameVersionProviderOptions,
-} from "../../extensions/gameversion_management/types/IGameVersionProvider";
+} from "../extensions/gameversion_management/types/IGameVersionProvider";
 import type {
   IHistoryEvent,
   IHistoryStack,
-} from "../../extensions/history_management/types";
-import type { IGameLoadOrderEntry } from "../../extensions/mod_load_order/types/types";
+} from "../extensions/history_management/types";
+import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 import type {
   IDeployedFile,
   IDeploymentMethod,
   IFileChange,
-} from "../../extensions/mod_management/types/IDeploymentMethod";
+} from "../extensions/mod_management/types/IDeploymentMethod";
 import type {
   IInstallResult,
   IInstruction,
   InstructionType,
-} from "../../extensions/mod_management/types/IInstallResult";
-import type { IModsAPIExtension } from "../../extensions/mod_management/types/IModsAPIExtension";
+} from "../extensions/mod_management/types/IInstallResult";
+import type { IModsAPIExtension } from "../extensions/mod_management/types/IModsAPIExtension";
 import type {
   InstallFunc,
   ProgressDelegate,
-} from "../../extensions/mod_management/types/InstallFunc";
+} from "../extensions/mod_management/types/InstallFunc";
 import type {
   ISupportedResult,
   TestSupported,
-} from "../../extensions/mod_management/types/TestSupported";
-import type { INexusAPIExtension } from "../../extensions/nexus_integration/types/INexusAPIExtension";
+} from "../extensions/mod_management/types/TestSupported";
+import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
 import type { Archive } from "../util/archives";
