@@ -622,11 +622,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   private setColors(theme: { [name: string]: string }) {
     this.nextState.colors = {};
     colorDefaults.forEach((entry) => {
-      if (
-        colorDefaults.find((color) => color.name === entry.name) !== undefined
-      ) {
-        this.nextState.colors[entry.name] = theme[entry.name] || entry.value;
-      }
+      this.nextState.colors[entry.name] = theme[entry.name] || entry.value;
     });
   }
 }
