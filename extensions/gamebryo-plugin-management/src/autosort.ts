@@ -1050,12 +1050,12 @@ class LootInterface {
                   bbcode,
                   checkboxes: solutions,
                 }, errActions)
-              .then(result => {
+              .then(async result => {
                 if (result.action === 'Apply Selected') {
                   const selected = Object.keys(result.input)
                     .filter(key => result.input[key]);
 
-                  selected.sort((lhs, rhs) => {
+                  const sorted = selected.sort((lhs, rhs) => {
                       // reset groups first because if one of the other commands changes the
                       // groups those might not work any more or reset a different list of groups
                       if (lhs.startsWith('resetgroups')) {
@@ -1065,11 +1065,20 @@ class LootInterface {
                       } else {
                         return lhs.localeCompare(rhs);
                       }
-                    })
-                    .forEach(key => this.applyFix(key, loot));
+                    });
 
-                  if (selected.length > 0) {
-                    // sort again
+                  for (const key of sorted) {
+                    await this.applyFix(key, loot);
+                  }
+
+                  if (sorted.length > 0) {
+                    // invalidate the cached userlist mtime so that readLists
+                    // is forced to reload from disk even if the file write
+                    // lands within the same filesystem timestamp
+                    this.mUserlistTime = undefined;
+                    // small delay to allow the persistor to flush the
+                    // updated userlist.yaml to disk before LOOT re-reads it
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     this.onSort(true);
                   }
                 }
