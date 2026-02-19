@@ -4,24 +4,24 @@ import FormInput from "../../../renderer/controls/FormInput";
 import Icon from "../../../renderer/controls/Icon";
 import IconBar from "../../../renderer/controls/IconBar";
 import { ToggleButton } from "../../../renderer/controls/TooltipControls";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
-import type { IState } from "../../../types/IState";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
+import type { IComponentContext } from "../../../renderer/types/IComponentContext";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import opn from "../../../util/opn";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import opn from "../../../renderer/util/opn";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type {
   IAvailableExtension,
   IExtension,
-} from "../../extension_manager/types";
+} from "../../../renderer/types/extensions";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 

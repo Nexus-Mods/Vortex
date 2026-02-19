@@ -1,27 +1,54 @@
+import type * as Redux from "redux";
+
+import PromiseBB from "bluebird";
+import * as _ from "lodash";
+import Zip from "node-7z";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+import { fileMD5 } from "vortexmt";
+import winapi from "winapi-bindings";
+
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IPresetStep, IPresetStepInstallMod } from "../../types/IPreset";
-import type { IState } from "../../types/IState";
-import type { ITestResult } from "../../types/ITestResult";
-import { getApplication } from "../../util/application";
+} from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import type { Normalize } from "../../renderer/util/getNormalizeFunc";
+import type DownloadManager from "./DownloadManager";
+import type { DownloadObserver } from "./DownloadObserver";
+import type observe from "./DownloadObserver";
+import type { DownloadState, IDownload } from "./types/IDownload";
+import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
+import type { IDownloadViewProps } from "./views/DownloadView";
+
+import ReduxProp from "../../renderer/ReduxProp";
+import { unknownToError } from "../../shared/errors";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import type { Normalize } from "../../util/getNormalizeFunc";
-import getNormalizeFunc from "../../util/getNormalizeFunc";
-import { log } from "../../util/log";
-import presetManager from "../../util/PresetManager";
-import ReduxProp from "../../renderer/ReduxProp";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, sum, toPromise, truthy } from "../../util/util";
-
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import getNormalizeFunc from "../../renderer/util/getNormalizeFunc";
+import { log } from "../../renderer/util/log";
+import * as selectors from "../../renderer/util/selectors";
+import { knownGames } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import {
+  batchDispatch,
+  sum,
+  toPromise,
+  truthy,
+} from "../../renderer/util/util";
+import NXMUrl from "../nexus_integration/NXMUrl";
+import { ensureLoggedIn } from "../nexus_integration/util";
+import {
+  convertNXMIdReverse,
+  convertGameIdReverse,
+} from "../nexus_integration/util/convertGameId";
 import {
   addLocalDownload,
   downloadProgress,
@@ -34,50 +61,22 @@ import {
   setDownloadSpeed,
   setDownloadSpeeds,
 } from "./actions/state";
-
 import { setTransferDownloads } from "./actions/transactions";
+import downloadAttributes from "./downloadAttributes";
 import { settingsReducer } from "./reducers/settings";
 import { stateReducer } from "./reducers/state";
 import { transactionsReducer } from "./reducers/transactions";
-import type { DownloadState, IDownload } from "./types/IDownload";
-import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
+import extendAPI from "./util/extendApi";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
 import queryInfo from "./util/queryDLInfo";
-import type { IDownloadViewProps } from "./views/DownloadView";
+import setDownloadGames from "./util/setDownloadGames";
 import DownloadView from "./views/DownloadView";
 import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
-
-import downloadAttributes from "./downloadAttributes";
-import type DownloadManager from "./DownloadManager";
-import type { DownloadObserver } from "./DownloadObserver";
-import type observe from "./DownloadObserver";
-
-import type * as RemoteT from "@electron/remote";
-import PromiseBB from "bluebird";
-import * as _ from "lodash";
-import Zip from "node-7z";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { fileMD5 } from "vortexmt";
-import winapi from "winapi-bindings";
-import lazyRequire from "../../util/lazyRequire";
-import setDownloadGames from "./util/setDownloadGames";
-import { ensureLoggedIn } from "../nexus_integration/util";
-import NXMUrl from "../nexus_integration/NXMUrl";
-import { knownGames } from "../../util/selectors";
-import {
-  convertNXMIdReverse,
-  convertGameIdReverse,
-} from "../nexus_integration/util/convertGameId";
-import extendAPI from "./util/extendApi";
-import { unknownToError } from "../../shared/errors";
-
-const remote = lazyRequire<typeof RemoteT>(() => require("@electron/remote"));
+import { mdiDownload } from "@mdi/js";
 
 let observer: DownloadObserver;
 let manager: DownloadManager;
@@ -294,7 +293,7 @@ function watchDownloads(
   }
 
   try {
-    currentWatch = fs.watch(downloadPath, {}, onChange) as fs.FSWatcher;
+    currentWatch = fs.watch(downloadPath, {}, onChange);
     currentWatch.on("error", (error) => {
       // these may happen when the download path gets moved.
       log("warn", "failed to watch mod directory", { downloadPath, error });
@@ -317,37 +316,49 @@ async function removeInvalidDownloads(api: IExtensionApi, gameId?: string) {
     return;
   }
   const downloadPath = selectors.downloadPathForGame(state, gameId);
-  let downloads: { [id: string]: IDownload } = state.persistent.downloads.files;
+  const downloads: { [id: string]: IDownload } =
+    state.persistent.downloads.files;
 
   const incomplete = Object.keys(downloads).filter(
     (dlId) =>
-      ["finished", "paused"].includes(downloads[dlId].state) &&
-      (!truthy(downloads[dlId].localPath) ||
+      ["finished", "paused", "failed"].includes(downloads[dlId].state) &&
+      (!downloads[dlId].localPath ||
         downloads[dlId].received === 0 ||
         downloads[dlId].size === 0),
   );
   const invalid = Object.keys(downloads).filter(
     (dlId) =>
-      !archiveExtLookup.has(
-        path.extname(downloads[dlId].localPath || "").toLowerCase(),
-      ),
+      downloads[dlId].localPath && !path.extname(downloads[dlId].localPath),
   );
   const removeSet = new Set<string>(incomplete.concat(invalid));
 
-  const array = Array.from(removeSet);
-  await PromiseBB.all(
-    array.map(async (dlId) => {
-      if (downloads[dlId].localPath !== undefined) {
-        await fs
-          .removeAsync(path.join(downloadPath, downloads[dlId].localPath))
-          .catch(() => null);
+  const toRemove: string[] = [];
+  const repairActions: Array<ReturnType<typeof downloadProgress>> = [];
+
+  await Promise.all(
+    Array.from(removeSet).map(async (dlId) => {
+      if (downloads[dlId].localPath === undefined) {
+        toRemove.push(dlId);
+        return;
+      }
+      const filePath = path.join(downloadPath, downloads[dlId].localPath);
+      const stats = await fs.statAsync(filePath).catch(() => undefined);
+      if (stats?.size > 0) {
+        // file exists and is valid on disk - repair the state instead of deleting
+        repairActions.push(
+          downloadProgress(dlId, stats.size, stats.size, [], undefined),
+        );
+      } else {
+        // file genuinely missing or empty - safe to clean up
+        await fs.removeAsync(filePath).catch(() => null);
+        toRemove.push(dlId);
       }
     }),
   );
-  batchDispatch(
-    api.store,
-    array.map((dlId) => removeDownloadSilent(dlId)),
-  );
+  batchDispatch(api.store, [
+    ...repairActions,
+    ...toRemove.map((dlId) => removeDownloadSilent(dlId)),
+  ]);
 }
 
 function removeInvalidFileExts(api: IExtensionApi, gameId?: string) {
@@ -1114,6 +1125,7 @@ function init(context: IExtensionContextExt): boolean {
     downloadAttributes(context.api, props, withAddInProgress);
 
   context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 30,
     hotkey: "D",
     group: "global",
     badge: downloadCount,
@@ -1121,6 +1133,23 @@ function init(context: IExtensionContextExt): boolean {
       downloadPathForGame,
       columns: downloadColumns,
     }),
+    mdi: mdiDownload,
+  });
+
+  context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 210,
+    id: "game-downloads",
+    hotkey: "D",
+    group: "per-game",
+    badge: downloadCount,
+    isModernOnly: true,
+    visible: () =>
+      selectors.activeGameId(context.api.store.getState()) !== undefined,
+    props: () => ({
+      downloadPathForGame,
+      columns: downloadColumns,
+    }),
+    mdi: mdiDownload,
   });
 
   context.registerSettings("Download", Settings, undefined, undefined, 75);
@@ -1146,7 +1175,7 @@ function init(context: IExtensionContextExt): boolean {
     );
     return incomplete === undefined
       ? true
-      : (context.api.translate("Can only query finished downloads") as string);
+      : context.api.translate("Can only query finished downloads");
   };
 
   context.registerAction(
@@ -1449,12 +1478,13 @@ function init(context: IExtensionContextExt): boolean {
     {
       let powerTimer: NodeJS.Timeout;
       let powerBlockerId: number;
-      const stopTimer = () => {
-        if (
-          powerBlockerId !== undefined &&
-          remote.powerSaveBlocker.isStarted(powerBlockerId)
-        ) {
-          remote.powerSaveBlocker.stop(powerBlockerId);
+      const stopTimer = async () => {
+        if (powerBlockerId !== undefined) {
+          const isStarted =
+            await window.api.powerSaveBlocker.isStarted(powerBlockerId);
+          if (isStarted) {
+            await window.api.powerSaveBlocker.stop(powerBlockerId);
+          }
         }
         powerBlockerId = undefined;
         powerTimer = undefined;
@@ -1514,9 +1544,12 @@ function init(context: IExtensionContextExt): boolean {
               clearTimeout(powerTimer);
             }
             if (powerBlockerId === undefined) {
-              powerBlockerId = remote.powerSaveBlocker.start(
-                "prevent-app-suspension",
-              );
+              // Start power save blocker asynchronously
+              window.api.powerSaveBlocker
+                .start("prevent-app-suspension")
+                .then((id) => {
+                  powerBlockerId = id;
+                });
             }
             powerTimer = setTimeout(stopTimer, 60000);
           }
@@ -1564,98 +1597,6 @@ function init(context: IExtensionContextExt): boolean {
           }
         },
       );
-
-      presetManager.on("installmod", (stepIn: IPresetStep) => {
-        const step = stepIn as IPresetStepInstallMod;
-        log("info", "preset starting download", { url: step.url });
-
-        const onDidInstallDependencies = (dlId: string, cb: () => void) => {
-          const callback = (gameId: string, modId: string) => {
-            const installedDLId =
-              context.api.getState().persistent.mods[gameId]?.[modId]
-                ?.archiveId;
-            if (installedDLId === dlId) {
-              context.api.events.off("did-install-dependencies", callback);
-              cb();
-            }
-          };
-          context.api.events.on("did-install-dependencies", callback);
-        };
-
-        const onDidInstallCollection = (dlId: string, cb: () => void) => {
-          const callback = (gameId: string, modId: string) => {
-            const installedDLId =
-              context.api.getState().persistent.mods[gameId]?.[modId]
-                ?.archiveId;
-            if (installedDLId === dlId) {
-              context.api.events.off("did-install-collection", callback);
-              cb();
-            }
-          };
-          context.api.events.on("did-install-collection", callback);
-        };
-
-        let isCollection: boolean = false;
-
-        try {
-          const urlParsed = new NXMUrl(step.url);
-          if (urlParsed.collectionSlug !== undefined) {
-            isCollection = true;
-
-            const state = context.api.getState();
-            const games = knownGames(state);
-            const gameId = convertNXMIdReverse(games, urlParsed.gameId);
-            const mods = state.persistent.mods[gameId];
-            const existing = Object.keys(mods).find(
-              (modId) =>
-                mods[modId].attributes?.collectionSlug ===
-                urlParsed.collectionSlug,
-            );
-            if (existing !== undefined) {
-              return new PromiseBB((resolve) => {
-                onDidInstallCollection(mods[existing].archiveId, resolve);
-                context.api.events.emit("resume-collection", gameId, existing);
-              });
-            }
-          }
-        } catch (err) {
-          // ignore if this is not nxm-protocol
-        }
-
-        return ensureLoggedIn(context.api)
-          .then(() =>
-            toPromise((cb) =>
-              context.api.events.emit(
-                "start-download",
-                [step.url],
-                {},
-                undefined,
-                cb,
-                "always",
-                {
-                  allowInstall: false,
-                },
-              ),
-            ),
-          )
-          .tapCatch((err) => {
-            log("error", "download failed", {
-              url: step.url,
-              error: err.message,
-            });
-          })
-          .then((dlId: string) => {
-            log("info", "download finished", { dlId });
-            return new PromiseBB((resolve) => {
-              if (isCollection) {
-                onDidInstallCollection(dlId, resolve);
-              } else {
-                onDidInstallDependencies(dlId, resolve);
-              }
-              context.api.events.emit("start-install-download", dlId);
-            });
-          });
-      });
     }
   });
 

@@ -19,14 +19,16 @@ import type { ComplexActionCreator } from 'redux-act';
 import { ComplexActionCreator1 } from 'redux-act';
 import { ComplexActionCreator2 } from 'redux-act';
 import { ComplexActionCreator3 } from 'redux-act';
-import type { ComponentProps } from 'react';
+import { ComplexActionCreator4 } from 'redux-act';
+import { ComplexActionCreator5 } from 'redux-act';
+import { ComplexActionCreator6 } from 'redux-act';
+import { ComponentProps } from 'react';
 import { ComponentType } from 'react';
 import { constants } from 'fs';
 import { createReadStream } from 'original-fs';
 import { createWriteStream } from 'original-fs';
 import { Dropdown as Dropdown_2 } from 'react-bootstrap';
 import { DropdownButton as DropdownButton_2 } from 'react-bootstrap';
-import * as electron from 'electron';
 import { EmptyActionCreator } from 'redux-act';
 import type { EndorsedStatus } from '@nexusmods/nexus-api';
 import { ForwardRefExoticComponent } from 'react';
@@ -60,7 +62,6 @@ import type { IReference } from 'modmeta-db';
 import type { IRevision } from '@nexusmods/nexus-api';
 import type { IRule } from 'modmeta-db';
 import type { IServer } from 'modmeta-db';
-import { JSX as JSX_2 } from 'react';
 import type { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { linkSync } from 'original-fs';
 import { Modal as Modal_2 } from 'react-bootstrap';
@@ -81,7 +82,6 @@ import { ParametricSelector } from 're-reselect';
 import { default as Promise_2 } from 'bluebird';
 import type * as Promise_3 from 'bluebird';
 import * as React_2 from 'react';
-import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
 import type { ReactSelectProps } from 'react-select';
 import type { Readable } from 'stream';
@@ -99,6 +99,7 @@ import * as semver from 'semver';
 import SevenZip from 'node-7z';
 import { Stats } from 'fs';
 import { statSync } from 'original-fs';
+import { SVGAttributes } from 'react';
 import { symlinkSync } from 'original-fs';
 import type { TFunction as TFunction_2 } from 'i18next';
 import type { ThunkDispatch } from 'redux-thunk';
@@ -109,15 +110,15 @@ import { writeFileSync } from 'original-fs';
 import { WriteStream } from 'fs';
 import { writeSync } from 'original-fs';
 
-// Warning: (ae-forgotten-export) The symbol "ExportType" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExportType" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class ActionContextMenu extends React_2.Component<ExportType> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ExportType_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExportType_2" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const ActionDropdown: React_2.ComponentClass<ExportType_2>;
@@ -352,13 +353,13 @@ const activeGameId: (state: IState) => string;
 const activeProfile: (state: any) => IProfile | undefined;
 
 // @public
-const addDialog: reduxAct.ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
-    id: string;
-    type: string;
-    title: string;
-    content: IDialogContent;
-    defaultAction: string;
-    actions: string[];
+const addDialog: ComplexActionCreator6<string, string, string, IDialogContent, string, string[], {
+id: string;
+type: string;
+title: string;
+content: IDialogContent;
+defaultAction: string;
+actions: string[];
 }, {}>;
 
 // @public
@@ -376,11 +377,11 @@ const addDiscoveredTool: reduxAct.ComplexActionCreator4<string, string, IDiscove
 }, {}>;
 
 // @public
-const addLocalDownload: reduxAct.ComplexActionCreator4<string, string, string, number, {
-    id: string;
-    game: string;
-    localPath: string;
-    fileSize: number;
+const addLocalDownload: ComplexActionCreator4<string, string, string, number, {
+id: string;
+game: string;
+localPath: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
@@ -403,7 +404,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => Promise<void> | Promise_2<void>;
+function addNotification(notification: INotification): (dispatch: any) => Promise_2<void> | Promise<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -425,14 +426,14 @@ const appendFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions
 // @public
 class Archive {
     constructor(handler: IArchiveHandler);
-    get addFile(): (filePath: string, sourcePath: string) => Promise_2<void>;
-    get create(): (sourcePath: string) => Promise_2<void>;
-    get extractAll(): (outputPath: string) => Promise_2<void>;
-    get extractFile(): (filePath: string, outputPath: string) => Promise_2<void>;
-    get readDir(): (archivePath: string) => Promise_2<string[]>;
-    get readFile(): (filePath: string) => NodeJS.ReadableStream;
+    get addFile(): ((filePath: string, sourcePath: string) => Promise_2<void>) | undefined;
+    get create(): ((sourcePath: string) => Promise_2<void>) | undefined;
+    get extractAll(): ((outputPath: string) => Promise_2<void>) | undefined;
+    get extractFile(): ((filePath: string, outputPath: string) => Promise_2<void>) | undefined;
+    get readDir(): ((archivePath: string) => Promise_2<string[]>) | undefined;
+    get readFile(): ((filePath: string) => NodeJS.ReadableStream) | undefined;
     // (undocumented)
-    get write(): () => Promise_2<void>;
+    get write(): (() => Promise_2<void>) | undefined;
 }
 
 // @public (undocumented)
@@ -451,7 +452,7 @@ type AttributeExtractor = (modInfo: any, modPath: string) => Promise_2<{
 // @public (undocumented)
 type AttributeRenderer = "progress";
 
-// Warning: (ae-forgotten-export) The symbol "ExportType_3" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExportType_3" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Banner: React_2.ComponentClass<ExportType_3>;
@@ -463,12 +464,12 @@ function batchDispatch(store: Redux.Dispatch | Redux.Store, actions: Redux.Actio
 function bbcodeToHTML(input: string): string;
 
 // @public (undocumented)
-function bundleAttachment(options?: IErrorOptions): Promise_2<string>;
+function bundleAttachment(options?: IErrorOptions): Promise_2<string | undefined>;
 
 // @public
 class Button_3 extends React_2.PureComponent<ButtonProps_2, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -579,7 +580,7 @@ const collapseGroup: reduxAct.ComplexActionCreator3<string, string, boolean, {
 // @public
 type CollectionModStatus = "pending" | "downloading" | "downloaded" | "installing" | "installed" | "failed" | "skipped" | "optional";
 
-// Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "MixpanelEvent" needs to be exported by the entry point api.d.ts
 //
 // @public
 class CollectionsDownloadCancelledEvent implements MixpanelEvent {
@@ -613,6 +614,33 @@ class CollectionsDownloadFailedEvent implements MixpanelEvent {
     constructor(collection_id: string, revision_id: string, game_id: number, error_code: string, error_message: string);
     // (undocumented)
     readonly eventName = "collections_download_failed";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string, creation_method: "from_profile" | "quick_collection" | "empty");
+    // (undocumented)
+    readonly eventName = "collection_drafted";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string);
+    // (undocumented)
+    readonly eventName = "collection_draft_updated";
+    // (undocumented)
+    readonly properties: Record<string, any>;
+}
+
+// @public
+class CollectionsDraftUploadedEvent implements MixpanelEvent {
+    constructor(collection_name: string, game_name: string);
+    // (undocumented)
+    readonly eventName = "collection_draft_uploaded";
     // (undocumented)
     readonly properties: Record<string, any>;
 }
@@ -699,7 +727,7 @@ enum Content {
     SettingsDownloadAd = "settings_download_ad"
 }
 
-// Warning: (ae-forgotten-export) The symbol "IContextMenuProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IContextMenuProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const ContextMenu: React_2.ComponentClass<IContextMenuProps>;
@@ -748,7 +776,7 @@ class CycleError extends Error {
     get cycles(): string[][];
 }
 
-// Warning: (ae-forgotten-export) The symbol "IDashletProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDashletProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class Dashlet extends React_2.Component<IDashletProps, {}> {
@@ -764,26 +792,23 @@ class DataInvalid extends Error {
 // @public
 function deBOM(input: string): string;
 
-// @public
-class Debouncer {
+// Warning: (ae-forgotten-export) The symbol "GenericDebouncer" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+class Debouncer extends GenericDebouncer<ReturnType<typeof setTimeout>, typeof setTimeout, typeof clearTimeout> {
     constructor(func: (...args: any[]) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
-    // (undocumented)
-    clear(): void;
-    runNow(callback: (err: Error) => void, ...args: any[]): void;
-    schedule(callback?: (err: Error) => void, ...args: any[]): void;
-    wait(callback: (err: Error) => void, immediately?: boolean): void;
 }
 
 // @public
 function deepMerge(lhs: any, rhs: any): any;
 
-// Warning: (ae-forgotten-export) The symbol "GitHub" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "GitHub" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const _default: GitHub;
 
 // @public (undocumented)
-function <T>(load: () => any): (props: any) => React_2.JSX.Element;
+function <T>(load: () => any): (props: any) => JSX.Element;
 
 // @public (undocumented)
 function <T>(delayed: () => T, exportId?: string): T;
@@ -835,7 +860,7 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 function dismissAllNotifications(): (dispatch: any) => Promise_2<void>;
 
 // @public
-const dismissDialog: reduxAct.ComplexActionCreator1<any, any, {}>;
+const dismissDialog: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 function dismissNotification(id: string): (dispatch: any) => Promise_2<void>;
@@ -860,15 +885,15 @@ const downloadPath: (state: IState) => string;
 // @public (undocumented)
 function downloadPathForGame(state: IState, gameId?: string): string;
 
-// Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IChunk" needs to be exported by the entry point api.d.ts
 //
 // @public
-const downloadProgress: reduxAct.ComplexActionCreator5<string, number, number, IChunk[], string[], {
-    id: string;
-    received: number;
-    total: number;
-    chunks: IChunk[];
-    urls: string[];
+const downloadProgress: ComplexActionCreator5<string, number, number, IChunk[], string[], {
+id: string;
+received: number;
+total: number;
+chunks: IChunk[];
+urls: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -887,12 +912,12 @@ const downloadsForGame: (state: IState, gameId: string) => {
     [dlId: string]: IDownload;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function DraggableList(props: IDraggableListProps): React_2.JSX.Element;
+export function DraggableList(props: IDraggableListProps): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps" needs to be exported by the entry point api.d.ts
 //
 // @public
 export class Dropdown extends React_2.Component<IProps, {
@@ -909,17 +934,17 @@ export class Dropdown extends React_2.Component<IProps, {
     static Toggle: typeof Dropdown_2.Toggle;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IProps_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_2" needs to be exported by the entry point api.d.ts
 //
 // @public
-export function DropdownButton(props: IProps_2): React_2.JSX.Element;
+export function DropdownButton(props: IProps_2): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "IBaseProps_5" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBaseProps_5" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Dropzone: React_2.ComponentClass<IBaseProps_5>;
 
-// Warning: (ae-forgotten-export) The symbol "IEmptyPlaceholderProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IEmptyPlaceholderProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class EmptyPlaceholder extends React_2.PureComponent<IEmptyPlaceholderProps, {}> {
@@ -954,13 +979,6 @@ function ensureFileAsync(filePath: string): Promise_2<void>;
 // @public (undocumented)
 export const ErrorBoundary: any;
 
-// Warning: (ae-forgotten-export) The symbol "IExtendedProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "Omit_2" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-function extend(registerFunc: (...args: any[]) => void, groupProp?: string, addExtInfo?: boolean): <P extends IExtendedProps>(component: React_2.ComponentType<P>) => React_2.ComponentType<Omit_2<P, keyof IExtendedProps> & IExtensibleProps>;
-
 // @public (undocumented)
 function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 
@@ -968,14 +986,14 @@ function extractExeIcon(exePath: string, destPath: string): Promise<void>;
 function fileMD5(filePath: string): Promise<string>;
 
 // @public
-const finalizingDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const finalizingDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const finalizingProgress: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    progress: number;
+const finalizingProgress: ComplexActionCreator2<string, number, {
+id: string;
+progress: number;
 }, {}>;
 
 // @public (undocumented)
@@ -992,25 +1010,25 @@ function findModByRef(reference: IModReference, mods: {
 }): IMod;
 
 // @public
-const finishDownload: reduxAct.ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
-    id: string;
-    state: "finished" | "failed" | "redirect";
-    failCause: any;
+const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
+id: string;
+state: "failed" | "finished" | "redirect";
+failCause: any;
 }, {}>;
 
 // @public (undocumented)
 function fireNotificationAction(notiId: string, notiProcess: string, action: number, dismiss: NotificationDismiss): void;
 
-// Warning: (ae-forgotten-export) The symbol "IProps_3" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_3" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FlexLayout extends React_2.PureComponent<IProps_3, {}> {
     // (undocumented)
-    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
-    // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point index.d.ts
+    static Fixed: (props: React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
+    // Warning: (ae-forgotten-export) The symbol "IFlexProps" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
-    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => React_2.JSX.Element;
+    static Flex: (props: IFlexProps & React_2.HTMLAttributes<HTMLDivElement>) => JSX.Element;
     // (undocumented)
     render(): JSX.Element;
 }
@@ -1027,15 +1045,15 @@ const forgetMod: reduxAct.ComplexActionCreator2<string, string, {
     modId: string;
 }, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "IFormItemProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IFormItemProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FormCheckboxItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IFormFeedbackProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IFormFeedbackProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FormFeedback extends React_2.Component<IFormFeedbackProps, {}> {
@@ -1049,12 +1067,12 @@ export class FormFeedback extends React_2.Component<IFormFeedbackProps, {}> {
     render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IProps_4" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_4" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const FormInput: React_2.ComponentClass<IProps_4>;
 
-// Warning: (ae-forgotten-export) The symbol "IFormPathProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IFormPathProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
@@ -1065,7 +1083,7 @@ export class FormPathItem extends ComponentEx<IFormPathProps, {}> {
 // @public (undocumented)
 export class FormTextItem extends React_2.Component<IFormItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 declare namespace fs {
@@ -1209,7 +1227,7 @@ function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args
 // @public (undocumented)
 function getActivator(activatorId: string): IDeploymentMethod;
 
-// Warning: (ae-forgotten-export) The symbol "IApplication" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IApplication" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 function getApplication(): IApplication;
@@ -1421,7 +1439,7 @@ clearCache: () => void;
     clearCache: () => void;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IModSource" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IModSource" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 function getModSource(id: string): IModSource;
@@ -1432,18 +1450,18 @@ function getModSources(): IModSource[];
 // @public
 function getModType(id: string): IModType;
 
-// Warning: (ae-forgotten-export) The symbol "INormalizeParameters" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "INormalizeParameters" needs to be exported by the entry point api.d.ts
 //
 // @public
 function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): Promise_2<Normalize>;
 
-// Warning: (ae-forgotten-export) The symbol "ILog" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ILog" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 function getReduxLog(): Promise<ILog[]>;
 
 // @public
-function getSafe<T>(state: any, path: Array<string | number>, fallback: T): T;
+function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T;
 
 // @public
 function getSafeCI<T>(state: any, path: Array<string | number>, fallback: T): T;
@@ -1454,7 +1472,7 @@ function getText(group: TextGroup, textId: string, t: TFunction): string;
 // @public (undocumented)
 function getVisibleWindow(win?: BrowserWindow | null): BrowserWindow | null;
 
-// Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "AppPath" needs to be exported by the entry point api.d.ts
 //
 // @public
 function getVortexPath(id: AppPath): string;
@@ -1575,7 +1593,7 @@ interface IAttributeState {
     sortDirection: SortDirection;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IExtensionDownloadInfo" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IExtensionDownloadInfo" needs to be exported by the entry point api.d.ts
 //
 // @public
 interface IAvailableExtension extends IExtensionDownloadInfo {
@@ -1610,7 +1628,7 @@ interface IAvailableExtension extends IExtensionDownloadInfo {
     tags: string[];
     // (undocumented)
     timestamp: number;
-    // Warning: (ae-forgotten-export) The symbol "ExtensionType" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ExtensionType" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     type?: ExtensionType;
@@ -1691,7 +1709,7 @@ interface IComponentContext {
     menuLayer: HTMLDivElement;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IIconProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IIconProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class Icon extends React_2.Component<IIconProps, {
@@ -1709,12 +1727,12 @@ export class Icon extends React_2.Component<IIconProps, {
 }
 
 // @public
-class Icon_3 extends React_2.Component<IconProps_2, {}> {
+class Icon_3 extends React_2.Component<IconProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ExportType_4" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExportType_4" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const IconBar: React_2.ComponentClass<ExportType_4>;
@@ -1722,7 +1740,7 @@ export const IconBar: React_2.ComponentClass<ExportType_4>;
 // @public (undocumented)
 class IconButton extends React_2.Component<IconButtonProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -1739,7 +1757,7 @@ interface IConditionResult {
 }
 
 // @public (undocumented)
-type IconProps_2 = ITooltipProps & ITooltipIconProps;
+type IconProps = ITooltipProps & ITooltipIconProps;
 
 // @public (undocumented)
 interface IControlBase {
@@ -1919,7 +1937,7 @@ interface IDictionary {
     [key: string]: any;
 }
 
-// @public
+// @public (undocumented)
 interface IDimensions {
     // (undocumented)
     height: number;
@@ -2000,7 +2018,7 @@ interface IDiscoveryState {
 // @public
 interface IDownload {
     chunks?: IChunk[];
-    // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point api.d.ts
     failCause?: IDownloadFailCause;
     fileMD5?: string;
     fileTime: number;
@@ -2012,13 +2030,13 @@ interface IDownload {
         modId: string;
     };
     localPath?: string;
-    // Warning: (ae-forgotten-export) The symbol "IModInfo_2" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModInfo_2" needs to be exported by the entry point api.d.ts
     modInfo: IModInfo_2;
     pausable?: boolean;
     received: number;
     size: number;
     startTime: number;
-    // Warning: (ae-forgotten-export) The symbol "DownloadState" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "DownloadState" needs to be exported by the entry point api.d.ts
     state: DownloadState;
     urls: string[];
     verified: number;
@@ -2155,8 +2173,8 @@ interface IExtensionApi {
     laterT: TFunction;
     locale: () => string;
     lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => Promise_2<ILookupResult[]>;
-    // Warning: (ae-forgotten-export) The symbol "ILookupOptions" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "IModLookupResult" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ILookupOptions" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModLookupResult" needs to be exported by the entry point api.d.ts
     lookupModReference: (ref: IModReference, options?: ILookupOptions) => Promise_2<IModLookupResult[]>;
     // (undocumented)
     NAMESPACE: string;
@@ -2181,9 +2199,9 @@ interface IExtensionApi {
     withPrePost: <T>(eventName: string, callback: (...args: any[]) => Promise_2<T>) => (...args: any[]) => Promise_2<T>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "INexusAPIExtension" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IModsAPIExtension" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IDownloadsAPIExtension" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "INexusAPIExtension" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IModsAPIExtension" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDownloadsAPIExtension" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, IDownloadsAPIExtension {
@@ -2205,10 +2223,11 @@ interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, 
 interface IExtensionContext {
     api: IExtensionApi;
     once: (callback: () => void | Promise_2<void>) => void;
+    // @deprecated
     onceMain: (callback: () => void) => void;
     optional: any;
     registerAction: RegisterAction;
-    // Warning: (ae-forgotten-export) The symbol "SanityCheck" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "SanityCheck" needs to be exported by the entry point api.d.ts
     registerActionCheck: (actionType: string, check: SanityCheck) => void;
     registerAPI: (name: string, func: (...args: any[]) => any, options: IApiFuncOptions) => void;
     registerArchiveType: (extension: string, handler: ArchiveHandlerCreator) => void;
@@ -2221,19 +2240,19 @@ interface IExtensionContext {
     registerFooter: RegisterFooter;
     registerGame: (game: IGame) => void;
     registerGameInfoProvider: (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => void;
-    // Warning: (ae-forgotten-export) The symbol "ICollectionsGameSupportEntry" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ICollectionsGameSupportEntry" needs to be exported by the entry point api.d.ts
     registerGameSpecificCollectionsData: (data: ICollectionsGameSupportEntry) => void;
     registerGameStore: (gameStore: IGameStore) => void;
     registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
-    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderTest" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderFunc" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "IGameVersionProviderOptions" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderTest" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "GameVersionProviderFunc" needs to be exported by the entry point api.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IGameVersionProviderOptions" needs to be exported by the entry point api.d.ts
     registerGameVersionProvider?: (id: string, priority: number, supported: GameVersionProviderTest, getVersion: GameVersionProviderFunc, options?: IGameVersionProviderOptions) => void;
     registerHistoryStack: (id: string, options: IHistoryStack) => void;
     registerInstaller: (id: string, priority: number, testSupported: TestSupported, install: InstallFunc) => void;
     registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
     registerLoadOrder: (gameInfo: ILoadOrderGameInfo) => void;
-    // Warning: (ae-forgotten-export) The symbol "IGameLoadOrderEntry" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IGameLoadOrderEntry" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
@@ -2398,7 +2417,7 @@ interface IGameStore {
     findByAppId: (appId: string | string[]) => Promise_2<IGameStoreEntry>;
     findByName: (appName: string) => Promise_2<IGameStoreEntry>;
     getExecInfo?: (appId: any) => Promise_2<IExecInfo>;
-    getGameStorePath: () => Promise_2<string>;
+    getGameStorePath: () => Promise_2<string | undefined>;
     getPosixPath?: (name: string) => Promise_2<string>;
     id: string;
     identifyGame?: (gamePath: string, fallback: (gamePath: string) => PromiseLike<boolean>) => Promise_2<boolean>;
@@ -2456,7 +2475,7 @@ interface IGameStoreEntry {
     // (undocumented)
     gamePath: string;
     // (undocumented)
-    gameStoreId: string;
+    gameStoreId: string | undefined;
     // (undocumented)
     lastUpdated?: Date;
     // (undocumented)
@@ -2614,11 +2633,11 @@ interface ILinkFileOptions {
 
 // @public
 interface ILoadOrderDisplayItem {
-    // Warning: (ae-forgotten-export) The symbol "IDnDConditionResult" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IDnDConditionResult" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     condition?: (lhs: ILoadOrderDisplayItem, rhs: ILoadOrderDisplayItem, predictedResult: ILoadOrderDisplayItem[]) => IDnDConditionResult;
-    // Warning: (ae-forgotten-export) The symbol "IActionDefinitionEx" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IActionDefinitionEx" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     contextMenuActions?: IActionDefinitionEx[];
@@ -2691,7 +2710,7 @@ interface ILookupDetails {
     gameId?: string;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IImageProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IImageProps" needs to be exported by the entry point api.d.ts
 //
 // @public
 function Image_2(props: IImageProps): JSX.Element;
@@ -2733,7 +2752,7 @@ interface IMergeFilter {
 interface IMod {
     // (undocumented)
     archiveId?: string;
-    // Warning: (ae-forgotten-export) The symbol "IModAttributes" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IModAttributes" needs to be exported by the entry point api.d.ts
     attributes?: IModAttributes;
     // (undocumented)
     enabledINITweaks?: string[];
@@ -2768,7 +2787,7 @@ interface IModLookupInfo {
     customFileName?: string;
     // (undocumented)
     fileId?: string;
-    // Warning: (ae-forgotten-export) The symbol "IFileListItem" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IFileListItem" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     fileList?: IFileListItem[];
@@ -2841,7 +2860,7 @@ interface IModRepoId {
 
 // @public (undocumented)
 interface IModRule extends IRule {
-    // Warning: (ae-forgotten-export) The symbol "IDownloadHint" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IDownloadHint" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     downloadHint?: IDownloadHint;
@@ -2907,11 +2926,11 @@ interface IModTypeOptions {
 }
 
 // @public
-const initDownload: reduxAct.ComplexActionCreator4<string, string[], IDictionary, string[], {
-    id: string;
-    urls: string[];
-    modInfo: IDictionary;
-    games: string[];
+const initDownload: ComplexActionCreator4<string, string[], IDictionary, string[], {
+id: string;
+urls: string[];
+modInfo: IDictionary;
+games: string[];
 }, {}>;
 
 // @public
@@ -2991,15 +3010,17 @@ const installPathForGame: ParametricSelector<IState, string, string> & {
 type InstallPathMode = "userData" | "suggested";
 
 // @public (undocumented)
-const instance: IGameStore;
+const instance: IGameStore | undefined;
 
-// Warning: (ae-forgotten-export) The symbol "GameStoreHelper" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "GameStoreHelper" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const instance_2: GameStoreHelper;
 
+// Warning: (ae-forgotten-export) The symbol "Steam" needs to be exported by the entry point api.d.ts
+//
 // @public (undocumented)
-const instance_3: IGameStore;
+const instance_3: Steam;
 
 // @public (undocumented)
 type InstructionType = "copy" | "mkdir" | "submodule" | "generatefile" | "iniedit" | "unsupported" | "attribute" | "setmodtype" | "error" | "rule";
@@ -3057,23 +3078,23 @@ interface IOverlaysState {
 // @public
 interface IPersistor {
     // (undocumented)
-    getAllKeys(): Promise_2<PersistorKey[]>;
+    getAllKeys(): PromiseLike<PersistorKey[]>;
     // (undocumented)
-    getAllKVs?(prefix?: string): Promise_2<Array<{
+    getAllKVs?(prefix?: string): PromiseLike<Array<{
         key: PersistorKey;
         value: string;
     }>>;
     // (undocumented)
-    getItem(key: PersistorKey): Promise_2<string>;
+    getItem(key: PersistorKey): PromiseLike<string>;
     // (undocumented)
-    removeItem(key: PersistorKey): Promise_2<void>;
+    removeItem(key: PersistorKey): PromiseLike<void>;
     // (undocumented)
-    setItem(key: PersistorKey, value: string): Promise_2<void>;
+    setItem(key: PersistorKey, value: string): PromiseLike<void>;
     // (undocumented)
-    setResetCallback(cb: () => Promise_2<void>): void;
+    setResetCallback(cb: () => PromiseLike<void>): void;
 }
 
-// @public
+// @public (undocumented)
 interface IPosition {
     // (undocumented)
     x: number;
@@ -3161,7 +3182,7 @@ interface IRegisteredExtension {
     dynamic: boolean;
     // (undocumented)
     info?: IExtension;
-    // Warning: (ae-forgotten-export) The symbol "ExtensionInit" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ExtensionInit" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     initFunc: () => ExtensionInit;
@@ -3689,7 +3710,13 @@ interface IStateVerifier {
 // @public (undocumented)
 interface ISteamEntry extends IGameStoreEntry {
     // (undocumented)
+    compatDataPath?: string;
+    // (undocumented)
     manifestData?: any;
+    // (undocumented)
+    protonPath?: string;
+    // (undocumented)
+    usesProton?: boolean;
 }
 
 // @public (undocumented)
@@ -3742,7 +3769,7 @@ interface ITableAttribute<T = any> {
     isSortable?: boolean;
     isToggleable?: boolean;
     isVolatile?: boolean;
-    // Warning: (ae-forgotten-export) The symbol "ITString" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ITString" needs to be exported by the entry point api.d.ts
     name?: string | ITString;
     noShrink?: boolean;
     placement: Placement;
@@ -3946,7 +3973,7 @@ interface ITooltipIconProps {
 
 // @public (undocumented)
 interface ITooltipProps {
-    // Warning: (ae-forgotten-export) The symbol "ButtonType_3" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ButtonType_3" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     buttonType?: ButtonType_3;
@@ -4004,7 +4031,7 @@ interface IValidationResult {
     invalid: IInvalidResult[];
 }
 
-// @public
+// @public (undocumented)
 interface IWindow {
     // (undocumented)
     customTitlebar: boolean;
@@ -4051,7 +4078,7 @@ const lastActiveProfileForGame: ParametricSelector<IState, string, string> & {
 // @public (undocumented)
 function linkAsync(src: string, dest: string, options?: ILinkFileOptions): Promise_2<void>;
 
-// Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const loadCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictionary, {
@@ -4062,10 +4089,10 @@ const loadCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictionary
 // @public (undocumented)
 type LoadOrder = ILoadOrderEntry_2[];
 
-// Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_5" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function LoadOrderIndexInput(props: IProps_5): React_3.JSX.Element;
+export function LoadOrderIndexInput(props: IProps_5): JSX.Element;
 
 // @public
 function local<T>(id: string, init: T): T;
@@ -4073,10 +4100,10 @@ function local<T>(id: string, init: T): T;
 // @public (undocumented)
 type LockedState = true | false | "true" | "false" | "always" | "never";
 
-// Warning: (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Level" needs to be exported by the entry point api.d.ts
 //
-// @public
-export function log(level: LogLevel, message: string, metadata?: unknown): void;
+// @public @deprecated (undocumented)
+export function log(level: Level, message: string, metadata?: unknown): void;
 
 // @public (undocumented)
 function lookupFromDownload(download: IDownload): IModLookupInfo;
@@ -4087,11 +4114,11 @@ const lstatAsync: (path: string) => Promise_2<fs_2.Stats>;
 // @public (undocumented)
 export const MainContext: React_2.Context<IComponentContext>;
 
-// Warning: (ae-forgotten-export) The symbol "IProps_11" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_11" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class MainPage extends ComponentEx<IProps_11, {}> {
-    // Warning: (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     static Body: typeof MainPageBody;
@@ -4104,7 +4131,7 @@ export class MainPage extends ComponentEx<IProps_11, {}> {
 // @public (undocumented)
 function makeFileWritableAsync(filePath: string): Promise_2<void>;
 
-// Warning: (ae-forgotten-export) The symbol "GetSelection" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "GetSelection" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export function makeGetSelection(tableId: string): GetSelection;
@@ -4126,10 +4153,8 @@ function makeQueue<T>(): (func: () => Bluebird<T>, tryOnly: boolean) => Bluebird
 // @public
 function makeReactive<T extends object>(value: T): T;
 
-// Warning: (ae-forgotten-export) The symbol "Arr" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-function makeRemoteCall<T, ArgsT extends Arr>(id: string, cb: (mainElectron: typeof electron, window: electron.WebContents, ...args: ArgsT) => Promise<T>): (...args: ArgsT) => Promise<T>;
+// @public @deprecated (undocumented)
+function makeRemoteCall(): never;
 
 // @public (undocumented)
 function makeUnique<T>(input: T[]): T[];
@@ -4141,9 +4166,9 @@ function makeUniqueByKey<T>(input: T[], key: (item: T) => string): T[];
 function merge<T extends object>(state: T, path: Array<string | number>, value: any): T;
 
 // @public (undocumented)
-const mergeDownloadModInfo: reduxAct.ComplexActionCreator2<string, any, {
-    id: string;
-    value: any;
+const mergeDownloadModInfo: ComplexActionCreator2<string, any, {
+id: string;
+value: any;
 }, {}>;
 
 // @public
@@ -4159,7 +4184,7 @@ type Method = "GET" | "POST" | "PUT";
 class MissingInterpreter extends Error {
     constructor(message: string, url?: string);
     // (undocumented)
-    get url(): string;
+    get url(): string | undefined;
 }
 
 // @public (undocumented)
@@ -4186,7 +4211,7 @@ export class Modal extends React_2.PureComponent<typeof Modal_2.prototype.props,
     static Title: typeof ModalTitle;
 }
 
-// Warning: (ae-forgotten-export) The symbol "INameOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "INameOptions" needs to be exported by the entry point api.d.ts
 //
 // @public
 function modName(mod: IMod, options?: INameOptions): string;
@@ -4221,7 +4246,7 @@ const modsForGame: (state: IState, gameId: string) => {
     [modId: string]: IMod;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IMoreProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IMoreProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const More: React_2.ComponentClass<IMoreProps>;
@@ -4238,7 +4263,7 @@ function mutateSafe<T>(state: T, path: Array<string | number>, value: any): void
 // @public (undocumented)
 class NavItem_2 extends React_2.Component<NavItemProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4295,7 +4320,7 @@ clearCache: () => void;
     clearCache: () => void;
 };
 
-// Warning: (ae-forgotten-export) The symbol "INexusURLOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "INexusURLOptions" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 function nexusModsURL(reqPath: string[], options?: INexusURLOptions): string;
@@ -4325,15 +4350,15 @@ function objDiff(lhs: any, rhs: any, skip?: string[]): Record<string, any>;
 // @public
 function onceCB<T extends Function>(func: T): T;
 
-// @public (undocumented)
-function open_2(target: string, wait?: boolean): Promise_2<void>;
+// @public @deprecated (undocumented)
+function open_2(target: string, _wait?: boolean): Promise_2<void>;
 
 // @public (undocumented)
 const openAsync: (path: string, flags: string | number, mode?: number) => Promise_2<number>;
 
 // @public (undocumented)
 export class OptionsFilter implements ITableFilter {
-    // Warning: (ae-forgotten-export) The symbol "Options" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Options" needs to be exported by the entry point api.d.ts
     constructor(options: Options | (() => Options), multi: boolean, raw?: boolean);
     // (undocumented)
     component: React_2.ComponentClass<IFilterProps>;
@@ -4347,7 +4372,7 @@ export class OptionsFilter implements ITableFilter {
     raw: boolean;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IProps_6" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_6" needs to be exported by the entry point api.d.ts
 //
 // @public
 export class Overlay extends React_2.Component<IProps_6, {
@@ -4355,7 +4380,7 @@ export class Overlay extends React_2.Component<IProps_6, {
 }> {
     constructor(props: any);
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4373,7 +4398,7 @@ class Overlayable<KeyT extends string | number | symbol, ObjT> {
     setLayer(layerId: string, data: Record<KeyT, Partial<ObjT>>): void;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IProps_7" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_7" needs to be exported by the entry point api.d.ts
 //
 // @public
 export class OverlayTrigger extends React_2.Component<IProps_7, {
@@ -4383,17 +4408,17 @@ export class OverlayTrigger extends React_2.Component<IProps_7, {
     // (undocumented)
     componentDidMount(): void;
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
 function pad(value: number, padding: string, width: number): string;
 
 // @public
-const pauseDownload: reduxAct.ComplexActionCreator3<string, boolean, IChunk[], {
-    id: string;
-    paused: boolean;
-    chunks: IChunk[];
+const pauseDownload: ComplexActionCreator3<string, boolean, IChunk[], {
+id: string;
+paused: boolean;
+chunks: IChunk[];
 }, {}>;
 
 // @public (undocumented)
@@ -4408,7 +4433,7 @@ type PersistorKey = string[];
 // @public (undocumented)
 type Placement = "table" | "detail" | "both" | "inline";
 
-// Warning: (ae-forgotten-export) The symbol "IPortalMenuProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IPortalMenuProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class PortalMenu extends React_2.Component<IPortalMenuProps, {
@@ -4423,7 +4448,7 @@ export class PortalMenu extends React_2.Component<IPortalMenuProps, {
     // (undocumented)
     static contextTypes: React_2.ValidationMap<any>;
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
@@ -4437,7 +4462,7 @@ type ProblemSeverity = "warning" | "error" | "fatal";
 
 // @public (undocumented)
 class ProcessCanceled extends Error {
-    constructor(message: string, extraInfo?: any);
+    constructor(message: string, extraInfo?: unknown);
     // (undocumented)
     get extraInfo(): any;
 }
@@ -4445,8 +4470,8 @@ class ProcessCanceled extends Error {
 // @public (undocumented)
 function profileById(state: IState, profileId: string): IProfile;
 
-// Warning: (ae-forgotten-export) The symbol "IBaseProps_9" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IProgressBarState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBaseProps_9" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProgressBarState" needs to be exported by the entry point api.d.ts
 //
 // @public
 export class ProgressBar extends React_2.PureComponent<IBaseProps_9, IProgressBarState> {
@@ -4489,7 +4514,7 @@ clearCache: () => void;
     clearCache: () => void;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IBaseProps_10" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBaseProps_10" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const RadialProgress: React_2.ComponentClass<IBaseProps_10>;
@@ -4532,7 +4557,7 @@ class ReduxProp<T> {
 // @public (undocumented)
 type RegisterAction = (group: string, position: number, iconOrComponent: string | React_2.ComponentType<any>, options: IActionOptions, titleOrProps?: string | PropsCallback, actionOrCondition?: (instanceIds?: string[]) => void | boolean, condition?: (instanceIds?: string[]) => boolean | string) => void;
 
-// Warning: (ae-forgotten-export) The symbol "IBannerOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBannerOptions" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 type RegisterBanner = (group: string, component: React_2.ComponentType<any>, options: IBannerOptions) => void;
@@ -4577,13 +4602,13 @@ const removeCategory: reduxAct.ComplexActionCreator2<string, string, {
 }, {}>;
 
 // @public
-const removeDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
-const removeDownloadSilent: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const removeDownloadSilent: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public (undocumented)
@@ -4633,7 +4658,7 @@ function renderBBCode(input: string, context?: unknown): React_2.ReactChild[];
 // @public
 function renderError(err: string | Error | any, options?: IErrorOptions): IErrorRendered;
 
-// Warning: (ae-forgotten-export) The symbol "IRenderOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IRenderOptions" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 function renderModReference(ref?: IModReference, mod?: IMod, options?: IRenderOptions): string;
@@ -4736,8 +4761,8 @@ declare namespace selectors {
 }
 export { selectors }
 
-// Warning: (ae-forgotten-export) The symbol "IProps_8" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "ISelectUpDownState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_8" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISelectUpDownState" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class SelectUpDown extends React_2.Component<IProps_8, ISelectUpDownState> {
@@ -4801,7 +4826,7 @@ const setAutoInstall: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 // @public (undocumented)
 const setAutoStart: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "ICategory" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICategory" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const setCategory: reduxAct.ComplexActionCreator3<string, string, ICategory, {
@@ -4828,15 +4853,15 @@ const setCollapsedGroups: reduxAct.ComplexActionCreator2<string, string[], {
 // @public (undocumented)
 const setCollectionConcurrency: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "IParameters" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IParameters" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const setCommandLine: reduxAct.ComplexActionCreator1<IParameters, IParameters, {}>;
 
 // @public (undocumented)
-const setCompatibleGames: reduxAct.ComplexActionCreator2<string, string[], {
-    id: string;
-    games: string[];
+const setCompatibleGames: ComplexActionCreator2<string, string[], {
+id: string;
+games: string[];
 }, {}>;
 
 // @public (undocumented)
@@ -4863,7 +4888,7 @@ const setDeploymentNecessary: reduxAct.ComplexActionCreator2<string, boolean, {
 // @public (undocumented)
 const setDesktopNotifications: reduxAct.ComplexActionCreator1<boolean, boolean, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "IInstallerState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IInstallerState" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const setDialogState: ComplexActionCreator2<IInstallerState, string, {
@@ -4877,66 +4902,66 @@ const setDialogVisible: reduxAct.ComplexActionCreator1<string, {
 }, {}>;
 
 // @public
-const setDownloadFilePath: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    filePath: string;
+const setDownloadFilePath: ComplexActionCreator2<string, string, {
+id: string;
+filePath: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHash: reduxAct.ComplexActionCreator2<string, string, {
-    id: string;
-    fileMD5: string;
+const setDownloadHash: ComplexActionCreator2<string, string, {
+id: string;
+fileMD5: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadHashByFile: reduxAct.ComplexActionCreator3<string, string, number, {
-    fileName: string;
-    fileMD5: string;
-    fileSize: number;
+const setDownloadHashByFile: ComplexActionCreator3<string, string, number, {
+fileName: string;
+fileMD5: string;
+fileSize: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInstalled: reduxAct.ComplexActionCreator3<string, string, string, {
-    id: string;
-    gameId: string;
-    modId: string;
+const setDownloadInstalled: ComplexActionCreator3<string, string, string, {
+id: string;
+gameId: string;
+modId: string;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadInterrupted: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    realReceived: number;
+const setDownloadInterrupted: ComplexActionCreator2<string, number, {
+id: string;
+realReceived: number;
 }, {}>;
 
 // @public (undocumented)
-const setDownloadModInfo: reduxAct.ComplexActionCreator3<string, string, any, {
-    id: string;
-    key: string;
-    value: any;
+const setDownloadModInfo: ComplexActionCreator3<string, string, any, {
+id: string;
+key: string;
+value: any;
 }, {}>;
 
 // @public (undocumented)
 const setDownloadPath: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-const setDownloadPausable: reduxAct.ComplexActionCreator2<string, boolean, {
-    id: string;
-    pausable: boolean;
+const setDownloadPausable: ComplexActionCreator2<string, boolean, {
+id: string;
+pausable: boolean;
 }, {}>;
 
 // @public
-const setDownloadSpeed: reduxAct.ComplexActionCreator1<unknown, unknown, {
-    forward: boolean;
-    scope: string;
+const setDownloadSpeed: ComplexActionCreator1<unknown, unknown, {
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
-const setDownloadSpeeds: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
+const setDownloadSpeeds: ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public (undocumented)
-const setDownloadTime: reduxAct.ComplexActionCreator2<string, number, {
-    id: string;
-    time: number;
+const setDownloadTime: ComplexActionCreator2<string, number, {
+id: string;
+time: number;
 }, {}>;
 
 // @public (undocumented)
@@ -5037,7 +5062,7 @@ const setInstallPath: reduxAct.ComplexActionCreator2<string, string, {
 // @public (undocumented)
 const setInstallPathMode: reduxAct.ComplexActionCreator1<InstallPathMode, InstallPathMode, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "VortexInstallType" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "VortexInstallType" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const setInstallType: reduxAct.ComplexActionCreator1<VortexInstallType, VortexInstallType, {}>;
@@ -5109,7 +5134,7 @@ const setModInstallationPath: reduxAct.ComplexActionCreator3<string, string, str
 // @public (undocumented)
 const setModsEnabled: (api: IExtensionApi, profileIdIn: string, modIdsIn: string[], enableIn: boolean, optionsIn?: IEnableOptions) => Bluebird<void>;
 
-// Warning: (ae-forgotten-export) The symbol "ModState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ModState" needs to be exported by the entry point api.d.ts
 //
 // @public
 const setModState: reduxAct.ComplexActionCreator3<string, string, ModState, {
@@ -5277,7 +5302,7 @@ const setUpdateChannel: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 class SetupError extends Error {
     constructor(message: string, component?: string);
     // (undocumented)
-    get component(): string;
+    get component(): string | undefined;
 }
 
 // @public (undocumented)
@@ -5316,7 +5341,7 @@ function showInfo<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, messag
 // @public
 function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string): void;
 
-// Warning: (ae-forgotten-export) The symbol "ShowUrlFunc" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ShowUrlFunc" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const showURL: ShowUrlFunc;
@@ -5336,10 +5361,10 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise_2<I
 // @public (undocumented)
 type SortType = "ascending" | "descending";
 
-// Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISpinnerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function Spinner(props: ISpinnerProps): React_2.JSX.Element;
+export function Spinner(props: ISpinnerProps): JSX.Element;
 
 // @public (undocumented)
 const startActivity: reduxAct.ComplexActionCreator2<string, string, {
@@ -5350,7 +5375,7 @@ const startActivity: reduxAct.ComplexActionCreator2<string, string, {
     scope: string;
 }>;
 
-// Warning: (ae-forgotten-export) The symbol "IInstallerInfoState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IInstallerInfoState" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 const startDialog: ComplexActionCreator2<IInstallerInfoState, string, {
@@ -5359,8 +5384,8 @@ instanceId: string;
 }, {}>;
 
 // @public
-const startDownload: reduxAct.ComplexActionCreator1<string, {
-    id: string;
+const startDownload: ComplexActionCreator1<string, {
+id: string;
 }, {}>;
 
 // @public
@@ -5408,7 +5433,7 @@ class StarterInfo implements IStarterInfo {
     originalEnvironment: {
         [key: string]: string;
     };
-    // Warning: (ae-forgotten-export) The symbol "OnShowErrorFunc" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "OnShowErrorFunc" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc): Promise_2<any>;
@@ -5425,7 +5450,7 @@ class StarterInfo implements IStarterInfo {
 }
 
 // @public
-const startNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const startNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
 const statAsync: (path: string) => Promise_2<fs_2.Stats>;
@@ -5436,7 +5461,7 @@ type StateChangeCallback<T = any> = (previous: T, current: T) => void;
 // @public (undocumented)
 const statSilentAsync: (path: string) => Promise_2<fs_2.Stats>;
 
-// Warning: (ae-forgotten-export) The symbol "ISteps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISteps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Steps: ISteps;
@@ -5451,10 +5476,10 @@ const stopActivity: reduxAct.ComplexActionCreator2<string, string, {
 }>;
 
 // @public (undocumented)
-const stopAllNotifications: reduxAct.EmptyActionCreator;
+const stopAllNotifications: EmptyActionCreator;
 
 // @public
-const stopNotification: reduxAct.ComplexActionCreator1<any, any, {}>;
+const stopNotification: ComplexActionCreator1<any, any, {}>;
 
 // @public
 const suppressNotification: ComplexActionCreator2<string, boolean, {
@@ -5465,14 +5490,15 @@ suppress: boolean;
 // @public (undocumented)
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise_2<void>;
 
-// Warning: (ae-forgotten-export) The symbol "IBaseProps_11" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBaseProps_11" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IExtensibleProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Table: React_2.ComponentType<IBaseProps_11 & IExtensibleProps>;
 
 // @public (undocumented)
 export class TableDateTimeFilter implements ITableFilter {
-    // Warning: (ae-forgotten-export) The symbol "DateTimeFilterComponent" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "DateTimeFilterComponent" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     component: typeof DateTimeFilterComponent;
@@ -5486,7 +5512,7 @@ export class TableDateTimeFilter implements ITableFilter {
 
 // @public (undocumented)
 export class TableNumericFilter implements ITableFilter {
-    // Warning: (ae-forgotten-export) The symbol "NumericFilterComponent" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "NumericFilterComponent" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     component: typeof NumericFilterComponent;
@@ -5499,7 +5525,7 @@ export class TableNumericFilter implements ITableFilter {
 // @public (undocumented)
 export class TableTextFilter implements ITableFilter {
     constructor(ignoreCase: boolean);
-    // Warning: (ae-forgotten-export) The symbol "TextFilterComponent" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "TextFilterComponent" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     component: typeof TextFilterComponent;
@@ -5546,33 +5572,37 @@ export const Tailwind: {
     TabBar: ({ children, className, }: {
         children: ReactNode;
         className?: string;
-    }) => JSX_2.Element;
-    TabButton: ({ className, count, disabled, name, ...props }: tabs.TabButtonProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabButton: ({ className, count, disabled, name, ...props }: tabs.TabButtonProps) => JSX.Element;
     TabContent: ({ count, label, }: {
         count?: number;
         label: string;
-    }) => JSX_2.Element;
-    TabLink: ({ className, count, name, ...props }: tabs.TabLinkProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabLink: ({ className, count, name, ...props }: tabs.TabLinkProps) => JSX.Element;
     TabPanel: ({ children, name, }: {
         children: ReactNode;
         name: string;
-    }) => JSX_2.Element;
-    TabProvider: ({ children, onSetSelectedTab, tab, tabListId, }: tabs.TabProviderProps) => JSX_2.Element;
+    }) => JSX.Element;
+    TabProvider: ({ children, onSetSelectedTab, tab, tabListId, }: tabs.TabProviderProps) => JSX.Element;
     useTabContext: () => tabs.TabsState;
-    FormField: ({ children, className, disabled, errorMessage, hideLabel, hints, hintsTypographyType, id, inputLength, label, maxLength, ref, showRequiredLabel, }: form.FormFieldProps) => JSX_2.Element;
+    FormField: ({ children, className, disabled, errorMessage, hideLabel, hints, hintsTypographyType, id, inputLength, label, maxLength, ref, showRequiredLabel, }: form.FormFieldProps) => JSX.Element;
     FormFieldWrap: ({ children }: {
         children: ReactNode;
-    }) => JSX_2.Element;
-    Input: ({ className, defaultValue, disabled, errorMessage, fieldClassName, hideLabel, hints, hintsTypographyType, id, label, maxLength, onChange, readOnly, required, showRequiredLabel, type, value, ...props }: form.InputProps) => JSX_2.Element;
-    InputDemo: () => JSX_2.Element;
-    Select: ({ children, className, disabled, errorMessage, hideLabel, hints, id, label, ref, required, showRequiredLabel, ...props }: form.SelectProps) => JSX_2.Element;
-    SelectDemo: () => JSX_2.Element;
+    }) => JSX.Element;
+    Input: ({ className, defaultValue, disabled, errorMessage, fieldClassName, hideLabel, hints, hintsTypographyType, id, label, maxLength, onChange, readOnly, required, showRequiredLabel, type, value, ...props }: form.InputProps) => JSX.Element;
+    InputDemo: () => JSX.Element;
+    Select: ({ children, className, disabled, errorMessage, hideLabel, hints, id, label, ref, required, showRequiredLabel, ...props }: form.SelectProps) => JSX.Element;
+    SelectDemo: () => JSX.Element;
     CollectionTile: ComponentType<collectiontile.CollectionTileProps & {
     api: IExtensionApi;
     }>;
     CollectionTileDemo: ComponentType<ICollectionTileDemoProps>;
     Link: ForwardRefExoticComponent<link.LinkProps & RefAttributes<HTMLAnchorElement>>;
-    Icon: ({ path, size, sizeOverride, className, title, ...rest }: icon.IconProps) => JSX_2.Element;
+    Icon: ({ path, size, className, title, ...props }: Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
+        path: string;
+        size?: icon.IconSize;
+        title?: string;
+    }) => JSX.Element;
     Button: (all: (ButtonHTMLAttributes<HTMLButtonElement> & ({
         as?: "button";
         disabled?: boolean;
@@ -5638,15 +5668,15 @@ export const Tailwind: {
         rightIconPath?: string;
     } & Partial<Record<"rightIcon", never>>) | ({
         rightIcon?: ReactNode;
-    } & Partial<Record<"rightIconPath", never>>))))))) => JSX_2.Element;
+    } & Partial<Record<"rightIconPath", never>>))))))) => JSX.Element;
     ButtonDemo: ComponentType<    {}>;
     Typography: ComponentType<typography.TypographyProps>;
 };
 
-// Warning: (ae-forgotten-export) The symbol "IError" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ReportableError" needs to be exported by the entry point api.d.ts
 //
 // @public
-function terminate(error: IError, state: any, allowReport?: boolean, source?: string): void;
+function terminate(error: ReportableError, state: any, allowReport?: boolean, source?: string): void;
 
 // @public (undocumented)
 function testModReference(mod: IMod | IModLookupInfo, reference: IModReference, source?: {
@@ -5679,10 +5709,10 @@ interface ThunkStore<S> extends Redux.Store<S> {
     dispatch: ThunkDispatch<S, null, Redux.Action>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ITimerProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ITimerProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export function Timer(props: ITimerProps): React_2.JSX.Element;
+export function Timer(props: ITimerProps): JSX.Element;
 
 // @public (undocumented)
 function toBlue<T, ArgsT extends any[]>(func: (...args: ArgsT) => Promise<T>): (...args: ArgsT) => Bluebird<T>;
@@ -5690,7 +5720,7 @@ function toBlue<T, ArgsT extends any[]>(func: (...args: ArgsT) => Promise<T>): (
 // @public (undocumented)
 type ToDoType = "settings" | "search" | "workaround" | "more";
 
-// Warning: (ae-forgotten-export) The symbol "IProps_10" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IProps_10" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class Toggle extends React_2.PureComponent<IProps_10, {}> {
@@ -5701,13 +5731,13 @@ export class Toggle extends React_2.PureComponent<IProps_10, {}> {
 // @public (undocumented)
 class ToggleButton extends React_2.Component<ToggleButtonProps, {}> {
     // (undocumented)
-    render(): React_2.JSX.Element;
+    render(): JSX.Element;
 }
 
 // @public (undocumented)
 type ToggleButtonProps = ButtonProps_2 & IToggleButtonExtraProps;
 
-// Warning: (ae-forgotten-export) The symbol "IToolbarIconProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IToolbarIconProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class ToolbarIcon extends React_2.PureComponent<IToolbarIconProps, {}> {
@@ -5715,10 +5745,10 @@ export class ToolbarIcon extends React_2.PureComponent<IToolbarIconProps, {}> {
     render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IToolIconProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IToolIconProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-export const ToolIcon: (props: IToolIconProps) => React_2.JSX.Element;
+export const ToolIcon: (props: IToolIconProps) => JSX.Element;
 
 // @public
 type ToolParameterCB = (options: IRunParameters) => {
@@ -5739,7 +5769,7 @@ declare namespace tooltip {
         NavItemProps,
         NavItem_2 as NavItem,
         ITooltipIconProps,
-        IconProps_2 as IconProps,
+        IconProps,
         Icon_3 as Icon,
         ClickPopoverProps,
         ClickPopover
@@ -5846,6 +5876,8 @@ declare namespace types {
         IQuery,
         InstructionType,
         IReference,
+        PersistorKey,
+        IPersistor,
         ThunkStore,
         PropsCallback,
         PersistingType,
@@ -5872,8 +5904,6 @@ declare namespace types {
         ISaveOptions,
         StateChangeCallback,
         ILookupDetails,
-        PersistorKey,
-        IPersistor,
         IArchiveOptions,
         IArchiveHandler,
         ArchiveHandlerCreator,
@@ -5908,8 +5938,8 @@ declare namespace types {
         NotificationType,
         INotification,
         IDownload,
-        IPosition,
         IDimensions,
+        IPosition,
         IWindow,
         INotificationState,
         IExtensionLoadFailure,
@@ -5983,19 +6013,19 @@ const updateCategories: reduxAct.ComplexActionCreator2<string, ICategoryDictiona
     gameCategories: ICategoryDictionary;
 }, {}>;
 
-// Warning: (ae-forgotten-export) The symbol "ValuesOf" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ValuesOf" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
 
 // @public (undocumented)
-const updateNotification: reduxAct.ComplexActionCreator3<string, number, string, {
-    id: string;
-    progress: number;
-    message: string;
+const updateNotification: ComplexActionCreator3<string, number, string, {
+id: string;
+progress: number;
+message: string;
 }, {
-    forward: boolean;
-    scope: string;
+forward: boolean;
+scope: string;
 }>;
 
 // @public (undocumented)
@@ -6004,15 +6034,17 @@ type UpdateType = "drag-n-drop" | "props-update" | "refresh";
 // @public (undocumented)
 function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer>;
 
-// Warning: (ae-forgotten-export) The symbol "IUsageProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUsageProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export const Usage: React_2.ComponentClass<IUsageProps>;
 
-// Warning: (ae-forgotten-export) The symbol "IUserCanceledConstructor" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-const UserCanceled: IUserCanceledConstructor;
+class UserCanceled extends Error {
+    constructor(skipped?: boolean);
+    // (undocumented)
+    skipped: boolean;
+}
 
 // @public
 function userFriendlyTime(date: Date, t: TFunction, locale: string): string;
@@ -6045,7 +6077,6 @@ declare namespace util {
         delay,
         deriveModInstallName as deriveInstallName,
         instance as epicGamesLauncher,
-        extend,
         extractExeIcon,
         fileMD5,
         findDownloadByRef,
@@ -6138,6 +6169,9 @@ declare namespace util {
         CollectionsInstallationFailedEvent,
         CollectionsInstallationCancelledEvent,
         CollectionsDownloadClickedEvent,
+        CollectionsDraftedEvent,
+        CollectionsDraftUploadedEvent,
+        CollectionsDraftUpdateUploadedEvent,
         TextGroup,
         calcDuration,
         showSuccess,
@@ -6200,13 +6234,13 @@ export class VisibilityProxy extends React_2.PureComponent<any, {}> {
     render(): JSX.Element;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IWalkOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IWalkOptions" needs to be exported by the entry point api.d.ts
 //
 // @public
 function walk(target: string, callback: (iterPath: string, stats: fs.Stats) => Promise_2<any>, options?: IWalkOptions): Promise_2<void>;
 
-// Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IWebView_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IWebviewProps" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IWebView_2" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class Webview extends React_2.Component<IWebviewProps & IWebView_2, {}> {
@@ -6247,7 +6281,7 @@ const writeFileAsync: (file: string, data: any, options?: fs_2.WriteFileOptions)
 // @public (undocumented)
 function writeFileAtomic(filePath: string, input: string | Buffer): Promise_2<void>;
 
-// Warning: (ae-forgotten-export) The symbol "IZoomableImageProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IZoomableImageProps" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
 export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
@@ -6266,18 +6300,18 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
-// api/lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:71:5 - (ae-forgotten-export) The symbol "tabs" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:88:5 - (ae-forgotten-export) The symbol "form" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:101:5 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:109:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point index.d.ts
-// api/lib/tailwind/index.d.ts:169:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point index.d.ts
-// api/lib/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:361:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point index.d.ts
-// api/lib/types/IState.d.ts:391:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point index.d.ts
+// api/lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:71:5 - (ae-forgotten-export) The symbol "tabs" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:88:5 - (ae-forgotten-export) The symbol "form" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:96:5 - (ae-forgotten-export) The symbol "collectiontile" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:99:5 - (ae-forgotten-export) The symbol "ICollectionTileDemoProps" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:100:5 - (ae-forgotten-export) The symbol "link" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:103:9 - (ae-forgotten-export) The symbol "icon" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:113:9 - (ae-forgotten-export) The symbol "button" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/tailwind/index.d.ts:173:5 - (ae-forgotten-export) The symbol "typography" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/types/IDialog.d.ts:82:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/types/IState.d.ts:329:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// api/lib/renderer/types/IState.d.ts:359:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 

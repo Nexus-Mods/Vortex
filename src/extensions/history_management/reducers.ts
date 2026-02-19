@@ -1,11 +1,11 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { addReducer } from "../../types/IExtensionContext";
+import type { IReducerSpec } from "../../renderer/types/IExtensionContext";
+import { addReducer } from "../../renderer/types/IExtensionContext";
 import {
   getSafe,
   pushSafe,
   setDefaultArray,
   setSafe,
-} from "../../util/storeHelper";
+} from "../../renderer/util/storeHelper";
 
 import * as actions from "./actions";
 import type { IHistoryEvent } from "./types";

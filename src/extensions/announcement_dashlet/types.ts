@@ -1,4 +1,4 @@
-import { HTTPError } from "../../util/CustomErrors";
+import { HTTPError } from "../../renderer/util/CustomErrors";
 
 export interface IAnnouncement {
   date: string;

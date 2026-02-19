@@ -1,17 +1,26 @@
 import { createHash } from "crypto";
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import { log } from "../../util/log";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import type {
+  IErrorOptions,
+  IExtensionApi,
+} from "../../renderer/types/IExtensionContext";
+import type { INotificationAction } from "../../renderer/types/INotification";
+import { log } from "../../renderer/util/log";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 
-// Jest doesn't support setImmediate, so we provide a polyfill
-// This ensures compatibility across environments
-// In test environment, use synchronous execution to avoid timing issues
-const setImmediatePolyfill =
-  typeof setImmediate !== "undefined"
-    ? setImmediate
-    : process?.env?.NODE_ENV === "test"
-      ? (fn: () => void) => fn() // Synchronous in tests
-      : (fn: () => void) => setTimeout(fn, 0);
+// In test environment, use synchronous execution to avoid timing issues with Jest fake timers
+// Check for jest global or NODE_ENV to detect test environment reliably
+const isTestEnvironment = (): boolean =>
+  typeof jest !== "undefined" || process?.env?.NODE_ENV === "test";
+
+const setImmediatePolyfill = (fn: () => void): void => {
+  if (isTestEnvironment()) {
+    fn(); // Synchronous in tests
+  } else if (typeof setImmediate !== "undefined") {
+    setImmediate(fn);
+  } else {
+    setTimeout(fn, 0);
+  }
+};
 
 export interface IAggregatedNotification {
   id: string;
@@ -22,7 +31,7 @@ export interface IAggregatedNotification {
   items: string[];
   count: number;
   allowReport?: boolean;
-  actions?: any[];
+  actions?: INotificationAction[];
 }
 
 export interface IPendingNotification {
@@ -31,7 +40,7 @@ export interface IPendingNotification {
   details: string | Error;
   item: string;
   allowReport?: boolean;
-  actions?: any[];
+  actions?: INotificationAction[];
 }
 
 /**
@@ -91,7 +100,7 @@ export class NotificationAggregator {
     title: string,
     details: string | Error,
     item: string,
-    options: { allowReport?: boolean; actions?: any[] } = {},
+    options: { allowReport?: boolean; actions?: INotificationAction[] } = {},
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
       setImmediatePolyfill(() => {
@@ -195,8 +204,9 @@ export class NotificationAggregator {
   /**
    * Flush all pending notifications for an aggregation session
    * @param aggregationId The aggregation session to flush
+   * @returns Promise that resolves when all notifications have been processed
    */
-  public flushAggregation(aggregationId: string): void {
+  public async flushAggregation(aggregationId: string): Promise<void> {
     if (!this.mActiveAggregations.has(aggregationId)) {
       log("warn", "flushAggregation called for inactive aggregation", {
         aggregationId,
@@ -211,21 +221,19 @@ export class NotificationAggregator {
       return;
     }
 
-    // Wait for async processing to complete before cleaning up
-    this.processNotificationsAsync(pending, aggregationId)
-      .then(() => {
-        log("debug", "notification processing complete, cleaning up", {
-          aggregationId,
-        });
-        this.cleanupAggregation(aggregationId);
-      })
-      .catch((err) => {
-        log("error", "error processing notifications", {
-          aggregationId,
-          error: getErrorMessageOrDefault(err),
-        });
-        this.cleanupAggregation(aggregationId);
+    try {
+      await this.processNotificationsAsync(pending, aggregationId);
+      log("debug", "notification processing complete, cleaning up", {
+        aggregationId,
       });
+    } catch (err) {
+      log("error", "error processing notifications", {
+        aggregationId,
+        error: getErrorMessageOrDefault(err),
+      });
+    } finally {
+      this.cleanupAggregation(aggregationId);
+    }
   }
 
   private async processNotificationsAsync(
@@ -233,10 +241,9 @@ export class NotificationAggregator {
     aggregationId: string,
   ): Promise<void> {
     try {
-      // Process aggregation in next tick to prevent blocking (synchronous in tests)
-      if (process?.env?.NODE_ENV !== "test") {
-        // Synchronous in test environment
-      } else {
+      // Process aggregation in next tick to prevent blocking
+      // Skip the delay in test environment for predictable timing
+      if (!isTestEnvironment()) {
         await new Promise<void>((resolve) => setImmediatePolyfill(resolve));
       }
 
@@ -285,7 +292,7 @@ export class NotificationAggregator {
         this.showAggregatedNotification(aggregated[i]);
 
         // Add small delay between notifications to prevent UI blocking (skip in tests)
-        if (i < aggregated.length - 1 && process?.env?.NODE_ENV !== "test") {
+        if (i < aggregated.length - 1 && !isTestEnvironment()) {
           await new Promise<void>((resolve) => setTimeout(resolve, 1));
         }
       }
@@ -300,9 +307,10 @@ export class NotificationAggregator {
   /**
    * Stop aggregation and flush any pending notifications
    * @param aggregationId The aggregation session to stop
+   * @returns Promise that resolves when all notifications have been processed
    */
-  public stopAggregation(aggregationId: string): void {
-    this.flushAggregation(aggregationId);
+  public async stopAggregation(aggregationId: string): Promise<void> {
+    await this.flushAggregation(aggregationId);
   }
 
   /**
@@ -357,14 +365,14 @@ export class NotificationAggregator {
       const errorNotification = group.find((n) => n.details instanceof Error);
       const stack =
         errorNotification !== undefined
-          ? (errorNotification.details as Error)?.stack
+          ? unknownToError(errorNotification.details)?.stack
           : undefined;
 
       const message = this.buildAggregatedMessage(first, uniqueItems);
 
       let details: string | Error = message;
       if (stack !== undefined) {
-        const originalError = errorNotification!.details as Error;
+        const originalError = unknownToError(errorNotification.details);
         const aggregatedError = new Error(message);
         aggregatedError.name = originalError.name;
         // Preserve the stack trace but with the aggregated error's name and message at the top
@@ -482,14 +490,11 @@ export class NotificationAggregator {
     notification: IAggregatedNotification,
   ): void {
     setImmediatePolyfill(() => {
-      const options: any = {
+      const options: IErrorOptions = {
         id: notification.id,
         allowReport: notification.allowReport,
+        actions: notification.actions,
       };
-
-      if (notification.actions) {
-        options.actions = notification.actions;
-      }
 
       // Add count information to the title if multiple items
       const displayTitle =
@@ -510,9 +515,9 @@ export class NotificationAggregator {
             id: notification.id,
             type: "warning",
             title: displayTitle,
-            details: notification.details,
-            text: notification.text,
-            ...options,
+            message: notification.text,
+            actions: notification.actions,
+            allowSuppress: options.allowReport,
           });
           break;
         case "info":
@@ -520,9 +525,9 @@ export class NotificationAggregator {
             id: notification.id,
             type: "info",
             title: displayTitle,
-            details: notification.details,
-            text: notification.text,
-            ...options,
+            message: notification.text,
+            actions: notification.actions,
+            allowSuppress: options.allowReport,
           });
           break;
       }

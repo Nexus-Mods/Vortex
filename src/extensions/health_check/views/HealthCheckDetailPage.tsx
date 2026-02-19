@@ -18,12 +18,12 @@ import type { IModRequirementExt, IModFileInfo } from "../types";
 import { log } from "../../..";
 import MainPage from "../../../renderer/views/MainPage";
 import { unknownToError } from "../../../shared/errors";
-import { Button } from "../../../tailwind/components/next/button";
-import { Icon } from "../../../tailwind/components/next/icon";
+import { Button } from "../../../renderer/tailwind/components/next/button";
+import { Icon } from "../../../renderer/tailwind/components/next/icon";
 import {
   Typography,
   TypographyLink,
-} from "../../../tailwind/components/next/typography";
+} from "../../../renderer/tailwind/components/next/typography";
 import { Pictogram } from "../../../tailwind/components/pictogram";
 import { opn } from "../../../util/api";
 import { setRequirementHidden } from "../actions/persistent";

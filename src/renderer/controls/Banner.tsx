@@ -1,8 +1,8 @@
-import type { IBannerOptions } from "../../types/IBannerOptions";
-import type { IExtensibleProps } from "../../types/IExtensionProvider";
+import type { IBannerOptions } from "../types/IBannerOptions";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
 import { connect } from "./ComponentEx";
-import { extend } from "../../util/ExtensionProvider";
-import { truthy } from "../../util/util";
+import { extend } from "../ExtensionProvider";
+import { truthy } from "../util/util";
 
 import * as _ from "lodash";
 import * as React from "react";

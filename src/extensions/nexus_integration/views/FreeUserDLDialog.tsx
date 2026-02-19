@@ -1,23 +1,30 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
+
 import * as React from "react";
 import { Button, Panel } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import { util } from "../../..";
+
+import type { IComponentContext } from "../../../renderer/types/IComponentContext";
+import type { IState } from "../../../renderer/types/IState";
+import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
+
 import Modal from "../../../renderer/controls/Modal";
-import type { IState } from "../../../types/IState";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
+import opn from "../../../renderer/util/opn";
+import {
+  Campaign,
+  Content,
+  nexusModsURL,
+  Section,
+} from "../../../renderer/util/util";
+import { MainContext } from "../../../renderer/views/MainWindow";
+import { getErrorMessageOrDefault } from "../../../shared/errors";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
 import NXMUrl from "../NXMUrl";
 import { makeFileUID } from "../util/UIDs";
-import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
-import { MainContext } from "../../../renderer/views/MainWindow";
-import type { IComponentContext } from "../../../types/IComponentContext";
-import opn from "../../../util/opn";
-import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
 
 interface IFreeUserDLDialogProps {
   t: TFunction;
@@ -205,13 +212,11 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [onSkip, urls]);
 
   const openModPage = React.useCallback(() => {
-    util.opn(
-      `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`,
-    );
+    opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`);
   }, [fileInfo]);
 
   const openAuthorPage = React.useCallback(() => {
-    util.opn(
+    opn(
       `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`,
     );
   }, [fileInfo]);
@@ -233,24 +238,27 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [campaign]);
 
   return (
-    <Modal show={show} onHide={nop} id="free-user-dl-dialog">
+    <Modal id="free-user-dl-dialog" show={show} onHide={nop}>
       <Modal.Header>
         <Modal.Title>{t("Download mod")}</Modal.Title>
       </Modal.Header>
+
       <Modal.Body>
         <NewFreeDownloadModal
-          positionText={positionText}
           fileInfo={fileInfo}
-          t={t}
-          openModPage={openModPage}
           goPremium={goPremium}
+          openModPage={openModPage}
+          positionText={positionText}
+          t={t}
           onDownload={download}
         />
       </Modal.Body>
+
       <Modal.Footer>
         <Button id="cancel-button" onClick={cancel}>
           {t("Cancel install")}
         </Button>
+
         <Button id="skip-button" onClick={skip}>
           {t("Skip mod")}
         </Button>

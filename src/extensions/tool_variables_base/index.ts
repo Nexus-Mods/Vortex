@@ -3,11 +3,11 @@ import * as path from "path";
 import type {
   IExtensionContext,
   IRunParameters,
-} from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { activeProfile } from "../../util/selectors";
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { activeProfile } from "../../renderer/util/selectors";
 
 function init(context: IExtensionContext): boolean {
   context.registerToolVariables((parameters: IRunParameters) => {

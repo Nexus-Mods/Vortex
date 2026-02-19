@@ -3,8 +3,8 @@ import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import { showUsageInstruction } from "../../actions";
-import type { IState } from "../../types/IState";
+import { showUsageInstruction } from "../actions";
+import type { IState } from "../types/IState";
 import { connect, PureComponentEx, translate } from "./ComponentEx";
 import { IconButton } from "./TooltipControls";
 
@@ -71,7 +71,8 @@ function mapStateToProps(
   ownProps: IUsageProps,
 ): IConnectedProps {
   return {
-    show: state.settings.interface.usage[ownProps.infoId] !== false,
+    // Defensive check: interface.usage might not be initialized during hydration
+    show: state.settings?.interface?.usage?.[ownProps.infoId] !== false,
   };
 }
 

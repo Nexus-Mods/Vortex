@@ -1,8 +1,5 @@
-import type {
-  IFilterProps,
-  ITableFilter,
-} from "../../../types/ITableAttribute";
-import { truthy } from "../../../util/util";
+import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
+import { truthy } from "../../util/util";
 
 import * as React from "react";
 import Select from "react-select";

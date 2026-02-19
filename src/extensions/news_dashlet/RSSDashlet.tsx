@@ -1,7 +1,7 @@
 import bbcode, { stripBBCode } from "../../renderer/controls/bbcode";
 import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 import { currentGame } from "../gamemode_management/selectors";
 import { nexusGameId } from "../nexus_integration/util/convertGameId";
 

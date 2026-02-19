@@ -1,11 +1,11 @@
 import { stateReducer } from '../src/extensions/download_management/reducers/state';
 import * as _ from 'lodash';
 
-jest.mock('../src/util/errorHandling', () => ({
+jest.mock('../src/renderer/util/errorHandling', () => ({
   terminate: jest.fn(),
 }));
 
-const { terminate } = require('../src/util/errorHandling');
+const { terminate } = require('../src/renderer/util/errorHandling');
 
 describe('addLocalDownload', () => {
   it('adds the download', () => {
@@ -16,7 +16,7 @@ describe('addLocalDownload', () => {
 
     _.unset(result, ['files', 'newid', 'fileTime']);
     expect(result).toEqual({ files: { newid:
-      { state: 'finished', game: ['game'], localPath: 'localPath', size: 42, chunks: [], urls: [], modInfo: {} }
+      { state: 'finished', game: ['game'], localPath: 'localPath', size: 42, received: 42, chunks: [], urls: [], modInfo: {} }
     } });
   });
 });

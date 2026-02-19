@@ -67,24 +67,6 @@ export class AppUpdatedEvent implements MixpanelEvent {
 }
 
 /**
- * Event sent when the application crashes.
- * @param os Operating system (Node.js platform string: win32, darwin, linux)
- * @param error_code Error code
- * @param error_message Error message
- */
-export class AppCrashedEvent implements MixpanelEvent {
-  readonly eventName = "app_crashed";
-  readonly properties: Record<string, any>;
-  constructor(os: string, error_code: string, error_message: string) {
-    this.properties = {
-      $os: mapPlatformToMixpanel(os),
-      error_code,
-      error_message,
-    };
-  }
-}
-
-/**
  * Event sent when an upsell prompt is clicked in the application.
  */
 export class AppUpsellClickedEvent implements MixpanelEvent {
@@ -96,6 +78,65 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
 /**
  * COLLECTION EVENTS
  */
+
+/* COLLECTION DRAFTING AND UPLOADING */
+
+/**
+ * Event sent when a collection draft is created in Vortex.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ * @param creation_method How the collection was created
+ */
+export class CollectionsDraftedEvent implements MixpanelEvent {
+  readonly eventName = "collection_drafted";
+  readonly properties: Record<string, any>;
+
+  constructor(
+    collection_name: string,
+    game_name: string,
+    creation_method: "from_profile" | "quick_collection" | "empty",
+  ) {
+    this.properties = {
+      collection_name,
+      game_name,
+      creation_method,
+    };
+  }
+}
+
+/**
+ * Event sent when a new draft collection is uploaded.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ */
+export class CollectionsDraftUploadedEvent implements MixpanelEvent {
+  readonly eventName = "collection_draft_uploaded";
+  readonly properties: Record<string, any>;
+
+  constructor(collection_name: string, game_name: string) {
+    this.properties = {
+      collection_name,
+      game_name,
+    };
+  }
+}
+
+/**
+ * Event sent when a draft collection update is uploaded.
+ * @param collection_name Name of the collection
+ * @param game_name Name of the game
+ */
+export class CollectionsDraftUpdateUploadedEvent implements MixpanelEvent {
+  readonly eventName = "collection_draft_updated";
+  readonly properties: Record<string, any>;
+
+  constructor(collection_name: string, game_name: string) {
+    this.properties = {
+      collection_name,
+      game_name,
+    };
+  }
+}
 
 /* COLLECTION DOWNLOAD */
 
@@ -279,17 +320,18 @@ export class CollectionsInstallationCancelledEvent implements MixpanelEvent {
  */
 
 /**
- * (DO NOT USE) This event is currently being tracked SERVER side
- *
- * Event sent when a mod download is started.
+ * Event sent when a mod download is started from the client.
+ * This client-side event complements the server-side mods_download_started event
+ * to enable success rate calculations by matching with _completed or _failed events.
  * @param mod_id ID of the mod
  * @param file_id ID of the file
  * @param game_id ID of the game
  * @param mod_uid UID of the mod
  * @param file_uid UID of the file
+ * @note "mods_download_started" event name is taken by server-side. Use "mods_download_started_client" instead.
  */
-export class ModsDownloadStartedEvent implements MixpanelEvent {
-  readonly eventName = "mods_download_started";
+export class ModsDownloadStartedClientEvent implements MixpanelEvent {
+  readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
   constructor(
     mod_id: string,

@@ -1,0 +1,163 @@
+import * as _ from "lodash";
+import * as React from "react";
+
+import type { IExtensionContext } from "./types/IExtensionContext";
+import type {
+  IExtendedProps,
+  IExtensibleProps,
+} from "./types/IExtensionProvider";
+
+import ExtensionManager from "./ExtensionManager";
+
+// Cache for extension objects to avoid re-collecting on every render
+const extensionCache: Map<string, unknown[]> = new Map();
+
+/**
+ * Hook to get extension objects for a given register function.
+ * This is the hook equivalent of the `extend` HOC.
+ *
+ * @param registerFunc - The register function (e.g., registerSettings)
+ * @param staticElements - Optional static elements to merge with extensions
+ * @param group - Optional group identifier for grouped extensions
+ * @param addExtInfo - Whether to add extension info to the callback
+ * @returns Array of collected extension objects
+ */
+export function useExtensionObjects<T>(
+  registerFunc: (...args: unknown[]) => T | undefined,
+  staticElements?: T[],
+  group?: string,
+  addExtInfo?: boolean,
+): T[] {
+  const context = React.useContext(ExtensionContext);
+  const cacheKey = `${registerFunc.name}:${group ?? "default"}`;
+
+  // Register the UI API on first use
+  React.useEffect(() => {
+    ExtensionManager.registerUIAPI(registerFunc.name);
+  }, [registerFunc.name]);
+
+  return React.useMemo(() => {
+    if (context === null) {
+      return staticElements ?? [];
+    }
+
+    // Check cache first
+    if (!extensionCache.has(cacheKey)) {
+      const collected: T[] = [];
+      context.apply(
+        registerFunc.name as keyof IExtensionContext,
+        (extInfo: unknown, ...args: unknown[]) => {
+          // Always pass extInfo - when addExtInfo is false, extInfo contains
+          // the first registered argument (e.g., id), not extension metadata
+          const res = registerFunc(group, extInfo, ...args);
+          if (res !== undefined) {
+            collected.push(res);
+          }
+        },
+        addExtInfo,
+      );
+      extensionCache.set(cacheKey, collected);
+    }
+
+    const cached = extensionCache.get(cacheKey) as T[];
+    return [...(staticElements ?? []), ...cached];
+  }, [context, cacheKey, staticElements, registerFunc, group, addExtInfo]);
+}
+
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+export const ExtensionContext = React.createContext<ExtensionManager | null>(
+  null,
+);
+
+export const useExtensionContext = (): ExtensionManager => {
+  const context = React.useContext(ExtensionContext);
+  if (context === null) {
+    throw new Error(
+      "useExtensionContext must be used within an ExtensionProvider",
+    );
+  }
+  return context;
+};
+
+export interface IExtensionProps {
+  extensions: ExtensionManager;
+}
+
+/**
+ * extension function. This function creates a wrapper around a component that
+ * binds the extensions of a component to its props
+ *
+ * @export
+ * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
+ * @returns {React.ComponentClass<P>} the wrapper component
+ */
+export function extend(
+  registerFunc: (...args) => void,
+  groupProp?: string,
+  addExtInfo?: boolean,
+): <P extends IExtendedProps>(
+  component: React.ComponentType<P>,
+) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
+  ExtensionManager.registerUIAPI(registerFunc.name);
+  const extensions: { [group: string]: any } = {};
+
+  const updateExtensions = (props: any, context: ExtensionManager) => {
+    extensions[props[groupProp]] = [];
+    context.apply(
+      registerFunc.name as keyof IExtensionContext,
+      (extInfo, ...args) => {
+        const res = registerFunc(props[groupProp], extInfo, ...args);
+        if (res !== undefined) {
+          extensions[props[groupProp]].push(res);
+        }
+      },
+      addExtInfo,
+    );
+  };
+
+  return <P extends IExtendedProps, S>(
+    ComponentToWrap: React.ComponentType<P>,
+  ): React.ComponentType<Omit<P, keyof IExtendedProps>> => {
+    // tslint:disable-next-line:class-name
+    type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
+    // tslint:disable-next-line:class-name
+    return class __ExtendedComponent extends React.Component<PropsT, S> {
+      public static contextType = ExtensionContext;
+
+      private mObjects: any[];
+
+      public UNSAFE_componentWillReceiveProps(nextProps: any) {
+        if (this.props[groupProp] !== nextProps[groupProp]) {
+          if (extensions[nextProps[groupProp]] === undefined) {
+            updateExtensions(nextProps, this.context);
+          }
+        }
+        if (this.props.staticElements !== nextProps.staticElements) {
+          this.mObjects = undefined;
+        }
+      }
+
+      public render(): JSX.Element {
+        const { children, staticElements } = this.props;
+
+        if (extensions[this.props[groupProp]] === undefined) {
+          updateExtensions(this.props, this.context);
+        }
+
+        if (this.mObjects === undefined) {
+          this.mObjects = [].concat(
+            staticElements || [],
+            extensions[this.props[groupProp]] || [],
+          );
+        }
+
+        const wrapProps: any = {
+          ..._.omit(this.props, ["staticElements", "group"]),
+          objects: this.mObjects,
+        };
+        return React.createElement(ComponentToWrap, wrapProps, children);
+      }
+    };
+  };
+}

@@ -56,7 +56,7 @@ jest.mock("../src/extensions/profile_management/selectors", () => ({
 }));
 
 jest.mock("vortex-api", () => {
-  const actualUtil = jest.requireActual("../src/util/api.ts");
+  const actualUtil = jest.requireActual("../src/renderer/util/api.ts");
   return {
     getState: jest.fn(),
     util: {

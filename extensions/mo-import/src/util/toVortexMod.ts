@@ -1,15 +1,18 @@
-import { IModEntry } from '../types/moEntries';
+import { IModEntry } from "../types/moEntries";
 
-import { types } from 'vortex-api';
+import { types } from "vortex-api";
 
-function toVortexMod(input: IModEntry, md5Hash: string,
-                     archiveId: string): types.IMod {
+function toVortexMod(
+  input: IModEntry,
+  md5Hash: string,
+  archiveId: string,
+): types.IMod {
   const attributes: { [id: string]: any } = {
     name: input.modName,
     installTime: new Date(),
     version: input.modVersion,
     fileId: input.downloadId,
-    notes: 'Imported from MO',
+    notes: "Imported from MO",
     category: input.categoryId,
   };
 
@@ -19,14 +22,14 @@ function toVortexMod(input: IModEntry, md5Hash: string,
 
   const mod: types.IMod = {
     id: input.vortexId,
-    state: 'installed',
-    type: '',
+    state: "installed",
+    type: "",
     installationPath: input.vortexId,
     archiveId,
     attributes,
   };
   if (input.nexusId) {
-    mod.attributes.source = 'nexus';
+    mod.attributes.source = "nexus";
     mod.attributes.modId = input.nexusId;
   }
   return mod;

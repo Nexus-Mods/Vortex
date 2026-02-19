@@ -1,4 +1,4 @@
-import createAction from "../../../actions/safeCreateAction";
+import createAction from "../../../renderer/actions/safeCreateAction";
 import type { LoadOrder, IValidationResult } from "../types/types";
 
 // This is a hack to force the load order to update.

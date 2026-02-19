@@ -1,19 +1,23 @@
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { getVisibleWindow } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { makeQueue } from "../../util/util";
-
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
 import * as fsFast from "fs-extra";
 import * as path from "path";
 
-const dialog =
-  process.type === "renderer"
-    ? // tslint:disable-next-line:no-var-requires
-      require("@electron/remote").dialog
-    : dialogIn;
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import { getVisibleWindow } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { getPreloadApi } from "../../renderer/util/preloadAccess";
+import { makeQueue } from "../../renderer/util/util";
+
+const showMessageBox = async (
+  options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> => {
+  return window.api.dialog.showMessageBox(options);
+};
 
 /**
  * assembles a file received in chunks.
@@ -144,7 +148,7 @@ class FileAssembler {
                 .catch({ code: "EBADF" }, () => {
                   // if we log this we may be generating thousands of log messages
                 })
-                .then(() => bytesWritten);
+                .then(() => Promise.resolve(bytesWritten));
             } else {
               return PromiseBB.resolve(bytesWritten);
             }
@@ -157,7 +161,7 @@ class FileAssembler {
               : PromiseBB.resolve(synced),
           )
           .catch({ code: "ENOSPC" }, () => {
-            dialog.showMessageBoxSync(getVisibleWindow(), {
+            return showMessageBox({
               type: "warning",
               title: "Disk is full",
               message:
@@ -166,9 +170,11 @@ class FileAssembler {
               buttons: ["Cancel", "Retry"],
               defaultId: 1,
               noLink: true,
-            }) === 1
-              ? this.addChunk(offset, data)
-              : PromiseBB.reject(new UserCanceled());
+            }).then((result) =>
+              result.response === 1
+                ? this.addChunk(offset, data)
+                : PromiseBB.reject(new UserCanceled()),
+            );
           }),
       false,
     );

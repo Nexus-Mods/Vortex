@@ -12,9 +12,9 @@ import {
   uniPatterns,
 } from "../installer_fomod_shared/utils/gameSupport";
 import { getGame } from "../gamemode_management/util/getGame";
-import { log } from "../../util/log";
-import type { IExtensionApi, IInstallResult } from "../../types/api";
-import { UserCanceled } from "../../util/CustomErrors";
+import { log } from "../../renderer/util/log";
+import type { IExtensionApi, IInstallResult } from "../../renderer/types/api";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
 
 /**
  * Install a FOMOD mod
@@ -180,6 +180,13 @@ export const install = async (
 
     return result;
   } catch (err: any) {
+    // UserCanceled is thrown directly from BaseIPCConnection when user clicks Cancel
+    // Re-throw it without modification so Vortex handles it gracefully
+    if (err instanceof UserCanceled) {
+      log("info", "FOMOD installation cancelled by user", { gameId });
+      throw err;
+    }
+
     // Provide context-aware error messages based on error type
     const errorName = err.name || "Error";
     const isTimeout = errorName === "IPCTimeoutError";

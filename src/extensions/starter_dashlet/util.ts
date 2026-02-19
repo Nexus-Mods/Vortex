@@ -1,24 +1,19 @@
 import PromiseBB from "bluebird";
 import _ from "lodash";
-import Debouncer from "../../util/Debouncer";
+import Debouncer from "../../renderer/util/Debouncer";
 import { nativeImage } from "electron";
-import * as fs from "../../util/fs";
+import * as fs from "../../renderer/util/fs";
 import path from "path";
-import extractExeIcon from "../../util/exeIcon";
-import { ProcessCanceled } from "../../util/CustomErrors";
+import extractExeIcon from "../../renderer/util/exeIcon";
+import { ProcessCanceled } from "../../renderer/util/CustomErrors";
 
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
 import type { IEditStarterInfo } from "./types";
 
-import type { IStarterInfo } from "../../util/StarterInfo";
-import StarterInfo from "../../util/StarterInfo";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import StarterInfo from "../../renderer/util/StarterInfo";
 
-import { truthy } from "../../util/util";
-
-import lazyRequire from "../../util/lazyRequire";
-import type * as remoteT from "@electron/remote";
-import { makeRemoteCallSync } from "../../util/electronRemote";
-const remote: typeof remoteT = lazyRequire(() => require("@electron/remote"));
+import { truthy } from "../../renderer/util/util";
 
 export const propOf = <T>(name: keyof T) => name;
 
@@ -62,16 +57,11 @@ export function splitCommandLine(input: string): string[] {
   return res;
 }
 
-const setJumpList = makeRemoteCallSync(
-  "set-jump-list",
-  (electron, window, categories: Electron.JumpListCategory[]) => {
-    try {
-      electron.app.setJumpList(categories);
-    } catch (err) {
-      console.error(err);
-    }
-  },
-);
+function setJumpList(categories: Electron.JumpListCategory[]): Promise<void> {
+  return window.api.app.setJumpList(categories).catch((err) => {
+    console.error(err);
+  });
+}
 
 export function updateJumpList(starters: IStarterInfo[]) {
   if (process.platform !== "win32") {

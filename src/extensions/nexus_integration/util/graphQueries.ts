@@ -87,10 +87,9 @@ export const FULL_COLLECTION_INFO: ICollectionQuery = {
   tileImage: {
     url: true,
   },
-  revisions: {
+  latestPublishedRevision: {
     id: true,
     revisionNumber: true,
-    revisionStatus: true,
   },
   description: true,
   summary: true,
@@ -249,5 +248,26 @@ export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
   modsRequiringThisMod: {
     nodes: { id: true, modId: true, modName: true },
     totalCount: true,
+  },
+};
+
+export const MY_COLLECTIONS_SEARCH_QUERY: ICollectionQuery = {
+  revisions: {
+    id: true,
+    revisionNumber: true,
+    createdAt: true,
+    updatedAt: true,
+    rating: {
+      average: true,
+    },
+    modCount: true,
+    collection: {
+      slug: true,
+      name: true,
+      tileImage: { url: true },
+      user: { name: true, memberId: true },
+      permissions: { global: true, key: true },
+      game: { domainName: true },
+    },
   },
 };

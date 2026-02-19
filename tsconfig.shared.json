@@ -1,0 +1,14 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.base.json",
+  "include": ["src/shared/**/*", "typings.custom/promise.d.ts"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "composite": true,
+    "noEmit": true,
+    "types": [],
+    "lib": ["ESNext"]
+  }
+}

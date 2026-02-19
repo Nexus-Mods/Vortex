@@ -1,27 +1,29 @@
 /* eslint-disable */
-import { ICollection, ICollectionTool } from './types/ICollection';
+import { ICollection, ICollectionTool } from "./types/ICollection";
 
-import { findExtensions, IExtensionFeature } from './util/extension';
-import { parseGameSpecifics } from './util/gameSupport';
-import { collectionModToRule } from './util/transformCollection';
+import { findExtensions, IExtensionFeature } from "./util/extension";
+import { parseGameSpecifics } from "./util/gameSupport";
+import { collectionModToRule } from "./util/transformCollection";
 
-import { BUNDLED_PATH, MOD_TYPE } from './constants';
+import { BUNDLED_PATH, MOD_TYPE } from "./constants";
 
-import * as _ from 'lodash';
-import * as path from 'path';
-import { actions, fs, log, selectors, types, util } from 'vortex-api';
-import { readCollection } from './util/importCollection';
-import { ICollectionConfig } from './types/ICollectionConfig';
-import { parseConfig } from './util/collectionConfig';
+import * as _ from "lodash";
+import * as path from "path";
+import { actions, fs, log, selectors, types, util } from "vortex-api";
+import { readCollection } from "./util/importCollection";
+import { ICollectionConfig } from "./types/ICollectionConfig";
+import { parseConfig } from "./util/collectionConfig";
 
 /**
  * supported test for use in registerInstaller
  */
-export async function testSupported(files: string[], gameId: string)
-    : Promise<types.ISupportedResult> {
+export async function testSupported(
+  files: string[],
+  gameId: string,
+): Promise<types.ISupportedResult> {
   return {
-    supported: files.indexOf('collection.json') !== -1,
-    requiredFiles: ['collection.json'],
+    supported: files.indexOf("collection.json") !== -1,
+    requiredFiles: ["collection.json"],
   };
 }
 
@@ -29,28 +31,36 @@ export async function testSupported(files: string[], gameId: string)
  * installer function to be used with registerInstaller
  */
 export function makeInstall(api: types.IExtensionApi) {
-  return async (files: string[],
-                destinationPath: string,
-                gameId: string,
-                progressDelegate: types.ProgressDelegate)
-                : Promise<types.IInstallResult> => {
-
-    const collection: ICollection =
-      await readCollection(api, path.join(destinationPath, 'collection.json'));
+  return async (
+    files: string[],
+    destinationPath: string,
+    gameId: string,
+    progressDelegate: types.ProgressDelegate,
+  ): Promise<types.IInstallResult> => {
+    const collection: ICollection = await readCollection(
+      api,
+      path.join(destinationPath, "collection.json"),
+    );
 
     const config: ICollectionConfig = await parseConfig({ collection, gameId });
-    const configInstructions: types.IInstruction[] = Object.entries(config).reduce((accum, [key, value]) => {
-      const instr: types.IInstruction = { type: 'attribute', key, value, };
-      accum.push(instr)
+    const configInstructions: types.IInstruction[] = Object.entries(
+      config,
+    ).reduce((accum, [key, value]) => {
+      const instr: types.IInstruction = { type: "attribute", key, value };
+      accum.push(instr);
       return accum;
     }, []);
-    const filesToCopy = files
-      .filter(filePath => !filePath.endsWith(path.sep)
-        && (filePath.split(path.sep)[0] !== BUNDLED_PATH));
+    const filesToCopy = files.filter(
+      (filePath) =>
+        !filePath.endsWith(path.sep) &&
+        filePath.split(path.sep)[0] !== BUNDLED_PATH,
+    );
 
-    const bundled = files
-      .filter(filePath => !filePath.endsWith(path.sep)
-        && (filePath.split(path.sep)[0] === BUNDLED_PATH));
+    const bundled = files.filter(
+      (filePath) =>
+        !filePath.endsWith(path.sep) &&
+        filePath.split(path.sep)[0] === BUNDLED_PATH,
+    );
 
     const knownGames = selectors.knownGames(api.getState());
 
@@ -62,54 +72,58 @@ export function makeInstall(api: types.IExtensionApi) {
     // (pointless optimisation ?)
     const state = api.getState();
     const downloads = Object.values(state.persistent.downloads.files).reverse();
-    const collectionDownload = downloads.find(down =>
-      (down.localPath !== undefined)
-      && (path.basename(destinationPath, '.installing')
-        === path.basename(down.localPath, path.extname(down.localPath))));
+    const collectionDownload = downloads.find(
+      (down) =>
+        down.localPath !== undefined &&
+        path.basename(destinationPath, ".installing") ===
+          path.basename(down.localPath, path.extname(down.localPath)),
+    );
 
     return Promise.resolve({
       instructions: [
         {
-          type: 'attribute' as any,
-          key: 'customFileName',
-          value: (collectionDownload?.modInfo?.name !== undefined)
-            ? collectionDownload.modInfo.name
-            : collection.info.name,
+          type: "attribute" as any,
+          key: "customFileName",
+          value:
+            collectionDownload?.modInfo?.name !== undefined
+              ? collectionDownload.modInfo.name
+              : collection.info.name,
         },
         {
-          type: 'attribute',
-          key: 'installInstructions',
+          type: "attribute",
+          key: "installInstructions",
           value: collection.info.installInstructions,
         },
         ...configInstructions,
         {
-          type: 'setmodtype' as any,
+          type: "setmodtype" as any,
           value: MOD_TYPE,
         },
-        ...filesToCopy.map(filePath => ({
-          type: 'copy' as any,
+        ...filesToCopy.map((filePath) => ({
+          type: "copy" as any,
           source: filePath,
           destination: filePath,
         })),
-        ...bundled.map(filePath => ({
-          type: 'copy' as any,
+        ...bundled.map((filePath) => ({
+          type: "copy" as any,
           source: filePath,
           destination: filePath,
         })),
-        ...collection.mods.map(mod => (
-          {
-            type: 'rule' as any,
-            rule: collectionModToRule(knownGames, mod),
-          })),
+        ...collection.mods.map((mod) => ({
+          type: "rule" as any,
+          rule: collectionModToRule(knownGames, mod),
+        })),
       ],
     });
   };
 }
 
-function applyCollectionRules(api: types.IExtensionApi,
-                              gameId: string,
-                              collection: ICollection,
-                              mods: { [modId: string]: types.IMod }) {
+function applyCollectionRules(
+  api: types.IExtensionApi,
+  gameId: string,
+  collection: ICollection,
+  mods: { [modId: string]: types.IMod },
+) {
   const batch = (collection.modRules ?? []).reduce((prev, rule) => {
     const sourceMod = util.findModByRef(rule.source, mods);
     if (sourceMod !== undefined) {
@@ -118,22 +132,28 @@ function applyCollectionRules(api: types.IExtensionApi,
       let exists: boolean = false;
       if (destMod !== undefined) {
         // replace existing rules between these two mods
-        const exSourceRules = (sourceMod.rules ?? []).filter(iter =>
-          ['before', 'after'].includes(iter.type)
-          && util.testModReference(destMod, iter.reference));
-        exSourceRules.forEach(exSourceRule => {
+        const exSourceRules = (sourceMod.rules ?? []).filter(
+          (iter) =>
+            ["before", "after"].includes(iter.type) &&
+            util.testModReference(destMod, iter.reference),
+        );
+        exSourceRules.forEach((exSourceRule) => {
           const copy = JSON.parse(JSON.stringify(exSourceRule));
           delete copy.reference.idHint;
           if (!exists && _.isEqual(copy, rule)) {
             exists = true;
           } else {
-            prev.push(actions.removeModRule(gameId, sourceMod.id, exSourceRule));
+            prev.push(
+              actions.removeModRule(gameId, sourceMod.id, exSourceRule),
+            );
           }
         });
-        const exDestRules = (destMod.rules ?? []).filter(iter =>
-          ['before', 'after'].includes(iter.type)
-          && util.testModReference(sourceMod, iter.reference));
-        exDestRules.forEach(exDestRule => {
+        const exDestRules = (destMod.rules ?? []).filter(
+          (iter) =>
+            ["before", "after"].includes(iter.type) &&
+            util.testModReference(sourceMod, iter.reference),
+        );
+        exDestRules.forEach((exDestRule) => {
           prev.push(actions.removeModRule(gameId, destMod.id, exDestRule));
         });
         rule.reference = {
@@ -144,8 +164,11 @@ function applyCollectionRules(api: types.IExtensionApi,
       }
 
       if (!exists) {
-        log('info', 'add collection rule',
-            { gameId, sourceMod: sourceMod.id, rule: JSON.stringify(rule) });
+        log("info", "add collection rule", {
+          gameId,
+          sourceMod: sourceMod.id,
+          rule: JSON.stringify(rule),
+        });
         prev.push(actions.addModRule(gameId, sourceMod.id, rule));
       }
     }
@@ -160,18 +183,24 @@ function applyCollectionRules(api: types.IExtensionApi,
  * It may get called multiple times so it has to take care to not break if any data already
  * exists
  */
-export async function postprocessCollection(api: types.IExtensionApi,
-                                            gameId: string,
-                                            collectionMod: types.IMod,
-                                            collection: ICollection,
-                                            mods: { [modId: string]: types.IMod }) {
-  log('info', 'postprocess collection');
+export async function postprocessCollection(
+  api: types.IExtensionApi,
+  gameId: string,
+  collectionMod: types.IMod,
+  collection: ICollection,
+  mods: { [modId: string]: types.IMod },
+) {
+  log("info", "postprocess collection");
   applyCollectionRules(api, gameId, collection, mods);
   try {
     // TODO: replace this with a call to the awaitModsDeployment API extension method
-    await util.toPromise(cb => api.events.emit('deploy-mods', cb, undefined, undefined, { isCollectionPostprocessCall: true }));
+    await util.toPromise((cb) =>
+      api.events.emit("deploy-mods", cb, undefined, undefined, {
+        isCollectionPostprocessCall: true,
+      }),
+    );
   } catch (err) {
-    log('warn', 'Failed to deploy during collection post processing');
+    log("warn", "Failed to deploy during collection post processing");
   }
 
   const exts: IExtensionFeature[] = findExtensions(api.getState(), gameId);
@@ -181,5 +210,5 @@ export async function postprocessCollection(api: types.IExtensionApi,
   }
 
   await parseGameSpecifics(api, gameId, collection, collectionMod);
-  api.events.emit('collection-postprocess-complete', gameId, collectionMod.id);
+  api.events.emit("collection-postprocess-complete", gameId, collectionMod.id);
 }

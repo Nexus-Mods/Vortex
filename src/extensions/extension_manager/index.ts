@@ -1,14 +1,17 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { NotificationDismiss } from "../../types/INotification";
-import type { IExtensionLoadFailure, IState } from "../../types/IState";
-import { relaunch } from "../../util/commandLine";
-import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
-import { isExtSame } from "../../util/ExtensionManager";
-import { log } from "../../util/log";
-import makeReactive from "../../util/makeReactive";
+} from "../../renderer/types/IExtensionContext";
+import type { NotificationDismiss } from "../../renderer/types/INotification";
+import type {
+  IExtensionLoadFailure,
+  IState,
+} from "../../renderer/types/IState";
+import { relaunch } from "../../renderer/util/commandLine";
+import { DataInvalid, ProcessCanceled } from "../../renderer/util/CustomErrors";
+import { isExtSame } from "../../renderer/ExtensionManager";
+import { log } from "../../renderer/util/log";
+import makeReactive from "../../renderer/util/makeReactive";
 
 import {
   setAvailableExtensions,
@@ -22,7 +25,7 @@ import type {
   IAvailableExtension,
   IExtension,
   IExtensionDownloadInfo,
-} from "./types";
+} from "../../renderer/types/extensions";
 import {
   downloadAndInstallExtension,
   fetchAvailableExtensions,
@@ -32,8 +35,8 @@ import {
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
-import { setDialogVisible, setExtensionEnabled } from "../../actions";
-import { getGame } from "../../util/api";
+import { setDialogVisible, setExtensionEnabled } from "../../renderer/actions";
+import { getGame } from "../../renderer/util/api";
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -369,6 +372,7 @@ function init(context: IExtensionContext) {
   context.registerReducer(["session", "extensions"], sessionReducer);
 
   context.registerMainPage("extensions", "Extensions", ExtensionManager, {
+    priority: 10,
     hotkey: "X",
     group: "global",
     // visible: () => context.api.store.getState().settings.interface.advanced,

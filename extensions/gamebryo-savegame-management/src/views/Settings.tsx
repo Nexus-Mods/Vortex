@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
-import { withTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
-import { ComponentEx, selectors, Toggle } from 'vortex-api';
-import { enableMonitor } from '../actions/settings';
-import { gameSupported } from '../util/gameSupport';
+import * as React from "react";
+import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
+import { withTranslation } from "react-i18next";
+import { connect } from "react-redux";
+import * as Redux from "redux";
+import { ThunkDispatch } from "redux-thunk";
+import { ComponentEx, selectors, Toggle } from "vortex-api";
+import { enableMonitor } from "../actions/settings";
+import { gameSupported } from "../util/gameSupport";
 
 export interface IBaseProps {
   onToggled: () => void;
@@ -33,16 +33,15 @@ class Settings extends ComponentEx<IProps, {}> {
 
     return (
       <form>
-        <FormGroup controlId='redirection'>
-          <ControlLabel>{t('Savegame folder monitoring')}</ControlLabel>
-          <Toggle
-            checked={monitorEnabled}
-            onToggle={this.toggle}
-          >
-            {t('Monitor Savegame directory for changes')}
+        <FormGroup controlId="redirection">
+          <ControlLabel>{t("Savegame folder monitoring")}</ControlLabel>
+          <Toggle checked={monitorEnabled} onToggle={this.toggle}>
+            {t("Monitor Savegame directory for changes")}
           </Toggle>
           <HelpBlock>
-            {t('If your games take very long to save when Vortex is running, try disabling this.')}
+            {t(
+              "If your games take very long to save when Vortex is running, try disabling this.",
+            )}
           </HelpBlock>
         </FormGroup>
       </form>
@@ -52,7 +51,7 @@ class Settings extends ComponentEx<IProps, {}> {
   private toggle = () => {
     this.props.enableMonitor(!this.props.monitorEnabled);
     this.props.onToggled();
-  }
+  };
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -62,11 +61,14 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<any, null, Redux.Action>,
+): IActionProps {
   return {
     enableMonitor: (enabled: boolean) => dispatch(enableMonitor(enabled)),
   };
 }
 
-export default withTranslation(['default', 'gamebryo-savegames'])(
-  connect(mapStateToProps, mapDispatchToProps)(Settings) as any);
+export default withTranslation(["default", "gamebryo-savegames"])(
+  connect(mapStateToProps, mapDispatchToProps)(Settings) as any,
+);

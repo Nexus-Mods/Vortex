@@ -3,21 +3,27 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../actions/notifications";
-import { addNotification, showDialog } from "../../../actions/notifications";
-import { setSettingsPage } from "../../../actions/session";
+} from "../../../renderer/actions/notifications";
+import {
+  addNotification,
+  showDialog,
+} from "../../../renderer/actions/notifications";
+import { setSettingsPage } from "../../../renderer/actions/session";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { INotificationAction } from "../../../types/INotification";
-import type { IState } from "../../../types/IState";
+import type { INotificationAction } from "../../../renderer/types/INotification";
+import type { IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { TemporaryError, UserCanceled } from "../../../util/CustomErrors";
-import { showError } from "../../../util/message";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import {
+  TemporaryError,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import { showError } from "../../../renderer/util/message";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
 import { NoDeployment } from "../util/exceptions";

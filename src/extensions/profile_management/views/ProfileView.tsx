@@ -2,19 +2,19 @@ import type {
   DialogActions,
   DialogType,
   IDialogContent,
-} from "../../../actions/notifications";
-import { showDialog } from "../../../actions/notifications";
-import type { IMod, IState } from "../../../types/IState";
+} from "../../../renderer/actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
+import type { IMod, IState } from "../../../renderer/types/IState";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
@@ -51,6 +51,7 @@ interface IConnectedProps {
   discoveredGames: { [gameId: string]: IDiscoveryResult };
   activity: string[];
   mods: { [gameId: string]: { [modId: string]: IMod } };
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -133,21 +134,25 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
             )}
           </div>
           {this.renderAddOrEdit(edit)}
-          <div>
-            {t("Other Games")}{" "}
-            <a onClick={this.toggleOther}>
-              {showOther ? t("Hide") : t("Show")}
-            </a>
-          </div>
-          <Collapse in={showOther}>
-            <div>
-              <div className="profile-list">
-                {otherProfilesSorted.map((profileId) =>
-                  this.renderProfile(profileId, supportedFeatures),
-                )}
+          {!this.props.useModernLayout && (
+            <>
+              <div>
+                {t("Other Games")}{" "}
+                <a onClick={this.toggleOther}>
+                  {showOther ? t("Hide") : t("Show")}
+                </a>
               </div>
-            </div>
-          </Collapse>
+              <Collapse in={showOther}>
+                <div>
+                  <div className="profile-list">
+                    {otherProfilesSorted.map((profileId) =>
+                      this.renderProfile(profileId, supportedFeatures),
+                    )}
+                  </div>
+                </div>
+              </Collapse>
+            </>
+          )}
           {isDeploying ? this.renderOverlay() : null}
         </MainPage.Body>
       </MainPage>
@@ -444,6 +449,7 @@ function mapStateToProps(state: IState): IConnectedProps {
       ["session", "base", "activity", "mods"],
       emptyArray,
     ),
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

@@ -1,17 +1,17 @@
-import type { IState } from "../../types/IState";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import type { IState } from "../../renderer/types/IState";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import { SITE_ID } from "./constants";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
-export function knownGames(state): IGameStored[] {
-  return getSafe(state, ["session", "gameMode", "known"], []);
+export function knownGames(state: IState): IGameStored[] {
+  return state.session.gameMode.known ?? [];
 }
 
-function discovered(state: IState): { [id: string]: IDiscoveryResult } {
+export function discovered(state: IState): { [id: string]: IDiscoveryResult } {
   return state.settings.gameMode.discovered;
 }
 

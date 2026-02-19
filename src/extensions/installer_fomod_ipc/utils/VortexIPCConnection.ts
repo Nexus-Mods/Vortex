@@ -2,12 +2,12 @@ import type { ConnectionStrategy, TimeoutOptions } from "fomod-installer-ipc";
 import { BaseIPCConnection } from "fomod-installer-ipc";
 import type { ISupportedResult } from "../../mod_management/types/TestSupported";
 import type { IInstallResult } from "../../mod_management/types/IInstallResult";
-import { statAsync } from "../../../util/fs";
-import type { IExtensionApi } from "../../../types/api";
-import { log } from "../../../util/log";
+import { statAsync } from "../../../renderer/util/fs";
+import type { IExtensionApi } from "../../../renderer/types/api";
+import { log } from "../../../renderer/util/log";
 import type { IChoices } from "../../installer_fomod_shared/types/interface";
 import path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 
 /**
  * Vortex-specific IPC connection implementation
@@ -63,7 +63,13 @@ export class VortexIPCConnection extends BaseIPCConnection {
               [{ label: no }, { label: yes } /*{ label: yesForAll }*/],
               dialogId,
             );
-            return dialogResult?.action === yes;
+            // Return true to continue, 'cancel' if user clicked Cancel, false for other cases
+            if (dialogResult?.action === yes) {
+              return true;
+            } else if (dialogResult?.action === no) {
+              return "cancel";
+            }
+            return false; // Dialog dismissed or other cases
           }
         : undefined,
       onDismissDialog: api

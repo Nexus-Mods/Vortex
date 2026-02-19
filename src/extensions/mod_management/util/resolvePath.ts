@@ -1,6 +1,6 @@
-import getVortexPath from "../../../util/getVortexPath";
-import makeCI from "../../../util/makeCaseInsensitive";
-import { getSafe } from "../../../util/storeHelper";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import makeCI from "../../../renderer/util/makeCaseInsensitive";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import * as path from "path";
 import format from "string-template";

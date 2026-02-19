@@ -3,7 +3,7 @@
  * Only registers when running in development mode
  */
 
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import TailwindPage from "./views/TailwindPage";
 
 function init(context: IExtensionContext): boolean {
@@ -18,6 +18,7 @@ function init(context: IExtensionContext): boolean {
   // Using 'details' icon (same as Knowledge Base) for development content
   context.registerMainPage("details", "Tailwind", TailwindPage, {
     group: "global",
+    isClassicOnly: true,
   });
 
   return true;

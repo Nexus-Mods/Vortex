@@ -6,7 +6,7 @@ jest.mock('fs-extra', () => ({
   },
 }));
 
-import * as fs from '../src/util/fs';
+import * as fs from '../src/renderer/util/fs';
 
 describe('readFileBOM', () => {
   it('supports files without BOM', () => {

@@ -1,10 +1,10 @@
-import type { AttributeExtractor } from "../../../types/IExtensionContext";
+import type { AttributeExtractor } from "../../../renderer/types/IExtensionContext";
 import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "../../../shared/errors";
 
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 
 const attributeExtractors: Array<{
   priority: number;

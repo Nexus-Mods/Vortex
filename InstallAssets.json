@@ -5,150 +5,101 @@
       "srcPath": "./LICENSE.md",
       "outPath": "",
       "skipPaths": 0,
-      "target": [
-        "app"
-      ]
+      "target": ["app"]
     },
     {
       "srcPath": "src/stylesheets",
       "outPath": "assets/css",
       "skipPaths": 2,
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
       "outPath": "assets/css",
       "rename": "bootstrap.scss",
       "skipPaths": 4,
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
-      "srcPath": "src/index.dev.html",
+      "srcPath": "src/renderer/index.dev.html",
       "outPath": "",
       "rename": "index.html",
-      "target": [
-        "out"
-      ],
-      "skipPaths": 1
+      "target": ["out"],
+      "skipPaths": 2
     },
     {
-      "srcPath": "src/index.html",
+      "srcPath": "src/renderer/index.html",
       "outPath": "",
-      "target": [
-        "app"
-      ],
-      "skipPaths": 1
+      "target": ["app"],
+      "skipPaths": 2
     },
     {
-      "srcPath": "src/splash.html",
+      "srcPath": "src/renderer/splash.html",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ],
-      "skipPaths": 1
+      "target": ["out", "app"],
+      "skipPaths": 2
     },
     {
       "srcPath": "locales/*/*",
       "outPath": "",
-      "target": [
-        "out"
-      ]
+      "target": ["out"]
     },
     {
       "srcPath": "locales/*/*",
       "outPath": "",
-      "target": [
-        "app"
-      ]
+      "target": ["app"]
     },
     {
       "srcPath": "assets/images/",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/icons/",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/pictograms/",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/fonts/*",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/dotnetprobe.exe",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/dotnetprobe",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/*.json",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "assets/licenses/*",
       "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
       "skipPaths": 2,
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     },
     {
       "srcPath": "extensions/*/index.js",
       "outPath": "bundledPlugins",
       "skipPaths": 1,
-      "target": [
-        "out",
-        "app"
-      ]
+      "target": ["out", "app"]
     }
   ]
 }

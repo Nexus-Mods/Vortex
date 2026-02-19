@@ -1,29 +1,34 @@
-import { setDownloadModInfo } from "../../actions";
+import { setDownloadModInfo } from "../../renderer/actions";
 import type {
   IExtensionApi,
   StateChangeCallback,
-} from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
+} from "../../renderer/types/IExtensionContext";
+import type {
+  IDownload,
+  IMod,
+  IModTable,
+  IState,
+} from "../../renderer/types/IState";
 import {
   DataInvalid,
   ProcessCanceled,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { calcDuration, showError } from "../../util/message";
-import { upload } from "../../util/network";
-import opn from "../../util/opn";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { calcDuration, showError } from "../../renderer/util/message";
+import { upload } from "../../renderer/util/network";
+import opn from "../../renderer/util/opn";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
 
 import { resolveCategoryName } from "../category_management";
 import {
@@ -48,6 +53,7 @@ import {
   CURRENT_REVISION_INFO,
   COLLECTION_SEARCH_QUERY,
   MOD_REQUIREMENTS_INFO,
+  MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
 import submitFeedback from "./util/submitFeedback";
 
@@ -707,13 +713,12 @@ export function onGetMyCollections(
     if (!nexusDomainId) {
       return [];
     }
+    const userId = api.getState().persistent["nexus"]?.userInfo?.userId;
+    if (userId === undefined) {
+      return [];
+    }
     try {
-      const query: ICollectionQuery = {
-        ...COLLECTION_SEARCH_QUERY,
-        revisions: {
-          ...FULL_REVISION_INFO,
-        },
-      };
+      const query: ICollectionQuery = MY_COLLECTIONS_SEARCH_QUERY;
       const searchResult: ICollectionSearchResult = await onSearchCollections(
         api,
         nexus,
@@ -728,12 +733,18 @@ export function onGetMyCollections(
         ],
         count,
         offset,
-        userId: api.getState().persistent["nexus"]?.userInfo?.userId.toString(),
+        userId: userId.toString(),
       });
 
-      const revisions: Partial<IRevision[]> = searchResult.nodes.flatMap(
-        (collection: ICollection) => collection.revisions ?? [],
-      );
+      // For each collection, pick only the latest revision (highest revisionNumber)
+      const revisions: Partial<IRevision[]> = searchResult.nodes
+        .map(
+          (collection: ICollection) =>
+            (collection.revisions ?? []).sort(
+              (a, b) => b.revisionNumber - a.revisionNumber,
+            )[0],
+        )
+        .filter((rev): rev is IRevision => rev != null);
 
       return revisions;
     } catch (err) {

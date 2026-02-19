@@ -1,7 +1,7 @@
 import type {
   IExtensionContext,
   ToDoType,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 import Dashlet from "./Dashlet";
 import type { IToDo } from "./IToDo";
 import settingsReducer from "./reducers";
@@ -46,7 +46,8 @@ function init(context: IExtensionContext): boolean {
     Dashlet,
     (state) => {
       const allTodos: IToDo[] = [].concat(todos(context.api), extTodos);
-      const steps = state.settings.firststeps.steps;
+      // Defensive check: firststeps might not be initialized during hydration
+      const steps = state.settings?.firststeps?.steps ?? {};
 
       const visibleSteps = allTodos.filter((item) => {
         if (steps[item.id]) {

@@ -15,16 +15,16 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
 import MainPage from "../../../renderer/views/MainPage";
-import { Button } from "../../../tailwind/components/next/button";
-import { Icon } from "../../../tailwind/components/next/icon";
+import { Button } from "../../../renderer/tailwind/components/next/button";
+import { Icon } from "../../../renderer/tailwind/components/next/icon";
 import {
   TabBar,
   TabButton,
   TabPanel,
   TabProvider,
-} from "../../../tailwind/components/next/tabs";
-import { Typography } from "../../../tailwind/components/next/typography";
-import { NoResults } from "../../../tailwind/components/no_results";
+} from "../../../renderer/tailwind/components/next/tabs";
+import { Typography } from "../../../renderer/tailwind/components/next/typography";
+import { NoResults } from "../../../renderer/tailwind/components/no_results";
 import { Pictogram } from "../../../tailwind/components/pictogram";
 import { batchDispatch } from "../../../util/util";
 import {

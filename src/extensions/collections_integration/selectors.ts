@@ -10,7 +10,7 @@ import * as path from "path";
 
 import { modsForActiveGame } from "../mod_management/selectors";
 
-import type { IDownload, IMod, IState } from "../../types/IState";
+import type { IDownload, IMod, IState } from "../../renderer/types/IState";
 import { activeDownloads } from "../download_management/selectors";
 
 /**
@@ -186,7 +186,8 @@ export const getCollectionModByReference = (
     if (searchParams.tag && ref.tag === searchParams.tag) return true;
     if (searchParams.fileMD5 && ref.fileMD5 === searchParams.fileMD5)
       return true;
-    if (searchParams.fileId && ref.id === searchParams.fileId) return true;
+    if (searchParams.fileId && ref.repo?.fileId === searchParams.fileId)
+      return true;
     if (
       searchParams.logicalFileName &&
       ref.logicalFileName === searchParams.logicalFileName

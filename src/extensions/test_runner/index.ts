@@ -28,22 +28,25 @@
  * Further event types can be triggered by extensions
  */
 
-import type { DialogActions } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+import type { DialogActions } from "../../renderer/actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import { getErrorMessageOrDefault } from "../../shared/errors";
 import type {
   CheckFunction,
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { INotificationAction } from "../../types/INotification";
-import type { ITestResult } from "../../types/ITestResult";
-import { getApplication } from "../../util/application";
-import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { log } from "../../util/log";
-import { activeGameId, activeProfile } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { setdefault } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import type { INotificationAction } from "../../renderer/types/INotification";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import { getApplication } from "../../renderer/util/application";
+import {
+  ProcessCanceled,
+  UserCanceled,
+} from "../../renderer/util/CustomErrors";
+import { log } from "../../renderer/util/log";
+import { activeGameId, activeProfile } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { setdefault } from "../../renderer/util/util";
 
 import PromiseBB from "bluebird";
 import * as _ from "lodash";

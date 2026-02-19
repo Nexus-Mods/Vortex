@@ -8,15 +8,15 @@ import {
 import type { TFunction } from "i18next";
 import React from "react";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGameStored, IMod } from "../../../types/IState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
-import { ProcessCanceled } from "../../../util/CustomErrors";
-import { laterT } from "../../../util/i18n";
-import { log } from "../../../util/log";
-import { activeGameId, gameById } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IGameStored, IMod } from "../../../renderer/types/IState";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
+import { ProcessCanceled } from "../../../renderer/util/CustomErrors";
+import { laterT } from "../../../renderer/util/i18n";
+import { log } from "../../../renderer/util/log";
+import { activeGameId, gameById } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGameId } from "./convertGameId";
 

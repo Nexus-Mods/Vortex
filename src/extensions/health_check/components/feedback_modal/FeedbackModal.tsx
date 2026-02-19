@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 
 import { Checkbox } from "../../../../tailwind/components/form/checkbox";
 import { Modal } from "../../../../tailwind/components/modal";
-import { Button } from "../../../../tailwind/components/next/button";
-import { Typography } from "../../../../tailwind/components/next/typography";
+import { Button } from "../../../../renderer/tailwind/components/next/button";
+import { Typography } from "../../../../renderer/tailwind/components/next/typography";
 
 export const FeedbackModal = ({
   isOpen,

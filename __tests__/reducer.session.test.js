@@ -1,4 +1,4 @@
-import { sessionReducer } from '../src/reducers/session';
+import { sessionReducer } from '../src/renderer/reducers/session';
 
 describe('displayGroup', () => {
   it('sets the display item and creates missing nodes', () => {

@@ -1,6 +1,6 @@
 import * as React from "react";
 import ToolbarIcon from "../../../renderer/controls/ToolbarIcon";
-import type { TFunction } from "../../../util/i18n";
+import type { TFunction } from "../../../renderer/util/i18n";
 import type { IDownload } from "../types/IDownload";
 
 export interface IShutdownButtonProps {

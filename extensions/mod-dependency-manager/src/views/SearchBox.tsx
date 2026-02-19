@@ -1,7 +1,7 @@
-import I18next from 'i18next';
-import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
-import { ComponentEx, Icon, tooltip } from 'vortex-api';
+import I18next from "i18next";
+import * as React from "react";
+import { FormControl } from "react-bootstrap";
+import { ComponentEx, Icon, tooltip } from "vortex-api";
 
 export interface ISearchMatch {
   node: any;
@@ -41,38 +41,40 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     const { t, searchFocusIndex, searchString } = this.props;
     const { searchFoundCount } = this.state;
     return (
-      <div className='search-box'>
-        <div style={{ display: 'inline-block', position: 'relative', height: 30 }}>
+      <div className="search-box">
+        <div
+          style={{ display: "inline-block", position: "relative", height: 30 }}
+        >
           <FormControl
-            className='search-box-input'
-            type='text'
-            placeholder={t('Search')}
-            value={searchString || ''}
+            className="search-box-input"
+            type="text"
+            placeholder={t("Search")}
+            value={searchString || ""}
             onChange={this.startSearch}
           />
-          <Icon className='search-icon' name='search' />
-          <span className='search-position' >
-            {t('{{ pos }} of {{ total }}', {
+          <Icon className="search-icon" name="search" />
+          <span className="search-position">
+            {t("{{ pos }} of {{ total }}", {
               replace: {
-                pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
+                pos: searchFoundCount > 0 ? searchFocusIndex + 1 : 0,
                 total: searchFoundCount || 0,
               },
             })}
           </span>
         </div>
         <tooltip.IconButton
-          className='btn-embed'
-          icon='search-up'
-          tooltip={t('Prev')}
-          type='button'
+          className="btn-embed"
+          icon="search-up"
+          tooltip={t("Prev")}
+          type="button"
           disabled={!searchFoundCount}
           onClick={this.selectPrevMatch}
         />
         <tooltip.IconButton
-          className='btn-embed'
-          icon='search-down'
-          tooltip={t('Next')}
-          type='button'
+          className="btn-embed"
+          icon="search-down"
+          tooltip={t("Next")}
+          type="button"
           disabled={!searchFoundCount}
           onClick={this.selectNextMatch}
         />
@@ -84,20 +86,22 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     const { onSetSearchFocus, searchFocusIndex } = this.props;
     const { searchFoundCount } = this.state;
 
-    onSetSearchFocus((searchFoundCount + searchFocusIndex - 1) % searchFoundCount);
-  }
+    onSetSearchFocus(
+      (searchFoundCount + searchFocusIndex - 1) % searchFoundCount,
+    );
+  };
 
   private selectNextMatch = () => {
     const { onSetSearchFocus, searchFocusIndex } = this.props;
     const { searchFoundCount } = this.state;
 
     onSetSearchFocus((searchFocusIndex + 1) % searchFoundCount);
-  }
+  };
 
   private startSearch = (event) => {
     const { onSetSearch } = this.props;
     onSetSearch(event.target.value);
-  }
+  };
 
   private updateMatches(matches: ISearchMatch[]) {
     const { onSetSearchFocus, searchFocusIndex } = this.props;
@@ -108,9 +112,10 @@ class SearchBox extends ComponentEx<ISearchBoxProps, ISearchBoxState> {
     if (this.state.searchFoundCount !== matches.length) {
       this.nextState.searchFoundCount = matches.length;
     }
-    const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
+    const newFocusIndex =
+      matches.length > 0 ? searchFocusIndex % matches.length : 0;
     if (searchFocusIndex !== newFocusIndex) {
-    onSetSearchFocus(newFocusIndex);
+      onSetSearchFocus(newFocusIndex);
     }
   }
 }

@@ -1,10 +1,10 @@
 import Bluebird from "bluebird";
 import * as path from "path";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
 import * as actions from "../actions/profiles";
 import { clearLastActiveProfile, setNextProfile } from "../actions/settings";
 import {

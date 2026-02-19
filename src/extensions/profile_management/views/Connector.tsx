@@ -1,7 +1,7 @@
 import Line from "./Line";
 
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import { getSafe } from "../../../util/storeHelper";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import * as React from "react";
 import { connect } from "react-redux";

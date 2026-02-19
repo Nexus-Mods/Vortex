@@ -2,39 +2,38 @@ import {
   setDownloadModInfo,
   setForcedLogout,
   setModAttribute,
-} from "../../actions";
-import type { IDialogResult } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
+} from "../../renderer/actions";
+import type { IDialogResult } from "../../renderer/actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IModLookupResult } from "../../types/IModLookupResult";
-import type { IState } from "../../types/IState";
-import { getApplication } from "../../util/application";
+} from "../../renderer/types/IExtensionContext";
+import type { IModLookupResult } from "../../renderer/types/IModLookupResult";
+import type { IState } from "../../renderer/types/IState";
+import { getApplication } from "../../renderer/util/application";
 import {
   DataInvalid,
   HTTPError,
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
   UserCanceled,
-} from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
+} from "../../renderer/util/CustomErrors";
+import Debouncer from "../../renderer/util/Debouncer";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
 import LazyComponent from "../../renderer/controls/LazyComponent";
-import type { LogLevel } from "../../util/log";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import opn from "../../util/opn";
-import presetManager from "../../util/PresetManager";
+import type { LogLevel } from "../../renderer/util/log";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import opn from "../../renderer/util/opn";
 import {
   activeGameId,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { currentGame, getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { currentGame, getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   decodeHTML,
@@ -43,7 +42,7 @@ import {
   truthy,
   Content,
   Campaign,
-} from "../../util/util";
+} from "../../renderer/util/util";
 
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import { DownloadIsHTML } from "../download_management/DownloadManager";
@@ -146,10 +145,9 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
-import type { IComponentContext } from "../../types/IComponentContext";
+import type { IComponentContext } from "../../renderer/types/IComponentContext";
 import { MainContext } from "../../renderer/views/MainWindow";
 import { getGame } from "../gamemode_management/util/getGame";
-import { selectors } from "vortex-api";
 import { app } from "electron";
 import Icon from "../../renderer/controls/Icon";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
@@ -829,17 +827,7 @@ function doDownload(api: IExtensionApi, url: string): PromiseBB<string> {
   );
 }
 
-function onceMain(api: IExtensionApi) {
-  try {
-    const stat = fs.statSync(requestLog.logPath);
-    const now = new Date();
-    if (stat.mtime.getUTCDate() !== now.getUTCDate()) {
-      fs.removeSync(requestLog.logPath);
-    }
-  } catch (err) {
-    // nop
-  }
-}
+// Main process initialization moved to src/main/extensions/nexusIntegration.ts
 
 interface IAwaitedLink {
   gameId: string;
@@ -1443,8 +1431,6 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     });
 
   checkModsWithMissingMeta(api);
-
-  presetManager.on("login_nexus", () => ensureLoggedIn(api));
 
   callbacks.forEach((cb) => cb(nexus));
 }
@@ -2066,9 +2052,15 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(["settings", "nexus"], settingsReducer);
   context.registerReducer(["persistent", "nexus"], persistentReducer);
   context.registerReducer(["session", "nexus"], sessionReducer);
-  context.registerAction("application-icons", 200, LoginIcon, {}, () => ({
-    nexus,
-  }));
+  context.registerAction(
+    "application-icons",
+    200,
+    LoginIcon,
+    { isClassicOnly: true },
+    () => ({
+      nexus,
+    }),
+  );
   context.registerAction(
     "mods-action-icons",
     800,
@@ -2220,7 +2212,7 @@ function init(context: IExtensionContextExt): boolean {
     "global-icons",
     100,
     "nexus",
-    {},
+    { isClassicOnly: true },
     "Refresh User Info",
     () => {
       log("info", "Refresh User Info global menu item clicked");
@@ -2510,7 +2502,6 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.once(() => once(context.api, extIntegrations));
-  context.onceMain(() => onceMain(context.api));
 
   return true;
 }

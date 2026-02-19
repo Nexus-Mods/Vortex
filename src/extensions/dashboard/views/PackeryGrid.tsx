@@ -1,4 +1,4 @@
-import lazyRequire from "../../../util/lazyRequire";
+import lazyRequire from "../../../renderer/util/lazyRequire";
 
 import * as _ from "lodash";
 import type * as PackeryT from "packery";

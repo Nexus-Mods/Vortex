@@ -1,19 +1,20 @@
-import path from "path";
-import { execFile, spawn } from "child_process";
-import { promisify } from "util";
 import Bluebird from "bluebird";
-import { NET_CORE_DOWNLOAD } from "./constants";
-import { SITE_ID } from "../gamemode_management/constants";
-import { downloadPathForGame } from "../download_management/selectors";
+import { execFile, spawn } from "child_process";
+import path from "path";
+import { promisify } from "util";
+
 import type {
   ITestResult,
   IExtensionApi,
   IExtensionContext,
-} from "../../types/api";
-import { getVortexPath, UserCanceled } from "../../util/api";
-import { delayed, toPromise } from "../../util/util";
-import { log } from "../../util/log";
-import { platform } from "process";
+} from "../../renderer/types/api";
+
+import { getVortexPath, UserCanceled } from "../../renderer/util/api";
+import { log } from "../../renderer/util/log";
+import { delayed, toPromise } from "../../renderer/util/util";
+import { downloadPathForGame } from "../download_management/selectors";
+import { SITE_ID } from "../gamemode_management/constants";
+import { NET_CORE_DOWNLOAD } from "./constants";
 
 const spawnAsync = (command: string, args: string[]): Promise<void> => {
   return new Promise((resolve, reject) => {

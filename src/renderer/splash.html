@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Vortex</title>
+        <style>
+            .fade-out {
+                opacity: 1;
+                -webkit-user-drag: none;
+            }
+        </style>
+    </head>
+
+    <body
+        id="bg"
+        style="
+            background-color: transparent;
+            overflow: visible;
+            display: table-cell;
+            overflow: hidden;
+        "
+    >
+        <img id="splash" class="fade-out" src="assets/images/splash.png" />
+
+        <script>
+            require("./renderer/splash.js");
+        </script>
+    </body>
+</html>

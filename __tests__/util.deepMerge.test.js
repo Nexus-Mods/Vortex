@@ -1,4 +1,4 @@
-import deepMerge from '../src/util/deepMerge';
+import deepMerge from '../src/renderer/util/deepMerge';
 
 describe('deepMerge', () => {
   it('merges objects without intersection', () => {

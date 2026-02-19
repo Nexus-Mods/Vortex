@@ -2,13 +2,14 @@ import type {
   IDashletOptions,
   IExtensionContext,
   PropsCallback,
-} from "../../types/IExtensionContext";
+} from "../../renderer/types/IExtensionContext";
 
 import type { IDashletProps } from "./types/IDashletProps";
 import Dashboard from "./views/Dashboard";
 import Settings from "./views/Settings";
 
 import settingsReducer from "./reducer";
+import { mdiViewDashboard } from "@mdi/js";
 
 const dashlets: IDashletProps[] = [];
 
@@ -44,6 +45,7 @@ function init(context: IExtensionContext): boolean {
     hotkey: "1",
     group: "dashboard",
     props: () => ({ dashlets }),
+    mdi: mdiViewDashboard,
   });
 
   context.registerSettings(

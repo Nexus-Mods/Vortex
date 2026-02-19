@@ -1,9 +1,9 @@
-import { setDialogVisible } from "../../actions";
+import { setDialogVisible } from "../../renderer/actions";
 import {
   removeExtension,
   setExtensionEnabled,
   setExtensionEndorsed,
-} from "../../actions/app";
+} from "../../renderer/actions/app";
 import type { DropType } from "../../renderer/controls/Dropzone";
 import Dropzone from "../../renderer/controls/Dropzone";
 import FlexLayout from "../../renderer/controls/FlexLayout";
@@ -15,17 +15,17 @@ import type {
   IExtensionLoadFailure,
   IExtensionState,
   IState,
-} from "../../types/IState";
-import type { ITableAttribute } from "../../types/ITableAttribute";
-import { relaunch } from "../../util/commandLine";
+} from "../../renderer/types/IState";
+import type { ITableAttribute } from "../../renderer/types/ITableAttribute";
+import { relaunch } from "../../renderer/util/commandLine";
 import {
   ComponentEx,
   connect,
   translate,
 } from "../../renderer/controls/ComponentEx";
-import { log } from "../../util/log";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+import { log } from "../../renderer/util/log";
+import * as selectors from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import MainPage from "../../renderer/views/MainPage";
 
 import type { IDownload } from "../download_management/types/IDownload";
@@ -33,7 +33,10 @@ import { SITE_ID } from "../gamemode_management/constants";
 
 import installExtension from "./installExtension";
 import getTableAttributes from "./tableAttributes";
-import type { IExtension, IExtensionWithState } from "./types";
+import type {
+  IExtension,
+  IExtensionWithState,
+} from "../../renderer/types/extensions";
 
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";

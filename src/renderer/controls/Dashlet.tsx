@@ -1,4 +1,4 @@
-import { truthy } from "../../util/util";
+import { truthy } from "../util/util";
 
 import * as React from "react";
 

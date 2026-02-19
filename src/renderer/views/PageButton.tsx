@@ -1,69 +1,70 @@
+import React, { useEffect, useMemo, useReducer, type FC } from "react";
+import { Badge } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+
+import type { IUpdateable } from "../ReduxProp";
+import type { IMainPage } from "../types/IMainPage";
+
 import Icon from "../controls/Icon";
 import Spinner from "../controls/Spinner";
-import type { IMainPage } from "../../types/IMainPage";
-import type { TFunction } from "../../util/i18n";
-
-import * as React from "react";
-import { Badge } from "react-bootstrap";
 
 interface IPageButtonProps {
-  t: TFunction;
   page: IMainPage;
   namespace: string;
 }
 
-class PageButton extends React.Component<IPageButtonProps, {}> {
-  public componentDidMount() {
-    const { page } = this.props;
+export const PageButton: FC<IPageButtonProps> = (props) => {
+  const { namespace, page } = props;
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+  const { t } = useTranslation();
+
+  // Create a stable object to pass to attach/detach that triggers re-renders
+  const updateHandle: IUpdateable = useMemo(() => ({ forceUpdate }), []);
+
+  useEffect(() => {
     if (page.badge) {
-      page.badge.attach(this);
+      page.badge.attach(updateHandle);
     }
     if (page.activity) {
-      page.activity.attach(this);
+      page.activity.attach(updateHandle);
     }
-  }
 
-  public componentWillUnmount() {
-    const { page } = this.props;
-    if (page.badge) {
-      page.badge.detach(this);
-    }
-    if (page.activity) {
-      page.activity.detach(this);
-    }
-  }
+    return () => {
+      if (page.badge) {
+        page.badge.detach(updateHandle);
+      }
+      if (page.activity) {
+        page.activity.detach(updateHandle);
+      }
+    };
+  }, [page, updateHandle]);
 
-  public render() {
-    const { t, namespace, page } = this.props;
-    return (
-      <div>
-        <Icon name={page.icon} />
-        <span className="menu-label">{t(page.title, { ns: namespace })}</span>
-        {this.renderBadge()}
-        {this.renderActivity()}
-      </div>
-    );
-  }
-
-  private renderBadge() {
-    const { page } = this.props;
-
+  const renderBadge = () => {
     if (page.badge === undefined) {
       return null;
     }
-
     return <Badge>{page.badge.calculate()}</Badge>;
-  }
+  };
 
-  private renderActivity() {
-    const { page } = this.props;
-
+  const renderActivity = () => {
     if (page.activity === undefined || !page.activity.calculate()) {
       return null;
     }
-
     return <Spinner />;
-  }
-}
+  };
+
+  return (
+    <div>
+      <Icon name={page.icon} />
+
+      <span className="menu-label">{t(page.title, { ns: namespace })}</span>
+
+      {renderBadge()}
+
+      {renderActivity()}
+    </div>
+  );
+};
 
 export default PageButton;

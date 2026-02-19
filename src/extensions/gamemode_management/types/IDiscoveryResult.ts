@@ -1,4 +1,4 @@
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import type { IDiscoveredTool } from "../../../renderer/types/IDiscoveredTool";
 
 /**
  * describes parameters for the game set by the user

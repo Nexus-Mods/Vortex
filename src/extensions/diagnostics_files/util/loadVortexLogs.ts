@@ -1,16 +1,37 @@
-import * as fs from "../../../util/fs";
-import type { LogLevel } from "../../../util/log";
+import * as fs from "../../../renderer/util/fs";
+import type { LogLevel } from "../../../renderer/util/log";
 
 import type { ILog, ISession } from "../types/ISession";
 
 import PromiseBB from "bluebird";
 import * as path from "path";
-import getVortexPath from "../../../util/getVortexPath";
+import getVortexPath from "../../../renderer/util/getVortexPath";
 
-const lineRE = /^(\S+) \[([A-Z]*)\] (.*)\r?/;
+// New format: timestamp [LEVEL] [PROCESS] message
+const lineRE = /^(\S+) \[([A-Z]*)\] \[([A-Z]*)\] (.*)\r?/;
+// Legacy format: timestamp [LEVEL] message
+const lineRE_Legacy = /^(\S+) \[([A-Z]*)\] (.*)\r?/;
+// ANSI color code regex (constructed to avoid ESLint error)
+// eslint-disable-next-line no-control-regex
+const ansiRegex = /\x1b\[[0-9;]*m/g;
 
 function parseLine(line: string, idx: number): ILog {
-  const match = line.match(lineRE);
+  // Strip ANSI color codes from the line
+  const cleanLine = line.replace(ansiRegex, "");
+
+  // Try new format first (with [PROCESS])
+  let match = cleanLine.match(lineRE);
+  if (match !== null && match.length === 5) {
+    return {
+      lineno: idx,
+      time: match[1],
+      type: match[2].toLowerCase() as LogLevel,
+      text: match[4], // Skip the process name in match[3], use the message in match[4]
+    };
+  }
+
+  // Fall back to legacy format (without [PROCESS])
+  match = cleanLine.match(lineRE_Legacy);
   if (match !== null && match.length === 4) {
     return {
       lineno: idx,
@@ -18,9 +39,9 @@ function parseLine(line: string, idx: number): ILog {
       type: match[2].toLowerCase() as LogLevel,
       text: match[3],
     };
-  } else {
-    return undefined;
   }
+
+  return undefined;
 }
 
 export function loadVortexLogs(): PromiseBB<ISession[]> {

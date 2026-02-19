@@ -5,8 +5,8 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { activeGameId, activeProfile } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
+import { activeGameId, activeProfile } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 

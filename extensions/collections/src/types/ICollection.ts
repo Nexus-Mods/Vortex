@@ -1,5 +1,6 @@
-import { types } from 'vortex-api';
-import { ICollectionGamebryo } from '../util/gameSupport/gamebryo';
+import { types } from "vortex-api";
+import { ICollectionGamebryo } from "../util/gameSupport/gamebryo";
+import { ICollectionConfig } from "./ICollectionConfig";
 
 export interface ICollectionInfo {
   author: string;
@@ -11,9 +12,9 @@ export interface ICollectionInfo {
   gameVersions?: string[];
 }
 
-export type UpdatePolicy = 'exact' | 'latest' | 'prefer';
+export type UpdatePolicy = "exact" | "latest" | "prefer";
 
-export type SourceType = 'browse' | 'manual' | 'direct' | 'nexus' | 'bundle';
+export type SourceType = "browse" | "manual" | "direct" | "nexus" | "bundle";
 
 export interface ICollectionSourceInfo {
   type: SourceType;
@@ -59,7 +60,13 @@ export interface ICollectionMod {
   fileOverrides?: string[];
 }
 
-export type RuleType = 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
+export type RuleType =
+  | "before"
+  | "after"
+  | "requires"
+  | "conflicts"
+  | "recommends"
+  | "provides";
 
 export interface ICollectionModRule {
   source: types.IModReference;
@@ -75,7 +82,7 @@ export interface ICollectionTool {
   env: { [key: string]: any };
   shell: boolean;
   detach: boolean;
-  onStart: 'hide' | 'hide_recover' | 'close';
+  onStart: "hide" | "hide_recover" | "close";
 }
 
 export interface ICollection extends Partial<ICollectionGamebryo> {
@@ -86,10 +93,14 @@ export interface ICollection extends Partial<ICollectionGamebryo> {
 
 export interface ICollectionAttributes {
   instructions?: { [modId: string]: string };
-  source?: { [modId: string]: { type: SourceType, url?: string, instructions?: string } };
+  source?: {
+    [modId: string]: { type: SourceType; url?: string; instructions?: string };
+  };
   installMode?: { [modId: string]: string };
   saveEdits?: { [modId: string]: boolean };
   fileOverrides?: { [modId: string]: boolean };
+  installInstructions?: string;
+  collectionConfig?: ICollectionConfig;
 }
 
 export interface ICollectionModRuleEx extends ICollectionModRule {

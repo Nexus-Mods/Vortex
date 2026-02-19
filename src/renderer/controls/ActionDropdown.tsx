@@ -1,8 +1,8 @@
-import type { IActionDefinition } from "../../types/IActionDefinition";
-import type { IExtensibleProps } from "../../types/IExtensionProvider";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { truthy } from "../../util/util";
+import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IExtensibleProps } from "../types/IExtensionProvider";
+import type { TFunction } from "../util/i18n";
+import { log } from "../util/log";
+import { truthy } from "../util/util";
 
 import type { IActionControlProps, IActionDefinitionEx } from "./ActionControl";
 import ActionControl from "./ActionControl";

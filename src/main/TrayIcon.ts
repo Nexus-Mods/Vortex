@@ -1,19 +1,30 @@
-import type { IExtensionApi } from "../types/api";
-import getVortexPath from "../util/getVortexPath";
-import { log } from "../util/log";
-
 import type { BrowserWindow } from "electron";
-import { app, Menu, Tray } from "electron";
-import * as path from "path";
 
+import { app, Menu, Tray } from "electron";
+import path from "node:path";
+
+import getVortexPath from "./getVortexPath";
+import { log } from "./logging";
+
+/**
+ * Manages the tray icon and its interactions.
+ * With the toasts system in place, the tray icon interactions are pretty much
+ * useless.
+ *
+ * The extension manager refactor work also makes this class obsolete as we're
+ * not forwarding the IExtensionApi anymore.
+ *
+ * However, we might want to enhance the tray icon functionality in the future, so
+ * we'll keep this class for now.
+ *
+ * @deprecated
+ */
 class TrayIcon {
   private mTrayIcon: Electron.Tray;
-  private mApi: IExtensionApi;
   private mImagePath: string;
   private mInitialized: boolean = false;
 
-  constructor(api: IExtensionApi) {
-    this.mApi = api;
+  constructor() {
     this.mImagePath = path.resolve(
       getVortexPath("assets"),
       "images",
@@ -21,7 +32,7 @@ class TrayIcon {
     );
     try {
       this.initTrayIcon();
-    } catch (err) {
+    } catch {
       // This appears to be caused by a bug in electron. It happens randomly,
       // very rarely and the error message looks like it's entirely internal
       setTimeout(() => {
@@ -70,15 +81,10 @@ class TrayIcon {
       ]),
     );
 
-    this.mApi.events.on("show-balloon", (title: string, content: string) =>
-      this.showNotification(title, content),
-    );
     this.mInitialized = true;
   }
 
-  private startGame() {
-    this.mApi.events.emit("quick-launch");
-  }
+  private startGame() {}
 
   private showNotification(title: string, content: string) {
     const icon = path.join(getVortexPath("assets"), "images", "vortex.png");

@@ -1,78 +1,6 @@
-import { showDialog } from "../../../actions/notifications";
-import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
-import FlexLayout from "../../../renderer/controls/FlexLayout";
-import Icon from "../../../renderer/controls/Icon";
-import More from "../../../renderer/controls/More";
-import Spinner from "../../../renderer/controls/Spinner";
-import Toggle from "../../../renderer/controls/Toggle";
-import { Button } from "../../../renderer/controls/TooltipControls";
-import type {
-  DialogActions,
-  DialogType,
-  IDialogContent,
-  IDialogResult,
-} from "../../../types/IDialog";
-import type { InstallPathMode, IState } from "../../../types/IState";
-import type { ValidationState } from "../../../types/ITableAttribute";
-import {
-  ComponentEx,
-  connect,
-  translate,
-} from "../../../renderer/controls/ComponentEx";
-import {
-  CleanupFailedException,
-  InsufficientDiskSpace,
-  NotFound,
-  ProcessCanceled,
-  TemporaryError,
-  UnsupportedOperatingSystem,
-  UserCanceled,
-} from "../../../util/CustomErrors";
-import { withContext } from "../../../util/errorHandling";
-import * as fs from "../../../util/fs";
-import getNormalizeFunc from "../../../util/getNormalizeFunc";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import {
-  cleanFailedTransfer,
-  testPathTransfer,
-  transferPath,
-} from "../../../util/transferPath";
-import {
-  ciEqual,
-  isChildPath,
-  isPathValid,
-  isReservedDirectory,
-} from "../../../util/util";
-import {
-  currentGame,
-  currentGameDiscovery,
-} from "../../gamemode_management/selectors";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
 
-import { setDeploymentNecessary } from "../actions/deployment";
-import {
-  setActivator,
-  setInstallPath,
-  setInstallPathMode,
-} from "../actions/settings";
-import { setTransferMods } from "../actions/transactions";
-
-import type { IDeploymentMethod } from "../types/IDeploymentMethod";
-import { getSupportedActivators } from "../util/deploymentMethods";
-import { NoDeployment } from "../util/exceptions";
-import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
-
-import { modPathsForGame } from "../selectors";
-import { STAGING_DIR_TAG } from "../stagingDirectory";
-import getText from "../texts";
-
-import * as remote from "@electron/remote";
 import PromiseBB from "bluebird";
 import * as path from "path";
 import * as React from "react";
@@ -89,11 +17,80 @@ import {
   Panel,
   ProgressBar,
 } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 import * as winapi from "winapi-bindings";
-import { ProvidePlugin } from "webpack";
+
+import type {
+  DialogActions,
+  DialogType,
+  IDialogContent,
+  IDialogResult,
+} from "../../../renderer/types/IDialog";
+import type { InstallPathMode, IState } from "../../../renderer/types/IState";
+import type { ValidationState } from "../../../renderer/types/ITableAttribute";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../../gamemode_management/types/IGameStored";
+import type { IDeploymentMethod } from "../types/IDeploymentMethod";
+
+import { showDialog } from "../../../renderer/actions/notifications";
+import {
+  ComponentEx,
+  connect,
+  translate,
+} from "../../../renderer/controls/ComponentEx";
+import EmptyPlaceholder from "../../../renderer/controls/EmptyPlaceholder";
+import FlexLayout from "../../../renderer/controls/FlexLayout";
+import Icon from "../../../renderer/controls/Icon";
+import More from "../../../renderer/controls/More";
+import Spinner from "../../../renderer/controls/Spinner";
+import Toggle from "../../../renderer/controls/Toggle";
+import { Button } from "../../../renderer/controls/TooltipControls";
+import {
+  CleanupFailedException,
+  InsufficientDiskSpace,
+  NotFound,
+  ProcessCanceled,
+  TemporaryError,
+  UnsupportedOperatingSystem,
+  UserCanceled,
+} from "../../../renderer/util/CustomErrors";
+import { withContext } from "../../../renderer/util/errorHandling";
+import * as fs from "../../../renderer/util/fs";
+import getNormalizeFunc from "../../../renderer/util/getNormalizeFunc";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import {
+  cleanFailedTransfer,
+  testPathTransfer,
+  transferPath,
+} from "../../../renderer/util/transferPath";
+import {
+  ciEqual,
+  isChildPath,
+  isPathValid,
+  isReservedDirectory,
+} from "../../../renderer/util/util";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
+import {
+  currentGame,
+  currentGameDiscovery,
+} from "../../gamemode_management/selectors";
+import { setDeploymentNecessary } from "../actions/deployment";
+import {
+  setActivator,
+  setInstallPath,
+  setInstallPathMode,
+} from "../actions/settings";
+import { setTransferMods } from "../actions/transactions";
+import { modPathsForGame } from "../selectors";
+import { STAGING_DIR_TAG } from "../stagingDirectory";
+import getText from "../texts";
+import { getSupportedActivators } from "../util/deploymentMethods";
+import { NoDeployment } from "../util/exceptions";
+import getInstallPath, { getInstallPathPattern } from "../util/getInstallPath";
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -111,6 +108,7 @@ interface IConnectedProps {
   instanceId: string;
   installPathMode: InstallPathMode;
   suggestInstallPathDirectory: string;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -140,6 +138,7 @@ interface IComponentState {
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
+  appPath: string;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -158,6 +157,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       currentActivator: props.currentActivator,
       installPath: props.installPath,
       changingActivator: false,
+      appPath: undefined,
     });
   }
 
@@ -174,6 +174,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       this.nextState.currentActivator =
         activators.length > 0 ? activators[0].id : undefined;
     }
+
+    // Load the app path for validation
+    window.api.app.getAppPath().then((appPath) => {
+      // In asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      if (path.basename(appPath) === "app.asar") {
+        appPath = path.dirname(path.dirname(appPath));
+      }
+      this.nextState.appPath = appPath;
+    });
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -202,11 +212,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <Panel key="defaults">
         <Panel.Body>
           <ControlLabel>{t("Defaults")}</ControlLabel>
+
           <Toggle
             checked={installPathMode === "suggested"}
             onToggle={this.toggleInstallPathMode}
           >
             {t("Automatically use suggested path for staging folder")}
+
             <More id="staging_path_mode" name="Staging Path Mode">
               {t(
                 "Usually, when you first manage a game, the staging folder is initially set to be in " +
@@ -249,13 +261,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               }),
               supportedActivators,
             )}
+
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
                   <div className="container">
                     <h2>{this.state.busy}</h2>
+
                     {progressFile !== undefined ? <p>{progressFile}</p> : null}
-                    <ProgressBar style={{ height: "1.5em" }} now={progress} />
+
+                    <ProgressBar now={progress} style={{ height: "1.5em" }} />
                   </div>
                 </Jumbotron>
               </Modal.Body>
@@ -266,23 +281,25 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <Panel.Body>
             <ControlLabel>
               {t("Deployment Method")}
+
               <More id="more-deploy" name={t("Deployment")}>
                 {getText("deployment", t)}
               </More>
             </ControlLabel>
+
             {this.renderActivators(supportedActivators, currentActivator)}
           </Panel.Body>
         </Panel>,
       );
-    } else {
+    } else if (!this.props.useModernLayout) {
       panels.push(
         <EmptyPlaceholder
           icon="settings"
-          text={t(
-            "This screen will have more options once you start managing a game.",
-          )}
           subtext={t(
             "Most settings here can be configured for each game individually.",
+          )}
+          text={t(
+            "This screen will have more options once you start managing a game.",
           )}
         />,
       );
@@ -921,12 +938,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     reason?: string;
   } {
     const { downloadsPath } = this.props;
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === "app.asar") {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
+    const { appPath } = this.state;
+
     if (downloadsPath !== undefined) {
       const downPath = path.dirname(downloadsPath);
       const normalizedDownloadsPath = path.normalize(downPath.toLowerCase());
@@ -950,7 +963,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       };
     }
 
-    if (isChildPath(input, vortexPath)) {
+    if (appPath !== undefined && isChildPath(input, appPath)) {
       return {
         state: "error",
         reason:
@@ -1013,17 +1026,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup id="install-path-form" validationState={validationState.state}>
         <ControlLabel>
           {label}
+
           <More id="more-paths" name={t("Mod Staging Folder")}>
             {getText("modspath", t)}
           </More>
         </ControlLabel>
+
         <FlexLayout type="row">
           <FlexLayout.Fixed>
             <InputGroup>
               <FormControl
                 className="install-path-input"
-                value={getInstallPathPattern(installPath)}
                 placeholder={label}
+                value={getInstallPathPattern(installPath)}
                 onChange={this.changePathEvt}
                 onKeyPress={
                   this.pathsChanged() && validationState.state !== "error"
@@ -1031,6 +1046,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     : null
                 }
               />
+
               <InputGroup.Button className="inset-btn">
                 <Button tooltip={t("Browse")} onClick={this.browsePath}>
                   <Icon name="browse" />
@@ -1038,27 +1054,31 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </InputGroup.Button>
             </InputGroup>
           </FlexLayout.Fixed>
+
           <FlexLayout.Fixed>
             <InputGroup.Button>
               <Button
-                onClick={this.suggestPath}
                 tooltip={t(
                   "This will suggest a path that puts the mods on the same drive as the game",
                 )}
+                onClick={this.suggestPath}
               >
                 {t("Suggest")}
               </Button>
+
               <BSButton disabled={applyDisabled} onClick={this.onApply}>
                 {hasModActivity ? <Spinner /> : t("Apply")}
               </BSButton>
             </InputGroup.Button>
           </FlexLayout.Fixed>
         </FlexLayout>
+
         <HelpBlock>
           <a data-url={pathPreview} onClick={this.openUrl}>
             {pathPreview}
           </a>
         </HelpBlock>
+
         {validationState.reason ? (
           <ControlLabel>{t(validationState.reason)}</ControlLabel>
         ) : null}
@@ -1083,7 +1103,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { modPaths, onShowError, suggestInstallPathDirectory } = this.props;
     PromiseBB.join(
       fs.statAsync(modPaths[""]),
-      fs.statAsync(remote.app.getPath("userData")),
+      window.api.app
+        .getPath("userData")
+        .then((userDataPath) => fs.statAsync(userDataPath)),
     )
       .then((stats) => {
         let suggestion: string;
@@ -1160,6 +1182,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <h4 style={{ marginBottom: 0 }}>
               {t("No deployment method available.")}
             </h4>
+
             <p style={{ marginTop: 0 }}>
               {t("See notification for more information.")}
             </p>
@@ -1174,6 +1197,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       >
         <InputGroup>
           {content}
+
           <InputGroup.Button>
             <BSButton
               disabled={!changed || changingActivator}
@@ -1183,9 +1207,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </BSButton>
           </InputGroup.Button>
         </InputGroup>
+
         {activatorIdx !== -1 ? (
           <HelpBlock>
             {t(activators[activatorIdx].description)}
+
             <More
               id="more-activator-detail"
               name={activators[activatorIdx].name}
@@ -1245,6 +1271,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     installPathMode: state.settings.mods.installPathMode,
     suggestInstallPathDirectory:
       state.settings.mods.suggestInstallPathDirectory,
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

@@ -1,7 +1,7 @@
-import { UserCanceled } from "../../util/CustomErrors";
-import * as fs from "../../util/fs";
-import { copyFileAtomic } from "../../util/fsAtomic";
-import { log } from "../../util/log";
+import { UserCanceled } from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { copyFileAtomic } from "../../renderer/util/fsAtomic";
+import { log } from "../../renderer/util/log";
 
 import PromiseBB from "bluebird";
 import * as path from "path";

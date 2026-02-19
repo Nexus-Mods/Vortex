@@ -1,16 +1,16 @@
-import type { IExtensionApi, IMod } from "../../types/api";
-import { getSafe } from "../../util/storeHelper";
-
 import * as _ from "lodash";
+
+import type { IExtensionApi, IMod } from "../../renderer/types/api";
 import type { ILoadOrderEntry, ILoadOrderEntryExt } from "./types/types";
-import { log } from "../../util/log";
+
+import { log } from "../../renderer/util/log";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   activeGameId,
   lastActiveProfileForGame,
 } from "../profile_management/selectors";
-import { toExtendedLoadOrderEntry } from "./util";
-import { util } from "vortex-api";
 import { currentLoadOrderForProfile } from "./selectors";
+import { toExtendedLoadOrderEntry } from "./util";
 
 export default class UpdateSet {
   private mApi: IExtensionApi;
@@ -44,7 +44,7 @@ export default class UpdateSet {
     const state = this.mApi.getState();
     const gameMode = activeGameId(state);
     const modId = lo.modId ?? lo.id;
-    const mod = util.getSafe(
+    const mod = getSafe(
       state,
       ["persistent", "mods", gameMode, modId],
       undefined,
@@ -114,7 +114,7 @@ export default class UpdateSet {
   };
 
   public hasEntry = (entry: ILoadOrderEntry): boolean => {
-    return !!entry.modId
+    return entry.modId
       ? Object.values(this.mModEntries).some((l) =>
           l.some((m) => m.modId === entry.modId || m.id === entry.id),
         )

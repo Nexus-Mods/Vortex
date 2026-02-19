@@ -1,11 +1,11 @@
 export const login = {
   acceptTOS: '//input[@value="Close"]',
   alreadyLoggedInError: 'text="You are already signed in."',
-  bannedErrorMessage: 'text=This account has been banned',
-  errorMessage: 'text=Invalid Login or password.',
+  bannedErrorMessage: "text=This account has been banned",
+  errorMessage: "text=Invalid Login or password.",
   errorMessageContainer: '//div[contains(@class, "alert-body")]',
   forgotPasswordLink: '//a[@href="/auth/password/new" and text()="Password"]',
-  incorrectMFAcodeError: 'text=Incorrect 2FA code',
+  incorrectMFAcodeError: "text=Incorrect 2FA code",
   logInButton: 'input:has-text("Log in")',
   logOutButton: '//a[text()="Sign out"][1]',
   mfaInput: 'input[id="otp"]',
@@ -15,9 +15,8 @@ export const login = {
   resetPasswordLink: 'a:has-text("Password")',
   resetPasswordSendEmailButton: 'input[value="Send email"]',
   sendEmailButton: '//input[@value="Send email"]',
-  successResetPasswordMessage: 'text=Success',
-  tooManyMFAAttemptsError: 'text=Too many attempts. Please try again later.',
-  TOSmessage: 'text=Terms and conditions update',
+  successResetPasswordMessage: "text=Success",
+  tooManyMFAAttemptsError: "text=Too many attempts. Please try again later.",
+  TOSmessage: "text=Terms and conditions update",
   verifyButton: 'input[value="Verify"]',
 };
-

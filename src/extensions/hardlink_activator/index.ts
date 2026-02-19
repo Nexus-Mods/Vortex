@@ -1,11 +1,11 @@
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { installPathForGame } from "../../util/selectors";
+} from "../../renderer/types/IExtensionContext";
+import type { IGame } from "../../renderer/types/IGame";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { installPathForGame } from "../../renderer/util/selectors";
 
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -22,7 +22,7 @@ import * as path from "path";
 import turbowalk from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
-import { setSettingsPage } from "../../actions/session";
+import { setSettingsPage } from "../../renderer/actions/session";
 import { getErrorCode } from "../../shared/errors";
 
 export class FileFound extends Error {

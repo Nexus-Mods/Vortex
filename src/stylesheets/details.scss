@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $font-size-large: 1.25em;
 $font-size-small: 0.9em;
 
@@ -82,7 +84,7 @@ $input-height-small: (
         ($padding-small-vertical * 2) + 0.3
 );
 
-$form-group-margin-bottom: floor($gutter-width / 2);
+$form-group-margin-bottom: floor($gutter-width * 0.5);
 
 $legend-color: $text-color;
 $legend-border-color: transparent;
@@ -167,8 +169,8 @@ $container-lg: $container-large-desktop;
 $navbar-height: 4.5em;
 $navbar-margin-bottom: $line-height-computed;
 $navbar-border-radius: $border-radius-base;
-$navbar-padding-horizontal: floor(($grid-gutter-width / 2));
-$navbar-padding-vertical: (($navbar-height - $line-height-computed) / 2);
+$navbar-padding-horizontal: floor(($grid-gutter-width * 0.5));
+$navbar-padding-vertical: (($navbar-height - $line-height-computed) * 0.5);
 $navbar-collapse-max-height: 340px;
 
 $navbar-default-color: #fff;
@@ -330,8 +332,8 @@ $label-link-hover-color: $text-color;
 
 //== Modals
 
-$modal-inner-padding: $gutter-width / 2;
-$modal-title-padding: $gutter-width / 2;
+$modal-inner-padding: $gutter-width * 0.5;
+$modal-title-padding: $gutter-width * 0.5;
 $modal-title-line-height: 1.4em;
 
 $modal-content-bg: $brand-menu;
@@ -349,7 +351,7 @@ $modal-sm: 300px;
 
 //== Alerts
 
-$alert-padding: $gutter-width / 3;
+$alert-padding: math.div($gutter-width, 3);
 $alert-border-radius: $border-radius-base;
 $alert-link-font-weight: bold;
 
@@ -404,8 +406,8 @@ $list-group-link-heading-color: $text-color;
 //== Panels
 
 $panel-bg: $brand-bg;
-$panel-body-padding: $gutter-width / 2;
-$panel-heading-padding: $gutter-width / 3 $gutter-width / 2;
+$panel-body-padding: $gutter-width * 0.5;
+$panel-heading-padding: math.div($gutter-width, 3) $gutter-width * 0.5;
 $panel-footer-padding: $panel-heading-padding;
 $panel-border-radius: $border-radius-base;
 
@@ -518,7 +520,7 @@ $dl-horizontal-offset: $component-offset-horizontal;
 $dl-horizontal-breakpoint: $grid-float-breakpoint;
 $hr-border: $gray-dark;
 
-$half-gutter: floor($gutter-width / 2);
-$slim-gutter: floor($gutter-width / 4);
+$half-gutter: floor($gutter-width * 0.5);
+$slim-gutter: floor($gutter-width * 0.25);
 
-$transition-time-half: floor($transition-time / 2);
+$transition-time-half: floor($transition-time * 0.5);

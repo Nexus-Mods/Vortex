@@ -1,4 +1,4 @@
-import { showDialog } from "../../../actions/notifications";
+import { showDialog } from "../../../renderer/actions/notifications";
 import Banner from "../../../renderer/controls/Banner";
 import CollapseIcon from "../../../renderer/controls/CollapseIcon";
 import type { DropType } from "../../../renderer/controls/Dropzone";
@@ -7,18 +7,18 @@ import FlexLayout from "../../../renderer/controls/FlexLayout";
 import IconBar from "../../../renderer/controls/IconBar";
 import type { ITableRowAction } from "../../../renderer/controls/Table";
 import SuperTable from "../../../renderer/controls/Table";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IComponentContext } from "../../../types/IComponentContext";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
+import type { IComponentContext } from "../../../renderer/types/IComponentContext";
 import type {
   DialogActions,
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../../types/IDialog";
-import type { IAttachment } from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IDialog";
+import type { IAttachment } from "../../../renderer/types/IExtensionContext";
 import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
-import type { IState } from "../../../types/IState";
-import type { ITableAttribute } from "../../../types/ITableAttribute";
+import type { IState } from "../../../renderer/types/IState";
+import type { ITableAttribute } from "../../../renderer/types/ITableAttribute";
 import {
   ComponentEx,
   connect,
@@ -29,14 +29,14 @@ import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../../util/CustomErrors";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
-import * as selectors from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { truthy } from "../../../util/util";
+} from "../../../renderer/util/CustomErrors";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { showError } from "../../../renderer/util/message";
+import opn from "../../../renderer/util/opn";
+import * as selectors from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { truthy } from "../../../renderer/util/util";
 import MainPage from "../../../renderer/views/MainPage";
 
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
@@ -60,6 +60,7 @@ import { Button, Panel } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
+import { getCollectionModByReference } from "../../../renderer/util/selectors";
 
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
@@ -119,7 +120,7 @@ const nop = () => null;
 const DROPZONE_ACCEPT: DropType[] = ["urls", "files"];
 
 function MountTrigger(props: { cb: () => void }) {
-  React.useCallback(() => {
+  React.useEffect(() => {
     props.cb();
   }, []);
   return null;
@@ -144,7 +145,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         icon: "inspect",
         title: "Inspect",
         action: this.inspect,
-        condition: this.inspectable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.inspectable(instanceIds[0]),
         multiRowAction: false,
         options: {
           noCollapse: true,
@@ -154,7 +157,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         icon: "start-install",
         title: "Install",
         action: this.install,
-        condition: this.installable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.installable(instanceIds),
         hotKey: { code: 13 },
         options: {
           noCollapse: true,
@@ -164,44 +169,58 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         icon: "start-install",
         title: "Unpack (as-is)",
         action: this.installAsIs,
-        condition: this.installable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.installable(instanceIds),
       },
       {
         icon: "pause",
         title: "Pause",
         action: this.pause,
-        condition: this.pausable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.pausable(instanceIds),
       },
       {
         icon: "resume",
         title: "Resume",
         action: this.resume,
-        condition: this.resumable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.resumable(instanceIds),
       },
       {
         icon: "resume",
         title: "Retry",
         action: this.resume,
-        condition: this.retryable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.retryable(instanceIds),
       },
       {
         icon: "delete",
         title: "Delete",
         action: this.remove,
-        condition: this.removable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.removable(instanceIds),
         hotKey: { code: 46 },
       },
       {
         icon: "stop",
         title: "Cancel",
         action: this.cancel,
-        condition: this.cancelable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.cancelable(instanceIds),
       },
       {
         icon: "open-ext",
         title: "Open",
         action: this.open,
-        condition: this.installable,
+        condition: (instanceIds: string[]) =>
+          this.allowActionsDuringCollectionSession(instanceIds) &&
+          this.installable(instanceIds),
         singleRowAction: true,
       },
     ];
@@ -379,6 +398,48 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit("pause-download", downloadId);
     });
+  };
+
+  /**
+   * Determines if actions are allowed for the given download IDs
+   * during a collection installation session. Running download actions
+   * during a collection installation session can cause problems with
+   * the installation process, so we want to prevent that.
+   *
+   * @param downloadIds the IDs of the downloads for which to check if actions are allowed
+   * @returns true if actions are allowed, false otherwise
+   */
+  private allowActionsDuringCollectionSession = (
+    downloadIds: string | string[],
+  ) => {
+    if (typeof downloadIds === "string") {
+      downloadIds = [downloadIds];
+    }
+    const activeCollectionSession = selectors.getCollectionActiveSession(
+      this.context.api.store.getState(),
+    );
+    if (!activeCollectionSession) {
+      // no active collection session - allow all actions.
+      return true;
+    }
+
+    return (
+      downloadIds.find((downloadId) => {
+        const download = this.getDownload(downloadId);
+        const tag = download?.modInfo?.referenceTag;
+        const identifiers = this.extractIds(download);
+        if (!identifiers) {
+          return false;
+        }
+        return (
+          getCollectionModByReference(this.context.api.store.getState(), {
+            tag,
+            fileId: identifiers.fileId,
+            modId: identifiers.modId,
+          }) != null
+        );
+      }) == null // couldn't find it - allow actions
+    );
   };
 
   private pausable = (downloadIds: string[]) => {

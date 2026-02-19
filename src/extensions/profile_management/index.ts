@@ -16,52 +16,61 @@
  *      enables or disables a mod in the current profile
  */
 
-import type { IDialogResult } from "../../actions/notifications";
-import { addNotification, showDialog } from "../../actions/notifications";
+import type * as Redux from "redux";
 
-import {
-  clearUIBlocker,
-  setProgress,
-  setUIBlocker,
-} from "../../actions/session";
+import PromiseBB from "bluebird";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+
+import type { IDialogResult } from "../../renderer/actions/notifications";
 import type {
   IExtensionApi,
   IExtensionContext,
   ThunkStore,
-} from "../../types/IExtensionContext";
-import type { IPresetStep, IPresetStepSetGame } from "../../types/IPreset";
-import type { IGameStored, IState } from "../../types/IState";
-import { relaunch } from "../../util/commandLine";
+} from "../../renderer/types/IExtensionContext";
+import type { IGameStored, IState } from "../../renderer/types/IState";
+import type {
+  IExtension,
+  IRegisteredExtension,
+} from "../../renderer/types/extensions";
+import type { IProfile } from "./types/IProfile";
+import type { IProfileFeature } from "./types/IProfileFeature";
+
+import {
+  addNotification,
+  showDialog,
+} from "../../renderer/actions/notifications";
+import {
+  clearUIBlocker,
+  setProgress,
+  setUIBlocker,
+} from "../../renderer/actions/session";
+import { relaunch } from "../../renderer/util/commandLine";
 import {
   ProcessCanceled,
   ServiceTemporarilyUnavailable,
   SetupError,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import type { IRegisteredExtension } from "../../util/ExtensionManager";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import onceCB from "../../util/onceCB";
-import presetManager from "../../util/PresetManager";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import getVortexPath from "../../renderer/util/getVortexPath";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import onceCB from "../../renderer/util/onceCB";
 import {
   discoveryByGame,
   gameById,
   installPathForGame,
   needToDeployForGame,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-
-import type { IExtension } from "../extension_manager/types";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { batchDispatch, truthy } from "../../renderer/util/util";
 import { readExtensions } from "../extension_manager/util";
 import { getGame } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
-
 import {
   forgetMod,
   removeProfile,
@@ -74,17 +83,10 @@ import {
   setCurrentProfile,
   setNextProfile,
 } from "./actions/settings";
+import { STUCK_TIMEOUT } from "./constants";
 import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
-import { CorruptActiveProfile } from "./types/Errors";
-import type { IProfile } from "./types/IProfile";
-import type { IProfileFeature } from "./types/IProfileFeature";
-import Connector from "./views/Connector";
-import ProfileView from "./views/ProfileView";
-import TransferDialog from "./views/TransferDialog";
-
-import { STUCK_TIMEOUT } from "./constants";
 import {
   activeGameId,
   activeProfile,
@@ -92,11 +94,11 @@ import {
   profileById,
 } from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
+import { CorruptActiveProfile } from "./types/Errors";
+import Connector from "./views/Connector";
+import ProfileView from "./views/ProfileView";
+import TransferDialog from "./views/TransferDialog";
+import { getErrorMessageOrDefault } from "../../shared/errors";
 
 const profileFiles: {
   [gameId: string]: Array<string | (() => PromiseLike<string[]>)>;
@@ -470,14 +472,15 @@ function genOnProfileChange(
         // changes that happened.
         const enqueue = (cb: () => PromiseBB<void>) => {
           queue = queue.then(cb).catch((err) => {
-            log("error", "error in profile-will-change handler", err.message);
+            const message = getErrorMessageOrDefault(err);
+            log("error", "error in profile-will-change handler", message);
             PromiseBB.resolve();
           });
         };
 
+        const oldProfile = state.persistent.profiles[prev];
         // changes to profile files are only saved back to the profile at this point
         queue = queue.then(() => refreshProfile(store, oldProfile, "import"));
-        const oldProfile = state.persistent.profiles[prev];
 
         api.events.emit("profile-will-change", current, enqueue);
 
@@ -491,18 +494,24 @@ function genOnProfileChange(
 
         return (
           queue
-            .then(() => refreshProfile(store, profile, "export"))
+            .then(() => {
+              log("debug", "starting refresh profile export");
+              return refreshProfile(store, profile, "export");
+            })
             // ensure the old profile is synchronised before we switch, otherwise me might
             // revert some changes
-            .tap(() =>
-              log("info", "will deploy previously active profile", prev),
-            )
-            .then(() => deploy(api, prev))
-            .tap(() => log("info", "will deploy next active profile", current))
-            .then(() => deploy(api, current))
-            .tap(() => log("info", "did deploy next active profile", current))
             .then(() => {
-              const prof = profileById(api.store.getState(), current);
+              log("info", "will deploy previously active profile", prev);
+              return deploy(api, prev);
+            })
+            .then(() => {
+              log("info", "did deploy previously active profile", prev);
+              log("info", "will deploy next active profile", current);
+              return deploy(api, current);
+            })
+            .then(() => {
+              log("info", "did deploy next active profile", current);
+              const prof = profileById(api.store.getState() as IState, current);
               if (prof === undefined) {
                 return PromiseBB.reject(
                   new ProcessCanceled(
@@ -522,8 +531,9 @@ function genOnProfileChange(
             })
         );
       })
-      .tapCatch(() => {
+      .catch((err) => {
         cancelSwitch();
+        return PromiseBB.reject(err);
       })
       .catch(ProcessCanceled, (err) => {
         showError(store.dispatch, "Failed to set profile", err.message, {
@@ -812,7 +822,8 @@ function unmanageGame(
           "you're sure this is what you want![/style]",
         message,
         parameters: {
-          gameName: game?.name ?? gameName ?? api.translate("<Missing game>"),
+          gameName:
+            game?.name ?? gameName ?? String(api.translate("<Missing game>")),
         },
       },
       [{ label: "Cancel" }, { label: "Delete profiles" }],
@@ -901,6 +912,19 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage("profile", "Profiles", ProfileView, {
     hotkey: "P",
     group: "global",
+    isClassicOnly: true,
+    visible: () =>
+      activeGameId(context.api.store.getState()) !== undefined &&
+      context.api.store.getState().settings.interface.profilesVisible,
+    props: () => ({ features: profileFeatures }),
+  });
+
+  context.registerMainPage("profile", "Profiles", ProfileView, {
+    priority: 35,
+    id: "game-profiles",
+    hotkey: "P",
+    group: "per-game",
+    isModernOnly: true,
     visible: () =>
       activeGameId(context.api.store.getState()) !== undefined &&
       context.api.store.getState().settings.interface.profilesVisible,
@@ -1285,12 +1309,6 @@ function init(context: IExtensionContext): boolean {
         }
       }
     }
-
-    presetManager.on("setgame", (step: IPresetStep): PromiseBB<void> => {
-      return manageGame(context.api, (step as IPresetStepSetGame).game)
-        .then(() => context.api.ext.awaitProfileSwitch?.())
-        .then(() => null);
-    });
   });
 
   context.registerDialog("profile-transfer-connector", Connector);

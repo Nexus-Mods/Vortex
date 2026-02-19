@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import type { IModFileInfo, IModRequirementExt } from "../../types";
 
 import { NexusMods } from "../../../../tailwind/components/icons/NexusMods";
-import { Button } from "../../../../tailwind/components/next/button";
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { Typography } from "../../../../tailwind/components/next/typography";
+import { Button } from "../../../../renderer/tailwind/components/next/button";
+import { Icon } from "../../../../renderer/tailwind/components/next/icon";
+import { Typography } from "../../../../renderer/tailwind/components/next/typography";
 import { opn } from "../../../../util/api";
 import { bytesToString } from "../../../../util/util";
 

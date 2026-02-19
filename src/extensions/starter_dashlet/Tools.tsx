@@ -1,4 +1,4 @@
-import { showDialog } from "../../actions/notifications";
+import { showDialog } from "../../renderer/actions/notifications";
 import Dashlet from "../../renderer/controls/Dashlet";
 import EmptyPlaceholder from "../../renderer/controls/EmptyPlaceholder";
 import type {
@@ -6,16 +6,16 @@ import type {
   DialogType,
   IDialogContent,
   IDialogResult,
-} from "../../types/IDialog";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IMod, IRunningTool } from "../../types/IState";
-import { log } from "../../util/log";
-import { showError } from "../../util/message";
-import { activeGameId } from "../../util/selectors";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import StarterInfo from "../../util/StarterInfo";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../../renderer/types/IDialog";
+import type { IDiscoveredTool } from "../../renderer/types/IDiscoveredTool";
+import type { IMod, IRunningTool } from "../../renderer/types/IState";
+import { log } from "../../renderer/util/log";
+import { showError } from "../../renderer/util/message";
+import { activeGameId } from "../../renderer/util/selectors";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import StarterInfo from "../../renderer/util/StarterInfo";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 
 import AddToolButton from "./AddToolButton";
 
@@ -69,6 +69,7 @@ interface IConnectedProps {
   primaryTool: string;
   toolsRunning: { [exePath: string]: IRunningTool };
   mods: { [modId: string]: IMod };
+  deploymentCounter: number;
 }
 
 interface IWelcomeScreenState {
@@ -139,6 +140,7 @@ export default function Tools(props: IStarterProps) {
     toolsOrder,
     mods,
     primaryTool,
+    deploymentCounter,
   } = connectedProps;
   const closeEditDialog = () => {
     dispatch([
@@ -265,7 +267,14 @@ export default function Tools(props: IStarterProps) {
     };
     onStateUpdate();
     updateValidTools(state.tools);
-  }, [discoveredGames, gameMode, knownGames, toolsOrder, mods]);
+  }, [
+    discoveredGames,
+    gameMode,
+    knownGames,
+    toolsOrder,
+    mods,
+    deploymentCounter,
+  ]);
 
   React.useEffect(() => {
     if (toolsOrder.length === 0 && state.tools.length > 0) {
@@ -524,6 +533,8 @@ function mapStateToProps(state: any): IConnectedProps {
     ),
     toolsRunning: state.session.base.toolsRunning,
     mods: getSafe(state, ["persistent", "mods", gameMode], emptyObj),
+    deploymentCounter:
+      state.persistent?.deployment?.deploymentCounter?.[gameMode] ?? 0,
   };
 
   const keys = Object.keys(res);

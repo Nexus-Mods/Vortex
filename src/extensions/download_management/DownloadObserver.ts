@@ -1,22 +1,53 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
+import type * as Redux from "redux";
+
+import PromiseBB from "bluebird";
+import * as path from "path";
+import { generate as shortid } from "shortid";
+
+import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
+import type { IState } from "../../renderer/types/IState";
+import type { RedownloadMode } from "./DownloadManager";
+import type DownloadManager from "./DownloadManager";
+import type { IChunk } from "./types/IChunk";
+import type { IDownload, IDownloadOptions } from "./types/IDownload";
+import type { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
+import type { IDownloadResult } from "./types/IDownloadResult";
+import type { IStartDownloadOptions } from "./types/IStartDownloadOptions";
+import type { ProgressCallback } from "./types/ProgressCallback";
+
 import {
   ProcessCanceled,
   TemporaryError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import { withContext } from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { renderError, showError } from "../../util/message";
-import * as selectors from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { flatten, setdefault, truthy } from "../../util/util";
-
+} from "../../renderer/util/CustomErrors";
+import { withContext } from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { renderError, showError } from "../../renderer/util/message";
+import * as selectors from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import {
+  flatten,
+  setdefault,
+  truthy,
+  batchDispatch,
+} from "../../renderer/util/util";
+import { unknownToError } from "../../shared/errors";
+import {
+  ModsDownloadStartedClientEvent,
+  ModsDownloadCompletedEvent,
+  ModsDownloadFailedEvent,
+  ModsDownloadCancelledEvent,
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsDownloadFailedEvent,
+} from "../analytics/mixpanel/MixpanelEvents";
 import { showURL } from "../browser/actions";
-import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import { knownGames } from "../gamemode_management/selectors";
-
+import { getGames } from "../gamemode_management/util/getGame";
+import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
+import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
+import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
 import {
   downloadProgress,
   finishDownload,
@@ -28,37 +59,10 @@ import {
   setDownloadModInfo,
   setDownloadPausable,
 } from "./actions/state";
-import type { IChunk } from "./types/IChunk";
-import type { IDownload, IDownloadOptions } from "./types/IDownload";
-import type { IDownloadResult } from "./types/IDownloadResult";
-import type { ProgressCallback } from "./types/ProgressCallback";
-import type { IStartDownloadOptions } from "./types/IStartDownloadOptions";
-import type { IDownloadRemoveOptions } from "./types/IDownloadRemoveOptions";
+import { AlreadyDownloaded, DownloadIsHTML } from "./DownloadManager";
 import { ensureDownloadsDirectory } from "./util/downloadDirectory";
 import getDownloadGames from "./util/getDownloadGames";
 import { finalizeDownload } from "./util/postprocessDownload";
-
-import type { RedownloadMode } from "./DownloadManager";
-import type DownloadManager from "./DownloadManager";
-import { AlreadyDownloaded, DownloadIsHTML } from "./DownloadManager";
-
-import PromiseBB from "bluebird";
-import * as path from "path";
-import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
-import { getGames } from "../gamemode_management/util/getGame";
-import { util } from "../..";
-import {
-  ModsDownloadCompletedEvent,
-  ModsDownloadFailedEvent,
-  ModsDownloadCancelledEvent,
-  CollectionsDownloadCompletedEvent,
-  CollectionsDownloadCancelledEvent,
-  CollectionsDownloadFailedEvent,
-} from "../analytics/mixpanel/MixpanelEvents";
-import { nexusIdsFromDownloadId } from "../nexus_integration/selectors";
-import { makeModAndFileUIDs } from "../nexus_integration/util/UIDs";
-import { unknownToError } from "../../shared/errors";
 
 function progressUpdate(
   store: Redux.Store<any>,
@@ -94,7 +98,7 @@ function progressUpdate(
     updates.push(setDownloadPausable(dlId, chunkable));
   }
   if (updates.length > 0) {
-    util.batchDispatch(store.dispatch, updates);
+    batchDispatch(store.dispatch, updates);
   }
 }
 
@@ -151,20 +155,22 @@ export class DownloadObserver {
     });
 
     api.onStateChange(["persistent", "nexus", "userInfo"], (old, newValue) => {
-      if (old?.isPremium !== newValue?.isPremium) {
-        // User's premium status has changed
-        // Clear the download queue by pausing all active downloads
+      // Pause active downloads only on actual premium status change (not login/logout).
+      // When user logs out, other handlers (e.g., collections) deal with pausing.
+      if (
+        old !== undefined &&
+        newValue !== undefined &&
+        old.isPremium !== newValue.isPremium
+      ) {
         const state = api.getState();
         const activeDownloadsList = selectors.queueClearingDownloads(state);
         Object.keys(activeDownloadsList).forEach((dlId) => {
-          this.handleRemoveDownload(dlId, undefined, { silent: true });
+          this.handlePauseDownload(dlId);
         });
-        if (newValue?.isPremium === true) {
-          manager.setMaxConcurrentDownloads(10);
-        } else {
-          manager.setMaxConcurrentDownloads(1);
-        }
       }
+
+      // Always adjust concurrent downloads limit based on current premium status
+      manager.setMaxConcurrentDownloads(newValue?.isPremium === true ? 10 : 1);
     });
   }
 
@@ -541,7 +547,19 @@ export class DownloadObserver {
             callback,
           ),
         ),
-    );
+    ).catch((err) => {
+      log("error", "unhandled error starting download", {
+        id,
+        error: err.message,
+      });
+      if (callback !== undefined && !callbacked) {
+        callback(err, id);
+      } else {
+        showError(this.mApi.store.dispatch, "Download failed", err.message, {
+          allowReport: false,
+        });
+      }
+    });
   }
 
   private handleDownloadFinished(
@@ -579,7 +597,19 @@ export class DownloadObserver {
       }
     };
 
-    if (res.unfinishedChunks.length > 0) {
+    if (res.hadErrors) {
+      this.mApi.store.dispatch(
+        finishDownload(id, "failed", {
+          message: "Download completed with chunk errors",
+        }),
+      );
+      this.mApi.events.emit("did-finish-download", id, "failed");
+      callback?.(
+        new ProcessCanceled("Download completed with chunk errors"),
+        id,
+      );
+      return onceFinished();
+    } else if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
       callback?.(null, id);
       return onceFinished();
@@ -588,7 +618,7 @@ export class DownloadObserver {
         downloadProgress(id, res.size, res.size, [], undefined),
         finishDownload(id, "redirect", { htmlFile: res.filePath }),
       ];
-      util.batchDispatch(this.mApi.store.dispatch, batched);
+      batchDispatch(this.mApi.store.dispatch, batched);
       this.mApi.events.emit("did-finish-download", id, "redirect");
       callback?.(new Error("html result"), id);
       return onceFinished();
@@ -600,7 +630,7 @@ export class DownloadObserver {
             (key) => setDownloadModInfo(id, key, flattened[key]),
           );
           if (batchedActions.length > 0) {
-            util.batchDispatch(this.mApi.store.dispatch, batchedActions);
+            batchDispatch(this.mApi.store.dispatch, batchedActions);
           }
 
           const state: IState = this.mApi.getState();
@@ -666,6 +696,7 @@ export class DownloadObserver {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
     let pendingUpdate = false;
+    let startEventEmitted = false;
     return (
       received: number,
       total: number,
@@ -674,6 +705,42 @@ export class DownloadObserver {
       urls?: string[],
       filePath?: string,
     ) => {
+      // Emit download started event on first progress callback for new downloads
+      // Check state first to see if this is a brand new download (received === 0 in state)
+      if (!startEventEmitted) {
+        const state = this.mApi.getState();
+        const download = state.persistent.downloads.files[id];
+        // Only emit for new downloads that haven't received any data yet
+        if (download && download.received === 0 && received > 0) {
+          const nexusIds = nexusIdsFromDownloadId(state, id);
+          if (
+            nexusIds?.numericGameId !== undefined &&
+            nexusIds?.modId !== undefined &&
+            nexusIds?.fileId !== undefined
+          ) {
+            const { modUID, fileUID } = makeModAndFileUIDs(
+              nexusIds.numericGameId.toString(),
+              nexusIds.modId,
+              nexusIds.fileId,
+            );
+            this.mApi.events.emit(
+              "analytics-track-mixpanel-event",
+              new ModsDownloadStartedClientEvent(
+                nexusIds.modId,
+                nexusIds.fileId,
+                nexusIds.numericGameId,
+                modUID,
+                fileUID,
+              ),
+            );
+          }
+        }
+        // Always mark as checked after first callback to avoid repeated state lookups
+        if (received > 0) {
+          startEventEmitted = true;
+        }
+      }
+
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
       const newPerc = total > 0 ? Math.floor((received * 100) / total) : 0;
@@ -956,7 +1023,22 @@ export class DownloadObserver {
                 );
             }
           },
-        );
+        ).catch((err) => {
+          log("error", "unhandled error resuming download", {
+            downloadId,
+            error: err.message,
+          });
+          if (callback !== undefined) {
+            callback(err, downloadId);
+          } else {
+            showError(
+              this.mApi.store.dispatch,
+              "Download failed",
+              err.message,
+              { allowReport: false },
+            );
+          }
+        });
       }
     } catch (err) {
       if (callback !== undefined) {
@@ -984,7 +1066,7 @@ export class DownloadObserver {
         id: downloadId,
         state: download.state,
       });
-      return this.handleResumeDownload(downloadId, callback);
+      this.handleResumeDownload(downloadId, callback);
     }
     log("debug", "not resuming download", {
       id: downloadId,

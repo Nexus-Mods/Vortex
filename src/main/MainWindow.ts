@@ -1,28 +1,17 @@
-import { addNotification } from "../actions/notifications";
-import {
-  setMaximized,
-  setWindowPosition,
-  setWindowSize,
-} from "../actions/window";
-import type { ThunkStore } from "../types/IExtensionContext";
-import type { IState, IWindow } from "../types/IState";
-import Debouncer from "../util/Debouncer";
-import { terminate } from "../util/errorHandling";
-import getVortexPath from "../util/getVortexPath";
-import { log } from "../util/log";
-import opn from "../util/opn";
-import { downloadPath } from "../util/selectors";
-import type * as storeHelperT from "../util/storeHelper";
-import { parseBool } from "../util/util";
-import { closeAllViews } from "../util/webview";
-
-import PromiseBB from "bluebird";
-import { ipcMain, screen, webContents } from "electron";
+import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 import * as path from "path";
-import type * as Redux from "redux";
 import { pathToFileURL } from "url";
+
+import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
+
 import { getErrorMessageOrDefault } from "../shared/errors";
+import { terminate } from "./errorHandling";
+import getVortexPath from "./getVortexPath";
+import { log } from "./logging";
+import Debouncer from "./NodeDebouncer";
+import { openUrl } from "./open";
+import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
 const REQUEST_HEADER_FILTER = {
@@ -44,7 +33,7 @@ interface IRect {
   y2: number;
 }
 
-function bounds2rect(bounds): IRect {
+function bounds2rect(bounds: Electron.Rectangle): IRect {
   return {
     x1: bounds.x,
     y1: bounds.y,
@@ -71,68 +60,87 @@ function reactArea(input: IRect): number {
   return (input.x2 - input.x1) * (input.y2 - input.y1);
 }
 
+function isEnvSet(key: string): boolean {
+  let value = process.env[key];
+  if (!value) return false;
+
+  value = value.toLowerCase();
+  return value === "true" || value === "yes" || value === "1";
+}
+
 class MainWindow {
   private mWindow: Electron.BrowserWindow | null = null;
-  // timers used to prevent window resize/move from constantly causeing writes to the
+  // timers used to prevent window resize/move from constantly causing writes to the
   // store
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
   private mInspector: boolean;
-  private mStore: Redux.Store<IState>;
+  private mInitialWindowSettings: IWindow | null = null;
 
-  constructor(store: Redux.Store<IState>, inspector: boolean) {
-    this.mStore = store;
+  /**
+   * Create a MainWindow instance.
+   *
+   * @param store - Redux store (optional in new architecture, renderer owns store)
+   * @param inspector - Whether to open dev tools
+   * @param windowSettings - Optional initial window settings (from persistence)
+   */
+  constructor(inspector: boolean, windowSettings?: IWindow) {
     this.mInspector = inspector === true;
+    this.mInitialWindowSettings = windowSettings ?? null;
+
     this.mResizeDebouncer = new Debouncer(() => {
       if (this.mWindow !== null && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
-        store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
+        this.sendWindowEvent("window:resized", size[0], size[1]);
       }
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }, 500);
 
     this.mMoveDebouncer = new Debouncer((x: number, y: number) => {
       if (this.mWindow !== null) {
-        store.dispatch(setWindowPosition({ x, y }));
+        this.sendWindowEvent("window:moved", x, y);
       }
-      return PromiseBB.resolve();
+      return Promise.resolve();
     }, 500);
   }
 
-  public create(
-    store: ThunkStore<IState>,
-  ): PromiseBB<Electron.WebContents | undefined> {
+  /**
+   * Send a window event to the renderer via IPC.
+   * In the new architecture, renderer handles dispatching Redux actions.
+   */
+  private sendWindowEvent(channel: string, ...args: unknown[]): void {
+    if (this.mWindow?.webContents) {
+      this.mWindow.webContents.send(channel, ...args);
+    }
+  }
+
+  public create(): Promise<Electron.WebContents | undefined> {
     if (this.mWindow !== null) {
-      return PromiseBB.resolve(undefined);
+      return Promise.resolve(undefined);
     }
 
-    const BrowserWindow: typeof Electron.BrowserWindow =
-      require("electron").BrowserWindow;
-
     this.mWindow = new BrowserWindow(
-      this.getWindowSettings(store.getState().settings.window),
+      this.getWindowSettings(this.mInitialWindowSettings),
     );
 
-    this.mWindow.loadURL(
-      pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
-    );
-    // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
+    this.mWindow
+      .loadURL(
+        pathToFileURL(path.join(getVortexPath("base"), "index.html")).href,
+      )
+      .catch((err: unknown) => log("error", "error loading window URL", err));
 
     let cancelTimer: NodeJS.Timeout;
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    if (
-      this.mInspector ||
-      (process.env.START_DEVTOOLS && parseBool(process.env.START_DEVTOOLS))
-    ) {
+    if (this.mInspector || isEnvSet("START_DEVTOOLS")) {
       // You can set START_DEVTOOLS to true, by creating a .env file in the root of the project
       this.mWindow.webContents.openDevTools();
     }
     this.mWindow.webContents.on(
       "console-message",
-      (evt: Electron.Event, level: number, message: string) => {
+      (_evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
           //   provide the other parameters of the message.
@@ -145,12 +153,7 @@ class MainWindow {
           // this isn't ideal as we don't have a stack trace of the error message here
           cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate(
-                { message: "Vortex failed to start", details: message },
-                {},
-                true,
-                "renderer",
-              );
+              terminate(new Error("Vortex failed to start"), true);
             }
           }, 15000);
         }
@@ -159,18 +162,12 @@ class MainWindow {
 
     this.mWindow.webContents.on(
       "render-process-gone",
-      (evt, details: Electron.RenderProcessGoneDetails) => {
+      (_evt, details: Electron.RenderProcessGoneDetails) => {
         log("error", "render process gone", {
           exitCode: details.exitCode,
           reason: details.reason,
         });
         if (details.reason !== "killed") {
-          store.dispatch(
-            addNotification({
-              type: "error",
-              message: "Vortex restarted after a crash, sorry about that.",
-            }),
-          );
           // workaround for electron issue #19887
           setImmediate(() => {
             process.env.CRASH_REPORTING =
@@ -189,7 +186,7 @@ class MainWindow {
 
     this.mWindow.webContents.on(
       "did-fail-load",
-      (evt, code, description, url) => {
+      (_evt, code, description, url) => {
         log("error", "failed to load page", { code, description, url });
       },
     );
@@ -231,7 +228,8 @@ class MainWindow {
       // unfortunately we have to deal with these events in the main process even though
       // we'll do the work in the renderer
       if (item.getURL().startsWith("blob:")) {
-        const dlPath = downloadPath(this.mStore.getState());
+        // Get download path from store if available, otherwise use system temp
+        const dlPath = app.getPath("temp");
         item.setSavePath(path.join(dlPath, item.getFilename() + ".tmp"));
         item.once("done", () => {
           signalUrl(item);
@@ -247,19 +245,19 @@ class MainWindow {
         return { action: "deny" };
       }
       // Open in external browser (for links with target="_blank")
-      opn(details.url).catch(() => null);
+      openUrl(new URL(details.url));
       return { action: "deny" };
     });
 
     this.mWindow.webContents.on("will-navigate", (event, url) => {
       log("debug", "navigating to page", url);
-      opn(url).catch(() => null);
+      openUrl(new URL(url));
       event.preventDefault();
     });
 
-    this.initEventHandlers(store);
+    this.initEventHandlers();
 
-    return new PromiseBB<Electron.WebContents>((resolve) => {
+    return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow?.once("ready-to-show", () => {
         if (resolve !== undefined && this.mWindow !== null) {
           resolve(this.mWindow.webContents);
@@ -362,53 +360,47 @@ class MainWindow {
   }
 
   private getWindowSettings(
-    windowMetrics: IWindow,
+    windowMetrics: IWindow | null | undefined,
   ): Electron.BrowserWindowConstructorOptions {
-    const { getSafe } = require("../util/storeHelper") as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
     const width = Math.max(
       1024,
-      getSafe(
-        windowMetrics,
-        ["size", "width"],
-        Math.floor(screenArea.width * 0.8),
-      ),
+      windowMetrics?.size?.width ?? Math.floor(screenArea.width * 0.8),
     );
     const height = Math.max(
       MIN_HEIGHT,
-      getSafe(
-        windowMetrics,
-        ["size", "height"],
-        Math.floor(screenArea.height * 0.8),
-      ),
+      windowMetrics?.size?.height ?? Math.floor(screenArea.height * 0.8),
     );
     return {
       width,
       height,
       minWidth: 1024,
       minHeight: MIN_HEIGHT,
-      x: getSafe(windowMetrics, ["position", "x"], undefined),
-      y: getSafe(windowMetrics, ["position", "y"], undefined),
+      x: windowMetrics?.position?.x ?? undefined,
+      y: windowMetrics?.position?.y ?? undefined,
       backgroundColor: "#fff",
       autoHideMenuBar: true,
-      frame: !getSafe(windowMetrics, ["customTitlebar"], true),
+      frame: !(windowMetrics?.customTitlebar ?? true),
       show: false,
       title: "Vortex",
       titleBarStyle:
         windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
-        preload: path.join(__dirname, "../preload/index.js"),
+        preload: path.join(
+          getVortexPath("base"),
+          app.isPackaged ? "preload.js" : "preload/index.js",
+        ),
         nodeIntegration: true, // Required for @electron/remote compatibility
         nodeIntegrationInWorker: true,
         webviewTag: true,
         enableWebSQL: false,
-        contextIsolation: false, // Required for @electron/remote compatibility
+        contextIsolation: false, // Required for preload script compatibility
         backgroundThrottling: false,
       },
     };
   }
 
-  private initEventHandlers(store: Redux.Store<IState>) {
+  private initEventHandlers() {
     if (this.mWindow === null) {
       return;
     }
@@ -417,13 +409,21 @@ class MainWindow {
       if (this.mWindow === null) {
         return;
       }
+      // Forward close event to renderer
+      this.mWindow.webContents.send("window:event:close");
       closeAllViews(this.mWindow);
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
     });
-    this.mWindow.on("maximize", () => store.dispatch(setMaximized(true)));
-    this.mWindow.on("unmaximize", () => store.dispatch(setMaximized(false)));
+    this.mWindow.on("maximize", () =>
+      this.sendWindowEvent("window:maximized", true),
+    );
+    this.mWindow.on("unmaximize", () =>
+      this.sendWindowEvent("window:maximized", false),
+    );
+    this.mWindow.on("focus", () => this.sendWindowEvent("window:focus"));
+    this.mWindow.on("blur", () => this.sendWindowEvent("window:blur"));
     this.mWindow.on("resize", () => this.mResizeDebouncer.schedule());
     this.mWindow.on("move", () => {
       if (this.mWindow?.isMaximized?.() === false) {

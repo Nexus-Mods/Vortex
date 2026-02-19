@@ -1,11 +1,11 @@
 import { ActionDropdown } from "../../../renderer/controls/api";
-import type { IActionDefinition } from "../../../types/IActionDefinition";
-import type { IMod } from "../../../types/IState";
+import type { IActionDefinition } from "../../../renderer/types/IActionDefinition";
+import type { IMod } from "../../../renderer/types/IState";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
-import { getSafe } from "../../../util/storeHelper";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import { getGame } from "../../gamemode_management/util/getGame";
 

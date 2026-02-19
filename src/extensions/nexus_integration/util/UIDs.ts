@@ -1,22 +1,24 @@
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 
 const gameNum = (() => {
   let cache: { [gameId: string]: number } | undefined;
   return (gameId: string): number | undefined => {
-    const games = nexusGames();
-    // Rebuild cache if undefined or if it was built from an empty games list
-    if (
-      cache === undefined ||
-      (Object.keys(cache).length === 0 && games.length > 0)
-    ) {
-      cache = games.reduce<{ [gameId: string]: number }>((prev, game) => {
-        prev[game.domain_name] = game.id;
-        return prev;
-      }, {});
+    if (cache === undefined) {
+      const games = nexusGames();
+      if (games.length > 0) {
+        cache = games.reduce((prev, game) => {
+          prev[game.domain_name] = game.id;
+          return prev;
+        }, {});
+      }
+    }
+
+    if (cache === undefined) {
+      return undefined;
     }
 
     const game = getGame(gameId);

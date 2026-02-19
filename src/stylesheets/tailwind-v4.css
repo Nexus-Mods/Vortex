@@ -12,6 +12,11 @@
 
 @import "tailwindcss";
 
+/* Import shared design system from nexus-next */
+@import "./shared/theme";
+@import "./shared/elements";
+@import "./shared/form";
+
 /*
  * Disable Tailwind utilities that conflict with Bootstrap class names.
  * - container: Tailwind's responsive container conflicts with Bootstrap's grid container
@@ -19,11 +24,6 @@
  */
 @source not inline('container');
 @source not inline('collapse');
-
-/* Import shared design system from nexus-next */
-@import "./shared/theme";
-@import "./shared/elements";
-@import "./shared/form";
 
 /* Make `dark:` respond to a `.dark` class on <html> or parent element */
 @variant dark (.dark &);

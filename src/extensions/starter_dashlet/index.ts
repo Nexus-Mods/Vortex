@@ -1,23 +1,23 @@
 import PromiseBB from "bluebird";
+import memoize from "memoize-one";
 import path from "path";
-import { fs } from "../..";
 
 import type {
   IExtensionApi,
   IExtensionContext,
-} from "../../types/IExtensionContext";
-import type { ITestResult } from "../../types/ITestResult";
-import type { IStarterInfo } from "../../util/StarterInfo";
-import { activeGameId } from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { truthy } from "../../util/util";
+} from "../../renderer/types/IExtensionContext";
+import type { ITestResult } from "../../renderer/types/ITestResult";
+import type { IStarterInfo } from "../../renderer/util/StarterInfo";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
-import memoize from "memoize-one";
-
+import * as fs from "../../renderer/util/fs";
+import { activeGameId } from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
+import { incrementDeploymentCounter } from "../mod_management/reducers/deployment";
 import { setPrimaryTool } from "./actions";
 import settingsReducer from "./reducers";
 import Tools from "./Tools";
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
 function testPrimaryTool(api: IExtensionApi): PromiseBB<ITestResult> {
   const state = api.store.getState();
@@ -94,6 +94,8 @@ const onDeploymentEvent = (api: IExtensionApi): PromiseBB<void> => {
   const state = api.store.getState();
   const gameMode = activeGameId(state);
   if (gameMode !== undefined) {
+    // Increment deployment counter to trigger tool validation update
+    api.store.dispatch(incrementDeploymentCounter(gameMode));
     return api.emitAndAwait("discover-tools", gameMode);
   }
   return PromiseBB.resolve();

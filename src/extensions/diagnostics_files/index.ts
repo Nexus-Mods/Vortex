@@ -1,5 +1,5 @@
-import { setDialogVisible } from "../../actions/session";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import { setDialogVisible } from "../../renderer/actions/session";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 
 import DiagnosticsFilesDialog from "./views/DiagnosticsFilesDialog";
 
@@ -8,7 +8,7 @@ function init(context: IExtensionContext): boolean {
     "global-icons",
     190,
     "changelog",
-    {},
+    { isClassicOnly: true },
     "View Logs",
     () => {
       context.api.store.dispatch(setDialogVisible("diagnostics-files-dialog"));

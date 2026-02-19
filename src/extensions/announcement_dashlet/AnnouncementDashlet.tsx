@@ -7,10 +7,10 @@ import { matchesGameMode, matchesVersion } from "./util";
 
 import Dashlet from "../../renderer/controls/Dashlet";
 import { Icon, IconButton } from "../../renderer/controls/TooltipControls";
-import { getApplication } from "../../util/application";
+import { getApplication } from "../../renderer/util/application";
 import { ComponentEx, translate } from "../../renderer/controls/ComponentEx";
-import opn from "../../util/opn";
-import * as selectors from "../../util/selectors";
+import opn from "../../renderer/util/opn";
+import * as selectors from "../../renderer/util/selectors";
 
 import { EmptyPlaceholder, FlexLayout } from "../../renderer/controls/api";
 import type { AnnouncementSeverity, IAnnouncement } from "./types";

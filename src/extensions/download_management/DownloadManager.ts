@@ -3,11 +3,10 @@ import {
   ProcessCanceled,
   StalledError,
   UserCanceled,
-} from "../../util/CustomErrors";
-import makeRemoteCall from "../../util/electronRemote";
-import * as fs from "../../util/fs";
-import { log } from "../../util/log";
-import { delayed, INVALID_FILENAME_RE, truthy } from "../../util/util";
+} from "../../renderer/util/CustomErrors";
+import * as fs from "../../renderer/util/fs";
+import { log } from "../../renderer/util/log";
+import { delayed, INVALID_FILENAME_RE, truthy } from "../../renderer/util/util";
 import type { IChunk } from "./types/IChunk";
 import type { IDownloadOptions } from "./types/IDownload";
 import type { IDownloadJob } from "./types/IDownloadJob";
@@ -34,17 +33,17 @@ import * as _ from "lodash";
 import * as path from "path";
 import type * as stream from "stream";
 import * as zlib from "zlib";
-import type { IExtensionApi } from "../../types/api";
+import type { IExtensionApi } from "../../renderer/types/api";
 
 import { simulateHttpError } from "./debug/simulateHttpError";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
+import { getPreloadApi } from "../../renderer/util/preloadAccess";
 
-const getCookies = makeRemoteCall(
-  "get-cookies",
-  (electron, webContents, filter: Electron.CookiesGetFilter) => {
-    return webContents.session.cookies.get(filter);
-  },
-);
+function getCookies(
+  filter: Electron.CookiesGetFilter,
+): Promise<Electron.Cookie[]> {
+  return getPreloadApi().session.getCookies(filter);
+}
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -220,7 +219,7 @@ class DownloadWorker {
           // to use it now
           job.received = job.size;
           job.size = 0;
-          const [ignore, fileName] = jobUrl.split("<")[0].split("|");
+          const [ignore, fileName] = jobUrl.toString().split("<")[0].split("|");
           finishCB(false, fileName);
         } else if (jobUrl) {
           this.assignJob(job, jobUrl);
@@ -327,23 +326,7 @@ class DownloadWorker {
     this.mResponse?.removeAllListeners?.("error");
     this.mRequest?.destroy?.();
     clearTimeout(this.mStallTimer);
-    const waitForInFlightWrites = () => {
-      return new Promise<void>((resolve) => {
-        if (this.mInFlightWrites === 0) {
-          resolve();
-          return;
-        }
-
-        const checkInterval = setInterval(() => {
-          if (this.mInFlightWrites === 0) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 50);
-      });
-    };
-
-    await waitForInFlightWrites();
+    await this.waitForInFlightWrites();
 
     // Reset worker state for restart
     this.mBuffers = [];
@@ -654,6 +637,7 @@ class DownloadWorker {
         "EHOSTUNREACH",
         "ENETUNREACH",
         "ETIMEDOUT",
+        "ENOTFOUND",
       ].includes(err.code) ||
       err.message?.includes("socket hang up") ||
       err.message?.includes("ECONNRESET") ||
@@ -694,7 +678,9 @@ class DownloadWorker {
 
     // For timeout errors, be more permissive - retry even without progress for initial connection issues
     const isTimeoutError =
-      ["ETIMEDOUT", "ESOCKETTIMEDOUT"].includes(err.code) ||
+      ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(
+        err.code,
+      ) ||
       err.message?.includes("Request timeout") ||
       err.message?.includes("ETIMEDOUT");
 
@@ -826,6 +812,7 @@ class DownloadWorker {
     // Reset network retry counter on successful chunk completion
     this.mNetworkRetries = 0;
     this.writeBuffer(str)
+      .then(() => this.waitForInFlightWrites())
       .then(() => {
         if (this.mJob.completionCB !== undefined) {
           this.mJob.completionCB();
@@ -835,6 +822,20 @@ class DownloadWorker {
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch((err) => this.handleError(err));
+  };
+
+  private waitForInFlightWrites = (): Bluebird<void> => {
+    if (this.mInFlightWrites <= 0) {
+      return Bluebird.resolve();
+    }
+    return new Bluebird<void>((resolve) => {
+      const check = setInterval(() => {
+        if (this.mInFlightWrites <= 0) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 10);
+    });
   };
 
   private handleResponse = (response: http.IncomingMessage, jobUrl: string) => {
@@ -868,23 +869,8 @@ class DownloadWorker {
           );
         }
 
-        const waitForWrites = () => {
-          return new Promise<void>((resolve) => {
-            if (this.mInFlightWrites === 0) {
-              resolve();
-              return;
-            }
-            const checkInterval = setInterval(() => {
-              if (this.mInFlightWrites === 0) {
-                clearInterval(checkInterval);
-                resolve();
-              }
-            }, 50);
-          });
-        };
-
         // delay the new request a bit to ensure the old request is completely settled
-        waitForWrites().then(() => {
+        this.waitForInFlightWrites().then(() => {
           setTimeout(() => {
             ++this.mRedirectsFollowed;
             this.mRedirected = false;
@@ -1010,21 +996,18 @@ class DownloadWorker {
     const res = this.mJob
       .dataCB(writeOffset, buf)
       .then(() => {
-        // Write confirmed - update confirmed received counter
         this.mInFlightWrites -= len;
-        this.mJob.confirmedReceived += len;
-
-        // Recalculate confirmed-based fields (these should already match the optimistic values)
-        // offset = confirmedOffset + confirmedReceived
-        this.mJob.offset =
-          this.mJob.confirmedOffset + this.mJob.confirmedReceived;
-        // size = confirmedSize - confirmedReceived
-        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
-
         if (this.mInFlightWrites < 0) {
-          // sanity
           this.mInFlightWrites = 0;
         }
+
+        // Write confirmed - update job fields from confirmed state only
+        this.mJob.confirmedReceived += len;
+
+        // Recalculate confirmed-based fields
+        this.mJob.offset =
+          this.mJob.confirmedOffset + this.mJob.confirmedReceived;
+        this.mJob.size = this.mJob.confirmedSize - this.mJob.confirmedReceived;
       })
       .catch((err) => {
         this.mInFlightWrites -= len;
@@ -1126,6 +1109,7 @@ const SLOW_WORKER_THRESHOLD = 10; // Number of "starving" measurements before co
 const SLOW_WORKER_MIN_AGE_MS = 10000; // Minimum time (10s) before allowing restart
 const SLOW_WORKER_RESTART_COOLDOWN_MS = 30000; // Cooldown period (30s) between restarts
 const MAX_WORKER_RESTARTS = 3; // Maximum restarts per worker
+const MAX_CHUNK_REQUEUES = 3; // Maximum times a chunk can be requeued after finishing with remaining data
 
 /**
  * manages downloads
@@ -1647,7 +1631,9 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Ensure URL is a string, not a URL object (URL objects don't serialize properly through IPC)
+          const url = resolved.urls[0];
+          return typeof url === "string" ? url : String(url);
         }),
       confirmedOffset: 0,
       confirmedSize: this.mMinChunkSize,
@@ -2144,11 +2130,14 @@ class DownloadManager {
     }
 
     // For single-chunk downloads, update confirmedSize only if download hasn't started yet
+    // AND it starts from the beginning of the file. Partial chunks (from resumed multi-chunk
+    // downloads or 416 recovery) should keep their original confirmedSize.
     // Once download has started (confirmedReceived > 0), confirmedSize is immutable
     // Note: confirmedSize may have already been updated by the worker in handleResponse
     if (
       download.chunks.length === 1 &&
-      download.chunks[0].confirmedReceived === 0
+      download.chunks[0].confirmedReceived === 0 &&
+      download.chunks[0].confirmedOffset === 0
     ) {
       download.chunks[0].confirmedSize = size;
       // Recalculate derived size field
@@ -2330,7 +2319,9 @@ class DownloadManager {
                   new ProcessCanceled("Failed to resolve download URL"),
                 );
               }
-              return resolved.urls[0];
+              // Ensure URL is a string, not a URL object
+              const url = resolved.urls[0];
+              return typeof url === "string" ? url : String(url);
             }),
         });
         offset += chunkSize;
@@ -2343,11 +2334,14 @@ class DownloadManager {
       });
     } else {
       // Single chunk download - update confirmedSize only if download hasn't started yet
+      // AND it starts from the beginning of the file. Partial chunks (from resumed multi-chunk
+      // downloads or 416 recovery) should keep their original confirmedSize.
       // Once download has started (confirmedReceived > 0), confirmedSize is immutable
       // Note: confirmedSize may have already been updated by the worker in handleResponse
       if (
         download.chunks.length === 1 &&
-        download.chunks[0].confirmedReceived === 0
+        download.chunks[0].confirmedReceived === 0 &&
+        download.chunks[0].confirmedOffset === 0
       ) {
         download.chunks[0].confirmedSize = fileSize;
         // Recalculate derived size field
@@ -2410,7 +2404,9 @@ class DownloadManager {
               new ProcessCanceled("Failed to resolve download URL"),
             );
           }
-          return resolved.urls[0];
+          // Ensure URL is a string, not a URL object
+          const url = resolved.urls[0];
+          return typeof url === "string" ? url : String(url);
         }),
       // Immutable confirmed fields
       confirmedOffset,
@@ -2517,9 +2513,32 @@ class DownloadManager {
     // size = confirmedSize - confirmedReceived (remaining bytes)
     const hasRemainingData = job.size > 0;
 
-    job.state = paused || hasRemainingData ? "paused" : "finished";
     if (!paused && hasRemainingData) {
-      download.error = true;
+      job.requeues = (job.requeues || 0) + 1;
+      if (job.requeues >= MAX_CHUNK_REQUEUES) {
+        log(
+          "warn",
+          "chunk exceeded max requeues, marking download as errored",
+          {
+            id: download.id,
+            workerId: job.workerId,
+            remaining: job.size,
+            requeues: job.requeues,
+          },
+        );
+        download.error = true;
+        job.state = "finished";
+      } else {
+        log("info", "chunk finished with remaining data, requeuing", {
+          id: download.id,
+          workerId: job.workerId,
+          remaining: job.size,
+          requeue: job.requeues,
+        });
+        job.state = "paused";
+      }
+    } else {
+      job.state = paused || hasRemainingData ? "paused" : "finished";
     }
 
     const activeChunk = download.chunks.find((chunk: IDownloadJob) => {
@@ -2540,7 +2559,7 @@ class DownloadManager {
         .then(() => {
           // If file has no extension, detect it from magic header and rename
           const currentExt = path.extname(download.tempName);
-          if (currentExt === "") {
+          if (currentExt === "" && !download.error) {
             log(
               "info",
               "download has no extension, detecting from magic header",

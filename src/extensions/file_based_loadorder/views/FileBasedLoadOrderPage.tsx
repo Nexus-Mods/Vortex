@@ -5,7 +5,7 @@ import { Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import * as actions from "../../../actions/index";
+import * as actions from "../../../renderer/actions/index";
 import {
   DraggableList,
   EmptyPlaceholder,
@@ -14,10 +14,10 @@ import {
   Spinner,
   ToolbarIcon,
 } from "../../../renderer/controls/api";
-import * as types from "../../../types/api";
-import * as util from "../../../util/api";
+import * as types from "../../../renderer/types/api";
+import * as util from "../../../renderer/util/api";
 import { ComponentEx } from "../../../renderer/controls/ComponentEx";
-import * as selectors from "../../../util/selectors";
+import * as selectors from "../../../renderer/util/selectors";
 import { DNDContainer, MainPage } from "../../../renderer/views/api";
 import FilterBox from "./FilterBox";
 

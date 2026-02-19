@@ -44,18 +44,24 @@ import {
   setDownloadModInfo,
   startActivity,
   stopActivity,
-} from "../../actions";
+} from "../../renderer/actions";
 import {
   type IConditionResult,
   type IDialogContent,
   showDialog,
   dismissNotification,
-} from "../../actions/notifications";
-import type { ICheckbox, IDialogResult } from "../../types/IDialog";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IProfile, IState } from "../../types/IState";
-import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
-import ConcurrencyLimiter from "../../util/ConcurrencyLimiter";
+} from "../../renderer/actions/notifications";
+import type { ICheckbox, IDialogResult } from "../../renderer/types/IDialog";
+import type {
+  IExtensionApi,
+  ThunkStore,
+} from "../../renderer/types/IExtensionContext";
+import type { IProfile, IState } from "../../renderer/types/IState";
+import {
+  getBatchContext,
+  type IBatchContext,
+} from "../../renderer/util/BatchContext";
+import ConcurrencyLimiter from "../../renderer/util/ConcurrencyLimiter";
 import { NotificationAggregator } from "./NotificationAggregator";
 import {
   DataInvalid,
@@ -66,17 +72,17 @@ import {
   TemporaryError,
   UserCanceled,
   ArchiveBrokenError,
-} from "../../util/CustomErrors";
+} from "../../renderer/util/CustomErrors";
 import {
   createErrorReport,
   didIgnoreError,
   isOutdated,
   withContext,
-} from "../../util/errorHandling";
-import * as fs from "../../util/fs";
-import type { TFunction } from "../../util/i18n";
-import { log } from "../../util/log";
-import { prettifyNodeErrorMessage } from "../../util/message";
+} from "../../renderer/util/errorHandling";
+import * as fs from "../../renderer/util/fs";
+import type { TFunction } from "../../renderer/util/i18n";
+import { log } from "../../renderer/util/log";
+import { prettifyNodeErrorMessage } from "../../renderer/util/message";
 import {
   activeGameId,
   activeProfile,
@@ -86,8 +92,8 @@ import {
   knownGames,
   lastActiveProfileForGame,
   profileById,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
+} from "../../renderer/util/selectors";
+import { getSafe } from "../../renderer/util/storeHelper";
 import {
   batchDispatch,
   delay,
@@ -95,10 +101,10 @@ import {
   setdefault,
   toPromise,
   truthy,
-} from "../../util/util";
-import walk from "../../util/walk";
+} from "../../renderer/util/util";
+import walk from "../../renderer/util/walk";
 
-import calculateFolderSize from "../../util/calculateFolderSize";
+import calculateFolderSize from "../../renderer/util/calculateFolderSize";
 
 import {
   getCollectionActiveSession,
@@ -185,7 +191,6 @@ import {
 import InstallContext from "./InstallContext";
 import makeListInstaller from "./listInstaller";
 import deriveModInstallName from "./modIdManager";
-import { STAGING_DIR_TAG } from "./stagingDirectory";
 
 import { HTTPError } from "@nexusmods/nexus-api";
 import Bluebird, { method as toBluebird } from "bluebird";
@@ -352,8 +357,8 @@ function nop() {
 }
 
 function findDownloadByReferenceTag(
-  downloads: { [downloadId: string]: any },
-  reference: any,
+  downloads: Record<string, IDownload>,
+  reference: IModReference,
 ): string | null {
   const dlId = findDownloadByRef(reference, downloads);
   if (dlId) {
@@ -374,7 +379,7 @@ function findDownloadByReferenceTag(
 }
 
 function getReadyDownloadId(
-  downloads: { [downloadId: string]: any },
+  downloads: Record<string, IDownload>,
   reference: { tag?: string; md5Hint?: string },
   hasActiveOrPendingCheck: (downloadId: string) => boolean,
 ): string | null {
@@ -1086,11 +1091,18 @@ class InstallManager {
     return extractProm
       .then(({ code, errors }: { code: number; errors: string[] }) => {
         log("debug", "extraction completed");
-        if (code !== 0) {
-          log("warn", "extraction reported error", {
+        if (errors.length > 0) {
+          const message =
+            code > 1
+              ? `Extraction completed with ${errors.length} error(s)`
+              : `Extraction completed with ${errors.length} warning(s)`;
+          const logLevel = code > 1 ? "error" : "warn";
+          log(logLevel, message, {
             code,
             errors: errors.join("; "),
           });
+        }
+        if (code !== 0) {
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             return Bluebird.reject(
@@ -1388,7 +1400,7 @@ class InstallManager {
               })
               // calculate the md5 hash here so we can store it with the mod meta information later,
               // otherwise we'd not remember the hash when installing from external file
-              .tap(() => {
+              .then((gameId) => {
                 // Check if we already have the hash from the download to avoid recalculation
                 const existingHash = getSafe(
                   fullInfo,
@@ -1403,7 +1415,7 @@ class InstallManager {
                 if (existingHash && existingSize) {
                   archiveMD5 = existingHash;
                   archiveSize = existingSize;
-                  return Promise.resolve();
+                  return Promise.resolve(gameId);
                 }
 
                 // Only calculate hash if we don't have it
@@ -1420,6 +1432,7 @@ class InstallManager {
                   } catch (err) {
                     // no operation
                   }
+                  return gameId;
                 });
               })
               .then((gameId) => {
@@ -1797,12 +1810,13 @@ class InstallManager {
                     fullInfo.choices,
                     unattended,
                     details,
-                  ).tap(() => {
+                  ).then((result) => {
                     const endTime = Date.now();
                     log("debug", "processed instructions", {
                       installId: activeInstall.installId,
                       duration: endTime - startTime,
                     });
+                    return result;
                   });
                 },
               )
@@ -3578,25 +3592,29 @@ class InstallManager {
     );
   }
 
-  private isCritical(error: string): boolean {
-    // Don't treat file-in-use errors as critical - they can be retried
-    if (this.isFileInUse(error)) {
-      return false;
+  private isFileInUse(errorMessage: string, errorCode?: string): boolean {
+    if (errorCode && ["EBUSY", "EPERM", "EACCES"].includes(errorCode)) {
+      return true;
     }
-    return (
-      error.indexOf("Unexpected end of archive") !== -1 ||
-      error.indexOf("ERROR: Data Error") !== -1 ||
-      // used to be "Can not", current 7z prints "Cannot"
-      error.indexOf("Cannot open the file as archive") !== -1 ||
-      error.indexOf("Can not open the file as archive") !== -1
-    );
+    const lowered = errorMessage.toLowerCase();
+    const patterns = [
+      "being used by another process",
+      "locked by another process",
+      "denied",
+      "cannot open",
+      "can not open",
+    ];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
-  private isFileInUse(error: string): boolean {
-    return (
-      error.indexOf("being used by another process") !== -1 ||
-      error.indexOf("locked by another process") !== -1
-    );
+  private isCritical(errorMessage: string): boolean {
+    // Don't treat file-in-use errors as critical - they can be retried
+    if (this.isFileInUse(errorMessage)) {
+      return false;
+    }
+    const lowered = errorMessage.toLowerCase();
+    const patterns = ["unexpected end of archive", "error: data error"];
+    return patterns.some((pattern) => lowered.includes(pattern));
   }
 
   private extractWithRetry(
@@ -3611,32 +3629,57 @@ class InstallManager {
     const attemptExtract = (
       retriesLeft: number,
     ): Bluebird<{ code: number; errors: string[] }> => {
-      return zip
-        .extractFull(
-          archivePath,
-          tempPath,
-          { ssc: false },
-          progress,
-          queryPassword as any,
-        )
-        .catch((err: Error) => {
-          if (this.isFileInUse(err.message) && retriesLeft > 0) {
-            log("info", "archive file in use, retrying extraction", {
-              archivePath: path.basename(archivePath),
-              retriesLeft,
-              retryDelayMs,
-            });
-            return delay(retryDelayMs).then(() =>
-              attemptExtract(retriesLeft - 1),
+      const retryIfFileInUse = (errorMessages: string[]) => {
+        if (
+          retriesLeft > 0 &&
+          errorMessages.some((msg) => this.isFileInUse(msg))
+        ) {
+          log("info", "archive file in use, retrying extraction", {
+            archivePath: path.basename(archivePath),
+            retriesLeft,
+            retryDelayMs,
+          });
+          return delay(retryDelayMs).then(() =>
+            attemptExtract(retriesLeft - 1),
+          );
+        }
+        return undefined;
+      };
+
+      // clean up any stale temp directory from a previous failed attempt
+      return fs.removeAsync(tempPath).then(() =>
+        zip
+          .extractFull(
+            archivePath,
+            tempPath,
+            { ssc: false },
+            progress,
+            queryPassword as any,
+          )
+          .then((result: { code: number; errors: string[] }) => {
+            // 7z can resolve (not reject) with a non-zero exit code and
+            // file-in-use errors. Retry in that case instead of proceeding
+            // with a partial extraction.
+            if (result.code !== 0) {
+              return retryIfFileInUse(result.errors ?? []) ?? result;
+            }
+            return result;
+          })
+          .catch((err) => {
+            const error = unknownToError(err);
+            return (
+              retryIfFileInUse([error.message]) ??
+              (this.isCritical(error.message)
+                ? Bluebird.reject(
+                    new ArchiveBrokenError(
+                      path.basename(archivePath),
+                      error.message,
+                    ),
+                  )
+                : Bluebird.reject(error))
             );
-          }
-          if (this.isCritical(err.message)) {
-            return Bluebird.reject(
-              new ArchiveBrokenError(path.basename(archivePath), err.message),
-            );
-          }
-          return Bluebird.reject(err);
-        });
+          }),
+      );
     };
     return attemptExtract(maxRetries);
   }
@@ -3702,6 +3745,9 @@ class InstallManager {
             code,
             errors: errors.join("; "),
           });
+          // 7z exit codes: 0=OK, 1=Warning, 2=Fatal, 7=CLI error, 8=OOM,
+          // 255=User stopped. Note that 2 can also be raised for file-in-use
+          // which is retryable so we can't treat it as critical.
           const critical = errors.find((err) => this.isCritical(err));
           if (critical !== undefined) {
             throw new ArchiveBrokenError(path.basename(archivePath), critical);
@@ -3723,9 +3769,6 @@ class InstallManager {
             }
           }),
         );
-      })
-      .finally(() => {
-        // process.noAsar = false;
       })
       .then(async () => {
         const hasFomodSegment = (file: string) => {
@@ -3778,10 +3821,7 @@ class InstallManager {
           );
           switch (dialogResult?.action) {
             case no:
-              throw new ProcessCanceled(
-                "User declined to install mod with C# scripts",
-              );
-            //throw new UserCanceled();
+              throw new UserCanceled();
             //case yesForAll:
             //  break;
           }
@@ -4499,7 +4539,17 @@ class InstallManager {
         },
       );
       if (fatal !== undefined) {
-        return Bluebird.reject(new ProcessCanceled("Installer script failed"));
+        const errorMessages = instructionGroups.error.map((err) => err.source);
+        const errorSummary = errorMessages.join("; ");
+        return Bluebird.reject(
+          new ProcessCanceled(`Installer script failed: ${errorSummary}`, {
+            modId,
+            errors: instructionGroups.error.map((err) => ({
+              severity: err.value,
+              message: err.source,
+            })),
+          }),
+        );
       }
     }
 
@@ -4957,13 +5007,13 @@ class InstallManager {
           "Select Variant to Replace",
           {
             text: '"{{modName}}" has several variants installed - please choose which one to replace:',
-            choices: modIds.map((id, idx) => {
-              const modAttributes = mods[idx].attributes;
+            choices: mods.map((mod, idx) => {
+              const modAttributes = mod.attributes;
               const variant = getSafe(modAttributes, ["variant"], "");
               return {
-                id,
+                id: mod.id,
                 value: idx === 0,
-                text: `modId: ${id}`,
+                text: `modId: ${mod.id}`,
                 subText: api.translate(
                   "Version: {{version}}; InstallTime: {{installTime}}; Variant: {{variant}}",
                   {
@@ -5189,13 +5239,14 @@ class InstallManager {
             }
           },
         )
-        .tap(() => {
+        .then((result) => {
           if (context !== undefined) {
             context.set(
               "items-completed",
               context.get("items-completed", 0) + 1,
             );
           }
+          return result;
         })
         .catch((err) => {
           return reject(err);
@@ -5886,7 +5937,7 @@ class InstallManager {
                 return Bluebird.resolve(undefined);
               }
               log("debug", "done installing dependency", {
-                ref: dep.reference.logicalFileName,
+                ref: dep.reference?.logicalFileName,
               });
               return Bluebird.resolve(updatedDependency);
             })
@@ -6397,20 +6448,22 @@ class InstallManager {
             // instead we update the rule in the collection. This has to happen immediately,
             // otherwise the installation might have weird issues around the mod
             // being installed having a different tag than the rule
-            dep.reference = this.updateModRule(
-              api,
-              gameId,
-              sourceModId,
-              dep,
-              {
-                ...dep.reference,
-                fileList: dep.fileList,
-                patches: dep.patches,
-                installerChoices: dep.installerChoices,
-                tag: downloads[downloadId].modInfo.referenceTag,
-              },
-              recommended,
-            )?.reference;
+            const reference: IModReference = {
+              ...dep.reference,
+              fileList: dep.fileList,
+              patches: dep.patches,
+              installerChoices: dep.installerChoices,
+              tag: downloads[downloadId].modInfo.referenceTag,
+            };
+            dep.reference =
+              this.updateModRule(
+                api,
+                gameId,
+                sourceModId,
+                dep,
+                reference,
+                recommended,
+              )?.reference ?? reference;
 
             dep.mod = findModByRef(
               dep.reference,
@@ -6610,7 +6663,7 @@ class InstallManager {
     dep: IDependency,
     reference: IModReference,
     recommended: boolean,
-  ) {
+  ): IModRule | undefined {
     const state: IState = api.store.getState();
     const rules: IModRule[] = getSafe(
       state.persistent.mods,
@@ -6621,15 +6674,17 @@ class InstallManager {
       referenceEqual(iter.reference, dep.reference),
     );
 
+    const type = recommended ? "recommends" : "requires";
+
     if (oldRule === undefined) {
       return undefined;
     }
 
-    const updatedRule: IRule = {
-      ...(oldRule || {}),
-      type: recommended ? "recommends" : "requires",
-      reference,
-    };
+    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
+      return oldRule;
+    }
+
+    const updatedRule: IModRule = { ...oldRule, type, reference };
 
     api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
     api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));
@@ -7484,9 +7539,14 @@ class InstallManager {
               missingFiles.add(job.src);
               return;
             }
-            if (
+            if (["EISDIR", "EEXIST"].includes(code)) {
+              // destination exists (stale from a previous
+              // failed install?) - remove it and fall back to copy
+              await fs.removeAsync(job.dst);
+              await copyAsyncWrap(job.src, job.dst);
+            } else if (
               code &&
-              ["EXDEV", "EPERM", "EACCES", "ENOTSUP", "EEXIST"].includes(code)
+              ["EXDEV", "EPERM", "EACCES", "ENOTSUP"].includes(code)
             ) {
               await copyAsyncWrap(job.src, job.dst);
             } else {

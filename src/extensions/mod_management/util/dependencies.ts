@@ -1,10 +1,10 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IDownload } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IDownload } from "../../../renderer/types/IState";
 import {
   NotFound,
   ProcessCanceled,
   UserCanceled,
-} from "../../../util/CustomErrors";
+} from "../../../renderer/util/CustomErrors";
 
 import type { IDependency, ILookupResultEx } from "../types/IDependency";
 import type {
@@ -15,11 +15,11 @@ import type {
   IModRule,
 } from "../types/IMod";
 
-import ConcurrencyLimiter from "../../../util/ConcurrencyLimiter";
-import { log } from "../../../util/log";
-import { activeGameId } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { semverCoerce, truthy } from "../../../util/util";
+import ConcurrencyLimiter from "../../../renderer/util/ConcurrencyLimiter";
+import { log } from "../../../renderer/util/log";
+import { activeGameId } from "../../../renderer/util/selectors";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { semverCoerce, truthy } from "../../../renderer/util/util";
 
 import Bluebird from "bluebird";
 import * as _ from "lodash";
@@ -167,7 +167,10 @@ function lookupDownloadHint(
       );
     }
     return Bluebird.resolve({ url: urlNorm });
-  } else if (input.mode === "browse") {
+  } else if (
+    input.mode === "browse" ||
+    (input.mode === "manual" && input.url)
+  ) {
     let urlNorm: string = "";
     try {
       urlNorm = normalizeUrl(input.url ?? "", { defaultProtocol: "https:" });
@@ -352,6 +355,9 @@ export function findDownloadByRef(
   reference: IReference,
   downloads: { [dlId: string]: IDownload },
 ): string {
+  if (!reference) {
+    return undefined;
+  }
   if (reference["md5Hint"] !== undefined) {
     const result = Object.keys(downloads).find(
       (dlId) => downloads[dlId].fileMD5 === reference["md5Hint"],
@@ -369,6 +375,10 @@ export function findDownloadByRef(
   ) {
     reference = _.omit(reference, ["fileMD5"]);
   }
+
+  // Downloads don't contain patch/fileList/installerChoices info, so exclude
+  // these from matching to avoid false negatives
+  reference = _.omit(reference, ["patches", "fileList", "installerChoices"]);
 
   try {
     const fuzzy = isFuzzyVersion(reference.versionMatch);
@@ -533,7 +543,10 @@ async function gatherDependenciesGraph(
           },
         },
       });
-      if (rule.downloadHint?.mode === "browse") {
+      if (
+        rule.downloadHint?.mode === "browse" ||
+        (rule.downloadHint?.mode === "manual" && rule.downloadHint?.url)
+      ) {
         node.reresolveDownloadHint = () =>
           lookupDownloadHint(api, rule.downloadHint).then((dlHintRes) => {
             node.lookupResults[0].value = {

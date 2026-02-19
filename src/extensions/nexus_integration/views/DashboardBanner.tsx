@@ -1,4 +1,4 @@
-import { setDialogVisible } from "../../../actions/session";
+import { setDialogVisible } from "../../../renderer/actions/session";
 import Image from "../../../renderer/controls/Image";
 import Spinner from "../../../renderer/controls/Spinner";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
@@ -7,10 +7,10 @@ import {
   connect,
   translate,
 } from "../../../renderer/controls/ComponentEx";
-import { UserCanceled } from "../../../util/CustomErrors";
-import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
-import { truthy } from "../../../util/util";
+import { UserCanceled } from "../../../renderer/util/CustomErrors";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import opn from "../../../renderer/util/opn";
+import { truthy } from "../../../renderer/util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 

@@ -1,10 +1,10 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
-import { getApplication } from "../../../util/application";
-import * as fs from "../../../util/fs";
-import { log } from "../../../util/log";
-import { IGNORABLE_PREFIXES } from "../../../util/getFileList";
-import { getSafe } from "../../../util/storeHelper";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
+import { getApplication } from "../../../renderer/util/application";
+import * as fs from "../../../renderer/util/fs";
+import { log } from "../../../renderer/util/log";
+import { IGNORABLE_PREFIXES } from "../../../renderer/util/getFileList";
+import { getSafe } from "../../../renderer/util/storeHelper";
 
 import { setModArchiveId } from "../actions/mods";
 import type { IMod } from "../types/IMod";

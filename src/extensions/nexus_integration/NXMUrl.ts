@@ -1,4 +1,4 @@
-import { DataInvalid } from "../../util/CustomErrors";
+import { DataInvalid } from "../../renderer/util/CustomErrors";
 
 import { URL } from "url";
 

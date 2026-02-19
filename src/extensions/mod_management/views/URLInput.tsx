@@ -3,8 +3,8 @@ import { useDispatch } from "react-redux";
 import FlexLayout from "../../../renderer/controls/FlexLayout";
 import FormInput from "../../../renderer/controls/FormInput";
 import { IconButton } from "../../../renderer/controls/TooltipControls";
-import type { TFunction } from "../../../util/i18n";
-import opn from "../../../util/opn";
+import type { TFunction } from "../../../renderer/util/i18n";
+import opn from "../../../renderer/util/opn";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 

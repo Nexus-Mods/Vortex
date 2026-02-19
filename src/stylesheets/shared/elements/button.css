@@ -70,6 +70,10 @@
             }
         }
 
+        &.nxm-button-icon-only {
+            min-width: 0;
+        }
+
         &:not(.nxm-button-icon-only) .nxm-button-icon {
             &:first-child {
                 margin-right: calc(var(--spacing) * 1.5);

@@ -1,4 +1,4 @@
-import createAction from "../../../actions/safeCreateAction";
+import createAction from "../../../renderer/actions/safeCreateAction";
 import type { IInstallerInfoState, IInstallerState } from "../types/interface";
 
 export const startDialog = createAction(

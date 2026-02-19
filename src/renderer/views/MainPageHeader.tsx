@@ -1,53 +1,26 @@
-import type { IExtensionApi } from "../../types/IExtensionContext";
-import type { IState } from "../../types/IState";
-import { connect } from "../controls/ComponentEx";
-import { truthy } from "../../util/util";
-
-import * as PropTypes from "prop-types";
-import * as React from "react";
+import React, { type FC, type ReactNode, useContext } from "react";
 import { Portal } from "react-overlays";
+import { useSelector } from "react-redux";
 
-export interface IComponentContext {
-  api: IExtensionApi;
-  headerPortal: () => HTMLElement;
-  page: string;
+import { mainPage as mainPageSelector } from "../util/selectors";
+import { PageHeaderContext } from "./MainPageContainer";
+
+export interface IProps {
+  children?: ReactNode;
 }
 
-interface IConnectedProps {
-  mainPage: string;
-}
+export const MainPageHeader: FC<IProps> = ({ children }) => {
+  const mainPage = useSelector(mainPageSelector);
+  const { headerPortal, page } = useContext(PageHeaderContext);
 
-type IProps = IConnectedProps;
-
-class MainPageHeader extends React.Component<IProps, {}> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-    headerPortal: PropTypes.func,
-    page: PropTypes.string,
-  };
-
-  declare public context: IComponentContext;
-
-  public shouldComponentUpdate() {
-    return true;
+  if (!headerPortal?.()) {
+    return null;
   }
+  return mainPage === page ? (
+    <Portal container={headerPortal}>
+      <div className="mainpage-header">{children}</div>
+    </Portal>
+  ) : null;
+};
 
-  public render(): JSX.Element {
-    if (!truthy(this.context.headerPortal())) {
-      return null;
-    }
-    return this.props.mainPage === this.context.page ? (
-      <Portal container={this.context.headerPortal}>
-        <div className="mainpage-header">{this.props.children}</div>
-      </Portal>
-    ) : null;
-  }
-}
-
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    mainPage: state.session.base.mainPage,
-  };
-}
-
-export default connect(mapStateToProps)(MainPageHeader) as any;
+export default MainPageHeader;

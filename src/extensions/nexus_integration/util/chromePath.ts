@@ -1,6 +1,6 @@
-import * as fs from "../../../util/fs";
-import getVortexPath from "../../../util/getVortexPath";
-import { deBOM, truthy } from "../../../util/util";
+import * as fs from "../../../renderer/util/fs";
+import getVortexPath from "../../../renderer/util/getVortexPath";
+import { deBOM, truthy } from "../../../renderer/util/util";
 
 import PromiseBB from "bluebird";
 import * as path from "path";

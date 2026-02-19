@@ -1,8 +1,7 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
+import { createAction } from "redux-act";
 import type { IChunk } from "../types/IChunk";
 
-import * as reduxAct from "redux-act";
-import { log } from "../../../util/log";
+import { log } from "../../../renderer/util/log";
 
 export interface IDictionary {
   [key: string]: any;
@@ -11,7 +10,7 @@ export interface IDictionary {
 /**
  * initialize a download (it may not be started immediately)
  */
-export const initDownload = safeCreateAction(
+export const initDownload = createAction(
   "INIT_DOWNLOAD",
   (id: string, urls: string[], modInfo: IDictionary, games: string[]) => ({
     id,
@@ -24,7 +23,7 @@ export const initDownload = safeCreateAction(
 /**
  * set download progress (in percent)
  */
-export const downloadProgress = safeCreateAction(
+export const downloadProgress = createAction(
   "DOWNLOAD_PROGRESS",
   (
     id: string,
@@ -35,7 +34,7 @@ export const downloadProgress = safeCreateAction(
   ) => ({ id, received, total, chunks, urls }),
 );
 
-export const finalizingProgress = safeCreateAction(
+export const finalizingProgress = createAction(
   "FINALIZING_PROGRESS",
   (id: string, progress: number) => ({ id, progress }),
 );
@@ -43,7 +42,7 @@ export const finalizingProgress = safeCreateAction(
 /**
  * set/change the file path
  */
-export const setDownloadFilePath = safeCreateAction(
+export const setDownloadFilePath = createAction(
   "SET_DOWNLOAD_FILEPATH",
   (id: string, filePath: string) => ({ id, filePath }),
 );
@@ -51,7 +50,7 @@ export const setDownloadFilePath = safeCreateAction(
 /**
  * mark the download as pausable or not
  */
-export const setDownloadPausable = safeCreateAction(
+export const setDownloadPausable = createAction(
   "SET_DOWNLOAD_PAUSABLE",
   (id: string, pausable: boolean) => ({ id, pausable }),
 );
@@ -59,16 +58,15 @@ export const setDownloadPausable = safeCreateAction(
 /**
  * mark download as started
  */
-export const startDownload = safeCreateAction(
-  "START_DOWNLOAD",
-  (id: string) => ({ id }),
-);
+export const startDownload = createAction("START_DOWNLOAD", (id: string) => ({
+  id,
+}));
 
 /**
  * mark download as finalizing, meaning the file has been downloaded fully,
  * during this phase checksums are calculated for example
  */
-export const finalizingDownload = safeCreateAction(
+export const finalizingDownload = createAction(
   "FINALIZING_DOWNLOAD",
   (id: string) => ({ id }),
 );
@@ -76,7 +74,7 @@ export const finalizingDownload = safeCreateAction(
 /**
  * mark download as finished
  */
-export const finishDownload = safeCreateAction(
+export const finishDownload = createAction(
   "FINISH_DOWNLOAD",
   (id: string, state: "finished" | "failed" | "redirect", failCause: any) => ({
     id,
@@ -85,12 +83,12 @@ export const finishDownload = safeCreateAction(
   }),
 );
 
-export const setDownloadHash = safeCreateAction(
+export const setDownloadHash = createAction(
   "SET_DOWNLOAD_HASH",
   (id: string, fileMD5: string) => ({ id, fileMD5 }),
 );
 
-export const setDownloadHashByFile = safeCreateAction(
+export const setDownloadHashByFile = createAction(
   "SET_DOWNLOAD_HASH_BY_FILE",
   (fileName: string, fileMD5: string, fileSize: number) => ({
     fileName,
@@ -102,12 +100,12 @@ export const setDownloadHashByFile = safeCreateAction(
 /**
  * mark download paused
  */
-export const pauseDownload = safeCreateAction(
+export const pauseDownload = createAction(
   "PAUSE_DOWNLOAD",
   (id: string, paused: boolean, chunks: IChunk[]) => ({ id, paused, chunks }),
 );
 
-export const setDownloadInterrupted = safeCreateAction(
+export const setDownloadInterrupted = createAction(
   "SET_DOWNLOAD_INTERRUPTED",
   (id: string, realReceived: number) => ({ id, realReceived }),
 );
@@ -115,12 +113,11 @@ export const setDownloadInterrupted = safeCreateAction(
 /**
  * remove a download (and associated file if any)
  */
-export const removeDownload = safeCreateAction(
-  "REMOVE_DOWNLOAD",
-  (id: string) => ({ id }),
-);
+export const removeDownload = createAction("REMOVE_DOWNLOAD", (id: string) => ({
+  id,
+}));
 
-export const removeDownloadSilent = safeCreateAction(
+export const removeDownloadSilent = createAction(
   "REMOVE_DOWNLOAD_SILENT",
   (id: string) => ({ id }),
 );
@@ -128,13 +125,13 @@ export const removeDownloadSilent = safeCreateAction(
 /**
  * sets the current download speed in bytes/second
  */
-export const setDownloadSpeed = safeCreateAction(
+export const setDownloadSpeed = createAction(
   "SET_DOWNLOAD_SPEED",
   (speed) => speed,
   () => ({ forward: false, scope: "local" }),
 );
 
-export const setDownloadSpeeds = safeCreateAction(
+export const setDownloadSpeeds = createAction(
   "SET_DOWNLOAD_SPEEDS",
   (speeds) => speeds,
 );
@@ -143,7 +140,7 @@ export const setDownloadSpeeds = safeCreateAction(
  * add a file that has been found on disk but where we weren't involved
  * in the download.
  */
-export const addLocalDownload = safeCreateAction(
+export const addLocalDownload = createAction(
   "ADD_LOCAL_DOWNLOAD",
   (id: string, game: string, localPath: string, fileSize: number) => ({
     id,
@@ -153,12 +150,12 @@ export const addLocalDownload = safeCreateAction(
   }),
 );
 
-export const mergeDownloadModInfo = safeCreateAction(
+export const mergeDownloadModInfo = createAction(
   "MERGE_DOWNLOAD_MODINFO",
   (id: string, value: any) => ({ id, value }),
 );
 
-export const setDownloadModInfo = safeCreateAction(
+export const setDownloadModInfo = createAction(
   "SET_DOWNLOAD_MODINFO",
   (id: string, key: string, value: any) => {
     if (key === "game" && Array.isArray(value)) {
@@ -170,17 +167,17 @@ export const setDownloadModInfo = safeCreateAction(
   },
 );
 
-export const setDownloadInstalled = safeCreateAction(
+export const setDownloadInstalled = createAction(
   "SET_DOWNLOAD_INSTALLED",
   (id: string, gameId: string, modId: string) => ({ id, gameId, modId }),
 );
 
-export const setDownloadTime = safeCreateAction(
+export const setDownloadTime = createAction(
   "SET_DOWNLOAD_TIME",
   (id: string, time: number) => ({ id, time }),
 );
 
-export const setCompatibleGames = safeCreateAction(
+export const setCompatibleGames = createAction(
   "SET_COMPATIBLE_GAMES",
   (id: string, games: string[]) => ({ id, games }),
 );

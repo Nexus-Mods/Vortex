@@ -1,11 +1,11 @@
-import { getSafe } from "../../util/storeHelper";
+import { getSafe } from "../../renderer/util/storeHelper";
 import type { IProfile } from "./types/IProfile";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 
-const profilesBase = (state: IState) => state.persistent.profiles;
-const lastActiveProfiles = (state: IState) =>
+export const profiles = (state: IState) => state.persistent.profiles;
+export const lastActiveProfiles = (state: IState) =>
   state.settings.profiles.lastActiveProfile;
 
 export const activeGameId = (state: IState): string => {
@@ -15,7 +15,7 @@ export const activeGameId = (state: IState): string => {
 
 export const gameProfiles = createSelector(
   activeGameId,
-  profilesBase,
+  profiles,
   (gameId: string, profiles: { [id: string]: IProfile }) => {
     return Object.keys(profiles)
       .filter((id: string) => profiles[id].gameId === gameId)
@@ -23,20 +23,25 @@ export const gameProfiles = createSelector(
   },
 );
 
-export const activeProfile = (state): IProfile | undefined => {
-  const profileId = getSafe(
-    state,
-    ["settings", "profiles", "activeProfileId"],
-    undefined,
-  );
-  return getSafe(state, ["persistent", "profiles", profileId], undefined);
+export const activeProfileId = (state: IState): string | undefined =>
+  state.settings.profiles.activeProfileId;
+
+export const nextProfileId = (state: IState): string | undefined =>
+  state.settings.profiles.nextProfileId;
+
+export const activeProfile = (state: IState): IProfile | undefined => {
+  const profileId = activeProfileId(state);
+  if (profileId === undefined) {
+    return undefined;
+  }
+  return state.persistent.profiles[profileId];
 };
 
 const profileByIdImpl = createCachedSelector(
-  profilesBase,
+  profiles,
   (state: IState, profileId: string) => profileId,
-  (profilesBaseIn: { [profileId: string]: IProfile }, profileId: string) =>
-    profilesBaseIn[profileId],
+  (profilesIn: { [profileId: string]: IProfile }, profileId: string) =>
+    profilesIn[profileId],
 )((state, profileId) => profileId);
 
 export function profileById(state: IState, profileId: string) {
