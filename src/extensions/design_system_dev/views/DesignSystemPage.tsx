@@ -1,7 +1,7 @@
 /**
- * Tailwind Development Page
+ * Design System Development Page
  * Only visible in development mode
- * Shows all Tailwind components and demos for testing
+ * Shows all design system components and demos for testing
  */
 
 import React, { useState } from "react";
@@ -27,13 +27,13 @@ import { Typography } from "../../../renderer/ui/components/typography";
 import { TypographyDemo } from "../../../renderer/ui/components/typography/TypographyDemo";
 import MainPage from "../../../renderer/views/MainPage";
 
-export const TailwindPage = ({ api }: { api: IExtensionApi }) => {
+export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
   const [selectedTab, setSelectedTab] = useState("button");
   const [selectedFormTab, setSelectedFormTab] = useState("input");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
 
   return (
-    <MainPage id="page-tailwind-dev">
+    <MainPage id="page-design-system-dev">
       <MainPage.Body className="h-full overflow-y-auto p-6">
         <div className="space-y-6">
           <div>
@@ -47,7 +47,7 @@ export const TailwindPage = ({ api }: { api: IExtensionApi }) => {
 
           <TabProvider
             tab={selectedTab}
-            tabListId="tailwind-demo-tabs"
+            tabListId="design-system-demo-tabs"
             onSetSelectedTab={setSelectedTab}
           >
             <TabBar>
@@ -156,4 +156,4 @@ export const TailwindPage = ({ api }: { api: IExtensionApi }) => {
   );
 };
 
-export default TailwindPage;
+export default DesignSystemPage;

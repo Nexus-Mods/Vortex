@@ -1,10 +1,12 @@
 /**
- * Tailwind Development Extension
+ * Design System Development Extension
  * Only registers when running in development mode
  */
 
+import { mdiPalette } from "@mdi/js";
+
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
-import TailwindPage from "./views/TailwindPage";
+import DesignSystemPage from "./views/DesignSystemPage";
 
 function init(context: IExtensionContext): boolean {
   // Only register this page in development mode
@@ -14,11 +16,10 @@ function init(context: IExtensionContext): boolean {
     return false; // Don't initialize in production
   }
 
-  // Register the Tailwind development page
-  // Using 'details' icon (same as Knowledge Base) for development content
-  context.registerMainPage("details", "Tailwind", TailwindPage, {
+  // Register the design system development page
+  context.registerMainPage("highlight-ui", "Design System", DesignSystemPage, {
     group: "global",
-    isClassicOnly: true,
+    mdi: mdiPalette,
   });
 
   return true;
