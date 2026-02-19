@@ -23,7 +23,7 @@ import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
 import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
 import { Typography } from "../../../renderer/ui/components/typography/Typography";
 import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
-import { Pictogram } from "../../../tailwind/components/pictogram";
+import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import { batchDispatch } from "../../../renderer/util/util";
 import {
   setRequirementHidden,

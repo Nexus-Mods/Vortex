@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 
 import type { IModFileInfo, IModRequirementExt } from "../../types";
 
-import { NexusMods } from "../../../../tailwind/components/icons/NexusMods";
+import { NexusMods } from "../../../../renderer/ui/components/icons/NexusMods";
 import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../../renderer/ui/components/icon/Icon";
 import { Typography } from "../../../../renderer/ui/components/typography/Typography";

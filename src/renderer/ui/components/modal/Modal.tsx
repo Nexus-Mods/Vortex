@@ -2,9 +2,9 @@ import { Dialog } from "@headlessui/react";
 import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
-import { Icon } from "../../../renderer/ui/components/icon/Icon";
-import { Typography } from "../../../renderer/ui/components/typography/Typography";
-import { joinClasses } from "../../../renderer/ui/utils/joinClasses";
+import { Icon } from "../icon/Icon";
+import { Typography } from "../typography/Typography";
+import { joinClasses } from "../../utils/joinClasses";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";
 

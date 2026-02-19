@@ -24,7 +24,7 @@ import {
   Typography,
   TypographyLink,
 } from "../../../renderer/ui/components/typography/Typography";
-import { Pictogram } from "../../../tailwind/components/pictogram";
+import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import { opn } from "../../../renderer/util/api";
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";

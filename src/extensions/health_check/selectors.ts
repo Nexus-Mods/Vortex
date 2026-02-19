@@ -58,7 +58,19 @@ export const allModRequirements = (state: IState): IModRequirementExt[] => {
     return [];
   }
 
-  return Object.values(modRequirements).flatMap((mod) => mod.missingMods);
+  const all = Object.values(modRequirements).flatMap((mod) => mod.missingMods);
+
+  // Deduplicate: the same mod installed multiple times can produce identical
+  // requirement entries. Use the same composite key the UI uses for rendering.
+  const seen = new Set<string>();
+  return all.filter((mod) => {
+    const key = `${mod.requiredBy.modId}-${mod.uid || `${mod.gameId}-${mod.modId || mod.modName}`}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 };
 
 /**

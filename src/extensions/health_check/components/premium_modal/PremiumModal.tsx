@@ -2,7 +2,7 @@ import { mdiCheck, mdiDiamondStone } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Modal } from "../../../../tailwind/components/modal";
+import { Modal } from "../../../../renderer/ui/components/modal/Modal";
 import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../../renderer/ui/components/icon/Icon";
 import { Typography } from "../../../../renderer/ui/components/typography/Typography";

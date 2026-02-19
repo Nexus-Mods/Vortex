@@ -1,6 +1,6 @@
 import React from "react";
 import type { HTMLAttributes } from "react";
-import { joinClasses } from "../../../renderer/ui/utils/joinClasses";
+import { joinClasses } from "../../utils/joinClasses";
 
 /* eslint-disable sort-keys */
 const sizeMap = {
