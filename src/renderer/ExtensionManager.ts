@@ -111,6 +111,10 @@ import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
 import {
+  deregisterProtocolHandler,
+  registerProtocolHandler,
+} from "./util/protocolRegistration";
+import {
   filteredEnvironment,
   isFunction,
   setdefault,
@@ -141,29 +145,6 @@ export function isExtSame(
 const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 
 const ERROR_OUTPUT_CUTOFF = 3;
-
-// TODO: remove this when separation is complete
-// Protocol client functions - now use window.api preload bridge
-const setSelfAsProtocolClient = (
-  protocol: string,
-  udPath: string,
-): Promise<void> => {
-  return getPreloadApi().app.setProtocolClient(protocol, udPath);
-};
-
-const isSelfProtocolClient = (
-  protocol: string,
-  udPath: string,
-): Promise<boolean> => {
-  return getPreloadApi().app.isProtocolClient(protocol, udPath);
-};
-
-const removeSelfAsProtocolClient = (
-  protocol: string,
-  udPath: string,
-): Promise<void> => {
-  return getPreloadApi().app.removeProtocolClient(protocol, udPath);
-};
 
 // Dialog functions - now use window.api preload bridge
 const showOpenDialog = (
@@ -2006,14 +1987,11 @@ class ExtensionManager {
     callback: (url: string, install: boolean) => void,
   ): Promise<boolean> => {
     log("info", "register protocol", { protocol });
-    const isAlreadyClient = await isSelfProtocolClient(
+    const haveToRegister = await registerProtocolHandler({
       protocol,
-      this.commandLineUserData(),
-    );
-    const haveToRegister = def && !isAlreadyClient;
-    if (def) {
-      await setSelfAsProtocolClient(protocol, this.commandLineUserData());
-    }
+      setAsDefault: def,
+      userDataPath: this.commandLineUserData(),
+    });
     this.mProtocolHandlers[protocol] = callback;
     return haveToRegister;
   };
@@ -2035,7 +2013,7 @@ class ExtensionManager {
 
   private deregisterProtocol = async (protocol: string): Promise<void> => {
     log("info", "deregister protocol");
-    await removeSelfAsProtocolClient(protocol, this.commandLineUserData());
+    await deregisterProtocolHandler(protocol, this.commandLineUserData());
   };
 
   private lookupModReference = (

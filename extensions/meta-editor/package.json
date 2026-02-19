@@ -33,7 +33,7 @@
     "i18next": "^19.0.1",
     "immutability-helper": "^2.6.6",
     "json-loader": "^0.5.7",
-    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "modmeta-db": "Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336",
     "react": "^16.5.1",
     "react-i18next": "^11.2.2",
     "semver": "^5.3.0",

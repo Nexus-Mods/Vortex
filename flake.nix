@@ -21,6 +21,11 @@
             nodejs_22
             yarn
 
+            # Flatpak tooling
+            flatpak
+            flatpak-builder
+            appstream
+
             # Python with setuptools for node-gyp (distutils removed in Python 3.12+)
             (python3.withPackages (ps: [ ps.setuptools ]))
 
@@ -60,7 +65,7 @@
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
             # Point to Nix-provided Electron
-            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39}/libexec/electron";
+            ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron_39.dist}";
 
             # Make the dotnet runtime available
             DOTNET_ROOT = "${pkgs.dotnetCorePackages.runtime_9_0}/share/dotnet";
@@ -80,8 +85,6 @@
             # Chromium sandbox
             export CHROME_DEVEL_SANDBOX="${pkgs.electron_39}/libexec/electron/chrome-sandbox"
 
-            # Register protocol handler
-            ./scripts/linux-protocol-registration.sh
           '';
         };
       });

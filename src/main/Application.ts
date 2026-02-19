@@ -183,10 +183,10 @@ class Application {
       path.join(tempPath, "dumps", `crash-main-${Date.now()}.dmp`),
     );
 
-    setupLogging(
-      app.getPath("userData"),
-      process.env.NODE_ENV === "development",
-    );
+    const enableLogging =
+      process.env.NODE_ENV === "development" ||
+      process.env.VORTEX_ENABLE_LOGGING === "1";
+    setupLogging(app.getPath("userData"), enableLogging);
     this.setupAppEvents(args);
   }
 
