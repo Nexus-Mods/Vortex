@@ -10,7 +10,6 @@ import { useTranslation } from "react-i18next";
 
 import type { IModFileInfo, IModRequirementExt } from "../../types";
 
-import { NexusMods } from "../../../../renderer/ui/components/icons/NexusMods";
 import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../../renderer/ui/components/icon/Icon";
 import { Typography } from "../../../../renderer/ui/components/typography/Typography";
@@ -84,7 +83,7 @@ export const ModRequirement = ({
                 <Button
                   buttonType="tertiary"
                   filled="weak"
-                  leftIcon={NexusMods}
+                  leftIcon={<img alt="" src="assets/images/nexus.svg" />}
                   size="sm"
                   onClick={() => opn(mod.modUrl).catch(() => null)}
                 >

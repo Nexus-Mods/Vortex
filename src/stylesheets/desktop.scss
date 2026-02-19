@@ -99,4 +99,16 @@
     :focus {
         outline: none;
     }
+
+    .modern-layout {
+        :focus-visible {
+            outline: revert;
+        }
+
+        :not(input):not(textarea),
+        :not(input):not(textarea)::after,
+        :not(input):not(textarea)::before {
+            cursor: revert;
+        }
+    }
 }

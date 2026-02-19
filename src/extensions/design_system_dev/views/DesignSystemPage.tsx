@@ -15,7 +15,9 @@ import { InputDemo } from "../../../renderer/ui/components/form/input/InputDemo"
 import { SelectDemo } from "../../../renderer/ui/components/form/select/SelectDemo";
 import { IconDemo } from "../../../renderer/ui/components/icon/IconDemo";
 import { ListingDemo } from "../../../renderer/ui/components/listing/ListingDemo";
+import { ModalDemo } from "../../../renderer/ui/components/modal/ModalDemo";
 import { PaginationDemo } from "../../../renderer/ui/components/pagination/PaginationDemo";
+import { PictogramDemo } from "../../../renderer/ui/components/pictogram/PictogramDemo";
 import { PickerDemo } from "../../../renderer/ui/components/picker/PickerDemo";
 import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
 import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
@@ -65,6 +67,10 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
               <TabButton name="Listing" />
 
               <TabButton name="Pagination" />
+
+              <TabButton name="Modal" />
+
+              <TabButton name="Pictogram" />
 
               <TabButton name="Collection Tile" />
             </TabBar>
@@ -142,6 +148,14 @@ export const DesignSystemPage = ({ api }: { api: IExtensionApi }) => {
 
               <TabPanel name="Pagination">
                 <PaginationDemo />
+              </TabPanel>
+
+              <TabPanel name="Modal">
+                <ModalDemo />
+              </TabPanel>
+
+              <TabPanel name="Pictogram">
+                <PictogramDemo />
               </TabPanel>
 
               <TabPanel name="Collection Tile">

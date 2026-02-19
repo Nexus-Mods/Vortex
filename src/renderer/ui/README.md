@@ -17,14 +17,13 @@ ui/
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
 │   ├── listing/         - List display component
+│   ├── modal/           - Modal dialog (Headless UI Dialog)
+│   ├── pictogram/       - Decorative SVG pictograms
 │   ├── listing_loader/  - Loading skeleton for lists
 │   ├── no_results/      - Empty state component
 │   ├── pagination/      - Pagination controls with jump-to-page
 │   ├── picker/          - Picker component
 │   ├── tabs/            - Tabbed interface with context-based state
-│   │   ├── tab/         - Tab button component
-│   │   ├── tab-bar/     - Tab container with tablist role
-│   │   └── tab-panel/   - Tab content panel (show/hide)
 │   └── typography/      - Typography system (heading, title, body)
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
@@ -154,9 +153,9 @@ import { Typography } from "../../ui/components/typography/Typography";
 Context-based tab system with keyboard navigation.
 
 ```tsx
-import { TabButton } from "../../ui/components/tabs/tab/Tab";
-import { TabBar } from "../../ui/components/tabs/tab-bar/TabBar";
-import { TabPanel } from "../../ui/components/tabs/tab-panel/TabPanel";
+import { TabButton } from "../../ui/components/tabs/Tab";
+import { TabBar } from "../../ui/components/tabs/TabBar";
+import { TabPanel } from "../../ui/components/tabs/TabPanel";
 import { TabProvider } from "../../ui/components/tabs/tabs.context";
 
 function MyTabs() {
@@ -251,6 +250,62 @@ import { Listing } from "../../ui/components/listing/Listing";
 import { ListingLoader } from "../../ui/components/listing_loader/ListingLoader";
 import { NoResults } from "../../ui/components/no_results/NoResults";
 ```
+
+### Modal
+
+Dialog component built on Headless UI `Dialog`. Use `Modal` for the common case (wrapper + panel combined), or `ModalWrapper` and `ModalPanel` separately for custom layouts.
+
+**Defaults:** `size="md"`, `showCloseButton={true}`
+
+```tsx
+import { Modal, ModalWrapper, ModalPanel } from "../../ui/components/modal/Modal";
+
+// Simple modal
+<Modal isOpen={isOpen} title="Confirm" onClose={handleClose}>
+  <p>Are you sure?</p>
+
+  <Button onClick={handleClose}>Cancel</Button>
+  <Button onClick={handleConfirm}>Confirm</Button>  
+</Modal>
+
+// Custom size, no close button
+<Modal isOpen={isOpen} size="lg" showCloseButton={false} onClose={handleClose}>
+  <p>Full content here</p>
+</Modal>
+
+// Separate wrapper + panel for custom layouts
+<ModalWrapper isOpen={isOpen} size="xl" onClose={handleClose}>
+  <ModalPanel title="Details" onClose={handleClose}>
+    <p>Panel content</p>
+  </ModalPanel>
+</ModalWrapper>
+```
+
+**Sizes:** `sm`, `md`, `lg`, `xl`
+
+### Pictogram
+
+Decorative SVG pictograms loaded from `assets/pictograms/`. Used for illustrative purposes in empty states, onboarding, etc.
+
+**Defaults:** `size="md"`, `theme="primary"`
+
+```tsx
+import { Pictogram } from "../../ui/components/pictogram/Pictogram";
+
+<Pictogram name="health-check" />
+<Pictogram name="health-check" size="lg" theme="premium" />
+```
+
+**Sizes:** `4xs` (16px), `3xs` (24px), `2xs` (36px), `xs` (48px), `sm` (56px), `md` (80px), `lg` (96px), `xl` (112px), `2xl` (160px)
+
+**Themes:** `primary`, `premium`, `creator`, `info`, `none`
+
+**Adding a new pictogram:**
+
+1. Add the SVG file to `assets/pictograms/` (the filename becomes the pictogram name)
+2. Set the SVG dimensions to `width="200" height="200" viewBox="0 0 200 200"`
+3. Replace the main fill colour with `style="fill: currentColor"` so it responds to the `theme` prop
+4. Add the filename (without `.svg`) to the `PictogramName` type in `Pictogram.tsx`
 
 ### Picker
 

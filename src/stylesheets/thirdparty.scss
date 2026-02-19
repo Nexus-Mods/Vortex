@@ -1,5 +1,5 @@
 /* Layer order must be declared before any @layer blocks - must match tailwind-v4.css */
-@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, components, utilities;
+@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, modern-overrides, components, utilities;
 
 @import "bootstrap/_bootstrap";
 @import "react-select";

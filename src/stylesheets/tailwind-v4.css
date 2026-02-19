@@ -5,10 +5,11 @@
  * 3. bootstrap-reset    - Bootstrap's normalize/scaffolding (overrides preflight)
  * 4. bootstrap-components - Bootstrap components
  * 5. bootstrap-override - Bootstrap overrides (above components)
- * 6. components         - Tailwind components
- * 7. utilities          - Tailwind utilities (highest priority)
+ * 6. modern-overrides   - Modern layout overrides (restores defaults within .modern-layout)
+ * 7. components         - Tailwind components
+ * 8. utilities          - Tailwind utilities (highest priority)
  */
-@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, components, utilities;
+@layer theme, base, bootstrap-reset, bootstrap-components, bootstrap-override, modern-overrides, components, utilities;
 
 @import "tailwindcss";
 

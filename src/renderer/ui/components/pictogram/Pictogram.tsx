@@ -1,8 +1,9 @@
-import React from "react";
 import type { HTMLAttributes } from "react";
+
+import React from "react";
+
 import { joinClasses } from "../../utils/joinClasses";
 
-/* eslint-disable sort-keys */
 const sizeMap = {
   "4xs": "size-4",
   "3xs": "size-6",
@@ -14,7 +15,6 @@ const sizeMap = {
   xl: "size-28",
   "2xl": "size-40",
 } as const satisfies Record<string, string>;
-/* eslint-enable sort-keys */
 
 type Theme = "creator" | "info" | "none" | "premium" | "primary";
 
