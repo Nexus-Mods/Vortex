@@ -14,7 +14,5 @@ export * from "./controls/api";
 export { ComponentEx, PureComponentEx } from "./controls/ComponentEx";
 // TODO: don't re-export bluebird Promis as "Promise", that's fucking insidious
 export { actions, PromiseBB as Promise, fs, log, selectors, types, util };
-// Tailwind component library (namespaced to avoid conflicts)
-export { Tailwind } from "./tailwind";
 
 export * from "./views/api";

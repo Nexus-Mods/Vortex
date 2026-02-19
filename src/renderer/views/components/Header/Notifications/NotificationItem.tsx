@@ -11,8 +11,8 @@ import type {
   NotificationType,
 } from "../../../../types/INotification";
 
-import { Icon } from "../../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../../tailwind/components/next/utils";
+import { Icon } from "../../../../ui/components/icon/Icon";
+import { joinClasses } from "../../../../ui/utils/joinClasses";
 import { NotificationActions } from "./NotificationActions";
 import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";

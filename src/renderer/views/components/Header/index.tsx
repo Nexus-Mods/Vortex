@@ -3,8 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useWindowContext } from "../../../contexts";
-import { Typography } from "../../../tailwind/components/next/typography";
-import { nxmPanelClose, nxmPanelOpen } from "../../../tailwind/lib/icon-paths";
+import { Typography } from "../../../ui/components/typography/Typography";
+import {
+  nxmPanelClose,
+  nxmPanelOpen,
+} from "../../../ui/lib/icon_paths/icon-paths";
 import {
   activeProfile as activeProfileSelector,
   gameProfiles as gameProfilesSelector,
@@ -62,7 +65,7 @@ export const Header: FC = () => {
 
         <Typography
           appearance="none"
-          className="flex items-center gap-x-2 truncate leading-5 font-semibold"
+          className="flex items-center gap-x-2 truncate font-semibold"
         >
           <span className="text-neutral-strong">{title}</span>
 

@@ -104,7 +104,10 @@ export const isAnyHealthCheckRunning = (state: IState): boolean =>
 export const healthCheckPersistentState = (
   state: IState,
 ): IHealthCheckPersistentState =>
-  state.persistent?.healthCheck ?? { hiddenRequirements: {} };
+  state.persistent?.healthCheck ?? {
+    hiddenRequirements: {},
+    feedbackGiven: {},
+  };
 
 /**
  * Get the hidden requirements map
@@ -134,6 +137,15 @@ export const getModHiddenRequirements = (
   state: IState,
   modId: number,
 ): string[] => hiddenRequirements(state)[modId] || [];
+
+/**
+ * Get the feedback given map
+ * Returns a map of mod nexusModId to array of requirement IDs that received feedback
+ */
+export const feedbackGivenMap = (
+  state: IState,
+): { [modId: number]: string[] } =>
+  healthCheckPersistentState(state).feedbackGiven ?? {};
 
 /**
  * Get cached mod files for a specific mod

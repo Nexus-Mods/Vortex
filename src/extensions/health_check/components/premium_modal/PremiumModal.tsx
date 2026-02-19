@@ -3,9 +3,9 @@ import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Modal } from "../../../../tailwind/components/modal";
-import { Button } from "../../../../renderer/tailwind/components/next/button";
-import { Icon } from "../../../../renderer/tailwind/components/next/icon";
-import { Typography } from "../../../../renderer/tailwind/components/next/typography";
+import { Button } from "../../../../renderer/ui/components/button/Button";
+import { Icon } from "../../../../renderer/ui/components/icon/Icon";
+import { Typography } from "../../../../renderer/ui/components/typography/Typography";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
   <li className="flex gap-x-1">

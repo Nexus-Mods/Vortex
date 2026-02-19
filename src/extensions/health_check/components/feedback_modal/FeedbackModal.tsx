@@ -3,8 +3,15 @@ import { useTranslation } from "react-i18next";
 
 import { Checkbox } from "../../../../tailwind/components/form/checkbox";
 import { Modal } from "../../../../tailwind/components/modal";
-import { Button } from "../../../../renderer/tailwind/components/next/button";
-import { Typography } from "../../../../renderer/tailwind/components/next/typography";
+import { Button } from "../../../../renderer/ui/components/button/Button";
+import { Typography } from "../../../../renderer/ui/components/typography/Typography";
+
+const FEEDBACK_OPTIONS = [
+  "incorrect_requirement",
+  "requirement_already_installed",
+  "explanation_was_unclear",
+  "other",
+] as const;
 
 export const FeedbackModal = ({
   isOpen,
@@ -13,7 +20,7 @@ export const FeedbackModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (reasons: string[]) => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
   const [checkedOptions, setCheckedOptions] = useState<string[]>([]);
@@ -30,25 +37,20 @@ export const FeedbackModal = ({
       </Typography>
 
       <div className="mt-4 space-y-2">
-        {[
-          t("detail::feedback_modal::options::incorrect_requirement"),
-          t("detail::feedback_modal::options::requirement_already_installed"),
-          t("detail::feedback_modal::options::explanation_was_unclear"),
-          t("detail::feedback_modal::options::other"),
-        ].map((option) => (
+        {FEEDBACK_OPTIONS.map((key) => (
           <Checkbox
-            checked={checkedOptions.includes(option)}
-            key={option}
+            checked={checkedOptions.includes(key)}
+            key={key}
             onChange={(e) => {
               const isChecked = e.target.checked;
               setCheckedOptions((prev) =>
                 isChecked
-                  ? [...prev, option]
-                  : prev.filter((o) => o !== option),
+                  ? [...prev, key]
+                  : prev.filter((o) => o !== key),
               );
             }}
           >
-            {option}
+            {t(`detail::feedback_modal::options::${key}`)}
           </Checkbox>
         ))}
       </div>
@@ -69,10 +71,7 @@ export const FeedbackModal = ({
           className="w-full"
           size="sm"
           onClick={() => {
-            // todo:
-            //  send checkedOptions to mixpanel,
-            //  can set loading={true} while awaiting request, prevents sending data twice and indicates state to user
-            onSuccess();
+            onSuccess(checkedOptions);
           }}
         >
           {t("detail::feedback_modal::buttons::confirm")}

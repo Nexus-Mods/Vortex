@@ -12,10 +12,10 @@
 
 @import "tailwindcss";
 
-/* Import shared design system from nexus-next */
-@import "./shared/theme";
-@import "./shared/elements";
-@import "./shared/form";
+/* Import design system */
+@import "./ui/theme";
+@import "./ui/elements";
+@import "./ui/form";
 
 /*
  * Disable Tailwind utilities that conflict with Bootstrap class names.

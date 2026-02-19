@@ -8,6 +8,10 @@
         font-family: $font-family-headings;
         margin-top: 0.5em;
         margin-bottom: 0.25em;
+
+        .modern-layout & {
+            all: revert-layer;
+        }
     }
 
     .dropdown-menu {
@@ -343,4 +347,4 @@
     .modal-body {
         padding: $half-gutter $gutter-width;
     }
-}
+} // @layer bootstrap-override

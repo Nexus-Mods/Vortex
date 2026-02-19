@@ -13,23 +13,19 @@ import { useSelector } from "react-redux";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
 
-import { Listing } from "../../../renderer/tailwind/components/listing";
-import { Button } from "../../../renderer/tailwind/components/next/button";
-import {
-  CollectionTile,
-  CollectionTileSkeleton,
-} from "../../../renderer/tailwind/components/next/collectiontile";
-import { Input } from "../../../renderer/tailwind/components/next/form";
-import {
-  TabBar,
-  TabButton,
-  TabPanel,
-  TabProvider,
-} from "../../../renderer/tailwind/components/next/tabs";
-import { Typography } from "../../../renderer/tailwind/components/next/typography";
-import { NoResults } from "../../../renderer/tailwind/components/no_results";
-import { Pagination } from "../../../renderer/tailwind/components/pagination/Pagination";
-import { Picker } from "../../../renderer/tailwind/components/picker";
+import { Button } from "../../../renderer/ui/components/button/Button";
+import { CollectionTile } from "../../../renderer/ui/components/collectiontile/CollectionTile";
+import { CollectionTileSkeleton } from "../../../renderer/ui/components/collectiontile/CollectionTileSkeleton";
+import { Input } from "../../../renderer/ui/components/form/input/Input";
+import { Listing } from "../../../renderer/ui/components/listing/Listing";
+import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
+import { Pagination } from "../../../renderer/ui/components/pagination/Pagination";
+import { Picker } from "../../../renderer/ui/components/picker/Picker";
+import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
+import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
+import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
+import { Typography } from "../../../renderer/ui/components/typography/Typography";
 import { UserCanceled } from "../../../renderer/util/api";
 import { getPreloadApi } from "../../../renderer/util/preloadAccess";
 import { activeGameId } from "../../../renderer/util/selectors";
@@ -249,7 +245,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           tabListId="browse-nexus-tabs"
           onSetSelectedTab={setSelectedTab}
         >
-          <TabBar className="pl-6" size="sm">
+          <TabBar className="pl-6">
             <TabButton
               count={allCollectionsTotal}
               name={t("collection:browse.tabs.collections")}
@@ -286,7 +282,6 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 />
 
                 <Button
-                  as="button"
                   buttonType="tertiary"
                   filled="weak"
                   leftIconPath={mdiMagnify}

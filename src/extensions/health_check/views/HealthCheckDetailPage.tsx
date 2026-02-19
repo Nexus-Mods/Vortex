@@ -18,21 +18,23 @@ import type { IModRequirementExt, IModFileInfo } from "../types";
 import { log } from "../../../renderer/util/log";
 import MainPage from "../../../renderer/views/MainPage";
 import { unknownToError } from "../../../shared/errors";
-import { Button } from "../../../renderer/tailwind/components/next/button";
-import { Icon } from "../../../renderer/tailwind/components/next/icon";
+import { Button } from "../../../renderer/ui/components/button/Button";
+import { Icon } from "../../../renderer/ui/components/icon/Icon";
 import {
   Typography,
   TypographyLink,
-} from "../../../renderer/tailwind/components/next/typography";
+} from "../../../renderer/ui/components/typography/Typography";
 import { Pictogram } from "../../../tailwind/components/pictogram";
 import { opn } from "../../../renderer/util/api";
-import { setRequirementHidden } from "../actions/persistent";
+import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
+import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";
 import { FeedbackModal } from "../components/feedback_modal";
 import { PremiumModal } from "../components/premium_modal";
 import {
   getModFiles,
   isModFilesLoading,
   hiddenRequirements,
+  feedbackGivenMap,
 } from "../selectors";
 import { getModFilesWithCache } from "../util";
 import { ModRequirement } from "../components/mod_requirement";
@@ -58,7 +60,13 @@ function HealthCheckDetailPage({
   const { t } = useTranslation(["health_check", "common"]);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [givenFeedBack, setGivenFeedBack] = useState(false);
+
+  // Check if feedback was already given for this requirement (persisted)
+  const feedbackMap = useSelector(feedbackGivenMap);
+  const givenFeedBack = React.useMemo(() => {
+    const given = feedbackMap[mod.requiredBy.modId] || [];
+    return given.includes(mod.id);
+  }, [feedbackMap, mod.requiredBy.modId, mod.id]);
 
   // Get mod files from Redux cache
   const modFiles = useSelector((state: IState) =>
@@ -116,11 +124,38 @@ function HealthCheckDetailPage({
     }
   }, [onDownloadMod, mod, isPremium, onBack, onRefresh]);
 
-  // Memoized callback for feedback modal success
-  const handleFeedbackSuccess = React.useCallback(() => {
-    setGivenFeedBack(true);
-    setShowFeedbackModal(false);
-  }, []);
+  // Memoized callback for positive feedback (thumbs up)
+  const handlePositiveFeedback = React.useCallback(() => {
+    api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
+    api.events.emit(
+      "analytics-track-mixpanel-event",
+      new HealthCheckFeedbackEvent(
+        "positive",
+        mod.gameId,
+        mod.modId,
+        mod.requiredBy.modId,
+      ),
+    );
+  }, [api, mod]);
+
+  // Memoized callback for negative feedback (from modal)
+  const handleFeedbackSuccess = React.useCallback(
+    (reasons: string[]) => {
+      api.store?.dispatch(setFeedbackGiven(mod.requiredBy.modId, mod.id));
+      api.events.emit(
+        "analytics-track-mixpanel-event",
+        new HealthCheckFeedbackEvent(
+          "negative",
+          mod.gameId,
+          mod.modId,
+          mod.requiredBy.modId,
+          reasons,
+        ),
+      );
+      setShowFeedbackModal(false);
+    },
+    [api, mod],
+  );
 
   // Memoized callback for toggling hide/unhide state
   const handleToggleHide = React.useCallback(() => {
@@ -285,7 +320,7 @@ function HealthCheckDetailPage({
                 leftIconPath={mdiThumbUp}
                 size="sm"
                 title={t("common:::helpful")}
-                onClick={() => setGivenFeedBack(true)}
+                onClick={handlePositiveFeedback}
               />
 
               <Button

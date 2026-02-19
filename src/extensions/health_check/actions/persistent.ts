@@ -31,3 +31,14 @@ export const clearAllHiddenRequirements = safeCreateAction(
   "CLEAR_ALL_HEALTH_CHECK_HIDDEN_REQUIREMENTS",
   () => undefined,
 );
+
+/**
+ * Record that feedback was given for a specific requirement
+ */
+export const setFeedbackGiven = safeCreateAction(
+  "SET_HEALTH_CHECK_FEEDBACK_GIVEN",
+  (modId: number, requirementId: string) => ({
+    modId,
+    requirementId,
+  }),
+);

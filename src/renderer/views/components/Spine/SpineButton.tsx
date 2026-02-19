@@ -1,7 +1,7 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import { Icon } from "../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { Icon } from "../../../ui/components/icon/Icon";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 
 interface SpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;

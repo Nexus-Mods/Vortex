@@ -1,0 +1,75 @@
+@source inline('{xs:,sm:,md:,lg:,xl:,2xl:,}text-{body,title,heading}-{xs,sm,md,lg,xl,2xl}');
+
+@theme {
+    /* Body */
+    --text-body-xs: var(--text-2xs);
+    --text-body-xs--line-height: var(--text-2xs--line-height);
+    --text-body-xs--letter-spacing: var(--tracking-wider);
+
+    --text-body-sm: var(--text-xs);
+    --text-body-sm--line-height: var(--text-xs--line-height);
+    --text-body-sm--letter-spacing: var(--tracking-wide);
+
+    --text-body-md: var(--text-sm);
+    --text-body-md--line-height: var(--text-sm--line-height);
+    --text-body-md--letter-spacing: var(--tracking-normal);
+
+    --text-body-lg: var(--text-base);
+    --text-body-lg--line-height: var(--text-base--line-height);
+    --text-body-lg--letter-spacing: var(--tracking-normal);
+
+    --text-body-xl: var(--text-lg);
+    --text-body-xl--line-height: var(--text-lg--line-height);
+    --text-body-xl--letter-spacing: var(--tracking-normal);
+
+    --text-body-2xl: 1.375rem;
+    --text-body-2xl--line-height: calc(1.875 / 1.375);
+    --text-body-2xl--letter-spacing: var(--tracking-normal);
+
+    /* Title — uppercase applied separately in markup */
+    --text-title-xs: var(--text-2xs);
+    --text-title-xs--line-height: var(--text-2xs--line-height);
+    --text-title-xs--letter-spacing: var(--tracking-widest);
+    --text-title-xs--font-weight: var(--font-weight-semibold);
+
+    --text-title-sm: var(--text-xs);
+    --text-title-sm--line-height: var(--text-xs--line-height);
+    --text-title-sm--letter-spacing: var(--tracking-widest);
+    --text-title-sm--font-weight: var(--font-weight-semibold);
+
+    --text-title-md: var(--text-sm);
+    --text-title-md--line-height: var(--text-sm--line-height);
+    --text-title-md--letter-spacing: var(--tracking-widest);
+    --text-title-md--font-weight: var(--font-weight-semibold);
+
+    /* Heading */
+    --text-heading-xs: var(--text-lg);
+    --text-heading-xs--line-height: var(--text-lg--line-height);
+    --text-heading-xs--letter-spacing: var(--tracking-normal);
+    --text-heading-xs--font-weight: var(--font-weight-semibold);
+
+    --text-heading-sm: var(--text-2xl);
+    --text-heading-sm--line-height: var(--text-2xl--line-height);
+    --text-heading-sm--letter-spacing: var(--tracking-normal);
+    --text-heading-sm--font-weight: var(--font-weight-semibold);
+
+    --text-heading-md: var(--text-3xl);
+    --text-heading-md--line-height: var(--text-3xl--line-height);
+    --text-heading-md--letter-spacing: var(--tracking-normal);
+    --text-heading-md--font-weight: var(--font-weight-semibold);
+
+    --text-heading-lg: var(--text-4xl);
+    --text-heading-lg--line-height: var(--text-4xl--line-height);
+    --text-heading-lg--letter-spacing: var(--tracking-tight);
+    --text-heading-lg--font-weight: var(--font-weight-semibold);
+
+    --text-heading-xl: var(--text-5xl);
+    --text-heading-xl--line-height: var(--text-5xl--line-height);
+    --text-heading-xl--letter-spacing: var(--tracking-tight);
+    --text-heading-xl--font-weight: var(--font-weight-semibold);
+
+    --text-heading-2xl: var(--text-6xl);
+    --text-heading-2xl--line-height: var(--text-6xl--line-height);
+    --text-heading-2xl--letter-spacing: var(--tracking-tight);
+    --text-heading-2xl--font-weight: var(--font-weight-semibold);
+}

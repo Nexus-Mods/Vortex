@@ -11,6 +11,11 @@ export interface IHealthCheckPersistentState {
    * This means mod 95885 has requirements with IDs "req-id-1", "req-id-2", and "req-id-3" hidden
    */
   hiddenRequirements: { [modId: number]: string[] };
+  /**
+   * Map of mod nexusModId to array of requirement IDs that have received feedback
+   * Prevents users from submitting feedback multiple times for the same requirement
+   */
+  feedbackGiven: { [modId: number]: string[] };
 }
 
 /**
@@ -48,8 +53,21 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     [actions.clearAllHiddenRequirements as any]: (state) => {
       return setSafe(state, ["hiddenRequirements"], {});
     },
+    [actions.setFeedbackGiven as any]: (state, payload) => {
+      const { modId, requirementId } = payload;
+      const current = state.feedbackGiven?.[modId] || [];
+      if (current.includes(requirementId)) {
+        return state;
+      }
+      return setSafe(
+        state,
+        ["feedbackGiven", modId],
+        [...current, requirementId],
+      );
+    },
   },
   defaults: {
     hiddenRequirements: {},
+    feedbackGiven: {},
   },
 };

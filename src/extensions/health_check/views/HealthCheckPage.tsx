@@ -15,16 +15,14 @@ import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
 import MainPage from "../../../renderer/views/MainPage";
-import { Button } from "../../../renderer/tailwind/components/next/button";
-import { Icon } from "../../../renderer/tailwind/components/next/icon";
-import {
-  TabBar,
-  TabButton,
-  TabPanel,
-  TabProvider,
-} from "../../../renderer/tailwind/components/next/tabs";
-import { Typography } from "../../../renderer/tailwind/components/next/typography";
-import { NoResults } from "../../../renderer/tailwind/components/no_results";
+import { Button } from "../../../renderer/ui/components/button/Button";
+import { Icon } from "../../../renderer/ui/components/icon/Icon";
+import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
+import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
+import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
+import { Typography } from "../../../renderer/ui/components/typography/Typography";
+import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
 import { Pictogram } from "../../../tailwind/components/pictogram";
 import { batchDispatch } from "../../../renderer/util/util";
 import {
@@ -69,7 +67,6 @@ const Mod = ({
       </div>
 
       <Button
-        as="button"
         buttonType="tertiary"
         filled="weak"
         leftIconPath={isHidden ? mdiEye : mdiEyeOff}
