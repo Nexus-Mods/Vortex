@@ -13,23 +13,23 @@ import { useSelector } from "react-redux";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
 
-import { Listing } from "../../../renderer/tailwind/components/listing";
-import { Button } from "../../../renderer/tailwind/components/next/button";
+import { Button } from "../../../renderer/ui/components/button";
 import {
   CollectionTile,
   CollectionTileSkeleton,
-} from "../../../renderer/tailwind/components/next/collectiontile";
-import { Input } from "../../../renderer/tailwind/components/next/form";
+} from "../../../renderer/ui/components/collectiontile";
+import { Input } from "../../../renderer/ui/components/form";
+import { Listing } from "../../../renderer/ui/components/listing";
+import { NoResults } from "../../../renderer/ui/components/no_results";
+import { Pagination } from "../../../renderer/ui/components/pagination/Pagination";
+import { Picker } from "../../../renderer/ui/components/picker";
 import {
   TabBar,
   TabButton,
   TabPanel,
   TabProvider,
-} from "../../../renderer/tailwind/components/next/tabs";
-import { Typography } from "../../../renderer/tailwind/components/next/typography";
-import { NoResults } from "../../../renderer/tailwind/components/no_results";
-import { Pagination } from "../../../renderer/tailwind/components/pagination/Pagination";
-import { Picker } from "../../../renderer/tailwind/components/picker";
+} from "../../../renderer/ui/components/tabs";
+import { Typography } from "../../../renderer/ui/components/typography";
 import { UserCanceled } from "../../../renderer/util/api";
 import { getPreloadApi } from "../../../renderer/util/preloadAccess";
 import { activeGameId } from "../../../renderer/util/selectors";

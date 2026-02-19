@@ -4,9 +4,9 @@ import { pathToFileURL } from "url";
 
 import type { IStarterInfo } from "../../../util/StarterInfo";
 
-import { Icon } from "../../../tailwind/components/next/icon";
-import { Typography } from "../../../tailwind/components/next/typography";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { Icon } from "../../../ui/components/icon";
+import { Typography } from "../../../ui/components/typography";
+import { joinClasses } from "../../../ui/utils/join_classes";
 import StarterInfo from "../../../util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

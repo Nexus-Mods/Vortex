@@ -18,7 +18,7 @@ import {
   DropdownDivider,
   DropdownItem,
   DropdownItems,
-} from "../../../tailwind/components/dropdown";
+} from "../../../ui/components/dropdown";
 import { IconButton } from "./IconButton";
 import { useGlobalIconActions } from "./useGlobalIconActions";
 

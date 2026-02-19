@@ -26,8 +26,8 @@ import {
   DropdownDivider,
   DropdownItem,
   DropdownItems,
-} from "../../../tailwind/components/dropdown";
-import { Icon } from "../../../tailwind/components/next/icon";
+} from "../../../ui/components/dropdown";
+import { Icon } from "../../../ui/components/icon";
 import opn from "../../../util/opn";
 import {
   isLoggedIn as isLoggedInSelector,

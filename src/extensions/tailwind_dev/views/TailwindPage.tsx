@@ -8,26 +8,23 @@ import React, { useState } from "react";
 
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 
-import { DropdownDemo } from "../../../renderer/tailwind/components/dropdown";
-import { ListingDemo } from "../../../renderer/tailwind/components/listing";
-import { ButtonDemo } from "../../../renderer/tailwind/components/next/button";
-import { CollectionTileDemo } from "../../../renderer/tailwind/components/next/collectiontile";
-import {
-  InputDemo,
-  SelectDemo,
-} from "../../../renderer/tailwind/components/next/form";
-import { IconDemo } from "../../../renderer/tailwind/components/next/icon";
+import { ButtonDemo } from "../../../renderer/ui/components/button";
+import { CollectionTileDemo } from "../../../renderer/ui/components/collectiontile";
+import { DropdownDemo } from "../../../renderer/ui/components/dropdown";
+import { InputDemo, SelectDemo } from "../../../renderer/ui/components/form";
+import { IconDemo } from "../../../renderer/ui/components/icon";
+import { ListingDemo } from "../../../renderer/ui/components/listing";
+import { PaginationDemo } from "../../../renderer/ui/components/pagination";
+import { PickerDemo } from "../../../renderer/ui/components/picker";
 import {
   TabBar,
   TabButton,
   TabPanel,
   TabProvider,
-} from "../../../renderer/tailwind/components/next/tabs";
-import { TabsDemo } from "../../../renderer/tailwind/components/next/tabs/TabsDemo";
-import { Typography } from "../../../renderer/tailwind/components/next/typography";
-import { TypographyDemo } from "../../../renderer/tailwind/components/next/typography/TypographyDemo";
-import { PaginationDemo } from "../../../renderer/tailwind/components/pagination";
-import { PickerDemo } from "../../../renderer/tailwind/components/picker";
+} from "../../../renderer/ui/components/tabs";
+import { TabsDemo } from "../../../renderer/ui/components/tabs/TabsDemo";
+import { Typography } from "../../../renderer/ui/components/typography";
+import { TypographyDemo } from "../../../renderer/ui/components/typography/TypographyDemo";
 import MainPage from "../../../renderer/views/MainPage";
 
 export const TailwindPage = ({ api }: { api: IExtensionApi }) => {

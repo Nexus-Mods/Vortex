@@ -159,7 +159,7 @@ import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
 import { getErrorCode } from "../../shared/errors";
-import { nxmMod } from "../../renderer/tailwind/lib/icon-paths/icon-paths";
+import { nxmMod } from "../../renderer/ui/lib/icon_paths/icon-paths";
 
 interface IAppContext {
   isProfileChanging: boolean;

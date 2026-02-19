@@ -12,8 +12,8 @@ import {
   toggleMaximize,
   useIsMaximized,
 } from "../../../hooks";
-import { Icon } from "../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { Icon } from "../../../ui/components/icon";
+import { joinClasses } from "../../../ui/utils/join_classes";
 
 interface WindowControlButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -1,8 +1,8 @@
 import React, { forwardRef, type ButtonHTMLAttributes } from "react";
 
-import { Icon } from "../../../tailwind/components/next/icon";
-import { Typography } from "../../../tailwind/components/next/typography";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { Icon } from "../../../ui/components/icon";
+import { Typography } from "../../../ui/components/typography";
+import { joinClasses } from "../../../ui/utils/join_classes";
 
 interface IconButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
