@@ -8,3 +8,4 @@ import "./redux-persist";
 import "./redux-watcher";
 import "./simple-vdf";
 import "./various-ext";
+import "./csstype";
