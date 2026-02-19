@@ -14,7 +14,7 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IResolver, IResolverRegistry, SerializedFilePath } from './IResolver';
+import type { IResolver, SerializedFilePath } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
 import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from './types';
@@ -203,26 +203,6 @@ export class FilePath {
     };
   }
 
-  /**
-   * Deserialize from JSON (requires resolver registry)
-   *
-   * @param json - Serialized FilePath
-   * @param registry - Resolver registry to look up resolver by name
-   * @returns New FilePath instance
-   * @throws Error if resolver not found in registry
-   *
-   * @example
-   * ```typescript
-   * const json = { relative: 'mods', anchor: 'userData', resolverName: 'vortex' };
-   * const filePath = FilePath.fromJSON(json, myRegistry);
-   * ```
-   */
-  static fromJSON(json: SerializedFilePath, registry: IResolverRegistry): FilePath {
-    const resolver = registry.getOrThrow(json.resolverName);
-    const relative = RelativePathNS.make(json.relative);
-    const anchor = AnchorNS.make(json.anchor);
-    return new FilePath(relative, anchor, resolver);
-  }
 
   // ========================================================================
   // Debugging

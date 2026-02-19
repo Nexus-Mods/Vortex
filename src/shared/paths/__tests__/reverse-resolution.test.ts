@@ -9,7 +9,7 @@
 import * as path from 'path';
 
 import { FilePath } from '../FilePath';
-import { ResolverRegistry } from '../ResolverRegistry';
+import { reverseResolve, findAllMatches } from '../utils';
 import { VortexResolver } from '../resolvers/VortexResolver';
 import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
@@ -183,30 +183,24 @@ describe('Reverse Resolution', () => {
     });
   });
 
-  describe('ResolverRegistry.fromResolved', () => {
-    let registry: ResolverRegistry;
+  describe('reverseResolve utility', () => {
     let resolver1: TestResolver;
     let resolver2: TestResolver;
 
     beforeEach(() => {
-      registry = new ResolverRegistry();
       resolver1 = new TestResolver();
       resolver2 = new TestResolver();
 
       // Give them different names
       (resolver1 as any).name = 'test1';
       (resolver2 as any).name = 'test2';
-
-      registry.register(resolver1);
-      registry.register(resolver2);
-      registry.setDefault(resolver1);
     });
 
     it('should find correct resolver for path', async () => {
       const originalPath = resolver1.PathFor('test1', 'mods/SkyUI');
       const osPath = await originalPath.resolve();
 
-      const filePath = await registry.fromResolved(osPath);
+      const filePath = await reverseResolve(osPath, [resolver1, resolver2]);
 
       expect(filePath).not.toBeNull();
       expect(filePath!.getResolver()).toBe(resolver1);
@@ -216,42 +210,39 @@ describe('Reverse Resolution', () => {
 
     it('should return null when no resolver matches', async () => {
       const osPath = ResolvedPath.make(makeAbsolutePath('unmatched', 'path'));
-      const filePath = await registry.fromResolved(osPath);
+      const filePath = await reverseResolve(osPath, [resolver1, resolver2]);
 
       expect(filePath).toBeNull();
     });
 
-    it('should prefer specified resolver', async () => {
+    it('should prefer resolver earlier in array', async () => {
       const originalPath = resolver1.PathFor('test1', 'mods');
       const osPath = await originalPath.resolve();
 
-      // Try with preferred resolver
-      const filePath = await registry.fromResolved(osPath, 'test2');
+      // Try with resolver1 first
+      const filePath = await reverseResolve(osPath, [resolver1, resolver2]);
 
-      // Should still use test1 since test2 can't handle it, but it tried test2 first
       expect(filePath).not.toBeNull();
+      expect(filePath!.getResolver().name).toBe('test1');
     });
 
-    it('should respect registration order for priority', async () => {
+    it('should respect resolver array order for priority', async () => {
       const originalPath = resolver1.PathFor('test1', 'mods');
       const osPath = await originalPath.resolve();
 
-      // First resolver registered should win
-      const filePath = await registry.fromResolved(osPath);
+      // First resolver in array should win
+      const filePath = await reverseResolve(osPath, [resolver1, resolver2]);
 
       expect(filePath).not.toBeNull();
       expect(filePath!.getResolver().name).toBe('test1');
     });
   });
 
-  describe('ResolverRegistry.findAllMatches', () => {
-    let registry: ResolverRegistry;
+  describe('findAllMatches utility', () => {
     let resolver: TestResolver;
 
     beforeEach(() => {
-      registry = new ResolverRegistry();
       resolver = new TestResolver();
-      registry.register(resolver);
     });
 
     it('should find all matching resolvers', async () => {
@@ -259,49 +250,24 @@ describe('Reverse Resolution', () => {
       const nestedFilePath = resolver.PathFor('nested', 'file.txt');
       const osPath = await nestedFilePath.resolve();
 
-      const matches = await registry.findAllMatches(osPath);
+      const matches = await findAllMatches(osPath, [resolver]);
 
       // Should find at least the nested anchor
       expect(matches.length).toBeGreaterThanOrEqual(1);
 
       // Verify we found 'nested'
-      const nestedMatch = matches.find(m => Anchor.name(m.anchor) === 'nested');
+      const nestedMatch = matches.find(m => Anchor.name(m.filePath.getAnchor()) === 'nested');
       expect(nestedMatch).toBeDefined();
     });
 
     it('should return empty array when no matches', async () => {
       const osPath = ResolvedPath.make(makeAbsolutePath('unmatched'));
-      const matches = await registry.findAllMatches(osPath);
+      const matches = await findAllMatches(osPath, [resolver]);
 
       expect(matches).toEqual([]);
     });
   });
 
-  describe('ResolverRegistry.clearReverseResolutionCache', () => {
-    let registry: ResolverRegistry;
-    let resolver: TestResolver;
-
-    beforeEach(() => {
-      registry = new ResolverRegistry();
-      resolver = new TestResolver();
-      registry.register(resolver);
-    });
-
-    it('should clear caches for all resolvers', async () => {
-      const originalPath = resolver.PathFor('test1', 'mods');
-      const osPath = await originalPath.resolve();
-
-      // Populate cache
-      await registry.fromResolved(osPath);
-
-      // Clear caches
-      registry.clearReverseResolutionCache();
-
-      // Should still work after cache clear
-      const filePath = await registry.fromResolved(osPath);
-      expect(filePath).not.toBeNull();
-    });
-  });
 
   describe('FilePath.relativeTo', () => {
     let resolver: TestResolver;
@@ -493,17 +459,14 @@ describe('Reverse Resolution', () => {
       resolver = new TestResolver();
     });
 
-    it('should round-trip: FilePath → resolve → fromResolved → FilePath', async () => {
-      const registry = new ResolverRegistry();
-      registry.register(resolver);
-
+    it('should round-trip: FilePath → resolve → reverseResolve → FilePath', async () => {
       const original = resolver.PathFor('test1', 'mods/SkyUI/interface/skyui.swf');
 
       // Forward: FilePath → OS path
       const osPath = await original.resolve();
 
       // Reverse: OS path → FilePath
-      const reconstructed = await registry.fromResolved(osPath);
+      const reconstructed = await reverseResolve(osPath, [resolver]);
 
       expect(reconstructed).not.toBeNull();
 
@@ -516,12 +479,9 @@ describe('Reverse Resolution', () => {
 
   describe('Integration: Complex path manipulations', () => {
     let resolver: TestResolver;
-    let registry: ResolverRegistry;
 
     beforeEach(() => {
       resolver = new TestResolver();
-      registry = new ResolverRegistry();
-      registry.register(resolver);
     });
 
     it('should handle backup scenario', async () => {
@@ -561,7 +521,7 @@ describe('Reverse Resolution', () => {
 
       // Convert back to FilePath objects
       const filePaths = await Promise.all(
-        discoveredFiles.map(file => registry.fromResolved(file))
+        discoveredFiles.map(file => reverseResolve(file, [resolver]))
       );
 
       expect(filePaths).toHaveLength(2);

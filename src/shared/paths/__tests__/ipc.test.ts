@@ -9,7 +9,6 @@ import type { IResolver } from '../IResolver';
 
 import { FilePath } from '../FilePath';
 import { FilePathIPC, SerializedFilePathSchema } from '../ipc';
-import { ResolverRegistry } from '../ResolverRegistry';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Mock resolver for testing
@@ -36,17 +35,22 @@ class TestResolver implements IResolver {
       this,
     );
   }
+
+  async tryReverse(): Promise<{ anchor: Anchor; relative: RelativePath } | null> {
+    return null;
+  }
+
+  async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
+    return new Map();
+  }
 }
 
 describe('FilePathIPC', () => {
   let resolver: TestResolver;
-  let registry: ResolverRegistry;
   let filePath: FilePath;
 
   beforeEach(() => {
     resolver = new TestResolver();
-    registry = new ResolverRegistry();
-    registry.register(resolver);
 
     filePath = new FilePath(
       RelativePath.make('mods/skyrim'),
@@ -67,45 +71,6 @@ describe('FilePathIPC', () => {
     });
   });
 
-  describe('deserialize', () => {
-    test('deserializes FilePath from JSON', () => {
-      const serialized = {
-        relative: 'mods/skyrim',
-        anchor: 'testAnchor',
-        resolverName: 'test',
-      };
-
-      const deserialized = FilePathIPC.deserialize(serialized, registry);
-
-      expect(deserialized.relative).toBe('mods/skyrim');
-      expect(Anchor.name(deserialized.anchor)).toBe('testAnchor');
-      expect(deserialized.resolver).toBe(resolver);
-    });
-
-    test('throws if resolver not found', () => {
-      const serialized = {
-        relative: 'mods',
-        anchor: 'testAnchor',
-        resolverName: 'nonexistent',
-      };
-
-      expect(() => {
-        FilePathIPC.deserialize(serialized, registry);
-      }).toThrow(/not found/);
-    });
-
-    test('validates input with Zod schema', () => {
-      const invalid = {
-        relative: '../invalid',
-        anchor: 'testAnchor',
-        resolverName: 'test',
-      };
-
-      expect(() => {
-        FilePathIPC.deserialize(invalid, registry);
-      }).toThrow();
-    });
-  });
 
   describe('serializeResolved', () => {
     test('resolves and serializes to string', async () => {
@@ -115,7 +80,7 @@ describe('FilePathIPC', () => {
     });
   });
 
-  describe('serializeMany and deserializeMany', () => {
+  describe('serializeMany', () => {
     test('serializes array of FilePaths', () => {
       const paths = [
         resolver.PathFor('testAnchor', 'mods'),
@@ -127,19 +92,6 @@ describe('FilePathIPC', () => {
       expect(serialized).toHaveLength(2);
       expect(serialized[0].relative).toBe('mods');
       expect(serialized[1].relative).toBe('downloads');
-    });
-
-    test('deserializes array of FilePaths', () => {
-      const serialized = [
-        { relative: 'mods', anchor: 'testAnchor', resolverName: 'test' },
-        { relative: 'downloads', anchor: 'testAnchor', resolverName: 'test' },
-      ];
-
-      const deserialized = FilePathIPC.deserializeMany(serialized, registry);
-
-      expect(deserialized).toHaveLength(2);
-      expect(deserialized[0].relative).toBe('mods');
-      expect(deserialized[1].relative).toBe('downloads');
     });
   });
 

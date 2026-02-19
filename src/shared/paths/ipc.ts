@@ -9,10 +9,9 @@
 // eslint-disable-next-line vortex/no-module-imports
 import { z } from 'zod';
 
-import type { IResolverRegistry, SerializedFilePath } from './IResolver';
+import type { SerializedFilePath } from './IResolver';
 
 import { FilePath } from './FilePath';
-import { RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
 import { RelativePathSchema } from './types';
 
 /**
@@ -53,51 +52,6 @@ export namespace FilePathIPC {
     return filePath.toJSON();
   }
 
-  /**
-   * Deserialize FilePath after receiving from IPC
-   *
-   * Requires access to resolver registry on the receiving side.
-   * The resolver must be registered in the registry before deserialization.
-   *
-   * @param serialized - Serialized FilePath data
-   * @param registry - Resolver registry to look up resolvers
-   * @returns Reconstructed FilePath instance
-   * @throws Error if resolver not found in registry
-   * @throws Error if serialized data is invalid
-   *
-   * @example
-   * ```typescript
-   * // Renderer process
-   * ipcRenderer.on('path-data', (event, serialized) => {
-   *   // Validate with Zod
-   *   const validated = SerializedFilePathSchema.parse(serialized);
-   *
-   *   // Recreate FilePath with explicit registry
-   *   const filePath = FilePathIPC.deserialize(validated, myRegistry);
-   *
-   *   // Use it
-   *   const resolved = await filePath.resolve();
-   *   console.log(resolved); // C:\Users\...\mods
-   * });
-   * ```
-   */
-  export function deserialize(
-    serialized: SerializedFilePath,
-    registry: IResolverRegistry,
-  ): FilePath {
-    // Validate input
-    const validated = SerializedFilePathSchema.parse(serialized);
-
-    // Look up resolver
-    const resolver = registry.getOrThrow(validated.resolverName);
-
-    // Reconstruct FilePath
-    return new FilePath(
-      RelativePathNS.unsafe(validated.relative),
-      AnchorNS.make(validated.anchor),
-      resolver,
-    );
-  }
 
   /**
    * Alternative: Resolve to ResolvedPath before sending
@@ -149,27 +103,6 @@ export namespace FilePathIPC {
     return filePaths.map(serialize);
   }
 
-  /**
-   * Deserialize an array of FilePath objects
-   *
-   * @param serialized - Array of serialized FilePath objects
-   * @param registry - Resolver registry to look up resolvers
-   * @returns Array of reconstructed FilePath instances
-   *
-   * @example
-   * ```typescript
-   * ipcRenderer.on('paths', (event, serialized) => {
-   *   const filePaths = FilePathIPC.deserializeMany(serialized, myRegistry);
-   *   // Use the paths...
-   * });
-   * ```
-   */
-  export function deserializeMany(
-    serialized: SerializedFilePath[],
-    registry: IResolverRegistry,
-  ): FilePath[] {
-    return serialized.map(s => deserialize(s, registry));
-  }
 
   /**
    * Resolve and serialize many FilePath objects

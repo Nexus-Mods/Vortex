@@ -124,36 +124,6 @@ export interface IResolver<ValidAnchors extends string = string> {
   getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
 }
 
-/**
- * Interface for resolver registry
- * Manages resolver instances and provides lookup by name
- */
-export interface IResolverRegistry {
-  /**
-   * Register a resolver instance
-   */
-  register(resolver: IResolver): void;
-
-  /**
-   * Get resolver by name (returns undefined if not found)
-   */
-  get(name: string): IResolver | undefined;
-
-  /**
-   * Get resolver by name (throws if not found)
-   */
-  getOrThrow(name: string): IResolver;
-
-  /**
-   * Set the default resolver for the registry
-   */
-  setDefault(resolver: IResolver): void;
-
-  /**
-   * Get the default resolver (throws if not set)
-   */
-  getDefault(): IResolver;
-}
 
 /**
  * Serializable representation of FilePath for IPC

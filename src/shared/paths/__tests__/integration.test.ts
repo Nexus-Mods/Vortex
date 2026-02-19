@@ -7,7 +7,6 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { FilePath } from '../FilePath';
 import { FilePathIPC } from '../ipc';
-import { ResolverRegistry } from '../ResolverRegistry';
 import { BaseResolver } from '../resolvers/BaseResolver';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
@@ -75,15 +74,10 @@ class GameResolver extends BaseResolver<'game' | 'gameMods'> {
 describe('Integration Tests', () => {
   let appResolver: AppResolver;
   let gameResolver: GameResolver;
-  let registry: ResolverRegistry;
 
   beforeEach(() => {
     appResolver = new AppResolver();
     gameResolver = new GameResolver();
-    registry = new ResolverRegistry();
-    registry.register(appResolver);
-    registry.register(gameResolver);
-    registry.setDefault(gameResolver);
   });
 
   describe('path operations', () => {
@@ -107,8 +101,8 @@ describe('Integration Tests', () => {
     });
   });
 
-  describe('IPC serialization round-trip', () => {
-    test('serialize, send, and deserialize FilePath', async () => {
+  describe('IPC serialization', () => {
+    test('serialize FilePath to JSON', async () => {
       // Original path
       const original = gameResolver.PathFor('game', 'mods/skyrim');
 
@@ -119,12 +113,6 @@ describe('Integration Tests', () => {
         anchor: 'game',
         resolverName: 'game',
       });
-
-      // Deserialize (as if receiving from IPC)
-      const deserialized = FilePathIPC.deserialize(serialized, registry);
-
-      // Should resolve to same path
-      expect(await deserialized.resolve()).toBe(await original.resolve());
     });
 
     test('serialize resolved paths for simple IPC', async () => {
@@ -189,33 +177,6 @@ describe('Integration Tests', () => {
     });
   });
 
-  describe('registry management', () => {
-    test('register and retrieve resolvers', () => {
-      expect(registry.get('app')).toBe(appResolver);
-      expect(registry.get('game')).toBe(gameResolver);
-      expect(registry.get('nonexistent')).toBeUndefined();
-    });
-
-    test('default resolver', () => {
-      expect(registry.getDefault()).toBe(gameResolver);
-      expect(registry.hasDefault()).toBe(true);
-    });
-
-    test('unregister resolvers', () => {
-      expect(registry.unregister('app')).toBe(true);
-      expect(registry.get('app')).toBeUndefined();
-      expect(registry.unregister('app')).toBe(false);
-    });
-
-    test('get stats', () => {
-      const stats = registry.getStats();
-      expect(stats.totalResolvers).toBe(2);
-      expect(stats.resolverNames).toContain('app');
-      expect(stats.resolverNames).toContain('game');
-      expect(stats.hasDefault).toBe(true);
-      expect(stats.defaultName).toBe('game');
-    });
-  });
 
   describe('real-world scenario: mod installation', () => {
     test('resolve mod installation paths', async () => {
@@ -232,22 +193,16 @@ describe('Integration Tests', () => {
       expect(await installPath.resolve()).toBe('/games/skyrim/Data/skyui');
     });
 
-    test('track mod file paths', async () => {
+    test('track mod file paths with resolved serialization', async () => {
       const modFiles = [
         gameResolver.PathFor('gameMods', 'skyui/interface/skyui.swf'),
         gameResolver.PathFor('gameMods', 'skyui/scripts/skyui.pex'),
         gameResolver.PathFor('gameMods', 'skyui/skse/plugins/skyui.dll'),
       ];
 
-      // Serialize for storage
-      const serialized = FilePathIPC.serializeMany(modFiles);
-      expect(serialized).toHaveLength(3);
-
-      // Later, deserialize and resolve
-      const deserialized = FilePathIPC.deserializeMany(serialized, registry);
-      const resolved = await Promise.all(
-        deserialized.map(p => p.resolve())
-      );
+      // Serialize to resolved paths for simple IPC
+      const resolved = await FilePathIPC.serializeManyResolved(modFiles);
+      expect(resolved).toHaveLength(3);
 
       expect(resolved[0]).toBe('/games/skyrim/Data/skyui/interface/skyui.swf');
       expect(resolved[1]).toBe('/games/skyrim/Data/skyui/scripts/skyui.pex');

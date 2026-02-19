@@ -9,18 +9,19 @@
  *   VortexResolver,
  *   FilePath,
  *   RelativePath,
- *   ResolverRegistry,
+ *   reverseResolve,
  * } from './shared/paths';
  *
- * // Create registry and resolver
- * const registry = new ResolverRegistry();
+ * // Create resolver
  * const resolver = new VortexResolver();
- * registry.setDefault(resolver);
  *
  * // Create paths
  * const modsPath = resolver.PathFor('userData', 'mods');
  * const resolved = await modsPath.resolve();
  * console.log(resolved); // C:\Users\...\mods
+ *
+ * // Reverse resolve OS paths
+ * const discovered = await reverseResolve(osPath, [resolver]);
  * ```
  */
 
@@ -64,12 +65,8 @@ export {
 } from './ipc';
 export type {
   IResolver,
-  IResolverRegistry,
   SerializedFilePath,
 } from './IResolver';
-export {
-  ResolverRegistry,
-} from './ResolverRegistry';
 
 // ============================================================================
 // Resolver Base Classes
@@ -115,7 +112,16 @@ export {
 } from './resolvers/WindowsResolver';
 
 // ============================================================================
-// Resolver Registry
+// Utility Functions
+// ============================================================================
+
+export {
+  reverseResolve,
+  findAllMatches,
+} from './utils';
+
+// ============================================================================
+// Branded Types
 // ============================================================================
 
 export {

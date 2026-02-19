@@ -8,7 +8,6 @@ import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 import type { IResolver } from '../IResolver';
 
 import { FilePath } from '../FilePath';
-import { ResolverRegistry } from '../ResolverRegistry';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Mock resolver for testing
@@ -179,36 +178,6 @@ describe('FilePath', () => {
       });
     });
 
-    test('fromJSON deserializes FilePath', () => {
-      const json = {
-        relative: 'mods/skyrim',
-        anchor: 'test',
-        resolverName: 'mock',
-      };
-
-      const registry = new ResolverRegistry();
-      registry.register(resolver);
-
-      const filePath = FilePath.fromJSON(json, registry);
-
-      expect(filePath.relative).toBe('mods/skyrim');
-      expect(Anchor.name(filePath.anchor)).toBe('test');
-      expect(filePath.resolver).toBe(resolver);
-    });
-
-    test('fromJSON throws if resolver not found', () => {
-      const json = {
-        relative: 'mods',
-        anchor: 'test',
-        resolverName: 'nonexistent',
-      };
-
-      const registry = new ResolverRegistry();
-
-      expect(() => {
-        FilePath.fromJSON(json, registry);
-      }).toThrow(/not found/);
-    });
   });
 
   describe('debugging', () => {
