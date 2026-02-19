@@ -35,7 +35,6 @@ import type * as stream from "stream";
 import * as zlib from "zlib";
 import type { IExtensionApi } from "../../types/api";
 
-import { simulateHttpError } from "./debug/simulateHttpError";
 import {
   getErrorMessageOrDefault,
   unknownToError,
