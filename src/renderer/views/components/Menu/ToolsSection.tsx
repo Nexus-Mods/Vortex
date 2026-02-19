@@ -3,8 +3,8 @@ import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useWindowContext } from "../../../contexts";
-import { Button } from "../../../tailwind/components/next/button";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { Button } from "../../../ui/components/button/Button";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 import { ToolButton } from "./ToolButton";
 import { useToolsContext } from "./ToolsContext";
 

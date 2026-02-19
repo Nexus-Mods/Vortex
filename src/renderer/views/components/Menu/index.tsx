@@ -10,7 +10,7 @@ import { useDispatch } from "react-redux";
 
 import { setOpenMainPage } from "../../../actions";
 import { usePagesContext, useWindowContext } from "../../../contexts";
-import { joinClasses } from "../../../tailwind/components/next/utils";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 import { getIconPath } from "../iconMap";
 import { useSpineContext } from "../Spine/SpineContext";
 import { MenuButton } from "./MenuButton";

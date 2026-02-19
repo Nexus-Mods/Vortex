@@ -13,12 +13,10 @@ import type { IActionDefinition } from "../../../types/IActionDefinition";
 
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
-import {
-  Dropdown,
-  DropdownDivider,
-  DropdownItem,
-  DropdownItems,
-} from "../../../tailwind/components/dropdown";
+import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
+import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
+import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
 import { IconButton } from "./IconButton";
 import { useGlobalIconActions } from "./useGlobalIconActions";
 

@@ -1,0 +1,139 @@
+@layer components {
+    .nxm-tab-bar {
+        & .nxm-tab-bar-scroller {
+            display: flex;
+            overflow-x: auto;
+            margin-inline: calc(var(--spacing) * -1);
+            padding-inline: calc(var(--spacing) * 1);
+        }
+    }
+
+    .nxm-tab-button {
+        position: relative;
+
+        transition-property:
+            color, background-color, border-color, outline-color, fill, stroke,
+            opacity, pointer-events;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        & .nxm-tab-button-content {
+            display: flex;
+            align-items: center;
+            column-gap: calc(var(--spacing) * 1);
+        }
+
+        &.nxm-tab-button-disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        &:is(a, :enabled):not(.nxm-button-disabled) {
+            cursor: pointer;
+        }
+    }
+
+    .nxm-tab-bar-primary {
+        position: relative;
+
+        &::after {
+            bottom: 0;
+            content: "";
+            width: 100%;
+            height: 1px;
+            position: absolute;
+            inset-inline: calc(var(--spacing) * 1);
+            background-color: var(--color-stroke-subdued);
+        }
+
+        & .nxm-tab-bar-scroller {
+            column-gap: calc(var(--spacing) * 6);
+        }
+
+        & .nxm-tab-button {
+            outline: none;
+            color: var(--color-neutral-subdued);
+            border-bottom: solid 1px transparent;
+
+            padding-top: calc(var(--spacing) * 1);
+            padding-bottom: calc(var(--spacing) * 2);
+
+            & .nxm-tab-button-content {
+                white-space: nowrap;
+                font-size: var(--text-body-md);
+                line-height: var(--text-body-md--line-height);
+                letter-spacing: var(--text-body-md--letter-spacing);
+                border-radius: calc(var(--spacing) * 0.5);
+
+                & .nxm-tab-button-count {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    font-size: var(--text-body-sm);
+                    line-height: var(--text-body-sm--line-height);
+                    letter-spacing: var(--text-body-sm--letter-spacing);
+
+                    color: var(--color-neutral-subdued);
+                    background-color: var(--color-surface-mid);
+
+                    border-radius: calc(infinity * 1px);
+                    min-height: calc(var(--spacing) * 4.5);
+                    padding-inline: calc(var(--spacing) * 1.5);
+                }
+            }
+
+            &:focus-visible {
+                & .nxm-tab-button-content {
+                    outline: var(--color-info-subdued) solid
+                        calc(var(--spacing) * 0.5);
+                    outline-offset: calc(var(--spacing) * 0.5);
+                }
+            }
+
+            &.nxm-tab-button-selected {
+                color: var(--color-neutral-strong);
+                border-color: var(--color-primary-moderate);
+            }
+
+            &:is(a, :enabled):not(.nxm-button-disabled):hover {
+                color: var(--color-neutral-moderate);
+            }
+        }
+    }
+
+    .nxm-tab-bar-secondary {
+        & .nxm-tab-bar-scroller {
+            column-gap: calc(var(--spacing) * 1);
+            margin-block: calc(var(--spacing) * -1);
+            padding-block: calc(var(--spacing) * 1);
+        }
+
+        & .nxm-tab-button {
+            color: var(--color-neutral-subdued);
+
+            white-space: nowrap;
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
+
+            min-height: calc(var(--spacing) * 7);
+            border-radius: calc(var(--spacing) * 1);
+            padding-inline: calc(var(--spacing) * 2);
+
+            &.nxm-tab-button-disabled {
+                color: var(--color-neutral-weak);
+            }
+
+            &.nxm-tab-button-selected {
+                color: var(--color-neutral-moderate);
+                background-color: var(--color-surface-mid);
+            }
+
+            &:is(a, :enabled):not(.nxm-button-disabled):hover {
+                color: var(--color-neutral-strong);
+                background-color: var(--color-surface-high);
+            }
+        }
+    }
+}

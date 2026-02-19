@@ -7,6 +7,7 @@ import {
   mdiHelpCircle,
   mdiInformationOutline,
   mdiMenu,
+  mdiPalette,
   mdiPuzzle,
   mdiShapeOutline,
   mdiTune,
@@ -27,6 +28,7 @@ const iconMap: Record<string, string> = {
   show: mdiEye,
   feedback: mdiCommentTextOutline,
   nexus: mdiWeb,
+  palette: mdiPalette,
   tune: mdiTune,
 };
 

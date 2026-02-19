@@ -2,7 +2,7 @@ import { mdiCogOutline, mdiClose } from "@mdi/js";
 import React, { type FC, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "../../../../tailwind/components/next/button";
+import { Button } from "../../../../ui/components/button/Button";
 
 interface NotificationControlsProps {
   noDismiss?: boolean;

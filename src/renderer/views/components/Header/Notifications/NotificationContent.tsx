@@ -1,6 +1,6 @@
 import React, { type FC } from "react";
 
-import { Typography } from "../../../../tailwind/components/next/typography";
+import { Typography } from "../../../../ui/components/typography/Typography";
 
 interface NotificationContentProps {
   title?: string;
