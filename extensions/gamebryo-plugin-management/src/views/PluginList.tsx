@@ -150,7 +150,7 @@ class GroupSelect extends React.PureComponent<IGroupSelectProps, IGroupSelectSta
     }
 
     const existingOptions = Array.from(new Set([]
-        .concat(masterlist.groups, userlist.groups)
+        .concat(masterlist.groups || [], userlist.groups || [])
         .filter(iter => iter !== undefined)
         .map(iter => iter.name)))
       .map(iter => ({ label: iter, value: iter }));
@@ -1133,8 +1133,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private setGroup = (plugin: string, group: string) => {
     const { onAddGroup, onAddGroupRule, onSetGroup, masterlist, userlist } = this.props;
     if ((group !== undefined)
-      && (masterlist.groups.find(iter => iter.name === group) === undefined)
-      && (userlist.groups.find(iter => iter.name === group) === undefined)) {
+      && ((masterlist.groups || []).find(iter => iter.name === group) === undefined)
+      && ((userlist.groups || []).find(iter => iter.name === group) === undefined)) {
       onAddGroup(group);
       onAddGroupRule(group, 'default');
     }
