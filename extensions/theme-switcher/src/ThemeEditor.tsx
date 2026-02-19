@@ -599,9 +599,10 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDashletHeight(theme: { [name: string]: string }) {
-    if (theme["dashlet-height"] !== undefined) {
-      this.nextState.dashletHeight = parseInt(theme["dashlet-height"], 10);
-    }
+    this.nextState.dashletHeight =
+      theme["dashlet-height"] !== undefined
+        ? parseInt(theme["dashlet-height"], 10)
+        : defaultTheme.dashletHeight;
   }
 
   private setDark(theme: { [name: string]: string }) {
