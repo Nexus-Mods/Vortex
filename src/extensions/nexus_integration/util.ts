@@ -1273,7 +1273,12 @@ function endorseCollectionImpl(
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusCollectionId: number = mod.attributes.collectionId;
+  const nexusCollectionId: number | undefined = mod.attributes?.collectionId ? parseInt(String(mod.attributes.collectionId), 10) : undefined;
+
+  if (nexusCollectionId === undefined) {
+    log("warn", "tried to endorse collection with no nexus collection id", { gameId, modId: mod.id });
+    return;
+  }
 
   store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
@@ -1307,7 +1312,11 @@ function endorseModImpl(
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusModId: number = mod.attributes.modId;
+  const nexusModId: number | undefined = mod.attributes?.modId ? parseInt(String(mod.attributes.modId), 10) : undefined;
+  if (nexusModId === undefined) {
+    log("warn", "tried to endorse mod with no nexus mod id", { gameId, modId: mod.id });
+    return;
+  }
   const version: string =
     getSafe(mod.attributes, ["version"], undefined) ||
     getSafe(mod.attributes, ["modVersion"], undefined);
