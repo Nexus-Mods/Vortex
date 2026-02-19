@@ -13,11 +13,12 @@ import type {
   Ref,
 } from "react";
 import { createElement } from "react";
-import type { ResponsiveScreenSizes } from "../utils";
-import { joinClasses } from "../utils";
-import type { IconSize } from "../icon";
-import { Icon } from "../icon";
-import type { XOr } from "../utils";
+
+import type { ResponsiveScreenSizes, XOr } from "../../utils/types";
+import type { IconSize } from "../icon/Icon";
+
+import { joinClasses } from "../../utils/joinClasses";
+import { Icon } from "../icon/Icon";
 
 export type TypographyTypes =
   | "heading-2xl"

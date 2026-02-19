@@ -167,9 +167,7 @@ export const ButtonDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button size="sm">
-            Responsive (sm on mobile, md on desktop)
-          </Button>
+          <Button size="sm">Responsive (sm on mobile, md on desktop)</Button>
         </div>
       </div>
 

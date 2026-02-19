@@ -44,9 +44,7 @@ export const FeedbackModal = ({
             onChange={(e) => {
               const isChecked = e.target.checked;
               setCheckedOptions((prev) =>
-                isChecked
-                  ? [...prev, key]
-                  : prev.filter((o) => o !== key),
+                isChecked ? [...prev, key] : prev.filter((o) => o !== key),
               );
             }}
           >

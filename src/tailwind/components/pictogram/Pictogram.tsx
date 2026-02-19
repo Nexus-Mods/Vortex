@@ -1,6 +1,6 @@
 import React from "react";
 import type { HTMLAttributes } from "react";
-import { joinClasses } from "../../../renderer/tailwind/components/next/utils";
+import { joinClasses } from "../../../renderer/ui/utils/joinClasses";
 
 /* eslint-disable sort-keys */
 const sizeMap = {
