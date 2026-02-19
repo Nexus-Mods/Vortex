@@ -8,7 +8,7 @@ import React, {
   type ReactNode,
 } from "react";
 
-import { getTabId } from "../../utils/get_tab_id";
+import { getTabId } from "../../utils/getTabId";
 
 /**
  * Arguments for the register tab method

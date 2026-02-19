@@ -1,7 +1,7 @@
 import { Menu } from "@headlessui/react";
 import { type ComponentProps } from "react";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 
 // needs updating to headless v2 so we can have dynamic positioning and proper z-index usage
 

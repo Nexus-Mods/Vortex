@@ -1,9 +1,9 @@
 import numeral from "numeral";
 import React, { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 
-import { getTabId } from "../../../utils/get_tab_id";
-import { joinClasses } from "../../../utils/join_classes";
-import { useTabContext } from "../tabs.context";
+import { getTabId } from "../../utils/getTabId";
+import { joinClasses } from "../../utils/joinClasses";
+import { useTabContext } from "./tabs.context";
 
 export type TabButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   count?: number;

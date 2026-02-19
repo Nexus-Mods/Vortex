@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { PREMIUM_PATH } from "../../../../extensions/nexus_integration/constants";
-import { Button } from "../../../ui/components/button";
-import { Typography } from "../../../ui/components/typography";
+import { Button } from "../../../ui/components/button/Button";
+import { Typography } from "../../../ui/components/typography/Typography";
 import opn from "../../../util/opn";
 import { isPremium as isPremiumSelector } from "../../../util/selectors";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";

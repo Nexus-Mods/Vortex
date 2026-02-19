@@ -1,1 +1,0 @@
-export { getTabId } from "./getTabId";

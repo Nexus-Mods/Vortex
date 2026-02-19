@@ -9,7 +9,7 @@ import React, { type ComponentType } from "react";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 
-import { Typography } from "../typography";
+import { Typography } from "../typography/Typography";
 import { CollectionTile } from "./CollectionTile";
 
 export interface ICollectionTileDemoProps {

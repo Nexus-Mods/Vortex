@@ -13,8 +13,8 @@ import {
 } from "@mdi/js";
 import React, { useCallback } from "react";
 
-import { Button } from "../button";
-import { Typography } from "../typography";
+import { Button } from "../button/Button";
+import { Typography } from "../typography/Typography";
 import { Dropdown } from "./Dropdown";
 import { DropdownDivider } from "./DropdownDivider";
 import { DropdownItem } from "./DropdownItem";

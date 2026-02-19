@@ -20,11 +20,11 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import Debouncer from "../../../util/Debouncer";
 import { isCollectionModPresent } from "../../../util/selectors";
 import { delayed } from "../../../util/util";
-import { nxmFileSize, nxmMod } from "../../lib/icon_paths";
-import { joinClasses } from "../../utils/join_classes";
-import { Button } from "../button";
-import { Icon } from "../icon";
-import { Typography } from "../typography";
+import { nxmFileSize, nxmMod } from "../../lib/icon_paths/icon-paths";
+import { joinClasses } from "../../utils/joinClasses";
+import { Button } from "../button/Button";
+import { Icon } from "../icon/Icon";
+import { Typography } from "../typography/Typography";
 
 const debouncer = new Debouncer(
   (func: () => void) => {

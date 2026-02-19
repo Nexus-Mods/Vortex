@@ -1,6 +1,6 @@
 import React, { type SVGAttributes } from "react";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 

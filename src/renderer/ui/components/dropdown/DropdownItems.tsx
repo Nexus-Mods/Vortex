@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 
 import { Menu } from "@headlessui/react";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 
 export const DropdownItems = ({
   className,

@@ -12,7 +12,7 @@ import {
   nxmEpicGames,
 } from "../../../ui/lib/icon_paths/icon-paths";
 // import { Icon } from "../../../tailwind/components/next/icon";
-import { joinClasses } from "../../../ui/utils/join_classes";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 
 // Fallback for stores without specific icons
 const _DEFAULT_STORE_ICON = mdiHelp;

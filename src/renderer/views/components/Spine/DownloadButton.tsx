@@ -6,9 +6,9 @@ import type { DownloadState } from "../../../../extensions/download_management/t
 import type { IState } from "../../../types/IState";
 
 import { setOpenMainPage } from "../../../actions/session";
-import { Icon } from "../../../ui/components/icon";
-import { Typography } from "../../../ui/components/typography";
-import { joinClasses } from "../../../ui/utils/join_classes";
+import { Icon } from "../../../ui/components/icon/Icon";
+import { Typography } from "../../../ui/components/typography/Typography";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 import { mainPage as mainPageSelector } from "../../../util/selectors";
 import { useSpineContext } from "./SpineContext";
 

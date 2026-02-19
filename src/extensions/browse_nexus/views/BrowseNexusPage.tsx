@@ -13,23 +13,19 @@ import { useSelector } from "react-redux";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
 
-import { Button } from "../../../renderer/ui/components/button";
-import {
-  CollectionTile,
-  CollectionTileSkeleton,
-} from "../../../renderer/ui/components/collectiontile";
-import { Input } from "../../../renderer/ui/components/form";
-import { Listing } from "../../../renderer/ui/components/listing";
-import { NoResults } from "../../../renderer/ui/components/no_results";
+import { Button } from "../../../renderer/ui/components/button/Button";
+import { CollectionTile } from "../../../renderer/ui/components/collectiontile/CollectionTile";
+import { CollectionTileSkeleton } from "../../../renderer/ui/components/collectiontile/CollectionTileSkeleton";
+import { Input } from "../../../renderer/ui/components/form/input/Input";
+import { Listing } from "../../../renderer/ui/components/listing/Listing";
+import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
 import { Pagination } from "../../../renderer/ui/components/pagination/Pagination";
-import { Picker } from "../../../renderer/ui/components/picker";
-import {
-  TabBar,
-  TabButton,
-  TabPanel,
-  TabProvider,
-} from "../../../renderer/ui/components/tabs";
-import { Typography } from "../../../renderer/ui/components/typography";
+import { Picker } from "../../../renderer/ui/components/picker/Picker";
+import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
+import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
+import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
+import { Typography } from "../../../renderer/ui/components/typography/Typography";
 import { UserCanceled } from "../../../renderer/util/api";
 import { getPreloadApi } from "../../../renderer/util/preloadAccess";
 import { activeGameId } from "../../../renderer/util/selectors";

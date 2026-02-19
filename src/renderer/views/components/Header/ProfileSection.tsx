@@ -21,13 +21,11 @@ import {
 import { NEXUS_BASE_URL } from "../../../../extensions/nexus_integration/constants";
 import { setDialogVisible } from "../../../actions/session";
 import { useExtensionContext } from "../../../ExtensionProvider";
-import {
-  Dropdown,
-  DropdownDivider,
-  DropdownItem,
-  DropdownItems,
-} from "../../../ui/components/dropdown";
-import { Icon } from "../../../ui/components/icon";
+import { Dropdown } from "../../../ui/components/dropdown/Dropdown";
+import { DropdownDivider } from "../../../ui/components/dropdown/DropdownDivider";
+import { DropdownItem } from "../../../ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "../../../ui/components/dropdown/DropdownItems";
+import { Icon } from "../../../ui/components/icon/Icon";
 import opn from "../../../util/opn";
 import {
   isLoggedIn as isLoggedInSelector,

@@ -5,8 +5,8 @@ import React, {
   type ReactNode,
 } from "react";
 
-import { ListingLoader } from "../listing_loader";
-import { NoResults } from "../no_results";
+import { ListingLoader } from "../listing_loader/ListingLoader";
+import { NoResults } from "../no_results/NoResults";
 
 export const Listing = ({
   additionalContent,

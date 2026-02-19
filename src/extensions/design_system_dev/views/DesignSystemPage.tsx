@@ -8,22 +8,21 @@ import React, { useState } from "react";
 
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 
-import { ButtonDemo } from "../../../renderer/ui/components/button";
-import { CollectionTileDemo } from "../../../renderer/ui/components/collectiontile";
-import { DropdownDemo } from "../../../renderer/ui/components/dropdown";
-import { InputDemo, SelectDemo } from "../../../renderer/ui/components/form";
-import { IconDemo } from "../../../renderer/ui/components/icon";
-import { ListingDemo } from "../../../renderer/ui/components/listing";
-import { PaginationDemo } from "../../../renderer/ui/components/pagination";
-import { PickerDemo } from "../../../renderer/ui/components/picker";
-import {
-  TabBar,
-  TabButton,
-  TabPanel,
-  TabProvider,
-} from "../../../renderer/ui/components/tabs";
+import { ButtonDemo } from "../../../renderer/ui/components/button/ButtonDemo";
+import { CollectionTileDemo } from "../../../renderer/ui/components/collectiontile/CollectionTileDemo";
+import { DropdownDemo } from "../../../renderer/ui/components/dropdown/DropdownDemo";
+import { InputDemo } from "../../../renderer/ui/components/form/input/InputDemo";
+import { SelectDemo } from "../../../renderer/ui/components/form/select/SelectDemo";
+import { IconDemo } from "../../../renderer/ui/components/icon/IconDemo";
+import { ListingDemo } from "../../../renderer/ui/components/listing/ListingDemo";
+import { PaginationDemo } from "../../../renderer/ui/components/pagination/PaginationDemo";
+import { PickerDemo } from "../../../renderer/ui/components/picker/PickerDemo";
+import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
+import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
+import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
 import { TabsDemo } from "../../../renderer/ui/components/tabs/TabsDemo";
-import { Typography } from "../../../renderer/ui/components/typography";
+import { Typography } from "../../../renderer/ui/components/typography/Typography";
 import { TypographyDemo } from "../../../renderer/ui/components/typography/TypographyDemo";
 import MainPage from "../../../renderer/views/MainPage";
 

@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 
-import { getTabId } from "../../../utils/get_tab_id";
-import { useTabContext } from "../tabs.context";
+import { getTabId } from "../../utils/getTabId";
+import { useTabContext } from "./tabs.context";
 
 /**
  * Tab Content component acts as a wrapper that shows/hides content

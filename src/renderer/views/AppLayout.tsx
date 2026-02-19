@@ -14,7 +14,7 @@ import {
   WindowProvider,
 } from "../contexts";
 import Spinner from "../controls/Spinner";
-import { Button } from "../ui/components/button";
+import { Button } from "../ui/components/button/Button";
 import { MutexProvider } from "../util/MutexContext";
 import { ClassicLayout, ModernLayout } from "./layout";
 

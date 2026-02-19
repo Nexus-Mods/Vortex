@@ -2,8 +2,8 @@ import React, { useState, type FormEvent } from "react";
 
 import type { PaginationProps } from "./Pagination";
 
-import { Button } from "../button";
-import { Input } from "../form";
+import { Button } from "../button/Button";
+import { Input } from "../form/input/Input";
 
 export const JumpToPage = ({
   currentPage,

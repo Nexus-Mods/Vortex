@@ -7,8 +7,8 @@
 
 import React, { type HTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { joinClasses } from "../../../utils/join_classes";
-import { Typography, type TypographyTypes } from "../../typography";
+import { joinClasses } from "../../../utils/joinClasses";
+import { Typography, type TypographyTypes } from "../../typography/Typography";
 
 export interface BaseFormFieldProps {
   /**

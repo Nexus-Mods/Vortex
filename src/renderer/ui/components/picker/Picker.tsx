@@ -1,12 +1,9 @@
 import React from "react";
 
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  type IListboxOption,
-  ListboxOptions,
-} from "../listbox";
+import { Listbox } from "../listbox/Listbox";
+import { ListboxButton } from "../listbox/ListboxButton";
+import { ListboxOption, type IListboxOption } from "../listbox/ListboxOption";
+import { ListboxOptions } from "../listbox/ListboxOptions";
 
 // todo placement prop should be removed when you use headless ui v2
 

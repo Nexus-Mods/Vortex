@@ -11,8 +11,8 @@ import type {
   NotificationType,
 } from "../../../../types/INotification";
 
-import { Icon } from "../../../../ui/components/icon";
-import { joinClasses } from "../../../../ui/utils/join_classes";
+import { Icon } from "../../../../ui/components/icon/Icon";
+import { joinClasses } from "../../../../ui/utils/joinClasses";
 import { NotificationActions } from "./NotificationActions";
 import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";

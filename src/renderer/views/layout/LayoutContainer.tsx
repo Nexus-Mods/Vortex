@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import type { IState } from "../../types/IState";
 
 import { useMenuLayerContext, useWindowContext } from "../../contexts";
-import { joinClasses } from "../../ui/utils/join_classes";
+import { joinClasses } from "../../ui/utils/joinClasses";
 import startupSettings from "../../util/startupSettings";
 
 export interface ILayoutContainerProps {

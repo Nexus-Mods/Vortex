@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 
 export const DropdownDivider = ({
   className,

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { INotificationAction } from "../../../../types/INotification";
 
-import { Button } from "../../../../ui/components/button";
+import { Button } from "../../../../ui/components/button/Button";
 
 interface NotificationActionsProps {
   actions?: INotificationAction[];

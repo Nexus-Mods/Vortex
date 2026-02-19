@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../../typography";
+import { Typography } from "../../typography/Typography";
 import { Input } from "./Input";
 
 export const InputDemo = () => {

@@ -6,7 +6,7 @@
 import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 import React, { useState } from "react";
 
-import { Typography } from "../typography";
+import { Typography } from "../typography/Typography";
 import { Button } from "./Button";
 
 export const ButtonDemo = () => {

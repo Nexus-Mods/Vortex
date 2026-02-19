@@ -9,7 +9,7 @@ import { createElement, type AllHTMLAttributes, type Ref } from "react";
 
 import type { ResponsiveScreenSizes } from "../../utils/types";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 
 export type TypographyTypes =
   | "heading-2xl"

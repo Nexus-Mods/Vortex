@@ -20,8 +20,8 @@ import {
   nxmMod,
   nxmRosette,
   nxmVortex,
-} from "../../lib/icon_paths";
-import { Typography } from "../typography";
+} from "../../lib/icon_paths/icon-paths";
+import { Typography } from "../typography/Typography";
 import { Icon } from "./Icon";
 
 const mdiIcons = [

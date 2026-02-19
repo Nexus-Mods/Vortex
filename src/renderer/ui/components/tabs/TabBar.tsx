@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 
-import { joinClasses } from "../../../utils/join_classes";
-import { useTabContext } from "../tabs.context";
+import { joinClasses } from "../../utils/joinClasses";
+import { useTabContext } from "./tabs.context";
 
 /**
  * Tab Bar component acts as a styling wrapper (and tablist role) for tabs

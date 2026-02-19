@@ -9,14 +9,13 @@
 import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 import React, {
   type ButtonHTMLAttributes,
-  type MutableRefObject,
+  forwardRef,
   type ReactNode,
-  type Ref,
 } from "react";
 
-import { joinClasses } from "../../utils/join_classes";
+import { joinClasses } from "../../utils/joinClasses";
 import type { XOr } from "../../utils/types";
-import { Icon } from "../icon";
+import { Icon } from "../icon/Icon";
 
 export type ButtonType =
   | "primary"
@@ -35,11 +34,10 @@ type BaseButtonProps = {
 } & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
   XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   disabled?: boolean;
   href?: never;
   isExternal?: never;
-  ref?: Ref<HTMLButtonElement>;
 } & BaseButtonProps;
 
 const getButtonClasses = ({
@@ -136,49 +134,57 @@ const ButtonIcon = ({
   return null;
 };
 
-export const Button = ({
-  "aria-disabled": ariaDisabled,
-  buttonType = "primary",
-  children,
-  className,
-  customContent,
-  disabled,
-  filled,
-  isExternal,
-  isLoading = false,
-  leftIcon,
-  leftIconPath,
-  ref,
-  rightIcon,
-  rightIconPath,
-  size = "md",
-  ...props
-}: ButtonProps) => (
-  <button
-    aria-disabled={ariaDisabled}
-    className={joinClasses([
-      ...getButtonClasses({
-        buttonType,
-        disabled: !!disabled || !!ariaDisabled || isLoading,
-        filled,
-        iconOnly: !customContent && !children,
-        size,
-      }),
-      className || "",
-    ])}
-    disabled={disabled || isLoading}
-    ref={ref as MutableRefObject<HTMLButtonElement>}
-    type={props.type ?? "button"}
-    {...props}
-  >
-    {customContent ?? (
-      <>
-        <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      "aria-disabled": ariaDisabled,
+      buttonType = "primary",
+      children,
+      className,
+      customContent,
+      disabled,
+      filled,
+      isExternal,
+      isLoading = false,
+      leftIcon,
+      leftIconPath,
+      rightIcon,
+      rightIconPath,
+      size = "md",
+      ...props
+    },
+    ref,
+  ) => (
+    <button
+      aria-disabled={ariaDisabled}
+      className={joinClasses([
+        ...getButtonClasses({
+          buttonType,
+          disabled: !!disabled || !!ariaDisabled || isLoading,
+          filled,
+          iconOnly: !customContent && !children,
+          size,
+        }),
+        className || "",
+      ])}
+      disabled={disabled || isLoading}
+      ref={ref}
+      type={props.type ?? "button"}
+      {...props}
+    >
+      {customContent ?? (
+        <>
+          <ButtonIcon
+            icon={leftIcon}
+            isLoading={isLoading}
+            path={leftIconPath}
+          />
 
-        {!!children && <span>{children}</span>}
+          {!!children && <span>{children}</span>}
 
-        <ButtonIcon icon={rightIcon} path={rightIconPath} />
-      </>
-    )}
-  </button>
+          <ButtonIcon icon={rightIcon} path={rightIconPath} />
+        </>
+      )}
+    </button>
+  ),
 );

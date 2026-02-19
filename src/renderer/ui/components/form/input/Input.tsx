@@ -7,10 +7,10 @@
 
 import React, { useState, type InputHTMLAttributes, type Ref } from "react";
 
-import type { BaseFormFieldProps } from "../formfield";
+import type { BaseFormFieldProps } from "../formfield/FormField";
 
-import { joinClasses } from "../../../utils/join_classes";
-import { FormField } from "../formfield";
+import { joinClasses } from "../../../utils/joinClasses";
+import { FormField } from "../formfield/FormField";
 
 export interface InputProps
   extends BaseFormFieldProps,

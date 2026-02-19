@@ -1,7 +1,7 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import { Icon } from "../../../ui/components/icon";
-import { joinClasses } from "../../../ui/utils/join_classes";
+import { Icon } from "../../../ui/components/icon/Icon";
+import { joinClasses } from "../../../ui/utils/joinClasses";
 
 interface SpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;

@@ -5,10 +5,10 @@
 
 import React, { useState } from "react";
 
-import { Typography } from "../typography";
-import { TabButton } from "./tab";
-import { TabBar } from "./tab-bar";
-import { TabPanel } from "./tab-panel";
+import { Typography } from "../typography/Typography";
+import { TabButton } from "./Tab";
+import { TabBar } from "./TabBar";
+import { TabPanel } from "./TabPanel";
 import { TabProvider } from "./tabs.context";
 
 export const TabsDemo = () => {

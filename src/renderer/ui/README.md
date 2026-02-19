@@ -39,26 +39,26 @@ ui/
 
 ### Within Vortex Source
 
-Import directly from the component directory:
+Import directly from the source file:
 
 ```tsx
-import { Button } from "../../ui/components/button";
-import { Icon } from "../../ui/components/icon";
-import { Typography } from "../../ui/components/typography";
+import { Button } from "../../ui/components/button/Button";
+import { Icon } from "../../ui/components/icon/Icon";
+import { Typography } from "../../ui/components/typography/Typography";
 ```
 
 ### Utilities
 
 ```tsx
-import { joinClasses } from "../../ui/utils/join_classes";
-import { getTabId } from "../../ui/utils/get_tab_id";
+import { joinClasses } from "../../ui/utils/join_classes/joinClasses";
+import { getTabId } from "../../ui/utils/get_tab_id/getTabId";
 import type { XOr, ResponsiveScreenSizes } from "../../ui/utils/types";
 ```
 
 ### Icon Paths
 
 ```tsx
-import { nxmVortex, nxmCollection } from "../../ui/lib/icon_paths";
+import { nxmVortex, nxmCollection } from "../../ui/lib/icon_paths/iconPaths";
 import { mdiDownload, mdiAccount } from "@mdi/js";
 ```
 
@@ -88,7 +88,7 @@ joinClasses(["nxm-button", className], {
 **Defaults:** `buttonType="primary"`, `size="md"` — only set these when you need something different.
 
 ```tsx
-import { Button } from "../../ui/components/button";
+import { Button } from "../../ui/components/button/Button";
 
 // Uses defaults (primary, md) — no need to specify
 <Button>Click Me</Button>
@@ -112,9 +112,9 @@ import { mdiDownload } from "@mdi/js";
 ### Icon
 
 ```tsx
-import { Icon } from "../../ui/components/icon";
+import { Icon } from "../../ui/components/icon/Icon";
 import { mdiAccount } from "@mdi/js";
-import { nxmVortex } from "../../ui/lib/icon_paths";
+import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 <Icon path={mdiAccount} size="md" />
 <Icon path={nxmVortex} size="lg" title="Vortex" />
@@ -129,7 +129,7 @@ import { nxmVortex } from "../../ui/lib/icon_paths";
 When `typographyType` is omitted it falls back based on `as`: `h1`→`heading-2xl`, `h2`→`heading-xl`, `h3`→`heading-lg`, `h4`→`heading-md`, `h5`→`heading-sm`, `h6`→`heading-xs`, everything else→`body-md`.
 
 ```tsx
-import { Typography } from "../../ui/components/typography";
+import { Typography } from "../../ui/components/typography/Typography";
 
 // Defaults to <p> with body-md and strong appearance
 <Typography>Some body text</Typography>
@@ -154,7 +154,10 @@ import { Typography } from "../../ui/components/typography";
 Context-based tab system with keyboard navigation.
 
 ```tsx
-import { TabProvider, TabBar, TabButton, TabPanel } from "../../ui/components/tabs";
+import { TabButton } from "../../ui/components/tabs/tab/Tab";
+import { TabBar } from "../../ui/components/tabs/tab-bar/TabBar";
+import { TabPanel } from "../../ui/components/tabs/tab-panel/TabPanel";
+import { TabProvider } from "../../ui/components/tabs/tabs.context";
 
 function MyTabs() {
   const [selectedTab, setSelectedTab] = useState("overview");
@@ -181,9 +184,9 @@ function MyTabs() {
 ### Form Components
 
 ```tsx
-import { Input } from "../../ui/components/form/input";
-import { Select } from "../../ui/components/form/select";
-import { FormFieldWrap } from "../../ui/components/form/formfield";
+import { Input } from "../../ui/components/form/input/Input";
+import { Select } from "../../ui/components/form/select/Select";
+import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
 
 // Input with validation
 <Input id="email" label="Email" type="email" required errorMessage="Invalid email" />
@@ -209,7 +212,10 @@ import { FormFieldWrap } from "../../ui/components/form/formfield";
 Menu component built on Headless UI `Menu`.
 
 ```tsx
-import { Dropdown, DropdownItem, DropdownItems, DropdownDivider } from "../../ui/components/dropdown";
+import { Dropdown } from "../../ui/components/dropdown/Dropdown";
+import { DropdownItem } from "../../ui/components/dropdown/DropdownItem";
+import { DropdownItems } from "../../ui/components/dropdown/DropdownItems";
+import { DropdownDivider } from "../../ui/components/dropdown/DropdownDivider";
 ```
 
 ### Listbox
@@ -217,7 +223,10 @@ import { Dropdown, DropdownItem, DropdownItems, DropdownDivider } from "../../ui
 Select component built on Headless UI `Listbox`.
 
 ```tsx
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "../../ui/components/listbox";
+import { Listbox } from "../../ui/components/listbox/Listbox";
+import { ListboxButton } from "../../ui/components/listbox/ListboxButton";
+import { ListboxOption } from "../../ui/components/listbox/ListboxOption";
+import { ListboxOptions } from "../../ui/components/listbox/ListboxOptions";
 ```
 
 ### CollectionTile
@@ -225,33 +234,34 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "../../ui/
 Collection card with cover image, metadata, tags, and action buttons.
 
 ```tsx
-import { CollectionTile, CollectionTileSkeleton } from "../../ui/components/collectiontile";
+import { CollectionTile } from "../../ui/components/collectiontile/CollectionTile";
+import { CollectionTileSkeleton } from "../../ui/components/collectiontile/CollectionTileSkeleton";
 ```
 
 ### Pagination
 
 ```tsx
-import { Pagination } from "../../ui/components/pagination";
+import { Pagination } from "../../ui/components/pagination/Pagination";
 ```
 
 ### Listing / ListingLoader / NoResults
 
 ```tsx
-import { Listing } from "../../ui/components/listing";
-import { ListingLoader } from "../../ui/components/listing_loader";
-import { NoResults } from "../../ui/components/no_results";
+import { Listing } from "../../ui/components/listing/Listing";
+import { ListingLoader } from "../../ui/components/listing_loader/ListingLoader";
+import { NoResults } from "../../ui/components/no_results/NoResults";
 ```
 
 ### Picker
 
 ```tsx
-import { Picker } from "../../ui/components/picker";
+import { Picker } from "../../ui/components/picker/Picker";
 ```
 
 ## Adding New Components
 
 1. Create a folder under `components/` for the component
 2. Use `nxm-` prefixed CSS class names for styling
-3. Import shared utilities from `../../utils/join_classes`, `../../utils/types`, etc.
-4. Export from an `index.ts` barrel file
+3. Import shared utilities from `../../utils/join_classes/joinClasses`, `../../utils/types`, etc.
+4. Export the component directly from the source file (no barrel `index.ts` files)
 5. Add a `*Demo.tsx` component if the component has visual states worth showcasing

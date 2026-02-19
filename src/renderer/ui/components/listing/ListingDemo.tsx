@@ -5,8 +5,8 @@
 
 import React, { useState } from "react";
 
-import { Button } from "../button";
-import { Typography } from "../typography";
+import { Button } from "../button/Button";
+import { Typography } from "../typography/Typography";
 import { Listing } from "./Listing";
 
 const SkeletonTile = () => (
