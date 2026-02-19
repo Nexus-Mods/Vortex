@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.4] - 2026-02-19
+
+- Fixed plugin cyclic interaction dialog changes not reflected in userlist ([#19605](https://github.com/Nexus-Mods/Vortex/issues/19605))
+- Fixed inconsistent rule checks between unsolved notif and rules dialogs ([#19746](https://github.com/Nexus-Mods/Vortex/issues/19746))
+- Fixed permission elevation issues when unlocking mod folder recursively ([#19948](https://github.com/Nexus-Mods/Vortex/issues/19948))
+- Added protective code when rendering groups ([#20436](https://github.com/Nexus-Mods/Vortex/issues/20436))
+- Added protective code to pluginList to avoid renderer crashes ([#20436](https://github.com/Nexus-Mods/Vortex/issues/20436))
+- Added protective code to avoid forwarding nullish values to minimatch during deployment ([#20424](https://github.com/Nexus-Mods/Vortex/issues/20424))
+- Fixed renderer crashes when collections extension is disabled ([#20481](https://github.com/Nexus-Mods/Vortex/issues/20481))
+- Fixed unhandled ProcessCanceled errors causing app to crash
+- Removed debug log entries for the notification aggregator
+
 ## [1.16.3] - 2026-02-17
 
   - Fixed collection react components not rerendering correctly
@@ -1423,6 +1435,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.4
 [1.16.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.3
 [1.16.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.2
 [1.16.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.1
