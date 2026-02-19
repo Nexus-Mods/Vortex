@@ -502,11 +502,11 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     }
     const theme: { [key: string]: string } = {
       ...this.state.colors,
-      "font-size-base": this.state.fontSize.toString() + "px",
-      "hidpi-scale-factor": this.state.hidpiScale.toString() + "%",
+      "font-size-base": `${this.state.fontSize}px`,
+      "hidpi-scale-factor": `${this.state.hidpiScale}%`,
       "font-family-base": fontFamily,
-      "font-family-headings": '"' + this.state.fontFamilyHeadings + '"',
-      "gutter-width": this.state.margin.toString() + "px",
+      "font-family-headings": `"${this.state.fontFamilyHeadings}"`,
+      "gutter-width": `${this.state.margin}px`,
       "dashlet-height": `${this.state.dashletHeight}px`,
       "dark-theme": this.state.dark ? "true" : "false",
       "titlebar-rows": this.state.titlebarRows.toString(),
@@ -606,11 +606,10 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDark(theme: { [name: string]: string }) {
-    const dark =
+    this.nextState.dark =
       theme["dark-theme"] !== undefined
         ? theme["dark-theme"] === "true"
         : defaultTheme.dark;
-    this.nextState.dark = dark;
   }
 
   private setTitlebarRows(theme: { [name: string]: string }) {
