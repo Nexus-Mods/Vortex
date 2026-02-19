@@ -550,12 +550,9 @@ export class DownloadObserver {
       if (callback !== undefined && !callbacked) {
         callback(err, id);
       } else {
-        showError(
-          this.mApi.store.dispatch,
-          "Download failed",
-          err.message,
-          { allowReport: false },
-        );
+        showError(this.mApi.store.dispatch, "Download failed", err.message, {
+          allowReport: false,
+        });
       }
     });
   }
@@ -602,10 +599,7 @@ export class DownloadObserver {
         }),
       );
       this.mApi.events.emit("did-finish-download", id, "failed");
-      callback?.(
-        new ProcessCanceled("Download completed with chunk errors"),
-        id,
-      );
+      callback?.(null, id);
       return onceFinished();
     } else if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
@@ -1065,6 +1059,7 @@ export class DownloadObserver {
         state: download.state,
       });
       this.handleResumeDownload(downloadId, callback);
+      return;
     }
     log("debug", "not resuming download", {
       id: downloadId,

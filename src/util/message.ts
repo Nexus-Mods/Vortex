@@ -536,19 +536,48 @@ export function showError(
   );
 }
 
-export interface IPrettifiedError {
-  message: string;
+export interface IPrettifiedError extends Error {
   code?: string;
-  replace?: any;
+  replace?: Record<string, string>;
   allowReport?: boolean;
-  stack?: string;
 }
 
+// err is typed as `any` because this function handles many different error shapes
+// with varying properties (.code, .syscall, .path, .host, .address, .filename, etc.)
+// that don't share a common type. This is a reasonable use of `any` at a system boundary.
 export function prettifyNodeErrorMessage(
   err: any,
   options?: IErrorOptions,
   fileName?: string,
 ): IPrettifiedError {
+  const result = prettifyNodeErrorMessageInner(err, options, fileName);
+  // Extend the original error in-place to preserve its identity (instanceof checks)
+  err.message = result.message;
+  if (result.code !== undefined) {
+    err.code = result.code;
+  }
+  if (result.replace !== undefined) {
+    err.replace = result.replace;
+  }
+  if (result.allowReport !== undefined) {
+    err.allowReport = result.allowReport;
+  }
+  return err;
+}
+
+interface IPrettifiedFields {
+  message: string;
+  code?: string;
+  replace?: Record<string, string>;
+  allowReport?: boolean;
+  stack?: string;
+}
+
+function prettifyNodeErrorMessageInner(
+  err: any,
+  options?: IErrorOptions,
+  fileName?: string,
+): IPrettifiedFields {
   const decoded = decodeSystemError(err, err.path ?? err.filename ?? fileName);
   if (decoded !== undefined) {
     return {
@@ -559,8 +588,15 @@ export function prettifyNodeErrorMessage(
   }
 
   if (err instanceof ThirdPartyError || err instanceof ArchiveBrokenError) {
+    const message =
+      err instanceof ArchiveBrokenError
+        ? "The archive appears to be broken/corrupted. Please delete it and try again.\n" +
+          "If downloaded via a collection, pause the collection, remove the archive, and resume the collection.\n" +
+          (err.fileName ? "Archive: " + err.fileName : err.message)
+        : err.message;
     return {
-      message: err.message,
+      message,
+      stack: err.stack,
       allowReport: false,
     };
   } else if (err instanceof TemporaryError) {

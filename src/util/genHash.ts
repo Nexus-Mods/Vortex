@@ -30,6 +30,14 @@ function sanitizeKnownMessages(input: string): string {
       )
       .replace(/.*(Cipher functions:OPENSSL_internal).*/, "$1")
       .replace(/\\\\?\\.*(\\Vortex\\resources)/i, "$1")
+      // archive broken errors contain dynamic file names and 7z error details that
+      // produce unique hashes per report - strip everything after the prefix so they
+      // all group into the same issue
+      .replace(/(Archive is broken):.*/, "$1")
+      // prettified archive error messages (from aggregated notifications) use a
+      // different format - strip the variable parts so they hash identically
+      .replace(/The archive appears to be broken.*/, "Archive is broken")
+      .replace(/Archive: .*/, "")
   );
 }
 
@@ -59,7 +67,7 @@ function sanitizeStackLine(input: string): string {
 
 export function extractToken(error: IError): string {
   if (error.stack === undefined) {
-    return removeQuoted(error.message);
+    return removeQuoted(sanitizeKnownMessages(error.message));
   }
 
   let hashStack = error.stack.split("\n");
