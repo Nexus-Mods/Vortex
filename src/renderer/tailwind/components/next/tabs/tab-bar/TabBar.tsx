@@ -1,7 +1,7 @@
-import * as React from "react";
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 
 import { joinClasses } from "../../utils";
+import { useTabContext } from "../tabs.context";
 
 /**
  * Tab Bar component acts as a styling wrapper (and tablist role) for tabs
@@ -9,19 +9,29 @@ import { joinClasses } from "../../utils";
 export const TabBar = ({
   children,
   className,
+  size = "md",
 }: {
   children: ReactNode;
   className?: string;
-}) => (
-  <div
-    className={joinClasses([
-      "scrollbar relative flex gap-x-6 overflow-x-auto",
-      className,
-    ])}
-    role="tablist"
-  >
-    <div className="bg-stroke-subdued absolute inset-x-0 bottom-0 h-px w-full" />
+  size?: "sm" | "md";
+}) => {
+  const { tabType } = useTabContext();
 
-    {children}
-  </div>
-);
+  return (
+    <div
+      className={joinClasses(
+        [
+          "nxm-tab-bar",
+          tabType === "primary"
+            ? "nxm-tab-bar-primary"
+            : "nxm-tab-bar-secondary",
+          className,
+        ],
+        { "nxm-tab-bar-sm": size === "sm" },
+      )}
+      role="tablist"
+    >
+      {children}
+    </div>
+  );
+};

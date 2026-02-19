@@ -1,21 +1,41 @@
-import type { IState } from "../../renderer/types/IState";
-import { getSafe } from "../../renderer/util/storeHelper";
-
 import { createSelector } from "reselect";
-import { truthy } from "../../renderer/util/util";
 
+import type { IState } from "../../renderer/types/IState";
+
+import { getSafe } from "../../renderer/util/storeHelper";
+import { truthy } from "../../renderer/util/util";
 import { nexusGames } from "../nexus_integration/util";
+import { hasConfidentialWithNexus, hasPersistentWithNexus } from "./guards";
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
 
-export const apiKey = (state: IState) =>
-  getSafe(state, ["confidential", "account", "nexus", "APIKey"], undefined);
+export const apiKey = (state: IState) => {
+  if (!hasConfidentialWithNexus(state.confidential)) {
+    return undefined;
+  }
+  return state.confidential.account?.nexus?.APIKey;
+};
+
+export const userInfo = (state: IState) => {
+  if (!hasPersistentWithNexus(state.persistent)) {
+    return undefined;
+  }
+  return state.persistent.nexus.userInfo;
+};
+
+export const isPremium = (state: IState) => {
+  if (!hasPersistentWithNexus(state.persistent)) {
+    return false;
+  }
+  return state.persistent.nexus.userInfo?.isPremium ?? false;
+};
 
 export const isLoggedIn = (state: IState) => {
-  const APIKEY = state.confidential.account["nexus"]?.APIKey;
-  const OAuthCredentials =
-    state.confidential.account["nexus"]?.OAuthCredentials;
-  return truthy(APIKEY) || truthy(OAuthCredentials);
+  if (!hasConfidentialWithNexus(state.confidential)) {
+    return false;
+  }
+  const { nexus } = state.confidential.account;
+  return truthy(nexus?.APIKey) || truthy(nexus?.OAuthCredentials);
 };
 
 export const nexusIdsFromDownloadId = createSelector(

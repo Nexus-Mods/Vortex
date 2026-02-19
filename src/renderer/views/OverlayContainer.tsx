@@ -1,50 +1,41 @@
-import ErrorBoundary from "../controls/ErrorBoundary";
-import type { PropsCallback } from "../types/IExtensionContext";
-import { extend } from "../controls/ComponentEx";
+import React, { type FC } from "react";
 
-import * as React from "react";
+import type { PropsCallback } from "../types/IExtensionContext";
+
+import ErrorBoundary from "../controls/ErrorBoundary";
 import ExtensionGate from "../controls/ExtensionGate";
+import { useExtensionObjects } from "../ExtensionProvider";
 
 interface IExtOverlay {
   id: string;
-  component: React.ComponentType<any>;
-  props: PropsCallback;
+  component: React.ComponentType;
+  props?: PropsCallback;
 }
 
-export interface IBaseProps {}
-
-export interface IExtendedProps {
-  objects: IExtOverlay[];
-}
-
-type IProps = IBaseProps & IExtendedProps;
-
-class OverlayContainer extends React.Component<IProps, {}> {
-  public render(): JSX.Element {
-    const { objects } = this.props;
-    return <div>{objects.map((dialog) => this.renderOverlay(dialog))}</div>;
-  }
-  private renderOverlay(overlay: IExtOverlay): JSX.Element {
-    const props = overlay.props !== undefined ? overlay.props() : {};
-    return (
-      <ErrorBoundary key={overlay.id} className="errorboundary-overlay">
-        <ExtensionGate id={overlay.id}>
-          <overlay.component {...props} />
-        </ExtensionGate>
-      </ErrorBoundary>
-    );
-  }
-}
-
-function registerOverlay(
-  instanceGroup: undefined,
+const registerOverlay = (
+  _instanceGroup: undefined,
   id: string,
-  component: React.ComponentClass<any>,
+  component: React.ComponentType,
   props?: PropsCallback,
-): IExtOverlay {
+): IExtOverlay => {
   return { id, component, props };
-}
+};
 
-export default extend(registerOverlay)(
-  OverlayContainer,
-) as React.ComponentClass<IBaseProps>;
+const renderOverlay: FC<IExtOverlay> = (overlay) => {
+  const props = overlay.props ? overlay.props() : {};
+  return (
+    <ErrorBoundary className="errorboundary-overlay" key={overlay.id}>
+      <ExtensionGate id={overlay.id}>
+        <overlay.component {...props} />
+      </ExtensionGate>
+    </ErrorBoundary>
+  );
+};
+
+export const OverlayContainer: FC = () => {
+  const overlays = useExtensionObjects<IExtOverlay>(registerOverlay);
+
+  return <div>{overlays.map((overlay) => renderOverlay(overlay))}</div>;
+};
+
+export default OverlayContainer;

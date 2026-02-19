@@ -5,11 +5,9 @@
  * Provides a form field wrapper with label, hints, error messages, and character counter.
  */
 
-import * as React from "react";
-import type { HTMLAttributes, ReactNode, Ref } from "react";
+import React, { type HTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { Typography } from "../../typography/Typography";
-import type { TypographyTypes } from "../../typography/Typography";
+import { Typography, type TypographyTypes } from "../../typography";
 import { joinClasses } from "../../utils";
 
 export interface BaseFormFieldProps {
@@ -22,6 +20,11 @@ export interface BaseFormFieldProps {
    * Styles and adds an error message to the field
    */
   errorMessage?: string;
+
+  /**
+   * Hides the error messages
+   */
+  hideErrors?: boolean;
 
   /**
    * Hides the label
@@ -80,7 +83,8 @@ export const FormField = ({
   className,
   disabled,
   errorMessage,
-  hideLabel = false,
+  hideLabel,
+  hideErrors,
   hints = [],
   hintsTypographyType = "body-md",
   id,
@@ -95,10 +99,10 @@ export const FormField = ({
 
   return (
     <div
-      ref={ref}
       className={joinClasses(["min-w-0", className], {
-        "opacity-40 pointer-events-none": disabled,
+        "pointer-events-none opacity-40": disabled,
       })}
+      ref={ref}
     >
       <label
         className={joinClasses(["mb-2 flex gap-x-1 text-sm"], {
@@ -119,7 +123,7 @@ export const FormField = ({
 
       {children}
 
-      {(!!errorMessage || !!hints.length || !!maxLength) && (
+      {((!!errorMessage && !hideErrors) || !!hints.length || !!maxLength) && (
         <div className="flex justify-between pt-1">
           <div>
             {!!errorMessage && (

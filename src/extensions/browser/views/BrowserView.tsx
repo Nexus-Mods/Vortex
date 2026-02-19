@@ -16,8 +16,7 @@ import {
 import Debouncer from "../../../renderer/util/Debouncer";
 import { log } from "../../../renderer/util/log";
 import { truthy } from "../../../renderer/util/util";
-import Notification from "../../../renderer/views/Notification";
-
+import { Notification } from "../../../renderer/views/Notification";
 import { closeBrowser } from "../actions";
 
 import PromiseBB from "bluebird";
@@ -253,7 +252,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         ? t(translated.message, { replace: translated.replace })
         : translated.message;
 
-    return <Notification key={idx} t={t} collapsed={1} params={translated} />;
+    return <Notification key={idx} collapsed={1} params={translated} />;
   };
 
   private renderLoadingOverlay(): JSX.Element {

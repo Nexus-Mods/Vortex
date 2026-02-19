@@ -76,6 +76,7 @@ import DownloadView from "./views/DownloadView";
 import Settings from "./views/Settings";
 import ShutdownButton from "./views/ShutdownButton";
 import SpeedOMeter from "./views/SpeedOMeter";
+import { mdiDownload } from "@mdi/js";
 
 let observer: DownloadObserver;
 let manager: DownloadManager;
@@ -1124,6 +1125,7 @@ function init(context: IExtensionContextExt): boolean {
     downloadAttributes(context.api, props, withAddInProgress);
 
   context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 30,
     hotkey: "D",
     group: "global",
     badge: downloadCount,
@@ -1131,6 +1133,23 @@ function init(context: IExtensionContextExt): boolean {
       downloadPathForGame,
       columns: downloadColumns,
     }),
+    mdi: mdiDownload,
+  });
+
+  context.registerMainPage("download", "Downloads", DownloadView, {
+    priority: 210,
+    id: "game-downloads",
+    hotkey: "D",
+    group: "per-game",
+    badge: downloadCount,
+    isModernOnly: true,
+    visible: () =>
+      selectors.activeGameId(context.api.store.getState()) !== undefined,
+    props: () => ({
+      downloadPathForGame,
+      columns: downloadColumns,
+    }),
+    mdi: mdiDownload,
   });
 
   context.registerSettings("Download", Settings, undefined, undefined, 75);

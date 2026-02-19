@@ -89,7 +89,8 @@ export interface ThunkStore<S> extends Redux.Store<S> {
   dispatch: ThunkDispatch<S, null, Redux.Action>;
 }
 
-export type PropsCallback = () => any;
+export type PropsCallback = () => { [key: string]: unknown };
+export type PropsCallbackTyped<T> = () => T;
 
 /**
  * determines where persisted state is stored and when it gets loaded.
@@ -164,11 +165,14 @@ export interface IMainPageOptions {
   hotkeyRaw?: string;
   visible?: () => boolean;
   group: "dashboard" | "global" | "per-game" | "support" | "hidden";
+  isClassicOnly?: boolean;
+  isModernOnly?: boolean;
   priority?: number;
-  props?: () => any;
+  props?: PropsCallback;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
   onReset?: () => void;
+  mdi?: string;
 }
 
 export type RegisterMainPage = (

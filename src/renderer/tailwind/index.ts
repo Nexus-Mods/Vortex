@@ -10,14 +10,14 @@
  *   <Tailwind.Button buttonType="primary">Click</Tailwind.Button>
  */
 
-// Import all components and utilities
-import * as typography from "./components/next/typography";
 import * as button from "./components/next/button";
-import * as icon from "./components/next/icon";
-import * as link from "./components/next/link";
 import * as collectiontile from "./components/next/collectiontile";
 import * as form from "./components/next/form";
+import * as icon from "./components/next/icon";
+import * as link from "./components/next/link";
 import * as tabs from "./components/next/tabs";
+// Import all components and utilities
+import * as typography from "./components/next/typography";
 import * as iconPaths from "./lib/icon-paths";
 
 /**
@@ -69,19 +69,10 @@ export const Tailwind = {
 // Also export as default for convenience
 export default Tailwind;
 
-// Type exports for external consumers
-export type {
-  // Typography types
-  TypographyProps,
-  TypographyTypes,
-} from "./components/next/typography/Typography";
-
 export type {
   // Button types
   ButtonType,
 } from "./components/next/button/Button";
-
-export type { IconSize } from "./components/next/icon/Icon";
 
 export type {
   // CollectionTile types
@@ -96,10 +87,18 @@ export type {
   SelectProps,
 } from "./components/next/form";
 
+export type { IconSize } from "./components/next/icon/Icon";
+
 export type {
   // Tabs types
   TabsState,
   TabProviderProps,
   TabButtonProps,
-  TabLinkProps,
 } from "./components/next/tabs";
+
+// Type exports for external consumers
+export type {
+  // Typography types
+  TypographyProps,
+  TypographyTypes,
+} from "./components/next/typography/Typography";

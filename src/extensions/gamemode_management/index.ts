@@ -94,6 +94,7 @@ import React from "react";
 
 import { clipboard } from "electron";
 import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
+import { mdiGamepadSquare } from "@mdi/js";
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -722,6 +723,7 @@ function init(context: IExtensionContext): boolean {
     "Games",
     LazyComponent(() => require("./views/GamePicker")),
     {
+      priority: 0,
       hotkey: "G",
       group: "global",
       props: () => ({
@@ -730,6 +732,7 @@ function init(context: IExtensionContext): boolean {
         nexusGames: nexusGames(),
       }),
       activity,
+      mdi: mdiGamepadSquare,
     },
   );
   context.registerFooter("discovery-progress", ProgressFooter);

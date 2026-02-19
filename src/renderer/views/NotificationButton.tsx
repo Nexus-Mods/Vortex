@@ -1,24 +1,30 @@
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
+// Disabled: This component legitimately syncs derived state (filtered notifications)
+// in effects based on notification changes and timers.
+
+import * as _ from "lodash";
+import React from "react";
+import { Badge, Button, Overlay, Popover } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+
+import type { IBar } from "../controls/RadialProgress";
+import type {
+  INotification,
+  INotificationAction,
+} from "../types/INotification";
+
 import {
   dismissNotification,
   fireNotificationAction,
 } from "../actions/notifications";
 import { suppressNotification } from "../actions/notificationSettings";
-import type {
-  INotification,
-  INotificationAction,
-} from "../types/INotification";
-import type { IState } from "../types/IState";
-import { ComponentEx, connect, translate } from "../controls/ComponentEx";
-
 import Icon from "../controls/Icon";
-import type { IBar } from "../controls/RadialProgress";
 import RadialProgress from "../controls/RadialProgress";
+import { useExtensionContext } from "../ExtensionProvider";
 import Debouncer from "../util/Debouncer";
-import Notification from "./Notification";
-
-import * as _ from "lodash";
-import * as React from "react";
-import { Badge, Button, Overlay, Popover } from "react-bootstrap";
+import { notifications as notificationsSelector } from "../util/selectors";
+import { Notification } from "./Notification";
 
 export interface IBaseProps {
   id: string;
@@ -26,254 +32,122 @@ export interface IBaseProps {
   hide: boolean;
 }
 
-interface IConnectedProps {
-  notifications: INotification[];
-}
-
-interface IActionProps {
-  onDismiss: (id: string) => void;
-  onSuppress: (id: string) => void;
-}
-
-type IProps = IBaseProps & IActionProps & IConnectedProps;
-
-function sortValue(noti: INotification): number {
+const sortValue = (noti: INotification): number => {
   let value = noti.createdTime;
   if (noti.progress !== undefined || noti.type === "activity") {
     value /= 10;
   }
   return value;
-}
+};
 
-function inverseSort(lhs: INotification, rhs: INotification) {
+const inverseSort = (lhs: INotification, rhs: INotification) => {
   return sortValue(lhs) - sortValue(rhs);
-}
+};
 
-interface IComponentState {
-  expand: string;
-  open: boolean;
-  resizing: boolean;
-  filtered: INotification[];
-}
+const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
+  warning: 10000,
+  error: 10000,
+  success: 5000,
+  info: 5000,
+  activity: null,
+};
 
-class NotificationButton extends ComponentEx<IProps, IComponentState> {
-  private mButtonRef = React.createRef<Button>();
-  private mUpdateTimer: NodeJS.Timeout = undefined;
-  private mUpdateDebouncer: Debouncer;
-  private mMounted: boolean = false;
+const displayTime = (item: INotification): number | null => {
+  if (item.displayMS !== undefined) {
+    return item.displayMS;
+  }
 
-  private resizeUpdate = _.debounce(
-    () => {
-      this.forceUpdate();
+  return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
+};
+
+export const NotificationButton: React.FC<IBaseProps> = ({ hide }) => {
+  const { t } = useTranslation(["common"]);
+  const dispatch = useDispatch();
+  const extensions = useExtensionContext();
+  const api = extensions.getApi();
+
+  // Redux state
+  const notifications = useSelector(notificationsSelector);
+
+  // Local state
+  const [expand, setExpand] = React.useState<string | undefined>(undefined);
+  const [open, setOpen] = React.useState(false);
+  const [resizing, setResizing] = React.useState(false);
+  const [filtered, setFiltered] = React.useState<INotification[]>([]);
+
+  // Refs
+  const buttonRef = React.useRef<Button>(null);
+  const updateTimerRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
+  const mountedRef = React.useRef(false);
+  const prevNotificationsRef = React.useRef(notifications);
+
+  // Store latest values for callbacks
+  const stateRef = React.useRef({ notifications, open, expand, filtered });
+  stateRef.current = { notifications, open, expand, filtered };
+
+  // Dispatch callbacks
+  const onDismiss = React.useCallback(
+    (notificationId: string) => {
+      dispatch(dismissNotification(notificationId));
     },
-    300,
-    { maxWait: 1000, trailing: true },
+    [dispatch],
   );
 
-  private resizeUpdating = _.debounce(
-    () => {
-      this.nextState.resizing = false;
+  const onSuppress = React.useCallback(
+    (notificationId: string) => {
+      dispatch(suppressNotification(notificationId, true));
     },
-    1000,
-    { leading: false, trailing: true },
+    [dispatch],
   );
 
-  constructor(props: IProps) {
-    super(props);
+  // Debounced resize handlers
+  const resizeUpdate = React.useMemo(
+    () =>
+      _.debounce(
+        () => {
+          // Force re-render
+          setResizing((prev) => prev);
+        },
+        300,
+        { maxWait: 1000, trailing: true },
+      ),
+    [],
+  );
 
-    this.initState({
-      expand: undefined,
-      open: false,
-      resizing: false,
-      filtered: [],
-    });
+  const resizeUpdating = React.useMemo(
+    () =>
+      _.debounce(
+        () => {
+          setResizing(false);
+        },
+        1000,
+        { leading: false, trailing: true },
+      ),
+    [],
+  );
 
-    this.mUpdateDebouncer = new Debouncer(this.triggerFilter, 200);
-  }
+  const updateFiltered = React.useCallback(() => {
+    const { notifications: notis, open: isOpen } = stateRef.current;
 
-  public componentDidMount() {
-    this.updateFiltered();
-    this.mMounted = true;
-    window.addEventListener("resize", this.onResize);
-  }
+    updateTimerRef.current = undefined;
 
-  public componentWillUnmount() {
-    window.removeEventListener("resize", this.onResize);
-    this.mMounted = false;
-    if (this.mUpdateTimer !== undefined) {
-      clearTimeout(this.mUpdateTimer);
-    }
-  }
-
-  public componentDidUpdate(prevProps: IProps) {
-    if (prevProps.notifications !== this.props.notifications) {
-      if (prevProps.notifications.length !== this.props.notifications.length) {
-        this.mUpdateDebouncer.runNow(() => null);
-      } else {
-        this.quickUpdate();
-        this.mUpdateDebouncer.schedule();
-      }
-    }
-  }
-
-  public render(): JSX.Element {
-    const { t, hide, notifications } = this.props;
-    const { filtered, resizing } = this.state;
-
-    const collapsed: { [groupId: string]: number } = {};
-
-    const items = filtered
-      .slice()
-      .reduce(
-        (prev: INotification[], notification: INotification) =>
-          this.groupNotifications(prev, notification, collapsed),
-        [],
-      )
-      .sort(inverseSort)
-      .map((notification) => this.renderNotification(notification, collapsed));
-
-    const popover = (
-      <Popover
-        id="notifications-popover"
-        arrowOffsetLeft={64}
-        style={{ display: hide ? "none" : "block" }}
-      >
-        {items.length > 0 ? items : t("No Notifications")}
-      </Popover>
-    );
-
-    const combinedProgress: IBar[] = [];
-
-    const progress = notifications.filter(
-      (iter) => iter.progress !== undefined,
-    );
-    if (progress.length > 0) {
-      const percentages = Math.min(...progress.map((iter) => iter.progress));
-      combinedProgress.push({
-        class: "running",
-        min: 0,
-        max: 100,
-        value: percentages,
-      });
-    }
-
-    const pendingActivities = notifications.filter(
-      (iter) => iter.type === "activity" && iter.progress === undefined,
-    );
-
-    return (
-      <div style={{ display: "inline-block" }}>
-        <Button
-          id="notifications-button"
-          onClick={this.toggle}
-          ref={this.mButtonRef}
-        >
-          <Icon name="notifications" />
-          <RadialProgress
-            className="notifications-progress"
-            data={combinedProgress}
-            spin={pendingActivities.length >= 1}
-            offset={8}
-            totalRadius={8}
-          />
-          {notifications.length === 0 ? null : (
-            <Badge>{notifications.length}</Badge>
-          )}
-        </Button>
-
-        <Overlay
-          placement="bottom"
-          rootClose={false}
-          onExit={this.unExpand}
-          show={items.length > 0}
-          target={this.mButtonRef.current}
-          shouldUpdatePosition={resizing}
-        >
-          {popover}
-        </Overlay>
-      </div>
-    );
-  }
-
-  private displayTime = (item: INotification) => {
-    if (item.displayMS !== undefined) {
-      return item.displayMS;
-    }
-
-    return (
-      {
-        warning: 10000,
-        error: 10000,
-        success: 5000,
-        info: 5000,
-        activity: null,
-      }[item.type] || 10000
-    );
-  };
-
-  private quickUpdate() {
-    // updating only progress and message
-    const { notifications } = this.props;
-    const { filtered } = this.state;
-    for (let i = 0; i < filtered.length; ++i) {
-      // there shouldn't be notifications without id here but just to be safe
-      if (filtered[i].id !== undefined) {
-        const ref = notifications.find((n) => n.id === filtered[i].id);
-        // if the notification no longer exists we're not removing it here,
-        // it will be removed in the "big" update (updateFiltered) a bit later
-        if (
-          ref !== undefined &&
-          (filtered[i].message !== ref.message ||
-            filtered[i].progress !== ref.progress)
-        ) {
-          this.nextState.filtered[i] = {
-            ...filtered[i],
-            message: ref.message,
-            progress: ref.progress,
-          };
-        }
-      }
-    }
-  }
-
-  private onResize = () => {
-    if (!this.state.resizing) {
-      this.nextState.resizing = true;
-    }
-    this.resizeUpdate();
-    this.resizeUpdating();
-  };
-
-  private triggerFilter = () => {
-    this.updateFiltered();
-    return Promise.resolve();
-  };
-
-  private updateFiltered() {
-    const { notifications } = this.props;
-    const { open } = this.state;
-
-    this.mUpdateTimer = undefined;
-
-    if (!this.mMounted) {
+    if (!mountedRef.current) {
       return;
     }
 
-    let filtered = notifications
-      .slice()
-      .filter((item) => item.type !== "silent");
-    let nextTimeout = null;
+    let newFiltered = notis.slice().filter((item) => item.type !== "silent");
+    let nextTimeout: number | null = null;
     const now = Date.now();
-    if (!open) {
-      filtered = filtered.filter((item) => {
-        const displayTime = this.displayTime(item);
-        if (displayTime === null) {
+    if (!isOpen) {
+      newFiltered = newFiltered.filter((item) => {
+        const dispTime = displayTime(item);
+        if (dispTime === null) {
           return true;
         }
 
         const timeout =
           (item.type === "activity" ? item.createdTime : item.updatedTime) +
-          displayTime;
+          dispTime;
         if (timeout > now) {
           if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;
@@ -285,186 +159,330 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       });
     }
 
-    this.nextState.filtered = filtered;
+    setFiltered(newFiltered);
 
-    if (!open) {
-      if (filtered.length > 0) {
-        if (this.mUpdateTimer !== undefined) {
-          // should never happen
-          clearTimeout(this.mUpdateTimer);
+    if (!isOpen) {
+      if (newFiltered.length > 0) {
+        if (updateTimerRef.current !== undefined) {
+          clearTimeout(updateTimerRef.current);
         }
         if (nextTimeout !== null) {
-          // if one of the displayed notifications has a timeout, refresh once that timeout expires
-          // (adding 100ms for good measure)
-          this.mUpdateTimer = setTimeout(
-            this.triggerFilter,
+          updateTimerRef.current = setTimeout(
+            () => updateFiltered(),
             nextTimeout - now + 100,
           );
         }
       }
     }
-  }
+  }, []);
 
-  private toggle = (evt: React.MouseEvent<any>) => {
-    evt.preventDefault();
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Notifications",
-      `${this.state.open ? "Close" : "Open"} Notifications`,
-    );
-    this.nextState.open = !this.state.open;
-    setTimeout(() => {
-      this.mUpdateDebouncer.runNow(() => null);
-    }, 0);
-  };
+  const updateDebouncer = React.useRef(
+    new Debouncer(() => {
+      updateFiltered();
+      return Promise.resolve();
+    }, 200),
+  );
 
-  private groupNotifications = (
-    previous: INotification[],
-    notification: INotification,
-    collapsed: { [groupId: string]: number },
-  ) => {
-    if (
-      notification.group !== undefined &&
-      notification.group !== this.state.expand
-    ) {
-      if (collapsed[notification.group] === undefined) {
-        previous.push(notification);
-        collapsed[notification.group] = 0;
+  const quickUpdate = React.useCallback(() => {
+    const { notifications: notis, filtered: filt } = stateRef.current;
+    const updates: Array<{ index: number; notification: INotification }> = [];
+
+    for (let i = 0; i < filt.length; ++i) {
+      if (filt[i].id !== undefined) {
+        const ref = notis.find((n) => n.id === filt[i].id);
+        if (
+          ref !== undefined &&
+          (filt[i].message !== ref.message || filt[i].progress !== ref.progress)
+        ) {
+          updates.push({
+            index: i,
+            notification: {
+              ...filt[i],
+              message: ref.message,
+              progress: ref.progress,
+            },
+          });
+        }
       }
-      collapsed[notification.group]++;
-    } else {
-      previous.push(notification);
-    }
-    return previous;
-  };
-
-  private expand = (groupId: string) => {
-    this.nextState.expand = groupId;
-  };
-
-  private unExpand = () => {
-    this.nextState.expand = undefined;
-  };
-
-  private renderNotification = (
-    notification: INotification,
-    collapsed: { [groupId: string]: number },
-  ) => {
-    const { t } = this.props;
-
-    const translated: INotification = { ...notification };
-    translated.title =
-      translated.title !== undefined &&
-      (notification.localize === undefined ||
-        notification.localize.title !== false)
-        ? t(translated.title, { replace: translated.replace })
-        : translated.title;
-
-    if (collapsed[notification.group] > 1 && translated.title !== undefined) {
-      translated.message = t("<Multiple>");
-    } else {
-      translated.message =
-        notification.localize === undefined ||
-        notification.localize.message !== false
-          ? t(translated.message, { replace: translated.replace })
-          : translated.message;
     }
 
-    return (
-      <Notification
-        t={t}
-        key={notification.id}
-        params={translated}
-        collapsed={collapsed[notification.group]}
-        onExpand={this.expand}
-        onTriggerAction={this.triggerAction}
-        onDismiss={this.dismissAll}
-        onSuppress={this.suppress}
-      />
-    );
-  };
-
-  private triggerAction = (notificationId: string, actionTitle: string) => {
-    const { notifications, onDismiss } = this.props;
-    const noti = notifications.find((iter) => iter.id === notificationId);
-    if (noti === undefined) {
-      return;
+    if (updates.length > 0) {
+      setFiltered((prev) => {
+        const newFiltered = [...prev];
+        updates.forEach(({ index, notification }) => {
+          newFiltered[index] = notification;
+        });
+        return newFiltered;
+      });
     }
+  }, []);
 
-    const callAction = (
-      id: string,
-      action: INotificationAction,
-      idx: number,
+  const onResize = React.useCallback(() => {
+    setResizing(true);
+    resizeUpdate();
+    resizeUpdating();
+  }, [resizeUpdate, resizeUpdating]);
+
+  const toggle = React.useCallback(
+    (evt: React.MouseEvent<unknown>) => {
+      evt.preventDefault();
+      const { open: isOpen } = stateRef.current;
+      api.events.emit(
+        "analytics-track-click-event",
+        "Notifications",
+        `${isOpen ? "Close" : "Open"} Notifications`,
+      );
+      setOpen(!isOpen);
+      setTimeout(() => {
+        updateDebouncer.current.runNow(() => null);
+      }, 0);
+    },
+    [api],
+  );
+
+  const groupNotifications = React.useCallback(
+    (
+      previous: INotification[],
+      notification: INotification,
+      collapsed: { [groupId: string]: number },
     ) => {
-      if (idx === -1) {
+      const { expand: currentExpand } = stateRef.current;
+      if (
+        notification.group !== undefined &&
+        notification.group !== currentExpand
+      ) {
+        if (collapsed[notification.group] === undefined) {
+          previous.push(notification);
+          collapsed[notification.group] = 0;
+        }
+        collapsed[notification.group]++;
+      } else {
+        previous.push(notification);
+      }
+      return previous;
+    },
+    [],
+  );
+
+  const expandGroup = React.useCallback((groupId: string) => {
+    setExpand(groupId);
+  }, []);
+
+  const unExpand = React.useCallback(() => {
+    setExpand(undefined);
+  }, []);
+
+  const suppress = React.useCallback(
+    (notificationId: string) => {
+      onDismiss(notificationId);
+      onSuppress(notificationId);
+    },
+    [onDismiss, onSuppress],
+  );
+
+  const triggerAction = React.useCallback(
+    (notificationId: string, actionTitle: string) => {
+      const { notifications: notis, expand: currentExpand } = stateRef.current;
+      const noti = notis.find((iter) => iter.id === notificationId);
+      if (noti === undefined) {
         return;
       }
 
-      if (action.action !== undefined) {
-        action.action(() => onDismiss(id));
+      const callAction = (
+        actionId: string,
+        action: INotificationAction,
+        idx: number,
+      ) => {
+        if (idx === -1) {
+          return;
+        }
+
+        if (action.action !== undefined) {
+          action.action(() => onDismiss(actionId));
+        } else {
+          fireNotificationAction(actionId, noti.process, idx, () =>
+            onDismiss(actionId),
+          );
+        }
+      };
+
+      if (noti.group === undefined || noti.group === currentExpand) {
+        const actionIdx = noti.actions.findIndex(
+          (iter) => iter.title === actionTitle,
+        );
+        callAction(noti.id, noti.actions[actionIdx], actionIdx);
       } else {
-        fireNotificationAction(id, noti.process, idx, () => onDismiss(id));
+        notis
+          .filter((iter) => iter.group === noti.group)
+          .forEach((iter) => {
+            const actionIdx = iter.actions.findIndex(
+              (actIter) => actIter.title === actionTitle,
+            );
+            callAction(iter.id, iter.actions[actionIdx], actionIdx);
+          });
+      }
+    },
+    [onDismiss],
+  );
+
+  const dismissAll = React.useCallback(
+    (notificationId: string) => {
+      const { notifications: notis, expand: currentExpand } = stateRef.current;
+      const noti = notis.find((iter) => iter.id === notificationId);
+      api.events.emit(
+        "analytics-track-click-event",
+        "Notifications",
+        "Dismiss",
+      );
+      if (noti === undefined) {
+        return;
+      }
+      if (noti.group === undefined || noti.group === currentExpand) {
+        onDismiss(notificationId);
+      } else {
+        notis
+          .filter((iter) => iter.group === noti.group)
+          .forEach((iter) => {
+            onDismiss(iter.id);
+          });
+      }
+    },
+    [api, onDismiss],
+  );
+
+  const renderNotification = React.useCallback(
+    (notification: INotification, collapsed: { [groupId: string]: number }) => {
+      const translated: INotification = { ...notification };
+      translated.title =
+        translated.title !== undefined &&
+        (notification.localize === undefined ||
+          notification.localize.title !== false)
+          ? t(translated.title, { replace: translated.replace })
+          : translated.title;
+
+      if (collapsed[notification.group] > 1 && translated.title !== undefined) {
+        translated.message = t("<Multiple>");
+      } else {
+        translated.message =
+          notification.localize === undefined ||
+          notification.localize.message !== false
+            ? t(translated.message, { replace: translated.replace })
+            : translated.message;
+      }
+
+      return (
+        <Notification
+          collapsed={collapsed[notification.group]}
+          key={notification.id}
+          params={translated}
+          onDismiss={dismissAll}
+          onExpand={expandGroup}
+          onSuppress={suppress}
+          onTriggerAction={triggerAction}
+        />
+      );
+    },
+    [t, expandGroup, triggerAction, dismissAll, suppress],
+  );
+
+  // Mount/unmount
+  React.useEffect(() => {
+    mountedRef.current = true;
+    updateFiltered();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      mountedRef.current = false;
+      if (updateTimerRef.current !== undefined) {
+        clearTimeout(updateTimerRef.current);
       }
     };
+  }, [onResize, updateFiltered]);
 
-    if (noti.group === undefined || noti.group === this.state.expand) {
-      const actionIdx = noti.actions.findIndex(
-        (iter) => iter.title === actionTitle,
-      );
-      callAction(noti.id, noti.actions[actionIdx], actionIdx);
-    } else {
-      notifications
-        .filter((iter) => iter.group === noti.group)
-        .forEach((iter) => {
-          const actionIdx = iter.actions.findIndex(
-            (actIter) => actIter.title === actionTitle,
-          );
-          callAction(iter.id, iter.actions[actionIdx], actionIdx);
-        });
+  // Handle notifications changes
+  React.useEffect(() => {
+    if (prevNotificationsRef.current !== notifications) {
+      if (prevNotificationsRef.current.length !== notifications.length) {
+        updateDebouncer.current.runNow(() => null);
+      } else {
+        quickUpdate();
+        updateDebouncer.current.schedule();
+      }
+      prevNotificationsRef.current = notifications;
     }
-  };
+  }, [notifications, quickUpdate]);
 
-  private dismissAll = (notificationId: string) => {
-    const { notifications, onDismiss } = this.props;
-    const noti = notifications.find((iter) => iter.id === notificationId);
-    this.context.api.events.emit(
-      "analytics-track-click-event",
-      "Notifications",
-      "Dismiss",
-    );
-    if (noti === undefined) {
-      return;
-    }
-    if (noti.group === undefined || noti.group === this.state.expand) {
-      onDismiss(notificationId);
-    } else {
-      notifications
-        .filter((iter) => iter.group === noti.group)
-        .forEach((iter) => {
-          onDismiss(iter.id);
-        });
-    }
-  };
+  // Render
+  const collapsed: { [groupId: string]: number } = {};
 
-  private suppress = (notificationId: string) => {
-    this.props.onDismiss(notificationId);
-    this.props.onSuppress(notificationId);
-  };
-}
+  const items = filtered
+    .slice()
+    .reduce(
+      (prev: INotification[], notification: INotification) =>
+        groupNotifications(prev, notification, collapsed),
+      [],
+    )
+    .sort(inverseSort)
+    .map((notification) => renderNotification(notification, collapsed));
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    notifications: state.session.notifications.notifications,
-  };
-}
+  const popover = (
+    <Popover
+      arrowOffsetLeft={64}
+      id="notifications-popover"
+      style={{ display: hide ? "none" : "block" }}
+    >
+      {items.length > 0 ? items : t("No Notifications")}
+    </Popover>
+  );
 
-function mapDispatchToProps(dispatch): IActionProps {
-  return {
-    onDismiss: (id: string) => dispatch(dismissNotification(id)),
-    onSuppress: (id: string) => dispatch(suppressNotification(id, true)),
-  };
-}
+  const combinedProgress: IBar[] = [];
 
-export default translate(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(NotificationButton),
-) as React.ComponentClass<IBaseProps>;
+  const progress = notifications.filter((iter) => iter.progress !== undefined);
+  if (progress.length > 0) {
+    const percentages = Math.min(...progress.map((iter) => iter.progress));
+    combinedProgress.push({
+      class: "running",
+      min: 0,
+      max: 100,
+      value: percentages,
+    });
+  }
+
+  const pendingActivities = notifications.filter(
+    (iter) => iter.type === "activity" && iter.progress === undefined,
+  );
+
+  return (
+    <div style={{ display: "inline-block" }}>
+      <Button id="notifications-button" ref={buttonRef} onClick={toggle}>
+        <Icon name="notifications" />
+
+        <RadialProgress
+          className="notifications-progress"
+          data={combinedProgress}
+          offset={8}
+          spin={pendingActivities.length >= 1}
+          totalRadius={8}
+        />
+
+        {notifications.length === 0 ? null : (
+          <Badge>{notifications.length}</Badge>
+        )}
+      </Button>
+
+      <Overlay
+        placement="bottom"
+        rootClose={false}
+        shouldUpdatePosition={resizing}
+        show={items.length > 0}
+        target={buttonRef.current}
+        onExit={unExpand}
+      >
+        {popover}
+      </Overlay>
+    </div>
+  );
+};
+
+export default NotificationButton;

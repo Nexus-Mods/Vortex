@@ -62,6 +62,11 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@mdi/js@7.4.47":
+  version "7.4.47"
+  resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
+  integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
+
 "@types/eslint-scope@^3.7.0":
   version "3.7.3"
   resolved "https://registry.yarnpkg.com/@types/eslint-scope/-/eslint-scope-3.7.3.tgz#125b88504b61e3c8bc6f870882003253005c3224"

@@ -21,7 +21,8 @@ export default function init(context: IExtensionContext) {
   context.registerReducer(["persistent", "loadOrder"], modLoadOrderReducer);
   context.registerReducer(["settings", "loadOrder"], loadOrderSettingsReducer);
 
-  context.registerMainPage("sort-none", "Load Order", LoadOrderPage, {
+  context.registerMainPage("sort-none", "Load order", LoadOrderPage, {
+    priority: 120,
     id: "generic-loadorder",
     hotkey: "E",
     group: "per-game",
@@ -30,7 +31,6 @@ export default function init(context: IExtensionContext) {
       const gameEntry: IGameLoadOrderEntry = findGameEntry(currentGameId);
       return gameEntry !== undefined ? true : false;
     },
-    priority: 120,
     props: () => {
       return {
         getGameEntry: (gameId) => findGameEntry(gameId),

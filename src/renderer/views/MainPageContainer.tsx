@@ -1,16 +1,32 @@
+import React, {
+  Component,
+  type FC,
+  useCallback,
+  type ReactNode,
+  useState,
+  useMemo,
+  type JSX,
+} from "react";
+import { Alert, Button, Jumbotron } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+
+import type { IMainPage } from "../types/IMainPage";
+
+import { useMainContext } from "../contexts";
+import {
+  PageHeaderProvider,
+  type IPageHeaderContext,
+  PageHeaderContext,
+} from "../contexts/MainPageHeaderContext";
 import ExtensionGate from "../controls/ExtensionGate";
 import Icon from "../controls/Icon";
-import type { IMainPage } from "../types/IMainPage";
-import { ComponentEx, translate } from "../controls/ComponentEx";
+import { getApplication } from "../util/application";
 import { didIgnoreError, isOutdated } from "../util/errorHandling";
 import { genHash } from "../util/genHash";
 import { log } from "../util/log";
 
-import * as PropTypes from "prop-types";
-import * as React from "react";
-import { Alert, Button, Jumbotron } from "react-bootstrap";
-import type { WithTranslation } from "react-i18next";
-import { getApplication } from "../util/application";
+// Backward compatibility export
+export { type IPageHeaderContext, PageHeaderContext };
 
 export interface IBaseProps {
   page: IMainPage;
@@ -22,104 +38,73 @@ export interface IMainPageContext {
   globalOverlay: JSX.Element;
 }
 
-type IProps = IBaseProps & WithTranslation;
-
-interface IComponentState {
-  error: Error;
-  errorInfo: React.ErrorInfo;
+interface IErrorBoundaryProps {
+  pageId: string;
+  classes: string[];
+  children: ReactNode;
 }
 
-class MainPageContainer extends ComponentEx<IProps, IComponentState> {
-  public static childContextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-    headerPortal: PropTypes.func,
-    page: PropTypes.string,
-  };
+interface IErrorBoundaryState {
+  error: Error | undefined;
+  errorInfo: React.ErrorInfo | undefined;
+}
 
-  private headerRef: HTMLElement;
-
-  constructor(props: IProps) {
+// Error boundaries must be class components - no hook equivalent exists
+class PageErrorBoundary extends Component<
+  IErrorBoundaryProps,
+  IErrorBoundaryState
+> {
+  constructor(props: IErrorBoundaryProps) {
     super(props);
-
-    this.state = {
-      error: undefined,
-      errorInfo: undefined,
-    };
-  }
-
-  public getChildContext() {
-    const { page } = this.props;
-    return {
-      api: this.context.api,
-      headerPortal: () => this.headerRef,
-      page: page.id,
-    };
+    this.state = { error: undefined, errorInfo: undefined };
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ error, errorInfo });
   }
 
-  public render(): JSX.Element {
-    const { t, active, page, secondary } = this.props;
-    const { error } = this.state;
-
-    const classes = ["main-page"];
-    classes.push(active ? "page-active" : "page-hidden");
-    if (secondary) {
-      classes.push("secondary");
-    }
+  public render() {
+    const { error, errorInfo } = this.state;
+    const { pageId, classes, children } = this.props;
 
     if (error !== undefined) {
       return (
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
-          <Alert className="render-failure" bsStyle="danger">
-            <Icon className="render-failure-icon" name="sad" />
-            <div className="render-failure-text">{t("Failed to render.")}</div>
-            <div className="render-failure-buttons">
-              {isOutdated() || didIgnoreError() ? null : (
-                <Button onClick={this.report}>{t("Report")}</Button>
-              )}
-              <Button onClick={this.retryRender}>{t("Retry")}</Button>
-            </div>
-          </Alert>
-        </div>
+        <ErrorFallback
+          classes={classes}
+          error={error}
+          errorInfo={errorInfo}
+          pageId={pageId}
+          onRetry={() =>
+            this.setState({ error: undefined, errorInfo: undefined })
+          }
+        />
       );
     }
 
-    try {
-      const props = page.propsFunc();
-
-      return (
-        <div id={`page-${page.id}`} className={classes.join(" ")}>
-          <div className="mainpage-header-container" ref={this.setHeaderRef} />
-          <div className="mainpage-body-container">
-            <ExtensionGate id={page.id}>
-              <page.component
-                active={active}
-                secondary={secondary}
-                {...props}
-              />
-            </ExtensionGate>
-          </div>
-        </div>
-      );
-    } catch (err) {
-      log("warn", "error rendering extension main page", err);
-      return (
-        <div className={classes.join(" ")}>
-          <Jumbotron>
-            <h4>{t("Unavailable")}</h4>
-          </Jumbotron>
-        </div>
-      );
-    }
+    return children;
   }
+}
 
-  private report = () => {
-    const { events } = this.context.api;
-    const { error, errorInfo } = this.state;
-    events.emit(
+interface IErrorFallbackProps {
+  pageId: string;
+  classes: string[];
+  error: Error;
+  errorInfo: React.ErrorInfo;
+  onRetry: () => void;
+}
+
+const ErrorFallback: FC<IErrorFallbackProps> = ({
+  pageId,
+  classes,
+  error,
+  errorInfo,
+  onRetry,
+}) => {
+  const { t } = useTranslation(["common"]);
+  const context = useMainContext();
+
+  const report = useCallback(() => {
+    context.api.events.emit(
       "report-feedback",
       error.stack.split("\n")[0],
       `Component rendering error
@@ -134,18 +119,93 @@ ComponentStack:
       [],
       genHash(error),
     );
-  };
+  }, [context.api, error, errorInfo]);
 
-  private retryRender = () => {
-    this.setState({ error: undefined, errorInfo: undefined });
-  };
+  return (
+    <div className={classes.join(" ")} id={`page-${pageId}`}>
+      <Alert bsStyle="danger" className="render-failure">
+        <Icon className="render-failure-icon" name="sad" />
 
-  private setHeaderRef = (ref) => {
-    if (this.headerRef !== ref) {
-      this.headerRef = ref;
-      this.forceUpdate();
+        <div className="render-failure-text">{t("Failed to render.")}</div>
+
+        <div className="render-failure-buttons">
+          {isOutdated() || didIgnoreError() ? null : (
+            <Button onClick={report}>{t("Report")}</Button>
+          )}
+
+          <Button onClick={onRetry}>{t("Retry")}</Button>
+        </div>
+      </Alert>
+    </div>
+  );
+};
+
+export const MainPageContainer: React.FC<IBaseProps> = ({
+  page,
+  active,
+  secondary,
+}) => {
+  const { t } = useTranslation(["common"]);
+  const [headerRef, setHeaderRef] = useState<HTMLElement | null>(null);
+
+  const classes = useMemo(() => {
+    const result = ["main-page"];
+    result.push(active ? "page-active" : "page-hidden");
+    if (secondary) {
+      result.push("secondary");
     }
-  };
-}
+    return result;
+  }, [active, secondary]);
 
-export default translate(["common"])(MainPageContainer);
+  const headerContextValue = useMemo<IPageHeaderContext>(
+    () => ({
+      headerPortal: () => headerRef,
+      page: page.id,
+    }),
+    [headerRef, page.id],
+  );
+
+  const handleHeaderRef = useCallback((ref: HTMLElement | null) => {
+    setHeaderRef(ref);
+  }, []);
+
+  // Render the page content
+  let content: JSX.Element;
+  try {
+    const props = page.propsFunc();
+    content = (
+      <PageHeaderProvider value={headerContextValue}>
+        <div className={classes.join(" ")} id={`page-${page.id}`}>
+          <div className="mainpage-header-container" ref={handleHeaderRef} />
+
+          <div className="mainpage-body-container">
+            <ExtensionGate id={page.id}>
+              <page.component
+                active={active}
+                secondary={secondary}
+                {...props}
+              />
+            </ExtensionGate>
+          </div>
+        </div>
+      </PageHeaderProvider>
+    );
+  } catch (err) {
+    log("warn", "error rendering extension main page", err);
+    content = (
+      <div className={classes.join(" ")}>
+        <Jumbotron>
+          <h4>{t("Unavailable")}</h4>
+        </Jumbotron>
+      </div>
+    );
+  }
+
+  return (
+    <PageErrorBoundary classes={classes} pageId={page.id}>
+      {content}
+    </PageErrorBoundary>
+  );
+};
+
+export default MainPageContainer;

@@ -108,6 +108,7 @@ interface IConnectedProps {
   instanceId: string;
   installPathMode: InstallPathMode;
   suggestInstallPathDirectory: string;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -221,11 +222,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <More id="staging_path_mode" name="Staging Path Mode">
               {t(
                 "Usually, when you first manage a game, the staging folder is initially set to be in " +
-                '"c:\\Users\\<username>\\AppData\\Roaming\\Vortex\\<game>" because that\'s ' +
-                "guaranteed to exist and have the necessary file permissions set up.\n\n" +
-                "If you enable this option, it will instead put the staging folder on the same drive " +
-                "as the primary mod folder of each game, in <drive>:\\{{suggestionPattern}}\\<game id>.\n" +
-                "This should usually work fine for most users and ensures deployment is possible.",
+                  '"c:\\Users\\<username>\\AppData\\Roaming\\Vortex\\<game>" because that\'s ' +
+                  "guaranteed to exist and have the necessary file permissions set up.\n\n" +
+                  "If you enable this option, it will instead put the staging folder on the same drive " +
+                  "as the primary mod folder of each game, in <drive>:\\{{suggestionPattern}}\\<game id>.\n" +
+                  "This should usually work fine for most users and ensures deployment is possible.",
                 {
                   replace: {
                     suggestionPattern: suggestInstallPathDirectory,
@@ -290,7 +291,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </Panel.Body>
         </Panel>,
       );
-    } else {
+    } else if (!this.props.useModernLayout) {
       panels.push(
         <EmptyPlaceholder
           icon="settings"
@@ -379,28 +380,28 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               stats !== undefined
                 ? PromiseBB.resolve(false)
                 : onShowDialog(
-                  "question",
-                  "Missing staging folder",
-                  {
-                    bbcode:
-                      "Vortex is unable to find your current mods staging folder. " +
-                      "This can happen when: <br />" +
-                      "1. You or an external application removed this folder.<br />" +
-                      "2. Your HDD/removable drive became faulty or unseated.<br />" +
-                      "3. The staging folder was located on a network drive which has been " +
-                      "disconnected for some reason.<br /><br />" +
-                      "Please diagnose your system and ensure that the source folder is detectable " +
-                      "by your operating system.<br /><br />" +
-                      'Alternatively, if you want to force Vortex to "re-initialize" your staging ' +
-                      "folder at the destination you have chosen, Vortex can do this for you but " +
-                      "note that the folder will be empty as nothing will be transferred inside it!",
-                  },
-                  [{ label: "Cancel" }, { label: "Reinitialize" }],
-                ).then((result) =>
-                  result.action === "Cancel"
-                    ? PromiseBB.reject(new UserCanceled())
-                    : PromiseBB.resolve(true),
-                );
+                    "question",
+                    "Missing staging folder",
+                    {
+                      bbcode:
+                        "Vortex is unable to find your current mods staging folder. " +
+                        "This can happen when: <br />" +
+                        "1. You or an external application removed this folder.<br />" +
+                        "2. Your HDD/removable drive became faulty or unseated.<br />" +
+                        "3. The staging folder was located on a network drive which has been " +
+                        "disconnected for some reason.<br /><br />" +
+                        "Please diagnose your system and ensure that the source folder is detectable " +
+                        "by your operating system.<br /><br />" +
+                        'Alternatively, if you want to force Vortex to "re-initialize" your staging ' +
+                        "folder at the destination you have chosen, Vortex can do this for you but " +
+                        "note that the folder will be empty as nothing will be transferred inside it!",
+                    },
+                    [{ label: "Cancel" }, { label: "Reinitialize" }],
+                  ).then((result) =>
+                    result.action === "Cancel"
+                      ? PromiseBB.reject(new UserCanceled())
+                      : PromiseBB.resolve(true),
+                  );
 
             return queryReset.then((didReset) => {
               onSetTransfer(gameMode, newPath);
@@ -568,7 +569,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const doPurge = () =>
       oldInstallPath !== newInstallPath
         ? // ignore if there is no deployment method because in that case there is nothing to purge
-        this.purgeActivation().catch(NoDeployment, () => PromiseBB.resolve())
+          this.purgeActivation().catch(NoDeployment, () => PromiseBB.resolve())
         : PromiseBB.resolve();
 
     this.nextState.progress = 0;
@@ -607,9 +608,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           {
             bbcode: t(
               "The mods staging folder has been copied [b]successfully[/b] to " +
-              "your chosen destination!<br />" +
-              "Clean-up of the old staging folder has been cancelled.<br /><br />" +
-              "Old staging folder: [url]{{thePath}}[/url]",
+                "your chosen destination!<br />" +
+                "Clean-up of the old staging folder has been cancelled.<br /><br />" +
+                "Old staging folder: [url]{{thePath}}[/url]",
               { replace: { thePath: oldInstallPath } },
             ),
           },
@@ -635,7 +636,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError(
           "Invalid destination",
           "The destination partition you selected is invalid - please choose a different " +
-          "destination",
+            "destination",
           false,
         ),
       )
@@ -656,15 +657,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             onShowError(
               "File operations interrupted",
               "Input/Output file operations have been interrupted. This is not a bug in Vortex, " +
-              "but rather a problem with your environment!<br /><br />" +
-              "Possible reasons behind this issue:<br />" +
-              "1. Your HDD/Removable drive has become unseated during transfer.<br />" +
-              "2. File operations were running on a network drive and said drive has become " +
-              "disconnected for some reason (Network hiccup?)<br />" +
-              "3. An overzealous third party tool (possibly Anti-Virus or virus) " +
-              "which is blocking Vortex from completing its operations.<br />" +
-              "4. A faulty HDD/Removable drive.<br /><br />" +
-              "Please test your environment and try again once you've confirmed it's fixed.",
+                "but rather a problem with your environment!<br /><br />" +
+                "Possible reasons behind this issue:<br />" +
+                "1. Your HDD/Removable drive has become unseated during transfer.<br />" +
+                "2. File operations were running on a network drive and said drive has become " +
+                "disconnected for some reason (Network hiccup?)<br />" +
+                "3. An overzealous third party tool (possibly Anti-Virus or virus) " +
+                "which is blocking Vortex from completing its operations.<br />" +
+                "4. A faulty HDD/Removable drive.<br /><br />" +
+                "Please test your environment and try again once you've confirmed it's fixed.",
               false,
               true,
             );
@@ -674,9 +675,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               "Failed to move directories",
               t(
                 "Vortex has encountered a corrupted and unreadable file/directory " +
-                "and is unable to complete the transfer. Vortex was attempting " +
-                'to move the following file/directory: "{{culprit}}" when your operating system ' +
-                "raised the error. Please test your environment and try again once you've confirmed it's fixed.",
+                  "and is unable to complete the transfer. Vortex was attempting " +
+                  'to move the following file/directory: "{{culprit}}" when your operating system ' +
+                  "raised the error. Please test your environment and try again once you've confirmed it's fixed.",
                 { replace: { culprit: err.path } },
               ),
               false,
@@ -723,7 +724,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 onShowError(
                   "Destination folder is not writable",
                   "Vortex is unable to clean up " +
-                  "the destination folder due to a permissions issue.",
+                    "the destination folder due to a permissions issue.",
                   false,
                 );
               } else {
@@ -1270,6 +1271,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     installPathMode: state.settings.mods.installPathMode,
     suggestInstallPathDirectory:
       state.settings.mods.suggestInstallPathDirectory,
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

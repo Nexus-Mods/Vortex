@@ -97,16 +97,17 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "./actions/window";
+import reducer, { Decision } from "./reducers/index";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
-import reducer, { Decision } from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
 import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
+import StyleManager from "./StyleManager";
+import { AppLayout } from "./views/AppLayout";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
-import StyleManager from "./StyleManager";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
@@ -123,7 +124,6 @@ import { showError } from "./util/message";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
 import LoadingScreen from "./views/LoadingScreen";
-import MainWindow from "./views/MainWindow";
 
 log("debug", "renderer process started", { pid: process["pid"] });
 
@@ -774,11 +774,7 @@ async function load(extensions: ExtensionManager): Promise<void> {
       <DndProvider backend={HTML5Backend}>
         <I18nextProvider i18n={i18n}>
           <ExtensionContext.Provider value={extensions}>
-            <MainWindow
-              api={extensions.getApi()}
-              className="full-height"
-              t={tFunc}
-            />
+            <AppLayout className="full-height" />
           </ExtensionContext.Provider>
         </I18nextProvider>
       </DndProvider>

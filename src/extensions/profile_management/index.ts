@@ -822,7 +822,8 @@ function unmanageGame(
           "you're sure this is what you want![/style]",
         message,
         parameters: {
-          gameName: game?.name ?? gameName ?? api.translate("<Missing game>"),
+          gameName:
+            game?.name ?? gameName ?? String(api.translate("<Missing game>")),
         },
       },
       [{ label: "Cancel" }, { label: "Delete profiles" }],
@@ -911,6 +912,19 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage("profile", "Profiles", ProfileView, {
     hotkey: "P",
     group: "global",
+    isClassicOnly: true,
+    visible: () =>
+      activeGameId(context.api.store.getState()) !== undefined &&
+      context.api.store.getState().settings.interface.profilesVisible,
+    props: () => ({ features: profileFeatures }),
+  });
+
+  context.registerMainPage("profile", "Profiles", ProfileView, {
+    priority: 35,
+    id: "game-profiles",
+    hotkey: "P",
+    group: "per-game",
+    isModernOnly: true,
     visible: () =>
       activeGameId(context.api.store.getState()) !== undefined &&
       context.api.store.getState().settings.interface.profilesVisible,

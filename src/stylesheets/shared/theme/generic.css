@@ -4,11 +4,11 @@
 
     --leading-tighter: 1.2;
 
-    --z-index-panel: 10000;
-    --z-index-modal: 10001;
-    --z-index-dropdown: 10002;
-    --z-index-tooltip: 10003;
-    --z-index-toast: 10004;
+    --z-index-dropdown: 1020;
+    --z-index-popover: 1030;
+    --z-index-tooltip: 1060;
+    --z-index-modal: 1050;
+    --z-index-toast: 1090;
 
     --shadow-sm:
         0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%),

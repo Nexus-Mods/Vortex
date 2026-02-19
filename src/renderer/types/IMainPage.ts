@@ -13,11 +13,14 @@ import type * as React from "react";
 export interface IMainPage {
   id: string;
   icon: string;
+  mdi?: string;
   title: string;
   component: React.ComponentClass<any> | React.StatelessComponent<any>;
   propsFunc: () => any;
   visible: () => boolean;
   group: "global" | "per-game" | "support" | "hidden" | "dashboard";
+  isClassicOnly?: boolean;
+  isModernOnly?: boolean;
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

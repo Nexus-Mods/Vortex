@@ -32,6 +32,11 @@ describe('Phased Installer', () => {
       settings: {
         downloads: {
           collectionsInstallWhileDownloading: false
+        },
+        profiles: {
+          activeProfileId: 'test-profile-1',
+          nextProfileId: undefined,
+          lastActiveProfile: {}
         }
       } as any
     };

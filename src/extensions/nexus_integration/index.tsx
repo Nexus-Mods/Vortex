@@ -2050,9 +2050,15 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(["settings", "nexus"], settingsReducer);
   context.registerReducer(["persistent", "nexus"], persistentReducer);
   context.registerReducer(["session", "nexus"], sessionReducer);
-  context.registerAction("application-icons", 200, LoginIcon, {}, () => ({
-    nexus,
-  }));
+  context.registerAction(
+    "application-icons",
+    200,
+    LoginIcon,
+    { isClassicOnly: true },
+    () => ({
+      nexus,
+    }),
+  );
   context.registerAction(
     "mods-action-icons",
     800,
@@ -2204,7 +2210,7 @@ function init(context: IExtensionContextExt): boolean {
     "global-icons",
     100,
     "nexus",
-    {},
+    { isClassicOnly: true },
     "Refresh User Info",
     () => {
       log("info", "Refresh User Info global menu item clicked");

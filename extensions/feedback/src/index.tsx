@@ -15,6 +15,7 @@ import * as path from "path";
 import * as tmp from "tmp";
 import { fs, log, types, util } from "vortex-api";
 import * as winapiT from "winapi-bindings";
+import { mdiCommentTextOutline } from "@mdi/js";
 
 const FEEDBACK_GOOGLE_FORM = "https://forms.gle/YF9ED2Xe4ef9jKf99";
 
@@ -394,13 +395,14 @@ function init(context: types.IExtensionContext) {
       dumpReduxActionsToFile,
       removeFiles,
     }),
-  });
+    mdi: mdiCommentTextOutline,
+  } as any);
 
   context.registerAction(
     "global-icons",
     100,
     "feedback",
-    {},
+    { classicOnly: true } as any,
     "Send Feedback",
     () => util.opn(FEEDBACK_GOOGLE_FORM).catch(() => null) as any,
   );
@@ -409,7 +411,7 @@ function init(context: types.IExtensionContext) {
     "global-icons",
     100,
     "bug",
-    {},
+    { classicOnly: true } as any,
     "Report Bug",
     () => util.opn(VORTEX_ISSUE_TRACKER).catch(() => null) as any,
   );

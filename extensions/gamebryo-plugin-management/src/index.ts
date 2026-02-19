@@ -495,6 +495,7 @@ function register(
 
   const installedPlugins = () => enabledPlugins(context.api.store.getState());
   context.registerMainPage("plugins", "Plugins", PluginList, {
+    priority: 70,
     id: "gamebryo-plugins",
     hotkey: "E",
     group: "per-game",

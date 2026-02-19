@@ -1,7 +1,8 @@
-import type { PropsCallback } from "../types/IExtensionContext";
-import { ComponentEx, extend, translate } from "../controls/ComponentEx";
+import React, { type FC, type JSX } from "react";
 
-import * as React from "react";
+import type { PropsCallbackTyped } from "../types/IExtensionContext";
+
+import { useExtensionObjects } from "../ExtensionProvider";
 
 export interface IBaseProps {
   slim: boolean;
@@ -9,42 +10,31 @@ export interface IBaseProps {
 
 interface IFooter {
   id: string;
-  component: React.ComponentClass<any>;
-  props: PropsCallback;
+  component: React.ComponentType<IBaseProps>;
+  props: PropsCallbackTyped<IBaseProps>;
 }
 
-interface IExtendedProps {
-  objects: IFooter[];
-}
-
-type IProps = IBaseProps & IExtendedProps;
+const registerFooter = (
+  _instanceGroup: undefined,
+  id: string,
+  component: React.ComponentType<IBaseProps>,
+  props: PropsCallbackTyped<IBaseProps>,
+): IFooter => {
+  return { id, component, props };
+};
 
 /**
  * Footer on the main window. Can be extended
- * @class MainFooter
  */
-class MainFooter extends ComponentEx<IProps, {}> {
-  public render(): JSX.Element {
-    const { objects } = this.props;
-    return <div id="main-footer">{objects.map(this.renderFooter)}</div>;
-  }
+export const MainFooter: FC<IBaseProps> = ({ slim }) => {
+  const footers = useExtensionObjects<IFooter>(registerFooter);
 
-  private renderFooter = (footer: IFooter): JSX.Element => {
-    const { slim } = this.props;
+  const renderFooter = (footer: IFooter): JSX.Element => {
     const props = footer.props !== undefined ? footer.props() : {};
     return <footer.component key={footer.id} slim={slim} {...props} />;
   };
-}
 
-function registerFooter(
-  instanceGroup: undefined,
-  id: string,
-  component: React.ComponentClass<any>,
-  props: PropsCallback,
-) {
-  return { id, component, props };
-}
+  return <div id="main-footer">{footers.map(renderFooter)}</div>;
+};
 
-export default translate(["common"])(
-  extend(registerFooter)(MainFooter),
-) as React.ComponentClass<IBaseProps>;
+export default MainFooter;
