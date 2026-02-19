@@ -1,4 +1,10 @@
-import { mdiCheck, mdiDiamondStone, mdiDownload, mdiOpenInNew, mdiWeb } from "@mdi/js";
+import {
+  mdiCheck,
+  mdiDiamondStone,
+  mdiDownload,
+  mdiOpenInNew,
+  mdiWeb,
+} from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,8 +14,8 @@ import { NexusMods } from "../../../../tailwind/components/icons/NexusMods";
 import { Button } from "../../../../renderer/tailwind/components/next/button";
 import { Icon } from "../../../../renderer/tailwind/components/next/icon";
 import { Typography } from "../../../../renderer/tailwind/components/next/typography";
-import { opn } from "../../../../util/api";
-import { bytesToString } from "../../../../util/util";
+import { opn } from "../../../../renderer/util/api";
+import { bytesToString } from "../../../../renderer/util/util";
 
 export const ModRequirement = ({
   mod,

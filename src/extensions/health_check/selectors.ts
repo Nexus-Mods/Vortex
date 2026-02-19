@@ -1,7 +1,7 @@
-import type { IState } from "../../types/IState";
+import type { IState } from "../../renderer/types/IState";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type { IHealthCheckPersistentState } from "./reducers/persistent";
-import type { IHealthCheckResult } from "../../types/IHealthCheck";
+import type { IHealthCheckResult } from "../../renderer/types/IHealthCheck";
 import type {
   HealthCheckId,
   IModMissingRequirements,

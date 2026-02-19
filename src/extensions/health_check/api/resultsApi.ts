@@ -3,7 +3,7 @@
  * Manages health check results and summaries
  */
 
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
+import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { HealthCheckId } from "../types";
 

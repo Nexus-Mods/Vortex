@@ -2,9 +2,9 @@ import { Dialog } from "@headlessui/react";
 import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
-import { Icon } from "../next/icon";
-import { Typography } from "../next/typography";
-import { joinClasses } from "../next/utils";
+import { Icon } from "../../../renderer/tailwind/components/next/icon";
+import { Typography } from "../../../renderer/tailwind/components/next/typography";
+import { joinClasses } from "../../../renderer/tailwind/components/next/utils";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";
 
@@ -30,7 +30,8 @@ export const ModalWrapper = ({
   onClose,
 }: ModalProps) => (
   <Dialog
-    className={joinClasses(["fixed inset-0 z-modal flex flex-col items-center justify-center overflow-y-auto p-4",
+    className={joinClasses([
+      "fixed inset-0 z-modal flex flex-col items-center justify-center overflow-y-auto p-4",
       className,
     ])}
     initialFocus={initialFocusRef}
@@ -60,7 +61,8 @@ export const ModalPanel = ({
   onClose,
 }: PropsWithChildren<ModalPanelProps>) => (
   <Dialog.Panel
-    className={joinClasses(["scrollbar relative w-full overflow-y-auto rounded-lg border border-surface-translucent-low bg-surface-low p-4 shadow-xl",
+    className={joinClasses([
+      "scrollbar relative w-full overflow-y-auto rounded-lg border border-surface-translucent-low bg-surface-low p-4 shadow-xl",
       modalSize[size],
       className,
     ])}

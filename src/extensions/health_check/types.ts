@@ -6,7 +6,7 @@ import type { IModRequiring, IModRequirement } from "@nexusmods/nexus-api";
 import type {
   HealthCheckTrigger,
   IHealthCheckResult,
-} from "../../types/IHealthCheck";
+} from "../../renderer/types/IHealthCheck";
 import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 
 /**

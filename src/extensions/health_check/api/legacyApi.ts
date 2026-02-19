@@ -3,8 +3,8 @@
  * Adapter for converting old Vortex tests to health checks
  */
 
-import type { CheckFunction } from "../../../types/IExtensionContext";
-import type { HealthCheckCategory } from "../../../types/IHealthCheck";
+import type { CheckFunction } from "../../../renderer/types/IExtensionContext";
+import type { HealthCheckCategory } from "../../../renderer/types/IHealthCheck";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 

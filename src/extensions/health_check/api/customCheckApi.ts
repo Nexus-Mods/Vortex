@@ -3,13 +3,13 @@
  * Manages custom health checks registered by extensions
  */
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type {
   IHealthCheck,
   IHealthCheckResult,
   HealthCheckTrigger,
   IHealthCheckEntry,
-} from "../../../types/IHealthCheck";
+} from "../../../renderer/types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { HealthCheckId } from "../types";
 

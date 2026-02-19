@@ -1,6 +1,6 @@
 import React, { type InputHTMLAttributes, type PropsWithChildren } from "react";
-import { joinClasses } from "../../next/utils";
-import { Icon } from "../../next/icon";
+import { joinClasses } from "../../../../renderer/tailwind/components/next/utils";
+import { Icon } from "../../../../renderer/tailwind/components/next/icon";
 
 export const Checkbox = ({
   checked,

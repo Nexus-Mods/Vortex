@@ -3,8 +3,8 @@
  * Combines all API modules into a single interface
  */
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { HealthCheckTrigger } from "../../../types/IHealthCheck";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
 import type { IHealthCheckApi } from "../types";

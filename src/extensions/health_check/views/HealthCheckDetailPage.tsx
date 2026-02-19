@@ -11,11 +11,11 @@ import React, { useState, useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IState } from "../../../renderer/types/IState";
 import type { IModRequirementExt, IModFileInfo } from "../types";
 
-import { log } from "../../..";
+import { log } from "../../../renderer/util/log";
 import MainPage from "../../../renderer/views/MainPage";
 import { unknownToError } from "../../../shared/errors";
 import { Button } from "../../../renderer/tailwind/components/next/button";
@@ -25,7 +25,7 @@ import {
   TypographyLink,
 } from "../../../renderer/tailwind/components/next/typography";
 import { Pictogram } from "../../../tailwind/components/pictogram";
-import { opn } from "../../../util/api";
+import { opn } from "../../../renderer/util/api";
 import { setRequirementHidden } from "../actions/persistent";
 import { FeedbackModal } from "../components/feedback_modal";
 import { PremiumModal } from "../components/premium_modal";

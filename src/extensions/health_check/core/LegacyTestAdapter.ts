@@ -1,16 +1,16 @@
 import type {
   CheckFunction,
   IExtensionApi,
-} from "../../../types/IExtensionContext";
+} from "../../../renderer/types/IExtensionContext";
 import {
   HealthCheckCategory,
   HealthCheckSeverity,
   HealthCheckTrigger,
-} from "../../../types/IHealthCheck";
+} from "../../../renderer/types/IHealthCheck";
 import type {
   IHealthCheckResult,
   ILegacyTestAdapter,
-} from "../../../types/IHealthCheck";
+} from "../../../renderer/types/IHealthCheck";
 import type { HealthCheckRegistry } from "./HealthCheckRegistry";
 
 export class LegacyTestAdapter {

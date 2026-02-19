@@ -11,7 +11,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
 import MainPage from "../../../renderer/views/MainPage";
@@ -26,7 +26,7 @@ import {
 import { Typography } from "../../../renderer/tailwind/components/next/typography";
 import { NoResults } from "../../../renderer/tailwind/components/no_results";
 import { Pictogram } from "../../../tailwind/components/pictogram";
-import { batchDispatch } from "../../../util/util";
+import { batchDispatch } from "../../../renderer/util/util";
 import {
   setRequirementHidden,
   clearAllHiddenRequirements,

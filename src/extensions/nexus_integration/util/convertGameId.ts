@@ -9,7 +9,7 @@ import type {
 } from "../../gamemode_management/types/IGameStored";
 import { getErrorMessageOrDefault } from "../../../shared/errors";
 import { knownGames } from "../../gamemode_management/selectors";
-import { IState } from "../../../types/IState";
+import { IState } from "../../../renderer/types/IState";
 import { nexusGames } from "../util";
 
 /**

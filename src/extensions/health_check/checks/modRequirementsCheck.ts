@@ -3,10 +3,10 @@
  * Validates that all Nexus mod requirements are satisfied
  */
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
-import { HealthCheckSeverity } from "../../../types/IHealthCheck";
-import { log } from "../../../util/log";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import { HealthCheckSeverity } from "../../../renderer/types/IHealthCheck";
+import { log } from "../../../renderer/util/log";
 import {
   getErrorMessageOrDefault,
   unknownToError,
@@ -15,16 +15,20 @@ import { activeProfile } from "../../profile_management/selectors";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IModRequirements } from "@nexusmods/nexus-api";
-import { getSafe } from "../../../util/storeHelper";
-import { setModAttribute } from "../../../actions";
+import { getSafe } from "../../../renderer/util/storeHelper";
+import { setModAttribute } from "../../../renderer/actions";
 import type {
   IModRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckParams,
 } from "../types";
-import { getGame, nexusGameId, renderModName } from "../../../util/api";
+import {
+  getGame,
+  nexusGameId,
+  renderModName,
+} from "../../../renderer/util/api";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
-import { batchDispatch } from "../../../util/util";
+import { batchDispatch } from "../../../renderer/util/util";
 import { numericGameIdToDomainName } from "../../nexus_integration/util/convertGameId";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";

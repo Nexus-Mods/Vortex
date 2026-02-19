@@ -1,5 +1,5 @@
-import safeCreateAction from "../../../actions/safeCreateAction";
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
+import safeCreateAction from "../../../renderer/actions/safeCreateAction";
+import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
 import type { IModFileInfo } from "../types";
 
 /**

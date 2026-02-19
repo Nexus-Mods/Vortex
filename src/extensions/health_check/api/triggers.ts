@@ -1,7 +1,7 @@
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { HealthCheckTrigger } from "../../../types/IHealthCheck";
-import type { IHealthCheckResult } from "../../../types/IHealthCheck";
-import { log } from "../../../util/log";
+import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
+import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import { log } from "../../../renderer/util/log";
 import type { IHealthCheckApi } from "../types";
 
 /**

@@ -3,8 +3,8 @@
  * Provides health check functionality for mods
  */
 
-import { activeGameId } from "../../util/selectors";
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import { activeGameId } from "../../renderer/util/selectors";
+import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
 import HealthCheckPage from "./views/HealthCheckPage";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
 import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
@@ -14,7 +14,7 @@ import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
-} from "../../types/IHealthCheck";
+} from "../../renderer/types/IHealthCheck";
 import { sessionReducer } from "./reducers/session";
 import { persistentReducer } from "./reducers/persistent";
 import { onDownloadRequirement } from "./util";
