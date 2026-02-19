@@ -27,11 +27,7 @@ export const PremiumIndicator: FC = () => {
 
   if (isPremium) {
     return (
-      <Typography
-        appearance="moderate"
-        className="leading-5"
-        typographyType="title-sm"
-      >
+      <Typography appearance="moderate" typographyType="title-sm">
         {t("Premium")}
       </Typography>
     );

@@ -61,11 +61,7 @@ const Stat = ({
   <div className="flex items-center gap-x-1">
     <Icon className="text-neutral-subdued" path={iconPath} size="sm" />
 
-    <Typography
-      appearance="moderate"
-      className="leading-5"
-      typographyType="body-sm"
-    >
+    <Typography appearance="moderate" typographyType="body-sm">
       {children}
     </Typography>
   </div>
@@ -145,7 +141,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
             <div className="absolute inset-x-0 bottom-0 z-2">
               <Typography
                 appearance="none"
-                className="flex h-7 items-center gap-x-1 bg-info-weak px-1.5 leading-5 text-info-50"
+                className="flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
                 typographyType="title-xs"
               >
                 <Icon path={mdiStar} size="xs" />
@@ -169,7 +165,7 @@ export const CollectionTile: ComponentType<CollectionTileProps> = ({
 
             <Typography
               appearance="moderate"
-              className="flex items-center gap-x-1 leading-5"
+              className="flex items-center gap-x-1"
               typographyType="body-sm"
             >
               <div className="size-4 overflow-hidden rounded-full bg-surface-translucent-low">

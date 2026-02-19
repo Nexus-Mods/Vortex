@@ -62,7 +62,7 @@ export const Header: FC = () => {
 
         <Typography
           appearance="none"
-          className="flex items-center gap-x-2 truncate leading-5 font-semibold"
+          className="flex items-center gap-x-2 truncate font-semibold"
         >
           <span className="text-neutral-strong">{title}</span>
 

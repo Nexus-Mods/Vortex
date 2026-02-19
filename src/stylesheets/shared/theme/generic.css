@@ -2,8 +2,6 @@
     --text-2xs: 0.625rem;
     --text-2xs--line-height: calc(1 / 0.625);
 
-    --leading-tighter: 1.2;
-
     --z-index-dropdown: 1020;
     --z-index-popover: 1030;
     --z-index-tooltip: 1060;

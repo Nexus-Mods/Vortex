@@ -13,9 +13,9 @@
         justify-content: center;
 
         white-space: nowrap;
-        font-size: var(--text-xs);
-        line-height: calc(var(--spacing) * 4);
-        letter-spacing: var(--tracking-wide);
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
 
         min-height: calc(var(--spacing) * 7);
         padding-inline: calc(var(--spacing) * 2);
@@ -116,9 +116,9 @@
         .nxm-dropdown-item-label {
             flex-grow: 1;
             text-align: left;
-            font-size: var(--text-xs);
-            line-height: calc(var(--spacing) * 4);
-            letter-spacing: var(--tracking-wide);
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
         }
 
         .nxm-dropdown-item-icon {

@@ -9,9 +9,9 @@
         justify-content: center;
 
         white-space: nowrap;
-        font-size: var(--text-base);
-        letter-spacing: var(--tracking-normal);
-        line-height: calc(var(--spacing) * 4);
+        font-size: var(--text-body-lg);
+        letter-spacing: var(--text-body-lg--letter-spacing);
+        line-height: var(--text-body-lg--line-height);
 
         min-width: calc(var(--spacing) * 24);
         min-height: calc(var(--spacing) * 9);
@@ -212,9 +212,9 @@
     min-width: 0;
     padding-inline: calc(var(--spacing) * 2);
 
-    font-size: var(--text-xs);
-    line-height: calc(var(--spacing) * 4);
-    letter-spacing: var(--tracking-wide);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    letter-spacing: var(--text-body-sm--letter-spacing);
 
     & .nxm-button-icon {
         width: calc(var(--spacing) * 4);

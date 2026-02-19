@@ -60,9 +60,9 @@
 
             & .nxm-tab-button-content {
                 white-space: nowrap;
-                font-size: var(--text-sm);
-                line-height: calc(var(--spacing) * 4);
-                letter-spacing: var(--tracking-normal);
+                font-size: var(--text-body-md);
+                line-height: var(--text-body-md--line-height);
+                letter-spacing: var(--text-body-md--letter-spacing);
                 border-radius: calc(var(--spacing) * 0.5);
 
                 & .nxm-tab-button-count {
@@ -70,9 +70,9 @@
                     align-items: center;
                     justify-content: center;
 
-                    font-size: var(--text-xs);
-                    line-height: calc(var(--spacing) * 4);
-                    letter-spacing: var(--tracking-wide);
+                    font-size: var(--text-body-sm);
+                    line-height: var(--text-body-sm--line-height);
+                    letter-spacing: var(--text-body-sm--letter-spacing);
 
                     color: var(--color-neutral-subdued);
                     background-color: var(--color-surface-mid);
@@ -113,9 +113,9 @@
             color: var(--color-neutral-subdued);
 
             white-space: nowrap;
-            font-size: var(--text-xs);
-            line-height: calc(var(--spacing) * 4);
-            letter-spacing: var(--tracking-wide);
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
 
             min-height: calc(var(--spacing) * 7);
             border-radius: calc(var(--spacing) * 1);

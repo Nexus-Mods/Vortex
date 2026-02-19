@@ -58,6 +58,29 @@ export interface TypographyProps extends AllHTMLAttributes<HTMLElement> {
   typographyType?: TypographyTypes | TypographyTypeObject;
 }
 
+const typeFallbacks: Record<TypographyElements, TypographyTypes> = {
+  div: "body-md",
+  h1: "heading-2xl",
+  h2: "heading-xl",
+  h3: "heading-lg",
+  h4: "heading-md",
+  h5: "heading-sm",
+  h6: "heading-xs",
+  p: "body-md",
+  span: "body-md",
+  ul: "body-md",
+};
+
+const toClasses = (type: TypographyTypes, prefix = "") => {
+  const classes = [`${prefix}text-${type}`];
+
+  if (type.startsWith("title-")) {
+    classes.push(`${prefix}uppercase`);
+  }
+
+  return classes;
+};
+
 const getTypographyStyles = ({
   as,
   typographyType,
@@ -65,43 +88,13 @@ const getTypographyStyles = ({
   as: TypographyProps["as"];
   typographyType: TypographyProps["typographyType"];
 }) => {
-  const styles: string[] = [];
-
-  const typeFallbacks: { [key in TypographyElements]: string } = {
-    div: "body-md",
-    h1: "heading-2xl",
-    h2: "heading-xl",
-    h3: "heading-lg",
-    h4: "heading-md",
-    h5: "heading-sm",
-    h6: "heading-xs",
-    p: "body-md",
-    span: "body-md",
-    ul: "body-md",
-  };
-
-  if (!typographyType || typeof typographyType === "string") {
-    styles.push(
-      `typography-${
-        typeof typographyType === "string"
-          ? typographyType
-          : (typeFallbacks[as] as TypographyTypes)
-      }`,
+  if (typeof typographyType === "object") {
+    return Object.entries(typographyType).flatMap(([size, type]) =>
+      !type ? [] : toClasses(type, size === "default" ? "" : `${size}:`),
     );
-  } else {
-    Object.keys(typographyType).forEach((size) => {
-      const screenSize = size as ResponsiveScreenSizes;
-      const style = typographyType[screenSize];
-
-      if (style) {
-        styles.push(
-          `${screenSize === "default" ? "" : `${screenSize}:`}typography-${style}`,
-        );
-      }
-    });
   }
 
-  return styles;
+  return toClasses(typographyType ?? typeFallbacks[as]);
 };
 
 export const Typography = ({

@@ -50,9 +50,9 @@
 
         .nxm-pagination-number,
         .nxm-pagination-separator {
-            font-size: var(--text-sm);
-            line-height: calc(var(--spacing) * 4);
-            letter-spacing: var(--tracking-normal);
+            font-size: var(--text-body-md);
+            line-height: var(--text-body-md--line-height);
+            letter-spacing: var(--text-body-md--letter-spacing);
 
             min-width: calc(var(--spacing) * 6);
         }
@@ -87,9 +87,9 @@
         .nxm-pagination-page-label {
             color: var(--color-neutral-subdued);
 
-            font-size: var(--text-sm);
-            line-height: calc(var(--spacing) * 4);
-            letter-spacing: var(--tracking-normal);
+            font-size: var(--text-body-md);
+            line-height: var(--text-body-md--line-height);
+            letter-spacing: var(--text-body-md--letter-spacing);
         }
 
         .nxm-pagination-page-input {
