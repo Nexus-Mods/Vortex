@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+import type { QueryName } from "../shared/types/generated/queryTypes";
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -9,7 +10,7 @@ import type {
   AssertSerializable,
   Serializable,
 } from "../shared/types/ipc";
-import type { PreloadWindow } from "../shared/types/preload";
+import type { PreloadWindow, QueryApi } from "../shared/types/preload";
 import type { PersistedHive } from "../shared/types/state";
 
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
@@ -267,6 +268,24 @@ try {
         betterIpcRenderer.invoke("powerSaveBlocker:stop", id),
       isStarted: (id: number) =>
         betterIpcRenderer.invoke("powerSaveBlocker:isStarted", id),
+    },
+    query: {
+      execute: ((name: QueryName, params: Record<string, Serializable>) =>
+        betterIpcRenderer.invoke(
+          "query:execute",
+          name,
+          params,
+        )) as QueryApi["execute"],
+      list: () =>
+        betterIpcRenderer.invoke("query:list") as Promise<QueryName[]>,
+      onInvalidated: (callback) => {
+        const listener = (
+          _: Electron.IpcRendererEvent,
+          queryNames: QueryName[],
+        ) => callback(queryNames);
+        ipcRenderer.on("query:invalidated", listener);
+        return () => ipcRenderer.removeListener("query:invalidated", listener);
+      },
     },
   });
 } catch (err) {

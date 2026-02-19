@@ -20,6 +20,7 @@ import type {
 } from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+import type { QueryName } from "./generated/queryTypes";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -160,6 +161,9 @@ export interface MainChannels {
 
   // Menu click events (main -> renderer)
   "menu:click": (menuItemId: string) => void;
+
+  // Query system: notify renderer that queries have been invalidated
+  "query:invalidated": (queryNames: QueryName[]) => void;
 }
 
 /** Type containing all known channels for synchronous IPC operations (used primarily by preload scripts) */
@@ -312,6 +316,15 @@ export interface InvokeChannels {
 
   // Compile stylesheets
   "styles:compile": (filePaths: string[]) => Promise<string>;
+
+  // Query system: execute a named query
+  "query:execute": (
+    queryName: QueryName,
+    params?: Record<string, Serializable>,
+  ) => Promise<Serializable[]>;
+
+  // Query system: list all available query names
+  "query:list": () => Promise<string[]>;
 }
 
 /** Represents all IPC-safe typed arrays */

@@ -37,6 +37,7 @@ import getVortexPath, { setVortexPath } from "./getVortexPath";
 import { log, setupLogging, changeLogPath } from "./logging";
 import MainWindow from "./MainWindow";
 import SplashScreen from "./SplashScreen";
+import DuckDBSingleton from "./store/DuckDBSingleton";
 import LevelPersist, { DatabaseLocked } from "./store/LevelPersist";
 import {
   initMainPersistence,
@@ -240,6 +241,7 @@ class Application {
       finalizeMainWrite()
         .then(() => {
           log("info", "clean application end");
+          DuckDBSingleton.getInstance().close();
           if (this.mTray !== undefined) {
             this.mTray.close();
           }
@@ -601,7 +603,7 @@ class Application {
     }
 
     const uacEnabled = this.isUACEnabled();
-    const result = await dialog.showMessageBox(this.mMainWindow.getHandle(), {
+    const result = await dialog.showMessageBox(this.mMainWindow?.getHandle() ?? null, {
       title: "Admin rights detected",
       message:
         `Vortex has detected that it is being run with administrator rights. It is strongly

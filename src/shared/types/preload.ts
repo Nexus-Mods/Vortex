@@ -16,6 +16,11 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type {
+  QueryName,
+  QueryParamsMap,
+  QueryResultMap,
+} from "./generated/queryTypes";
+import type {
   DiffOperation,
   AppInitMetadata,
   Serializable,
@@ -84,6 +89,9 @@ export interface Api {
 
   /** Power Save Blocker APIs */
   powerSaveBlocker: PowerSaveBlocker;
+
+  /** Query system APIs — typed reactive SQL queries over DuckDB/level_pivot */
+  query: QueryApi;
 }
 
 export interface Example {
@@ -367,6 +375,21 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
+}
+
+/** API for typed reactive SQL queries */
+export interface QueryApi {
+  /** Execute a named query. Params and return type are inferred from the query name. */
+  execute<Q extends QueryName>(
+    queryName: Q,
+    params: QueryParamsMap[Q],
+  ): Promise<QueryResultMap[Q][]>;
+
+  /** List all available query names */
+  list(): Promise<QueryName[]>;
+
+  /** Subscribe to invalidation events. Returns unsubscribe function. */
+  onInvalidated(callback: (queryNames: QueryName[]) => void): () => void;
 }
 
 /** API for querying update status from main process */
