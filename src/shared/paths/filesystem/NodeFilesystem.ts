@@ -69,7 +69,7 @@ export class NodeFilesystem implements IFilesystem {
       if (entry.isSymbolicLink()) type |= FileTypeEnum.SymbolicLink;
 
       results.push({
-        name: RelativePathNS.unsafe(entry.name),
+        name: RelativePathNS.make(entry.name),
         type,
         size: stats.size,
         mtime: stats.mtime,

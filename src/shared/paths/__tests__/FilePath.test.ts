@@ -212,11 +212,108 @@ describe('FilePath', () => {
       expect(path1.equals(path3)).toBe(false);
     });
 
-    test('hashCode generates consistent hash', () => {
+    test('hashCode generates consistent numeric hash', () => {
       const path1 = new FilePath(RelativePath.make('mods'), anchor, resolver);
       const path2 = new FilePath(RelativePath.make('mods'), anchor, resolver);
 
       expect(path1.hashCode()).toBe(path2.hashCode());
+      expect(typeof path1.hashCode()).toBe('number');
+      expect(path1.hashCode()).toBeGreaterThanOrEqual(0);
+    });
+
+    test('hashCode differs for different paths', () => {
+      const path1 = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const path2 = new FilePath(RelativePath.make('downloads'), anchor, resolver);
+
+      expect(path1.hashCode()).not.toBe(path2.hashCode());
+    });
+  });
+
+  describe('depth', () => {
+    test('returns segment count', () => {
+      const filePath = new FilePath(RelativePath.make('mods/skyrim/data'), anchor, resolver);
+      expect(filePath.depth()).toBe(3);
+    });
+
+    test('empty relative has depth 0', () => {
+      const filePath = new FilePath(RelativePath.EMPTY, anchor, resolver);
+      expect(filePath.depth()).toBe(0);
+    });
+
+    test('single segment has depth 1', () => {
+      const filePath = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      expect(filePath.depth()).toBe(1);
+    });
+  });
+
+  describe('isIn', () => {
+    test('child is in parent', () => {
+      const parent = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const child = new FilePath(RelativePath.make('mods/skyrim'), anchor, resolver);
+
+      expect(child.isIn(parent)).toBe(true);
+    });
+
+    test('equal paths are not "in" each other', () => {
+      const path1 = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const path2 = new FilePath(RelativePath.make('mods'), anchor, resolver);
+
+      expect(path1.isIn(path2)).toBe(false);
+    });
+
+    test('returns false for different anchors', () => {
+      const otherAnchor = Anchor.make('other');
+      const otherResolver = new MockResolver('mock-other');
+
+      const parent = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const child = new FilePath(RelativePath.make('mods/skyrim'), otherAnchor, otherResolver);
+
+      expect(child.isIn(parent)).toBe(false);
+    });
+
+    test('returns false for different resolvers', () => {
+      const otherResolver = new MockResolver('different');
+
+      const parent = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const child = new FilePath(RelativePath.make('mods/skyrim'), anchor, otherResolver);
+
+      expect(child.isIn(parent)).toBe(false);
+    });
+  });
+
+  describe('compare', () => {
+    test('sorts by resolver name first', () => {
+      const resolverA = new MockResolver('alpha');
+      const resolverB = new MockResolver('beta');
+
+      const pathA = new FilePath(RelativePath.make('z'), anchor, resolverA);
+      const pathB = new FilePath(RelativePath.make('a'), anchor, resolverB);
+
+      expect(pathA.compare(pathB)).toBeLessThan(0);
+    });
+
+    test('sorts by anchor name second', () => {
+      const anchorA = Anchor.make('alpha');
+      const anchorB = Anchor.make('beta');
+
+      const pathA = new FilePath(RelativePath.make('z'), anchorA, resolver);
+      const pathB = new FilePath(RelativePath.make('a'), anchorB, resolver);
+
+      expect(pathA.compare(pathB)).toBeLessThan(0);
+    });
+
+    test('sorts by relative path third', () => {
+      const pathA = new FilePath(RelativePath.make('alpha'), anchor, resolver);
+      const pathB = new FilePath(RelativePath.make('beta'), anchor, resolver);
+
+      expect(pathA.compare(pathB)).toBeLessThan(0);
+    });
+
+    test('equal paths compare as 0', () => {
+      const path1 = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const path2 = new FilePath(RelativePath.make('mods'), anchor, resolver);
+
+      expect(path1.compare(path2)).toBe(0);
     });
   });
 });

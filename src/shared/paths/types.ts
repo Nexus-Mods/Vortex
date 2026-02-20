@@ -170,6 +170,51 @@ export namespace RelativePath {
   export function toString(relative: RelativePath): string {
     return relative as string;
   }
+
+  /**
+   * Count path segments. Empty = 0, "mods/skyrim/data" = 3.
+   */
+  export function depth(relative: RelativePath): number {
+    if (relative === '' || relative === EMPTY) return 0;
+    return (relative as string).split('/').length;
+  }
+
+  /**
+   * Strict containment check (not equal). Everything is "in" EMPTY.
+   */
+  export function isIn(child: RelativePath, parent: RelativePath): boolean {
+    if (parent === EMPTY || parent === '') {
+      return child !== EMPTY && child !== '';
+    }
+    return (child as string).startsWith((parent as string) + '/');
+  }
+
+  /**
+   * Equality check (already normalized on construction, so === suffices)
+   */
+  export function equals(a: RelativePath, b: RelativePath): boolean {
+    return a === b;
+  }
+
+  /**
+   * Locale-aware comparison for sorting
+   */
+  export function compare(a: RelativePath, b: RelativePath): number {
+    return (a as string).localeCompare(b as string);
+  }
+
+  /**
+   * FNV-1a numeric hash (unsigned 32-bit)
+   */
+  export function hash(relative: RelativePath): number {
+    const str = relative as string;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
 }
 
 // ============================================================================
@@ -280,16 +325,17 @@ export namespace ResolvedPath {
   /**
    * Get relative path from one resolved path to another
    *
+   * Returns a plain string because path.relative() can produce `../foo`
+   * which violates the RelativePath contract (rejects `..` prefixes).
+   *
    * @example
    * const from = ResolvedPath.make('C:\\Vortex\\mods');
    * const to = ResolvedPath.make('C:\\Vortex\\downloads');
    * ResolvedPath.relative(from, to)
-   * // => RelativePath.make('../downloads')
+   * // => '../downloads'
    */
-  export function relative(from: ResolvedPath, to: ResolvedPath): RelativePath {
-    const rel = path.relative(from as string, to as string);
-    // Use unsafe since path.relative() can produce valid .. paths
-    return rel as RelativePath;
+  export function relative(from: ResolvedPath, to: ResolvedPath): string {
+    return path.relative(from as string, to as string);
   }
 }
 

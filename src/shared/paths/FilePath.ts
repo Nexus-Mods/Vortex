@@ -234,22 +234,12 @@ export class FilePath {
   }
 
   // ========================================================================
-  // Equality
+  // Equality & Comparison
   // ========================================================================
 
   /**
    * Check if two FilePath instances are logically equal
    * (same anchor, relative path, and resolver)
-   *
-   * @param other - Other FilePath to compare
-   * @returns true if equal
-   *
-   * @example
-   * ```typescript
-   * const path1 = resolver.PathFor('userData', 'mods');
-   * const path2 = resolver.PathFor('userData', 'mods');
-   * path1.equals(path2); // true
-   * ```
    */
   equals(other: FilePath): boolean {
     return (
@@ -260,13 +250,48 @@ export class FilePath {
   }
 
   /**
-   * Create a hash code for this FilePath (useful for Maps/Sets)
-   *
-   * @returns Hash code string
+   * FNV-1a numeric hash of the composite "resolver:anchor:relative" string
    */
-  hashCode(): string {
+  hashCode(): number {
     const anchorName = AnchorNS.name(this.anchor);
-    return `${this.resolver.name}:${anchorName}:${this.relative}`;
+    const str = `${this.resolver.name}:${anchorName}:${this.relative}`;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
+
+  /**
+   * Count path segments in the relative path
+   */
+  depth(): number {
+    return RelativePathNS.depth(this.relative);
+  }
+
+  /**
+   * Check if this path is logically contained within another FilePath
+   * Returns false if anchor or resolver differ.
+   */
+  isIn(parent: FilePath): boolean {
+    if (this.anchor !== parent.anchor || this.resolver !== parent.resolver) {
+      return false;
+    }
+    return RelativePathNS.isIn(this.relative, parent.relative);
+  }
+
+  /**
+   * Compare for sorting: by resolver name, then anchor name, then relative path
+   */
+  compare(other: FilePath): number {
+    const resolverCmp = this.resolver.name.localeCompare(other.resolver.name);
+    if (resolverCmp !== 0) return resolverCmp;
+
+    const anchorCmp = AnchorNS.name(this.anchor).localeCompare(AnchorNS.name(other.anchor));
+    if (anchorCmp !== 0) return anchorCmp;
+
+    return RelativePathNS.compare(this.relative, other.relative);
   }
 
   // ========================================================================
@@ -337,9 +362,9 @@ export class FilePath {
    */
   withBase(newBase: FilePath): FilePath {
     // Combine new base's relative path with this path's relative path
-    const combinedRelative = RelativePathNS.join(newBase.getRelativePath(), this.relative);
+    const combinedRelative = RelativePathNS.join(newBase.relative, this.relative);
 
-    return new FilePath(combinedRelative, newBase.getAnchor(), newBase.getResolver());
+    return new FilePath(combinedRelative, newBase.anchor, newBase.resolver);
   }
 
   /**
@@ -360,30 +385,4 @@ export class FilePath {
     return relative !== null;
   }
 
-  /**
-   * Get the anchor for this FilePath (for reverse resolution use cases)
-   *
-   * @returns The anchor
-   */
-  getAnchor(): Anchor {
-    return this.anchor;
-  }
-
-  /**
-   * Get the resolver for this FilePath
-   *
-   * @returns The resolver
-   */
-  getResolver(): IResolver {
-    return this.resolver;
-  }
-
-  /**
-   * Get the relative path component
-   *
-   * @returns The relative path
-   */
-  getRelativePath(): RelativePath {
-    return this.relative;
-  }
 }

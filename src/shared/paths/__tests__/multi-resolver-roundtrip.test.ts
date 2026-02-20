@@ -96,9 +96,9 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(vortexPath).not.toBeNull();
 
       // Should identify as VortexResolver
-      expect(vortexPath!.getResolver().name).toBe('vortex');
-      expect(Anchor.name(vortexPath!.getAnchor())).toBe('userData');
-      expect(vortexPath!.getRelativePath()).toBe('mods/skyrim');
+      expect(vortexPath!.resolver.name).toBe('vortex');
+      expect(Anchor.name(vortexPath!.anchor)).toBe('userData');
+      expect(vortexPath!.relative).toBe('mods/skyrim');
 
       // Resolve back through Vortex
       const resolved2 = await vortexPath.resolve();
@@ -117,14 +117,14 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(reversedPath).not.toBeNull();
 
       // Since VortexResolver is more specific, it should match
-      expect(reversedPath!.getResolver().name).toBe('vortex');
+      expect(reversedPath!.resolver.name).toBe('vortex');
 
       // But if we explicitly prefer Unix (make unix the child), it should work too
       const unixFirst = new UnixResolver(vortexResolver);
       const preferredUnixPath = await unixFirst.tryReverse(resolved1);
       expect(preferredUnixPath).not.toBeNull();
-      expect(preferredUnixPath!.getResolver().name).toBe('unix');
-      expect(Anchor.name(preferredUnixPath!.getAnchor())).toBe('root');
+      expect(preferredUnixPath!.resolver.name).toBe('unix');
+      expect(Anchor.name(preferredUnixPath!.anchor)).toBe('root');
 
       // Resolve back through Unix
       const resolved2 = await preferredUnixPath.resolve();
@@ -144,9 +144,9 @@ describe('Multi-Resolver Roundtrip', () => {
       const vortexResult = await vortexResolver.tryReverse(originalResolved);
       expect(vortexResult).not.toBeNull();
       const vortexPath = new FilePath(vortexResult!.relative, vortexResult!.anchor, vortexResolver);
-      expect(vortexPath.getResolver().name).toBe('vortex');
-      expect(Anchor.name(vortexPath.getAnchor())).toBe('temp');
-      expect(vortexPath.getRelativePath()).toBe('downloads/mod.zip');
+      expect(vortexPath.resolver.name).toBe('vortex');
+      expect(Anchor.name(vortexPath.anchor)).toBe('temp');
+      expect(vortexPath.relative).toBe('downloads/mod.zip');
 
       // Resolve through Vortex
       const vortexResolved = await vortexPath.resolve();
@@ -157,8 +157,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const unixResult = await unixFirst.tryReverse(vortexResolved);
       expect(unixResult).not.toBeNull();
       const unixPath = new FilePath(unixResult!.relative, unixResult!.anchor, unixFirst);
-      expect(unixPath.getResolver().name).toBe('unix');
-      expect(Anchor.name(unixPath.getAnchor())).toBe('root');
+      expect(unixPath.resolver.name).toBe('unix');
+      expect(Anchor.name(unixPath.anchor)).toBe('root');
 
       // Verify relative path matches original
       const finalResolved = await unixPath.resolve();
@@ -186,8 +186,8 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(normalizePath(step3 as string)).toBe(normalizePath(step1 as string));
 
       // Verify the final path has correct anchor and relative
-      expect(Anchor.name(vortexPath.getAnchor())).toBe('userData');
-      expect(vortexPath.getRelativePath()).toBe('mods/skyrim/meshes/armor/plate.nif');
+      expect(Anchor.name(vortexPath.anchor)).toBe('userData');
+      expect(vortexPath.relative).toBe('mods/skyrim/meshes/armor/plate.nif');
     });
   });
 
@@ -232,8 +232,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const filePath = new FilePath(result!.relative, result!.anchor, unixResolver);
 
       // Unix resolver should handle it (through delegation)
-      expect(Anchor.name(filePath.getAnchor())).toBe('root');
-      expect(filePath.getRelativePath()).toBe('etc/passwd');
+      expect(Anchor.name(filePath.anchor)).toBe('root');
+      expect(filePath.relative).toBe('etc/passwd');
     });
 
     it('should delegate to parent when child cannot handle path', async () => {
@@ -322,13 +322,13 @@ describe('Multi-Resolver Roundtrip', () => {
       // Vortex should have 'temp' anchor
       const vortexMatch = matches.find(m => m.resolver.name === 'vortex');
       expect(vortexMatch).toBeDefined();
-      expect(Anchor.name(vortexMatch!.filePath.getAnchor())).toBe('temp');
-      expect(vortexMatch!.filePath.getRelativePath()).toBe('cache/file.txt');
+      expect(Anchor.name(vortexMatch!.filePath.anchor)).toBe('temp');
+      expect(vortexMatch!.filePath.relative).toBe('cache/file.txt');
 
       // Unix should have 'root' anchor
       const unixMatch = matches.find(m => m.resolver.name === 'unix');
       expect(unixMatch).toBeDefined();
-      expect(Anchor.name(unixMatch!.filePath.getAnchor())).toBe('root');
+      expect(Anchor.name(unixMatch!.filePath.anchor)).toBe('root');
     });
   });
 
@@ -342,8 +342,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const moved = original.withBase(backupBase);
 
       // Verify structure
-      expect(Anchor.name(moved.getAnchor())).toBe('temp');
-      expect(moved.getRelativePath()).toBe('backups/2024/mods/skyrim/mesh.nif');
+      expect(Anchor.name(moved.anchor)).toBe('temp');
+      expect(moved.relative).toBe('backups/2024/mods/skyrim/mesh.nif');
 
       // Resolve and reverse
       const resolved = await moved.resolve();
@@ -352,8 +352,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const reversed = new FilePath(result!.relative, result!.anchor, vortexResolver);
 
       // Should reconstruct correctly
-      expect(Anchor.name(reversed.getAnchor())).toBe('temp');
-      expect(reversed.getRelativePath()).toBe('backups/2024/mods/skyrim/mesh.nif');
+      expect(Anchor.name(reversed.anchor)).toBe('temp');
+      expect(reversed.relative).toBe('backups/2024/mods/skyrim/mesh.nif');
 
       // Should resolve to same path
       const finalResolved = await reversed.resolve();
@@ -369,9 +369,9 @@ describe('Multi-Resolver Roundtrip', () => {
       const moved = original.withBase(vortexBase);
 
       // Should now be a Vortex path
-      expect(moved.getResolver().name).toBe('vortex');
-      expect(Anchor.name(moved.getAnchor())).toBe('userData');
-      expect(moved.getRelativePath()).toBe('staging/tmp/extracted/mod/data.esp');
+      expect(moved.resolver.name).toBe('vortex');
+      expect(Anchor.name(moved.anchor)).toBe('userData');
+      expect(moved.relative).toBe('staging/tmp/extracted/mod/data.esp');
 
       // Roundtrip through resolution
       const resolved = await moved.resolve();
@@ -379,9 +379,9 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(result).not.toBeNull();
       const reversed = new FilePath(result!.relative, result!.anchor, vortexResolver);
 
-      expect(reversed.getResolver().name).toBe('vortex');
-      expect(Anchor.name(reversed.getAnchor())).toBe('userData');
-      expect(reversed.getRelativePath()).toBe('staging/tmp/extracted/mod/data.esp');
+      expect(reversed.resolver.name).toBe('vortex');
+      expect(Anchor.name(reversed.anchor)).toBe('userData');
+      expect(reversed.relative).toBe('staging/tmp/extracted/mod/data.esp');
     });
 
     it('should preserve structure through withBase() + roundtrip', async () => {
@@ -391,7 +391,7 @@ describe('Multi-Resolver Roundtrip', () => {
 
       // Move to backup
       const backed = modFile.withBase(backupDir);
-      expect(backed.getRelativePath()).toBe('backups/2024-01-15/mods/elden-ring/chr/armor.chrbnd');
+      expect(backed.relative).toBe('backups/2024-01-15/mods/elden-ring/chr/armor.chrbnd');
 
       // Resolve to OS path
       const osPath = await backed.resolve();
@@ -402,8 +402,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const restored = new FilePath(result!.relative, result!.anchor, vortexResolver);
 
       // Should match backed path exactly
-      expect(Anchor.name(restored.getAnchor())).toBe('temp');
-      expect(restored.getRelativePath()).toBe('backups/2024-01-15/mods/elden-ring/chr/armor.chrbnd');
+      expect(Anchor.name(restored.anchor)).toBe('temp');
+      expect(restored.relative).toBe('backups/2024-01-15/mods/elden-ring/chr/armor.chrbnd');
     });
   });
 
@@ -455,7 +455,7 @@ describe('Multi-Resolver Roundtrip', () => {
       const scannedResult = await vortexResolver.tryReverse(extractedResolved);
       expect(scannedResult).not.toBeNull();
       const scannedPath = new FilePath(scannedResult!.relative, scannedResult!.anchor, vortexResolver);
-      expect(Anchor.name(scannedPath.getAnchor())).toBe('temp');
+      expect(Anchor.name(scannedPath.anchor)).toBe('temp');
 
       // 4. Move to staging area (withBase)
       const stagingBase = vortexResolver.PathFor('userData', 'staging/collection-001');

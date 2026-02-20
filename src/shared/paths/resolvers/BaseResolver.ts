@@ -189,7 +189,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
       if (parentFilePath !== null) {
         // Check if parent returned an anchor that WE claim to handle
         // If yes, this is a validation error (we should have handled it but failed)
-        const parentAnchor = parentFilePath.getAnchor();
+        const parentAnchor = parentFilePath.anchor;
         if (this.canResolve(parentAnchor)) {
           throw new Error(
             `Path validation failed for resolver "${this.name}": ${resolvedPath}. ` +

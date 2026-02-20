@@ -44,14 +44,15 @@ Electron-based mod manager with Redux state management.
 - **Renderer Process**: `src/renderer/renderer.tsx`
 - **Preload Process**: `src/preload/index.ts`
 - **Extensions**: `src/extensions/` (embedded) and `extensions/` (bundled)
-- **State**: Redux actions in `src/actions/`, reducers in `src/reducers/`
+- **State**: Redux actions in `src/renderer/actions/`, reducers in `src/renderer/reducers/`
 
 ### Key Directories
 
 - `src/controls/` - Reusable React components
 - `src/views/` - Main UI views
 - `src/util/` - Utility helpers
-- `src/types/` - TypeScript definitions
+- `src/types/` and `src/shared/types/` - TypeScript definitions
+- `src/shared/` - Shared modules (path system, shared utilities)
 - `src/main/dist/` - Production build staging
 - `src/main/out/` - Development build output
 

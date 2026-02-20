@@ -74,6 +74,123 @@ describe('RelativePath', () => {
       expect(RelativePath.basename(path, '.esp')).toBe('data');
     });
   });
+
+  describe('depth', () => {
+    test.each([
+      ['', 0],
+      ['single', 1],
+      ['mods/skyrim', 2],
+      ['mods/skyrim/data', 3],
+      ['a/b/c/d/e', 5],
+    ])('depth(%s) = %s', (input, expected) => {
+      const rp = input === '' ? RelativePath.EMPTY : RelativePath.make(input);
+      expect(RelativePath.depth(rp)).toBe(expected);
+    });
+
+    test('depth of EMPTY is 0', () => {
+      expect(RelativePath.depth(RelativePath.EMPTY)).toBe(0);
+    });
+  });
+
+  describe('isIn', () => {
+    test('child is in parent', () => {
+      const parent = RelativePath.make('mods');
+      const child = RelativePath.make('mods/skyrim');
+      expect(RelativePath.isIn(child, parent)).toBe(true);
+    });
+
+    test('deeply nested child is in parent', () => {
+      const parent = RelativePath.make('mods');
+      const child = RelativePath.make('mods/skyrim/data/meshes');
+      expect(RelativePath.isIn(child, parent)).toBe(true);
+    });
+
+    test('equal paths are not "in" each other (strict)', () => {
+      const p = RelativePath.make('mods/skyrim');
+      expect(RelativePath.isIn(p, p)).toBe(false);
+    });
+
+    test('everything is in EMPTY', () => {
+      const child = RelativePath.make('mods');
+      expect(RelativePath.isIn(child, RelativePath.EMPTY)).toBe(true);
+    });
+
+    test('EMPTY is not in EMPTY', () => {
+      expect(RelativePath.isIn(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(false);
+    });
+
+    test('parent is not in child', () => {
+      const parent = RelativePath.make('mods');
+      const child = RelativePath.make('mods/skyrim');
+      expect(RelativePath.isIn(parent, child)).toBe(false);
+    });
+
+    test('prefix-but-not-parent does not match', () => {
+      const parent = RelativePath.make('mods');
+      const notChild = RelativePath.make('mods-extra/skyrim');
+      expect(RelativePath.isIn(notChild, parent)).toBe(false);
+    });
+  });
+
+  describe('equals', () => {
+    test('equal paths', () => {
+      const a = RelativePath.make('mods/skyrim');
+      const b = RelativePath.make('mods/skyrim');
+      expect(RelativePath.equals(a, b)).toBe(true);
+    });
+
+    test('unequal paths', () => {
+      const a = RelativePath.make('mods/skyrim');
+      const b = RelativePath.make('mods/oblivion');
+      expect(RelativePath.equals(a, b)).toBe(false);
+    });
+
+    test('EMPTY equals EMPTY', () => {
+      expect(RelativePath.equals(RelativePath.EMPTY, RelativePath.EMPTY)).toBe(true);
+    });
+  });
+
+  describe('compare', () => {
+    test('sorts alphabetically', () => {
+      const a = RelativePath.make('alpha');
+      const b = RelativePath.make('beta');
+      expect(RelativePath.compare(a, b)).toBeLessThan(0);
+      expect(RelativePath.compare(b, a)).toBeGreaterThan(0);
+    });
+
+    test('equal paths compare as 0', () => {
+      const a = RelativePath.make('mods/skyrim');
+      const b = RelativePath.make('mods/skyrim');
+      expect(RelativePath.compare(a, b)).toBe(0);
+    });
+  });
+
+  describe('hash', () => {
+    test('consistent hashing', () => {
+      const a = RelativePath.make('mods/skyrim');
+      const b = RelativePath.make('mods/skyrim');
+      expect(RelativePath.hash(a)).toBe(RelativePath.hash(b));
+    });
+
+    test('different paths produce different hashes', () => {
+      const a = RelativePath.make('mods/skyrim');
+      const b = RelativePath.make('mods/oblivion');
+      expect(RelativePath.hash(a)).not.toBe(RelativePath.hash(b));
+    });
+
+    test('returns unsigned 32-bit integer', () => {
+      const h = RelativePath.hash(RelativePath.make('test'));
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(0xFFFFFFFF);
+      expect(Number.isInteger(h)).toBe(true);
+    });
+
+    test('empty path has a valid hash', () => {
+      const h = RelativePath.hash(RelativePath.EMPTY);
+      expect(Number.isInteger(h)).toBe(true);
+      expect(h).toBeGreaterThanOrEqual(0);
+    });
+  });
 });
 
 describe('ResolvedPath', () => {

@@ -76,8 +76,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('test1');
-      expect(result!.getRelativePath() as string).toBe('mods/SkyUI');
+      expect(Anchor.name(result!.anchor)).toBe('test1');
+      expect(result!.relative as string).toBe('mods/SkyUI');
     });
 
     it('should return null for paths not under any anchor', async () => {
@@ -95,8 +95,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('nested');
-      expect(result!.getRelativePath() as string).toBe('subdir');
+      expect(Anchor.name(result!.anchor)).toBe('nested');
+      expect(result!.relative as string).toBe('subdir');
     });
 
     it('should handle exact anchor path (empty relative)', async () => {
@@ -106,8 +106,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('test1');
-      expect(result!.getRelativePath()).toBe('');
+      expect(Anchor.name(result!.anchor)).toBe('test1');
+      expect(result!.relative).toBe('');
     });
 
     if (isWindows) {
@@ -137,8 +137,8 @@ describe('Reverse Resolution', () => {
       expect(result2).not.toBeNull();
 
       // Results should be equivalent
-      expect(Anchor.name(result1!.getAnchor())).toBe(Anchor.name(result2!.getAnchor()));
-      expect(result1!.getRelativePath()).toBe(result2!.getRelativePath());
+      expect(Anchor.name(result1!.anchor)).toBe(Anchor.name(result2!.anchor));
+      expect(result1!.relative).toBe(result2!.relative);
     });
 
     it('should clear cache when requested', async () => {
@@ -202,8 +202,8 @@ describe('Reverse Resolution', () => {
       const result = await childResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('test1');
-      expect(result!.getRelativePath() as string).toBe('mods/SkyUI');
+      expect(Anchor.name(result!.anchor)).toBe('test1');
+      expect(result!.relative as string).toBe('mods/SkyUI');
     });
 
     it('should delegate to parent when child cannot handle path', async () => {
@@ -215,8 +215,8 @@ describe('Reverse Resolution', () => {
       const result = await childResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('test2');
-      expect(result!.getRelativePath() as string).toBe('other/file.txt');
+      expect(Anchor.name(result!.anchor)).toBe('test2');
+      expect(result!.relative as string).toBe('other/file.txt');
     });
 
     it('should return null when neither child nor parent can handle path', async () => {
@@ -253,7 +253,7 @@ describe('Reverse Resolution', () => {
 
       // Should find the nested anchor (most specific)
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.getAnchor())).toBe('nested');
+      expect(Anchor.name(result!.anchor)).toBe('nested');
     });
 
     it('should return null when no match', async () => {
@@ -346,9 +346,9 @@ describe('Reverse Resolution', () => {
 
       const moved = original.withBase(newBase);
 
-      expect(Anchor.name(moved.getAnchor())).toBe('test2');
-      expect(moved.getRelativePath() as string).toBe('backups/skyrim/Data/Meshes/armor.nif');
-      expect(moved.getResolver()).toBe(resolver);
+      expect(Anchor.name(moved.anchor)).toBe('test2');
+      expect(moved.relative as string).toBe('backups/skyrim/Data/Meshes/armor.nif');
+      expect(moved.resolver).toBe(resolver);
     });
 
     it('should work with empty base relative', () => {
@@ -357,7 +357,7 @@ describe('Reverse Resolution', () => {
 
       const moved = original.withBase(newBase);
 
-      expect(moved.getRelativePath() as string).toBe('mods/skyrim.esp');
+      expect(moved.relative as string).toBe('mods/skyrim.esp');
     });
 
     it('should work with empty original relative', () => {
@@ -366,7 +366,7 @@ describe('Reverse Resolution', () => {
 
       const moved = original.withBase(newBase);
 
-      expect(moved.getRelativePath() as string).toBe('backup');
+      expect(moved.relative as string).toBe('backup');
     });
 
     it('should preserve resolver from new base', () => {
@@ -378,7 +378,7 @@ describe('Reverse Resolution', () => {
 
       const moved = original.withBase(newBase);
 
-      expect(moved.getResolver()).toBe(resolver2);
+      expect(moved.resolver).toBe(resolver2);
     });
   });
 
@@ -419,7 +419,7 @@ describe('Reverse Resolution', () => {
     });
   });
 
-  describe('FilePath getter methods', () => {
+  describe('FilePath property access', () => {
     let resolver: TestResolver;
 
     beforeEach(() => {
@@ -428,21 +428,21 @@ describe('Reverse Resolution', () => {
 
     it('should return correct anchor', () => {
       const filePath = resolver.PathFor('test1', 'mods');
-      const anchor = filePath.getAnchor();
+      const anchor = filePath.anchor;
 
       expect(Anchor.name(anchor)).toBe('test1');
     });
 
     it('should return correct resolver', () => {
       const filePath = resolver.PathFor('test1', 'mods');
-      const returnedResolver = filePath.getResolver();
+      const returnedResolver = filePath.resolver;
 
       expect(returnedResolver).toBe(resolver);
     });
 
     it('should return correct relative path', () => {
       const filePath = resolver.PathFor('test1', 'mods/skyrim');
-      const relative = filePath.getRelativePath();
+      const relative = filePath.relative;
 
       expect(relative as string).toBe('mods/skyrim');
     });
@@ -525,7 +525,7 @@ describe('Reverse Resolution', () => {
 
       // Verify they're all under 'test1' anchor
       filePaths.forEach(fp => {
-        expect(Anchor.name(fp!.getAnchor())).toBe('test1');
+        expect(Anchor.name(fp!.anchor)).toBe('test1');
       });
     });
   });
@@ -540,7 +540,7 @@ describe('Reverse Resolution', () => {
         const result = await resolver.tryReverse(osPath);
         // Windows resolver should handle C: drive
         expect(result).not.toBeNull();
-        expect(result ? Anchor.name(result.getAnchor()) : null).toBe('c');
+        expect(result ? Anchor.name(result.anchor) : null).toBe('c');
       } else {
         const resolver = new UnixResolver();
         const testPath = resolver.PathFor('root', 'test/file.txt');
@@ -549,7 +549,7 @@ describe('Reverse Resolution', () => {
         const result = await resolver.tryReverse(osPath);
         // Unix resolver should handle root
         expect(result).not.toBeNull();
-        expect(result ? Anchor.name(result.getAnchor()) : null).toBe('root');
+        expect(result ? Anchor.name(result.anchor) : null).toBe('root');
       }
     });
   });

@@ -28,7 +28,7 @@ The library uses TypeScript branded types for compile-time safety:
 `FilePath` combines a `RelativePath`, an `Anchor`, and an `IResolver` into a single object that defers resolution:
 
 ```typescript
-import { VortexResolver } from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
 
 const resolver = new VortexResolver();
 const filePath = resolver.PathFor('userData', 'mods/skyrim');
@@ -51,15 +51,12 @@ Resolvers are chainable - if a resolver doesn't handle an anchor, it delegates t
 
 ## Installation
 
-The path system is built into Vortex. Import from `shared/paths`:
+The path system is built into Vortex. Import directly from module files:
 
 ```typescript
-import {
-  VortexResolver,
-  FilePath,
-  RelativePath,
-  ResolverRegistry,
-} from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
+import { FilePath } from './shared/paths/FilePath';
+import { RelativePath } from './shared/paths/types';
 ```
 
 ## Quick Start
@@ -67,12 +64,9 @@ import {
 ### 1. Initialize Resolvers
 
 ```typescript
-import { VortexResolver, ResolverRegistry } from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
 
-// Create registry and resolver
-const registry = new ResolverRegistry();
 const resolver = new VortexResolver();
-registry.setDefault(resolver);
 ```
 
 ### 2. Create Paths
@@ -82,7 +76,8 @@ registry.setDefault(resolver);
 const modsPath = resolver.PathFor('userData', 'mods');
 
 // Manual construction
-import { FilePath, RelativePath, Anchor } from './shared/paths';
+import { FilePath } from './shared/paths/FilePath';
+import { RelativePath, Anchor } from './shared/paths/types';
 const modsPath2 = new FilePath(
   RelativePath.make('mods'),
   Anchor.make('userData'),
@@ -96,9 +91,6 @@ const modsPath2 = new FilePath(
 // Async resolution
 const resolved = await modsPath.resolve();
 console.log(resolved); // Platform-specific: C:\Users\... or /home/user/...
-
-// Sync resolution (if supported)
-const resolvedSync = modsPath.resolveSync();
 ```
 
 ### 4. Path Operations
@@ -119,7 +111,7 @@ const filename = skyrimPath.basename(); // 'data'
 ### Basic Usage
 
 ```typescript
-import { VortexResolver } from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
 
 const resolver = new VortexResolver();
 
@@ -137,7 +129,8 @@ const skyrimPath = modsPath.join('skyrim', 'data');
 ### Type-Safe Anchors
 
 ```typescript
-import { VortexResolver, ProtonResolver } from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
+import { ProtonResolver } from './shared/paths/resolvers/ProtonResolver';
 
 const vortex = new VortexResolver();
 
@@ -154,7 +147,9 @@ proton.PathFor('userData');   // ✗ TypeScript error!
 ### Resolver Chaining
 
 ```typescript
-import { VortexResolver, GameResolver, ProtonResolver } from './shared/paths';
+import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
+import { GameResolver } from './shared/paths/resolvers/GameResolver';
+import { ProtonResolver } from './shared/paths/resolvers/ProtonResolver';
 
 // Build resolver chain
 const vortex = new VortexResolver();
@@ -169,7 +164,7 @@ const resolved = await path.resolve();
 ### IPC Serialization
 
 ```typescript
-import { FilePathIPC, ResolverRegistry } from './shared/paths';
+import { FilePathIPC } from './shared/paths/ipc';
 
 // Main process - serialize for IPC
 const filePath = resolver.PathFor('userData', 'mods');
@@ -179,36 +174,17 @@ const serialized = FilePathIPC.serialize(filePath);
 ipcMain.send('path-data', serialized);
 
 // Renderer process - deserialize
-// (Assuming you've set up a registry in the renderer process)
 ipcRenderer.on('path-data', (event, serialized) => {
-  const filePath = FilePathIPC.deserialize(
-    serialized,
-    rendererRegistry  // Use your renderer-side registry
-  );
+  const filePath = FilePathIPC.deserialize(serialized, resolver);
   const resolved = await filePath.resolve();
-});
-```
-
-### Alternative: Pre-Resolved Paths
-
-When the receiving side doesn't need anchor context:
-
-```typescript
-// Resolve before sending
-const resolvedPath = await FilePathIPC.serializeResolved(filePath);
-ipcMain.send('resolved-path', resolvedPath);
-
-// Receiver gets the string
-ipcRenderer.on('resolved-path', (event, path: string) => {
-  const resolved = ResolvedPath.make(path);
-  // Use directly with filesystem
 });
 ```
 
 ### Testing with Mock Filesystems
 
 ```typescript
-import { WindowsFilesystem, UnixFilesystem } from './shared/paths';
+import { WindowsFilesystem } from './shared/paths/filesystem/WindowsFilesystem';
+import { UnixFilesystem } from './shared/paths/filesystem/UnixFilesystem';
 
 test('Windows case insensitivity', async () => {
   const fs = new WindowsFilesystem();
@@ -319,6 +295,13 @@ RelativePath.EMPTY: RelativePath
 RelativePath.join(base: RelativePath, ...segments: string[]): RelativePath
 RelativePath.dirname(path: RelativePath): RelativePath
 RelativePath.basename(path: RelativePath, ext?: string): string
+
+// Collection helpers
+RelativePath.depth(path: RelativePath): number
+RelativePath.isIn(child: RelativePath, parent: RelativePath): boolean
+RelativePath.equals(a: RelativePath, b: RelativePath): boolean
+RelativePath.compare(a: RelativePath, b: RelativePath): number
+RelativePath.hash(path: RelativePath): number
 ```
 
 #### ResolvedPath
@@ -332,7 +315,7 @@ ResolvedPath.join(base: ResolvedPath, ...segments: string[]): ResolvedPath
 ResolvedPath.dirname(path: ResolvedPath): ResolvedPath
 ResolvedPath.basename(path: ResolvedPath, ext?: string): string
 ResolvedPath.parse(path: ResolvedPath): ParsedPath
-ResolvedPath.relative(from: ResolvedPath, to: ResolvedPath): RelativePath
+ResolvedPath.relative(from: ResolvedPath, to: ResolvedPath): string
 ```
 
 #### Extension
@@ -375,7 +358,6 @@ class FilePath {
 
   // Resolution
   resolve(): Promise<ResolvedPath>;
-  resolveSync(): ResolvedPath;
 
   // Builder methods (return new FilePath)
   join(...segments: string[]): FilePath;
@@ -387,11 +369,18 @@ class FilePath {
 
   // Serialization
   toJSON(): SerializedFilePath;
-  static fromJSON(json: SerializedFilePath, registry: IResolverRegistry): FilePath;
 
-  // Equality
+  // Equality & Comparison
   equals(other: FilePath): boolean;
-  hashCode(): string;
+  hashCode(): number;
+  depth(): number;
+  isIn(parent: FilePath): boolean;
+  compare(other: FilePath): number;
+
+  // Reverse resolution
+  relativeTo(childPath: string | ResolvedPath): Promise<RelativePath | null>;
+  isAncestorOf(childPath: string | ResolvedPath): Promise<boolean>;
+  withBase(newBase: FilePath): FilePath;
 }
 ```
 
@@ -403,7 +392,6 @@ interface IResolver<ValidAnchors extends string = string> {
   readonly parent?: IResolver;
 
   resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath>;
-  resolveSync?(anchor: Anchor, relative: RelativePath): ResolvedPath;
 
   canResolve(anchor: Anchor): boolean;
   supportedAnchors(): Anchor[];
@@ -421,22 +409,20 @@ interface IFilesystem {
 
   // Read operations
   readFile(path: ResolvedPath, encoding?: BufferEncoding): Promise<string | Buffer>;
-  readFileSync(path: ResolvedPath, encoding?: BufferEncoding): string | Buffer;
 
   // Write operations
   writeFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
-  writeFileSync(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): void;
   appendFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
   unlink(path: ResolvedPath): Promise<void>;
 
   // Directory operations
-  readdir(path: ResolvedPath, options?: { withFileTypes?: boolean }): Promise<string[] | Dirent[]>;
+  readdir(path: ResolvedPath): Promise<FileEntry[]>;
   mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void>;
   rmdir(path: ResolvedPath, options?: { recursive?: boolean }): Promise<void>;
 
   // Metadata operations
   exists(path: ResolvedPath): Promise<boolean>;
-  stat(path: ResolvedPath): Promise<Stats>;
+  stat(path: ResolvedPath): Promise<FileEntry>;
 
   // Copy/move operations
   copy(src: ResolvedPath, dest: ResolvedPath, options?: CopyOptions): Promise<void>;
@@ -459,7 +445,7 @@ Tests use mock filesystems for 100% cross-platform coverage.
 All path types use Zod schemas for runtime validation:
 
 ```typescript
-import { RelativePathSchema, ResolvedPathSchema } from './shared/paths';
+import { RelativePathSchema, ResolvedPathSchema } from './shared/paths/types';
 
 RelativePathSchema.parse('mods/skyrim');  // ✓ Valid
 RelativePathSchema.parse('../etc/passwd'); // ✗ Throws
@@ -473,7 +459,6 @@ ResolvedPathSchema.parse('relative/path');  // ✗ Throws
 - **Zero-cost branded types**: No runtime overhead
 - **Deferred resolution**: Paths are only resolved when needed
 - **Optional caching**: Use `CachingResolver` wrapper for repeated resolutions
-- **Sync when possible**: Most resolvers support `resolveSync()` for zero async overhead
 
 ## Migration Guide
 
