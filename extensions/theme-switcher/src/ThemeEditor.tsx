@@ -74,7 +74,7 @@ class ColorPreview extends React.Component<IColorProps, never> {
         <ChromePicker
           color={color}
           disableAlpha={true}
-          onChangeComplete={this.onUpdate}
+          onChange={this.onUpdate}
         />
       </Popover>
     );
