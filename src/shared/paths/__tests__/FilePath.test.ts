@@ -42,6 +42,14 @@ class MockResolver implements IResolver {
       this,
     );
   }
+
+  async tryReverse(): Promise<FilePath | null> {
+    return null;
+  }
+
+  async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
+    return new Map();
+  }
 }
 
 describe('FilePath', () => {
@@ -70,6 +78,8 @@ describe('FilePath', () => {
         supportedAnchors: () => [],
         resolve: jest.fn(),
         PathFor: jest.fn(),
+        tryReverse: jest.fn(),
+        getBasePaths: jest.fn(),
       };
 
       expect(() => {
@@ -160,24 +170,6 @@ describe('FilePath', () => {
       expect(filePath.basename()).toBe('data.esp');
       expect(filePath.basename('.esp')).toBe('data');
     });
-  });
-
-  describe('serialization', () => {
-    test('toJSON serializes FilePath', () => {
-      const filePath = new FilePath(
-        RelativePath.make('mods/skyrim'),
-        anchor,
-        resolver,
-      );
-      const json = filePath.toJSON();
-
-      expect(json).toEqual({
-        relative: 'mods/skyrim',
-        anchor: 'test',
-        resolverName: 'mock',
-      });
-    });
-
   });
 
   describe('debugging', () => {

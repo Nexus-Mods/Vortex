@@ -6,10 +6,8 @@
  * 2. Join the base path with a relative path
  * 3. Return a ResolvedPath
  *
- * This pattern is shared by:
- * - VortexResolver (static record lookup)
- * - GameResolver (dynamic Map lookup)
- * - ProtonResolver (computed with async IO)
+ * This pattern is shared by user-defined resolvers (static record,
+ * dynamic map, or computed) as well as the built-in platform resolvers:
  * - WindowsResolver (computed, simple)
  * - UnixResolver (computed, trivial)
  *
@@ -134,7 +132,8 @@ export abstract class MappingResolver<ValidAnchors extends string>
         try {
           const anchor = AnchorNS.make(anchorName);
           const basePath = await strategy.resolve(anchorName);
-          basePaths.set(anchor, basePath);
+          const osPath = this.toOSPath(basePath);
+          basePaths.set(anchor, osPath);
         } catch (err) {
           // Skip anchors that can't be resolved
         }
@@ -172,7 +171,7 @@ export abstract class MappingResolver<ValidAnchors extends string>
  * // With transform function
  * fromRecord(
  *   { userData: 'userData', temp: 'temp' },
- *   (appPath) => ResolvedPathNS.make(getVortexPath(appPath))
+ *   (key) => ResolvedPathNS.make(lookupPath(key))
  * )
  * ```
  */
@@ -254,8 +253,8 @@ export function fromMap<K extends string>(
  * fromFunction(
  *   ['drive_c', 'documents'] as const,
  *   async (name) => {
- *     const protonInfo = await getProtonInfo();
- *     return computePath(protonInfo, name);
+ *     const info = await fetchPathInfo();
+ *     return computePath(info, name);
  *   }
  * )
  * ```

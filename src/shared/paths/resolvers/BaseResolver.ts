@@ -38,7 +38,8 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     // Try self first
     if (this.canResolve(anchor)) {
       const basePath = await this.resolveAnchor(anchor);
-      return this.joinPaths(basePath, relative);
+      const combined = this.joinPaths(basePath, relative);
+      return this.toOSPath(combined);
     }
 
     // Delegate to parent
@@ -48,6 +49,25 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
 
     // No one in the chain can handle this anchor
     throw new Error(`Resolver "${this.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`);
+  }
+
+  // ========================================================================
+  // OS Path Conversion
+  // ========================================================================
+
+  /**
+   * Convert an intermediate resolved path to a final OS path.
+   * Walks up the parent chain until a terminal resolver (Unix/Windows)
+   * handles it. Non-terminal resolvers without a parent throw.
+   */
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    if (this.parent instanceof BaseResolver) {
+      return this.parent.toOSPath(intermediatePath);
+    }
+    throw new Error(
+      `Resolver "${this.name}" cannot create OS paths. ` +
+      `Resolver chains must terminate with a platform resolver (UnixResolver or WindowsResolver).`
+    );
   }
 
   // ========================================================================
@@ -101,11 +121,11 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    *
    * @example
    * ```typescript
-   * class VortexResolver extends BaseResolver<'userData' | 'temp'> {
+   * class AppResolver extends BaseResolver<'userData' | 'temp'> {
    *   // PathFor is automatically type-safe
    * }
    *
-   * const resolver = new VortexResolver();
+   * const resolver = new AppResolver(new UnixResolver());
    * resolver.PathFor('userData');  // ✓ Valid
    * resolver.PathFor('temp');      // ✓ Valid
    * resolver.PathFor('drive_c');   // ✗ TypeScript error!
@@ -155,10 +175,10 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
       anchors.map(async (anchor) => {
         try {
           const basePath = await this.resolveAnchor(anchor);
-          basePaths.set(anchor, basePath);
+          const osPath = this.toOSPath(basePath);
+          basePaths.set(anchor, osPath);
         } catch (err) {
-          // Anchor may not be resolvable (e.g., Proton on Windows)
-          // Skip it silently
+          // Anchor may not be resolvable — skip it silently
         }
       })
     );

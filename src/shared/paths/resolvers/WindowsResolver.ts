@@ -85,6 +85,14 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
   }
 
   // ========================================================================
+  // OS Path Conversion (Terminal Resolver)
+  // ========================================================================
+
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath;  // Windows paths are already valid OS paths
+  }
+
+  // ========================================================================
   // Type-Safe PathFor (inherited from BaseResolver)
   // ========================================================================
 

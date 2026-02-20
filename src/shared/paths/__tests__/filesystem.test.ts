@@ -26,13 +26,6 @@ describe('MockFilesystem', () => {
       expect(content).toBe('hello world');
     });
 
-    test('writeFile and readFile (sync behavior)', async () => {
-      const path = ResolvedPath.make('/test/file.txt');
-      await fs.writeFile(path, 'hello world', 'utf8');
-      const content = await fs.readFile(path, 'utf8');
-      expect(content).toBe('hello world');
-    });
-
     test('writeFile creates parent directories', async () => {
       const path = ResolvedPath.make('/deep/nested/dir/file.txt');
       await fs.writeFile(path, 'content', 'utf8');

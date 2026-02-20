@@ -48,6 +48,14 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
   }
 
   // ========================================================================
+  // OS Path Conversion (Terminal Resolver)
+  // ========================================================================
+
+  protected toOSPath(intermediatePath: import('../types').ResolvedPath): import('../types').ResolvedPath {
+    return intermediatePath;  // Unix paths are already valid OS paths
+  }
+
+  // ========================================================================
   // Type-Safe PathFor (inherited from BaseResolver)
   // ========================================================================
 

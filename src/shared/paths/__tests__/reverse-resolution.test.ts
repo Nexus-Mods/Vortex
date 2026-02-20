@@ -9,7 +9,6 @@
 import * as path from 'path';
 
 import { FilePath } from '../FilePath';
-import { VortexResolver } from '../resolvers/VortexResolver';
 import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
 import {
@@ -34,6 +33,11 @@ class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
       test2: ResolvedPath.make(process.platform === 'win32' ? 'C:\\test\\base2' : '/test/base2'),
       nested: ResolvedPath.make(process.platform === 'win32' ? 'C:\\test\\base1\\nested' : '/test/base1/nested'),
     });
+  }
+
+  /** Test paths are already absolute — act as terminal resolver */
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath;
   }
 }
 
@@ -534,7 +538,7 @@ describe('Reverse Resolution', () => {
     it('should handle platform-specific paths correctly', async () => {
       if (isWindows) {
         const resolver = new WindowsResolver();
-        const testPath = resolver.PathFor('drive_c', 'test/file.txt');
+        const testPath = resolver.PathFor('c', 'test/file.txt');
         const osPath = await testPath.resolve();
 
         const result = await resolver.tryReverse(osPath);

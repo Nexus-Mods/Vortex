@@ -19,7 +19,7 @@ export enum FileType {
 
 /**
  * File/directory entry with metadata
- * Plain data structure suitable for IPC serialization (no virtual methods)
+ * Plain data structure (no virtual methods)
  */
 export interface FileEntry {
   /**

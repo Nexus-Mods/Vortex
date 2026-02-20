@@ -14,10 +14,10 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IResolver, SerializedFilePath } from './IResolver';
+import type { IResolver } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
-import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from './types';
+import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from './types';
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver
@@ -54,7 +54,7 @@ export class FilePath {
    * Async resolution to ResolvedPath
    *
    * Resolves the anchor + relative path to a concrete OS path.
-   * May require IO (e.g., ProtonResolver needs to read config files).
+   * May require IO (e.g., resolvers that read config files).
    *
    * @returns Promise resolving to absolute OS path
    * @throws Error if no resolver in the chain can handle this anchor
@@ -180,31 +180,6 @@ export class FilePath {
   }
 
   // ========================================================================
-  // Serialization
-  // ========================================================================
-
-  /**
-   * Serialize to JSON for IPC or Redux storage
-   *
-   * @returns Serializable object with relative, anchor, resolverName
-   *
-   * @example
-   * ```typescript
-   * const filePath = resolver.PathFor('userData', 'mods');
-   * const json = filePath.toJSON();
-   * // { relative: 'mods', anchor: 'userData', resolverName: 'vortex' }
-   * ```
-   */
-  toJSON(): SerializedFilePath {
-    return {
-      relative: this.relative as string,
-      anchor: AnchorNS.name(this.anchor),
-      resolverName: this.resolver.name,
-    };
-  }
-
-
-  // ========================================================================
   // Debugging
   // ========================================================================
 
@@ -254,13 +229,7 @@ export class FilePath {
    */
   hashCode(): number {
     const anchorName = AnchorNS.name(this.anchor);
-    const str = `${this.resolver.name}:${anchorName}:${this.relative}`;
-    let h = 0x811c9dc5;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 0x01000193);
-    }
-    return h >>> 0;
+    return fnv1a(`${this.resolver.name}:${anchorName}:${this.relative}`);
   }
 
   /**

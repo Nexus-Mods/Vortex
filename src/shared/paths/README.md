@@ -9,7 +9,6 @@ This library provides a structured approach to path handling in Vortex:
 - **Deferred Resolution**: Paths stay logical until the last moment
 - **Type-Safe Anchors**: Compile-time guarantees for valid anchor names
 - **Cross-Platform**: Abstracts OS differences through resolvers
-- **IPC-Ready**: Clean serialization for passing paths across processes
 - **Testable**: Mock filesystem implementations for 100% cross-platform testing
 
 ## Core Concepts
@@ -28,45 +27,70 @@ The library uses TypeScript branded types for compile-time safety:
 `FilePath` combines a `RelativePath`, an `Anchor`, and an `IResolver` into a single object that defers resolution:
 
 ```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
-
-const resolver = new VortexResolver();
+const resolver = new AppResolver(new UnixResolver());
 const filePath = resolver.PathFor('userData', 'mods/skyrim');
 
 // Path stays logical until resolved
 const resolved = await filePath.resolve();
-console.log(resolved); // C:\Users\...\AppData\Roaming\Vortex\mods\skyrim
+console.log(resolved); // /home/user/.local/share/app/mods/skyrim
 ```
 
 ### Resolvers
 
-Resolvers map anchors to concrete OS paths:
+Resolvers map anchors to concrete OS paths. The library provides two terminal
+platform resolvers and a base class for building your own:
 
-- **VortexResolver**: App-level paths (userData, temp, documents, etc.)
-- **GameResolver**: Game-specific paths (game, gameMods, gameData)
-- **ProtonResolver**: Wine/Proton translation for Linux
+- **UnixResolver**: Single `root` anchor → `/`
+- **WindowsResolver**: 26 drive-letter anchors (`a`–`z`) → `A:\` – `Z:\`
+- **MappingResolver**: Abstract base for user-defined anchor mappings
 - **CachingResolver**: TTL-based caching wrapper
 
-Resolvers are chainable - if a resolver doesn't handle an anchor, it delegates to its parent.
+Resolvers are chainable — if a resolver doesn't handle an anchor, it delegates to its parent.
 
-## Installation
+### Resolver Pipeline
 
-The path system is built into Vortex. Import directly from module files:
+After a non-terminal resolver resolves its anchor and joins the relative path,
+the result flows **up** the parent chain via `toOSPath()` until a terminal
+resolver (UnixResolver or WindowsResolver) finalises it:
 
-```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
-import { FilePath } from './shared/paths/FilePath';
-import { RelativePath } from './shared/paths/types';
 ```
+Request: resolve('userData', 'mods/skyrim')
+  ↓
+AppResolver.resolveAnchor('userData') → '/home/user/.vortex/userData'
+  ↓ joinPaths
+'/home/user/.vortex/userData/mods/skyrim'
+  ↓ toOSPath()  (walks up to parent)
+UnixResolver.toOSPath() → returns as-is (terminal)
+  ↓
+ResolvedPath('/home/user/.vortex/userData/mods/skyrim')
+```
+
+Non-terminal resolvers without a parent will throw, ensuring every chain
+terminates with a platform resolver.
 
 ## Quick Start
 
-### 1. Initialize Resolvers
+### 1. Create a Custom Resolver
 
 ```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
+import { MappingResolver, fromRecord } from './shared/paths/resolvers/MappingResolver';
+import { UnixResolver } from './shared/paths/resolvers/UnixResolver';
+import { ResolvedPath } from './shared/paths/types';
 
-const resolver = new VortexResolver();
+class AppResolver extends MappingResolver<'userData' | 'temp'> {
+  constructor(parent: IResolver) {
+    super('app', parent);
+  }
+
+  protected getStrategy() {
+    return fromRecord({
+      userData: ResolvedPath.make('/home/user/.app/userData'),
+      temp: ResolvedPath.make('/tmp/app'),
+    });
+  }
+}
+
+const resolver = new AppResolver(new UnixResolver());
 ```
 
 ### 2. Create Paths
@@ -90,7 +114,7 @@ const modsPath2 = new FilePath(
 ```typescript
 // Async resolution
 const resolved = await modsPath.resolve();
-console.log(resolved); // Platform-specific: C:\Users\... or /home/user/...
+console.log(resolved); // Platform-specific: /home/user/.app/userData/mods
 ```
 
 ### 4. Path Operations
@@ -106,78 +130,56 @@ const parent = skyrimPath.parent();
 const filename = skyrimPath.basename(); // 'data'
 ```
 
-## Usage Examples
-
-### Basic Usage
+### 5. Reverse Resolution
 
 ```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
-
-const resolver = new VortexResolver();
-
-// Create a file path
-const modsPath = resolver.PathFor('userData', 'mods');
-
-// Resolve to OS path
-const resolved = await modsPath.resolve();
-console.log(resolved); // Platform-specific
-
-// Join paths
-const skyrimPath = modsPath.join('skyrim', 'data');
+// Convert OS path back to FilePath
+const osPath = ResolvedPath.make('/home/user/.app/userData/mods/SkyUI');
+const filePath = await resolver.tryReverse(osPath);
+// → FilePath with anchor='userData', relative='mods/SkyUI'
 ```
+
+## Usage Examples
 
 ### Type-Safe Anchors
 
 ```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
-import { ProtonResolver } from './shared/paths/resolvers/ProtonResolver';
+const resolver = new AppResolver(new UnixResolver());
 
-const vortex = new VortexResolver();
-
-vortex.PathFor('userData');   // ✓ Valid
-vortex.PathFor('temp');       // ✓ Valid
-vortex.PathFor('drive_c');    // ✗ TypeScript error!
-
-const proton = new ProtonResolver('/steam', '12345');
-
-proton.PathFor('drive_c');    // ✓ Valid (Proton-specific)
-proton.PathFor('userData');   // ✗ TypeScript error!
+resolver.PathFor('userData');   // ✓ Valid
+resolver.PathFor('temp');       // ✓ Valid
+resolver.PathFor('drive_c');    // ✗ TypeScript error!
 ```
 
 ### Resolver Chaining
 
 ```typescript
-import { VortexResolver } from './shared/paths/resolvers/VortexResolver';
-import { GameResolver } from './shared/paths/resolvers/GameResolver';
-import { ProtonResolver } from './shared/paths/resolvers/ProtonResolver';
+// Build resolver chain: app (child) → unix (parent/terminal)
+const unix = new UnixResolver();
+const app = new AppResolver(unix);
 
-// Build resolver chain
-const vortex = new VortexResolver();
-const game = new GameResolver(getState, vortex);
-const proton = new ProtonResolver('/steam', '12345', game);
-
-// ProtonResolver tries first, then GameResolver, then VortexResolver
-const path = proton.PathFor('documents');
-const resolved = await path.resolve();
+// app tries first, then delegates unknown anchors to unix
+const path = app.PathFor('root' as any, 'etc/hosts');
+const resolved = await path.resolve(); // /etc/hosts (handled by unix parent)
 ```
 
-### IPC Serialization
+### Custom Terminal Resolvers
+
+To create a terminal resolver (one that can produce OS paths directly),
+override `toOSPath`:
 
 ```typescript
-import { FilePathIPC } from './shared/paths/ipc';
+class MyTerminalResolver extends MappingResolver<'data'> {
+  constructor() {
+    super('terminal');
+  }
 
-// Main process - serialize for IPC
-const filePath = resolver.PathFor('userData', 'mods');
-const serialized = FilePathIPC.serialize(filePath);
+  protected getStrategy() { ... }
 
-// Send across process boundary
-ipcMain.send('path-data', serialized);
-
-// Renderer process - deserialize
-ipcRenderer.on('path-data', (event, serialized) => {
-  const filePath = FilePathIPC.deserialize(serialized, resolver);
-  const resolved = await filePath.resolve();
-});
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath; // I produce valid OS paths directly
+  }
+}
 ```
 
 ### Testing with Mock Filesystems
@@ -194,20 +196,6 @@ test('Windows case insensitivity', async () => {
 
   await fs.writeFile(path1, 'content', 'utf8');
   expect(await fs.exists(path2)).toBe(true); // Case insensitive!
-});
-
-test('Unix case sensitivity', async () => {
-  const fs = new UnixFilesystem();
-
-  const path1 = ResolvedPath.make('/vortex/MODS');
-  const path2 = ResolvedPath.make('/vortex/mods');
-
-  await fs.writeFile(path1, 'content1', 'utf8');
-  await fs.writeFile(path2, 'content2', 'utf8');
-
-  // Two separate files
-  expect(await fs.readFile(path1, 'utf8')).toBe('content1');
-  expect(await fs.readFile(path2, 'utf8')).toBe('content2');
 });
 ```
 
@@ -226,57 +214,13 @@ string → RelativePath → FilePath → resolve() → ResolvedPath → IFilesys
 ```
 Request
   ↓
-ProtonResolver (Linux-specific anchors: drive_c, programFiles, ...)
+AppResolver (userData, temp, home, ...)
+  ↓ toOSPath() — delegates up
   ↓ (delegate if not handled)
-GameResolver (game, gameMods, gameData, gameSaves)
-  ↓ (delegate if not handled)
-VortexResolver (userData, temp, documents, ...)
-  ↓ (delegate if not handled)
-Error: No resolver can handle this anchor
+UnixResolver / WindowsResolver (terminal — produces OS path)
+  ↓
+ResolvedPath
 ```
-
-## Resolver Reference
-
-### VortexResolver
-
-Maps Vortex application paths:
-
-- `userData` - User data directory
-- `temp` - Temporary directory
-- `documents` - User documents
-- `appData` - Application data
-- `localAppData` - Local application data
-- `home` - User home directory
-- `desktop` - Desktop directory
-- `base` - Application base path
-- `assets` - Assets directory
-- `modules` - Node modules
-- `bundledPlugins` - Bundled plugins
-- `locales` - Locale files
-- `package` - Package directory
-- `application` - Application directory
-- `exe` - Executable path
-
-### GameResolver
-
-Maps game-specific paths (requires Redux state):
-
-- `game` - Game installation directory
-- `gameMods` - Game mods directory
-- `gameData` - Game data directory
-- `gameSaves` - Game saves directory
-
-### ProtonResolver
-
-Maps Proton/Wine paths (Linux only):
-
-- `drive_c` - C:\ root in Wine prefix
-- `documents` - My Documents
-- `appData` - Application Data
-- `localAppData` - Local Settings/Application Data
-- `home` - User profile directory
-- `programFiles` - Program Files
-- `programFilesX86` - Program Files (x86)
 
 ## API Reference
 
@@ -285,18 +229,11 @@ Maps Proton/Wine paths (Linux only):
 #### RelativePath
 
 ```typescript
-// Constructor
 RelativePath.make(input: string): RelativePath
-
-// Empty path
 RelativePath.EMPTY: RelativePath
-
-// Operations
 RelativePath.join(base: RelativePath, ...segments: string[]): RelativePath
 RelativePath.dirname(path: RelativePath): RelativePath
 RelativePath.basename(path: RelativePath, ext?: string): string
-
-// Collection helpers
 RelativePath.depth(path: RelativePath): number
 RelativePath.isIn(child: RelativePath, parent: RelativePath): boolean
 RelativePath.equals(a: RelativePath, b: RelativePath): boolean
@@ -307,10 +244,7 @@ RelativePath.hash(path: RelativePath): number
 #### ResolvedPath
 
 ```typescript
-// Constructor
 ResolvedPath.make(osPath: string): ResolvedPath
-
-// Operations
 ResolvedPath.join(base: ResolvedPath, ...segments: string[]): ResolvedPath
 ResolvedPath.dirname(path: ResolvedPath): ResolvedPath
 ResolvedPath.basename(path: ResolvedPath, ext?: string): string
@@ -321,29 +255,17 @@ ResolvedPath.relative(from: ResolvedPath, to: ResolvedPath): string
 #### Extension
 
 ```typescript
-// Constructor
 Extension.make(input: string): Extension
-
-// Extract from path
 Extension.fromPath(filePath: string): Extension | undefined
-
-// Check match
 Extension.matches(ext: Extension, filePath: string): boolean
-
-// Common extensions
 Extension.ESP, Extension.ESM, Extension.DLL, Extension.EXE, Extension.JSON
 ```
 
 #### Anchor
 
 ```typescript
-// Constructor
 Anchor.make(name: string): Anchor
-
-// Get name
 Anchor.name(anchor: Anchor): string
-
-// Validation
 Anchor.isAnchor(value: unknown): value is Anchor
 ```
 
@@ -351,36 +273,28 @@ Anchor.isAnchor(value: unknown): value is Anchor
 
 ```typescript
 class FilePath {
-  // Properties
   readonly relative: RelativePath;
   readonly anchor: Anchor;
   readonly resolver: IResolver;
 
-  // Resolution
   resolve(): Promise<ResolvedPath>;
 
-  // Builder methods (return new FilePath)
   join(...segments: string[]): FilePath;
   withResolver(newResolver: IResolver): FilePath;
   withAnchor(newAnchor: Anchor): FilePath;
   withRelative(newRelative: RelativePath): FilePath;
   parent(): FilePath;
   basename(ext?: string): string;
+  withBase(newBase: FilePath): FilePath;
 
-  // Serialization
-  toJSON(): SerializedFilePath;
-
-  // Equality & Comparison
   equals(other: FilePath): boolean;
   hashCode(): number;
   depth(): number;
   isIn(parent: FilePath): boolean;
   compare(other: FilePath): number;
 
-  // Reverse resolution
   relativeTo(childPath: string | ResolvedPath): Promise<RelativePath | null>;
   isAncestorOf(childPath: string | ResolvedPath): Promise<boolean>;
-  withBase(newBase: FilePath): FilePath;
 }
 ```
 
@@ -392,11 +306,11 @@ interface IResolver<ValidAnchors extends string = string> {
   readonly parent?: IResolver;
 
   resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath>;
-
   canResolve(anchor: Anchor): boolean;
   supportedAnchors(): Anchor[];
-
   PathFor<A extends ValidAnchors>(anchorName: A, relative?: string): FilePath;
+  tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null>;
+  getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
 }
 ```
 
@@ -407,24 +321,19 @@ interface IFilesystem {
   readonly platform: 'win32' | 'linux' | 'darwin';
   readonly caseSensitive: boolean;
 
-  // Read operations
   readFile(path: ResolvedPath, encoding?: BufferEncoding): Promise<string | Buffer>;
-
-  // Write operations
   writeFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
   appendFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
   unlink(path: ResolvedPath): Promise<void>;
 
-  // Directory operations
   readdir(path: ResolvedPath): Promise<FileEntry[]>;
   mkdir(path: ResolvedPath, options?: { recursive?: boolean; mode?: number }): Promise<void>;
   rmdir(path: ResolvedPath, options?: { recursive?: boolean }): Promise<void>;
 
-  // Metadata operations
   exists(path: ResolvedPath): Promise<boolean>;
   stat(path: ResolvedPath): Promise<FileEntry>;
+  lstat(path: ResolvedPath): Promise<FileEntry>;
 
-  // Copy/move operations
   copy(src: ResolvedPath, dest: ResolvedPath, options?: CopyOptions): Promise<void>;
   rename(src: ResolvedPath, dest: ResolvedPath): Promise<void>;
 }
@@ -460,17 +369,6 @@ ResolvedPathSchema.parse('relative/path');  // ✗ Throws
 - **Deferred resolution**: Paths are only resolved when needed
 - **Optional caching**: Use `CachingResolver` wrapper for repeated resolutions
 
-## Migration Guide
-
-This library is **not integrated** with existing Vortex code yet. It's designed as an addon for future use. Integration will happen in a separate phase.
-
-To start using the path system:
-
-1. Import the library
-2. Initialize resolvers
-3. Use `FilePath` for new code
-4. Gradually migrate existing path handling
-
 ## Design Decisions
 
 ### Why Branded Types?
@@ -483,19 +381,11 @@ Paths can be constructed, manipulated, and serialized without filesystem access.
 
 ### Why Resolver Chains?
 
-Resolver chains enable modular path handling. Each resolver handles its domain (app paths, game paths, Proton paths) and delegates unknown anchors to the parent.
+Resolver chains enable modular path handling. Each resolver handles its domain (app paths, game paths) and delegates unknown anchors to the parent. Only terminal resolvers (UnixResolver, WindowsResolver) produce final OS paths.
 
 ### Why IFilesystem Abstraction?
 
 The filesystem abstraction enables 100% cross-platform testing. Tests can simulate Windows and Unix behavior without real filesystem access.
-
-## Future Work
-
-- Integration with existing Vortex path handling
-- Migration tooling for converting old APIs
-- Additional resolvers (archives, network paths)
-- Performance benchmarks
-- Developer migration guide
 
 ## License
 

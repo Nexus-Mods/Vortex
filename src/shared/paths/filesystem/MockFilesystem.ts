@@ -8,7 +8,7 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IFilesystem, FileEntry, FileType } from '../IFilesystem';
+import type { IFilesystem, FileEntry } from '../IFilesystem';
 import type { ResolvedPath, RelativePath } from '../types';
 
 import { FileType as FileTypeEnum } from '../IFilesystem';
@@ -70,15 +70,6 @@ export class MockFilesystem implements IFilesystem {
    */
   private getParentPath(p: string): string {
     return path.dirname(p);
-  }
-
-  /**
-   * Split path into segments
-   */
-  private getSegments(p: string): string[] {
-    const normalized = path.normalize(p);
-    const parts = normalized.split(this.sep).filter(s => s.length > 0 && s !== '.');
-    return parts;
   }
 
   // ========================================================================

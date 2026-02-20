@@ -17,9 +17,9 @@ import type { Anchor, RelativePath, ResolvedPath } from './types';
  *
  * @example
  * ```typescript
- * type VortexAnchors = 'userData' | 'temp' | 'documents';
- * class VortexResolver implements IResolver<VortexAnchors> {
- *   PathFor<A extends VortexAnchors>(anchorName: A): FilePath {
+ * type AppAnchors = 'userData' | 'temp' | 'documents';
+ * class AppResolver implements IResolver<AppAnchors> {
+ *   PathFor<A extends AppAnchors>(anchorName: A): FilePath {
  *     // TypeScript enforces anchorName is one of: 'userData' | 'temp' | 'documents'
  *   }
  * }
@@ -28,7 +28,6 @@ import type { Anchor, RelativePath, ResolvedPath } from './types';
 export interface IResolver<ValidAnchors extends string = string> {
   /**
    * Unique name for serialization and debugging
-   * Used to look up resolvers in the registry
    */
   readonly name: string;
 
@@ -74,7 +73,7 @@ export interface IResolver<ValidAnchors extends string = string> {
    *
    * @example
    * ```typescript
-   * const resolver = new VortexResolver();
+   * const resolver = new AppResolver(new UnixResolver());
    *
    * // Type-safe: only accepts valid anchor names
    * resolver.PathFor('userData');        // ✓ Valid
@@ -100,8 +99,8 @@ export interface IResolver<ValidAnchors extends string = string> {
    *
    * @example
    * ```typescript
-   * const osPath = ResolvedPath.make('C:\\Users\\...\\Vortex\\mods\\SkyUI');
-   * const filePath = await vortexResolver.tryReverse(osPath);
+   * const osPath = ResolvedPath.make('C:\\Users\\...\\AppData\\mods\\SkyUI');
+   * const filePath = await appResolver.tryReverse(osPath);
    * // → FilePath with anchor='userData', relative='mods/SkyUI'
    * ```
    */
@@ -112,11 +111,10 @@ export interface IResolver<ValidAnchors extends string = string> {
    * Used for efficient reverse resolution matching
    *
    * @returns Map of anchors to their resolved base paths
-   * @internal - Primarily for use by ResolverRegistry
    *
    * @example
    * ```typescript
-   * const bases = await vortexResolver.getBasePaths();
+   * const bases = await appResolver.getBasePaths();
    * // → Map {
    * //   Anchor('userData') → 'C:\\Users\\...\\Vortex',
    * //   Anchor('temp') → 'C:\\Users\\...\\Temp',
@@ -125,14 +123,4 @@ export interface IResolver<ValidAnchors extends string = string> {
    * ```
    */
   getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
-}
-
-
-/**
- * Serializable representation of FilePath for IPC
- */
-export interface SerializedFilePath {
-  relative: string;
-  anchor: string;
-  resolverName: string;
 }

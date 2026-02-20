@@ -6,7 +6,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { FilePath } from '../FilePath';
-import { FilePathIPC } from '../ipc';
 import { BaseResolver } from '../resolvers/BaseResolver';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
@@ -39,9 +38,14 @@ class AppResolver extends BaseResolver<'userData' | 'temp'> {
     }
     throw new Error(`Unknown anchor: ${name}`);
   }
+
+  /** Test paths are already absolute — act as terminal resolver */
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath;
+  }
 }
 
-class GameResolver extends BaseResolver<'game' | 'gameMods'> {
+class TestGameResolver extends BaseResolver<'game' | 'gameMods'> {
   constructor() {
     super('game');
   }
@@ -69,15 +73,20 @@ class GameResolver extends BaseResolver<'game' | 'gameMods'> {
     }
     throw new Error(`Unknown anchor: ${name}`);
   }
+
+  /** Test paths are already absolute — act as terminal resolver */
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
+    return intermediatePath;
+  }
 }
 
 describe('Integration Tests', () => {
   let appResolver: AppResolver;
-  let gameResolver: GameResolver;
+  let gameResolver: TestGameResolver;
 
   beforeEach(() => {
     appResolver = new AppResolver();
-    gameResolver = new GameResolver();
+    gameResolver = new TestGameResolver();
   });
 
   describe('path operations', () => {
@@ -98,30 +107,6 @@ describe('Integration Tests', () => {
       expect(skyuiDir.relative).toBe('skyui');
       const resolved = await skyuiDir.resolve();
       expect(resolved).toBe('/games/skyrim/Data/skyui');
-    });
-  });
-
-  describe('IPC serialization', () => {
-    test('serialize FilePath to JSON', async () => {
-      // Original path
-      const original = gameResolver.PathFor('game', 'mods/skyrim');
-
-      // Serialize (as if sending over IPC)
-      const serialized = FilePathIPC.serialize(original);
-      expect(serialized).toEqual({
-        relative: 'mods/skyrim',
-        anchor: 'game',
-        resolverName: 'game',
-      });
-    });
-
-    test('serialize resolved paths for simple IPC', async () => {
-      const filePath = gameResolver.PathFor('game', 'mods');
-      const resolved = await FilePathIPC.serializeResolved(filePath);
-
-      // Can reconstruct ResolvedPath on receiving side
-      const reconstructed = ResolvedPath.make(resolved);
-      expect(reconstructed).toBe(resolved);
     });
   });
 
@@ -191,22 +176,6 @@ describe('Integration Tests', () => {
       // Install to game mods
       const installPath = gameResolver.PathFor('gameMods', 'skyui');
       expect(await installPath.resolve()).toBe('/games/skyrim/Data/skyui');
-    });
-
-    test('track mod file paths with resolved serialization', async () => {
-      const modFiles = [
-        gameResolver.PathFor('gameMods', 'skyui/interface/skyui.swf'),
-        gameResolver.PathFor('gameMods', 'skyui/scripts/skyui.pex'),
-        gameResolver.PathFor('gameMods', 'skyui/skse/plugins/skyui.dll'),
-      ];
-
-      // Serialize to resolved paths for simple IPC
-      const resolved = await FilePathIPC.serializeManyResolved(modFiles);
-      expect(resolved).toHaveLength(3);
-
-      expect(resolved[0]).toBe('/games/skyrim/Data/skyui/interface/skyui.swf');
-      expect(resolved[1]).toBe('/games/skyrim/Data/skyui/scripts/skyui.pex');
-      expect(resolved[2]).toBe('/games/skyrim/Data/skyui/skse/plugins/skyui.dll');
     });
   });
 

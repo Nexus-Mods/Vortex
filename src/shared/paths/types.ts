@@ -146,7 +146,7 @@ export namespace RelativePath {
    * // => 'mods/skyrim'
    */
   export function dirname(relative: RelativePath): RelativePath {
-    const dir = path.dirname(relative as string);
+    const dir = path.posix.dirname(relative as string);
     if (dir === '.' || dir === '') {
       return EMPTY;
     }
@@ -161,7 +161,7 @@ export namespace RelativePath {
    * // => 'data.esp'
    */
   export function basename(relative: RelativePath, ext?: string): string {
-    return path.basename(relative as string, ext);
+    return path.posix.basename(relative as string, ext);
   }
 
   /**
@@ -207,13 +207,7 @@ export namespace RelativePath {
    * FNV-1a numeric hash (unsigned 32-bit)
    */
   export function hash(relative: RelativePath): number {
-    const str = relative as string;
-    let h = 0x811c9dc5;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 0x01000193);
-    }
-    return h >>> 0;
+    return fnv1a(relative as string);
   }
 }
 
@@ -419,8 +413,29 @@ export namespace Extension {
 }
 
 // ============================================================================
+// FNV-1a Hash Utility
+// ============================================================================
+
+/**
+ * FNV-1a hash (unsigned 32-bit)
+ *
+ * Deterministic, fast hash for strings. Used by RelativePath.hash() and
+ * FilePath.hashCode() to avoid duplicating the algorithm.
+ */
+export function fnv1a(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+// ============================================================================
 // Anchor: Named resolution starting points (interned Symbols)
 // ============================================================================
+
+const ANCHOR_PREFIX = 'anchor:';
 
 declare const ANCHOR_BRAND: unique symbol;
 
@@ -443,7 +458,7 @@ export namespace Anchor {
    * a1 === a2 // => true (interned)
    */
   export function make(name: string): Anchor {
-    return Symbol.for(`anchor:${name}`) as Anchor;
+    return Symbol.for(`${ANCHOR_PREFIX}${name}`) as Anchor;
   }
 
   /**
@@ -455,10 +470,10 @@ export namespace Anchor {
    */
   export function name(anchor: Anchor): string {
     const description = Symbol.keyFor(anchor as symbol);
-    if (!description || !description.startsWith('anchor:')) {
+    if (!description || !description.startsWith(ANCHOR_PREFIX)) {
       throw new Error('Invalid anchor symbol');
     }
-    return description.substring(7); // Remove 'anchor:' prefix
+    return description.substring(ANCHOR_PREFIX.length);
   }
 
   /**
@@ -476,6 +491,6 @@ export namespace Anchor {
       return false;
     }
     const description = Symbol.keyFor(value);
-    return description !== undefined && description.startsWith('anchor:');
+    return description !== undefined && description.startsWith(ANCHOR_PREFIX);
   }
 }
