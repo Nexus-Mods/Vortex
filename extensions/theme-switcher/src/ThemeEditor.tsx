@@ -518,13 +518,13 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       "gray-dark",
       "gray-darker",
     ];
-    let grayColors = ["D4D4D8", "A1A1AA", "3F3F46", "27272A", "18181B"];
+    let grayColors = ["#D4D4D8", "#A1A1AA", "#3F3F46", "#27272A", "#18181B"];
     if (this.state.dark) {
       grayColors.reverse();
     }
 
     grayNames.forEach((id: string, idx: number) => {
-      theme[id] = "#" + grayColors[idx];
+      theme[id] = grayColors[idx];
     });
 
     this.props.onApply(theme);
