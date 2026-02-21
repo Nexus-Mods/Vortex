@@ -137,6 +137,7 @@ const colorDefaults: IColorEntry[] = [
   { name: "text-color", value: "#F4F4F5" },
   { name: "text-color-disabled", value: "#898994" },
   { name: "link-color", value: "#C87B28" },
+  { name: "border-color", value: "#ffffff1a" },
 ];
 
 interface IComponentState {
