@@ -520,7 +520,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     ];
     let grayColors = ["D4D4D8", "A1A1AA", "3F3F46", "27272A", "18181B"];
     if (this.state.dark) {
-      grayColors = grayColors.reverse();
+      grayColors.reverse();
     }
 
     grayNames.forEach((id: string, idx: number) => {
