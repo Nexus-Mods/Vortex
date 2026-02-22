@@ -1,6 +1,6 @@
 {
   "name": "theme-switcher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Settings section to switch and customize UI themes",
   "main": "./out/index.js",
   "scripts": {
