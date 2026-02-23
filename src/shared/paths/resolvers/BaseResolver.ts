@@ -276,8 +276,8 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     for (const [anchor, basePath] of basePaths) {
       const normalizedBase = this.normalizePath(basePath);
 
-      // Check if path starts with this base
-      const isUnder = this.isUnder(normalizedPath, normalizedBase);
+      // Check if path starts with this base (already normalized above)
+      const isUnder = this.isUnder(normalizedPath, normalizedBase, true);
 
       if (isUnder) {
         const relative = this.extractRelative(normalizedPath, normalizedBase);
@@ -316,10 +316,10 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   /**
    * Check if path is under base path
    */
-  private isUnder(childPath: string, basePath: string): boolean {
+  private isUnder(childPath: string, basePath: string, preNormalized = false): boolean {
     const fs = this.getFilesystem();
-    const normalizedChild = fs.normalizePath(childPath);
-    const normalizedBase = fs.normalizePath(basePath);
+    const normalizedChild = preNormalized ? childPath : fs.normalizePath(childPath);
+    const normalizedBase = preNormalized ? basePath : fs.normalizePath(basePath);
 
     // Ensure base ends with separator for proper prefix matching
     const baseWithSep = normalizedBase.endsWith(fs.sep) ? normalizedBase : normalizedBase + fs.sep;
