@@ -79,7 +79,7 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
    * This ensures correct path joining even on non-Windows platforms
    */
   protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
-    if (relative === '' || relative === RelativePathNS.EMPTY) {
+    if (relative === RelativePathNS.EMPTY) {
       return base;
     }
     // Use Windows path joining explicitly

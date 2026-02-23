@@ -139,7 +139,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    * Join base path with relative path (OS-specific)
    */
   protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
-    if (relative === RelativePathNS.EMPTY || relative === '') {
+    if (relative === RelativePathNS.EMPTY) {
       return base;
     }
     const joined = path.join(base as string, relative as string);

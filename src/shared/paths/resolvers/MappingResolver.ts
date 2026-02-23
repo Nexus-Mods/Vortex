@@ -115,36 +115,6 @@ export abstract class MappingResolver<ValidAnchors extends string>
     const name = AnchorNS.name(anchor) as ValidAnchors;
     return this.strategy.resolve(name);
   }
-
-  // ========================================================================
-  // Reverse Resolution Optimization
-  // ========================================================================
-
-  /**
-   * Override computeBasePaths with more efficient strategy-based approach
-   * We already have all anchors via strategy.supportedAnchors()
-   */
-  protected async computeBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
-    const basePaths = new Map<Anchor, ResolvedPath>();
-    const strategy = this.strategy;
-    const anchorNames = strategy.supportedAnchors();
-
-    // Resolve all anchors using strategy
-    await Promise.all(
-      anchorNames.map(async (anchorName) => {
-        try {
-          const anchor = AnchorNS.make(anchorName);
-          const basePath = await strategy.resolve(anchorName);
-          const osPath = this.toOSPath(basePath);
-          basePaths.set(anchor, osPath);
-        } catch (_err) {
-          // Skip anchors that can't be resolved
-        }
-      })
-    );
-
-    return basePaths;
-  }
 }
 
 // ============================================================================
