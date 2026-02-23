@@ -81,13 +81,13 @@ class UnixTestResolver extends BaseResolver<'home' | 'var'> {
 
 describe('Path Normalization and Cross-Platform Handling', () => {
   describe('FilePath.relativeTo - Path Normalization', () => {
-    let resolver: WindowsTestResolver | UnixTestResolver;
-
     // Note: relativeTo() uses path.resolve() which is host-OS specific.
     // Windows-literal path tests only work on Windows hosts.
     const isWindows = process.platform === 'win32';
 
     (isWindows ? describe : describe.skip)('Windows path handling (host-OS only)', () => {
+      let resolver: WindowsTestResolver;
+
       beforeEach(() => {
         resolver = new WindowsTestResolver();
       });
@@ -165,6 +165,8 @@ describe('Path Normalization and Cross-Platform Handling', () => {
     });
 
     describe('Unix path handling', () => {
+      let resolver: UnixTestResolver;
+
       beforeEach(() => {
         resolver = new UnixTestResolver();
       });
@@ -213,6 +215,8 @@ describe('Path Normalization and Cross-Platform Handling', () => {
     });
 
     describe('Edge cases (Unix)', () => {
+      let resolver: UnixTestResolver;
+
       beforeEach(() => {
         resolver = new UnixTestResolver();
       });
@@ -258,7 +262,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
   });
 
   describe('BaseResolver.isUnder - Case Insensitive Handling', () => {
-    let resolver: WindowsTestResolver | UnixTestResolver;
+    let resolver: WindowsTestResolver;
 
     beforeEach(() => {
       resolver = new WindowsTestResolver();
@@ -270,7 +274,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
       const osPath = await filePath.resolve();
 
       // Convert to lowercase
-      const lowercasePath = (osPath as string).toLowerCase();
+      const lowercasePath = ResolvedPath.unsafe((osPath as string).toLowerCase());
 
       const result = await resolver.tryReverse(lowercasePath);
 
@@ -298,7 +302,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
         .map((part, i) => i % 2 === 0 ? part.toLowerCase() : part.toUpperCase())
         .join('\\');
 
-      const result = await resolver.tryReverse(mixedPath);
+      const result = await resolver.tryReverse(ResolvedPath.unsafe(mixedPath));
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result!.anchor)).toBe('userData');
@@ -306,7 +310,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
   });
 
   describe('RelativePath extraction validation', () => {
-    let resolver: WindowsTestResolver | UnixTestResolver;
+    let resolver: WindowsTestResolver;
 
     beforeEach(() => {
       resolver = new WindowsTestResolver();
