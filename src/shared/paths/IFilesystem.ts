@@ -166,11 +166,11 @@ export interface IFilesystem {
    * Read entire file contents
    *
    * @param path - Absolute path to file
-   * @param encoding - Optional encoding (utf8, etc.) - if omitted, returns Buffer
-   * @returns File contents as string (if encoding specified) or Buffer
+   * @param encoding - Encoding (default: utf8) - pass null to get a raw Buffer
+   * @returns File contents as string or Buffer (if encoding is null)
    * @throws Error if file doesn't exist or can't be read
    */
-  readFile(path: ResolvedPath, encoding?: BufferEncoding): Promise<string | Buffer>;
+  readFile(path: ResolvedPath, encoding?: BufferEncoding | null): Promise<string | Buffer>;
 
   // ========================================================================
   // Write Operations
@@ -182,7 +182,7 @@ export interface IFilesystem {
    *
    * @param path - Absolute path to file
    * @param data - Data to write (string or Buffer)
-   * @param encoding - Optional encoding (default: utf8)
+   * @param encoding - Encoding (default: utf8)
    * @throws Error if write fails
    */
   writeFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
@@ -192,7 +192,7 @@ export interface IFilesystem {
    *
    * @param path - Absolute path to file
    * @param data - Data to append
-   * @param encoding - Optional encoding (default: utf8)
+   * @param encoding - Encoding (default: utf8)
    */
   appendFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
 

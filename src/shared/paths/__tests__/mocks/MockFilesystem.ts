@@ -127,7 +127,7 @@ export class MockFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(path: ResolvedPath, encoding?: BufferEncoding): Promise<string | Buffer> {
+  async readFile(path: ResolvedPath, encoding: BufferEncoding | null = 'utf8'): Promise<string | Buffer> {
     const entry = this.getFileEntry(path);
     entry.atime = new Date();
     if (encoding) {
@@ -140,14 +140,14 @@ export class MockFilesystem implements IFilesystem {
   // Write Operations
   // ========================================================================
 
-  async writeFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void> {
+  async writeFile(path: ResolvedPath, data: string | Buffer, encoding: BufferEncoding = 'utf8'): Promise<void> {
     // Ensure parent directory exists (create if needed)
     const parent = this.getParentPath(path as string);
     if (parent !== path as string && !this.entries.has(this.normalizePath(parent))) {
       await this.mkdir(parent as ResolvedPath, { recursive: true });
     }
 
-    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding || 'utf8');
+    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding);
     const now = new Date();
 
     const existingEntry = this.getEntry(path);
@@ -165,8 +165,8 @@ export class MockFilesystem implements IFilesystem {
     });
   }
 
-  async appendFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void> {
-    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding || 'utf8');
+  async appendFile(path: ResolvedPath, data: string | Buffer, encoding: BufferEncoding = 'utf8'): Promise<void> {
+    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding);
 
     if (this.entries.has(this.normalizePath(path as string))) {
       const existing = this.getFileEntry(path);

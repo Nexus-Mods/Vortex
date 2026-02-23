@@ -193,7 +193,7 @@ test('Windows case insensitivity', async () => {
   const path1 = ResolvedPath.make('C:\\Vortex\\MODS');
   const path2 = ResolvedPath.make('C:\\vortex\\mods');
 
-  await fs.writeFile(path1, 'content', 'utf8');
+  await fs.writeFile(path1, 'content');
   expect(await fs.exists(path2)).toBe(true); // Case insensitive!
 });
 ```
