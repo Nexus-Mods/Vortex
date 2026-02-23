@@ -1,7 +1,7 @@
 /* Style overrides applied when the modern layout is active.
    The .modern-layout class is set on the LayoutContainer root element. */
 
-@layer modern-overrides {
+@layer base {
     .modern-layout {
         .dropdown-menu > li > a {
             &:hover,

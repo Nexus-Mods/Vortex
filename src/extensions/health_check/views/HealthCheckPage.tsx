@@ -7,24 +7,30 @@ import {
   mdiEyeOff,
   mdiRefresh,
 } from "@mdi/js";
-import React, { useState } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type KeyboardEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
-import MainPage from "../../../renderer/views/MainPage";
 import { Button } from "../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../renderer/ui/components/icon/Icon";
-import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
+import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
+import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
+import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
 import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
 import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
 import { Typography } from "../../../renderer/ui/components/typography/Typography";
-import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
-import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import { batchDispatch } from "../../../renderer/util/util";
+import MainPage from "../../../renderer/views/MainPage";
 import {
   setRequirementHidden,
   clearAllHiddenRequirements,
@@ -41,14 +47,22 @@ const Mod = ({
   isHidden?: boolean;
   requirementInfo: IModRequirementExt;
   onClick: () => void;
-  onToggleHide?: (e: React.MouseEvent) => void;
+  onToggleHide?: (e: MouseEvent) => void;
 }) => {
   const { t } = useTranslation("health_check");
 
   return (
     <div
-      className="hover-overlay-weak flex w-full items-center gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs"
+      className="hover-overlay-weak flex w-full cursor-pointer items-center gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e: KeyboardEvent) => {
+        if (["Enter", " "].includes(e.key)) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <Icon className="shrink-0 text-info-strong" path={mdiAlertCircle} />
 
@@ -112,7 +126,7 @@ function HealthCheckPage({
 
   const hiddenReqsMap = useSelector(hiddenRequirements);
 
-  const isModRequirementHidden = React.useCallback(
+  const isModRequirementHidden = useCallback(
     (mod: IModRequirementExt): boolean => {
       const hiddenReqs = hiddenReqsMap[mod.requiredBy.modId] || [];
       return hiddenReqs.includes(mod.id);
@@ -121,12 +135,12 @@ function HealthCheckPage({
   );
 
   // Filter active and hidden mods
-  const activeMods = React.useMemo(
+  const activeMods = useMemo(
     () => modRequirements.filter((mod) => !isModRequirementHidden(mod)),
     [modRequirements, isModRequirementHidden],
   );
 
-  const hiddenMods = React.useMemo(
+  const hiddenMods = useMemo(
     () => modRequirements.filter((mod) => isModRequirementHidden(mod)),
     [modRequirements, isModRequirementHidden],
   );

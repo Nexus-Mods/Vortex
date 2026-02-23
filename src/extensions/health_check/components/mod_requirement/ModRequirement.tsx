@@ -163,7 +163,7 @@ export const ModRequirement = ({
                 <>
                   {modFiles.map((file) => (
                     <div
-                      className="flex items-center justify-between rounded-sm border border-stroke-weak bg-surface-translucent-low px-3 py-2 transition-colors hover:bg-surface-translucent-mid"
+                      className="flex items-center justify-between rounded-sm border border-stroke-weak bg-surface-translucent-low px-3 py-2"
                       key={file.fileId}
                     >
                       <div className="min-w-0 flex-1">
@@ -173,9 +173,12 @@ export const ModRequirement = ({
                           </Typography>
 
                           {file.isPrimary && (
-                            <span className="shrink-0 rounded-sm bg-premium-moderate px-1.5 py-0.5 text-xs text-neutral-strong">
+                            <Typography
+                              className="shrink-0 rounded-sm bg-premium-moderate px-1.5 py-0.5"
+                              typographyType="body-sm"
+                            >
                               Primary
-                            </span>
+                            </Typography>
                           )}
                         </div>
 

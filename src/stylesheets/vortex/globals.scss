@@ -75,7 +75,7 @@ body {
     background: darken($gray-darker, 10%);
 }
 
-@layer base {
+.legacy-layout {
     ::-webkit-input-placeholder {
         color: $input-color-placeholder;
         font-style: italic;
