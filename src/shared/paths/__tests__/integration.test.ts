@@ -7,7 +7,11 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
-import { MockFilesystem } from '../filesystem/MockFilesystem';
+import { WindowsResolver } from '../resolvers/WindowsResolver';
+import { UnixResolver } from '../resolvers/UnixResolver';
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Test resolver implementations
@@ -182,11 +186,6 @@ describe('Integration Tests', () => {
 
   describe('OS-specific resolvers (WindowsResolver & UnixResolver)', () => {
     test('resolvers work on any platform', async () => {
-      const { WindowsResolver } = await import('../resolvers/WindowsResolver');
-      const { UnixResolver } = await import('../resolvers/UnixResolver');
-      const { MockWindowsFilesystem } = await import('../filesystem/MockWindowsFilesystem');
-      const { MockUnixFilesystem } = await import('../filesystem/MockUnixFilesystem');
-
       // WindowsResolver always works
       const windowsResolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
       const cDrive = windowsResolver.PathFor('c');
@@ -201,11 +200,6 @@ describe('Integration Tests', () => {
     });
 
     test('resolvers return all anchors regardless of platform', async () => {
-      const { WindowsResolver } = await import('../resolvers/WindowsResolver');
-      const { UnixResolver } = await import('../resolvers/UnixResolver');
-      const { MockWindowsFilesystem } = await import('../filesystem/MockWindowsFilesystem');
-      const { MockUnixFilesystem } = await import('../filesystem/MockUnixFilesystem');
-
       const windowsResolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
       expect(windowsResolver.supportedAnchors()).toHaveLength(26);
 
@@ -214,8 +208,6 @@ describe('Integration Tests', () => {
     });
 
     test('WindowsResolver canResolve all 26 drive letters', async () => {
-      const { WindowsResolver } = await import('../resolvers/WindowsResolver');
-      const { MockWindowsFilesystem } = await import('../filesystem/MockWindowsFilesystem');
       const resolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
 
       const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -226,8 +218,6 @@ describe('Integration Tests', () => {
     });
 
     test('UnixResolver only resolves root anchor', async () => {
-      const { UnixResolver } = await import('../resolvers/UnixResolver');
-      const { MockUnixFilesystem } = await import('../filesystem/MockUnixFilesystem');
       const resolver = new UnixResolver(undefined, new MockUnixFilesystem());
 
       expect(resolver.canResolve(Anchor.make('root'))).toBe(true);

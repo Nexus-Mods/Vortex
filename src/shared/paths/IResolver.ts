@@ -33,13 +33,18 @@ export interface IResolver<ValidAnchors extends string = string> {
   readonly name: string;
 
   /**
-   * Optional parent resolver for delegation
-   * When this resolver cannot handle an anchor or path, it delegates to its parent
+   * Optional parent resolver for the resolver chain.
+   * Used by `toOSPath()` to walk up to a terminal resolver, and by
+   * `tryReverse()` for top-down reverse resolution. Parent delegation
+   * does NOT apply to forward `resolve()` — unknown anchors throw.
    */
   readonly parent?: IResolver;
 
   /**
-   * Primary resolution method (async - may require IO)
+   * Resolve an anchor + relative path to an absolute OS path.
+   *
+   * Only resolves anchors this resolver understands (checked via `canResolve`).
+   * Unknown anchors throw immediately — there is no parent delegation.
    *
    * @param anchor - The anchor to resolve
    * @param relative - The relative path from the anchor
@@ -92,8 +97,11 @@ export interface IResolver<ValidAnchors extends string = string> {
   // ========================================================================
 
   /**
-   * Try to reverse-resolve an OS path to a FilePath
-   * Returns null if this resolver (or its parent chain) cannot handle the path
+   * Try to reverse-resolve an OS path to a FilePath using top-down resolution.
+   *
+   * Walks to the top of the parent chain first, then refines on the way back
+   * down. The most specific (deepest) match wins. Returns null if no resolver
+   * in the chain can handle the path.
    *
    * @param resolvedPath - Absolute OS path to parse
    * @returns FilePath instance, or null if not handled

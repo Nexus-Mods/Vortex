@@ -9,7 +9,7 @@ import type { IFilesystem } from '../IFilesystem';
 import type { IResolver } from '../IResolver';
 
 import { FilePath } from '../FilePath';
-import { MockFilesystem } from '../filesystem/MockFilesystem';
+import { MockFilesystem } from './mocks/MockFilesystem';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Mock resolver for testing

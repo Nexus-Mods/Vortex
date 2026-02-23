@@ -20,6 +20,22 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 /**
  * Abstract base resolver with type-safe anchor support
  *
+ * ## Resolution Protocol
+ *
+ * **Forward resolution** (`resolve`): A resolver ONLY resolves anchors it
+ * understands (checked via `canResolve`). Unknown anchors throw immediately —
+ * there is no parent delegation during forward resolution. After resolving an
+ * anchor to an intermediate path, the result walks up the parent chain via
+ * `toOSPath()` to produce a final OS path. Non-terminal resolvers (e.g.
+ * MappingResolver) delegate `toOSPath()` to their parent; terminal resolvers
+ * (UnixResolver, WindowsResolver) return the path as-is.
+ *
+ * **Reverse resolution** (`tryReverse`): Uses a top-down strategy. The
+ * resolver first walks to the top of the parent chain, then refines on the
+ * way back down. Each level tries its own anchors; the most specific (deepest)
+ * match wins. This ensures that a child resolver's anchors take priority over
+ * a parent's broader anchors when both match.
+ *
  * @template ValidAnchors - Union of string literals for valid anchor names
  */
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
@@ -56,23 +72,23 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   // ========================================================================
 
   /**
-   * Async resolution - delegates to parent if this resolver cannot handle the anchor
+   * Resolve an anchor + relative path to an absolute OS path.
+   *
+   * Only resolves anchors this resolver understands. Unknown anchors throw
+   * immediately — there is no parent delegation during forward resolution.
    */
   async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
-    // Try self first
-    if (this.canResolve(anchor)) {
-      const basePath = await this.resolveAnchor(anchor);
-      const combined = this.joinPaths(basePath, relative);
-      return this.toOSPath(combined);
+    const anchorName = AnchorNS.name(anchor);
+    if (!this.canResolve(anchor)) {
+      throw new Error(
+        `Resolver "${this.name}" cannot resolve anchor: ${anchorName}. ` +
+        `Supported anchors: [${this.supportedAnchors().map(AnchorNS.name).join(', ')}]`
+      );
     }
 
-    // Delegate to parent
-    if (this.parent) {
-      return this.parent.resolve(anchor, relative);
-    }
-
-    // No one in the chain can handle this anchor
-    throw new Error(`Resolver "${this.name}" cannot handle anchor: ${AnchorNS.name(anchor)}`);
+    const basePath = await this.resolveAnchor(anchor);
+    const combined = this.joinPaths(basePath, relative);
+    return this.toOSPath(combined);
   }
 
   // ========================================================================
@@ -211,42 +227,28 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   }
 
   /**
-   * Try to reverse-resolve an OS path with parent delegation
+   * Try to reverse-resolve an OS path using top-down resolution.
    *
-   * Tries to reverse resolve the path using this resolver first (most specific),
-   * then delegates to parent if this resolver cannot handle it.
+   * Walks to the top of the parent chain first, letting each level try
+   * its anchors on the way back down. The most specific (deepest) match
+   * wins, so child resolver anchors take priority over parent anchors.
    *
    * @returns FilePath instance using the appropriate resolver, or null if no resolver can handle it
    */
   async tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null> {
-    // Try self first (most specific)
+    // Walk to top parent first, then refine on way back down
+    let result: FilePath | null = null;
+    if (this.parent) {
+      result = await this.parent.tryReverse(resolvedPath);
+    }
+
+    // Try self — if we match, our more-specific anchor wins
     const selfResult = await this.tryReverseSelf(resolvedPath);
     if (selfResult !== null) {
-      // We handled it - create FilePath with this resolver
       return new FilePath(selfResult.relative, selfResult.anchor, this);
     }
 
-    // Delegate to parent
-    if (this.parent) {
-      const parentFilePath = await this.parent.tryReverse(resolvedPath);
-
-      if (parentFilePath !== null) {
-        // Check if parent returned an anchor that WE claim to handle
-        // If yes, this is a validation error (we should have handled it but failed)
-        const parentAnchor = parentFilePath.anchor;
-        if (this.canResolve(parentAnchor)) {
-          throw new Error(
-            `Path validation failed for resolver "${this.name}": ${resolvedPath}. ` +
-            `Parent returned anchor "${AnchorNS.name(parentAnchor)}" which this resolver claims to handle.`
-          );
-        }
-
-        // Parent returned an anchor we don't handle - return parent's FilePath
-        return parentFilePath;
-      }
-    }
-
-    return null;
+    return result;
   }
 
   /**
@@ -335,154 +337,5 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     const normalized = relative.replace(/\\/g, '/');
 
     return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
-  }
-}
-
-// ============================================================================
-// CachingResolver - TTL-based caching wrapper
-// ============================================================================
-
-interface CacheEntry {
-  value: Promise<ResolvedPath>;
-  expiresAt: number;
-}
-
-/**
- * Caching wrapper for resolvers with TTL
- *
- * Caches resolution results for a configurable time period to reduce
- * repeated filesystem or IO operations.
- */
-export class CachingResolver implements IResolver {
-  private cache = new Map<string, CacheEntry>();
-
-  constructor(
-    private readonly inner: IResolver,
-    private readonly ttlMs: number = 60000, // 1 minute default
-    public readonly parent?: IResolver,
-  ) {}
-
-  get name(): string {
-    return `caching(${this.inner.name})`;
-  }
-
-  // ========================================================================
-  // Resolution with Caching
-  // ========================================================================
-
-  async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
-    const key = this.makeCacheKey(anchor, relative);
-    const now = Date.now();
-
-    // Check cache
-    const cached = this.cache.get(key);
-    if (cached && cached.expiresAt > now) {
-      return cached.value;
-    }
-
-    // Resolve and cache
-    const promise = this.inner.resolve(anchor, relative);
-    this.cache.set(key, {
-      value: promise,
-      expiresAt: now + this.ttlMs,
-    });
-
-    // Clean up expired entries periodically
-    this.cleanupExpired();
-
-    return promise;
-  }
-
-  // ========================================================================
-  // Delegation
-  // ========================================================================
-
-  canResolve(anchor: Anchor): boolean {
-    return this.inner.canResolve(anchor);
-  }
-
-  supportedAnchors(): Anchor[] {
-    return this.inner.supportedAnchors();
-  }
-
-  getFilesystem(): IFilesystem {
-    return this.inner.getFilesystem();
-  }
-
-  PathFor<A extends string>(anchorName: A, relative?: string): FilePath {
-    // Delegate to inner resolver but use this caching resolver
-    const anchor = AnchorNS.make(anchorName);
-    if (!this.canResolve(anchor)) {
-      throw new Error(`Resolver ${this.name} cannot resolve anchor: ${anchorName}`);
-    }
-
-    const relativePath = relative ? RelativePathNS.make(relative) : RelativePathNS.EMPTY;
-    return new FilePath(relativePath, anchor, this);
-  }
-
-  // ========================================================================
-  // Reverse Resolution (Delegated)
-  // ========================================================================
-
-  async tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null> {
-    return this.inner.tryReverse(resolvedPath);
-  }
-
-  async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
-    return this.inner.getBasePaths();
-  }
-
-  // ========================================================================
-  // Cache Management
-  // ========================================================================
-
-  /**
-   * Clear all cached entries
-   */
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Clear entries for a specific anchor
-   */
-  clearAnchor(anchor: Anchor): void {
-    const anchorName = AnchorNS.name(anchor);
-    const prefix = `${anchorName}:`;
-
-    for (const key of this.cache.keys()) {
-      if (key.startsWith(prefix)) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  /**
-   * Get cache statistics
-   */
-  getCacheStats(): { size: number } {
-    return {
-      size: this.cache.size,
-    };
-  }
-
-  // ========================================================================
-  // Private Helpers
-  // ========================================================================
-
-  private makeCacheKey(anchor: Anchor, relative: RelativePath): string {
-    const anchorName = AnchorNS.name(anchor);
-    return `${anchorName}:${relative}`;
-  }
-
-  private cleanupExpired(): void {
-    const now = Date.now();
-
-    // Cleanup cache
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.expiresAt <= now) {
-        this.cache.delete(key);
-      }
-    }
   }
 }

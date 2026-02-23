@@ -11,9 +11,11 @@ import * as path from 'path';
 import { FilePath } from '../FilePath';
 import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
-import { MockFilesystem } from '../filesystem/MockFilesystem';
-import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
-import { MockWindowsFilesystem } from '../filesystem/MockWindowsFilesystem';
+import type { IResolver } from '../IResolver';
+
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 import {
   Anchor,
   RelativePath,
@@ -26,7 +28,7 @@ import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
 // ============================================================================
 
 class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
-  constructor(parent?: import('../IResolver').IResolver) {
+  constructor(parent?: IResolver) {
     super('test', parent, new MockFilesystem(
       process.platform === 'win32' ? 'win32' : 'linux',
       process.platform !== 'win32',

@@ -43,7 +43,6 @@ platform resolvers and a base class for building your own:
 - **UnixResolver**: Single `root` anchor → `/`
 - **WindowsResolver**: 26 drive-letter anchors (`a`–`z`) → `A:\` – `Z:\`
 - **MappingResolver**: Abstract base for user-defined anchor mappings
-- **CachingResolver**: TTL-based caching wrapper
 
 Resolvers are chainable — if a resolver doesn't handle an anchor, it delegates to its parent.
 
@@ -367,7 +366,6 @@ ResolvedPathSchema.parse('relative/path');  // ✗ Throws
 
 - **Zero-cost branded types**: No runtime overhead
 - **Deferred resolution**: Paths are only resolved when needed
-- **Optional caching**: Use `CachingResolver` wrapper for repeated resolutions
 
 ## Design Decisions
 

@@ -16,6 +16,8 @@
  */
 
 import type { FilePath } from '../FilePath';
+import type { IFilesystem } from '../IFilesystem';
+import type { IResolver } from '../IResolver';
 import type { Anchor, ResolvedPath } from '../types';
 
 import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
@@ -71,7 +73,7 @@ export type MappingStrategy<ValidAnchors extends string> = {
 export abstract class MappingResolver<ValidAnchors extends string>
   extends BaseResolver<ValidAnchors> {
 
-  constructor(name: string, parent?: import('../IResolver').IResolver, filesystem?: import('../IFilesystem').IFilesystem) {
+  constructor(name: string, parent?: IResolver, filesystem?: IFilesystem) {
     super(name, parent, filesystem);
   }
 

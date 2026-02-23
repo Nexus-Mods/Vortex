@@ -15,6 +15,10 @@
  * ```
  */
 
+import type { IResolver } from '../IResolver';
+import type { IFilesystem } from '../IFilesystem';
+import type { ResolvedPath } from '../types';
+
 import { ResolvedPath as ResolvedPathNS } from '../types';
 import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
@@ -32,7 +36,7 @@ export type UnixAnchor = 'root';
  * @template ValidAnchors - UnixAnchor type ('root' only)
  */
 export class UnixResolver extends MappingResolver<UnixAnchor> {
-  constructor(parent?: import('../IResolver').IResolver, filesystem?: import('../IFilesystem').IFilesystem) {
+  constructor(parent?: IResolver, filesystem?: IFilesystem) {
     super('unix', parent, filesystem);
   }
 
@@ -51,7 +55,7 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
   // OS Path Conversion (Terminal Resolver)
   // ========================================================================
 
-  protected toOSPath(intermediatePath: import('../types').ResolvedPath): import('../types').ResolvedPath {
+  protected toOSPath(intermediatePath: ResolvedPath): ResolvedPath {
     return intermediatePath;  // Unix paths are already valid OS paths
   }
 

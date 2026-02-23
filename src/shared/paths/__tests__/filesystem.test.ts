@@ -5,9 +5,9 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { MockFilesystem } from '../filesystem/MockFilesystem';
-import { MockWindowsFilesystem } from '../filesystem/MockWindowsFilesystem';
-import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { FileEntry } from '../IFilesystem';
 import { ResolvedPath } from '../types';
 

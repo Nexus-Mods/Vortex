@@ -12,7 +12,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
-import { MockFilesystem } from '../filesystem/MockFilesystem';
+import { MockFilesystem } from './mocks/MockFilesystem';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Test resolver that simulates Windows paths

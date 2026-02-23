@@ -12,8 +12,16 @@ const config = {
     "^../util/ComponentEx$": "<rootDir>/src/__mocks__/ComponentEx.js",
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  testRegex: "(/src/__tests__/.*)\\.(js|jsx|ts|tsx)$",
-  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/out/"],
+  testRegex: "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/dist/",
+    "/out/",
+    "/playwright/",
+    "<rootDir>/app/",
+    "<rootDir>/extensions/fomod-installer/",
+    "/__tests__/mocks/",
+  ],
   modulePathIgnorePatterns: [
     "<rootDir>/out/",
     "<rootDir>/dist/",

@@ -24,9 +24,9 @@ import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
 import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
-import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import type { IResolver } from '../IResolver';
-import { Anchor, ResolvedPath } from '../types';
+import { Anchor, RelativePath, ResolvedPath } from '../types';
 
 // ============================================================================
 // Test-only resolvers
@@ -81,16 +81,12 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(normalizePath(resolved as string)).toBe('/home/user/.vortex/userData/mods/skyrim');
     });
 
-    it('should delegate unknown anchors to parent via resolve()', async () => {
+    it('should throw for unknown anchors instead of delegating to parent', async () => {
       // 'root' is handled by UnixResolver parent, not TestAppResolver
-      // Use resolve() directly — PathFor validates canResolve at construction time
-      const { RelativePath } = await import('../types');
-      const resolved = await appResolver.resolve(
-        Anchor.make('root'),
-        RelativePath.make('etc/hosts')
-      );
-
-      expect(normalizePath(resolved as string)).toBe('/etc/hosts');
+      // Forward resolve() does NOT delegate — unknown anchors throw immediately
+      await expect(
+        appResolver.resolve(Anchor.make('root'), RelativePath.make('etc/hosts'))
+      ).rejects.toThrow(/cannot resolve anchor/i);
     });
   });
 
