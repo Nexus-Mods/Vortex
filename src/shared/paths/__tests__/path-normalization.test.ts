@@ -10,10 +10,9 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
+import { Anchor, ResolvedPath } from '../types';
 import { MockFilesystem } from './mocks/MockFilesystem';
-import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Test resolver that simulates Windows paths
 class WindowsTestResolver extends BaseResolver<'userData' | 'temp'> {
@@ -279,7 +278,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
       const result = await resolver.tryReverse(lowercasePath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('userData');
+      expect(Anchor.name(result.anchor)).toBe('userData');
     });
 
     test('should handle exact case match on Windows', async () => {
@@ -289,7 +288,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('userData');
+      expect(Anchor.name(result.anchor)).toBe('userData');
     });
 
     test('should handle mixed case paths on Windows', async () => {
@@ -305,7 +304,7 @@ describe('Path Normalization and Cross-Platform Handling', () => {
       const result = await resolver.tryReverse(ResolvedPath.unsafe(mixedPath));
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('userData');
+      expect(Anchor.name(result.anchor)).toBe('userData');
     });
   });
 

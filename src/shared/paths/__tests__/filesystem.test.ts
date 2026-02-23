@@ -5,11 +5,11 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { MockFilesystem } from './mocks/MockFilesystem';
-import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
-import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { FileEntry } from '../IFilesystem';
 import { ResolvedPath } from '../types';
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 
 describe('MockFilesystem', () => {
   let fs: MockFilesystem;

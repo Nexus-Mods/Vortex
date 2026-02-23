@@ -8,20 +8,19 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import { FilePath } from '../FilePath';
-import { WindowsResolver } from '../resolvers/WindowsResolver';
-import { UnixResolver } from '../resolvers/UnixResolver';
 import type { IResolver } from '../IResolver';
 
-import { MockFilesystem } from './mocks/MockFilesystem';
-import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
-import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
+import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
+import { UnixResolver } from '../resolvers/UnixResolver';
+import { WindowsResolver } from '../resolvers/WindowsResolver';
 import {
   Anchor,
   RelativePath,
   ResolvedPath,
 } from '../types';
-import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 
 // ============================================================================
 // Mock Resolver for Testing
@@ -54,11 +53,6 @@ class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
 // ============================================================================
 
 const isWindows = process.platform === 'win32';
-const isUnix = !isWindows;
-
-function makePath(...segments: string[]): string {
-  return path.join(...segments);
-}
 
 function makeAbsolutePath(...segments: string[]): string {
   if (isWindows) {
@@ -88,8 +82,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('test1');
-      expect(result!.relative as string).toBe('mods/SkyUI');
+      expect(Anchor.name(result.anchor)).toBe('test1');
+      expect(result.relative as string).toBe('mods/SkyUI');
     });
 
     it('should return null for paths not under any anchor', async () => {
@@ -107,8 +101,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('nested');
-      expect(result!.relative as string).toBe('subdir');
+      expect(Anchor.name(result.anchor)).toBe('nested');
+      expect(result.relative as string).toBe('subdir');
     });
 
     it('should handle exact anchor path (empty relative)', async () => {
@@ -118,8 +112,8 @@ describe('Reverse Resolution', () => {
       const result = await resolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('test1');
-      expect(result!.relative).toBe('');
+      expect(Anchor.name(result.anchor)).toBe('test1');
+      expect(result.relative).toBe('');
     });
 
     if (isWindows) {
@@ -132,7 +126,7 @@ describe('Reverse Resolution', () => {
         const result = await resolver.tryReverse(lowercasePath);
 
         expect(result).not.toBeNull();
-        expect(Anchor.name(result!.anchor)).toBe('test1');
+        expect(Anchor.name(result.anchor)).toBe('test1');
       });
     }
 
@@ -149,8 +143,8 @@ describe('Reverse Resolution', () => {
       expect(result2).not.toBeNull();
 
       // Results should be equivalent
-      expect(Anchor.name(result1!.anchor)).toBe(Anchor.name(result2!.anchor));
-      expect(result1!.relative).toBe(result2!.relative);
+      expect(Anchor.name(result1.anchor)).toBe(Anchor.name(result2.anchor));
+      expect(result1.relative).toBe(result2.relative);
     });
 
     it('should clear cache when requested', async () => {
@@ -214,8 +208,8 @@ describe('Reverse Resolution', () => {
       const result = await childResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('test1');
-      expect(result!.relative as string).toBe('mods/SkyUI');
+      expect(Anchor.name(result.anchor)).toBe('test1');
+      expect(result.relative as string).toBe('mods/SkyUI');
     });
 
     it('should delegate to parent when child cannot handle path', async () => {
@@ -227,8 +221,8 @@ describe('Reverse Resolution', () => {
       const result = await childResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('test2');
-      expect(result!.relative as string).toBe('other/file.txt');
+      expect(Anchor.name(result.anchor)).toBe('test2');
+      expect(result.relative as string).toBe('other/file.txt');
     });
 
     it('should return null when neither child nor parent can handle path', async () => {
@@ -265,7 +259,7 @@ describe('Reverse Resolution', () => {
 
       // Should find the nested anchor (most specific)
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('nested');
+      expect(Anchor.name(result.anchor)).toBe('nested');
     });
 
     it('should return null when no match', async () => {
@@ -478,7 +472,7 @@ describe('Reverse Resolution', () => {
       expect(reconstructed).not.toBeNull();
 
       // Should resolve to the same OS path
-      const resolvedAgain = await reconstructed!.resolve();
+      const resolvedAgain = await reconstructed.resolve();
       expect(path.normalize(resolvedAgain as string))
         .toBe(path.normalize(osPath as string));
     });
@@ -513,7 +507,7 @@ describe('Reverse Resolution', () => {
     it('should handle file discovery scenario', async () => {
       // Scan directory and discover files (simulated)
       const baseDir = resolver.PathFor('test1', 'mods');
-      const basePath = await baseDir.resolve();
+      const _basePath = await baseDir.resolve();
 
       // Create actual child FilePaths that we know will exist
       const skyuiPath = resolver.PathFor('test1', 'mods/SkyUI/skyui.esp');
@@ -537,7 +531,7 @@ describe('Reverse Resolution', () => {
 
       // Verify they're all under 'test1' anchor
       filePaths.forEach(fp => {
-        expect(Anchor.name(fp!.anchor)).toBe('test1');
+        expect(Anchor.name(fp.anchor)).toBe('test1');
       });
     });
   });

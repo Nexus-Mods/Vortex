@@ -9,7 +9,7 @@
 import * as path from 'path';
 
 import type { IFilesystem, FileEntry } from '../../IFilesystem';
-import type { ResolvedPath, RelativePath } from '../../types';
+import type { ResolvedPath } from '../../types';
 
 import { FileType as FileTypeEnum } from '../../IFilesystem';
 import { RelativePath as RelativePathNS } from '../../types';

@@ -6,8 +6,8 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { UnixResolver } from '../resolvers/UnixResolver';
-import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { Anchor } from '../types';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 
 describe('UnixResolver', () => {
   let resolver: UnixResolver;

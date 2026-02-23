@@ -16,17 +16,15 @@
  */
 
 /* eslint-disable vortex/no-module-imports */
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import * as path from 'path';
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-
-import { FilePath } from '../FilePath';
-import { BaseResolver } from '../resolvers/BaseResolver';
-import { UnixResolver } from '../resolvers/UnixResolver';
-import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
-import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import type { IResolver } from '../IResolver';
+
+import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
+import { UnixResolver } from '../resolvers/UnixResolver';
 import { Anchor, RelativePath, ResolvedPath } from '../types';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 
 // ============================================================================
 // Test-only resolvers
@@ -97,11 +95,11 @@ describe('Multi-Resolver Roundtrip', () => {
 
       const reversed = await appResolver.tryReverse(resolved1);
       expect(reversed).not.toBeNull();
-      expect(reversed!.resolver.name).toBe('testApp');
-      expect(Anchor.name(reversed!.anchor)).toBe('userData');
-      expect(reversed!.relative).toBe('mods/skyrim/data.esp');
+      expect(reversed.resolver.name).toBe('testApp');
+      expect(Anchor.name(reversed.anchor)).toBe('userData');
+      expect(reversed.relative).toBe('mods/skyrim/data.esp');
 
-      const resolved2 = await reversed!.resolve();
+      const resolved2 = await reversed.resolve();
       expect(normalizePath(resolved2 as string)).toBe(normalizePath(resolved1 as string));
     });
 
@@ -111,8 +109,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const reversed = await appResolver.tryReverse(osPath);
 
       expect(reversed).not.toBeNull();
-      expect(Anchor.name(reversed!.anchor)).toBe('root');
-      expect(reversed!.relative).toBe('opt/games/skyrim/data');
+      expect(Anchor.name(reversed.anchor)).toBe('root');
+      expect(reversed.relative).toBe('opt/games/skyrim/data');
     });
   });
 
@@ -124,22 +122,22 @@ describe('Multi-Resolver Roundtrip', () => {
       // Convert to app anchor via reverse resolution
       const appResult = await appResolver.tryReverse(originalResolved);
       expect(appResult).not.toBeNull();
-      expect(appResult!.resolver.name).toBe('testApp');
-      expect(Anchor.name(appResult!.anchor)).toBe('temp');
-      expect(appResult!.relative).toBe('downloads/mod.zip');
+      expect(appResult.resolver.name).toBe('testApp');
+      expect(Anchor.name(appResult.anchor)).toBe('temp');
+      expect(appResult.relative).toBe('downloads/mod.zip');
 
       // Resolve through app resolver
-      const appResolved = await appResult!.resolve();
+      const appResolved = await appResult.resolve();
       expect(normalizePath(appResolved as string)).toBe(normalizePath(originalResolved as string));
 
       // Convert back to Unix
       const unixFirst = new UnixResolver(appResolver);
       const unixResult = await unixFirst.tryReverse(appResolved);
       expect(unixResult).not.toBeNull();
-      expect(unixResult!.resolver.name).toBe('unix');
-      expect(Anchor.name(unixResult!.anchor)).toBe('root');
+      expect(unixResult.resolver.name).toBe('unix');
+      expect(Anchor.name(unixResult.anchor)).toBe('root');
 
-      const finalResolved = await unixResult!.resolve();
+      const finalResolved = await unixResult.resolve();
       expect(normalizePath(finalResolved as string)).toBe(normalizePath(originalResolved as string));
     });
 
@@ -151,17 +149,17 @@ describe('Multi-Resolver Roundtrip', () => {
       const unixFirst = new UnixResolver(appResolver);
       const unixResult = await unixFirst.tryReverse(step1);
       expect(unixResult).not.toBeNull();
-      const step2 = await unixResult!.resolve();
+      const step2 = await unixResult.resolve();
       expect(normalizePath(step2 as string)).toBe(normalizePath(step1 as string));
 
       // Convert back to App
       const appResult = await appResolver.tryReverse(step2);
       expect(appResult).not.toBeNull();
-      const step3 = await appResult!.resolve();
+      const step3 = await appResult.resolve();
       expect(normalizePath(step3 as string)).toBe(normalizePath(step1 as string));
 
-      expect(Anchor.name(appResult!.anchor)).toBe('userData');
-      expect(appResult!.relative).toBe('mods/skyrim/meshes/armor/plate.nif');
+      expect(Anchor.name(appResult.anchor)).toBe('userData');
+      expect(appResult.relative).toBe('mods/skyrim/meshes/armor/plate.nif');
     });
   });
 
@@ -173,8 +171,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const result = await appResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('userData');
-      expect(result!.relative).toBe('mods/skyrim.esp');
+      expect(Anchor.name(result.anchor)).toBe('userData');
+      expect(result.relative).toBe('mods/skyrim.esp');
     });
 
     it('should match home for paths not under userData or temp', async () => {
@@ -183,8 +181,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const result = await appResolver.tryReverse(osPath);
 
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('home');
-      expect(result!.relative).toBe('Documents/notes.txt');
+      expect(Anchor.name(result.anchor)).toBe('home');
+      expect(result.relative).toBe('Documents/notes.txt');
     });
   });
 
@@ -196,8 +194,8 @@ describe('Multi-Resolver Roundtrip', () => {
 
       // AppResolver can't handle /etc, delegates to UnixResolver
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('root');
-      expect(result!.relative).toBe('etc/passwd');
+      expect(Anchor.name(result.anchor)).toBe('root');
+      expect(result.relative).toBe('etc/passwd');
     });
 
     it('should try child resolver first for overlapping ranges', async () => {
@@ -206,13 +204,13 @@ describe('Multi-Resolver Roundtrip', () => {
       // App resolver tries first — should match userData
       const appResult = await appResolver.tryReverse(osPath);
       expect(appResult).not.toBeNull();
-      expect(Anchor.name(appResult!.anchor)).toBe('userData');
+      expect(Anchor.name(appResult.anchor)).toBe('userData');
 
       // Unix tries first — should match root
       const unixFirst = new UnixResolver(appResolver);
       const unixResult = await unixFirst.tryReverse(osPath);
       expect(unixResult).not.toBeNull();
-      expect(Anchor.name(unixResult!.anchor)).toBe('root');
+      expect(Anchor.name(unixResult.anchor)).toBe('root');
     });
   });
 
@@ -229,10 +227,10 @@ describe('Multi-Resolver Roundtrip', () => {
       const result = await appResolver.tryReverse(resolved);
       expect(result).not.toBeNull();
 
-      expect(Anchor.name(result!.anchor)).toBe('temp');
-      expect(result!.relative).toBe('backups/2024/mods/skyrim/mesh.nif');
+      expect(Anchor.name(result.anchor)).toBe('temp');
+      expect(result.relative).toBe('backups/2024/mods/skyrim/mesh.nif');
 
-      const finalResolved = await result!.resolve();
+      const finalResolved = await result.resolve();
       expect(normalizePath(finalResolved as string)).toBe(normalizePath(resolved as string));
     });
 
@@ -248,7 +246,7 @@ describe('Multi-Resolver Roundtrip', () => {
       const resolved = await moved.resolve();
       const result = await appResolver.tryReverse(resolved);
       expect(result).not.toBeNull();
-      expect(result!.relative).toBe('staging/tmp/extracted/mod/data.esp');
+      expect(result.relative).toBe('staging/tmp/extracted/mod/data.esp');
     });
   });
 
@@ -285,8 +283,8 @@ describe('Multi-Resolver Roundtrip', () => {
       const result2 = await appResolver.tryReverse(osPath);
       expect(result2).not.toBeNull();
 
-      expect(Anchor.name(result1!.anchor)).toBe(Anchor.name(result2!.anchor));
-      expect(result1!.relative).toBe(result2!.relative);
+      expect(Anchor.name(result1.anchor)).toBe(Anchor.name(result2.anchor));
+      expect(result1.relative).toBe(result2.relative);
     });
 
     it('should still work after clearing caches', async () => {
@@ -299,7 +297,7 @@ describe('Multi-Resolver Roundtrip', () => {
 
       const result = await appResolver.tryReverse(osPath);
       expect(result).not.toBeNull();
-      expect(Anchor.name(result!.anchor)).toBe('temp');
+      expect(Anchor.name(result.anchor)).toBe('temp');
     });
   });
 });

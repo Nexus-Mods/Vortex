@@ -17,7 +17,7 @@ import * as path from 'path';
 import type { IResolver } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
-import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from './types';
+import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
 
 /**
  * FilePath combines a RelativePath, an Anchor, and a IResolver

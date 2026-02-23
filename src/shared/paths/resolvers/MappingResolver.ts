@@ -73,7 +73,8 @@ export type MappingStrategy<ValidAnchors extends string> = {
 export abstract class MappingResolver<ValidAnchors extends string>
   extends BaseResolver<ValidAnchors> {
 
-  constructor(name: string, parent?: IResolver, filesystem?: IFilesystem) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(name: string, parent?: IResolver<any>, filesystem?: IFilesystem) {
     super(name, parent, filesystem);
   }
 
@@ -136,7 +137,7 @@ export abstract class MappingResolver<ValidAnchors extends string>
           const basePath = await strategy.resolve(anchorName);
           const osPath = this.toOSPath(basePath);
           basePaths.set(anchor, osPath);
-        } catch (err) {
+        } catch (_err) {
           // Skip anchors that can't be resolved
         }
       })

@@ -41,7 +41,8 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
-    protected readonly parent?: IResolver,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public readonly parent?: IResolver<any>,
     private readonly filesystem?: IFilesystem,
   ) {}
 
@@ -196,7 +197,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    * Get all base paths for this resolver (with caching)
    */
   async getBasePaths(): Promise<Map<Anchor, ResolvedPath>> {
-    if (!this.basePathCache) {
+    if (this.basePathCache === undefined) {
       this.basePathCache = this.computeBasePaths();
     }
     return this.basePathCache;
@@ -217,7 +218,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
           const basePath = await this.resolveAnchor(anchor);
           const osPath = this.toOSPath(basePath);
           basePaths.set(anchor, osPath);
-        } catch (err) {
+        } catch (_err) {
           // Anchor may not be resolvable — skip it silently
         }
       })

@@ -9,8 +9,8 @@ import type { IFilesystem } from '../IFilesystem';
 import type { IResolver } from '../IResolver';
 
 import { FilePath } from '../FilePath';
-import { MockFilesystem } from './mocks/MockFilesystem';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
+import { MockFilesystem } from './mocks/MockFilesystem';
 
 // Mock resolver for testing
 class MockResolver implements IResolver {
@@ -31,7 +31,7 @@ class MockResolver implements IResolver {
     return ResolvedPath.make(path);
   }
 
-  canResolve(anchor: Anchor): boolean {
+  canResolve(_anchor: Anchor): boolean {
     return true;
   }
 
@@ -84,10 +84,10 @@ describe('FilePath', () => {
         name: 'bad',
         canResolve: () => false,
         supportedAnchors: () => [],
-        resolve: jest.fn(),
-        PathFor: jest.fn(),
-        tryReverse: jest.fn(),
-        getBasePaths: jest.fn(),
+        resolve: jest.fn<IResolver['resolve']>(),
+        PathFor: jest.fn<IResolver['PathFor']>(),
+        tryReverse: jest.fn<IResolver['tryReverse']>(),
+        getBasePaths: jest.fn<IResolver['getBasePaths']>(),
         getFilesystem: () => new MockFilesystem('linux', true),
       };
 

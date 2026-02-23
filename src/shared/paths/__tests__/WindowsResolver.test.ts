@@ -6,8 +6,8 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { WindowsResolver } from '../resolvers/WindowsResolver';
-import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 import { Anchor } from '../types';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 
 describe('WindowsResolver', () => {
   let resolver: WindowsResolver;

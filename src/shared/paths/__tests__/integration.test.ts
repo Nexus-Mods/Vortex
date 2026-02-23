@@ -5,14 +5,13 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
-import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
-import { MockFilesystem } from './mocks/MockFilesystem';
-import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
-import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
+import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
+import { MockFilesystem } from './mocks/MockFilesystem';
+import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
+import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 
 // Test resolver implementations
 class AppResolver extends BaseResolver<'userData' | 'temp'> {

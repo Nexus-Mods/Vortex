@@ -38,7 +38,8 @@ export interface IResolver<ValidAnchors extends string = string> {
    * `tryReverse()` for top-down reverse resolution. Parent delegation
    * does NOT apply to forward `resolve()` — unknown anchors throw.
    */
-  readonly parent?: IResolver;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly parent?: IResolver<any>;
 
   /**
    * Resolve an anchor + relative path to an absolute OS path.

@@ -19,8 +19,8 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IResolver } from '../IResolver';
 import type { IFilesystem } from '../IFilesystem';
+import type { IResolver } from '../IResolver';
 import type { RelativePath, ResolvedPath } from '../types';
 
 import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
@@ -50,7 +50,8 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  * @template ValidAnchors - WindowsDrive type (26 lowercase drive letters)
  */
 export class WindowsResolver extends MappingResolver<WindowsDrive> {
-  constructor(parent?: IResolver, filesystem?: IFilesystem) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(parent?: IResolver<any>, filesystem?: IFilesystem) {
     super('windows', parent, filesystem);
   }
 
