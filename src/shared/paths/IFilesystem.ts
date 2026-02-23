@@ -149,6 +149,9 @@ export interface IFilesystem {
    */
   readonly caseSensitive: boolean;
 
+  /** Path separator for this filesystem ('\\' on Windows, '/' on Unix) */
+  readonly sep: string;
+
   /**
    * Normalize a path for comparison (handles case folding and separator normalization)
    * This is the single authority on how to normalize a path for comparison.

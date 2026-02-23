@@ -357,4 +357,47 @@ describe('Path Normalization and Cross-Platform Handling', () => {
       expect(relative as string).toBe('mods/SkyUI');
     });
   });
+
+  describe('Cross-platform reverse resolution (Windows resolver on any host)', () => {
+    let resolver: WindowsTestResolver;
+
+    beforeEach(() => {
+      resolver = new WindowsTestResolver();
+    });
+
+    test('should reverse-resolve a Windows path to the correct anchor', async () => {
+      const osPath = ResolvedPath.make('C:\\Users\\TestUser\\AppData\\Roaming\\Vortex\\mods\\SkyUI');
+      const result = await resolver.tryReverse(osPath);
+
+      expect(result).not.toBeNull();
+      expect(Anchor.name(result.anchor)).toBe('userData');
+      // Case-insensitive filesystem normalizes to lowercase during comparison
+      expect(result.relative as string).toBe('mods/skyui');
+    });
+
+    test('should reverse-resolve an exact base path match', async () => {
+      const osPath = ResolvedPath.make('C:\\Users\\TestUser\\AppData\\Roaming\\Vortex');
+      const result = await resolver.tryReverse(osPath);
+
+      expect(result).not.toBeNull();
+      expect(Anchor.name(result.anchor)).toBe('userData');
+      expect(result.relative as string).toBe('');
+    });
+
+    test('should pick the most specific anchor when multiple match', async () => {
+      const osPath = ResolvedPath.make('C:\\Temp\\subdir\\file.txt');
+      const result = await resolver.tryReverse(osPath);
+
+      expect(result).not.toBeNull();
+      expect(Anchor.name(result.anchor)).toBe('temp');
+      expect(result.relative as string).toBe('subdir/file.txt');
+    });
+
+    test('should return null for paths under no anchor', async () => {
+      const osPath = ResolvedPath.make('D:\\SomeOtherPath\\file.txt');
+      const result = await resolver.tryReverse(osPath);
+
+      expect(result).toBeNull();
+    });
+  });
 });

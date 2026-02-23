@@ -33,7 +33,7 @@ interface Entry {
  */
 export class MockFilesystem implements IFilesystem {
   private entries = new Map<string, Entry>();
-  private readonly sep: string;
+  public readonly sep: string;
 
   constructor(
     public readonly platform: 'win32' | 'linux' | 'darwin' = 'linux',
@@ -59,9 +59,11 @@ export class MockFilesystem implements IFilesystem {
 
   /**
    * Normalize path for case-insensitive comparison
+   * Uses platform-appropriate path module so Windows mocks work on Linux hosts
    */
   normalizePath(p: string): string {
-    const normalized = path.normalize(p);
+    const pathMod = this.platform === 'win32' ? path.win32 : path.posix;
+    const normalized = pathMod.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }
 

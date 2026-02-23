@@ -322,8 +322,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     const normalizedBase = fs.normalizePath(basePath);
 
     // Ensure base ends with separator for proper prefix matching
-    const sep = path.sep;
-    const baseWithSep = normalizedBase.endsWith(sep) ? normalizedBase : normalizedBase + sep;
+    const baseWithSep = normalizedBase.endsWith(fs.sep) ? normalizedBase : normalizedBase + fs.sep;
     return normalizedChild.startsWith(baseWithSep) || normalizedChild === normalizedBase;
   }
 
@@ -331,8 +330,8 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    * Extract relative path from full path given base
    */
   private extractRelative(fullPath: string, basePath: string): RelativePath {
-    // Use path.relative for cross-platform correctness
-    const relative = path.relative(basePath, fullPath);
+    const pathMod = this.getFilesystem().platform === 'win32' ? path.win32 : path.posix;
+    const relative = pathMod.relative(basePath, fullPath);
 
     // Convert to forward slashes (RelativePath convention)
     const normalized = relative.replace(/\\/g, '/');

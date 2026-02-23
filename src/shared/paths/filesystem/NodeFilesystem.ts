@@ -22,6 +22,7 @@ import { RelativePath as RelativePathNS } from '../types';
 export class NodeFilesystem implements IFilesystem {
   readonly platform = process.platform as 'win32' | 'linux' | 'darwin';
   readonly caseSensitive = process.platform !== 'win32';
+  readonly sep = path.sep;
 
   normalizePath(p: string): string {
     const normalized = path.normalize(p);
