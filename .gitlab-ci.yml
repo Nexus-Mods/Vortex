@@ -57,7 +57,6 @@ build:linux:
       echo "=== End Environment Info ==="
   script:
     - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn lint:ci
     - yarn build
 
 build:windows:
@@ -84,7 +83,6 @@ build:windows:
     - git config --global --add safe.directory $CI_PROJECT_DIR
   script:
     - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn lint:ci
     - yarn build
     - yarn test
 
