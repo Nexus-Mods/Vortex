@@ -3143,9 +3143,9 @@ node-7z@Nexus-Mods/node-7z:
     bluebird "^3.4.7"
 
 node-abi@^3.3.0:
-  version "3.79.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.79.0.tgz#a5d9129828898f99366ee39c1d9c6ef74f2f1076"
-  integrity sha512-Pr/5KdBQGG8TirdkS0qN3B+f3eo8zTOfZQWAxHoJqopMz2/uvRnG+S4fWu/6AZxKei2CP2p/psdQ5HFC2Ap5BA==
+  version "3.87.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.87.0.tgz#423e28fea5c2f195fddd98acded9938c001ae6dd"
+  integrity sha512-+CGM1L1CgmtheLcBuleyYOn7NWPVu0s0EJH2C4puxgEZb9h8QpR9G2dBfZJOAUhi7VQxuBPMd0hiISWcTyiYyQ==
   dependencies:
     semver "^7.3.5"
 
@@ -4093,9 +4093,9 @@ semver@^6.2.0:
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
 semver@^7.3.5:
-  version "7.7.3"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.7.3.tgz#4b5f4143d007633a8dc671cd0a6ef9147b8bb946"
-  integrity sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.7.4.tgz#28464e36060e991fa7a11d0279d2d3f3b57a7e8a"
+  integrity sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==
 
 semver@^7.5.4, semver@^7.6.0:
   version "7.7.2"
@@ -4348,7 +4348,7 @@ string-template@^1.0.0:
   resolved "https://registry.yarnpkg.com/string-template/-/string-template-1.0.0.tgz#9e9f2233dc00f218718ec379a28a5673ecca8b96"
   integrity sha512-SLqR3GBUXuoPP5MmYtD7ompvXiG87QjT6lzOszyXjTM86Uu7At7vNnt2xgyTLq5o9T4IxTYFyGxcULqpsmsfdg==
 
-"string-width-cjs@npm:string-width@^4.2.0", "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.0:
+"string-width-cjs@npm:string-width@^4.2.0":
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -4365,6 +4365,15 @@ string-width@^1.0.1:
     code-point-at "^1.0.0"
     is-fullwidth-code-point "^1.0.0"
     strip-ansi "^3.0.0"
+
+"string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.0:
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
+  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
+  dependencies:
+    emoji-regex "^8.0.0"
+    is-fullwidth-code-point "^3.0.0"
+    strip-ansi "^6.0.1"
 
 string-width@^5.0.1, string-width@^5.1.2:
   version "5.1.2"
@@ -4399,7 +4408,7 @@ string_decoder@~1.1.1:
   dependencies:
     safe-buffer "~5.1.0"
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -4412,6 +4421,13 @@ strip-ansi@^3.0.0, strip-ansi@^3.0.1:
   integrity sha512-VhumSSbBqDTP8p2ZLKj40UjBCV4+v8bUSEpUb4KjRgWk9pbqGF4REFj6KEagidb2f/M6AzC0EmFyDNGaw9OCzg==
   dependencies:
     ansi-regex "^2.0.0"
+
+strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
+  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
+  dependencies:
+    ansi-regex "^5.0.1"
 
 strip-ansi@^7.0.1:
   version "7.1.2"
@@ -4542,8 +4558,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "3.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/cf4238a4d192763c8133500ce9b366a71b262a33"
+  version "3.1.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f"
   dependencies:
     fs-extra "^8.1.0"
     winapi-bindings Nexus-Mods/node-winapi-bindings
@@ -4829,8 +4845,8 @@ wide-align@^1.1.0:
     string-width "^1.0.2 || 2 || 3 || 4"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.7.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/8558bf0d118c8bdff501a4123c716d7a071eb006"
+  version "2.7.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "^8.0.0"
