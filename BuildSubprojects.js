@@ -282,7 +282,7 @@ function main(args) {
               project,
               buildType,
               feedback,
-              args.noparallel,
+              args.noparallel || process.env.NO_PARALLEL,
             );
           })
           .then(() => {
