@@ -627,40 +627,44 @@ export function getInfoGraphQL(
   //   },
   // } as any;
 
-  return new BluebirdPromise((resolve, reject) => {
-    const uid = makeFileUID({
-      fileId: fileId.toString(),
-      modId: modId.toString(),
-      gameId: domain,
-    });
-
-    if (uid === undefined) {
-      return reject(
-        new Error(
-          `Unable to create file UID for game "${domain}", mod ${modId}, file ${fileId}`,
-        ),
-      );
-    }
-
-    nexus
-      .modFilesByUid(fileQuery, [uid])
-      .then((fileResult) => {
-        if (!fileResult?.[0]) {
-          return reject(
-            new Error(
-              `File not found on Nexus: game "${domain}", mod ${modId}, file ${fileId}`,
-            ),
-          );
-        }
-        const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
-        const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
-        return resolve({ modInfo, fileInfo });
-      })
-      .catch((err) => {
-        err["attachLogOnReport"] = true;
-        return reject(err);
+  // Ensure the nexus games cache is loaded before constructing UIDs,
+  // as makeFileUID needs the games list to convert domain names to numeric IDs
+  return nexusGamesProm().then(() =>
+    new BluebirdPromise((resolve, reject) => {
+      const uid = makeFileUID({
+        fileId: fileId.toString(),
+        modId: modId.toString(),
+        gameId: domain,
       });
-  });
+
+      if (uid === undefined) {
+        return reject(
+          new Error(
+            `Unable to create file UID for game "${domain}", mod ${modId}, file ${fileId}`,
+          ),
+        );
+      }
+
+      nexus
+        .modFilesByUid(fileQuery, [uid])
+        .then((fileResult) => {
+          if (!fileResult?.[0]) {
+            return reject(
+              new Error(
+                `File not found on Nexus: game "${domain}", mod ${modId}, file ${fileId}`,
+              ),
+            );
+          }
+          const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
+          const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
+          return resolve({ modInfo, fileInfo });
+        })
+        .catch((err) => {
+          err["attachLogOnReport"] = true;
+          return reject(err);
+        });
+    }),
+  );
 }
 
 // Helper function to transform GraphQL mod data to IModInfo format
