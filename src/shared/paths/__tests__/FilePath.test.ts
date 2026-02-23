@@ -5,13 +5,17 @@
 
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
+import type { IFilesystem } from '../IFilesystem';
 import type { IResolver } from '../IResolver';
 
 import { FilePath } from '../FilePath';
+import { MockFilesystem } from '../filesystem/MockFilesystem';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 
 // Mock resolver for testing
 class MockResolver implements IResolver {
+  private readonly fs: IFilesystem = new MockFilesystem('linux', true);
+
   constructor(
     public readonly name: string = 'mock',
     public readonly parent?: IResolver,
@@ -33,6 +37,10 @@ class MockResolver implements IResolver {
 
   supportedAnchors(): Anchor[] {
     return [Anchor.make('test')];
+  }
+
+  getFilesystem(): IFilesystem {
+    return this.fs;
   }
 
   PathFor(anchorName: string, relative: string = ''): FilePath {
@@ -80,6 +88,7 @@ describe('FilePath', () => {
         PathFor: jest.fn(),
         tryReverse: jest.fn(),
         getBasePaths: jest.fn(),
+        getFilesystem: () => new MockFilesystem('linux', true),
       };
 
       expect(() => {

@@ -149,6 +149,15 @@ export interface IFilesystem {
    */
   readonly caseSensitive: boolean;
 
+  /**
+   * Normalize a path for comparison (handles case folding and separator normalization)
+   * This is the single authority on how to normalize a path for comparison.
+   *
+   * @param p - Path string to normalize
+   * @returns Normalized path string suitable for comparison
+   */
+  normalizePath(p: string): string;
+
   // ========================================================================
   // Read Operations
   // ========================================================================

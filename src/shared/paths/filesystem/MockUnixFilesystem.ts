@@ -1,5 +1,5 @@
 /**
- * UnixFilesystem - Mock filesystem with Unix behavior
+ * MockUnixFilesystem - Mock filesystem with Unix behavior
  *
  * Characteristics:
  * - Case-sensitive paths (/vortex !== /Vortex)
@@ -13,7 +13,7 @@ import { MockFilesystem } from './MockFilesystem';
  * Mock filesystem with Unix behavior
  * Used for testing Unix-specific path handling
  */
-export class UnixFilesystem extends MockFilesystem {
+export class MockUnixFilesystem extends MockFilesystem {
   constructor() {
     super('linux', true);
   }

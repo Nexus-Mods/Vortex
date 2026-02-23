@@ -60,7 +60,7 @@ export class MockFilesystem implements IFilesystem {
   /**
    * Normalize path for case-insensitive comparison
    */
-  private normalizePath(p: string): string {
+  normalizePath(p: string): string {
     const normalized = path.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }

@@ -6,8 +6,8 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { MockFilesystem } from '../filesystem/MockFilesystem';
-import { WindowsFilesystem } from '../filesystem/WindowsFilesystem';
-import { UnixFilesystem } from '../filesystem/UnixFilesystem';
+import { MockWindowsFilesystem } from '../filesystem/MockWindowsFilesystem';
+import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
 import { FileEntry } from '../IFilesystem';
 import { ResolvedPath } from '../types';
 
@@ -172,11 +172,11 @@ describe('MockFilesystem', () => {
   });
 });
 
-describe('WindowsFilesystem', () => {
-  let fs: WindowsFilesystem;
+describe('MockWindowsFilesystem', () => {
+  let fs: MockWindowsFilesystem;
 
   beforeEach(() => {
-    fs = new WindowsFilesystem();
+    fs = new MockWindowsFilesystem();
   });
 
   test('is case-insensitive', async () => {
@@ -198,11 +198,11 @@ describe('WindowsFilesystem', () => {
   });
 });
 
-describe('UnixFilesystem', () => {
-  let fs: UnixFilesystem;
+describe('MockUnixFilesystem', () => {
+  let fs: MockUnixFilesystem;
 
   beforeEach(() => {
-    fs = new UnixFilesystem();
+    fs = new MockUnixFilesystem();
   });
 
   test('is case-sensitive', async () => {

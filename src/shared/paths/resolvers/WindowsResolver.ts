@@ -48,8 +48,8 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  * @template ValidAnchors - WindowsDrive type (26 lowercase drive letters)
  */
 export class WindowsResolver extends MappingResolver<WindowsDrive> {
-  constructor(parent?: import('../IResolver').IResolver) {
-    super('windows', parent);
+  constructor(parent?: import('../IResolver').IResolver, filesystem?: import('../IFilesystem').IFilesystem) {
+    super('windows', parent, filesystem);
   }
 
   // ========================================================================

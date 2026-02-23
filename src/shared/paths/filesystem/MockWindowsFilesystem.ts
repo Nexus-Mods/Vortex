@@ -1,5 +1,5 @@
 /**
- * WindowsFilesystem - Mock filesystem with Windows behavior
+ * MockWindowsFilesystem - Mock filesystem with Windows behavior
  *
  * Characteristics:
  * - Case-insensitive paths (C:\Vortex === C:\vortex)
@@ -13,7 +13,7 @@ import { MockFilesystem } from './MockFilesystem';
  * Mock filesystem with Windows behavior
  * Used for testing Windows-specific path handling
  */
-export class WindowsFilesystem extends MockFilesystem {
+export class MockWindowsFilesystem extends MockFilesystem {
   constructor() {
     super('win32', false);
   }

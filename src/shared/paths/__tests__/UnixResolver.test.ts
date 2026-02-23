@@ -6,13 +6,14 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { UnixResolver } from '../resolvers/UnixResolver';
+import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
 import { Anchor } from '../types';
 
 describe('UnixResolver', () => {
   let resolver: UnixResolver;
 
   beforeEach(() => {
-    resolver = new UnixResolver();
+    resolver = new UnixResolver(undefined, new MockUnixFilesystem());
   });
 
   describe('basic properties', () => {

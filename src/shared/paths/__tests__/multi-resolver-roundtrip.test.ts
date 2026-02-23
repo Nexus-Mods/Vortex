@@ -24,6 +24,7 @@ import { FilePath } from '../FilePath';
 import { BaseResolver } from '../resolvers/BaseResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
 import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
+import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
 import type { IResolver } from '../IResolver';
 import { Anchor, ResolvedPath } from '../types';
 
@@ -68,7 +69,7 @@ describe('Multi-Resolver Roundtrip', () => {
   let appResolver: TestAppResolver;
 
   beforeEach(() => {
-    unixResolver = new UnixResolver();
+    unixResolver = new UnixResolver(undefined, new MockUnixFilesystem());
     appResolver = new TestAppResolver(unixResolver);
   });
 

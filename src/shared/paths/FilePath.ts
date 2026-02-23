@@ -288,17 +288,15 @@ export class FilePath {
     // Resolve this FilePath to get the parent OS path
     const parentPath = await this.resolve();
 
-    // Normalize for comparison
-    const normalizedParent = path.normalize(parentPath as string);
-    const normalizedChild = path.normalize(childPath as string);
+    // Normalize for comparison - use path.resolve() instead of path.normalize()
+    // path.resolve() properly handles . and .. segments without introducing ambiguity
+    const resolvedParent = path.resolve(parentPath as string);
+    const resolvedChild = path.resolve(childPath as string);
 
     // Check if child is under parent (case-insensitive on Windows)
-    const parentLower = process.platform === 'win32'
-      ? normalizedParent.toLowerCase()
-      : normalizedParent;
-    const childLower = process.platform === 'win32'
-      ? normalizedChild.toLowerCase()
-      : normalizedChild;
+    const fs = this.resolver.getFilesystem();
+    const parentLower = fs.normalizePath(resolvedParent);
+    const childLower = fs.normalizePath(resolvedChild);
 
     const parentWithSep = parentLower.endsWith(path.sep)
       ? parentLower
@@ -309,7 +307,7 @@ export class FilePath {
     }
 
     // Extract relative path
-    const relative = path.relative(normalizedParent, normalizedChild);
+    const relative = path.relative(resolvedParent, resolvedChild);
     const normalized = relative.replace(/\\/g, '/'); // Forward slashes
 
     return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);

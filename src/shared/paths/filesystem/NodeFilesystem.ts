@@ -23,6 +23,11 @@ export class NodeFilesystem implements IFilesystem {
   readonly platform = process.platform as 'win32' | 'linux' | 'darwin';
   readonly caseSensitive = process.platform !== 'win32';
 
+  normalizePath(p: string): string {
+    const normalized = path.normalize(p);
+    return this.caseSensitive ? normalized : normalized.toLowerCase();
+  }
+
   // ========================================================================
   // Read Operations
   // ========================================================================

@@ -10,6 +10,7 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
+import type { IFilesystem } from '../IFilesystem';
 import type { IResolver } from '../IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from '../types';
 
@@ -25,7 +26,30 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   constructor(
     public readonly name: string,
     protected readonly parent?: IResolver,
+    private readonly filesystem?: IFilesystem,
   ) {}
+
+  // ========================================================================
+  // Filesystem Access
+  // ========================================================================
+
+  /**
+   * Get the filesystem for this resolver chain.
+   * Returns this resolver's filesystem if set, otherwise delegates to parent.
+   * Throws if no filesystem is found in the chain.
+   */
+  getFilesystem(): IFilesystem {
+    if (this.filesystem) {
+      return this.filesystem;
+    }
+    if (this.parent) {
+      return this.parent.getFilesystem();
+    }
+    throw new Error(
+      `Resolver "${this.name}" has no filesystem. ` +
+      `Resolver chains must include an IFilesystem (either directly or via a parent resolver).`
+    );
+  }
 
   // ========================================================================
   // Resolution
@@ -280,29 +304,24 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   // ========================================================================
 
   /**
-   * Normalize path for comparison
-   * - Lowercase on case-insensitive platforms (Windows)
-   * - Normalize separators
+   * Normalize path for comparison using the filesystem's normalization
    */
   private normalizePath(p: ResolvedPath): string {
-    let normalized = path.normalize(p as string);
-
-    // Windows is case-insensitive
-    if (process.platform === 'win32') {
-      normalized = normalized.toLowerCase();
-    }
-
-    return normalized;
+    return this.getFilesystem().normalizePath(p as string);
   }
 
   /**
    * Check if path is under base path
    */
   private isUnder(childPath: string, basePath: string): boolean {
+    const fs = this.getFilesystem();
+    const normalizedChild = fs.normalizePath(childPath);
+    const normalizedBase = fs.normalizePath(basePath);
+
     // Ensure base ends with separator for proper prefix matching
     const sep = path.sep;
-    const baseWithSep = basePath.endsWith(sep) ? basePath : basePath + sep;
-    return childPath.startsWith(baseWithSep) || childPath === basePath;
+    const baseWithSep = normalizedBase.endsWith(sep) ? normalizedBase : normalizedBase + sep;
+    return normalizedChild.startsWith(baseWithSep) || normalizedChild === normalizedBase;
   }
 
   /**
@@ -384,6 +403,10 @@ export class CachingResolver implements IResolver {
 
   supportedAnchors(): Anchor[] {
     return this.inner.supportedAnchors();
+  }
+
+  getFilesystem(): IFilesystem {
+    return this.inner.getFilesystem();
   }
 
   PathFor<A extends string>(anchorName: A, relative?: string): FilePath {

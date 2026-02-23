@@ -8,6 +8,7 @@
  */
 
 import type { FilePath } from './FilePath';
+import type { IFilesystem } from './IFilesystem';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
 /**
@@ -105,6 +106,12 @@ export interface IResolver<ValidAnchors extends string = string> {
    * ```
    */
   tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null>;
+
+  /**
+   * Get the filesystem associated with this resolver chain
+   * Used for path normalization and platform-specific behavior
+   */
+  getFilesystem(): IFilesystem;
 
   /**
    * Get all base paths this resolver can resolve

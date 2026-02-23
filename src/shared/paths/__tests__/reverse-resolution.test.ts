@@ -11,6 +11,9 @@ import * as path from 'path';
 import { FilePath } from '../FilePath';
 import { WindowsResolver } from '../resolvers/WindowsResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
+import { MockFilesystem } from '../filesystem/MockFilesystem';
+import { MockUnixFilesystem } from '../filesystem/MockUnixFilesystem';
+import { MockWindowsFilesystem } from '../filesystem/MockWindowsFilesystem';
 import {
   Anchor,
   RelativePath,
@@ -24,7 +27,10 @@ import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
 
 class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
   constructor(parent?: import('../IResolver').IResolver) {
-    super('test', parent);
+    super('test', parent, new MockFilesystem(
+      process.platform === 'win32' ? 'win32' : 'linux',
+      process.platform !== 'win32',
+    ));
   }
 
   protected getStrategy() {
@@ -537,7 +543,7 @@ describe('Reverse Resolution', () => {
   describe('Cross-platform compatibility', () => {
     it('should handle platform-specific paths correctly', async () => {
       if (isWindows) {
-        const resolver = new WindowsResolver();
+        const resolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
         const testPath = resolver.PathFor('c', 'test/file.txt');
         const osPath = await testPath.resolve();
 
@@ -546,7 +552,7 @@ describe('Reverse Resolution', () => {
         expect(result).not.toBeNull();
         expect(result ? Anchor.name(result.anchor) : null).toBe('c');
       } else {
-        const resolver = new UnixResolver();
+        const resolver = new UnixResolver(undefined, new MockUnixFilesystem());
         const testPath = resolver.PathFor('root', 'test/file.txt');
         const osPath = await testPath.resolve();
 

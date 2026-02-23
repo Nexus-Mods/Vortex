@@ -6,13 +6,14 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
 import { WindowsResolver } from '../resolvers/WindowsResolver';
+import { MockWindowsFilesystem } from '../filesystem/MockWindowsFilesystem';
 import { Anchor } from '../types';
 
 describe('WindowsResolver', () => {
   let resolver: WindowsResolver;
 
   beforeEach(() => {
-    resolver = new WindowsResolver();
+    resolver = new WindowsResolver(undefined, new MockWindowsFilesystem());
   });
 
   describe('basic properties', () => {
