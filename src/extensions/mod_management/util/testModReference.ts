@@ -1,8 +1,6 @@
 /* eslint-disable */
 import { truthy } from "../../../util/util";
 
-import { log } from "../../../util/log";
-
 import {
   IMod,
   IModReference,
@@ -15,7 +13,6 @@ import * as _ from "lodash";
 import minimatch from "minimatch";
 import * as path from "path";
 import * as semver from "semver";
-import { IFileUpdate } from "@nexusmods/nexus-api";
 
 export interface IModLookupInfo {
   id?: string;
@@ -460,6 +457,18 @@ export function testRefByIdentifiers(
     ) {
       return true;
     }
+  }
+  // If the reference specifies a repo mod id and the download has a known
+  // (different) mod id, this is definitively not the right download - don't
+  // fall through to weaker matching criteria like logicalFileName which can
+  // produce false matches for generic names like "Main File"
+  if (
+    ref.repo?.modId != null &&
+    modId != null &&
+    !isNaN(modId) &&
+    ref.repo.modId !== modId.toString()
+  ) {
+    return false;
   }
   // right file?
   if (
