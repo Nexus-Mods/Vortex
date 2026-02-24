@@ -24,7 +24,7 @@ The library uses TypeScript branded types for compile-time safety:
 
 ### FilePath
 
-`FilePath` combines a `RelativePath`, an `Anchor`, and an `IResolver` into a single object that defers resolution:
+`FilePath` combines a `RelativePath`, an `Anchor`, and an `IResolverBase` into a single object that defers resolution:
 
 ```typescript
 const resolver = new AppResolver(new UnixResolver());
@@ -77,7 +77,7 @@ import { UnixResolver } from './shared/paths/resolvers/UnixResolver';
 import { ResolvedPath } from './shared/paths/types';
 
 class AppResolver extends MappingResolver<'userData' | 'temp'> {
-  constructor(parent: IResolver) {
+  constructor(parent: IResolverBase) {
     super('app', parent);
   }
 
@@ -277,12 +277,12 @@ Anchor.isAnchor(value: unknown): value is Anchor
 class FilePath {
   readonly relative: RelativePath;
   readonly anchor: Anchor;
-  readonly resolver: IResolver;
+  readonly resolver: IResolverBase;
 
   resolve(): Promise<ResolvedPath>;
 
   join(...segments: string[]): FilePath;
-  withResolver(newResolver: IResolver): FilePath;
+  withResolver(newResolver: IResolverBase): FilePath;
   withAnchor(newAnchor: Anchor): FilePath;
   withRelative(newRelative: RelativePath): FilePath;
   parent(): FilePath;
@@ -300,19 +300,30 @@ class FilePath {
 }
 ```
 
-### IResolver Interface
+### Resolver Interfaces
+
+The resolver system uses two interfaces:
+
+- **`IResolverBase`** — non-generic, contains all resolver methods except `PathFor`. Used for parent references, `FilePath.resolver`, and anywhere the anchor type parameter is irrelevant.
+- **`IResolver<ValidAnchors>`** — extends `IResolverBase`, adds the generic `PathFor` method for compile-time anchor name checking.
+
+This split exists because `PathFor`'s generic parameter is contravariant — `IResolver<'root'>` is not assignable to `IResolver<string>` even though it's a valid resolver. `IResolverBase` avoids this issue entirely. See [Why IResolverBase?](#why-iresolverbase) in Design Decisions.
 
 ```typescript
-interface IResolver<ValidAnchors extends string = string> {
+interface IResolverBase {
   readonly name: string;
-  readonly parent?: IResolver;
+  readonly parent?: IResolverBase;
 
   resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath>;
   canResolve(anchor: Anchor): boolean;
   supportedAnchors(): Anchor[];
-  PathFor<A extends ValidAnchors>(anchorName: A, relative?: string): FilePath;
   tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null>;
+  getFilesystem(): IFilesystem;
   getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
+}
+
+interface IResolver<ValidAnchors extends string = string> extends IResolverBase {
+  PathFor<A extends ValidAnchors>(anchorName: A, relative?: string): FilePath;
 }
 ```
 
@@ -384,6 +395,12 @@ Paths can be constructed, manipulated, and serialized without filesystem access.
 ### Why Resolver Chains?
 
 Resolver chains enable modular path handling. Each resolver handles its own anchors and throws on unknown ones. `tryReverse()` only checks this resolver's own anchors — callers that need to search multiple resolvers should walk the chain explicitly. The parent chain is used for `toOSPath()` delegation (walking up to the terminal resolver). Only terminal resolvers (UnixResolver, WindowsResolver) produce final OS paths.
+
+### Why IResolverBase?
+
+`IResolver<ValidAnchors>` has a generic `PathFor<A extends ValidAnchors>` method. Because `PathFor` takes `A` as a parameter, it's **contravariant** in `ValidAnchors` — meaning `IResolver<'root'>` is *not* assignable to `IResolver<string>`, even though `'root'` extends `string`. This makes it impossible to use `IResolver<string>` (or any single generic instantiation) as a common type for parent references or `FilePath.resolver`.
+
+`IResolverBase` solves this by extracting every method *except* `PathFor` into a non-generic interface. Since `IResolver<V>` extends `IResolverBase`, any resolver is assignable to `IResolverBase` regardless of its anchor type — no `any` needed.
 
 ### Why is resolve() async?
 
