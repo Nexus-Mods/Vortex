@@ -705,11 +705,20 @@ class InstallDriver {
   private onStop() {
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
+
+      // Flush pending tracking updates before cleanup so they aren't lost
+      this.mModStatusDebouncer.runNow(() => undefined);
+
+      // Ensure InstallManager cleans up its internal state (pending installs,
+      // active installs, phase state) for this collection. This is idempotent —
+      // if pauseCollection already emitted this event, the handler is a no-op.
+      this.mApi.emitAndAwait('cancel-dependency-install', this.mCollection.id)
+        .catch(() => undefined);
     }
-    
+
     // Complete the installation tracking as cancelled/failed
     this.completeInstallationTracking(false);
-    
+
     this.mCollection = undefined;
     this.mProfile = undefined;
     this.mGameId = undefined;
