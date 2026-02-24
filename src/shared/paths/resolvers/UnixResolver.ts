@@ -17,9 +17,9 @@
 
 import type { IFilesystem } from '../IFilesystem';
 import type { IResolverBase } from '../IResolver';
-import type { ResolvedPath } from '../types';
+import type { RelativePath, ResolvedPath } from '../types';
 
-import { ResolvedPath as ResolvedPathNS } from '../types';
+import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
 import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
 /**
@@ -49,6 +49,25 @@ export class UnixResolver extends MappingResolver<UnixAnchor> {
       ['root'] as const,
       () => ResolvedPathNS.make('/')
     );
+  }
+
+  // ========================================================================
+  // Path Joining (Unix-specific)
+  // ========================================================================
+
+  /**
+   * Override to use POSIX path joining semantics
+   * This ensures correct path joining even on non-Unix platforms (e.g., Windows)
+   */
+  protected joinPaths(base: ResolvedPath, relative: RelativePath): ResolvedPath {
+    if (relative === RelativePathNS.EMPTY) {
+      return base;
+    }
+    // RelativePath is pre-normalized (no backslashes, no leading/trailing slashes),
+    // so string concatenation is sufficient and correct on all platforms
+    const baseStr = base as string;
+    const sep = baseStr.endsWith('/') ? '' : '/';
+    return ResolvedPathNS.make(`${baseStr}${sep}${relative as string}`);
   }
 
   // ========================================================================
