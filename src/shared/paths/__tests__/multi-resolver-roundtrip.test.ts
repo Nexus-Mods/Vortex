@@ -19,7 +19,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import * as path from 'path';
 
-import type { IResolver } from '../IResolver';
+import type { IResolverBase } from '../IResolver';
 
 import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
@@ -37,8 +37,7 @@ type TestAppAnchor = 'userData' | 'temp' | 'home';
  * Chained to a UnixResolver parent so toOSPath flows through the terminal.
  */
 class TestAppResolver extends MappingResolver<TestAppAnchor> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
-  constructor(parent: IResolver<any>) {
+  constructor(parent: IResolverBase) {
     super('testApp', parent);
   }
 

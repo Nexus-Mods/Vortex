@@ -11,7 +11,7 @@
 import * as path from 'path';
 
 import type { IFilesystem } from '../IFilesystem';
-import type { IResolver } from '../IResolver';
+import type { IResolver, IResolverBase } from '../IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from '../types';
 
 import { FilePath } from '../FilePath';
@@ -39,8 +39,7 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
-    public readonly parent?: IResolver<any>,
+    public readonly parent?: IResolverBase,
     private readonly filesystem?: IFilesystem,
   ) {}
 

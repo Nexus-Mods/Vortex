@@ -16,7 +16,7 @@
  */
 
 import type { IFilesystem } from '../IFilesystem';
-import type { IResolver } from '../IResolver';
+import type { IResolverBase } from '../IResolver';
 import type { ResolvedPath } from '../types';
 
 import { ResolvedPath as ResolvedPathNS } from '../types';
@@ -36,8 +36,7 @@ export type UnixAnchor = 'root';
  * @template ValidAnchors - UnixAnchor type ('root' only)
  */
 export class UnixResolver extends MappingResolver<UnixAnchor> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
-  constructor(parent?: IResolver<any>, filesystem?: IFilesystem) {
+  constructor(parent?: IResolverBase, filesystem?: IFilesystem) {
     super('unix', parent, filesystem);
   }
 

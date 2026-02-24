@@ -17,7 +17,7 @@
 
 import type { FilePath } from '../FilePath';
 import type { IFilesystem } from '../IFilesystem';
-import type { IResolver } from '../IResolver';
+import type { IResolverBase } from '../IResolver';
 import type { Anchor, ResolvedPath } from '../types';
 
 import { Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
@@ -73,8 +73,7 @@ export type MappingStrategy<ValidAnchors extends string> = {
 export abstract class MappingResolver<ValidAnchors extends string>
   extends BaseResolver<ValidAnchors> {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
-  constructor(name: string, parent?: IResolver<any>, filesystem?: IFilesystem) {
+  constructor(name: string, parent?: IResolverBase, filesystem?: IFilesystem) {
     super(name, parent, filesystem);
   }
 

@@ -1,10 +1,16 @@
 /**
- * IResolver interface with type-safe anchor support
+ * IResolver interfaces with type-safe anchor support
  *
  * Resolvers map anchors to concrete OS paths. They support:
  * - Type-safe anchor names via generic parameter
  * - Async resolution
  * - Introspection (canResolve, supportedAnchors)
+ *
+ * Two interfaces are provided:
+ * - `IResolverBase` — non-generic, used for parent references and anywhere
+ *   the anchor type parameter is irrelevant (e.g., FilePath.resolver)
+ * - `IResolver<ValidAnchors>` — adds the generic `PathFor` method for
+ *   type-safe anchor name checking at compile time
  */
 
 import type { FilePath } from './FilePath';
@@ -12,21 +18,19 @@ import type { IFilesystem } from './IFilesystem';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
 /**
- * Generic resolver interface with type-safe anchor names
+ * Non-generic resolver interface for resolver chain plumbing
  *
- * @template ValidAnchors - Union of string literals representing valid anchor names
+ * Contains all resolver methods except `PathFor`. Used for:
+ * - Parent references (`parent?: IResolverBase`)
+ * - `FilePath.resolver` (only calls resolve/canResolve/getFilesystem)
+ * - Any context where the anchor type parameter is irrelevant
  *
- * @example
- * ```typescript
- * type AppAnchors = 'userData' | 'temp' | 'documents';
- * class AppResolver implements IResolver<AppAnchors> {
- *   PathFor<A extends AppAnchors>(anchorName: A): FilePath {
- *     // TypeScript enforces anchorName is one of: 'userData' | 'temp' | 'documents'
- *   }
- * }
- * ```
+ * Separated from `IResolver<ValidAnchors>` because `PathFor`'s generic
+ * parameter is contravariant — `IResolver<'root'>` is not assignable to
+ * `IResolver<string>` even though it's a valid resolver. `IResolverBase`
+ * avoids this issue entirely.
  */
-export interface IResolver<ValidAnchors extends string = string> {
+export interface IResolverBase {
   /**
    * Unique name for serialization and debugging
    */
@@ -38,8 +42,7 @@ export interface IResolver<ValidAnchors extends string = string> {
    * `getFilesystem()` to find the chain's filesystem. Parent delegation
    * does NOT apply to forward `resolve()` or `tryReverse()`.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- parent only uses non-generic methods; IResolver<string> breaks contravariance of PathFor
-  readonly parent?: IResolver<any>;
+  readonly parent?: IResolverBase;
 
   /**
    * Resolve an anchor + relative path to an absolute OS path.
@@ -74,34 +77,6 @@ export interface IResolver<ValidAnchors extends string = string> {
    * @returns Array of supported anchors
    */
   supportedAnchors(): Anchor[];
-
-  /**
-   * Type-safe convenience method for creating FilePath objects
-   * This is a USER-REQUESTED feature for ergonomic API usage
-   *
-   * @template A - Anchor name (constrained to ValidAnchors)
-   * @param anchorName - The anchor name (type-checked at compile time)
-   * @param relative - Optional relative path from anchor
-   * @returns FilePath instance configured with this resolver
-   *
-   * @example
-   * ```typescript
-   * const resolver = new AppResolver(new UnixResolver());
-   *
-   * // Type-safe: only accepts valid anchor names
-   * resolver.PathFor('userData');        // ✓ Valid
-   * resolver.PathFor('temp', 'cache');   // ✓ Valid
-   * resolver.PathFor('drive_c');         // ✗ TypeScript error!
-   * ```
-   */
-  PathFor<A extends ValidAnchors>(
-    anchorName: A,
-    relative?: string
-  ): FilePath;
-
-  // ========================================================================
-  // Reverse Resolution
-  // ========================================================================
 
   /**
    * Try to reverse-resolve an OS path to a FilePath using only this resolver's
@@ -143,4 +118,47 @@ export interface IResolver<ValidAnchors extends string = string> {
    * ```
    */
   getBasePaths(): Promise<Map<Anchor, ResolvedPath>>;
+}
+
+/**
+ * Generic resolver interface with type-safe anchor names
+ *
+ * Extends `IResolverBase` with `PathFor` — a type-safe convenience method
+ * that constrains anchor names at compile time.
+ *
+ * @template ValidAnchors - Union of string literals representing valid anchor names
+ *
+ * @example
+ * ```typescript
+ * type AppAnchors = 'userData' | 'temp' | 'documents';
+ * class AppResolver implements IResolver<AppAnchors> {
+ *   PathFor<A extends AppAnchors>(anchorName: A): FilePath {
+ *     // TypeScript enforces anchorName is one of: 'userData' | 'temp' | 'documents'
+ *   }
+ * }
+ * ```
+ */
+export interface IResolver<ValidAnchors extends string = string> extends IResolverBase {
+  /**
+   * Type-safe convenience method for creating FilePath objects
+   *
+   * @template A - Anchor name (constrained to ValidAnchors)
+   * @param anchorName - The anchor name (type-checked at compile time)
+   * @param relative - Optional relative path from anchor
+   * @returns FilePath instance configured with this resolver
+   *
+   * @example
+   * ```typescript
+   * const resolver = new AppResolver(new UnixResolver());
+   *
+   * // Type-safe: only accepts valid anchor names
+   * resolver.PathFor('userData');        // ✓ Valid
+   * resolver.PathFor('temp', 'cache');   // ✓ Valid
+   * resolver.PathFor('drive_c');         // ✗ TypeScript error!
+   * ```
+   */
+  PathFor<A extends ValidAnchors>(
+    anchorName: A,
+    relative?: string
+  ): FilePath;
 }

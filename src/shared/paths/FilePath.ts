@@ -14,7 +14,7 @@
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IResolver } from './IResolver';
+import type { IResolverBase } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
 import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
@@ -36,8 +36,7 @@ export class FilePath {
   constructor(
     public readonly relative: RelativePath,
     public readonly anchor: Anchor,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FilePath only uses non-generic resolver methods; IResolver<string> breaks contravariance of PathFor
-    public readonly resolver: IResolver<any>,
+    public readonly resolver: IResolverBase,
   ) {
     // Validate that the resolver can handle this anchor
     if (!resolver.canResolve(anchor)) {
@@ -117,7 +116,7 @@ export class FilePath {
    * // Same anchor and relative path, but different resolver
    * ```
    */
-  withResolver(newResolver: IResolver): FilePath {
+  withResolver(newResolver: IResolverBase): FilePath {
     return new FilePath(this.relative, this.anchor, newResolver);
   }
 

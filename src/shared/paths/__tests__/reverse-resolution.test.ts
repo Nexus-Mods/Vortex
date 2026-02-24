@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from '@jest/globals';
 // eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
-import type { IResolver } from '../IResolver';
+import type { IResolverBase } from '../IResolver';
 
 import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
 import { UnixResolver } from '../resolvers/UnixResolver';
@@ -28,8 +28,7 @@ import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 // ============================================================================
 
 class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
-  constructor(parent?: IResolver<any>) {
+  constructor(parent?: IResolverBase) {
     super('test', parent, new MockFilesystem(
       process.platform === 'win32' ? 'windows' : 'unix',
       process.platform !== 'win32',

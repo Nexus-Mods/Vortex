@@ -6,19 +6,19 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
 import type { IFilesystem } from '../IFilesystem';
-import type { IResolver } from '../IResolver';
+import type { IResolverBase } from '../IResolver';
 
 import { FilePath } from '../FilePath';
 import { RelativePath, Anchor, ResolvedPath } from '../types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 
 // Mock resolver for testing
-class MockResolver implements IResolver {
+class MockResolver implements IResolverBase {
   private readonly fs: IFilesystem = new MockFilesystem('unix', true);
 
   constructor(
     public readonly name: string = 'mock',
-    public readonly parent?: IResolver,
+    public readonly parent?: IResolverBase,
   ) {}
 
   async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
@@ -80,14 +80,13 @@ describe('FilePath', () => {
     });
 
     test('throws if resolver cannot handle anchor', () => {
-      const badResolver: IResolver = {
+      const badResolver: IResolverBase = {
         name: 'bad',
         canResolve: () => false,
         supportedAnchors: () => [],
-        resolve: jest.fn<IResolver['resolve']>(),
-        PathFor: jest.fn<IResolver['PathFor']>(),
-        tryReverse: jest.fn<IResolver['tryReverse']>(),
-        getBasePaths: jest.fn<IResolver['getBasePaths']>(),
+        resolve: jest.fn<IResolverBase['resolve']>(),
+        tryReverse: jest.fn<IResolverBase['tryReverse']>(),
+        getBasePaths: jest.fn<IResolverBase['getBasePaths']>(),
         getFilesystem: () => new MockFilesystem('unix', true),
       };
 
