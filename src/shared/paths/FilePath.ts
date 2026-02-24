@@ -36,7 +36,8 @@ export class FilePath {
   constructor(
     public readonly relative: RelativePath,
     public readonly anchor: Anchor,
-    public readonly resolver: IResolver,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FilePath only uses non-generic resolver methods; IResolver<string> breaks contravariance of PathFor
+    public readonly resolver: IResolver<any>,
   ) {
     // Validate that the resolver can handle this anchor
     if (!resolver.canResolve(anchor)) {

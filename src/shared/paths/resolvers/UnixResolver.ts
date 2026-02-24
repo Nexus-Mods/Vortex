@@ -36,7 +36,8 @@ export type UnixAnchor = 'root';
  * @template ValidAnchors - UnixAnchor type ('root' only)
  */
 export class UnixResolver extends MappingResolver<UnixAnchor> {
-  constructor(parent?: IResolver, filesystem?: IFilesystem) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
+  constructor(parent?: IResolver<any>, filesystem?: IFilesystem) {
     super('unix', parent, filesystem);
   }
 

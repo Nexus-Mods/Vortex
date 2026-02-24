@@ -50,7 +50,8 @@ const DRIVE_LETTERS: readonly WindowsDrive[] = [
  * @template ValidAnchors - WindowsDrive type (26 lowercase drive letters)
  */
 export class WindowsResolver extends MappingResolver<WindowsDrive> {
-  constructor(parent?: IResolver, filesystem?: IFilesystem) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
+  constructor(parent?: IResolver<any>, filesystem?: IFilesystem) {
     super('windows', parent, filesystem);
   }
 

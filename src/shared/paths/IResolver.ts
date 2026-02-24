@@ -38,7 +38,8 @@ export interface IResolver<ValidAnchors extends string = string> {
    * `getFilesystem()` to find the chain's filesystem. Parent delegation
    * does NOT apply to forward `resolve()` or `tryReverse()`.
    */
-  readonly parent?: IResolver;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- parent only uses non-generic methods; IResolver<string> breaks contravariance of PathFor
+  readonly parent?: IResolver<any>;
 
   /**
    * Resolve an anchor + relative path to an absolute OS path.

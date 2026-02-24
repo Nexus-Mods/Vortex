@@ -37,7 +37,8 @@ type TestAppAnchor = 'userData' | 'temp' | 'home';
  * Chained to a UnixResolver parent so toOSPath flows through the terminal.
  */
 class TestAppResolver extends MappingResolver<TestAppAnchor> {
-  constructor(parent: IResolver) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
+  constructor(parent: IResolver<any>) {
     super('testApp', parent);
   }
 

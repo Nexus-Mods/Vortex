@@ -39,7 +39,8 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
-    public readonly parent?: IResolver,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see IResolver.parent
+    public readonly parent?: IResolver<any>,
     private readonly filesystem?: IFilesystem,
   ) {}
 
