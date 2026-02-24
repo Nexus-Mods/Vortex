@@ -865,7 +865,7 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
           .then(() => {
             if (removeArchive) {
               archiveIds.forEach(archiveId => {
-                this.context.api.events.emit('remove-download', archiveId);
+                this.context.api.events.emit('remove-download', archiveId, undefined, { confirmed: true });
               });
             }
             return Bluebird.resolve();
