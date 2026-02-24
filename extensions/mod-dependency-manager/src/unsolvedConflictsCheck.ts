@@ -2,7 +2,7 @@ import Promise from 'bluebird';
 import { selectors, types, util } from 'vortex-api';
 import { IBiDirRule } from './types/IBiDirRule';
 import { IConflict } from './types/IConflict';
-import { findRuleBiDir } from './util/findRule';
+import { findRuleBiDir, isConflictResolved } from './util/findRule';
 import showUnsolvedConflictsDialog from './util/showUnsolvedConflicts';
 
 function unsolvedConflictsCheck(api: types.IExtensionApi,
@@ -26,7 +26,8 @@ function unsolvedConflictsCheck(api: types.IExtensionApi,
         return false;
       }
       encountered.add(encKey);
-      return findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined;
+      return !isConflictResolved(mods, modId, conflict.otherMod)
+        && findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined;
     }) !== undefined);
   if (firstConflict !== undefined) {
     return api.showDialog('error', t('Unresolved Conflict'), {

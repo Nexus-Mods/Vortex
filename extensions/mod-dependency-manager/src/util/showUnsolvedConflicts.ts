@@ -1,7 +1,7 @@
 import { selectors, types, util } from 'vortex-api';
 import { setConflictDialog } from '../actions';
 import { IBiDirRule } from '../types/IBiDirRule';
-import { findRuleBiDir } from './findRule';
+import { findRuleBiDir, isConflictResolved } from './findRule';
 
 function showUnsolvedConflictsDialog(api: types.IExtensionApi,
                                      modRules: IBiDirRule[],
@@ -39,8 +39,8 @@ function showUnsolvedConflictsDialog(api: types.IExtensionApi,
         return false;
       }
       encountered.add(encKey);
-      const rule = findRuleBiDir(modRules, mods[modId], conflict.otherMod);
-      return rule === undefined;
+      return !isConflictResolved(mods, modId, conflict.otherMod)
+        && findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined;
     }) !== undefined);
   }
 
