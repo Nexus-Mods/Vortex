@@ -5,8 +5,8 @@
  * extract relative paths, and manipulate path bases.
  */
 
+/* eslint-disable vortex/no-module-imports */
 import { describe, it, expect, beforeEach } from '@jest/globals';
-// eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
 
 import type { IResolverBase } from '../IResolver';
