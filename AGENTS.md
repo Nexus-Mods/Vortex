@@ -44,7 +44,7 @@ Electron-based mod manager with Redux state management.
 - **Renderer Process**: `src/renderer/renderer.tsx`
 - **Preload Process**: `src/preload/index.ts`
 - **Extensions**: `src/extensions/` (embedded) and `extensions/` (bundled)
-- **State**: Redux actions in `src/renderer/actions/`, reducers in `src/renderer/reducers/`
+- **State**: Redux actions in `src/actions/`, reducers in `src/reducers/`
 
 ### Key Directories
 
