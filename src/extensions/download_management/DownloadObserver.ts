@@ -1,3 +1,4 @@
+import { IDialogResult } from "../../types/IDialog";
 import { IExtensionApi } from "../../types/IExtensionContext";
 import { IState } from "../../types/IState";
 import {
@@ -794,79 +795,108 @@ export class DownloadObserver {
       return;
     }
 
-    const callCB = (err: Error) => {
-      if (cb !== undefined) {
-        cb(err);
-      }
-    };
+    const proceedWithRemoval = () => {
+      const callCB = (err: Error) => {
+        if (cb !== undefined) {
+          cb(err);
+        }
+      };
 
-    const onceStopped = (): Promise<void> => {
-      if (truthy(download.localPath) && truthy(download.game)) {
-        // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
-        // would put manually added downloads into the download root if no game was being managed.
-        // Newer versions won't do this anymore (hopefully) but we still need to enable users to
-        // clean up these broken downloads
-        const rawGameId = getDownloadGames(download)[0];
-        const gameId = rawGameId
-          ? convertGameIdReverse(
-              selectors.knownGames(this.mApi.store.getState()),
-              rawGameId,
-            )
-          : undefined;
-        const dlPath = truthy(gameId)
-          ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
-          : selectors.downloadPath(this.mApi.store.getState());
+      const onceStopped = (): Promise<void> => {
+        if (truthy(download.localPath) && truthy(download.game)) {
+          // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
+          // would put manually added downloads into the download root if no game was being managed.
+          // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+          // clean up these broken downloads
+          const rawGameId = getDownloadGames(download)[0];
+          const gameId = rawGameId
+            ? convertGameIdReverse(
+                selectors.knownGames(this.mApi.store.getState()),
+                rawGameId,
+              )
+            : undefined;
+          const dlPath = truthy(gameId)
+            ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+            : selectors.downloadPath(this.mApi.store.getState());
 
-        return fs
-          .removeAsync(path.join(dlPath, download.localPath))
-          .then(() => {
-            this.mApi.store.dispatch(
-              options?.silent
-                ? removeDownloadSilent(downloadId)
-                : removeDownload(downloadId),
-            );
-            callCB(null);
-          })
-          .catch(UserCanceled, callCB)
-          .catch((err) => {
-            if (cb !== undefined) {
-              cb(err);
-            } else {
-              showError(
-                this.mApi.store.dispatch,
-                "Failed to remove file",
-                err,
-                {
-                  allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
-                },
+          return fs
+            .removeAsync(path.join(dlPath, download.localPath))
+            .then(() => {
+              this.mApi.store.dispatch(
+                options?.silent
+                  ? removeDownloadSilent(downloadId)
+                  : removeDownload(downloadId),
               );
-            }
+              callCB(null);
+            })
+            .catch(UserCanceled, callCB)
+            .catch((err) => {
+              if (cb !== undefined) {
+                cb(err);
+              } else {
+                showError(
+                  this.mApi.store.dispatch,
+                  "Failed to remove file",
+                  err,
+                  {
+                    allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
+                  },
+                );
+              }
+            });
+        } else {
+          this.mApi.store.dispatch(
+            options?.silent
+              ? removeDownloadSilent(downloadId)
+              : removeDownload(downloadId),
+          );
+          return Promise.resolve();
+        }
+      };
+
+      if (["init", "started", "paused", "failed"].includes(download.state)) {
+        // need to cancel the download
+        if (!this.mManager.stop(downloadId)) {
+          // error case, for some reason the manager didn't know about this download, maybe some
+          // delay?
+          this.mInterceptedDownloads.push({
+            time: Date.now(),
+            tag: download.modInfo?.referenceTag,
           });
+          onceStopped();
+        } else {
+          this.queueFinishCB(downloadId, () => onceStopped());
+        }
       } else {
-        this.mApi.store.dispatch(
-          options?.silent
-            ? removeDownloadSilent(downloadId)
-            : removeDownload(downloadId),
-        );
-        return Promise.resolve();
+        onceStopped();
       }
     };
 
-    if (["init", "started", "paused", "failed"].includes(download.state)) {
-      // need to cancel the download
-      if (!this.mManager.stop(downloadId)) {
-        // error case, for some reason the manager didn't know about this download, maybe some
-        // delay?
-        this.mInterceptedDownloads.push({
-          time: Date.now(),
-          tag: download.modInfo?.referenceTag,
-        });
-        onceStopped();
-      } else {
-        this.queueFinishCB(downloadId, () => onceStopped());
-      }
+    if (options?.confirmed) {
+      proceedWithRemoval();
     } else {
-      onceStopped();
+      const fileName = download.localPath
+        ? path.basename(download.localPath)
+        : downloadId;
+      this.mApi
+        .showDialog(
+          "question",
+          "Confirm Deletion",
+          {
+            text: "Do you really want to delete this archive?",
+            message: fileName,
+          },
+          [{ label: "Cancel" }, { label: "Delete" }],
+        )
+        .then((result: IDialogResult) => {
+          if (result.action === "Delete") {
+            proceedWithRemoval();
+          } else {
+            if (cb !== undefined) {
+              cb(new UserCanceled());
+            }
+          }
+        });
     }
   }
 
