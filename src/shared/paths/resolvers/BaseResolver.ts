@@ -30,19 +30,16 @@ import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as Res
  * MappingResolver) delegate `toOSPath()` to their parent; terminal resolvers
  * (UnixResolver, WindowsResolver) return the path as-is.
  *
- * **Reverse resolution** (`tryReverse`): Uses a top-down strategy. The
- * resolver first walks to the top of the parent chain, then refines on the
- * way back down. Each level tries its own anchors; the most specific (deepest)
- * match wins. This ensures that a child resolver's anchors take priority over
- * a parent's broader anchors when both match.
+ * **Reverse resolution** (`tryReverse`): Only checks this resolver's own
+ * anchors. Does not delegate to the parent. Callers that need to search
+ * multiple resolvers should walk the chain explicitly.
  *
  * @template ValidAnchors - Union of string literals for valid anchor names
  */
 export abstract class BaseResolver<ValidAnchors extends string = string> implements IResolver<ValidAnchors> {
   constructor(
     public readonly name: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public readonly parent?: IResolver<any>,
+    public readonly parent?: IResolver,
     private readonly filesystem?: IFilesystem,
   ) {}
 
@@ -77,6 +74,9 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    *
    * Only resolves anchors this resolver understands. Unknown anchors throw
    * immediately — there is no parent delegation during forward resolution.
+   *
+   * Async to support a planned feature: case normalization via filesystem I/O
+   * (e.g., `"program files"` → `"Program Files"` on Windows).
    */
   async resolve(anchor: Anchor, relative: RelativePath): Promise<ResolvedPath> {
     const anchorName = AnchorNS.name(anchor);
@@ -228,28 +228,19 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   }
 
   /**
-   * Try to reverse-resolve an OS path using top-down resolution.
+   * Try to reverse-resolve an OS path using only this resolver's own anchors.
    *
-   * Walks to the top of the parent chain first, letting each level try
-   * its anchors on the way back down. The most specific (deepest) match
-   * wins, so child resolver anchors take priority over parent anchors.
+   * Does NOT delegate to parent. Callers that need to search multiple
+   * resolvers should walk the chain themselves.
    *
-   * @returns FilePath instance using the appropriate resolver, or null if no resolver can handle it
+   * @returns FilePath instance, or null if this resolver cannot handle the path
    */
   async tryReverse(resolvedPath: ResolvedPath): Promise<FilePath | null> {
-    // Walk to top parent first, then refine on way back down
-    let result: FilePath | null = null;
-    if (this.parent) {
-      result = await this.parent.tryReverse(resolvedPath);
-    }
-
-    // Try self — if we match, our more-specific anchor wins
     const selfResult = await this.tryReverseSelf(resolvedPath);
     if (selfResult !== null) {
       return new FilePath(selfResult.relative, selfResult.anchor, this);
     }
-
-    return result;
+    return null;
   }
 
   /**
@@ -330,7 +321,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    * Extract relative path from full path given base
    */
   private extractRelative(fullPath: string, basePath: string): RelativePath {
-    const pathMod = this.getFilesystem().platform === 'win32' ? path.win32 : path.posix;
+    const pathMod = this.getFilesystem().platform === 'windows' ? path.win32 : path.posix;
     const relative = pathMod.relative(basePath, fullPath);
 
     // Convert to forward slashes (RelativePath convention)

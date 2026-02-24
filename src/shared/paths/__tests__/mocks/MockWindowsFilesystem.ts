@@ -15,6 +15,6 @@ import { MockFilesystem } from './MockFilesystem';
  */
 export class MockWindowsFilesystem extends MockFilesystem {
   constructor() {
-    super('win32', false);
+    super('windows', false);
   }
 }

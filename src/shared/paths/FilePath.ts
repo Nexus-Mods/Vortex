@@ -54,7 +54,12 @@ export class FilePath {
    * Async resolution to ResolvedPath
    *
    * Resolves the anchor + relative path to a concrete OS path.
-   * May require IO (e.g., resolvers that read config files).
+   *
+   * Returns a Promise to support a planned feature: **case normalization** —
+   * reading the filesystem to determine the true casing of path segments
+   * (e.g., `"program files"` → `"Program Files"` on Windows). This requires
+   * async I/O, so the signature is async even though current implementations
+   * resolve synchronously.
    *
    * @returns Promise resolving to absolute OS path
    * @throws Error if no resolver in the chain can handle this anchor
@@ -76,7 +81,9 @@ export class FilePath {
 
   /**
    * Join path segments to this path
-   * Returns a new FilePath with extended relative path
+   * Returns a new FilePath with extended relative path.
+   * Segments may contain separators (forward or back slashes) —
+   * they are normalized by RelativePath.make().
    *
    * @param segments - Path segments to join
    * @returns New FilePath with joined path
@@ -86,6 +93,9 @@ export class FilePath {
    * const mods = resolver.PathFor('userData', 'mods');
    * const skyrim = mods.join('skyrim', 'data');
    * // skyrim.relative === 'mods/skyrim/data'
+   *
+   * const nested = mods.join('skyrim/data', 'meshes');
+   * // nested.relative === 'mods/skyrim/data/meshes'
    * ```
    */
   join(...segments: string[]): FilePath {
@@ -268,48 +278,49 @@ export class FilePath {
   // ========================================================================
 
   /**
-   * Get relative path from this FilePath to a child OS path
+   * Get the relative path from a base path to this FilePath ("this relative to base")
    *
-   * @param childPath - Absolute OS path that should be under this FilePath
-   * @returns Relative path from this FilePath to the child, or null if not under
+   * @param basePath - Absolute OS path that this FilePath should be under
+   * @returns Relative path from basePath to this FilePath, or null if not under
    *
    * @example
    * ```typescript
-   * const parent = resolver.PathFor('userData', 'mods');
-   * const childPath = 'C:\\...\\Vortex\\mods\\SkyUI\\interface\\skyui.swf';
-   * const relative = await parent.relativeTo(childPath);
+   * const child = resolver.PathFor('userData', 'mods/SkyUI/interface/skyui.swf');
+   * const parentPath = 'C:\\...\\Vortex\\mods';
+   * const relative = await child.relativeTo(parentPath);
    * // → RelativePath('SkyUI/interface/skyui.swf')
    *
-   * // To get the child as a FilePath:
-   * const child = parent.join(relative);
+   * // To get the child as a FilePath from parent:
+   * const parent = resolver.PathFor('userData', 'mods');
+   * const reconstructed = parent.join(relative);
    * ```
    */
-  async relativeTo(childPath: string | ResolvedPath): Promise<RelativePath | null> {
-    // Resolve this FilePath to get the parent OS path
-    const parentPath = await this.resolve();
+  async relativeTo(basePath: string | ResolvedPath): Promise<RelativePath | null> {
+    // Resolve this FilePath to get the child OS path
+    const childPath = await this.resolve();
 
     // Use platform-appropriate path module for correct behavior on any host
     const fs = this.resolver.getFilesystem();
-    const pathMod = fs.platform === 'win32' ? path.win32 : path.posix;
+    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
 
     // Normalize for comparison - resolve() properly handles . and .. segments
-    const resolvedParent = pathMod.resolve(parentPath as string);
+    const resolvedBase = pathMod.resolve(basePath as string);
     const resolvedChild = pathMod.resolve(childPath as string);
 
-    // Check if child is under parent (case-insensitive on Windows)
-    const parentLower = fs.normalizePath(resolvedParent);
-    const childLower = fs.normalizePath(resolvedChild);
+    // Check if child is under base (case-insensitive on Windows)
+    const baseNorm = fs.normalizePath(resolvedBase);
+    const childNorm = fs.normalizePath(resolvedChild);
 
-    const parentWithSep = parentLower.endsWith(fs.sep)
-      ? parentLower
-      : parentLower + fs.sep;
+    const baseWithSep = baseNorm.endsWith(fs.sep)
+      ? baseNorm
+      : baseNorm + fs.sep;
 
-    if (!childLower.startsWith(parentWithSep) && childLower !== parentLower) {
-      return null; // Child is not under parent
+    if (!childNorm.startsWith(baseWithSep) && childNorm !== baseNorm) {
+      return null; // This path is not under basePath
     }
 
     // Extract relative path
-    const relative = pathMod.relative(resolvedParent, resolvedChild);
+    const relative = pathMod.relative(resolvedBase, resolvedChild);
     const normalized = relative.replace(/\\/g, '/'); // Forward slashes
 
     return normalized === '' ? RelativePathNS.EMPTY : RelativePathNS.make(normalized);
@@ -350,8 +361,15 @@ export class FilePath {
    * ```
    */
   async isAncestorOf(childPath: string | ResolvedPath): Promise<boolean> {
-    const relative = await this.relativeTo(childPath);
-    return relative !== null;
+    const parentPath = await this.resolve();
+    const fs = this.resolver.getFilesystem();
+    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+    const resolvedParent = pathMod.resolve(parentPath as string);
+    const resolvedChild = pathMod.resolve(childPath as string);
+    const parentNorm = fs.normalizePath(resolvedParent);
+    const childNorm = fs.normalizePath(resolvedChild);
+    const parentWithSep = parentNorm.endsWith(fs.sep) ? parentNorm : parentNorm + fs.sep;
+    return childNorm.startsWith(parentWithSep) || childNorm === parentNorm;
   }
 
 }

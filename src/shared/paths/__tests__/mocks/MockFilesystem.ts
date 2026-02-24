@@ -36,14 +36,14 @@ export class MockFilesystem implements IFilesystem {
   public readonly sep: string;
 
   constructor(
-    public readonly platform: 'win32' | 'linux' | 'darwin' = 'linux',
-    public readonly caseSensitive: boolean = platform !== 'win32',
+    public readonly platform: 'windows' | 'unix' = 'unix',
+    public readonly caseSensitive: boolean = platform !== 'windows',
   ) {
     // Set separator for this platform
-    this.sep = this.platform === 'win32' ? '\\' : '/';
+    this.sep = this.platform === 'windows' ? '\\' : '/';
 
     // Create root directory
-    const root = this.platform === 'win32' ? 'C:\\' : '/';
+    const root = this.platform === 'windows' ? 'C:\\' : '/';
     this.entries.set(this.normalizePath(root), {
       type: 'directory',
       mode: 0o755,
@@ -62,7 +62,7 @@ export class MockFilesystem implements IFilesystem {
    * Uses platform-appropriate path module so Windows mocks work on Linux hosts
    */
   normalizePath(p: string): string {
-    const pathMod = this.platform === 'win32' ? path.win32 : path.posix;
+    const pathMod = this.platform === 'windows' ? path.win32 : path.posix;
     const normalized = pathMod.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }
@@ -388,7 +388,7 @@ export class MockFilesystem implements IFilesystem {
   clear(): void {
     this.entries.clear();
     // Recreate root
-    const root = this.platform === 'win32' ? 'C:\\' : '/';
+    const root = this.platform === 'windows' ? 'C:\\' : '/';
     this.entries.set(this.normalizePath(root), {
       type: 'directory',
       mode: 0o755,

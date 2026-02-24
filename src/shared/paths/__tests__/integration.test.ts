@@ -16,7 +16,7 @@ import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 // Test resolver implementations
 class AppResolver extends BaseResolver<'userData' | 'temp'> {
   constructor() {
-    super('app', undefined, new MockFilesystem('linux', true));
+    super('app', undefined, new MockFilesystem('unix', true));
   }
 
   canResolve(anchor: Anchor): boolean {
@@ -51,7 +51,7 @@ class AppResolver extends BaseResolver<'userData' | 'temp'> {
 
 class TestGameResolver extends BaseResolver<'game' | 'gameMods'> {
   constructor() {
-    super('game', undefined, new MockFilesystem('linux', true));
+    super('game', undefined, new MockFilesystem('unix', true));
   }
 
   canResolve(anchor: Anchor): boolean {

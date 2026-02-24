@@ -103,14 +103,12 @@ describe('Multi-Resolver Roundtrip', () => {
       expect(normalizePath(resolved2 as string)).toBe(normalizePath(resolved1 as string));
     });
 
-    it('should roundtrip Unix root paths via app resolver chain', async () => {
-      // Path outside app dirs — should delegate to unix parent
+    it('should return null for paths outside own anchors', async () => {
+      // Path outside app dirs — appResolver can't handle it (no parent delegation)
       const osPath = ResolvedPath.make('/opt/games/skyrim/data');
       const reversed = await appResolver.tryReverse(osPath);
 
-      expect(reversed).not.toBeNull();
-      expect(Anchor.name(reversed.anchor)).toBe('root');
-      expect(reversed.relative).toBe('opt/games/skyrim/data');
+      expect(reversed).toBeNull();
     });
   });
 
@@ -186,29 +184,26 @@ describe('Multi-Resolver Roundtrip', () => {
     });
   });
 
-  describe('Delegation', () => {
-    it('should delegate to parent when child cannot handle path', async () => {
+  describe('No parent delegation', () => {
+    it('should return null when path is not under own anchors', async () => {
       const osPath = ResolvedPath.make('/etc/passwd');
 
+      // AppResolver can't handle /etc — no parent delegation
       const result = await appResolver.tryReverse(osPath);
 
-      // AppResolver can't handle /etc, delegates to UnixResolver
-      expect(result).not.toBeNull();
-      expect(Anchor.name(result.anchor)).toBe('root');
-      expect(result.relative).toBe('etc/passwd');
+      expect(result).toBeNull();
     });
 
-    it('should try child resolver first for overlapping ranges', async () => {
+    it('should resolve own anchors independently of parent', async () => {
       const osPath = ResolvedPath.make('/home/user/.vortex/userData/mods/mod.esp');
 
-      // App resolver tries first — should match userData
+      // App resolver matches its own userData anchor
       const appResult = await appResolver.tryReverse(osPath);
       expect(appResult).not.toBeNull();
       expect(Anchor.name(appResult.anchor)).toBe('userData');
 
-      // Unix tries first — should match root
-      const unixFirst = new UnixResolver(appResolver);
-      const unixResult = await unixFirst.tryReverse(osPath);
+      // Unix resolver matches its own root anchor
+      const unixResult = await unixResolver.tryReverse(osPath);
       expect(unixResult).not.toBeNull();
       expect(Anchor.name(unixResult.anchor)).toBe('root');
     });

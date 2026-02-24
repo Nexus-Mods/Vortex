@@ -140,7 +140,7 @@ export interface IFilesystem {
   /**
    * Platform identifier
    */
-  readonly platform: 'win32' | 'linux' | 'darwin';
+  readonly platform: 'windows' | 'unix';
 
   /**
    * Whether this filesystem is case-sensitive

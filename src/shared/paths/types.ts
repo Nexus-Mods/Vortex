@@ -122,14 +122,19 @@ export namespace RelativePath {
 
   /**
    * Join path segments into a single RelativePath
-   * All segments are joined with forward slashes and normalized
+   * All segments are joined with forward slashes and normalized.
+   * Segments may contain separators (forward or back slashes) —
+   * they are normalized by `make()`.
    *
    * @example
-   * RelativePath.join(
-   *   RelativePath.make('mods'),
-   *   'skyrim',
-   *   'data'
-   * ) // => 'mods/skyrim/data'
+   * RelativePath.join(RelativePath.make('mods'), 'skyrim', 'data')
+   * // => 'mods/skyrim/data'
+   *
+   * RelativePath.join(RelativePath.make('mods'), 'skyrim/data', 'meshes')
+   * // => 'mods/skyrim/data/meshes'
+   *
+   * RelativePath.join(RelativePath.make('mods'), 'skyrim\\data', 'meshes')
+   * // => 'mods/skyrim/data/meshes'
    */
   export function join(base: RelativePath, ...segments: string[]): RelativePath {
     const combined = [base as string, ...segments]

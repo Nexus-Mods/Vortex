@@ -15,7 +15,7 @@ describe('MockFilesystem', () => {
   let fs: MockFilesystem;
 
   beforeEach(() => {
-    fs = new MockFilesystem('linux', true);
+    fs = new MockFilesystem('unix', true);
   });
 
   describe('file operations', () => {
@@ -192,8 +192,8 @@ describe('MockWindowsFilesystem', () => {
     expect(content).toBe('content');
   });
 
-  test('platform is win32', () => {
-    expect(fs.platform).toBe('win32');
+  test('platform is windows', () => {
+    expect(fs.platform).toBe('windows');
     expect(fs.caseSensitive).toBe(false);
   });
 });
@@ -219,8 +219,8 @@ describe('MockUnixFilesystem', () => {
     expect(await fs.readFile(path2)).toBe('content2');
   });
 
-  test('platform is linux', () => {
-    expect(fs.platform).toBe('linux');
+  test('platform is unix', () => {
+    expect(fs.platform).toBe('unix');
     expect(fs.caseSensitive).toBe(true);
   });
 });

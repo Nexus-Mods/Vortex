@@ -47,6 +47,26 @@ describe('RelativePath', () => {
     ])('join(%s, %s) = %s', (base, segments, expected) => {
       expect(RelativePath.join(base, ...segments)).toBe(expected);
     });
+
+    test('join handles segments containing forward slashes', () => {
+      expect(RelativePath.join(RelativePath.make('mods'), 'skyrim/data', 'meshes'))
+        .toBe('mods/skyrim/data/meshes');
+    });
+
+    test('join handles segments containing backslashes', () => {
+      expect(RelativePath.join(RelativePath.make('mods'), 'skyrim\\data', 'meshes'))
+        .toBe('mods/skyrim/data/meshes');
+    });
+
+    test('join handles segments with leading slashes', () => {
+      expect(RelativePath.join(RelativePath.make('a'), '/b', 'c'))
+        .toBe('a/b/c');
+    });
+
+    test('join handles segments with trailing slashes', () => {
+      expect(RelativePath.join(RelativePath.make('a'), 'b/', 'c'))
+        .toBe('a/b/c');
+    });
   });
 
   describe('dirname', () => {

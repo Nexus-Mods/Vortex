@@ -20,7 +20,7 @@ import { RelativePath as RelativePathNS } from '../types';
  * Real filesystem implementation using Node.js fs
  */
 export class NodeFilesystem implements IFilesystem {
-  readonly platform = process.platform as 'win32' | 'linux' | 'darwin';
+  readonly platform = process.platform === 'win32' ? 'windows' as const : 'unix' as const;
   readonly caseSensitive = process.platform !== 'win32';
   readonly sep = path.sep;
 

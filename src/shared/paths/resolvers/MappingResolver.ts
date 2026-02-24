@@ -73,8 +73,7 @@ export type MappingStrategy<ValidAnchors extends string> = {
 export abstract class MappingResolver<ValidAnchors extends string>
   extends BaseResolver<ValidAnchors> {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(name: string, parent?: IResolver<any>, filesystem?: IFilesystem) {
+  constructor(name: string, parent?: IResolver, filesystem?: IFilesystem) {
     super(name, parent, filesystem);
   }
 

@@ -34,18 +34,23 @@ export interface IResolver<ValidAnchors extends string = string> {
 
   /**
    * Optional parent resolver for the resolver chain.
-   * Used by `toOSPath()` to walk up to a terminal resolver, and by
-   * `tryReverse()` for top-down reverse resolution. Parent delegation
-   * does NOT apply to forward `resolve()` — unknown anchors throw.
+   * Used by `toOSPath()` to walk up to a terminal resolver and by
+   * `getFilesystem()` to find the chain's filesystem. Parent delegation
+   * does NOT apply to forward `resolve()` or `tryReverse()`.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly parent?: IResolver<any>;
+  readonly parent?: IResolver;
 
   /**
    * Resolve an anchor + relative path to an absolute OS path.
    *
    * Only resolves anchors this resolver understands (checked via `canResolve`).
    * Unknown anchors throw immediately — there is no parent delegation.
+   *
+   * Returns a Promise to support a planned feature: **case normalization** —
+   * reading the filesystem to determine the true casing of path segments
+   * (e.g., `"program files"` → `"Program Files"` on Windows). This requires
+   * async I/O, so the signature is async even though current implementations
+   * don't need it.
    *
    * @param anchor - The anchor to resolve
    * @param relative - The relative path from the anchor
@@ -98,11 +103,9 @@ export interface IResolver<ValidAnchors extends string = string> {
   // ========================================================================
 
   /**
-   * Try to reverse-resolve an OS path to a FilePath using top-down resolution.
-   *
-   * Walks to the top of the parent chain first, then refines on the way back
-   * down. The most specific (deepest) match wins. Returns null if no resolver
-   * in the chain can handle the path.
+   * Try to reverse-resolve an OS path to a FilePath using only this resolver's
+   * own anchors. Does not delegate to parent. Returns null if this resolver
+   * cannot handle the path.
    *
    * @param resolvedPath - Absolute OS path to parse
    * @returns FilePath instance, or null if not handled

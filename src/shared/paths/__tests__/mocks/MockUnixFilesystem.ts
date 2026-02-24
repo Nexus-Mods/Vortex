@@ -15,6 +15,6 @@ import { MockFilesystem } from './MockFilesystem';
  */
 export class MockUnixFilesystem extends MockFilesystem {
   constructor() {
-    super('linux', true);
+    super('unix', true);
   }
 }

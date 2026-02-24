@@ -44,7 +44,7 @@ platform resolvers and a base class for building your own:
 - **WindowsResolver**: 26 drive-letter anchors (`a`–`z`) → `A:\` – `Z:\`
 - **MappingResolver**: Abstract base for user-defined anchor mappings
 
-Resolvers are chainable. Forward resolution (`resolve()`) throws on unknown anchors — there is no parent delegation. The parent chain is used for `toOSPath()` (walking up to the terminal resolver) and `tryReverse()` (top-down refinement).
+Resolvers are chainable. Forward resolution (`resolve()`) throws on unknown anchors — there is no parent delegation. `tryReverse()` only checks this resolver's own anchors. The parent chain is used for `toOSPath()` (walking up to the terminal resolver) and `getFilesystem()` (finding the chain's filesystem).
 
 ### Resolver Pipeline
 
@@ -161,9 +161,9 @@ const app = new AppResolver(unix);
 app.PathFor('userData', 'mods');         // ✓ app resolves, toOSPath() delegates to unix
 app.PathFor('root' as any, 'etc/hosts'); // ✗ throws — app doesn't support 'root'
 
-// tryReverse walks the chain top-down (parent first, then child refines)
+// tryReverse only checks this resolver's own anchors (no parent delegation)
 const fp = await app.tryReverse(ResolvedPath.make('/home/user/.app/userData/mods'));
-// → FilePath with anchor='userData' (app's more-specific anchor wins)
+// → FilePath with anchor='userData'
 ```
 
 ### Custom Terminal Resolvers
@@ -192,7 +192,7 @@ class MyTerminalResolver extends MappingResolver<'data'> {
 import { MockFilesystem } from './shared/paths/__tests__/mocks/MockFilesystem';
 
 test('Windows case insensitivity', async () => {
-  const fs = new MockFilesystem('win32', false);
+  const fs = new MockFilesystem('windows', false);
 
   const path1 = ResolvedPath.make('C:\\Vortex\\MODS');
   const path2 = ResolvedPath.make('C:\\vortex\\mods');
@@ -295,7 +295,7 @@ class FilePath {
   isIn(parent: FilePath): boolean;
   compare(other: FilePath): number;
 
-  relativeTo(childPath: string | ResolvedPath): Promise<RelativePath | null>;
+  relativeTo(basePath: string | ResolvedPath): Promise<RelativePath | null>;
   isAncestorOf(childPath: string | ResolvedPath): Promise<boolean>;
 }
 ```
@@ -320,7 +320,7 @@ interface IResolver<ValidAnchors extends string = string> {
 
 ```typescript
 interface IFilesystem {
-  readonly platform: 'win32' | 'linux' | 'darwin';
+  readonly platform: 'windows' | 'unix';
   readonly caseSensitive: boolean;
   readonly sep: string;
 
@@ -383,7 +383,11 @@ Paths can be constructed, manipulated, and serialized without filesystem access.
 
 ### Why Resolver Chains?
 
-Resolver chains enable modular path handling. Each resolver handles its own anchors and throws on unknown ones. The parent chain is used for `toOSPath()` delegation (walking up to the terminal resolver) and `tryReverse()` (top-down refinement where deeper matches win). Only terminal resolvers (UnixResolver, WindowsResolver) produce final OS paths.
+Resolver chains enable modular path handling. Each resolver handles its own anchors and throws on unknown ones. `tryReverse()` only checks this resolver's own anchors — callers that need to search multiple resolvers should walk the chain explicitly. The parent chain is used for `toOSPath()` delegation (walking up to the terminal resolver). Only terminal resolvers (UnixResolver, WindowsResolver) produce final OS paths.
+
+### Why is resolve() async?
+
+`resolve()` returns a `Promise` to support a planned feature: **case normalization**. On case-insensitive filesystems (Windows), the true casing of path segments can only be determined by reading the filesystem (e.g., `"program files"` → `"Program Files"`). This requires async I/O, so the signature is async even though current implementations resolve synchronously.
 
 ### Why IFilesystem Abstraction?
 

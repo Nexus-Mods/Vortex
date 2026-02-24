@@ -14,7 +14,7 @@ import { MockFilesystem } from './mocks/MockFilesystem';
 
 // Mock resolver for testing
 class MockResolver implements IResolver {
-  private readonly fs: IFilesystem = new MockFilesystem('linux', true);
+  private readonly fs: IFilesystem = new MockFilesystem('unix', true);
 
   constructor(
     public readonly name: string = 'mock',
@@ -88,7 +88,7 @@ describe('FilePath', () => {
         PathFor: jest.fn<IResolver['PathFor']>(),
         tryReverse: jest.fn<IResolver['tryReverse']>(),
         getBasePaths: jest.fn<IResolver['getBasePaths']>(),
-        getFilesystem: () => new MockFilesystem('linux', true),
+        getFilesystem: () => new MockFilesystem('unix', true),
       };
 
       expect(() => {
@@ -121,6 +121,12 @@ describe('FilePath', () => {
       expect(joined.anchor).toBe(base.anchor);
       expect(joined.resolver).toBe(base.resolver);
       expect(base.relative).toBe('mods'); // Original unchanged
+    });
+
+    test('join handles segments with separators', () => {
+      const base = new FilePath(RelativePath.make('mods'), anchor, resolver);
+      const joined = base.join('skyrim/data', 'meshes');
+      expect(joined.relative).toBe('mods/skyrim/data/meshes');
     });
 
     test('withResolver creates new FilePath', () => {
