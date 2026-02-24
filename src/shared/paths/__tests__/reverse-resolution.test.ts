@@ -5,9 +5,7 @@
  * extract relative paths, and manipulate path bases.
  */
 
-/* eslint-disable vortex/no-module-imports */
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import * as path from 'path';
+/// <reference types="jest" />
 
 import type { IResolverBase } from '../IResolver';
 
@@ -56,11 +54,8 @@ class TestResolver extends MappingResolver<'test1' | 'test2' | 'nested'> {
 const isWindows = process.platform === 'win32';
 
 function makeAbsolutePath(...segments: string[]): string {
-  if (isWindows) {
-    return path.join('C:\\', ...segments);
-  } else {
-    return path.join('/', ...segments);
-  }
+  const joined = segments.join('/');
+  return isWindows ? `C:\\${joined.replace(/\//g, '\\')}` : `/${joined}`;
 }
 
 // ============================================================================
@@ -323,8 +318,7 @@ describe('Reverse Resolution', () => {
       const resolvedChild = await reconstructed.resolve();
       const childPath = await child.resolve();
 
-      expect(path.normalize(resolvedChild as string))
-        .toBe(path.normalize(childPath as string));
+      expect(resolvedChild).toBe(childPath);
     });
   });
 
@@ -462,8 +456,7 @@ describe('Reverse Resolution', () => {
 
       // Should resolve to the same OS path
       const resolvedAgain = await reconstructed.resolve();
-      expect(path.normalize(resolvedAgain as string))
-        .toBe(path.normalize(osPath as string));
+      expect(resolvedAgain).toBe(osPath);
     });
   });
 
