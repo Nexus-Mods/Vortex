@@ -8,10 +8,7 @@ import { app } from "electron";
 import { readFile } from "node:fs/promises";
 
 import { createVortexResource } from "../shared/telemetry/resources";
-import {
-  OTLP_ENDPOINT,
-  OTLP_HEADERS,
-} from "../shared/telemetry/setup";
+import { COLLECTOR_URL, OTLP_HEADERS } from "../shared/telemetry/setup";
 import { recordErrorOnSpan } from "../shared/telemetry/spans";
 import type { ReportableError } from "../shared/types/errors";
 
@@ -46,12 +43,7 @@ interface ICrashInfo {
 export async function sendReportFile(filePath: string): Promise<void> {
   const contents = await readFile(filePath, "utf8");
   const json: ICrashInfo = JSON.parse(contents) as ICrashInfo;
-  await reportCrash(
-    json.type,
-    json.error,
-    json.context,
-    json.reportProcess,
-  );
+  await reportCrash(json.type, json.error, json.context, json.reportProcess);
 }
 
 /**
@@ -67,7 +59,7 @@ export async function reportCrash(
   const resource = createVortexResource("report", app.getVersion());
 
   const exporter = new OTLPTraceExporter({
-    url: OTLP_ENDPOINT,
+    url: `${COLLECTOR_URL}/v1/traces`,
     headers: OTLP_HEADERS,
   });
 
@@ -99,4 +91,3 @@ export async function reportCrash(
     await provider.shutdown();
   }
 }
-

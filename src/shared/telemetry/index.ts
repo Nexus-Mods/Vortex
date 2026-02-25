@@ -7,6 +7,7 @@ export {
   getResource,
   getTracer,
   isTelemetryEnabled,
+  setServiceVersion,
   setTelemetryEnabled,
 } from "./setup";
 export type { TelemetrySetupResult } from "./setup";

@@ -31,19 +31,16 @@ function patchBluebirdContext(): void {
   /* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any */
 }
 
-import { VORTEX_VERSION } from "../constants";
 import { createVortexResource } from "./resources";
 import {
   RingBufferSpanProcessor,
   type RingBufferOptions,
 } from "./RingBufferSpanProcessor";
 
-export const OTLP_ENDPOINT =
-  process.env.VORTEX_OTLP_ENDPOINT ??
-  "https://vortex-collector.nexusmods.com/v1/traces";
+export const COLLECTOR_URL =
+  process.env.VORTEX_COLLECTOR_URL ?? "https://vortex-collector.nexusmods.com";
 
-export const OTLP_HEADERS: Record<string, string> = {
-};
+export const OTLP_HEADERS: Record<string, string> = {};
 
 export interface TelemetrySetupResult {
   provider: BasicTracerProvider;
@@ -68,10 +65,25 @@ export function isTelemetryEnabled(): boolean {
 }
 
 /**
+ * Update the service version on the resource after initialization.
+ * Use this when the version isn't available synchronously at startup.
+ */
+export function setServiceVersion(version: string): void {
+  if (resourceSingleton !== undefined) {
+    // "service.version" is ATTR_SERVICE_VERSION from @opentelemetry/semantic-conventions
+    (resourceSingleton.attributes as Record<string, unknown>)[
+      "service.version"
+    ] = version;
+  }
+}
+
+/**
  * Get the Resource for this process (for manual OTLP export).
  * Returns undefined if telemetry hasn't been initialized yet.
  */
-export function getResource(): ReturnType<typeof createVortexResource> | undefined {
+export function getResource():
+  | ReturnType<typeof createVortexResource>
+  | undefined {
   return resourceSingleton;
 }
 
@@ -81,14 +93,15 @@ export function getResource(): ReturnType<typeof createVortexResource> | undefin
  */
 export function createTelemetryProvider(
   processName: "main" | "renderer",
+  appVersion?: string,
   options?: RingBufferOptions,
 ): TelemetrySetupResult {
-  const resource = createVortexResource(processName, VORTEX_VERSION, {
+  const resource = createVortexResource(processName, appVersion ?? "", {
     "process.pid": process.pid,
   });
 
   const exporter = new OTLPTraceExporter({
-    url: OTLP_ENDPOINT,
+    url: `${COLLECTOR_URL}/v1/traces`,
     headers: OTLP_HEADERS,
   });
 

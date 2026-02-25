@@ -81,7 +81,10 @@ import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
 import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
-import { createTelemetryProvider } from "../shared/telemetry/setup";
+import {
+  createTelemetryProvider,
+  setServiceVersion,
+} from "../shared/telemetry/setup";
 import { setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
@@ -434,6 +437,10 @@ async function initGlobals(): Promise<void> {
   // This replaces synchronous IPC calls that were in the preload script
   const { ApplicationData } = await import("../shared/applicationData");
   await ApplicationData.init();
+
+  if (ApplicationData.version !== undefined) {
+    setServiceVersion(ApplicationData.version);
+  }
 }
 
 async function init(): Promise<ExtensionManager | null> {

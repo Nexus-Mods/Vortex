@@ -819,7 +819,13 @@ function applyErrorToSpan(
   attributes?: Record<string, string | number | boolean>,
 ): void {
   span.setAttribute("error.title", title);
-  recordErrorOnSpan(span, error, getApplication().version, globalContext, attributes);
+  recordErrorOnSpan(
+    span,
+    error,
+    getApplication().version,
+    globalContext,
+    attributes,
+  );
 }
 
 /**
