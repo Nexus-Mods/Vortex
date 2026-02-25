@@ -6,6 +6,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 workflow:
+  auto_cancel:
+    on_new_commit: interruptible
   rules:
     - if: $CI_COMMIT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
