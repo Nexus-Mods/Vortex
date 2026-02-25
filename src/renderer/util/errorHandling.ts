@@ -29,9 +29,9 @@ import {
   NEXUS_BASE_URL,
   OAUTH_CLIENT_ID,
 } from "../extensions/nexus_integration/constants";
-import { getErrorMessageOrDefault } from "../../shared/errors";
-import { computeErrorFingerprint, unknownToError } from "../../shared/errors";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 import { getProcessor } from "../../shared/telemetry/setup";
+import { recordErrorOnSpan } from "../../shared/telemetry/spans";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
@@ -777,11 +777,7 @@ export function withTrackedActivity<T>(
   const spanOptions = { attributes: { ...contextAttributes, ...attributes } };
   const spanFn = async (span: Span): Promise<T> => {
     const recordError = (error: Error) => {
-      span.setAttribute(
-        "error.fingerprint",
-        computeErrorFingerprint(error.stack, getApplication().version),
-      );
-      span.recordException(error);
+      recordErrorOnSpan(span, error, getApplication().version);
     };
 
     let hasError = false;
@@ -821,24 +817,7 @@ function applyErrorToSpan(
   attributes?: Record<string, string | number | boolean>,
 ): void {
   span.setAttribute("error.title", title);
-  if (attributes !== undefined) {
-    for (const [key, value] of Object.entries(attributes)) {
-      span.setAttribute(key, value);
-    }
-  }
-  // Attach ambient context (active game mode, extension version, etc.)
-  for (const [key, value] of Object.entries(globalContext)) {
-    span.setAttribute(`context.${key}`, value);
-  }
-  const fingerprint = computeErrorFingerprint(
-    error.stack,
-    getApplication().version,
-  );
-  if (fingerprint !== undefined) {
-    span.setAttribute("error.fingerprint", fingerprint);
-  }
-  span.recordException(error);
-  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  recordErrorOnSpan(span, error, getApplication().version, globalContext, attributes);
 }
 
 /**

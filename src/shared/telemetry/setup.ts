@@ -1,14 +1,8 @@
 import { context, trace } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { Resource } from "@opentelemetry/resources";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from "@opentelemetry/semantic-conventions";
 import Bluebird from "bluebird";
-import os from "os";
 
 /**
  * Patch Bluebird's .then() to propagate OTel context per-callback.
@@ -43,11 +37,12 @@ import {
   type RingBufferOptions,
 } from "./RingBufferSpanProcessor";
 
-const OTLP_ENDPOINT =
+export const OTLP_ENDPOINT =
   process.env.VORTEX_OTLP_ENDPOINT ??
   "https://vortex-collector.nexusmods.com/v1/traces";
 
-const OTLP_HEADERS: Record<string, string> = {};
+export const OTLP_HEADERS: Record<string, string> = {
+};
 
 export interface TelemetrySetupResult {
   provider: BasicTracerProvider;
@@ -58,13 +53,13 @@ export interface TelemetrySetupResult {
 let processorSingleton: RingBufferSpanProcessor | undefined;
 
 /** Process-level singleton reference to the resource */
-let resourceSingleton: Resource | undefined;
+let resourceSingleton: ReturnType<typeof createVortexResource> | undefined;
 
 /**
  * Get the Resource for this process (for manual OTLP export).
  * Returns undefined if telemetry hasn't been initialized yet.
  */
-export function getResource(): Resource | undefined {
+export function getResource(): ReturnType<typeof createVortexResource> | undefined {
   return resourceSingleton;
 }
 
@@ -76,14 +71,7 @@ export function createTelemetryProvider(
   processName: "main" | "renderer",
   options?: RingBufferOptions,
 ): TelemetrySetupResult {
-  const resource = new Resource({
-    [ATTR_SERVICE_NAME]: "vortex",
-    [ATTR_SERVICE_VERSION]: VORTEX_VERSION,
-    "deployment.environment": "test",
-    "process.type": processName,
-    "os.type": os.type(),
-    "os.version": os.release(),
-    "host.arch": os.arch(),
+  const resource = createVortexResource(processName, VORTEX_VERSION, {
     "process.pid": process.pid,
   });
 
