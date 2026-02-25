@@ -374,8 +374,9 @@ describe('Path Normalization and Cross-Platform Handling', () => {
 
       expect(result).not.toBeNull();
       expect(Anchor.name(result.anchor)).toBe('userData');
-      // Case-insensitive filesystem normalizes to lowercase during comparison
-      expect(result.relative as string).toBe('mods/skyui');
+      // Case-insensitive comparison is used only for containment checks;
+      // the extracted relative path preserves the original case from the input
+      expect(result.relative as string).toBe('mods/SkyUI');
     });
 
     test('should reverse-resolve an exact base path match', async () => {

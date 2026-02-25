@@ -142,7 +142,16 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
     if (relative === RelativePathNS.EMPTY) {
       return base;
     }
-    const joined = path.join(base as string, relative as string);
+    // Use platform-appropriate path module if filesystem is available,
+    // falling back to host-OS path module otherwise
+    let pathMod: typeof path;
+    try {
+      const fs = this.getFilesystem();
+      pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+    } catch {
+      pathMod = path;
+    }
+    const joined = pathMod.join(base as string, relative as string);
     return ResolvedPathNS.make(joined);
   }
 
@@ -271,7 +280,8 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
       const isUnder = this.isUnder(normalizedPath, normalizedBase, true);
 
       if (isUnder) {
-        const relative = this.extractRelative(normalizedPath, normalizedBase);
+        // Pass original (non-case-folded) paths to preserve case in the relative portion
+        const relative = this.extractRelative(resolvedPath as string, basePath as string);
 
         // Keep the longest matching base (most specific)
         if (!bestMatch || normalizedBase.length > this.normalizePath(bestMatch.basePath).length) {
@@ -318,11 +328,25 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
   }
 
   /**
-   * Extract relative path from full path given base
+   * Extract relative path from full path given base.
+   * Uses structural normalization (not case-folding) to preserve original case.
    */
   private extractRelative(fullPath: string, basePath: string): RelativePath {
-    const pathMod = this.getFilesystem().platform === 'windows' ? path.win32 : path.posix;
-    const relative = pathMod.relative(basePath, fullPath);
+    const fs = this.getFilesystem();
+    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+    const sep = fs.sep;
+
+    // Normalize structurally (consistent separators, resolve . and ..) but not case
+    const normFull = pathMod.normalize(fullPath);
+    const normBase = pathMod.normalize(basePath);
+
+    if (normFull === normBase || normFull.length <= normBase.length) {
+      return RelativePathNS.EMPTY;
+    }
+
+    // Strip base prefix (plus separator) from full path
+    const prefixLen = normBase.endsWith(sep) ? normBase.length : normBase.length + 1;
+    const relative = normFull.substring(prefixLen);
 
     // Convert to forward slashes (RelativePath convention)
     const normalized = relative.replace(/\\/g, '/');

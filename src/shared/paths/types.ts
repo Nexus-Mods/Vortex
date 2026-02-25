@@ -334,7 +334,10 @@ export namespace ResolvedPath {
    * // => '../downloads'
    */
   export function relative(from: ResolvedPath, to: ResolvedPath): string {
-    return path.relative(from as string, to as string);
+    const fromStr = from as string;
+    // Use win32 for Windows-style paths, posix for Unix-style paths
+    const pathMod = /^[a-zA-Z]:\\/.test(fromStr) ? path.win32 : path.posix;
+    return pathMod.relative(fromStr, to as string);
   }
 }
 
