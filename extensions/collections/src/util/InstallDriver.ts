@@ -39,6 +39,7 @@ class InstallDriver {
   private mOnStop: () => void;
   private mPrepare: Bluebird<void> = Bluebird.resolve();
   private mTimeStarted: number;
+  private mPostprocessing: boolean = false;
 
   private mStateUpdates: any[] = [];
   private mModStatusDebouncer: util.Debouncer = new util.Debouncer(() => {
@@ -47,6 +48,18 @@ class InstallDriver {
     util.batchDispatch(this.mApi.store, actions);
     return Bluebird.resolve();
   }, 100, false, false);
+
+  // Throttle the progress notification to avoid flooding Redux/UI on every
+  // single mod event.  Tracking dispatches (mModStatusDebouncer) are unaffected.
+  // reset=false keeps it from starving, triggerImmediately=true shows instant
+  // feedback on the first event.
+  private mProgressDebouncer: util.Debouncer = new util.Debouncer(
+    () => {
+      if (this.mProfile && this.mGameId && this.mCollection) {
+        this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
+      }
+      return Bluebird.resolve();
+    }, 1000, false, true);
 
   // Collection installation tracking
   private mCurrentSessionId: string;
@@ -172,7 +185,7 @@ class InstallDriver {
         const isMarkedInstalled = this.mInstalledMods.find(m => m.id === mod.id) !== undefined;
         if (isMarkedInstalled) {
           // Been here, done that. Update progress and return
-          this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
+          this.mProgressDebouncer.schedule();
           return;
         }
         if (dependent.type === 'requires') {
@@ -185,7 +198,7 @@ class InstallDriver {
         if ((this.mCollection?.installationPath !== undefined)
           && (dependent.reference.description !== undefined)) {
           if (dependent.type === 'requires') {
-            this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
+            this.mProgressDebouncer.schedule();
           }
           applyPatches(api, this.mCollection,
             gameId, dependent.reference.description, modId, dependent.extra?.patches);
@@ -204,7 +217,7 @@ class InstallDriver {
     api.events.on('did-finish-download', (downloadId: string, downloadState: string) => {
       // not checking whether the download is actually part of this collection because
       // that check may be more expensive than the ui update
-      this.updateProgress(this.mProfile, this.mGameId, this.mCollection);
+      this.mProgressDebouncer.schedule();
 
       // Update mod status to 'downloaded' when download completes successfully
       if (downloadState === 'finished') {
@@ -451,6 +464,10 @@ class InstallDriver {
     return this.mStep;
   }
 
+  public get postprocessing(): boolean {
+    return this.mPostprocessing;
+  }
+
   public get installedMods(): types.IMod[] {
     return this.mInstalledMods;
   }
@@ -678,10 +695,23 @@ class InstallDriver {
           await readCollection(
             this.mApi,
             path.join(stagingPath, mod.installationPath, 'collection.json'));
+
+        // Signal postprocessing and yield to the event loop so the review
+        // dialog can render before the heavy deployment/parsing work begins.
+        this.mPostprocessing = true;
+        this.triggerUpdate();
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+
         await postprocessCollection(this.mApi, gameId, mod, collectionInfo, mods);
 
-        /* COLLECTIONS COMPLETED ANALYTICS */        
-        
+        this.mPostprocessing = false;
+
+        // Refresh again so that postprocessing changes are reflected in the UI.
+        // (and have the finalization step cleared)
+        this.triggerUpdate();
+
+        /* COLLECTIONS COMPLETED ANALYTICS */
+
         const nexusIds = selectors.nexusIdsFromDownloadId(this.mApi.getState(), this.mCollection.archiveId);
 
         const duration_ms = Date.now() - this.mTimeStarted;
@@ -695,6 +725,7 @@ class InstallDriver {
         // });
 
       } catch (err) {
+        this.mPostprocessing = false;
         log('info', 'Failed to apply mod rules from collection. This is normal if this is the '
           + 'platform where the collection has been created.');
         this.mDebounce.schedule(undefined, this.collectionSlug, this.revisionNumber, err);
@@ -703,11 +734,15 @@ class InstallDriver {
   }
 
   private onStop() {
+    this.mPostprocessing = false;
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
 
       // Flush pending tracking updates before cleanup so they aren't lost
       this.mModStatusDebouncer.runNow(() => undefined);
+      // Cancel any pending progress notification — the notification is about
+      // to be dismissed anyway and we don't want it to fire after cleanup.
+      this.mProgressDebouncer.clear();
 
       // Ensure InstallManager cleans up its internal state (pending installs,
       // active installs, phase state) for this collection. This is idempotent —
