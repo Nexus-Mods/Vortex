@@ -1,4 +1,3 @@
-import type { IFeedbackResponse } from "@nexusmods/nexus-api";
 import type ZipT from "node-7z";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -17,8 +16,7 @@ import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
-import { getErrorMessageOrDefault } from "../../shared/errors";
-import { jsonRequest } from "./network";
+import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
 import {
   StalledError,
   TemporaryError,
@@ -26,21 +24,13 @@ import {
   ArchiveBrokenError,
   UserCanceled,
 } from "./CustomErrors";
-import {
-  didIgnoreError,
-  getErrorContext,
-  isOutdated,
-  sendReport,
-  toError,
-} from "./errorHandling";
+import { didIgnoreError, isOutdated, recordErrorSpan } from "./errorHandling";
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import opn from "./opn";
 import { flatten, nexusModsURL, setdefault, truthy } from "./util";
-
-const GITHUB_PROJ = "Nexus-Mods/Vortex";
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -128,51 +118,6 @@ export function showInfo<S>(
       displayMS: calcDuration(message.length),
     }),
   );
-}
-
-function genGithubUrl(issueId: number) {
-  return `https://github.com/Nexus-Mods/Vortex/issues/${issueId}`;
-}
-
-function genFeedbackText(
-  response: IFeedbackResponse,
-  githubInfo?: any,
-): string {
-  const lines = [
-    "Thank you for your feedback!",
-    "",
-    "If you're reporting a bug, please don't forget to leave additional " +
-      "information in the form that should have opened in your webbrowser.",
-    "",
-  ];
-
-  if (response.github_issue === undefined) {
-    lines.push("Your feedback will be reviewed before it is published.");
-  } else {
-    if (
-      (githubInfo !== undefined && githubInfo.state === "closed") ||
-      response.github_issue.issue_state === "closed"
-    ) {
-      lines.push(
-        "This issue was reported before and seems to be fixed already. " +
-          "If you're not running the newest version of Vortex, please update.",
-      );
-    } else if (
-      (githubInfo !== undefined && githubInfo.comments >= 1) ||
-      response.count > 1
-    ) {
-      lines.push(
-        "This is not the first report about this problem, so your report " +
-          "was added as a comment to the existing one.",
-      );
-    } else {
-      lines.push("You were the first to report this issue.");
-    }
-    const url = genGithubUrl(response.github_issue.issue_number);
-    lines.push(`You can review the created issue on [url]${url}[/url]`);
-  }
-
-  return lines.join("[br][/br]");
 }
 
 const noReportErrors = [
@@ -312,7 +257,6 @@ export function showError(
   if (options === undefined) {
     options = {};
   }
-  const sourceErr = new Error();
 
   if (
     options.extensionName === undefined &&
@@ -329,6 +273,11 @@ export function showError(
       : shouldAllowReport(details, options);
 
   log(allowReport ? "error" : "warn", title, err);
+
+  if (allowReport && !isOutdated() && !didIgnoreError()) {
+    const error = details instanceof Error ? details : unknownToError(details);
+    recordErrorSpan(title, error);
+  }
 
   const content: IDialogContent =
     truthy(options) && options.isHTML
@@ -399,19 +348,6 @@ export function showError(
     );
   }
 
-  if (
-    options.attachments !== undefined &&
-    options.attachments.length > 0 &&
-    allowReport
-  ) {
-    content.text =
-      (content.text !== undefined ? content.text + "\n\n" : "") +
-      "Note: If you report this error, the following data will be added to the report:\n" +
-      options.attachments
-        .map((attach) => ` - ${attach.description}`)
-        .join("\n");
-  }
-
   let extIssueTrackerURL: string | undefined = undefined;
   if (options.extension?.info?.issueTrackerURL !== undefined) {
     extIssueTrackerURL = options.extension.info.issueTrackerURL;
@@ -437,8 +373,6 @@ export function showError(
   }
 
   const actions: IDialogAction[] = [];
-
-  const context = details?.context ?? getErrorContext();
 
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     if (extIssueTrackerURL !== undefined) {
@@ -473,44 +407,6 @@ export function showError(
             ),
           );
         },
-      });
-    } else if (options.extension === undefined) {
-      actions.push({
-        label: "Report",
-        action: () =>
-          bundleAttachment(options)
-            .then((attachmentBundle) =>
-              sendReport(
-                "error",
-                toError(details, title, options, sourceErr.stack),
-                context,
-                ["error"],
-                "",
-                process.type,
-                undefined,
-                attachmentBundle,
-              ),
-            )
-            .then((response) => {
-              if (response?.github_issue !== undefined) {
-                const { issue_number } = response.github_issue;
-                const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${issue_number}`;
-                jsonRequest<any>(githubURL)
-                  .catch(() => undefined)
-                  .then((githubInfo) => {
-                    dispatch(
-                      showDialog(
-                        "success",
-                        "Issue reported",
-                        {
-                          bbcode: genFeedbackText(response, githubInfo),
-                        },
-                        [{ label: "Close" }],
-                      ),
-                    );
-                  });
-              }
-            }),
       });
     }
   }

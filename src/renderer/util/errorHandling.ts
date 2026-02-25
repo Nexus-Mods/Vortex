@@ -9,11 +9,11 @@ import PromiseBB from "bluebird";
 import { dialog as dialogIn, ipcRenderer } from "electron";
 import {
   type Span,
+  context,
   ROOT_CONTEXT,
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
-import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
 import * as os from "os";
@@ -711,10 +711,13 @@ export function withContext(
   value: string,
   fun: () => PromiseBB<any>,
 ) {
-  setErrorContext(id, value);
-  return fun().finally(() => {
-    clearErrorContext(id);
-  });
+  return withTrackedActivity(
+    "vortex.context",
+    id,
+    { "context.value": value },
+    () => fun(),
+    { root: true },
+  );
 }
 
 /**
@@ -765,7 +768,13 @@ export function withTrackedActivity<T>(
   options?: TrackedActivityOptions,
 ): Promise<T> {
   const tracer = trace.getTracer(tracerName);
-  const spanOptions = { attributes };
+
+  // Attach ambient context (active game mode, extension version, etc.)
+  const contextAttributes: Record<string, string> = {};
+  for (const [key, value] of Object.entries(globalContext)) {
+    contextAttributes[`context.${key}`] = value;
+  }
+  const spanOptions = { attributes: { ...contextAttributes, ...attributes } };
   const spanFn = async (span: Span): Promise<T> => {
     const recordError = (error: Error) => {
       span.setAttribute(
@@ -803,4 +812,60 @@ export function withTrackedActivity<T>(
   return options?.root === true
     ? tracer.startActiveSpan(spanName, spanOptions, ROOT_CONTEXT, spanFn)
     : tracer.startActiveSpan(spanName, spanOptions, spanFn);
+}
+
+function applyErrorToSpan(
+  span: Span,
+  title: string,
+  error: Error,
+  attributes?: Record<string, string | number | boolean>,
+): void {
+  span.setAttribute("error.title", title);
+  if (attributes !== undefined) {
+    for (const [key, value] of Object.entries(attributes)) {
+      span.setAttribute(key, value);
+    }
+  }
+  // Attach ambient context (active game mode, extension version, etc.)
+  for (const [key, value] of Object.entries(globalContext)) {
+    span.setAttribute(`context.${key}`, value);
+  }
+  const fingerprint = computeErrorFingerprint(
+    error.stack,
+    getApplication().version,
+  );
+  if (fingerprint !== undefined) {
+    span.setAttribute("error.fingerprint", fingerprint);
+  }
+  span.recordException(error);
+  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+}
+
+/**
+ * Record an error on the currently active span, or create a new root span
+ * if none exists. The RingBufferSpanProcessor will detect the ERROR status
+ * and export the trace automatically.
+ */
+export function recordErrorSpan(
+  title: string,
+  error: Error,
+  attributes?: Record<string, string | number | boolean>,
+): void {
+  const activeSpan = trace.getSpan(context.active());
+
+  if (activeSpan !== undefined) {
+    applyErrorToSpan(activeSpan, title, error, attributes);
+  } else {
+    // No active span — create a new root span for this orphan error
+    const tracer = trace.getTracer("vortex.errors");
+    tracer.startActiveSpan(
+      "error.report",
+      { attributes: { "error.title": title, ...attributes } },
+      ROOT_CONTEXT,
+      (span) => {
+        applyErrorToSpan(span, title, error, attributes);
+        span.end();
+      },
+    );
+  }
 }
