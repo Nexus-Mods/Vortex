@@ -413,11 +413,14 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public async UNSAFE_componentWillReceiveProps(newProps: ICollectionPageProps) {
+    // Note: notification changes are intentionally NOT checked here because
+    // updateModsEx() is expensive (multiple iterations over all mods) and
+    // notification updates fire very frequently during collection installation.
+    // Per-mod progress is already updated when mods/downloads change.
     if ((this.props.mods !== newProps.mods)
         || (this.props.profile !== newProps.profile)
         || (this.props.collection !== newProps.collection)
-        || (this.props.downloads !== newProps.downloads)
-        || this.installingNotificationsChanged(this.props, newProps)) {
+        || (this.props.downloads !== newProps.downloads)) {
       this.nextState.modsEx = this.updateModsEx(this.props, newProps);
       const { collection } = this.props;
       const { attributes } = collection;

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Button, Media, Panel } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
-import { actions, log, Modal, tooltip, types, util } from 'vortex-api';
+import { actions, log, Modal, Spinner, tooltip, types, util } from 'vortex-api';
 import { NAMESPACE } from '../../constants';
 
 import YouCuratedTag from './YouCuratedThisTag';
@@ -93,6 +93,8 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
 
   const ownCollection: boolean = driver.collectionInfo?.user?.memberId === userInfo?.userId;
 
+  const finalizing = driver.postprocessing;
+
   return (
     <Modal
       id='install-finished-dialog'
@@ -103,7 +105,14 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
         <Modal.Title>{t('Collection installation complete')}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <div className='collection-finished-body'>
+        {finalizing ? (
+          <div className='collection-finished-finalizing'>
+            <Spinner />
+            {t('Finalizing installation - deploying mods and applying collection rules...')}
+          </div>
+        ) : null}
+        <div className='collection-finished-body'
+             style={finalizing ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
           <Media.Left>
             <CollectionThumbnail
               t={t}
@@ -160,15 +169,15 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
       </Modal.Body>
       {(optionals.length > 0) ? (
         <Modal.Footer>
-          <Button onClick={skip}>
+          <Button onClick={skip} disabled={finalizing}>
             {t('No Thanks')}
           </Button>
-          <Button onClick={showOptionals}>{t('View optional mods')}</Button>
-          <Button onClick={installAllOptionals}>{t('Install optional mods')}</Button>
+          <Button onClick={showOptionals} disabled={finalizing}>{t('View optional mods')}</Button>
+          <Button onClick={installAllOptionals} disabled={finalizing}>{t('Install optional mods')}</Button>
         </Modal.Footer>
       ) : (
         <Modal.Footer>
-          <Button onClick={skip}>
+          <Button onClick={skip} disabled={finalizing}>
             {t('Done')}
           </Button>
         </Modal.Footer>
