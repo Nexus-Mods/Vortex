@@ -390,7 +390,7 @@ async function removeCollection(api: types.IExtensionApi,
         const download = state.persistent.downloads.files[dlId];
         if ((download !== undefined)
           && (deleteArchives || (download.state !== 'finished'))) {
-          await util.toPromise(cb => api.events.emit('remove-download', dlId, cb, { silent: true }));
+          await util.toPromise(cb => api.events.emit('remove-download', dlId, cb, { silent: true, confirmed: true }));
         }
       }
       doProgress('Removing downloads', 50 * ((completed++) / collection.rules.length));
@@ -419,7 +419,7 @@ async function removeCollection(api: types.IExtensionApi,
       doProgress('Removing collection', 0.99);
       const download = state.persistent.downloads.files[collection.archiveId];
       if (download !== undefined) {
-        await util.toPromise(cb => api.events.emit('remove-download', collection.archiveId, cb, { silent: true }));
+        await util.toPromise(cb => api.events.emit('remove-download', collection.archiveId, cb, { silent: true, confirmed: true }));
       }
       await util.toPromise(cb => api.events.emit('remove-mod', gameId, modId, cb, {
         silent: true,
