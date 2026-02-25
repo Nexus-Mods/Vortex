@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { IError } from "../types/IError";
+import { getApplication } from "./application";
 
 // remove the file names from stack lines because they contain local paths
 function removeFileNames(input: string): string {
@@ -96,8 +98,34 @@ export function extractToken(error: IError): string {
   return hashStack.join("\n");
 }
 
+/**
+ * Compute a fingerprint from the stack trace call frames and app version.
+ * Same error from the same code path in the same version produces the same hash,
+ * which can be used for deduplication on the backend.
+ */
+export function computeErrorFingerprint(
+  stack: string | undefined,
+  appVersion: string,
+): string | undefined {
+  if (stack === undefined) return undefined;
+  const frames = stack
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("at "));
+  if (frames.length === 0) return undefined;
+  const input = frames.join("\n") + "\n" + appVersion;
+  return createHash("sha256").update(input).digest("hex");
+}
+
 export function genHash(error: IError) {
-  const { createHash } = require("crypto");
+  const fingerprint = computeErrorFingerprint(
+    error.stack,
+    getApplication().version,
+  );
+  if (fingerprint !== undefined) {
+    return fingerprint;
+  }
+  // Fall back to message-based hash when no usable stack
   const hash = createHash("md5");
   return hash.update(extractToken(error)).digest("hex");
 }

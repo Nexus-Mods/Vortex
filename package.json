@@ -56,7 +56,7 @@
     "preinstall": "node preinstall.js",
     "postinstall": "node postinstall.js",
     "install:debug": "cross-env VORTEX_BUILD_CONFIG=Debug yarn install",
-    "test": "jest --no-cache",
+    "test": "jest --no-cache --config jest.config.mjs",
     "build": "yarn run check_packages && yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . --watch",
     "buildext": "node ./tools/buildScripts/buildSingleExtension.js",
