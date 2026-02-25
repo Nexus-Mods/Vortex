@@ -5,15 +5,8 @@ variables:
   NO_PARALLEL: "true" # unreliable if false
   GIT_SUBMODULE_STRATEGY: recursive
 
-# The pipeline will run on:
-# - Every merge request
-# - Every commit to any branch (unless an MR is already open for that branch, to avoid duplicates)
-# - Manual web triggers
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
     - if: $CI_COMMIT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
 
