@@ -81,6 +81,7 @@ import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
 import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
+import { createTelemetryProvider } from "../shared/telemetry/setup";
 import { setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
@@ -126,6 +127,8 @@ import { bytesToString, getAllPropertyNames } from "./util/util";
 import LoadingScreen from "./views/LoadingScreen";
 
 log("debug", "renderer process started", { pid: process["pid"] });
+
+createTelemetryProvider("renderer");
 
 setVortexPath("temp", () => path.join(getVortexPath("userData"), "temp"));
 
@@ -188,11 +191,7 @@ let store: ThunkStore<IState>;
 
 const terminateFromError = (error: any, allowReport?: boolean) => {
   log("warn", "about to report an error", { stack: new Error().stack });
-  terminate(
-    toError(error),
-    store !== undefined ? store.getState() : {},
-    allowReport,
-  );
+  terminate(toError(error), allowReport);
 };
 
 function errorHandler(evt: any) {

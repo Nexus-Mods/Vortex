@@ -32,6 +32,7 @@ import winapi from "winapi-bindings";
 
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from "../shared/constants";
 import { VORTEX_VERSION } from "../shared/constants";
+import { createTelemetryProvider, getTracer } from "../shared/telemetry/setup";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
@@ -160,6 +161,8 @@ async function main(): Promise<void> {
     "disable-features",
     "UseEcoQoSForBackgroundProcess",
   );
+
+  createTelemetryProvider("main");
 
   initIpcHandlers();
   StylesheetCompiler.init();

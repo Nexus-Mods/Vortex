@@ -79,6 +79,7 @@ import {
   getVisibleWindow,
   terminate,
   withContext as withErrorContext,
+  withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
 
@@ -267,6 +268,7 @@ export {
   userFriendlyTime,
   walk,
   withErrorContext,
+  withTrackedActivity,
   writeFileAtomic,
   CollectionsDownloadCompletedEvent,
   CollectionsDownloadFailedEvent,

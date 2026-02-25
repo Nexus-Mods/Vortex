@@ -7,6 +7,13 @@ import type { BrowserWindow } from "electron";
 
 import PromiseBB from "bluebird";
 import { dialog as dialogIn, ipcRenderer } from "electron";
+import {
+  type Span,
+  ROOT_CONTEXT,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
+import { ipcRenderer } from "electron";
 import * as fs from "fs-extra";
 import I18next from "i18next";
 import * as os from "os";
@@ -23,6 +30,8 @@ import {
   OAUTH_CLIENT_ID,
 } from "../extensions/nexus_integration/constants";
 import { getErrorMessageOrDefault } from "../../shared/errors";
+import { computeErrorFingerprint, unknownToError } from "../../shared/errors";
+import { getProcessor } from "../../shared/telemetry/setup";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
@@ -719,4 +728,79 @@ export function contextify(err: Error): Error {
 
 export function getErrorContext(): IErrorContext {
   return { ...globalContext };
+}
+
+export type SetAttribute = (
+  key: string,
+  value: string | number | boolean,
+) => void;
+
+export type SetError = (error: Error) => void;
+
+export type TrackedFunction<T> = (
+  setAttribute: SetAttribute,
+  setError: SetError,
+) => PromiseBB<T> | Promise<T>;
+
+export interface TrackedActivityOptions {
+  /** Start a new root trace instead of inheriting the active parent span. */
+  root?: boolean;
+}
+
+/**
+ * Execute a function wrapped in an OTel span with full control over
+ * tracer name, span name, and attributes.
+ * The span is automatically ended when the returned promise settles.
+ * The callback receives a `setAttribute` function for adding dynamic attributes.
+ *
+ * Pass `{ root: true }` for top-level operations (downloads, installs) that
+ * should start a new trace rather than becoming children of whatever span
+ * happens to be active in the Bluebird chain.
+ */
+export function withTrackedActivity<T>(
+  tracerName: string,
+  spanName: string,
+  attributes: Record<string, string | number | boolean>,
+  fun: TrackedFunction<T>,
+  options?: TrackedActivityOptions,
+): Promise<T> {
+  const tracer = trace.getTracer(tracerName);
+  const spanOptions = { attributes };
+  const spanFn = async (span: Span): Promise<T> => {
+    const recordError = (error: Error) => {
+      span.setAttribute(
+        "error.fingerprint",
+        computeErrorFingerprint(error.stack, getApplication().version),
+      );
+      span.recordException(error);
+    };
+
+    let hasError = false;
+    try {
+      const result = await fun(
+        (key, value) => span.setAttribute(key, value),
+        (error) => {
+          hasError = true;
+          recordError(error);
+        },
+      );
+      span.setStatus({
+        code: hasError ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+      });
+      return result;
+    } catch (unknownErr) {
+      const err = unknownToError(unknownErr);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err?.message,
+      });
+      recordError(err);
+      throw err;
+    } finally {
+      span.end();
+    }
+  };
+  return options?.root === true
+    ? tracer.startActiveSpan(spanName, spanOptions, ROOT_CONTEXT, spanFn)
+    : tracer.startActiveSpan(spanName, spanOptions, spanFn);
 }
