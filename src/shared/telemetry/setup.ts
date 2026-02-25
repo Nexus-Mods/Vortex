@@ -32,6 +32,7 @@ function patchBluebirdContext(): void {
 }
 
 import { VORTEX_VERSION } from "../constants";
+import { createVortexResource } from "./resources";
 import {
   RingBufferSpanProcessor,
   type RingBufferOptions,
@@ -54,6 +55,17 @@ let processorSingleton: RingBufferSpanProcessor | undefined;
 
 /** Process-level singleton reference to the resource */
 let resourceSingleton: ReturnType<typeof createVortexResource> | undefined;
+
+/** Whether telemetry export is enabled (controlled by analytics opt-in). */
+let telemetryExportEnabled = false;
+
+export function setTelemetryEnabled(enabled: boolean): void {
+  telemetryExportEnabled = enabled;
+}
+
+export function isTelemetryEnabled(): boolean {
+  return telemetryExportEnabled;
+}
 
 /**
  * Get the Resource for this process (for manual OTLP export).
@@ -83,6 +95,7 @@ export function createTelemetryProvider(
   const processor = new RingBufferSpanProcessor({
     ...options,
     onExportSpans: (spans) => {
+      if (!telemetryExportEnabled) return;
       exporter.export(spans, () => {});
     },
   });

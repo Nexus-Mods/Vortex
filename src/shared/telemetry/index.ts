@@ -6,6 +6,8 @@ export {
   getProcessor,
   getResource,
   getTracer,
+  isTelemetryEnabled,
+  setTelemetryEnabled,
 } from "./setup";
 export type { TelemetrySetupResult } from "./setup";
 export { recordErrorOnSpan } from "./spans";
