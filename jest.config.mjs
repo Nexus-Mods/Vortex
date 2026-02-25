@@ -2,13 +2,8 @@
 const config = {
   testEnvironment: "jsdom",
   transform: {
-    "^.+\\.(ts|tsx)$": ["ts-jest", { tsconfig: "tsconfig.renderer.json" }],
+    "^.+\\.(ts|tsx)$": "ts-jest",
     "^.+\\.(js|jsx)$": "babel-jest",
-  },
-  globals: {
-    "ts-jest": {
-      tsconfig: "tsconfig.renderer.json",
-    },
   },
   moduleNameMapper: {
     "^cheerio$": "<rootDir>/__mocks__/cheerio.js",
