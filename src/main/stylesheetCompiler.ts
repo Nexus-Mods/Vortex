@@ -1,4 +1,5 @@
 import path from "path";
+import { pathToFileURL } from "url";
 import sass from "sass";
 
 import getVortexPath from "./getVortexPath";
@@ -40,12 +41,17 @@ export default class StylesheetCompiler {
   }
 
   private createSource(filePaths: string[]): string {
+    let themePath: string = ".";
+
     const source = filePaths
       .map((filePath) => {
         const fixedPath = StylesheetCompiler.fixPath(filePath);
         const importDecleration = `@import "${fixedPath}";`;
 
         if (path.extname(fixedPath) !== ".scss") {
+          if (path.dirname(filePath) !== ".") {
+            themePath = path.dirname(filePath);
+          }
           return importDecleration + "\n";
         }
 
@@ -56,7 +62,7 @@ export default class StylesheetCompiler {
       })
       .join("\n");
 
-    return source;
+    return `$theme-path: "${pathToFileURL(themePath)}";\n` + source;
   }
 
   private compile(source: string): string {
