@@ -412,7 +412,11 @@ function findCollectionByDownload(
   }
 
   const activeCollection = getCollectionActiveSession(state);
-  if (sourceModId != null && activeCollection == null) {
+  // Always try direct rule matching when sourceModId is available - this uses
+  // testModReference which is more robust than the session-based field equality
+  // checks below.  Previously this was gated on activeCollection == null which
+  // meant the robust path was skipped during active collection installations.
+  if (sourceModId != null) {
     const mods: { [modId: string]: IMod } = state.persistent.mods[gameId];
     const collectionMod = mods?.[sourceModId];
     if (!collectionMod || !download?.id) {

@@ -1150,6 +1150,12 @@ function once(api: types.IExtensionApi) {
     return Promise.resolve();
   });
 
+  api.events.on('did-install-collection', (gameId: string) => {
+    updateRulesDebouncer.schedule(() => {
+      updateConflictDebouncer.schedule(undefined, true);
+    }, gameId);
+  });
+
   api.events.on('profile-did-change', () => {
     const gameMode = selectors.activeGameId(store.getState());
     updateMetaRules(api, gameMode, store.getState().persistent.mods[gameMode])
