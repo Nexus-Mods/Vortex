@@ -111,7 +111,8 @@ export function computeErrorFingerprint(
   const frames = stack
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.startsWith("at "));
+    .filter((line) => line.startsWith("at "))
+    .map(sanitizeStackLine);
   if (frames.length === 0) return undefined;
   const input = frames.join("\n") + "\n" + appVersion;
   return createHash("sha256").update(input).digest("hex");
