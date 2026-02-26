@@ -9,10 +9,6 @@ import pLimit from "p-limit";
 
 import projectGroups from "./BuildSubprojects.json" with { type: "json" };
 
-const npmcli = process.platform === "win32" ? "npm.cmd" : "npm";
-const yarncli = process.platform === "win32" ? "yarn.cmd" : "yarn";
-const useYarn = true;
-
 const copyfilesAsync = (args, config) =>
   new Promise((resolve) => copyfiles(args, config, resolve));
 
@@ -96,15 +92,7 @@ function getId() {
 }
 
 function npm(command, args, options, out) {
-  if (!useYarn && command === "add") {
-    command = "install";
-  }
-  return spawnAsync(
-    useYarn ? yarncli : npmcli,
-    [command, ...args, "--mutex", "file"],
-    options,
-    out,
-  );
+  return spawnAsync("pnpm", [command, ...args], options, out);
 }
 
 async function changes(basePath, patterns, force) {
@@ -152,9 +140,7 @@ async function updateSourceMap(filePath) {
 
 async function processCustom(project, buildDir, feedback, noparallel) {
   const start = Date.now();
-  let instArgs = noparallel ? ["--network-concurrency", "1"] : [];
 
-  await npm("install", instArgs, { cwd: project.path }, feedback);
   await npm(
     "run",
     [typeof project.build === "string" ? project.build : "build"],

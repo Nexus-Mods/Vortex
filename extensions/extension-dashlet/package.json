@@ -22,6 +22,7 @@
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "typescript": "^4.9.5",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "memoize-one": "^5.1.1"
+    "memoize-one": "^5.1.1",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }

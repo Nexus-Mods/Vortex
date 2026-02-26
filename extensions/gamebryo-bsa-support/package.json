@@ -11,6 +11,9 @@
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
     "build": "npm run webpack && npm run copy_bsatk && extractInfo"
   },
+  "os": [
+    "win32"
+  ],
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
@@ -18,12 +21,12 @@
     "@types/node": "^22.14.0",
     "@types/rimraf": "^3.0.2",
     "bluebird": "^3.7.2",
-    "bsatk": "Nexus-Mods/node-bsatk",
+    "bsatk": "Nexus-Mods/node-bsatk#fix/linux-build",
     "copyfiles": "^2.4.1",
     "rimraf": "^3.0.2",
     "tmp": "^0.1.0",
     "ts-loader": "^9.5.1",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
   }

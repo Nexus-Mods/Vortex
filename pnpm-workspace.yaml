@@ -10,14 +10,19 @@ packages:
 
 onlyBuiltDependencies:
   - "@parcel/watcher"
+  - ba2tk
+  - bsatk
+  - bsdiff-node
   - core-js
   - crash-dump
   - diskusage
   - drivelist
   - electron
   - fomod-installer-native
+  - font-scanner
   - leveldown
   - native-errors
+  - unrs-resolver
   - vortexmt
   - winapi-bindings
   - xxhash-addon

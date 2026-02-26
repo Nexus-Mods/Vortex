@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "build": "npm run webpack && node download_dependencies.js && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -20,6 +20,11 @@
     "node-7z": "Nexus-Mods/node-7z",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "react": "^16.12.0",
-    "react-i18next": "^11.11.0"
+    "react-i18next": "^11.11.0",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4",
+    "bluebird": "^3.7.2",
+    "@types/bluebird": "~3.5.20",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }

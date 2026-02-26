@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "bundle7z": "7z a -t7z test-setup.7z .\\dist\\index.js .\\dist\\info.json",
     "build": "npm run webpack && extractInfo"
   },
@@ -25,6 +25,11 @@
     "react-bootstrap": "^0.32.4",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4",
+    "bluebird": "^3.7.2",
+    "@types/bluebird": "~3.5.20",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }

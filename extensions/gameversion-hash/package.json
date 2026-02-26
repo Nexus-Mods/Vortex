@@ -4,7 +4,7 @@
   "description": "An alternative to conventional game version resolution aiming to identify game version based on file hashes. This is useful when the game is in Early Access or the user facing version is not easily resolved.",
   "main": "./dist/index.js",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
+    "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "build": "npm run webpack && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -21,7 +21,10 @@
     "react-dom": "^16.12.0",
     "typescript": "^4.9.5",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "vortexmt": "Nexus-Mods/node-vortexmt"
+    "vortexmt": "Nexus-Mods/node-vortexmt",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   },
   "dependencies": {
     "simple-git": "^3.7.1"

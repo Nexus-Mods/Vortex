@@ -18,8 +18,9 @@
     "i18next": "^8.4.3",
     "redux-thunk": "^2.2.0",
     "ts-loader": "^4.4.2",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
     "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1"
+    "webpack-cli": "^4.9.1",
+    "redux": "^4.0.4"
   }
 }

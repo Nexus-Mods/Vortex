@@ -157,15 +157,27 @@ importers:
       react-redux:
         specifier: ^5.0.7
         version: 5.1.2(react@16.14.0)(redux@4.2.1)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.7.4
         version: 1.8.0
       semver:
         specifier: ^5.5.0
         version: 5.7.2
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.16.7)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/collections:
     dependencies:
@@ -185,6 +197,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/lodash':
+        specifier: ~4.17.24
+        version: 4.17.24
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.11
@@ -221,6 +236,9 @@ importers:
       jest:
         specifier: ^30.1.3
         version: 30.2.0(@types/node@22.19.11)(babel-plugin-macros@3.1.0)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.23
       memoize-one:
         specifier: ^6.0.0
         version: 6.0.0
@@ -282,7 +300,7 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortexmt:
         specifier: Nexus-Mods/node-vortexmt
@@ -338,6 +356,9 @@ importers:
 
   extensions/documentation:
     devDependencies:
+      '@types/lodash':
+        specifier: ~4.17.24
+        version: 4.17.24
       '@types/react':
         specifier: '16'
         version: 16.14.66
@@ -350,6 +371,9 @@ importers:
       i18next:
         specifier: ^19.0.1
         version: 19.9.2
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.23
       react-bootstrap:
         specifier: ^0.33.0
         version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -359,6 +383,9 @@ importers:
       react-i18next:
         specifier: ^11.11.0
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
@@ -366,7 +393,7 @@ importers:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -413,6 +440,9 @@ importers:
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
@@ -464,6 +494,9 @@ importers:
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
+      redux-thunk:
+        specifier: ^2.3.0
+        version: 2.4.2(redux@4.2.1)
       tmp:
         specifier: ^0.0.31
         version: 0.0.31
@@ -471,7 +504,7 @@ importers:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -485,6 +518,9 @@ importers:
 
   extensions/fnis-integration:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/node':
         specifier: ^10.3.4
         version: 10.17.60
@@ -511,13 +547,19 @@ importers:
         version: 6.26.3
       babel-loader:
         specifier: ^7.1.4
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2(webpack-cli@5.1.4))
+        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       copyfiles:
         specifier: ^2.1.1
         version: 2.4.1
       exe-version:
         specifier: Nexus-Mods/node-exe-version
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
+      i18next:
+        specifier: ^19.0.1
+        version: 19.9.2
       modmeta-db:
         specifier: Nexus-Mods/modmeta-db
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@10.0.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -533,18 +575,39 @@ importers:
       react-redux:
         specifier: ^5.0.7
         version: 5.1.2(react@16.14.0)(redux@4.2.1)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
+      redux-thunk:
+        specifier: ^2.3.0
+        version: 2.4.2(redux@4.2.1)
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
+      winapi-bindings:
+        specifier: git+https://github.com/Nexus-Mods/node-winapi-bindings
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
 
   extensions/game-pillarsofeternity2:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/node':
         specifier: ^10.3.4
         version: 10.17.60
@@ -571,10 +634,16 @@ importers:
         version: 6.26.3
       babel-loader:
         specifier: ^7.1.4
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2(webpack-cli@5.1.4))
+        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       copyfiles:
         specifier: ^2.1.1
         version: 2.4.1
+      react:
+        specifier: ^16.12.0
+        version: 16.14.0
       react-dnd:
         specifier: ^10.0.2
         version: 10.0.2(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -593,12 +662,24 @@ importers:
       typescript:
         specifier: ^4.4.3
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-archive-check:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^12.1.0
         version: 12.1.0
@@ -611,6 +692,9 @@ importers:
       '@types/redux-thunk':
         specifier: ^2.1.0
         version: 2.1.0(redux@4.2.1)
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       react-bootstrap:
         specifier: ^0.32.4
         version: 0.32.4(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -618,11 +702,17 @@ importers:
         specifier: ^4.9.5
         version: 4.9.5
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/gamebryo-archive-invalidation:
     devDependencies:
@@ -686,17 +776,20 @@ importers:
       react-i18next:
         specifier: ^11.2.7
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.7.3
         version: 1.8.0
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
+      redux-thunk:
+        specifier: ^2.3.0
+        version: 2.4.2(redux@4.2.1)
       ts-loader:
         specifier: ^9.4.2
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: Nexus-Mods/vortex-parse-ini
@@ -728,9 +821,6 @@ importers:
       rimraf:
         specifier: ^2.6.1
         version: 2.7.1
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       ts-loader:
         specifier: ^9.4.2
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -759,17 +849,14 @@ importers:
         specifier: ^3.7.2
         version: 3.7.2
       bsatk:
-        specifier: Nexus-Mods/node-bsatk
-        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/0e4f9b09996cc6606339580734050724ee6a44c3
+        specifier: Nexus-Mods/node-bsatk#fix/linux-build
+        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/adba59d35aab4d2c5e757b467026c60df60b7172
       copyfiles:
         specifier: ^2.4.1
         version: 2.4.1
       rimraf:
         specifier: ^3.0.2
         version: 3.0.2
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       tmp:
         specifier: ^0.1.0
         version: 0.1.0
@@ -777,7 +864,7 @@ importers:
         specifier: ^9.5.1
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.94.0
@@ -833,6 +920,9 @@ importers:
       react-i18next:
         specifier: ^11.11.0
         version: 11.18.6(i18next@15.1.3)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
@@ -840,7 +930,7 @@ importers:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -1049,9 +1139,6 @@ importers:
       redux-act:
         specifier: ^1.7.7
         version: 1.8.0
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       ts-loader:
         specifier: ^9.5.1
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -1115,9 +1202,6 @@ importers:
       redux-act:
         specifier: ^1.7.3
         version: 1.8.0
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       ts-loader:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -1175,33 +1259,63 @@ importers:
 
   extensions/gamestore-gog:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/node':
         specifier: ^12.12.14
         version: 12.20.55
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: Nexus-Mods/node-winapi-bindings
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
 
   extensions/gamestore-origin:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/libxmljs':
         specifier: ^0.18.4
         version: 0.18.13
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       turbowalk:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: Nexus-Mods/node-winapi-bindings
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -1211,15 +1325,30 @@ importers:
 
   extensions/gamestore-uplay:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/node':
         specifier: ^12.12.14
         version: 12.20.55
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: Nexus-Mods/node-winapi-bindings
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -1290,12 +1419,21 @@ importers:
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
       vortexmt:
         specifier: Nexus-Mods/node-vortexmt
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/issue-tracker:
     devDependencies:
@@ -1416,9 +1554,6 @@ importers:
       redux-act:
         specifier: ^1.1.0
         version: 1.8.0
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       ts-loader:
         specifier: ^9.4.2
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -1512,6 +1647,9 @@ importers:
 
   extensions/mo-import:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^12.1.0
         version: 12.1.0
@@ -1533,6 +1671,9 @@ importers:
       '@types/react-router':
         specifier: ^2.0.41
         version: 2.0.61
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       copyfiles:
         specifier: ^2.1.1
         version: 2.4.1
@@ -1560,18 +1701,30 @@ importers:
       react-i18next:
         specifier: ^1.10.1
         version: 1.11.0(i18next@10.6.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       semver:
         specifier: ^6.2.0
         version: 6.3.1
       shortid:
         specifier: 2.2.17
         version: 2.2.17
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       vortex-parse-ini:
         specifier: Nexus-Mods/vortex-parse-ini
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/mod-content:
     devDependencies:
@@ -1614,6 +1767,9 @@ importers:
       react-bootstrap:
         specifier: ^0.33.0
         version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       ts-loader:
         specifier: ^9.4.2
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -1621,7 +1777,7 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.75.0
@@ -1635,6 +1791,9 @@ importers:
       '@types/immutability-helper':
         specifier: ^2.0.15
         version: 2.6.3
+      '@types/lodash':
+        specifier: ~4.17.24
+        version: 4.17.24
       '@types/minimatch':
         specifier: ^2.0.29
         version: 2.0.29
@@ -1656,6 +1815,9 @@ importers:
       '@types/react-sortable-tree':
         specifier: ^0.3.12
         version: 0.3.23(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      '@types/semver':
+        specifier: ~7.7.1
+        version: 7.7.1
       '@types/webpack':
         specifier: ^2.2.11
         version: 2.2.16
@@ -1692,6 +1854,9 @@ importers:
       json-loader:
         specifier: ^0.5.7
         version: 0.5.7
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.23
       memoize-one:
         specifier: ^5.1.1
         version: 5.2.1
@@ -1710,6 +1875,9 @@ importers:
       react-dnd:
         specifier: ^7.4.5
         version: 7.7.0(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+      react-dnd-html5-backend:
+        specifier: ^14.0.5
+        version: 14.1.0
       react-dom:
         specifier: ^16.14.0
         version: 16.14.0(react@16.14.0)
@@ -1728,6 +1896,9 @@ importers:
       react-sortable-tree-theme-file-explorer:
         specifier: ^2.0.0
         version: 2.0.0(react-dom@16.14.0(react@16.14.0))(react-sortable-tree@2.8.0(react-dnd@7.7.0(@types/react@16.14.66)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.7.3
         version: 1.8.0
@@ -1737,6 +1908,9 @@ importers:
       reselect:
         specifier: ^4.1.7
         version: 4.1.8
+      semver:
+        specifier: ^7.6.0
+        version: 7.7.4
       shortid:
         specifier: 2.2.17
         version: 2.2.17
@@ -1747,8 +1921,8 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: Nexus-Mods/Vortex-api
-        version: https://codeload.github.com/Nexus-Mods/Vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.76.0
         version: 5.105.2(webpack-cli@4.10.0)
@@ -1849,6 +2023,9 @@ importers:
       '@types/redux':
         specifier: ^3.6.0
         version: 3.6.0
+      '@types/semver':
+        specifier: ~7.7.1
+        version: 7.7.1
       babel-loader:
         specifier: ^9.1.0
         version: 9.2.1(@babel/core@7.29.0)(webpack@5.105.2)
@@ -1867,11 +2044,14 @@ importers:
       react-i18next:
         specifier: ^11.11.0
         version: 11.18.6(i18next@8.4.3)(react@16.14.0)
+      semver:
+        specifier: ^7.6.0
+        version: 7.7.4
       ts-loader:
         specifier: ^9.4.1
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: Nexus-Mods/vortex-parse-ini
@@ -1888,6 +2068,9 @@ importers:
       '@types/redux':
         specifier: ^3.6.0
         version: 3.6.0
+      '@types/semver':
+        specifier: ~7.7.1
+        version: 7.7.1
       babel-loader:
         specifier: ^7.1.1
         version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
@@ -1897,11 +2080,14 @@ importers:
       i18next:
         specifier: ^8.4.3
         version: 8.4.3
+      semver:
+        specifier: ^7.6.0
+        version: 7.7.4
       ts-loader:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -1912,18 +2098,36 @@ importers:
 
   extensions/modtype-dinput:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^8.4.0
         version: 8.4.6
       '@types/redux':
         specifier: ^3.6.0
         version: 3.6.0
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-enb:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^8.4.0
         version: 8.4.6
@@ -1932,13 +2136,25 @@ importers:
         version: 3.6.0
       babel-loader:
         specifier: ^7.1.1
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2(webpack-cli@5.1.4))
+        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
+      redux-thunk:
+        specifier: ^2.3.0
+        version: 2.4.2(redux@4.2.1)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/modtype-gedosato:
     devDependencies:
@@ -1988,6 +2204,9 @@ importers:
       '@types/redux':
         specifier: ^3.6.0
         version: 3.6.0
+      '@types/semver':
+        specifier: ~7.7.1
+        version: 7.7.1
       babel-loader:
         specifier: ^8.2.3
         version: 8.4.1(@babel/core@7.29.0)(webpack@5.105.2)
@@ -2003,11 +2222,17 @@ importers:
       react-i18next:
         specifier: ^11.11.0
         version: 11.18.6(i18next@8.4.3)(react@16.14.0)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
+      semver:
+        specifier: ^7.6.0
+        version: 7.7.4
       ts-loader:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -2112,17 +2337,29 @@ importers:
         specifier: 2.2.8
         version: 2.2.8
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/new-file-monitor:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/node':
         specifier: ^13.5.1
         version: 13.13.52
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       copyfiles:
         specifier: ^2.2.0
         version: 2.4.1
@@ -2135,6 +2372,9 @@ importers:
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
@@ -2198,6 +2438,9 @@ importers:
       react-i18next:
         specifier: ^1.10.1
         version: 1.11.0(i18next@19.9.2)
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
@@ -2214,7 +2457,7 @@ importers:
         specifier: ^9.2.6
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -2243,6 +2486,9 @@ importers:
       i18next:
         specifier: ^8.4.3
         version: 8.4.3
+      redux:
+        specifier: ^4.0.4
+        version: 4.2.1
       redux-thunk:
         specifier: ^2.2.0
         version: 2.4.2(redux@4.2.1)
@@ -2250,7 +2496,7 @@ importers:
         specifier: ^4.4.2
         version: 4.4.2
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.66.0
@@ -2261,6 +2507,9 @@ importers:
 
   extensions/quickbms-support:
     devDependencies:
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^8.4.0
         version: 8.4.6
@@ -2272,7 +2521,10 @@ importers:
         version: 3.6.0
       babel-loader:
         specifier: ^7.1.1
-        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2(webpack-cli@5.1.4))
+        version: 7.1.5(babel-core@6.26.3)(webpack@5.105.2)
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       cross-fetch:
         specifier: ^3.1.5
         version: 3.2.0(encoding@0.1.13)
@@ -2288,9 +2540,18 @@ importers:
       react-i18next:
         specifier: ^11.11.0
         version: 11.18.6(i18next@8.4.3)(react@16.14.0)
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/script-extender-error-check:
     devDependencies:
@@ -2330,6 +2591,9 @@ importers:
       turbowalk:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
@@ -2346,15 +2610,27 @@ importers:
       '@nexusmods/nexus-api':
         specifier: Nexus-Mods/node-nexus-api
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
+      '@types/lodash':
+        specifier: ~4.17.24
+        version: 4.17.24
       '@types/node':
         specifier: ^12.0.10
         version: 12.20.55
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       electron:
         specifier: 18.3.7
         version: 18.3.7
       exe-version:
         specifier: Nexus-Mods/node-exe-version
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.23
       nexus-api:
         specifier: Nexus-Mods/node-nexus-api
         version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679'
@@ -2371,11 +2647,17 @@ importers:
         specifier: ^4.4.3
         version: 4.9.5
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
 
   extensions/test-gameversion:
     devDependencies:
@@ -2430,9 +2712,6 @@ importers:
       redux-thunk:
         specifier: ^2.3.0
         version: 2.4.2(redux@4.2.1)
-      rm-local-modules:
-        specifier: ^0.0.2
-        version: 0.0.2
       ts-loader:
         specifier: ^9.4.2
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -2454,12 +2733,18 @@ importers:
       7z-bin:
         specifier: Nexus-Mods/7z-bin
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
+      '@types/bluebird':
+        specifier: ~3.5.20
+        version: 3.5.42
       '@types/i18next':
         specifier: ^12.1.0
         version: 12.1.0
       '@types/node':
         specifier: ^16.10.3
         version: 16.18.126
+      bluebird:
+        specifier: ^3.7.2
+        version: 3.7.2
       copyfiles:
         specifier: ^2.1.1
         version: 2.4.1
@@ -2472,9 +2757,18 @@ importers:
       turbowalk:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
+      webpack:
+        specifier: ^5.94.0
+        version: 5.105.2(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
         specifier: Nexus-Mods/node-winapi-bindings
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2541,11 +2835,14 @@ importers:
       redux-act:
         specifier: ^1.8.0
         version: 1.8.0
+      redux-thunk:
+        specifier: ^2.3.0
+        version: 2.4.2(redux@3.7.2)
       ts-loader:
         specifier: 4.4.2
         version: 4.4.2
       vortex-api:
-        specifier: Nexus-Mods/vortex-api
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: ^5.61.0
@@ -2589,6 +2886,9 @@ importers:
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
+      vortex-api:
+        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
         version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@4.9.5)
@@ -6704,9 +7004,10 @@ packages:
   bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/0e4f9b09996cc6606339580734050724ee6a44c3:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/0e4f9b09996cc6606339580734050724ee6a44c3}
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/adba59d35aab4d2c5e757b467026c60df60b7172:
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/adba59d35aab4d2c5e757b467026c60df60b7172}
     version: 2.1.0
+    os: [win32, linux]
 
   bsdiff-node@https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/bsdiff-node/tar.gz/a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5}
@@ -6882,9 +7183,6 @@ packages:
   clean-stack@2.2.0:
     resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
     engines: {node: '>=6'}
-
-  cli-color@1.4.0:
-    resolution: {integrity: sha512-xu6RvQqqrWEo6MPR1eixqGPywhYBHRs653F9jfXB2Hx4jdM/3WxiNE1vppRmxtMIfl16SFYTpYlrnqH/HsK/2w==}
 
   cli-truncate@2.1.0:
     resolution: {integrity: sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==}
@@ -7256,10 +7554,6 @@ packages:
 
   d3@5.16.0:
     resolution: {integrity: sha512-4PL5hHaHwX4m7Zr1UapXW23apo6pexCgdetdJ5kTmADpG/7T9Gkxw0M0tf/pjoB63ezCCm0u5UaFYy2aMt0Mcw==}
-
-  d@1.0.2:
-    resolution: {integrity: sha512-MOqHvMWF9/9MX6nza0KgvFH4HpMU0EF5uUDXqX/BtxtU8NfB0QzRtJ8Oe/6SuS4kbhyzVJwjd97EA4PKrzJ8bw==}
-    engines: {node: '>=0.12'}
 
   dashdash@1.14.1:
     resolution: {integrity: sha512-jRFi8UDGo6j+odZiEpjazZaWqEal3w/basFjQHQEwVtZJGDpxbH1MeYluwCS8Xq5wmLJooDlMgvVarmWfGM44g==}
@@ -7733,25 +8027,11 @@ packages:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
 
-  es5-ext@0.10.64:
-    resolution: {integrity: sha512-p2snDhiLaXe6dahss1LddxqEm+SkuDvV8dnIQG0MWjyHpcMNfXKPE+/Cc0y+PhxJX3A4xGNeFCj5oc0BUh6deg==}
-    engines: {node: '>=0.10'}
-
   es6-error@4.1.1:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
 
-  es6-iterator@2.0.3:
-    resolution: {integrity: sha512-zw4SRzoUkd+cl+ZoE15A9o1oQd920Bb0iOJMQkQhl3jNc03YqVjAhG7scf9C5KWRU/R13Orf588uCC6525o02g==}
-
   es6-promise@4.2.8:
     resolution: {integrity: sha512-HJDGx5daxeIvxdBxvG2cb9g4tEvwIk3i8+nhX0yGrYmZUzbkdg8QbDevheDB8gd0//uPj4c1EQua8Q+MViT0/w==}
-
-  es6-symbol@3.1.4:
-    resolution: {integrity: sha512-U9bFFjX8tFiATgtkJ1zg25+KviIXpgRvRHS8sau3GfhVzThRQrOeksPeT0BWW2MNZs1OEWJ1DPXOQMn0KKRkvg==}
-    engines: {node: '>=0.12'}
-
-  es6-weak-map@2.0.3:
-    resolution: {integrity: sha512-p5um32HOTO1kP+w7PRnB+5lQ43Z6muuMuIMffvDN8ZB4GcnjLBV6zGStpbASIMk4DCAvEaamhe2zhyCb/QXXsA==}
 
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
@@ -7871,10 +8151,6 @@ packages:
       jiti:
         optional: true
 
-  esniff@2.0.1:
-    resolution: {integrity: sha512-kTUIGKQ/mDPFoJ0oVfcmyJn4iBDRptjNVIzwIFR7tqWXdVI9xfA2RMwY/gbSpJG3lkdWNEjLap/NqVHZiJsdfg==}
-    engines: {node: '>=0.10'}
-
   espree@10.4.0:
     resolution: {integrity: sha512-j6PAQ2uUr79PZhBjP5C5fhl8e39FmRnOjsD5lGnWrFU8i2G776tBK7+nP8KuQUTTyAZUwfQqXAgrVH5MbH9CYQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -7917,9 +8193,6 @@ packages:
 
   ev-emitter@1.1.1:
     resolution: {integrity: sha512-ipiDYhdQSCZ4hSbX4rMW+XzNKMD1prg/sTvoVmSLkuQ1MVlwjJQQA+sW8tMYR3BLUr9KjodFV4pvzunvRhd33Q==}
-
-  event-emitter@0.3.5:
-    resolution: {integrity: sha512-D9rRn9y7kLPnJ+hMq7S/nhvoKwwvVJahBi2BPmx3bvbsEdK3W9ii8cBSGjP+72/LnM4n6fo3+dkCX5FeTQruXA==}
 
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
@@ -7975,9 +8248,6 @@ packages:
   ext-name@5.0.0:
     resolution: {integrity: sha512-yblEwXAbGv1VQDmow7s38W77hzAgJAO50ztBLMcUyUBfxv1HC+LGwtiEN+Co6LtlqT/5uwVOxsD4TNIilWhwdQ==}
     engines: {node: '>=4'}
-
-  ext@1.7.0:
-    resolution: {integrity: sha512-6hxeJYaL110a9b5TEJSj0gojyHQAmA2ch5Os+ySCiA1QGdS697XWY1pzsrSjqA9LDEEgdB/KypIlR59RcLuHYw==}
 
   extend-shallow@2.0.1:
     resolution: {integrity: sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug==}
@@ -8880,9 +9150,6 @@ packages:
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
 
-  is-promise@2.2.2:
-    resolution: {integrity: sha512-+lP4/6lKUBfQjZ2pdxThZvLUAafmZb8OAxFb8XXtiQmS35INgr85hdOGoEs124ez1FCnZJt6jau/T+alh58QFQ==}
-
   is-regex@1.2.1:
     resolution: {integrity: sha512-MjYsKHO5O7mCsmRGxWcLWheFqN9DJ/2TmngvjKXihe6efViPqc274+Fx/4fYj/r03+ESvBdTXK0V6tA3rgez1g==}
     engines: {node: '>= 0.4'}
@@ -9778,9 +10045,6 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lru-queue@0.1.0:
-    resolution: {integrity: sha512-BpdYkt9EvGl8OfWHDQPISVpcl5xZthb+XPsbELj5AQXxIC8IriDZIQYjBJPEm5rS420sjZ0TLEzRcq5KdBhYrQ==}
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -9870,10 +10134,6 @@ packages:
 
   memoize-one@6.0.0:
     resolution: {integrity: sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==}
-
-  memoizee@0.4.17:
-    resolution: {integrity: sha512-DGqD7Hjpi/1or4F/aYAspXKNm5Yili0QDAFAY4QYvpqpgiY6+1jOfqpmByzjxbWd/T9mChbCArXAbDAsTm5oXA==}
-    engines: {node: '>=0.12'}
 
   memory-fs@0.5.0:
     resolution: {integrity: sha512-jA0rdU5KoQMC0e6ppoNRtpp6vjFq6+NY7r8hywnC7V+1Xj/MtHwGIbB1QaK/dunyjWteJzmkpd7ooeWg10T7GA==}
@@ -10106,9 +10366,6 @@ packages:
 
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
-
-  next-tick@1.1.0:
-    resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
 
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -11295,10 +11552,6 @@ packages:
     version: 2.6.2
     hasBin: true
 
-  rm-local-modules@0.0.2:
-    resolution: {integrity: sha512-MjgNgRLgGyxlkhJ+cW4K6HWt+8/JFAehJzkp31Ys9ayOrF/9Y4TdO0MaYqatXDL9AZeA5C/MD72i7BzV8qvUTw==}
-    hasBin: true
-
   roarr@2.15.4:
     resolution: {integrity: sha512-CHhPh+UNHD2GTXNYhPWLnU8ONHdI+5DI+4EYIAOaiD63rHeYlZvyh8P+in5999TTSFgUYuKUAjzRI4mdh/p+2A==}
     engines: {node: '>=8.0'}
@@ -11853,10 +12106,6 @@ packages:
   through2@2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}
 
-  timers-ext@0.1.8:
-    resolution: {integrity: sha512-wFH7+SEAcKfJpfLPkrgMPvvwnEtj8W4IurvEyrKsDleXnKLCDw71w8jltvfLa8Rm4qQxxT4jmDBYbJG/z7qoww==}
-    engines: {node: '>=0.12'}
-
   tinycolor2@1.6.0:
     resolution: {integrity: sha512-XPaBkWQJdsf3pLKJV9p4qN/S+fm2Oj8AIPo1BTUhg5oxkvm9+SVEGFdhyOz7tTdUTfvxMiAs4sp6/eZO2Ew+pw==}
 
@@ -12084,9 +12333,6 @@ packages:
   type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
-
-  type@2.7.3:
-    resolution: {integrity: sha512-8j+1QmAbPvLZow5Qpi6NCaN8FB60p/6x8/vfNqOk/hC+HuvFZhL4+WfekuhQLiqFZXOgQdrs3B+XxEmCc6b3FQ==}
 
   typed-array-buffer@1.0.3:
     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
@@ -12377,11 +12623,6 @@ packages:
   void-elements@3.1.0:
     resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
     engines: {node: '>=0.10.0'}
-
-  vortex-api@https://codeload.github.com/Nexus-Mods/Vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/Vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424}
-    version: 1.9.1-r41
-    hasBin: true
 
   vortex-api@https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424}
@@ -16454,21 +16695,13 @@ snapshots:
       object-assign: 4.1.1
       webpack: 5.105.2(webpack-cli@4.10.0)
 
-  babel-loader@7.1.5(babel-core@6.26.3)(webpack@5.105.2(webpack-cli@5.1.4)):
-    dependencies:
-      babel-core: 6.26.3
-      find-cache-dir: 1.0.0
-      loader-utils: 1.4.2
-      mkdirp: 0.5.6
-      webpack: 5.105.2(webpack-cli@5.1.4)
-
   babel-loader@7.1.5(babel-core@6.26.3)(webpack@5.105.2):
     dependencies:
       babel-core: 6.26.3
       find-cache-dir: 1.0.0
       loader-utils: 1.4.2
       mkdirp: 0.5.6
-      webpack: 5.105.2(webpack-cli@4.10.0)
+      webpack: 5.105.2(webpack-cli@5.1.4)
 
   babel-loader@8.4.1(@babel/core@7.16.7)(webpack@5.105.2):
     dependencies:
@@ -16815,7 +17048,7 @@ snapshots:
     dependencies:
       base-x: 3.0.11
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/0e4f9b09996cc6606339580734050724ee6a44c3:
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/adba59d35aab4d2c5e757b467026c60df60b7172:
     dependencies:
       autogypi: 0.2.2
       node-addon-api: 8.5.0
@@ -17075,15 +17308,6 @@ snapshots:
   classnames@2.5.1: {}
 
   clean-stack@2.2.0: {}
-
-  cli-color@1.4.0:
-    dependencies:
-      ansi-regex: 2.1.1
-      d: 1.0.2
-      es5-ext: 0.10.64
-      es6-iterator: 2.0.3
-      memoizee: 0.4.17
-      timers-ext: 0.1.8
 
   cli-truncate@2.1.0:
     dependencies:
@@ -17522,11 +17746,6 @@ snapshots:
       d3-transition: 1.3.2
       d3-voronoi: 1.1.4
       d3-zoom: 1.8.3
-
-  d@1.0.2:
-    dependencies:
-      es5-ext: 0.10.64
-      type: 2.7.3
 
   dashdash@1.14.1:
     dependencies:
@@ -18150,35 +18369,10 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
-  es5-ext@0.10.64:
-    dependencies:
-      es6-iterator: 2.0.3
-      es6-symbol: 3.1.4
-      esniff: 2.0.1
-      next-tick: 1.1.0
-
   es6-error@4.1.1:
     optional: true
 
-  es6-iterator@2.0.3:
-    dependencies:
-      d: 1.0.2
-      es5-ext: 0.10.64
-      es6-symbol: 3.1.4
-
   es6-promise@4.2.8: {}
-
-  es6-symbol@3.1.4:
-    dependencies:
-      d: 1.0.2
-      ext: 1.7.0
-
-  es6-weak-map@2.0.3:
-    dependencies:
-      d: 1.0.2
-      es5-ext: 0.10.64
-      es6-iterator: 2.0.3
-      es6-symbol: 3.1.4
 
   escalade@3.2.0: {}
 
@@ -18378,13 +18572,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  esniff@2.0.1:
-    dependencies:
-      d: 1.0.2
-      es5-ext: 0.10.64
-      event-emitter: 0.3.5
-      type: 2.7.3
-
   espree@10.4.0:
     dependencies:
       acorn: 8.16.0
@@ -18423,11 +18610,6 @@ snapshots:
   etag@1.8.1: {}
 
   ev-emitter@1.1.1: {}
-
-  event-emitter@0.3.5:
-    dependencies:
-      d: 1.0.2
-      es5-ext: 0.10.64
 
   events@3.3.0: {}
 
@@ -18540,10 +18722,6 @@ snapshots:
     dependencies:
       ext-list: 2.2.2
       sort-keys-length: 1.0.1
-
-  ext@1.7.0:
-    dependencies:
-      type: 2.7.3
 
   extend-shallow@2.0.1:
     dependencies:
@@ -19573,8 +19751,6 @@ snapshots:
       isobject: 3.0.1
 
   is-potential-custom-element-name@1.0.1: {}
-
-  is-promise@2.2.2: {}
 
   is-regex@1.2.1:
     dependencies:
@@ -20822,10 +20998,6 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lru-queue@0.1.0:
-    dependencies:
-      es5-ext: 0.10.64
-
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -20951,17 +21123,6 @@ snapshots:
   memoize-one@5.2.1: {}
 
   memoize-one@6.0.0: {}
-
-  memoizee@0.4.17:
-    dependencies:
-      d: 1.0.2
-      es5-ext: 0.10.64
-      es6-weak-map: 2.0.3
-      event-emitter: 0.3.5
-      is-promise: 2.2.2
-      lru-queue: 0.1.0
-      next-tick: 1.1.0
-      timers-ext: 0.1.8
 
   memory-fs@0.5.0:
     dependencies:
@@ -21213,8 +21374,6 @@ snapshots:
   negotiator@0.6.4: {}
 
   neo-async@2.6.2: {}
-
-  next-tick@1.1.0: {}
 
   nice-try@1.0.5: {}
 
@@ -22685,12 +22844,6 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
-  rm-local-modules@0.0.2:
-    dependencies:
-      cli-color: 1.4.0
-      minimist: 1.2.8
-      rimraf: 2.7.1
-
   roarr@2.15.4:
     dependencies:
       boolean: 3.2.0
@@ -23330,11 +23483,6 @@ snapshots:
       readable-stream: 2.3.8
       xtend: 4.0.2
 
-  timers-ext@0.1.8:
-    dependencies:
-      es5-ext: 0.10.64
-      next-tick: 1.1.0
-
   tinycolor2@1.6.0: {}
 
   tinyexec@0.3.2: {}
@@ -23595,8 +23743,6 @@ snapshots:
     dependencies:
       media-typer: 0.3.0
       mime-types: 2.1.35
-
-  type@2.7.3: {}
 
   typed-array-buffer@1.0.3:
     dependencies:
@@ -23914,8 +24060,6 @@ snapshots:
       vfile-message: 2.0.4
 
   void-elements@3.1.0: {}
-
-  vortex-api@https://codeload.github.com/Nexus-Mods/Vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424: {}
 
   vortex-api@https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424: {}
 
