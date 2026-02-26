@@ -391,26 +391,21 @@ class DownloadWorker {
     let parsed: URL;
     let referer: string;
     try {
-      let decodedUrl = jobUrlString;
+      const [rawUrlIn, refererIn] = jobUrlString.split("<");
       try {
-        // Only decode if the URL contains encoded characters
-        if (jobUrlString.includes("%")) {
-          decodedUrl = decodeURIComponent(jobUrlString);
-        }
-      } catch (decodeErr) {
-        // Can't decode, use original
-        decodedUrl = jobUrlString;
+        // Try parsing the URL as-is first to preserve percent-encoding.
+        // This is important for pre-signed URLs (e.g. Azure SAS tokens used by
+        // GitHub release assets) where decoding %2B, %3D etc. would invalidate
+        // the signature.
+        parsed = new URL(rawUrlIn);
+        jobUrlString = rawUrlIn;
+      } catch {
+        // URL parsing failed - try decoding first to handle double-encoded URLs
+        const decoded = decodeURIComponent(rawUrlIn);
+        parsed = new URL(decoded);
+        jobUrlString = decoded;
       }
-
-      const [urlIn, refererIn] = decodedUrl.split("<");
-      // at some point in the past we'd encode the uri here which apparently led to double-encoded
-      // uris. Then we'd decode it which led to the request failing if there were characters in
-      // the url that required encoding.
-      // Since all that was tested at some point I'm getting the feeling it's inconsistent in
-      // the callers whether the url is encoded or not
-      parsed = new URL(urlIn);
       referer = refererIn;
-      jobUrlString = urlIn;
     } catch (err) {
       const errorMsg = `Invalid URL format: ${err.message} (URL: ${jobUrlString}, original type: ${typeof jobUrl})`;
       log("error", "URL parsing failed in startDownload", {
@@ -856,7 +851,15 @@ class DownloadWorker {
         this.mJob.url = () => Bluebird.resolve(newUrl);
         this.mRedirected = true;
 
-        if (response.headers["set-cookie"] !== undefined) {
+        const currentHost = new URL(jobUrl).hostname;
+        const newHost = new URL(newUrl).hostname;
+
+        if (currentHost !== newHost) {
+          // Cross-domain redirect: don't forward cookies from the old domain.
+          // Electron's getCookies (called in assignJob) will provide
+          // domain-appropriate cookies for the new URL.
+          this.mJob.extraCookies = [];
+        } else if (response.headers["set-cookie"] !== undefined) {
           this.mJob.extraCookies = this.mJob.extraCookies.concat(
             response.headers["set-cookie"],
           );
