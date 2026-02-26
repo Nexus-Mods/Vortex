@@ -818,6 +818,7 @@ class InstallDriver {
             this.mInstallDone = true;
             this.mInstallingMod = undefined;
           }
+          this.mProgressDebouncer.clear();
           this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + modId);
           this.triggerUpdate();
         } else {
@@ -829,6 +830,7 @@ class InstallDriver {
 
           const incomplete = (this.mCollection.rules ?? []).find(filter);
 
+          this.mProgressDebouncer.clear();
           this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + modId);
 
           if (incomplete === undefined) {
@@ -1302,12 +1304,10 @@ class InstallDriver {
   };
 
   private close = () => {
-    if (this.mGameId !== undefined && this.mCollection !== undefined) {
-      this.mApi.events.emit(
-        "did-install-collection",
-        this.mGameId,
-        this.mCollection.id,
-      );
+    if ((this.mGameId !== undefined) && (this.mCollection !== undefined)) {
+      this.mApi.events.emit('did-install-collection', this.mGameId, this.mCollection.id);
+      this.mProgressDebouncer.clear();
+      this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
     }
 
     this.completeInstallationTracking(true);
