@@ -157,9 +157,6 @@ export class NotificationAggregator {
 
     const pending = this.mPendingNotifications[aggregationId] || [];
     if (pending.length === 0) {
-      log("debug", "no pending notifications to flush, scheduling next flush", {
-        aggregationId,
-      });
       // Reset timeout for next batch
       this.mTimeouts[aggregationId] = setTimeout(() => {
         this.flushPendingNotifications(aggregationId, timeoutMs);

@@ -3099,17 +3099,13 @@ interface IPosition {
 }
 
 // @public (undocumented)
-interface IPrettifiedError {
+interface IPrettifiedError extends Error {
     // (undocumented)
     allowReport?: boolean;
     // (undocumented)
     code?: string;
     // (undocumented)
-    message: string;
-    // (undocumented)
-    replace?: any;
-    // (undocumented)
-    stack?: string;
+    replace?: Record<string, string>;
 }
 
 // @public (undocumented)

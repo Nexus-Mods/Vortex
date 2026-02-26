@@ -4,6 +4,7 @@ import PromiseBB from "bluebird";
 import * as path from "path";
 import { generate as shortid } from "shortid";
 
+import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { RedownloadMode } from "./DownloadManager";
@@ -609,10 +610,7 @@ export class DownloadObserver {
         }),
       );
       this.mApi.events.emit("did-finish-download", id, "failed");
-      callback?.(
-        new ProcessCanceled("Download completed with chunk errors"),
-        id,
-      );
+      callback?.(null, id);
       return onceFinished();
     } else if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
@@ -807,79 +805,108 @@ export class DownloadObserver {
       return;
     }
 
-    const callCB = (err: Error) => {
-      if (cb !== undefined) {
-        cb(err);
-      }
-    };
+    const proceedWithRemoval = () => {
+      const callCB = (err: Error) => {
+        if (cb !== undefined) {
+          cb(err);
+        }
+      };
 
-    const onceStopped = (): PromiseBB<void> => {
-      if (truthy(download.localPath) && truthy(download.game)) {
-        // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
-        // would put manually added downloads into the download root if no game was being managed.
-        // Newer versions won't do this anymore (hopefully) but we still need to enable users to
-        // clean up these broken downloads
-        const rawGameId = getDownloadGames(download)[0];
-        const gameId = rawGameId
-          ? convertGameIdReverse(
-              selectors.knownGames(this.mApi.store.getState()),
-              rawGameId,
-            )
-          : undefined;
-        const dlPath = truthy(gameId)
-          ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
-          : selectors.downloadPath(this.mApi.store.getState());
+      const onceStopped = (): PromiseBB<void> => {
+        if (truthy(download.localPath) && truthy(download.game)) {
+          // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.3.5)
+          // would put manually added downloads into the download root if no game was being managed.
+          // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+          // clean up these broken downloads
+          const rawGameId = getDownloadGames(download)[0];
+          const gameId = rawGameId
+            ? convertGameIdReverse(
+                selectors.knownGames(this.mApi.store.getState()),
+                rawGameId,
+              )
+            : undefined;
+          const dlPath = truthy(gameId)
+            ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+            : selectors.downloadPath(this.mApi.store.getState());
 
-        return fs
-          .removeAsync(path.join(dlPath, download.localPath))
-          .then(() => {
-            this.mApi.store.dispatch(
-              options?.silent
-                ? removeDownloadSilent(downloadId)
-                : removeDownload(downloadId),
-            );
-            callCB(null);
-          })
-          .catch(UserCanceled, callCB)
-          .catch((err) => {
-            if (cb !== undefined) {
-              cb(err);
-            } else {
-              showError(
-                this.mApi.store.dispatch,
-                "Failed to remove file",
-                err,
-                {
-                  allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
-                },
+          return fs
+            .removeAsync(path.join(dlPath, download.localPath))
+            .then(() => {
+              this.mApi.store.dispatch(
+                options?.silent
+                  ? removeDownloadSilent(downloadId)
+                  : removeDownload(downloadId),
               );
-            }
+              callCB(null);
+            })
+            .catch(UserCanceled, callCB)
+            .catch((err) => {
+              if (cb !== undefined) {
+                cb(err);
+              } else {
+                showError(
+                  this.mApi.store.dispatch,
+                  "Failed to remove file",
+                  err,
+                  {
+                    allowReport: ["EBUSY", "EPERM"].indexOf(err.code) === -1,
+                  },
+                );
+              }
+            });
+        } else {
+          this.mApi.store.dispatch(
+            options?.silent
+              ? removeDownloadSilent(downloadId)
+              : removeDownload(downloadId),
+          );
+          return PromiseBB.resolve();
+        }
+      };
+
+      if (["init", "started", "paused", "failed"].includes(download.state)) {
+        // need to cancel the download
+        if (!this.mManager.stop(downloadId)) {
+          // error case, for some reason the manager didn't know about this download, maybe some
+          // delay?
+          this.mInterceptedDownloads.push({
+            time: Date.now(),
+            tag: download.modInfo?.referenceTag,
           });
+          onceStopped();
+        } else {
+          this.queueFinishCB(downloadId, () => onceStopped());
+        }
       } else {
-        this.mApi.store.dispatch(
-          options?.silent
-            ? removeDownloadSilent(downloadId)
-            : removeDownload(downloadId),
-        );
-        return PromiseBB.resolve();
+        onceStopped();
       }
     };
 
-    if (["init", "started", "paused", "failed"].includes(download.state)) {
-      // need to cancel the download
-      if (!this.mManager.stop(downloadId)) {
-        // error case, for some reason the manager didn't know about this download, maybe some
-        // delay?
-        this.mInterceptedDownloads.push({
-          time: Date.now(),
-          tag: download.modInfo?.referenceTag,
-        });
-        onceStopped();
-      } else {
-        this.queueFinishCB(downloadId, () => onceStopped());
-      }
+    if (options?.confirmed) {
+      proceedWithRemoval();
     } else {
-      onceStopped();
+      const fileName = download.localPath
+        ? path.basename(download.localPath)
+        : downloadId;
+      this.mApi
+        .showDialog(
+          "question",
+          "Confirm Deletion",
+          {
+            text: "Do you really want to delete this archive?",
+            message: fileName,
+          },
+          [{ label: "Cancel" }, { label: "Delete" }],
+        )
+        .then((result: IDialogResult) => {
+          if (result.action === "Delete") {
+            proceedWithRemoval();
+          } else {
+            if (cb !== undefined) {
+              cb(new UserCanceled());
+            }
+          }
+        });
     }
   }
 
@@ -1080,6 +1107,7 @@ export class DownloadObserver {
         state: download.state,
       });
       this.handleResumeDownload(downloadId, callback);
+      return;
     }
     log("debug", "not resuming download", {
       id: downloadId,

@@ -1,7 +1,7 @@
 import { selectors, types, util } from "vortex-api";
 import { setConflictDialog } from "../actions";
 import { IBiDirRule } from "../types/IBiDirRule";
-import findRule from "./findRule";
+import { findRuleBiDir, isConflictResolved } from "./findRule";
 
 function showUnsolvedConflictsDialog(
   api: types.IExtensionApi,
@@ -34,14 +34,24 @@ function showUnsolvedConflictsDialog(
   let modsToShow = Object.keys(conflicts);
 
   if (!showAll) {
+    const encountered = new Set<string>();
+    const mapEnc = (lhs: string, rhs: string) => [lhs, rhs].sort().join(":");
     modsToShow = modsToShow.filter(
       (modId) =>
         conflicts[modId].find((conflict) => {
           if (conflict.otherMod === undefined) {
             return false;
           }
-          const rule = findRule(modRules, mods[modId], conflict.otherMod);
-          return rule === undefined;
+          const encKey = mapEnc(modId, conflict.otherMod.id);
+          if (encountered.has(encKey)) {
+            return false;
+          }
+          encountered.add(encKey);
+          return (
+            !isConflictResolved(mods, modId, conflict.otherMod) &&
+            findRuleBiDir(modRules, mods[modId], conflict.otherMod) ===
+              undefined
+          );
         }) !== undefined,
     );
   }

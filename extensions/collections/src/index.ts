@@ -486,7 +486,10 @@ async function removeCollection(
             (deleteArchives || download.state !== "finished")
           ) {
             await util.toPromise((cb) =>
-              api.events.emit("remove-download", dlId, cb, { silent: true }),
+              api.events.emit("remove-download", dlId, cb, {
+                silent: true,
+                confirmed: true,
+              }),
             );
           }
         }
@@ -525,6 +528,7 @@ async function removeCollection(
         await util.toPromise((cb) =>
           api.events.emit("remove-download", collection.archiveId, cb, {
             silent: true,
+            confirmed: true,
           }),
         );
       }

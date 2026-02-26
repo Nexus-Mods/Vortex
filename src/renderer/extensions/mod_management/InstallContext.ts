@@ -9,6 +9,7 @@ import type { INotification } from "../../types/INotification";
 import type { IState } from "../../types/IState";
 import getVortexPath from "../../util/getVortexPath";
 import { log } from "../../util/log";
+import type { IPrettifiedError } from "../../util/message";
 import { showError } from "../../util/message";
 import { getSafe } from "../../util/storeHelper";
 import {
@@ -78,6 +79,7 @@ class InstallContext implements IInstallContext {
   private mArchiveId: string;
   private mInstallOutcome: InstallOutcome;
   private mFailReason: string;
+  private mFailError: IPrettifiedError;
   private mIsEnabled: (modId: string) => boolean;
   private mIsDownload: (archiveId: string) => boolean;
   private mSilent: boolean = false;
@@ -213,7 +215,7 @@ class InstallContext implements IInstallContext {
     PromiseBB.delay(50).then(() => {
       if (!this.mDidReportError) {
         this.mDidReportError = true;
-        const noti = this.outcomeNotification(
+        const noti: INotification = this.outcomeNotification(
           this.mInstallOutcome,
           this.mIndicatorId,
           this.mIsEnabled(this.mAddedId),
@@ -229,10 +231,10 @@ class InstallContext implements IInstallContext {
                 aggregationId,
                 noti.type as "error" | "warning" | "info",
                 noti.title,
-                noti.message,
+                this.mFailError ?? noti.message,
                 mod !== undefined ? getModName(mod) : this.mIndicatorId,
                 {
-                  allowReport: (noti as any).allowReport,
+                  allowReport: this.mFailError?.allowReport ?? true,
                   actions: noti.actions,
                 },
               );
@@ -304,6 +306,7 @@ class InstallContext implements IInstallContext {
     outcome: InstallOutcome,
     info?: any,
     reason?: string,
+    error?: IPrettifiedError,
   ): void {
     log("info", "finish mod install", {
       id: this.mIndicatorId,
@@ -335,6 +338,7 @@ class InstallContext implements IInstallContext {
       }
     } else {
       this.mFailReason = reason;
+      this.mFailError = error;
       if (this.mAddedId !== undefined) {
         this.mRemoveMod(this.mAddedId);
       }

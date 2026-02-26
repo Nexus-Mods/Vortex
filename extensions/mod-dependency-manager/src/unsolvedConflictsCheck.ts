@@ -2,7 +2,7 @@ import Promise from "bluebird";
 import { selectors, types, util } from "vortex-api";
 import { IBiDirRule } from "./types/IBiDirRule";
 import { IConflict } from "./types/IConflict";
-import { IModLookupInfo } from "./types/IModLookupInfo";
+import { findRuleBiDir, isConflictResolved } from "./util/findRule";
 import showUnsolvedConflictsDialog from "./util/showUnsolvedConflicts";
 
 function unsolvedConflictsCheck(
@@ -13,25 +13,27 @@ function unsolvedConflictsCheck(
   const state = api.store.getState();
   const t = api.translate;
 
-  const findRule = (source: types.IMod, ref: IModLookupInfo): IBiDirRule => {
-    return modRules.find(
-      (rule) =>
-        util.testModReference(source, rule.source) &&
-        util.testModReference(ref, rule.reference),
-    );
-  };
-
   const gameMode = selectors.activeGameId(state);
   const mods = util.getSafe(state, ["persistent", "mods", gameMode], {});
   const conflicts: { [modId: string]: IConflict[] } =
     util.getSafe(state, ["session", "dependencies", "conflicts"], {}) || {};
 
   // find the first conflict that has no rule associated
+  const encountered = new Set<string>();
+  const mapEnc = (lhs: string, rhs: string) => [lhs, rhs].sort().join(":");
   const firstConflict = Object.keys(conflicts).find(
     (modId) =>
-      conflicts[modId].find(
-        (conflict) => findRule(mods[modId], conflict.otherMod) === undefined,
-      ) !== undefined,
+      conflicts[modId].find((conflict) => {
+        const encKey = mapEnc(modId, conflict.otherMod.id);
+        if (encountered.has(encKey)) {
+          return false;
+        }
+        encountered.add(encKey);
+        return (
+          !isConflictResolved(mods, modId, conflict.otherMod) &&
+          findRuleBiDir(modRules, mods[modId], conflict.otherMod) === undefined
+        );
+      }) !== undefined,
   );
   if (firstConflict !== undefined) {
     return api

@@ -29,7 +29,11 @@ import type {
   ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IGameStored, IState } from "../../types/IState";
-import type { IExtension, IRegisteredExtension } from "../../types/extensions";
+import type {
+  IExtension,
+  IExtensionDownloadInfo,
+  IRegisteredExtension,
+} from "../../types/extensions";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 
@@ -60,8 +64,12 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, truthy } from "../../util/util";
+
 import { readExtensions } from "../extension_manager/util";
-import { getGame } from "../gamemode_management/util/getGame";
+import {
+  getGame,
+  getGameStubDownloadInfo,
+} from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
@@ -599,9 +607,26 @@ function manageGameUndiscovered(
   const gameStored = knownGames.find((game) => game.id === gameId);
 
   if (gameStored === undefined) {
-    const extension = state.session.extensions.available.find(
-      (ext) => ext?.gameId === gameId || ext.name === gameId,
-    );
+    const stubDownloadInfo = getGameStubDownloadInfo(gameId);
+    let extension: IExtensionDownloadInfo;
+    if (stubDownloadInfo !== undefined) {
+      if (
+        stubDownloadInfo.modId !== undefined &&
+        stubDownloadInfo.fileId === undefined
+      ) {
+        const manifestEntry = state.session.extensions.available.find(
+          (ext) => ext.modId === stubDownloadInfo.modId,
+        );
+        if (manifestEntry !== undefined) {
+          stubDownloadInfo.fileId = manifestEntry.fileId;
+        }
+      }
+      extension = stubDownloadInfo;
+    } else {
+      extension = state.session.extensions.available.find(
+        (ext) => ext?.gameId === gameId || ext.name === gameId,
+      );
+    }
     if (extension === undefined) {
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);
     }

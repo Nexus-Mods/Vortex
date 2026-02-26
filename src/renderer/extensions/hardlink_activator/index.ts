@@ -35,7 +35,7 @@ export class FileFound extends Error {
 class DeploymentMethod extends LinkingDeployment {
   public priority: number = 5;
 
-  private mInstallationFiles: Set<number>;
+  private mInstallationFiles: Set<string>;
 
   constructor(api: IExtensionApi) {
     super(
@@ -240,13 +240,15 @@ class DeploymentMethod extends LinkingDeployment {
     dataPath: string,
     onProgress?: (num: number, total: number) => void,
   ): PromiseBB<void> {
-    let installEntryProm: PromiseBB<Set<number>>;
+    let installEntryProm: PromiseBB<Set<string>>;
 
     // find ids of all files in our mods directory
+    // using idStr (string) instead of id (number) to avoid precision loss
+    // for NTFS file IDs exceeding Number.MAX_SAFE_INTEGER
     if (this.mInstallationFiles !== undefined) {
       installEntryProm = PromiseBB.resolve(this.mInstallationFiles);
     } else {
-      this.mInstallationFiles = new Set<number>();
+      this.mInstallationFiles = new Set<string>();
       installEntryProm = turbowalk(
         installationPath,
         (entries) => {
@@ -256,8 +258,8 @@ class DeploymentMethod extends LinkingDeployment {
             return;
           }
           entries.forEach((entry) => {
-            if (entry.linkCount > 1) {
-              this.mInstallationFiles.add(entry.id);
+            if (entry.linkCount > 1 && entry.idStr !== undefined) {
+              this.mInstallationFiles.add(entry.idStr);
             }
           });
         },
@@ -289,7 +291,11 @@ class DeploymentMethod extends LinkingDeployment {
         (entries) => {
           queue = queue.then(() =>
             PromiseBB.map(entries, (entry) => {
-              if (entry.linkCount > 1 && inos.has(entry.id)) {
+              if (
+                entry.linkCount > 1 &&
+                entry.idStr !== undefined &&
+                inos.has(entry.idStr)
+              ) {
                 ++purged;
                 if (purged % 1000 === 0) {
                   onProgress?.(purged, total);

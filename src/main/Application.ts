@@ -63,7 +63,7 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
     const err = unknownToError(error);
-    if (err instanceof UserCanceled) {
+    if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
       return true;
     }
 

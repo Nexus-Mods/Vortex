@@ -307,14 +307,33 @@ export const getCollectionInstallProgress = createSelector(
         ? Math.round((session.downloadedCount / session.totalRequired) * 100)
         : 0;
 
+    // Compute isComplete and installProgress from individual mod entries
+    // filtered by type, because the aggregate counters (installedCount,
+    // failedCount, skippedCount) include BOTH required and optional mods,
+    // but totalRequired only counts 'requires' mods.  When optional mods
+    // install before the last required mods the aggregate totals exceed
+    // totalRequired, causing a premature isComplete.
+    const requiredMods = session.mods
+      ? Object.values(session.mods).filter(
+          (mod: ICollectionModInstallInfo) => mod.type === "requires",
+        )
+      : [];
+    const installedRequired = requiredMods.filter(
+      (mod) => mod.status === "installed",
+    ).length;
+    const completedRequired = requiredMods.filter(
+      (mod) =>
+        mod.status === "installed" ||
+        mod.status === "failed" ||
+        mod.status === "skipped",
+    ).length;
+
     const installProgress =
       session.totalRequired > 0
-        ? Math.round((session.installedCount / session.totalRequired) * 100)
+        ? Math.round((installedRequired / session.totalRequired) * 100)
         : 0;
 
-    const isComplete =
-      session.installedCount + session.failedCount + session.skippedCount >=
-      session.totalRequired;
+    const isComplete = completedRequired >= session.totalRequired;
 
     return {
       totalRequired: session.totalRequired,

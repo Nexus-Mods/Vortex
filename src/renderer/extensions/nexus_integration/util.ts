@@ -15,6 +15,7 @@ import type {
   ModStatus,
   IGraphUser,
   IModInfo,
+  IModFileQuery,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
@@ -48,7 +49,7 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { RateLimitExceeded } from "../../util/github";
-import { log } from "../../util/log";
+import { log } from "../../logging";
 import { calcDuration, showError } from "../../util/message";
 import { jsonRequest } from "../../util/network";
 import opn from "../../util/opn";
@@ -556,33 +557,79 @@ export function getInfoGraphQL(
   modId: number,
   fileId: number,
 ): BluebirdPromise<IRemoteInfo> {
-  return new BluebirdPromise((resolve, reject) => {
-    const uid = makeFileUID({
-      fileId: fileId.toString(),
-      modId: modId.toString(),
-      gameId: domain,
-    });
+  // Define the GraphQL query for file information
+  const fileQuery: Partial<IModFileQuery> = {
+    categoryId: true,
+    count: true,
+    date: true,
+    description: true,
+    fileId: true,
+    mod: {
+      author: true,
+      category: true,
+      game: {
+        id: true,
+        domainName: true,
+      },
+      gameId: true,
+      id: true,
+      modCategory: {
+        id: true,
+        name: true,
+      },
+      pictureUrl: true,
+      status: true,
+      uid: true,
+    },
+    modId: true,
+    name: true,
+    primary: true,
+    size: true,
+    uid: true,
+    uri: true,
+    version: true,
+  } as any;
 
-    if (uid === undefined) {
-      return reject(
-        new Error(
-          `Unable to create file UID for game "${domain}", mod ${modId}, file ${fileId}`,
-        ),
-      );
-    }
+  // Ensure the nexus games cache is loaded before constructing UIDs,
+  // as makeFileUID needs the games list to convert domain names to numeric IDs
+  return nexusGamesProm().then(
+    () =>
+      new BluebirdPromise((resolve, reject) => {
+        const uid = makeFileUID({
+          fileId: fileId.toString(),
+          modId: modId.toString(),
+          gameId: domain,
+        });
 
-    nexus
-      .modFilesByUid(MOD_FILE_INFO, [uid])
-      .then((fileResult) => {
-        const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
-        const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
-        return resolve({ modInfo, fileInfo });
-      })
-      .catch((err) => {
-        err["attachLogOnReport"] = true;
-        return reject(err);
-      });
-  });
+        if (uid === undefined) {
+          return reject(
+            new Error(
+              `Unable to create file UID for game "${domain}", mod ${modId}, file ${fileId}`,
+            ),
+          );
+        }
+
+        nexus
+          .modFilesByUid(fileQuery, [uid])
+          .then((fileResult) => {
+            if (!fileResult?.[0]) {
+              return reject(
+                new Error(
+                  `File not found on Nexus: game "${domain}", mod ${modId}, file ${fileId}`,
+                ),
+              );
+            }
+            const fileInfo = transformGraphQLFileToIFileInfo(fileResult[0]);
+            const modInfo = transformGraphQLModToIModInfo(fileResult[0]);
+            return resolve({ modInfo, fileInfo });
+          })
+          .catch((err) => {
+            const error = unknownToError(err);
+            error["attachLogOnReport"] = true;
+            return reject(error);
+          });
+      }),
+  );
 }
 
 // Helper function to transform GraphQL mod data to IModInfo format
@@ -1204,7 +1251,17 @@ function endorseCollectionImpl(
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusCollectionId: number = mod.attributes.collectionId;
+  const nexusCollectionId: number | undefined = mod.attributes?.collectionId
+    ? parseInt(String(mod.attributes.collectionId), 10)
+    : undefined;
+
+  if (nexusCollectionId === undefined) {
+    log("warn", "tried to endorse collection with no nexus collection id", {
+      gameId,
+      modId: mod.id,
+    });
+    return;
+  }
 
   store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
@@ -1238,7 +1295,16 @@ function endorseModImpl(
 
   const gameId = mod.attributes?.downloadGame;
 
-  const nexusModId: number = mod.attributes.modId;
+  const nexusModId: number | undefined = mod.attributes?.modId
+    ? parseInt(String(mod.attributes.modId), 10)
+    : undefined;
+  if (nexusModId === undefined) {
+    log("warn", "tried to endorse mod with no nexus mod id", {
+      gameId,
+      modId: mod.id,
+    });
+    return;
+  }
   const version: string =
     getSafe(mod.attributes, ["version"], undefined) ||
     getSafe(mod.attributes, ["modVersion"], undefined);

@@ -113,6 +113,7 @@ import {
   AlreadyDownloaded,
   DownloadIsHTML,
 } from "../download_management/DownloadManager";
+import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 
@@ -1924,6 +1925,7 @@ class InstallManager {
                         api.translate(pretty.message, {
                           replace: pretty.replace,
                         }),
+                        pretty,
                       ),
                     );
                   }
@@ -1938,6 +1940,13 @@ class InstallManager {
                     });
                   } else if (err instanceof ArchiveBrokenError) {
                     return prom.then(() => {
+                      if (archiveId) {
+                        api.store.dispatch(
+                          finishDownload(archiveId, "failed", {
+                            message: err.message,
+                          }),
+                        );
+                      }
                       if (unattended) {
                         promiseCallback?.(err, null);
                         return Promise.resolve();
@@ -1955,6 +1964,7 @@ class InstallManager {
                                   "remove-download",
                                   archiveId,
                                   dismiss,
+                                  { confirmed: true },
                                 );
                               },
                             },
@@ -1976,6 +1986,7 @@ class InstallManager {
                                       path.basename(archivePath),
                                     );
                                   },
+                                  { confirmed: true },
                                 );
                                 dismiss();
                               },
@@ -2758,8 +2769,15 @@ class InstallManager {
     sourceModId: string,
   ): Bluebird<void> {
     const POLL_MS = 500;
+    // If no progress (new mods reaching terminal state) is made for this
+    // duration, attempt a rescue (force-clean stuck installs + requeue).
+    const STALL_TIMEOUT_MS = 5 * 60 * 1000;
 
     return new Bluebird<void>((resolve) => {
+      let lastProgressTime = Date.now();
+      let lastTerminalCount = this.getTerminalModCount(api, sourceModId);
+      let rescueAttempted = false;
+
       const poll = () => {
         const phaseState = this.mInstallPhaseState.get(sourceModId);
         if (!phaseState) {
@@ -2775,20 +2793,84 @@ class InstallManager {
           return resolve();
         }
 
+        // ── Stall detection ──
+        const currentTerminalCount = this.getTerminalModCount(api, sourceModId);
+        if (currentTerminalCount > lastTerminalCount) {
+          lastTerminalCount = currentTerminalCount;
+          lastProgressTime = Date.now();
+          rescueAttempted = false;
+        }
+
+        const stallDuration = Date.now() - lastProgressTime;
+        if (stallDuration > STALL_TIMEOUT_MS) {
+          if (!rescueAttempted) {
+            // First timeout: attempt rescue
+            log("warn", "Collection install stalled, attempting rescue", {
+              sourceModId,
+              stallMs: stallDuration,
+              terminalCount: lastTerminalCount,
+              activeInstalls: this.mActiveInstalls.size,
+              pendingInstalls: this.mPendingInstalls.size,
+            });
+            this.forceCleanupStuckInstalls(api, 1);
+            const status = this.checkCollectionPhaseStatus(
+              api,
+              sourceModId,
+              phaseState.allowedPhase ?? 0,
+            );
+            if (status.needsRequeue) {
+              this.reQueueDownloadedMods(
+                api,
+                sourceModId,
+                status.allMods,
+                phaseState.allowedPhase ?? 0,
+              );
+            }
+            rescueAttempted = true;
+            // Give the rescue some time to take effect
+            lastProgressTime = Date.now();
+            setTimeout(poll, POLL_MS);
+            return;
+          } else {
+            // Second timeout after rescue: give up
+            log(
+              "warn",
+              "Collection install stalled after rescue attempt, resolving",
+              {
+                sourceModId,
+                terminalCount: lastTerminalCount,
+                activeInstalls: this.mActiveInstalls.size,
+                pendingInstalls: this.mPendingInstalls.size,
+              },
+            );
+            return resolve();
+          }
+        }
+
         const collectionInstallProgress = getCollectionInstallProgress(
           api.getState(),
         );
         if (!collectionInstallProgress) {
           const activeCollection = getCollectionActiveSession(api.getState());
           if (!activeCollection) {
-            log(
-              "debug",
-              "No active collection session, all phases considered complete",
-              { sourceModId },
-            );
-            delete this.mDependencyInstalls[sourceModId];
-            this.cleanupPendingInstalls(sourceModId, true);
-            return resolve();
+            // The Redux session may have been cleared by the InstallDriver
+            // (e.g. after required mods finish but optional downloads are
+            // still in flight).  Only tear down engine state if there is
+            // truly nothing left to process for this collection.
+            if (!this.hasActiveOrPendingInstallation(sourceModId)) {
+              log(
+                "debug",
+                "No active collection session and no pending work, cleaning up",
+                { sourceModId },
+              );
+              delete this.mDependencyInstalls[sourceModId];
+              this.cleanupPendingInstalls(sourceModId, true);
+              return resolve();
+            }
+            // Still have pending/active installs — keep polling so that
+            // in-flight downloads can still be requeued.
+            setTimeout(poll, POLL_MS);
+            return;
           }
         }
 
@@ -2797,7 +2879,10 @@ class InstallManager {
           phaseState.deploymentPromises || new Map<number, Promise<void>>();
         const hasQueuedDeployments = deploymentPromises.size > 0;
 
-        if (collectionInstallProgress?.isComplete) {
+        if (
+          collectionInstallProgress?.isComplete &&
+          !this.hasActiveOrPendingInstallation(sourceModId)
+        ) {
           log("debug", "All phases complete", { sourceModId });
           return resolve();
         } else {
@@ -2879,9 +2964,14 @@ class InstallManager {
     },
   ): Bluebird<void> {
     const POLL_MS = 500;
+    // If no progress is made for this duration, consider the phase stalled.
+    const STALL_TIMEOUT_MS = 5 * 60 * 1000;
 
     let hasDeployed = false;
     return new Bluebird<void>((resolve) => {
+      let lastProgressTime = Date.now();
+      let lastTerminalCount = this.getTerminalModCount(api, sourceModId);
+
       const poll = () => {
         const phaseState = this.mInstallPhaseState.get(sourceModId);
         if (!phaseState) {
@@ -2896,6 +2986,27 @@ class InstallManager {
             "Stopping phase polling - dependency installation cancelled",
             { sourceModId },
           );
+          return resolve();
+        }
+
+        // Progress-aware stall detection — reset timer whenever a mod
+        // reaches a terminal state.
+        const currentTerminalCount = this.getTerminalModCount(api, sourceModId);
+        if (currentTerminalCount > lastTerminalCount) {
+          lastTerminalCount = currentTerminalCount;
+          lastProgressTime = Date.now();
+        }
+
+        if (Date.now() - lastProgressTime > STALL_TIMEOUT_MS) {
+          log("warn", "Phase settlement stalled, resolving", {
+            sourceModId,
+            phase: options.phase,
+            stallMs: Date.now() - lastProgressTime,
+            terminalCount: lastTerminalCount,
+          });
+          if (phaseState) {
+            phaseState.isDeploying = false;
+          }
           return resolve();
         }
 
@@ -3115,6 +3226,30 @@ class InstallManager {
       downloadedCount,
       modsNeedingRequeue,
     };
+  }
+
+  /**
+   * Returns the number of mods in terminal states (installed/failed/skipped)
+   * for the collection session associated with sourceModId.
+   * Used by the stall-detection logic in pollAllPhasesComplete.
+   */
+  private getTerminalModCount(api: IExtensionApi, sourceModId: string): number {
+    const state = api.getState();
+    const batchContext = getBatchContext(
+      ["install-dependencies", "install-recommendations"],
+      "",
+    );
+    const profileId =
+      batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const sessionId = generateCollectionSessionId(sourceModId, profileId);
+    const session = getCollectionSessionById(state, sessionId);
+    if (!session?.mods) {
+      return 0;
+    }
+
+    return Object.values(session.mods).filter((mod: any) =>
+      ["installed", "failed", "skipped"].includes(mod.status),
+    ).length;
   }
 
   // Helper to check if an archiveId has pending or active installations
@@ -3661,6 +3796,22 @@ class InstallManager {
         return undefined;
       };
 
+      // DEBUG: Force random errors at 10% rate for testing
+      // if (Math.random() < 0.1) {
+      //   const errors = [
+      //     () =>
+      //       new ArchiveBrokenError(
+      //         path.basename(archivePath),
+      //         "debug test error",
+      //       ),
+      //     () => { const e = new Error("EPERM: operation not permitted"); (e as any).code = "EPERM"; (e as any).path = archivePath; return e; },
+      //     () => new ProcessCanceled("debug canceled"),
+      //     () => { const e = new Error("ENOENT: no such file or directory"); (e as any).code = "ENOENT"; (e as any).path = archivePath; return e; },
+      //   ];
+      //   return Bluebird.reject(
+      //     errors[Math.floor(Math.random() * errors.length)](),
+      //   );
+      // }
       // clean up any stale temp directory from a previous failed attempt
       return fs.removeAsync(tempPath).then(() =>
         zip
@@ -5937,7 +6088,7 @@ class InstallManager {
                   api,
                   sourceModId,
                   "Failed to install dependency",
-                  pretty as Error,
+                  err,
                   refName,
                   {
                     allowReport: pretty.allowReport,
@@ -6494,6 +6645,28 @@ class InstallManager {
           return dep.mod == null
             ? Bluebird.resolve()
                 .then(() => {
+                  // Queue installation for already-finished downloads that aren't
+                  // installed yet. Without this, mods whose archives already exist
+                  // (e.g. from a prior cancelled install) would never be queued
+                  // because the did-finish-download event only fires for NEW
+                  // downloads. queueInstallation deduplicates internally.
+                  const freshDownloads =
+                    api.getState().persistent.downloads.files;
+                  if (
+                    downloadId &&
+                    freshDownloads[downloadId]?.state === "finished" &&
+                    freshDownloads[downloadId]?.size > 0
+                  ) {
+                    this.queueInstallation(
+                      api,
+                      dep,
+                      downloadId,
+                      gameId,
+                      sourceModId,
+                      recommended,
+                      dep.phase ?? 0,
+                    );
+                  }
                   return Bluebird.resolve({ updatedDep: dep, downloadId });
                 })
                 .catch((err) => {

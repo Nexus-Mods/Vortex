@@ -108,6 +108,44 @@ const RETRY_ERRORS = new Set([
   "UNKNOWN",
 ]);
 
+// Tracks paths where elevated permissions have been successfully granted,
+// so we don't show the unlock dialog repeatedly for child paths or
+// loop infinitely when permissions don't stick.
+// Entries are removed when they prove ineffective (isPathAlreadyUnlocked),
+// keeping the set small over time.
+const elevatedUnlockPaths = new Set<string>();
+
+function normalizePath(filePath: string): string {
+  return path.normalize(filePath).toLowerCase();
+}
+
+function isPathAlreadyUnlocked(filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  if (elevatedUnlockPaths.has(normalized)) {
+    // Remove the entry: if we already unlocked this exact path and the
+    // operation still fails, the unlock didn't help. Removing it ensures
+    // future EPERM errors on this path will show the dialog again.
+    elevatedUnlockPaths.delete(normalized);
+    return true;
+  }
+  return false;
+}
+
+function isChildOfUnlockedPath(filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  let found = false;
+  elevatedUnlockPaths.forEach((unlocked) => {
+    if (normalized.startsWith(unlocked + path.sep)) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function recordUnlockedPath(filePath: string): void {
+  elevatedUnlockPaths.add(normalizePath(filePath));
+}
+
 const simfail =
   process.env.SIMULATE_FS_ERRORS === "true"
     ? (func: () => PromiseBB<any>): PromiseBB<any> => {
@@ -217,6 +255,43 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
       ? PromiseBB.reject(new UserCanceled())
       : PromiseBB.resolve(result.response === 2),
   );
+}
+
+function elevatedUnlock(
+  unlockPath: string,
+  filePath: string,
+  originalError: NodeJS.ErrnoException,
+): PromiseBB<boolean> {
+  // Record the path immediately (before the async elevated call) so that
+  // concurrent operations on child paths see it and skip the dialog
+  recordUnlockedPath(unlockPath);
+  const userId = permission.getUserId();
+  return elevated(
+    (ipcPath, req: NodeJS.Require) => {
+      return req("permissions").allow(unlockPath, userId, "rwx", {
+        recursive: true,
+      });
+    },
+    { unlockPath, userId },
+  )
+    .then(() => true)
+    .catch((elevatedErr) => {
+      if (
+        elevatedErr instanceof UserCanceled ||
+        elevatedErr.message.indexOf(
+          "The operation was canceled by the user",
+        ) !== -1
+      ) {
+        return Promise.reject(new UserCanceled());
+      }
+      // if elevation failed, return the original error because the one from
+      // elevate - while interesting as well - would make error handling too complicated
+      log("error", "failed to acquire permission", {
+        filePath,
+        error: elevatedErr.message,
+      });
+      return Promise.reject(originalError);
+    });
 }
 
 function unknownErrorRetry(
@@ -377,36 +452,25 @@ function errorRepeat(
           return PromiseBB.reject(statErr);
         }
       })
-      .then(() => unlockConfirm(unlockPath))
-      .then((doUnlock) => {
-        if (doUnlock) {
-          const userId = permission.getUserId();
-          return elevated(
-            (ipcPath, req: NodeRequire) => {
-              return req("permissions").allow(unlockPath, userId as any, "rwx");
-            },
-            { unlockPath, userId },
-          )
-            .then(() => true)
-            .catch((elevatedErr) => {
-              const message = getErrorMessageOrDefault(elevatedErr);
-              if (
-                elevatedErr instanceof UserCanceled ||
-                message.indexOf("The operation was canceled by the user") !== -1
-              ) {
-                return Promise.reject(new UserCanceled());
-              }
-              // if elevation failed, return the original error because the one from
-              // elevate - while interesting as well - would make error handling too complicated
-              log("error", "failed to acquire permission", {
-                filePath,
-                error: message,
-              });
-              return Promise.reject(error);
-            });
-        } else {
-          return PromiseBB.resolve(true);
+      .then(() => {
+        // If we already granted elevated permissions on this exact path and the
+        // operation still fails, the permission change didn't help.
+        // Stop retrying to avoid an infinite dialog loop.
+        if (isPathAlreadyUnlocked(unlockPath)) {
+          return PromiseBB.resolve(false);
         }
+        // If this path is under a directory where permissions were already
+        // granted recursively, auto-grant without showing the dialog again
+        if (isChildOfUnlockedPath(unlockPath)) {
+          return elevatedUnlock(unlockPath, filePath, error);
+        }
+        return unlockConfirm(unlockPath).then((doUnlock) => {
+          if (doUnlock) {
+            return elevatedUnlock(unlockPath, filePath, error);
+          } else {
+            return PromiseBB.resolve(true);
+          }
+        });
       });
   } else if (error.code === "UNKNOWN") {
     return unknownErrorRetry(filePath, error, stackErr);

@@ -1,6 +1,7 @@
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
+import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type GameVersionManager from "../../gameversion_management/GameVersionManager";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
@@ -91,6 +92,13 @@ export function getGame(gameId: string): IGame {
     }
   }
   return makeGameProxy(game);
+}
+
+export function getGameStubDownloadInfo(
+  gameId: string,
+): IExtensionDownloadInfo | undefined {
+  const stub = $.extensionStubs.find((iter) => iter.game.id === gameId);
+  return stub?.ext;
 }
 
 export function getGameStores(): IGameStore[] {
