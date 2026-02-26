@@ -905,6 +905,19 @@ class Application {
         this.mAppMetadata.instanceId = instanceId;
       }
 
+      // 8. Read initial analytics opt-in state for telemetry gating.
+      // Subsequent changes are picked up via persist:diff listener in ipcHandler.
+      const analyticsEnabled = await readPersistedValue<boolean>("settings", [
+        "analytics",
+        "enabled",
+      ]);
+      if (analyticsEnabled === true) {
+        const { setTelemetryEnabled } = await import(
+          "../shared/telemetry/state"
+        );
+        setTelemetryEnabled(true);
+      }
+
       log("debug", "persistence setup complete");
     } catch (err) {
       if (err instanceof DataInvalid) {

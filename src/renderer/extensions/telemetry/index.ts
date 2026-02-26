@@ -1,26 +1,54 @@
-import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { Context } from "@opentelemetry/api";
+import type {
+  ReadableSpan,
+  Span,
+  SpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
 
-import { setTelemetryEnabled } from "../../../shared/telemetry/setup";
-import { getSafe } from "../../util/storeHelper";
+import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
+import { Resource } from "@opentelemetry/resources";
+import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 
-function init(context: IExtensionContext): boolean {
-  context.once(() => {
-    const state = context.api.getState();
-    const analyticsEnabled = getSafe<boolean>(
-      state,
-      ["settings", "analytics", "enabled"],
-      false,
-    );
-    setTelemetryEnabled(analyticsEnabled);
+import { patchBluebirdContext } from "../../../shared/telemetry/bluebird-patch";
+import { serializeSpan } from "../../../shared/telemetry/types";
 
-    // Watch for analytics opt-in changes
-    context.api.onStateChange(
-      ["settings", "analytics", "enabled"],
-      (_prev, next) => {
-        setTelemetryEnabled(!!next);
-      },
-    );
+/**
+ * A minimal SpanProcessor that forwards every completed span to the main
+ * process via IPC. The main process handles buffering, error detection,
+ * and OTLP export via its own RingBufferSpanProcessor.
+ */
+class ForwardingSpanProcessor implements SpanProcessor {
+  onStart(_span: Span, _parentContext: Context): void {}
+
+  onEnd(span: ReadableSpan): void {
+    window.api.telemetry.forwardSpan(serializeSpan(span));
+  }
+
+  forceFlush(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  shutdown(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+function init(): boolean {
+  const resource = new Resource({
+    "service.name": "vortex",
+    "process.type": "renderer",
   });
+
+  const provider = new BasicTracerProvider({
+    resource,
+    spanProcessors: [new ForwardingSpanProcessor()],
+  });
+  provider.register({
+    // TODO: Switch to ZoneContextManager when Node.js is removed from renderer
+    contextManager: new AsyncLocalStorageContextManager(),
+  });
+
+  patchBluebirdContext();
 
   return true;
 }

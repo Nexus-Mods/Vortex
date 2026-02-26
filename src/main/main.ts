@@ -32,7 +32,6 @@ import winapi from "winapi-bindings";
 
 import { DEBUG_PORT, HTTP_HEADER_SIZE } from "../shared/constants";
 import { VORTEX_VERSION } from "../shared/constants";
-import { createTelemetryProvider, getTracer } from "../shared/telemetry/setup";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { terminate } from "./errorHandling";
@@ -40,6 +39,8 @@ import { sendReportFile } from "./errorReporting";
 import getVortexPath from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import StylesheetCompiler from "./stylesheetCompiler";
+import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
+import { createMainTelemetryProvider } from "./telemetry/setup";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
@@ -162,9 +163,10 @@ async function main(): Promise<void> {
     "UseEcoQoSForBackgroundProcess",
   );
 
-  createTelemetryProvider("main", app.getVersion());
+  createMainTelemetryProvider(app.getVersion());
 
   initIpcHandlers();
+  initTelemetryIpcHandler();
   StylesheetCompiler.init();
 
   // --run has to be evaluated *before* we request the single instance lock!

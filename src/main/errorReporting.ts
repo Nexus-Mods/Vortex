@@ -7,10 +7,11 @@ import {
 import { app } from "electron";
 import { readFile } from "node:fs/promises";
 
-import { createVortexResource } from "../shared/telemetry/resources";
-import { COLLECTOR_URL, OTLP_HEADERS } from "../shared/telemetry/setup";
-import { recordErrorOnSpan } from "../shared/telemetry/spans";
 import type { ReportableError } from "../shared/types/errors";
+
+import { recordErrorOnSpan } from "../shared/telemetry/spans";
+import { createVortexResource } from "./telemetry/resources";
+import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
 
 let errorReportingDisabled = false;
 

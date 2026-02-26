@@ -268,6 +268,10 @@ try {
       isStarted: (id: number) =>
         betterIpcRenderer.invoke("powerSaveBlocker:isStarted", id),
     },
+    telemetry: {
+      forwardSpan: (span) =>
+        betterIpcRenderer.send("telemetry:forward-span", span),
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);

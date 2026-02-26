@@ -30,8 +30,8 @@ import {
   OAUTH_CLIENT_ID,
 } from "../extensions/nexus_integration/constants";
 import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
-import { getProcessor, isTelemetryEnabled } from "../../shared/telemetry/setup";
 import { recordErrorOnSpan } from "../../shared/telemetry/spans";
+import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";
 import { UserCanceled } from "./CustomErrors";
@@ -168,7 +168,7 @@ export function createErrorReport(
       userData,
     }),
   );
-  if (isTelemetryEnabled()) {
+  if (isTelemetryEnabled(state)) {
     spawnSelf(["--report", reportPath]);
   }
 }

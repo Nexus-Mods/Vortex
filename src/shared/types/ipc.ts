@@ -20,6 +20,7 @@ import type {
 } from "./electron";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+import type { SerializedSpan } from "../telemetry/types";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -124,6 +125,9 @@ export interface RendererChannels {
 
   // Updater: Restart and install update
   "updater:restart-and-install": () => void;
+
+  // Telemetry: Forward a completed span from renderer to main for buffering/export
+  "telemetry:forward-span": (span: SerializedSpan) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */

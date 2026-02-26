@@ -1,14 +1,12 @@
-export { createVortexResource } from "./resources";
 export { RingBufferSpanProcessor } from "./RingBufferSpanProcessor";
 export type { RingBufferOptions } from "./RingBufferSpanProcessor";
+export { recordErrorOnSpan } from "./spans";
 export {
-  createTelemetryProvider,
   getProcessor,
-  getResource,
   getTracer,
   isTelemetryEnabled,
-  setServiceVersion,
+  setProcessor,
   setTelemetryEnabled,
-} from "./setup";
-export type { TelemetrySetupResult } from "./setup";
-export { recordErrorOnSpan } from "./spans";
+} from "./state";
+export { deserializeSpan, serializeSpan } from "./types";
+export type { SerializedSpan } from "./types";

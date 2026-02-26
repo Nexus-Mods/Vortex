@@ -2389,6 +2389,19 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/context-async-hooks/-/context-async-hooks-2.5.1.tgz#457b8f9c1e219bf6e22b549d90f773db0a38fe06"
   integrity sha512-MHbu8XxCHcBn6RwvCt2Vpn1WnLMNECfNKYB14LI5XypcgH4IE0/DiVifVR9tAkwPMyLXN8dOoPJfya3IryLQVw==
 
+"@opentelemetry/context-zone-peer-dep@2.5.1":
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/context-zone-peer-dep/-/context-zone-peer-dep-2.5.1.tgz#c1fb818d61aca1758b8abcb5d430cb91e7782104"
+  integrity sha512-xyBDA9BIjlAeawNawFZtwJp4BUznGrR5Sm7ldK/94qWtYde9+1y61tAqBep0/5B46WpbEadZGbpa2MCKAZwvxA==
+
+"@opentelemetry/context-zone@^2.5.1":
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/context-zone/-/context-zone-2.5.1.tgz#c226ca4bbfea94f7fafe61cb9db9f857130b8062"
+  integrity sha512-v4HORgtvdnDAdFsP43H5P2fTSzCE/22UrxszSeDyEJmKldpEh2Dyp6tT/5GXYBBVFaTnFvkGv81U0pXV4z41Jg==
+  dependencies:
+    "@opentelemetry/context-zone-peer-dep" "2.5.1"
+    zone.js "^0.11.0 || ^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0"
+
 "@opentelemetry/core@1.30.1":
   version "1.30.1"
   resolved "https://registry.yarnpkg.com/@opentelemetry/core/-/core-1.30.1.tgz#a0b468bb396358df801881709ea38299fc30ab27"
@@ -14936,3 +14949,8 @@ zod@^4.1.5, zod@^4.3.5:
   version "4.3.5"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.3.5.tgz#aeb269a6f9fc259b1212c348c7c5432aaa474d2a"
   integrity sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==
+
+"zone.js@^0.11.0 || ^0.12.0 || ^0.13.0 || ^0.14.0 || ^0.15.0 || ^0.16.0":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/zone.js/-/zone.js-0.16.1.tgz#ca91f0889e46b1c252aab6c75332e36840916227"
+  integrity sha512-dpvY17vxYIW3+bNrP0ClUlaiY0CiIRK3tnoLaGoQsQcY9/I/NpzIWQ7tQNhbV7LacQMpCII6wVzuL3tuWOyfuA==
