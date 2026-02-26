@@ -21,7 +21,6 @@
     "bluebird": "^3.5.1",
     "copyfiles": "^2.1.1",
     "rimraf": "^2.6.1",
-    "rm-local-modules": "^0.0.2",
     "ts-loader": "^9.4.2",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.75.0",

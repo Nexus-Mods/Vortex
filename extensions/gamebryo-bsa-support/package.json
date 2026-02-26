@@ -21,11 +21,10 @@
     "bsatk": "Nexus-Mods/node-bsatk",
     "copyfiles": "^2.4.1",
     "rimraf": "^3.0.2",
-    "rm-local-modules": "^0.0.2",
+    "tmp": "^0.1.0",
     "ts-loader": "^9.5.1",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "tmp": "^0.1.0"
+    "webpack-cli": "^5.1.4"
   }
 }

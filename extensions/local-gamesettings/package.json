@@ -36,7 +36,6 @@
     "react-i18next": "^1.10.1",
     "redux": "^4.0.4",
     "redux-act": "^1.1.0",
-    "rm-local-modules": "^0.0.2",
     "ts-loader": "^9.4.2",
     "vortex-api": "Nexus-Mods/vortex-api",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",

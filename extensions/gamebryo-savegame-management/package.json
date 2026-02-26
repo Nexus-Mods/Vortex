@@ -37,18 +37,17 @@
     "prop-types": "^15.7.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-i18next": "^11.11.0",
     "react-redux": "^7.2.3",
+    "react-select": "^1.2.1",
     "redux": "4.0.4",
     "redux-act": "^1.7.7",
-    "rm-local-modules": "^0.0.2",
     "ts-loader": "^9.5.1",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "vortex-api": "Nexus-Mods/vortex-api",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "react-i18next": "^11.11.0",
-    "react-select": "^1.2.1"
+    "webpack-cli": "^5.1.4"
   },
   "resolutions": {
     "@types/react": "16.14.66",
