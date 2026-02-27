@@ -38,16 +38,14 @@ jobs:
           echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
           echo "Using Node.js version: $nodeVersion"
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
           cache: "pnpm"
-
-      - name: Install corepack
-        run: |
-          npm install --global corepack@latest
-          corepack install
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
