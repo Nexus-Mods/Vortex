@@ -42,22 +42,33 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "yarn"
+          cache: "pnpm"
+
+      - name: Install corepack
+        run: |
+          npm install --global corepack@latest
+          corepack install
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
+      - name: Build FOMOD
+        run: pnpm run build:fomod
+
       - name: Install dependencies
-        run: yarn --frozen-lockfile --network-timeout 600000 install
+        run: pnpm install
 
       - name: Lint
-        run: yarn lint:ci
+        run: pnpm run lint:ci
 
       - name: Build
-        run: yarn build
+        run: pnpm run build
+
+      - name: Build subprojects
+        run: pnpm run subprojects:out
 
       - name: Test
         if: runner.os == 'Windows'
-        run: yarn test
+        run: pnpm run test
