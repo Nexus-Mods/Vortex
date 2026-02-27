@@ -1563,6 +1563,25 @@ class InstallManager {
                   return Bluebird.reject(err);
                 }
                 modId = newModId;
+
+                // When installing as a dependency of a collection, always tag the mod
+                // with the collection name as its variant so it's clear which collection
+                // installed it and different collection versions can coexist.
+                if (
+                  sourceModId != null &&
+                  getSafe(fullInfo, ["custom", "variant"], undefined) ===
+                    undefined
+                ) {
+                  const collectionMod =
+                    api.getState().persistent.mods?.[installGameId]?.[
+                      sourceModId
+                    ];
+                  if (collectionMod != null) {
+                    setdefault(fullInfo, "custom", {} as any).variant =
+                      modName(collectionMod);
+                  }
+                }
+
                 log("debug", "mod id for newly installed mod", {
                   archivePath,
                   modId,
@@ -1580,6 +1599,8 @@ class InstallManager {
                         api.store,
                         installGameId,
                         isCollection,
+                        modInfo.modId,
+                        modInfo.logicalFileName,
                       )
                     : undefined;
 
@@ -4785,6 +4806,8 @@ class InstallManager {
     store: Redux.Store<any>,
     gameMode: string,
     isCollection: boolean,
+    nexusModId?: number,
+    logicalFileName?: string,
   ): IMod {
     const mods = store.getState().persistent.mods[gameMode] || {};
     // This is not great, but we need to differentiate between revisionIds and fileIds
@@ -4806,6 +4829,26 @@ class InstallManager {
           mods[key].attributes?.fileId ?? mods[key].attributes?.revisionId;
         if (newestFileId !== currentFileId && newestFileId === fileId) {
           mod = mods[key];
+        }
+        // Also detect same-file different-version by Nexus modId + logicalFileName.
+        // logicalFileName identifies the specific file on a mod page, so matching both
+        // avoids false positives when a mod page hosts multiple unrelated files.
+        if (
+          mod === undefined &&
+          nexusModId != null &&
+          logicalFileName != null
+        ) {
+          const installedModId: number = mods[key].attributes?.modId;
+          const installedLogicalFileName: string =
+            mods[key].attributes?.logicalFileName;
+          const installedFileId: number = mods[key].attributes?.fileId;
+          if (
+            installedModId === nexusModId &&
+            installedLogicalFileName === logicalFileName &&
+            installedFileId !== fileId
+          ) {
+            mod = mods[key];
+          }
         }
       });
 
