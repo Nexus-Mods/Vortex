@@ -131,6 +131,10 @@ export namespace FileEntry {
 /**
  * Filesystem abstraction for cross-platform testing
  * All methods accept ResolvedPath (not raw strings!)
+ *
+ * Uses Uint8Array instead of Buffer for platform-agnostic binary data.
+ * Node.js Buffer extends Uint8Array, so NodeFilesystem implementations
+ * work without any runtime changes.
  */
 export interface IFilesystem {
   // ========================================================================
@@ -169,11 +173,11 @@ export interface IFilesystem {
    * Read entire file contents
    *
    * @param path - Absolute path to file
-   * @param encoding - Encoding (default: utf8) - pass null to get a raw Buffer
-   * @returns File contents as string or Buffer (if encoding is null)
+   * @param encoding - Encoding (default: utf8) - pass null to get raw binary data
+   * @returns File contents as string or Uint8Array (if encoding is null)
    * @throws Error if file doesn't exist or can't be read
    */
-  readFile(path: ResolvedPath, encoding?: BufferEncoding | null): Promise<string | Buffer>;
+  readFile(path: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array>;
 
   // ========================================================================
   // Write Operations
@@ -184,11 +188,11 @@ export interface IFilesystem {
    * Creates parent directories if they don't exist
    *
    * @param path - Absolute path to file
-   * @param data - Data to write (string or Buffer)
+   * @param data - Data to write (string or binary data)
    * @param encoding - Encoding (default: utf8)
    * @throws Error if write fails
    */
-  writeFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
+  writeFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
 
   /**
    * Append data to file
@@ -197,7 +201,7 @@ export interface IFilesystem {
    * @param data - Data to append
    * @param encoding - Encoding (default: utf8)
    */
-  appendFile(path: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void>;
+  appendFile(path: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void>;
 
   /**
    * Delete file

@@ -1,4 +1,3 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for path normalization and cross-platform path handling
  *
@@ -10,8 +9,8 @@
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { BaseResolver } from '../resolvers/BaseResolver';
-import { Anchor, ResolvedPath } from '../types';
+import { BaseResolver } from '../src/resolvers/BaseResolver';
+import { Anchor, ResolvedPath } from '../src/types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 
 // Test resolver that simulates Windows paths

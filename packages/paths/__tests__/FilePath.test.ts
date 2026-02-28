@@ -1,15 +1,14 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for FilePath class
  */
 
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
-import type { IFilesystem } from '../IFilesystem';
-import type { IResolverBase } from '../IResolver';
+import type { IFilesystem } from '../src/IFilesystem';
+import type { IResolverBase } from '../src/IResolver';
 
-import { FilePath } from '../FilePath';
-import { RelativePath, Anchor, ResolvedPath } from '../types';
+import { FilePath } from '../src/FilePath';
+import { RelativePath, Anchor, ResolvedPath } from '../src/types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 
 // Mock resolver for testing

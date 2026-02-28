@@ -11,12 +11,10 @@
  * ```
  */
 
-// eslint-disable-next-line vortex/no-module-imports
-import * as path from 'path';
-
 import type { IResolverBase } from './IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from './types';
 
+import { forPlatform } from './pathUtils';
 import { fnv1a, RelativePath as RelativePathNS, Anchor as AnchorNS } from './types';
 
 /**
@@ -211,13 +209,6 @@ export class FilePath {
     return `FilePath[${anchorName}]/${relativePath} (${this.resolver.name})`;
   }
 
-  /**
-   * For console.log debugging
-   */
-  [Symbol.for('nodejs.util.inspect.custom')](): string {
-    return this.toString();
-  }
-
   // ========================================================================
   // Equality & Comparison
   // ========================================================================
@@ -301,11 +292,11 @@ export class FilePath {
 
     // Use platform-appropriate path module for correct behavior on any host
     const fs = this.resolver.getFilesystem();
-    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+    const pathMod = forPlatform(fs.platform);
 
     // Normalize for comparison - resolve() properly handles . and .. segments
-    const resolvedBase = pathMod.resolve(basePath as string);
-    const resolvedChild = pathMod.resolve(childPath as string);
+    const resolvedBase = pathMod.normalize(basePath as string);
+    const resolvedChild = pathMod.normalize(childPath as string);
 
     // Check if child is under base (case-insensitive on Windows)
     const baseNorm = fs.normalizePath(resolvedBase);
@@ -363,9 +354,9 @@ export class FilePath {
   async isAncestorOf(childPath: string | ResolvedPath): Promise<boolean> {
     const parentPath = await this.resolve();
     const fs = this.resolver.getFilesystem();
-    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
-    const resolvedParent = pathMod.resolve(parentPath as string);
-    const resolvedChild = pathMod.resolve(childPath as string);
+    const pathMod = forPlatform(fs.platform);
+    const resolvedParent = pathMod.normalize(parentPath as string);
+    const resolvedChild = pathMod.normalize(childPath as string);
     const parentNorm = fs.normalizePath(resolvedParent);
     const childNorm = fs.normalizePath(resolvedChild);
     const parentWithSep = parentNorm.endsWith(fs.sep) ? parentNorm : parentNorm + fs.sep;

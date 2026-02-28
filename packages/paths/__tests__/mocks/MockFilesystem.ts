@@ -5,14 +5,12 @@
  * platform behavior (case-sensitive, path separators, etc.).
  */
 
-// eslint-disable-next-line vortex/no-module-imports
-import * as path from 'path';
+import { forPlatform, type PathModule } from '../../src/pathUtils';
+import type { IFilesystem, FileEntry } from '../../src/IFilesystem';
+import type { ResolvedPath } from '../../src/types';
 
-import type { IFilesystem, FileEntry } from '../../IFilesystem';
-import type { ResolvedPath } from '../../types';
-
-import { FileType as FileTypeEnum } from '../../IFilesystem';
-import { RelativePath as RelativePathNS } from '../../types';
+import { FileType as FileTypeEnum } from '../../src/IFilesystem';
+import { RelativePath as RelativePathNS } from '../../src/types';
 
 /**
  * In-memory entry
@@ -34,6 +32,7 @@ interface Entry {
 export class MockFilesystem implements IFilesystem {
   private entries = new Map<string, Entry>();
   public readonly sep: string;
+  private readonly pathMod: PathModule;
 
   constructor(
     public readonly platform: 'windows' | 'unix' = 'unix',
@@ -41,6 +40,7 @@ export class MockFilesystem implements IFilesystem {
   ) {
     // Set separator for this platform
     this.sep = this.platform === 'windows' ? '\\' : '/';
+    this.pathMod = forPlatform(this.platform);
 
     // Create root directory
     const root = this.platform === 'windows' ? 'C:\\' : '/';
@@ -62,8 +62,7 @@ export class MockFilesystem implements IFilesystem {
    * Uses platform-appropriate path module so Windows mocks work on Linux hosts
    */
   normalizePath(p: string): string {
-    const pathMod = this.platform === 'windows' ? path.win32 : path.posix;
-    const normalized = pathMod.normalize(p);
+    const normalized = this.pathMod.normalize(p);
     return this.caseSensitive ? normalized : normalized.toLowerCase();
   }
 
@@ -71,7 +70,7 @@ export class MockFilesystem implements IFilesystem {
    * Get parent directory path
    */
   private getParentPath(p: string): string {
-    return path.dirname(p);
+    return this.pathMod.dirname(p);
   }
 
   // ========================================================================
@@ -129,27 +128,31 @@ export class MockFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(path: ResolvedPath, encoding: BufferEncoding | null = 'utf8'): Promise<string | Buffer> {
+  async readFile(path: ResolvedPath, encoding: string | null = 'utf8'): Promise<string | Uint8Array> {
     const entry = this.getFileEntry(path);
     entry.atime = new Date();
     if (encoding) {
-      return entry.content.toString(encoding);
+      return entry.content!.toString(encoding as BufferEncoding);
     }
-    return entry.content;
+    return entry.content!;
   }
 
   // ========================================================================
   // Write Operations
   // ========================================================================
 
-  async writeFile(path: ResolvedPath, data: string | Buffer, encoding: BufferEncoding = 'utf8'): Promise<void> {
+  async writeFile(path: ResolvedPath, data: string | Uint8Array, encoding: string = 'utf8'): Promise<void> {
     // Ensure parent directory exists (create if needed)
     const parent = this.getParentPath(path as string);
     if (parent !== path as string && !this.entries.has(this.normalizePath(parent))) {
       await this.mkdir(parent as ResolvedPath, { recursive: true });
     }
 
-    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding);
+    const buffer = Buffer.isBuffer(data)
+      ? data
+      : data instanceof Uint8Array
+        ? Buffer.from(data)
+        : Buffer.from(data, encoding as BufferEncoding);
     const now = new Date();
 
     const existingEntry = this.getEntry(path);
@@ -167,8 +170,12 @@ export class MockFilesystem implements IFilesystem {
     });
   }
 
-  async appendFile(path: ResolvedPath, data: string | Buffer, encoding: BufferEncoding = 'utf8'): Promise<void> {
-    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, encoding);
+  async appendFile(path: ResolvedPath, data: string | Uint8Array, encoding: string = 'utf8'): Promise<void> {
+    const buffer = Buffer.isBuffer(data)
+      ? data
+      : data instanceof Uint8Array
+        ? Buffer.from(data)
+        : Buffer.from(data, encoding as BufferEncoding);
 
     if (this.entries.has(this.normalizePath(path as string))) {
       const existing = this.getFileEntry(path);
@@ -358,8 +365,8 @@ export class MockFilesystem implements IFilesystem {
 
       const children = await this.readdir(src);
       for (const child of children) {
-        const childSrc = path.join(src as string, child.name as string) as ResolvedPath;
-        const childDest = path.join(dest as string, child.name as string) as ResolvedPath;
+        const childSrc = this.pathMod.join(src as string, child.name as string) as unknown as ResolvedPath;
+        const childDest = this.pathMod.join(dest as string, child.name as string) as unknown as ResolvedPath;
         await this.copy(childSrc, childDest, options);
       }
     }

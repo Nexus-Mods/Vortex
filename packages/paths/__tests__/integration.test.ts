@@ -1,14 +1,13 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Integration tests - End-to-end scenarios
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { BaseResolver } from '../resolvers/BaseResolver';
-import { UnixResolver } from '../resolvers/UnixResolver';
-import { WindowsResolver } from '../resolvers/WindowsResolver';
-import { RelativePath, Anchor, ResolvedPath } from '../types';
+import { BaseResolver } from '../src/resolvers/BaseResolver';
+import { UnixResolver } from '../src/resolvers/UnixResolver';
+import { WindowsResolver } from '../src/resolvers/WindowsResolver';
+import { RelativePath, Anchor, ResolvedPath } from '../src/types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';

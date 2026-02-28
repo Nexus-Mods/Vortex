@@ -1,12 +1,11 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for WindowsResolver - Windows drive letter resolution
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { WindowsResolver } from '../resolvers/WindowsResolver';
-import { Anchor } from '../types';
+import { WindowsResolver } from '../src/resolvers/WindowsResolver';
+import { Anchor } from '../src/types';
 import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';
 
 describe('WindowsResolver', () => {

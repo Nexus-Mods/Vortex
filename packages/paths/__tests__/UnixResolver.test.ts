@@ -1,12 +1,11 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for UnixResolver - Unix filesystem root resolution
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { UnixResolver } from '../resolvers/UnixResolver';
-import { Anchor } from '../types';
+import { UnixResolver } from '../src/resolvers/UnixResolver';
+import { Anchor } from '../src/types';
 import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 
 describe('UnixResolver', () => {

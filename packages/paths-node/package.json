@@ -1,0 +1,26 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/paths-node",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "pnpm tsc -p tsconfig.build.json",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+  },
+  "main": "./out/index.js",
+  "types": "./out/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./out/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@vortex/paths": "workspace:*",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4"
+  }
+}

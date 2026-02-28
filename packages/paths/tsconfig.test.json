@@ -1,0 +1,10 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "__tests__/**/*"],
+  "compilerOptions": {
+    "types": ["node"],
+    "module": "commonjs",
+    "moduleResolution": "node"
+  }
+}

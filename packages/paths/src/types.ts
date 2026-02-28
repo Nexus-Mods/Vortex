@@ -8,10 +8,9 @@
  * - Anchor: Named resolution starting points (interned Symbols)
  */
 
-// eslint-disable-next-line vortex/no-module-imports
-import * as path from 'path';
-// eslint-disable-next-line vortex/no-module-imports
 import { z } from 'zod';
+
+import { posix, win32, detectPathModule } from './pathUtils';
 
 // ============================================================================
 // Zod Schemas for Runtime Validation
@@ -52,8 +51,8 @@ export const ResolvedPathSchema = z.string()
     if (/^[a-zA-Z]:\\/.test(s)) {
       return true;
     }
-    // Fall back to platform-specific check
-    return path.isAbsolute(s);
+    // Check both platform modules
+    return posix.isAbsolute(s) || win32.isAbsolute(s);
   }, {
     message: 'Resolved paths must be absolute (Unix: /path or Windows: C:\\path)',
   });
@@ -151,7 +150,7 @@ export namespace RelativePath {
    * // => 'mods/skyrim'
    */
   export function dirname(relative: RelativePath): RelativePath {
-    const dir = path.posix.dirname(relative as string);
+    const dir = posix.dirname(relative as string);
     if (dir === '.' || dir === '') {
       return EMPTY;
     }
@@ -166,7 +165,7 @@ export namespace RelativePath {
    * // => 'data.esp'
    */
   export function basename(relative: RelativePath, ext?: string): string {
-    return path.posix.basename(relative as string, ext);
+    return posix.basename(relative as string, ext);
   }
 
   /**
@@ -269,7 +268,8 @@ export namespace ResolvedPath {
     ext: string;       // Extension (with dot)
     name: string;      // Filename without extension
   } {
-    return path.parse(resolved as string);
+    const pathMod = detectPathModule(resolved as string);
+    return pathMod.parse(resolved as string);
   }
 
   /**
@@ -281,7 +281,8 @@ export namespace ResolvedPath {
    * // => 'C:\\Vortex\\mods\\skyrim' (Windows)
    */
   export function join(base: ResolvedPath, ...segments: string[]): ResolvedPath {
-    const joined = path.join(base as string, ...segments);
+    const pathMod = detectPathModule(base as string);
+    const joined = pathMod.join(base as string, ...segments);
     return make(joined);
   }
 
@@ -293,7 +294,8 @@ export namespace ResolvedPath {
    * // => 'C:\\Vortex'
    */
   export function dirname(resolved: ResolvedPath): ResolvedPath {
-    return make(path.dirname(resolved as string));
+    const pathMod = detectPathModule(resolved as string);
+    return make(pathMod.dirname(resolved as string));
   }
 
   /**
@@ -304,7 +306,8 @@ export namespace ResolvedPath {
    * // => 'data.esp'
    */
   export function basename(resolved: ResolvedPath, ext?: string): string {
-    return path.basename(resolved as string, ext);
+    const pathMod = detectPathModule(resolved as string);
+    return pathMod.basename(resolved as string, ext);
   }
 
   /**
@@ -318,7 +321,8 @@ export namespace ResolvedPath {
    * Normalize path (resolve . and .. segments, deduplicate separators)
    */
   export function normalize(resolved: ResolvedPath): ResolvedPath {
-    return make(path.normalize(resolved as string));
+    const pathMod = detectPathModule(resolved as string);
+    return make(pathMod.normalize(resolved as string));
   }
 
   /**
@@ -336,7 +340,7 @@ export namespace ResolvedPath {
   export function relative(from: ResolvedPath, to: ResolvedPath): string {
     const fromStr = from as string;
     // Use win32 for Windows-style paths, posix for Unix-style paths
-    const pathMod = /^[a-zA-Z]:\\/.test(fromStr) ? path.win32 : path.posix;
+    const pathMod = /^[a-zA-Z]:\\/.test(fromStr) ? win32 : posix;
     return pathMod.relative(fromStr, to as string);
   }
 }
@@ -382,7 +386,8 @@ export namespace Extension {
    * Extension.fromPath('noext') // => undefined
    */
   export function fromPath(filePath: string): Extension | undefined {
-    const ext = path.extname(filePath);
+    const pathMod = detectPathModule(filePath);
+    const ext = pathMod.extname(filePath);
     if (ext === '') {
       return undefined;
     }

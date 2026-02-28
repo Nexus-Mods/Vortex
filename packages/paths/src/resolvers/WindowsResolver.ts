@@ -16,13 +16,11 @@
  * ```
  */
 
-// eslint-disable-next-line vortex/no-module-imports
-import * as path from 'path';
-
 import type { IFilesystem } from '../IFilesystem';
 import type { IResolverBase } from '../IResolver';
 import type { RelativePath, ResolvedPath } from '../types';
 
+import { win32 } from '../pathUtils';
 import { RelativePath as RelativePathNS, ResolvedPath as ResolvedPathNS } from '../types';
 import { MappingResolver, fromFunction, type MappingStrategy } from './MappingResolver';
 
@@ -82,7 +80,7 @@ export class WindowsResolver extends MappingResolver<WindowsDrive> {
       return base;
     }
     // Use Windows path joining explicitly
-    const joined = path.win32.join(base as string, relative as string);
+    const joined = win32.join(base as string, relative as string);
     return ResolvedPathNS.make(joined);
   }
 

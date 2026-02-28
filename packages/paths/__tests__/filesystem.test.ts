@@ -1,12 +1,11 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for IFilesystem implementations
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 
-import { FileEntry } from '../IFilesystem';
-import { ResolvedPath } from '../types';
+import { FileEntry } from '../src/IFilesystem';
+import { ResolvedPath } from '../src/types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';

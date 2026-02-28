@@ -7,14 +7,12 @@
  * - Common resolution logic
  */
 
-// eslint-disable-next-line vortex/no-module-imports
-import * as path from 'path';
-
 import type { IFilesystem } from '../IFilesystem';
 import type { IResolver, IResolverBase } from '../IResolver';
 import type { Anchor, RelativePath, ResolvedPath } from '../types';
 
 import { FilePath } from '../FilePath';
+import { forPlatform, type PathModule } from '../pathUtils';
 import { RelativePath as RelativePathNS, Anchor as AnchorNS, ResolvedPath as ResolvedPathNS } from '../types';
 
 /**
@@ -143,13 +141,13 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
       return base;
     }
     // Use platform-appropriate path module if filesystem is available,
-    // falling back to host-OS path module otherwise
-    let pathMod: typeof path;
+    // falling back to posix otherwise
+    let pathMod: PathModule;
     try {
       const fs = this.getFilesystem();
-      pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+      pathMod = forPlatform(fs.platform);
     } catch {
-      pathMod = path;
+      pathMod = forPlatform('unix');
     }
     const joined = pathMod.join(base as string, relative as string);
     return ResolvedPathNS.make(joined);
@@ -333,7 +331,7 @@ export abstract class BaseResolver<ValidAnchors extends string = string> impleme
    */
   private extractRelative(fullPath: string, basePath: string): RelativePath {
     const fs = this.getFilesystem();
-    const pathMod = fs.platform === 'windows' ? path.win32 : path.posix;
+    const pathMod = forPlatform(fs.platform);
     const sep = fs.sep;
 
     // Normalize structurally (consistent separators, resolve . and ..) but not case

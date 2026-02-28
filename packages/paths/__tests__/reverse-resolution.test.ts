@@ -5,18 +5,16 @@
  * extract relative paths, and manipulate path bases.
  */
 
-/// <reference types="jest" />
+import type { IResolverBase } from '../src/IResolver';
 
-import type { IResolverBase } from '../IResolver';
-
-import { fromRecord, MappingResolver } from '../resolvers/MappingResolver';
-import { UnixResolver } from '../resolvers/UnixResolver';
-import { WindowsResolver } from '../resolvers/WindowsResolver';
+import { fromRecord, MappingResolver } from '../src/resolvers/MappingResolver';
+import { UnixResolver } from '../src/resolvers/UnixResolver';
+import { WindowsResolver } from '../src/resolvers/WindowsResolver';
 import {
   Anchor,
   RelativePath,
   ResolvedPath,
-} from '../types';
+} from '../src/types';
 import { MockFilesystem } from './mocks/MockFilesystem';
 import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 import { MockWindowsFilesystem } from './mocks/MockWindowsFilesystem';

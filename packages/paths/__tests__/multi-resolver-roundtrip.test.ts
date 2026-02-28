@@ -15,15 +15,14 @@
  * - toOSPath throws when no terminal resolver in chain
  */
 
-/* eslint-disable vortex/no-module-imports */
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import * as path from 'path';
+import { posix } from '../src/pathUtils';
 
-import type { IResolverBase } from '../IResolver';
+import type { IResolverBase } from '../src/IResolver';
 
-import { MappingResolver, fromRecord } from '../resolvers/MappingResolver';
-import { UnixResolver } from '../resolvers/UnixResolver';
-import { Anchor, RelativePath, ResolvedPath } from '../types';
+import { MappingResolver, fromRecord } from '../src/resolvers/MappingResolver';
+import { UnixResolver } from '../src/resolvers/UnixResolver';
+import { Anchor, RelativePath, ResolvedPath } from '../src/types';
 import { MockUnixFilesystem } from './mocks/MockUnixFilesystem';
 
 // ============================================================================
@@ -55,7 +54,7 @@ class TestAppResolver extends MappingResolver<TestAppAnchor> {
 // ============================================================================
 
 function normalizePath(p: string): string {
-  return path.normalize(p).replace(/\\/g, '/').replace(/\/$/, '');
+  return posix.normalize(p).replace(/\/$/, '');
 }
 
 // ============================================================================

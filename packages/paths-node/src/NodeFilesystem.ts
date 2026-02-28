@@ -5,16 +5,12 @@
  * Used in production code for actual filesystem access.
  */
 
-// eslint-disable-next-line vortex/no-module-imports
+import type { IFilesystem, FileEntry } from '@vortex/paths';
+import type { ResolvedPath } from '@vortex/paths';
+
+import { FileType as FileTypeEnum, RelativePath as RelativePathNS } from '@vortex/paths';
 import * as fs from 'fs-extra';
-// eslint-disable-next-line vortex/no-module-imports
 import * as path from 'path';
-
-import type { IFilesystem, FileEntry } from '../IFilesystem';
-import type { ResolvedPath } from '../types';
-
-import { FileType as FileTypeEnum } from '../IFilesystem';
-import { RelativePath as RelativePathNS } from '../types';
 
 /**
  * Real filesystem implementation using Node.js fs
@@ -33,9 +29,9 @@ export class NodeFilesystem implements IFilesystem {
   // Read Operations
   // ========================================================================
 
-  async readFile(filePath: ResolvedPath, encoding?: BufferEncoding): Promise<string | Buffer> {
+  async readFile(filePath: ResolvedPath, encoding?: string | null): Promise<string | Uint8Array> {
     if (encoding) {
-      return fs.readFile(filePath as string, { encoding });
+      return fs.readFile(filePath as string, { encoding: encoding as BufferEncoding });
     }
     return fs.readFile(filePath as string);
   }
@@ -44,13 +40,13 @@ export class NodeFilesystem implements IFilesystem {
   // Write Operations
   // ========================================================================
 
-  async writeFile(filePath: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void> {
+  async writeFile(filePath: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void> {
     await fs.ensureDir(path.dirname(filePath as string));
-    await fs.writeFile(filePath as string, data, encoding ? { encoding } : undefined);
+    await fs.writeFile(filePath as string, data, encoding ? { encoding: encoding as BufferEncoding } : undefined);
   }
 
-  async appendFile(filePath: ResolvedPath, data: string | Buffer, encoding?: BufferEncoding): Promise<void> {
-    await fs.appendFile(filePath as string, data, encoding ? { encoding } : undefined);
+  async appendFile(filePath: ResolvedPath, data: string | Uint8Array, encoding?: string): Promise<void> {
+    await fs.appendFile(filePath as string, data, encoding ? { encoding: encoding as BufferEncoding } : undefined);
   }
 
   async unlink(filePath: ResolvedPath): Promise<void> {
@@ -155,7 +151,6 @@ export class NodeFilesystem implements IFilesystem {
   ): Promise<void> {
     await fs.copy(src as string, dest as string, {
       overwrite: options?.overwrite ?? true,
-      recursive: options?.recursive ?? true,
     });
   }
 

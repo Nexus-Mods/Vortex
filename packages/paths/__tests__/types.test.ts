@@ -1,4 +1,3 @@
-/* eslint-disable vortex/no-module-imports */
 /**
  * Tests for branded types: RelativePath, ResolvedPath, Extension, Anchor
  */
@@ -10,7 +9,7 @@ import {
   ResolvedPath,
   Extension,
   Anchor,
-} from '../types';
+} from '../src/types';
 
 describe('RelativePath', () => {
   describe('normalization', () => {
