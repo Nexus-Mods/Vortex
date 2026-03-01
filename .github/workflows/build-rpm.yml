@@ -31,16 +31,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
+
+      - name: Setup pnpm from packageManager
+        run: |
+          corepack enable
+          pnpm --version
 
       - name: Install system dependencies
         run: |
