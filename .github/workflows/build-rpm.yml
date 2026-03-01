@@ -1,0 +1,72 @@
+name: Build RPM
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/main/electron-builder.config.json'
+      - 'src/main/electron-builder.linux-rpm.json'
+      - 'src/main/package.json'
+      - 'scripts/ensure-rpm-packaging.mjs'
+      - '.github/workflows/build-rpm.yml'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-rpm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure RPM packaging changes
+        run: node ./scripts/ensure-rpm-packaging.mjs
+
+      - name: Build distribution assets
+        run: |
+          pnpm run dist
+          pnpm run assets:dist
+          pnpm run subprojects:dist
+
+      - name: Build Linux RPM package
+        run: pnpm -F @vortex/main run package:linux:rpm
+
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vortex-rpm-${{ github.run_number }}
+          path: |
+            dist/*.rpm
+            dist/*.zip
+          if-no-files-found: error

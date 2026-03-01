@@ -1,0 +1,13 @@
+{
+  "extends": "./electron-builder.config.json",
+  "linux": {
+    "target": [
+      "rpm",
+      "zip"
+    ]
+  },
+  "extraResources": [
+    "./nsis/**/*",
+    "../../locales"
+  ]
+}

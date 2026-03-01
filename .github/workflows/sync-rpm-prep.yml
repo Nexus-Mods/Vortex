@@ -1,0 +1,55 @@
+name: Sync RPM Prep
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-rpm-prep
+  cancel-in-progress: true
+
+jobs:
+  sync-and-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sync from origin/master
+        run: |
+          git fetch origin master
+          git checkout -B automation/rpm-prep origin/master
+
+      - name: Ensure RPM packaging changes
+        run: node ./scripts/ensure-rpm-packaging.mjs
+
+      - name: Create or update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'ci: ensure rpm packaging changes'
+          branch: automation/rpm-prep
+          base: master
+          title: 'ci: sync RPM packaging prep'
+          body: |
+            Automated branch synced from `origin/master` and updated with RPM packaging prerequisites.
+
+            This PR is intentionally created in the current repository (`${{ github.repository }}`), not upstream.
+          labels: |
+            automation
+            ci
+          delete-branch: true
+          sign-commits: true
+          add-paths: |
+            src/main/electron-builder.config.json
+            src/main/electron-builder.linux-rpm.json
+            src/main/package.json
+            scripts/ensure-rpm-packaging.mjs
