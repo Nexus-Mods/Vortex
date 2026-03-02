@@ -6,7 +6,8 @@
   "repository": "",
   "scripts": {
     "pack": "pnpm webpack --config webpack.config.js --progress --profile --color",
-    "build": "pnpm run pack && extractInfo"
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || pnpm run _build",
+    "_build": "pnpm run pack && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

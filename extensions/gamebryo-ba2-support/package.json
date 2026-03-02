@@ -8,7 +8,8 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "clear": "rm-local-modules",
     "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/ba2tk.node ./dist",
-    "build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
+    "_build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-ba2-support",
     "buildDev": "npm run build && npm run installDev"
   },
