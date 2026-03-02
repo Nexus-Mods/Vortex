@@ -2,7 +2,6 @@ stages:
   - build
 
 variables:
-  NO_PARALLEL: "true" # unreliable if false
   GIT_SUBMODULE_STRATEGY: recursive
 
 workflow:
@@ -22,8 +21,7 @@ workflow:
   script:
     - pnpm run build:fomod
     - pnpm install
-    - pnpm run build
-    - pnpm run subprojects:out
+    - pnpm run build:all
 
 build:linux:
   extends: .build_template
@@ -60,9 +58,8 @@ build:linux:
     - pnpm run build:fomod
     - pnpm install
     - pnpm run lint:ci
-    - pnpm run build
+    - pnpm run build:all
     - pnpm run test
-    - pnpm run subprojects:out
 
 build:windows:
   extends: .build_template
@@ -94,9 +91,8 @@ build:windows:
     - pnpm run build:fomod
     - pnpm install
     - pnpm run lint:ci
-    - pnpm run build
+    - pnpm run build:all
     - pnpm run test
-    - pnpm run subprojects:out
 
 .dist_template:
   stage: build
@@ -104,8 +100,7 @@ build:windows:
   script:
     - pnpm run build:fomod
     - pnpm install
-    - pnpm run dist
-    - pnpm run subprojects:dist
+    - pnpm run dist:all
 
 dist:linux:
   extends: .dist_template
