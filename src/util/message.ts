@@ -551,18 +551,36 @@ export function prettifyNodeErrorMessage(
   fileName?: string,
 ): IPrettifiedError {
   const result = prettifyNodeErrorMessageInner(err, options, fileName);
-  // Extend the original error in-place to preserve its identity (instanceof checks)
-  err.message = result.message;
-  if (result.code !== undefined) {
-    err.code = result.code;
+  // Extend the original error in-place to preserve its identity (instanceof checks).
+  // Some error types (e.g. DOMException) have read-only properties that can't be set,
+  // in which case we fall back to a wrapper Error.
+  try {
+    err.message = result.message;
+    if (result.code !== undefined) {
+      err.code = result.code;
+    }
+    if (result.replace !== undefined) {
+      err.replace = result.replace;
+    }
+    if (result.allowReport !== undefined) {
+      err.allowReport = result.allowReport;
+    }
+    return err;
+  } catch {
+    const wrapped = new Error(result.message) as IPrettifiedError;
+    wrapped.stack = err.stack;
+    wrapped.name = err.name;
+    if (result.code !== undefined) {
+      wrapped.code = result.code;
+    }
+    if (result.replace !== undefined) {
+      wrapped.replace = result.replace;
+    }
+    if (result.allowReport !== undefined) {
+      wrapped.allowReport = result.allowReport;
+    }
+    return wrapped;
   }
-  if (result.replace !== undefined) {
-    err.replace = result.replace;
-  }
-  if (result.allowReport !== undefined) {
-    err.allowReport = result.allowReport;
-  }
-  return err;
 }
 
 interface IPrettifiedFields {
