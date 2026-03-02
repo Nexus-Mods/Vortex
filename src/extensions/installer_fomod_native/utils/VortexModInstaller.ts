@@ -11,8 +11,14 @@ export class VortexModInstaller {
     api: IExtensionApi,
     instanceId: string,
     gameId: string,
+    unattended: boolean = false,
   ): Promise<VortexModInstaller> {
-    const delegates = new VortexModInstaller(api, instanceId, gameId);
+    const delegates = new VortexModInstaller(
+      api,
+      instanceId,
+      gameId,
+      unattended,
+    );
     await delegates.initialize();
     return delegates;
   }
@@ -25,8 +31,19 @@ export class VortexModInstaller {
   private mScriptPath: string;
   private mDialogManager: DialogManager | undefined;
   private mSharedDelegates: SharedDelegates;
+  // When true (collection install with preset choices), skip all dialog Redux
+  // dispatches. The C# fomod still calls uiStartDialog/uiUpdateState/uiEndDialog
+  // for each step, but in unattended mode we don't need to update the store —
+  // choices come from the input preset, not from Redux state. Skipping these
+  // eliminates dozens of expensive main-thread TSFN callbacks per fomod mod.
+  private mUnattended: boolean;
 
-  private constructor(api: IExtensionApi, instanceId: string, gameId: string) {
+  private constructor(
+    api: IExtensionApi,
+    instanceId: string,
+    gameId: string,
+    unattended: boolean = false,
+  ) {
     this.fomod = lazyRequire<typeof fomodT>(() =>
       require("fomod-installer-native"),
     );
@@ -43,6 +60,7 @@ export class VortexModInstaller {
     this.mApi = api;
     this.mInstanceId = instanceId;
     this.mGameId = gameId;
+    this.mUnattended = unattended;
   }
 
   private async initialize(): Promise<void> {
@@ -121,6 +139,9 @@ export class VortexModInstaller {
     contCallback: fomodT.types.ContinueCallback,
     cancelCallback: fomodT.types.CancelCallback,
   ): void => {
+    if (this.mUnattended) {
+      return;
+    }
     log("debug", "Starting FOMOD dialog", { instanceId: this.mInstanceId });
     this.mDialogManager = new DialogManager(
       this.mApi,
@@ -144,6 +165,9 @@ export class VortexModInstaller {
     installSteps: fomodT.types.IInstallStep[],
     currentStepId: number,
   ): void => {
+    if (this.mUnattended) {
+      return;
+    }
     if (!this.mDialogManager) {
       throw new Error("DialogManager not initialized");
     }
@@ -167,6 +191,9 @@ export class VortexModInstaller {
    * Delegates to DialogManager instance
    */
   private uiEndDialog = (): void => {
+    if (this.mUnattended) {
+      return;
+    }
     if (!this.mDialogManager) {
       log("debug", "Ending FOMOD dialog - already disposed", {
         instanceId: this.mInstanceId,
