@@ -4,12 +4,10 @@
   "description": "generate events when new files are added to a mod directory",
   "main": "./out/index.js",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/new-file-monitor",
-    "_build": "npm run webpack && copyfiles -f src/stylesheets/import-tool.scss dist && copyfiles -f src/images/* dist && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs new-file-monitor out",
-    "buildDev": "npm run build",
-    "dist": "npm run _build && node ../copy-extension.mjs new-file-monitor dist"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/import-tool.scss src/images/* dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs new-file-monitor out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs new-file-monitor dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

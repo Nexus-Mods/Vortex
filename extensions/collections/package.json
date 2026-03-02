@@ -6,16 +6,11 @@
   "license": "GPL-3.0",
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "copy_assets": "copyfiles -f src/language.json dist && copyfiles -f src/icons.svg dist && copyfiles -f src/collectionicon.svg dist && copyfiles -f style.scss dist && copyfiles -f src/assets/fallback_tile.png dist && copyfiles -f node_modules/bsdiff-node/build/Release/bsdiff.node dist",
-    "bundle7z": "7z a -t7z collections.7z .\\dist\\index.js .\\dist\\info.json .\\dist\\language.json .\\dist\\*.svg .\\dist\\style.scss",
-    "update_validation": "generate-validation .",
-    "_postinstall": "npm run update_validation",
-    "_build": "npm run webpack && npm run copy_assets && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs collections out",
-    "test": "jest",
-    "test:build": "node scripts/validate-build.js",
-    "dist": "npm run _build && node ../copy-extension.mjs collections dist"
+    "_assets": "copyfiles -u 1 -f src/language.json src/icons.svg src/collectionicon.svg style.scss src/assets/fallback_tile.png dist",
+    "_native": "copyfiles -u 1 -f node_modules/bsdiff-node/build/Release/bsdiff.node dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs collections out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs collections dist"
   },
   "devDependencies": {
     "7z-bin": "catalog:",

@@ -5,11 +5,10 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "copy_scss": "copyfiles -f src/issue_tracker.scss dist",
-    "_build": "npm run webpack && npm run copy_scss && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs issue-tracker out",
-    "dist": "npm run _build && node ../copy-extension.mjs issue-tracker dist"
+    "_assets": "copyfiles -u 1 -f src/issue_tracker.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs issue-tracker out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs issue-tracker dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

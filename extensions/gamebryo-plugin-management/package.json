@@ -5,17 +5,11 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/esptk.node ./dist",
-    "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/node-loot.node ./dist && copyfiles -f ./node_modules/loot/loot_api/loot.dll ./dist && copyfiles -f ./src/loot_icon.png ./dist",
-    "copy_async": "copyfiles -f ./node_modules/loot/async.js ./dist && copyfiles -f ./node_modules/loot/bindings.js ./dist",
-    "fix_async_path": "node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",
-    "copy_assets": "copyfiles -f src/stylesheets/plugin_management.scss dist && copyfiles -f src/language.json dist",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run fix_async_path && npm run copy_assets && extractInfo && node ../copy-extension.mjs gamebryo-plugin-management out",
-    "buildDev": "npm run build",
-    "_dist": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run fix_async_path && npm run copy_assets && extractInfo && node ../copy-extension.mjs gamebryo-plugin-management dist",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/plugin_management.scss src/language.json dist",
+    "_native": "copyfiles -u 1 -f ./node_modules/esptk/build/Release/esptk.node ./node_modules/loot/build/Release/node-loot.node ./node_modules/loot/loot_api/loot.dll ./node_modules/loot/async.js ./node_modules/loot/bindings.js src/loot_icon.png dist && node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-plugin-management out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-plugin-management dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

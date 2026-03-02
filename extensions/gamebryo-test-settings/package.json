@@ -5,11 +5,9 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "clear": "rm-local-modules",
-    "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs gamebryo-test-settings out",
-    "dist": "npm run _build && node ../copy-extension.mjs gamebryo-test-settings dist"
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs gamebryo-test-settings out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs gamebryo-test-settings dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

@@ -4,10 +4,10 @@
   "description": "Feedback page",
   "main": "./out/index.js",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "_build": "npm run webpack && extractInfo && copyfiles -f src/stylesheets/feedback.scss dist && copyfiles -f issues.json dist",
-    "build": "npm run _build && node ../copy-extension.mjs feedback out",
-    "dist": "npm run _build && node ../copy-extension.mjs feedback dist"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/feedback.scss issues.json dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo && pnpm run _assets",
+    "build": "pnpm run _build && node ../copy-extension.mjs feedback out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs feedback dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

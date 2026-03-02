@@ -5,12 +5,10 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "copy_gameart": "copyfiles -f assets/gameart.png dist",
-    "copy_scss": "copyfiles -f src/stylesheet.scss dist",
-    "_build": "yarn run webpack && yarn run copy_gameart && yarn run copy_scss && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs game-pillarsofeternity2 out",
-    "dist": "npm run _build && node ../copy-extension.mjs game-pillarsofeternity2 dist"
+    "_assets": "copyfiles -u 1 -f assets/gameart.png src/stylesheet.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs game-pillarsofeternity2 out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs game-pillarsofeternity2 dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

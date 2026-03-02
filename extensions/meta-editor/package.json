@@ -5,12 +5,10 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/meta-editor",
-    "_build": "npm run webpack && copyfiles -f src/stylesheets/metaeditor.scss dist && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs meta-editor out",
-    "buildDev": "npm run build",
-    "dist": "npm run _build && node ../copy-extension.mjs meta-editor dist"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/metaeditor.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs meta-editor out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs meta-editor dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

@@ -7,12 +7,10 @@
     "node": "./out/index.js"
   },
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --mode development --progress --profile --color",
-    "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run webpack && npm run copy_bsatk && extractInfo && node ../copy-extension.mjs gamebryo-bsa-support out",
-    "_dist": "npm run webpack && npm run copy_bsatk && extractInfo && node ../copy-extension.mjs gamebryo-bsa-support dist",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
+    "_native": "copyfiles -u 1 -f ./node_modules/bsatk/build/Release/bsatk.node dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _native && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-bsa-support out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-bsa-support dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

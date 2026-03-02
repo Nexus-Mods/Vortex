@@ -4,13 +4,11 @@
   "description": "Settings section to switch and customize UI themes",
   "main": "./out/index.js",
   "scripts": {
-    "tsc": "tsc -p .",
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --stats-error-details --progress --profile --color",
-    "copy_lib": "copyfiles -u 4 node_modules/font-scanner/build/Release/fontmanager.node dist",
-    "copy_themes": "copyfiles themes/**/* dist",
-    "_build": "npm run webpack && npm run copy_lib && npm run copy_themes && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs theme-switcher out",
-    "dist": "npm run _build && node ../copy-extension.mjs theme-switcher dist"
+    "_assets": "copyfiles -u 1 -u 3 themes/**/* dist",
+    "_native": "copyfiles -u 1 -u 4 node_modules/font-scanner/build/Release/fontmanager.node dist",
+    "_build": "pnpm webpack --config webpack.config.js --stats-error-details --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs theme-switcher out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs theme-switcher dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

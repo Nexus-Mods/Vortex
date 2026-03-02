@@ -4,10 +4,10 @@
   "description": "Custom highlighting (and notes) for mods",
   "main": "./out/index.js",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "_build": "npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs mod-highlight out",
-    "dist": "npm run _build && node ../copy-extension.mjs mod-highlight dist"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/mod-highlight.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs mod-highlight out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs mod-highlight dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

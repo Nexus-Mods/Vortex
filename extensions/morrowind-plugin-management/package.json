@@ -5,8 +5,8 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "_build": "npm run webpack && copyfiles -f src/stylesheet.scss dist && extractInfo",
+    "_assets": "copyfiles -u 1 -f src/stylesheet.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs morrowind-plugin-management out",
     "dist": "pnpm run _build && node ../copy-extension.mjs morrowind-plugin-management dist"
   },

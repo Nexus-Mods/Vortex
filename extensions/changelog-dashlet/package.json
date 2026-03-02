@@ -5,11 +5,10 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "copy_scss": "copyfiles -f src/changelog.scss dist",
-    "_build": "npm run webpack && npm run copy_scss && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs changelog-dashlet out",
-    "dist": "npm run _build && node ../copy-extension.mjs changelog-dashlet dist"
+    "_assets": "copyfiles -u 1 -f src/changelog.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs changelog-dashlet out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs changelog-dashlet dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

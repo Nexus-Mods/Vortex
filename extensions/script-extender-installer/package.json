@@ -5,11 +5,9 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "bundle7z": "7z a -t7z script-extender-installer.7z .\\dist\\index.js .\\dist\\info.json",
-    "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && node ../copy-extension.mjs script-extender-installer out",
-    "dist": "npm run _build && node ../copy-extension.mjs script-extender-installer dist"
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs script-extender-installer out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs script-extender-installer dist"
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",

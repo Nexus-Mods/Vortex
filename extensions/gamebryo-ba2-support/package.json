@@ -4,15 +4,10 @@
   "description": "Support for new gamebryo data archives",
   "main": "./out/index.js",
   "scripts": {
-    "tsc": "tsc -p .",
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "clear": "rm-local-modules",
-    "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/ba2tk.node ./dist",
-    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo && node ../copy-extension.mjs gamebryo-ba2-support out",
-    "buildDev": "npm run build",
-    "_dist": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo && node ../copy-extension.mjs gamebryo-ba2-support dist",
-    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
+    "_native": "copyfiles -u 1 -f ./node_modules/ba2tk/build/Release/ba2tk.node dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _native && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-ba2-support out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-ba2-support dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
