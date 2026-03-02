@@ -5,7 +5,7 @@ import {
 } from "../constants";
 import { IExtendedInterfaceProps } from "../types/IExtendedInterfaceProps";
 
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { Button, ControlLabel, Table } from "react-bootstrap";
@@ -57,7 +57,7 @@ interface IComponentState {
 }
 
 interface ITweakProps {
-  t: I18next.TFunction;
+  t: TFunction;
   tweaksPath: string;
   fileName: string;
   enabled: boolean;
