@@ -103,7 +103,7 @@ import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../shared/errors";
+} from "@vortex/shared";
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();

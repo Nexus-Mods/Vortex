@@ -16,7 +16,7 @@ import { getAllActivators } from "./deploymentMethods";
 import modName from "./modName";
 import { removeMod, removeMods } from "./removeMods";
 import sortMods, { CycleError } from "./sort";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 async function combineMods(
   api: IExtensionApi,

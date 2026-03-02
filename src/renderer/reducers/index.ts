@@ -32,7 +32,7 @@ import { combineReducers } from "redux";
 import { createReducer } from "redux-act";
 import { enableBatching } from "redux-batched-actions";
 import type { IState } from "../types/IState";
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 export const STATE_BACKUP_PATH = "state_backups";
 

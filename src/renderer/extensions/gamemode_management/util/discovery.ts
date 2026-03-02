@@ -5,7 +5,7 @@ import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../../shared/errors";
+} from "@vortex/shared";
 import { GameEntryNotFound } from "../../../types/IGameStore";
 import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
 import type { ITool } from "../../../types/ITool";

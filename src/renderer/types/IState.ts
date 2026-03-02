@@ -9,7 +9,7 @@ import type {
 } from "../extensions/history_management/reducers";
 import type { IMod } from "../extensions/mod_management/types/IMod";
 import type { IProfile } from "../extensions/profile_management/types/IProfile";
-import type { IParameters } from "../../shared/types/cli";
+import type { IParameters } from "@vortex/shared/cli";
 import type { IAvailableExtension, IExtension } from "./extensions";
 import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
@@ -18,7 +18,7 @@ import type { VortexInstallType } from "./VortexInstallType";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
-import type { IDimensions, IPosition, IWindow } from "../../shared/types/state";
+import type { IDimensions, IPosition, IWindow } from "@vortex/shared/state";
 export type { IDimensions, IPosition, IWindow };
 
 /**

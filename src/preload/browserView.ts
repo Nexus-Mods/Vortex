@@ -5,9 +5,8 @@
  * may expect when using bundled JavaScript (Webpack/Browserify targets both Node and browser)
  */
 
-import { contextBridge } from "electron";
-
 import { Buffer } from "buffer";
+import { contextBridge } from "electron";
 
 // Expose Buffer to the page context via contextBridge
 // With contextIsolation, only contextBridge can pass objects to the page

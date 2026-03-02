@@ -69,7 +69,7 @@ import {
   isPathValid,
   isReservedDirectory,
 } from "../../../util/util";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import {
   currentGame,
   currentGameDiscovery,

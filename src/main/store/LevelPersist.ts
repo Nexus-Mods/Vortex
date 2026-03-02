@@ -1,13 +1,12 @@
+import type { IPersistor } from "@vortex/shared/state";
 import type leveldownT from "leveldown";
 
+import { unknownToError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
 import PromiseBB from "bluebird";
 import encode from "encoding-down";
 import * as levelup from "levelup";
 
-import type { IPersistor } from "../../shared/types/state";
-
-import { unknownToError } from "../../shared/errors";
-import { DataInvalid } from "../../shared/types/errors";
 import { log } from "../logging";
 
 const SEPARATOR: string = "###";

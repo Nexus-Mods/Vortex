@@ -204,7 +204,7 @@ import {
   getErrorMessage,
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../shared/errors";
+} from "@vortex/shared";
 
 // Interface for tracking active installation information
 interface IActiveInstallation {

@@ -23,7 +23,7 @@ import turbowalk from "turbowalk";
 import * as util from "util";
 import * as winapi from "winapi-bindings";
 import { setSettingsPage } from "../../actions/session";
-import { getErrorCode } from "../../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 
 export class FileFound extends Error {
   constructor(name) {

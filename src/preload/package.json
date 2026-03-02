@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "electron": "37.4.0"
+  },
+  "dependencies": {
+    "@vortex/shared": "workspace:*"
   }
 }

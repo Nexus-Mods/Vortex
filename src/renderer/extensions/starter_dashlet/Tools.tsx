@@ -1,6 +1,17 @@
-import { showDialog } from "../../actions/notifications";
-import Dashlet from "../../controls/Dashlet";
-import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
+import type PromiseBB from "bluebird";
+import type * as Redux from "redux";
+import type { ThunkDispatch } from "redux-thunk";
+
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import * as React from "react";
+import { Media } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { generate as shortid } from "shortid";
+
 import type {
   DialogActions,
   DialogType,
@@ -9,51 +20,33 @@ import type {
 } from "../../types/IDialog";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IMod, IRunningTool } from "../../types/IState";
+import type { IStarterInfo } from "../../util/StarterInfo";
+import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../gamemode_management/types/IGameStored";
+import type { IToolStored } from "../gamemode_management/types/IToolStored";
+import type { IReducerAction, StateReducerType } from "./types";
+
+import { showDialog } from "../../actions/notifications";
+import Dashlet from "../../controls/Dashlet";
+import DynDiv from "../../controls/DynDiv";
+import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
+import FlexLayout from "../../controls/FlexLayout";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
-import type { IStarterInfo } from "../../util/StarterInfo";
 import StarterInfo from "../../util/StarterInfo";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-
-import AddToolButton from "./AddToolButton";
-
+import { MainContext } from "../../views/MainWindow";
 import {
   addDiscoveredTool,
   setToolVisible,
 } from "../gamemode_management/actions/settings";
-
-import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import type { IToolStored } from "../gamemode_management/types/IToolStored";
-
 import { setPrimaryTool, setToolOrder } from "./actions";
-
-import ToolEditDialog from "./ToolEditDialog";
-
-import type PromiseBB from "bluebird";
-import * as React from "react";
-import { Media } from "react-bootstrap";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
-import { generate as shortid } from "shortid";
-
-import DynDiv from "../../controls/DynDiv";
-import FlexLayout from "../../controls/FlexLayout";
-import type { IReducerAction, StateReducerType } from "./types";
-
-import { MainContext } from "../../views/MainWindow";
-
-import { propOf, updateJumpList } from "./util";
-import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-
+import AddToolButton from "./AddToolButton";
 import Tool from "./Tool";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../../../shared/errors";
+import ToolEditDialog from "./ToolEditDialog";
+import { propOf, updateJumpList } from "./util";
 
 interface IBaseProps {
   onGetValidTools: (
@@ -97,7 +90,7 @@ const welcomeScreenStateReducer = (
   state: IWelcomeScreenState,
   actions: IReducerAction<any>[],
 ) => {
-  let newState = { ...state };
+  const newState = { ...state };
   for (const action of actions) {
     newState[action.type] = action.value;
   }
@@ -295,11 +288,11 @@ export default function Tools(props: IStarterProps) {
   if (gameMode === undefined) {
     content = (
       <EmptyPlaceholder
+        fill={true}
         icon="game"
         text={t(
           "When you are managing a game, supported tools will appear here",
         )}
-        fill
       />
     );
   } else {
@@ -307,26 +300,29 @@ export default function Tools(props: IStarterProps) {
     const discoveredGame = discoveredGames[gameMode];
     content = (
       <Media id="starter-dashlet">
-        <FlexLayout type="row" className="starter-dashlet-tools-header">
+        <FlexLayout className="starter-dashlet-tools-header" type="row">
           <div className="dashlet-title">{t("Tools")}</div>
+
           <DynDiv group="starter-dashlet-tools-controls" />
         </FlexLayout>
+
         <Media.Body>
           <FlexLayout type="column">
             {toolEditDialog()}
+
             <ToolIcons
-              validToolIds={state.validToolIds}
               addNewTool={addNewTool}
               applyOrder={applyOrder}
               counter={state.counter}
               discoveredGame={discoveredGame}
               discoveredTools={discoveredTools}
-              game={game}
               editTool={editTool}
+              game={game}
               removeTool={removeTool}
               setPrimary={setPrimary}
               startTool={startTool}
               tools={state.tools}
+              validToolIds={state.validToolIds}
             />
           </FlexLayout>
         </Media.Body>
@@ -335,7 +331,7 @@ export default function Tools(props: IStarterProps) {
   }
 
   return (
-    <Dashlet title="" className="dashlet-starter">
+    <Dashlet className="dashlet-starter" title="">
       {content}
     </Dashlet>
   );
@@ -392,23 +388,24 @@ function ToolIcons(props: IToolIconsProps): JSX.Element {
     <div className="tool-icon-box">
       {visible.map((starter: IStarterInfo, idx: number) => (
         <Tool
-          key={starter.id + idx}
-          idx={idx}
-          removeTool={removeTool}
-          setPrimary={setPrimary}
-          startTool={startTool}
-          editTool={editTool}
-          starter={starter}
-          tools={tools}
-          validToolIds={validToolIds}
           applyOrder={applyOrder}
           counter={counter}
+          editTool={editTool}
+          idx={idx}
+          key={starter.id + idx}
+          removeTool={removeTool}
+          setPrimary={setPrimary}
+          starter={starter}
+          startTool={startTool}
+          tools={tools}
+          validToolIds={validToolIds}
         />
       ))}
+
       <AddToolButton
-        onSetToolOrder={applyOrder}
-        onAddNewTool={addNewTool}
         tools={tools}
+        onAddNewTool={addNewTool}
+        onSetToolOrder={applyOrder}
       />
     </div>
   );

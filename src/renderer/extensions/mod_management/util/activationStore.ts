@@ -1,27 +1,17 @@
-import { showDialog } from "../../../actions/notifications";
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
-import type { IState } from "../../../types/IState";
+import type msgpackT from "@msgpack/msgpack";
+
 import {
   getErrorCode,
   getErrorMessageOrDefault,
-} from "../../../../shared/errors";
-import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import * as fs from "../../../util/fs";
-import { writeFileAtomic } from "../../../util/fsAtomic";
-import getVortexPath from "../../../util/getVortexPath";
+} from "@vortex/shared";
+import Bluebird from "bluebird";
+import * as path from "path";
+import { sync as writeAtomicSync } from "write-file-atomic";
+
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
+import type { IState } from "../../../types/IState";
 import type { TFunction } from "../../../util/i18n";
-import { log } from "../../../util/log";
-import {
-  activeGameId,
-  discoveryByGame,
-  installPathForGame,
-} from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
-import { deBOM, makeQueue, truthy } from "../../../util/util";
-
-import { getGame } from "../../gamemode_management/util/getGame";
-
 import type {
   IDeploymentManifest,
   ManifestFormat,
@@ -31,13 +21,22 @@ import type {
   IDeploymentMethod,
 } from "../types/IDeploymentMethod";
 
+import { showDialog } from "../../../actions/notifications";
+import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
+import * as fs from "../../../util/fs";
+import { writeFileAtomic } from "../../../util/fsAtomic";
+import getVortexPath from "../../../util/getVortexPath";
+import { log } from "../../../util/log";
+import {
+  activeGameId,
+  discoveryByGame,
+  installPathForGame,
+} from "../../../util/selectors";
+import { getSafe } from "../../../util/storeHelper";
+import { deBOM, makeQueue, truthy } from "../../../util/util";
+import { getGame } from "../../gamemode_management/util/getGame";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import format_1 from "./manifest_formats/format_1";
-
-import type msgpackT from "@msgpack/msgpack";
-import Bluebird from "bluebird";
-import * as path from "path";
-import { sync as writeAtomicSync } from "write-file-atomic";
 
 const CURRENT_VERSION = 1;
 
@@ -149,30 +148,30 @@ export function purgeDeployedFiles(
 function queryPurgeTextSafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-      "If you switch between different instances (or between shared and " +
-      "single-user mode) it's better if you purge mods before switching.\n\n" +
-      "Vortex can try to clean up now but this is less reliable (*) than doing it " +
-      "from the instance that deployed the files in the first place.\n\n" +
-      "If you modified any files in the game directory you should back them up " +
-      "before continuing.\n\n" +
-      "(*) This purge relies on a manifest of deployed files, created by that other " +
-      "instance. Files that have been changed since that manifest was created " +
-      "won't be removed to prevent data loss. If the manifest is damaged or " +
-      'outdated the purge may be incomplete. When purging from the "right" instance ' +
-      "the manifest isn't required, it can reliably deduce which files need to " +
-      "be removed.",
+    "If you switch between different instances (or between shared and " +
+    "single-user mode) it's better if you purge mods before switching.\n\n" +
+    "Vortex can try to clean up now but this is less reliable (*) than doing it " +
+    "from the instance that deployed the files in the first place.\n\n" +
+    "If you modified any files in the game directory you should back them up " +
+    "before continuing.\n\n" +
+    "(*) This purge relies on a manifest of deployed files, created by that other " +
+    "instance. Files that have been changed since that manifest was created " +
+    "won't be removed to prevent data loss. If the manifest is damaged or " +
+    'outdated the purge may be incomplete. When purging from the "right" instance ' +
+    "the manifest isn't required, it can reliably deduce which files need to " +
+    "be removed.",
   );
 }
 
 function queryPurgeTextUnsafe(t: TFunction) {
   return t(
     "IMPORTANT: This game was modded by another instance of Vortex.\n\n" +
-      "Vortex can only proceed by purging the mods from that other instance.\n\n" +
-      "This will irreversibly **destroy** the mod installations from that other " +
-      "instance!\n\n" +
-      "You should instead cancel now, open that other vortex instance and purge " +
-      "from there. This can also be caused by switching between shared and " +
-      "single-user mode.",
+    "Vortex can only proceed by purging the mods from that other instance.\n\n" +
+    "This will irreversibly **destroy** the mod installations from that other " +
+    "instance!\n\n" +
+    "You should instead cancel now, open that other vortex instance and purge " +
+    "from there. This can also be caused by switching between shared and " +
+    "single-user mode.",
   );
 }
 
@@ -588,10 +587,10 @@ export function saveActivation(
   return activation.length === 0
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
     : writeFileAtomic(tagFilePath, dataJSON)
-        // remove backup from previous Vortex versions
-        .then(() =>
-          fs
-            .removeAsync(path.join(stagingPath, tagFileName))
-            .catch({ code: "ENOENT" }, () => null),
-        );
+      // remove backup from previous Vortex versions
+      .then(() =>
+        fs
+          .removeAsync(path.join(stagingPath, tagFileName))
+          .catch({ code: "ENOENT" }, () => null),
+      );
 }

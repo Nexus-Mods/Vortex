@@ -17,6 +17,11 @@ import type * as permissionT from "permissions";
 import type * as vortexRunT from "vortex-run";
 import type * as whoLocksT from "wholocks";
 
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  isErrorWithSystemCode,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { dialog as dialogIn } from "electron";
 import * as fs from "fs-extra";
@@ -31,11 +36,6 @@ import * as tmp from "tmp";
 
 import type { TFunction } from "./i18n";
 
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  isErrorWithSystemCode,
-} from "../../shared/errors";
 import {
   ProcessCanceled,
   SelfCopyCheckError,

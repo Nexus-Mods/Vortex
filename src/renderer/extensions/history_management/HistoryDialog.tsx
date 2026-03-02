@@ -9,7 +9,7 @@ import type { TFunction } from "../../util/i18n";
 import relativeTime from "../../util/relativeTime";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IHistoryEvent, IHistoryStack } from "./types";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 interface IDialogProps {
   onClose: () => void;

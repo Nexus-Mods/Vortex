@@ -13,12 +13,28 @@ const MAIN_PACKAGE_PATH = resolve(MAIN_DIR, "package.json");
 const DIST_DIR = resolve(MAIN_DIR, "dist");
 const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
 
-/** Rewrite relative file dependencies to absolute file dependencies */
-function rewriteFileDependencies(deps = {}) {
+/** Rewrite relative file dependencies to absolute file dependencies,
+ *  and resolve workspace: dependencies to absolute file dependencies */
+function rewriteFileDependencies(deps = {}, workspacePackageMap = {}) {
   const rewritten = {};
 
   for (const [name, version] of Object.entries(deps)) {
-    if (typeof version !== "string" || !version.startsWith("file:")) {
+    if (typeof version !== "string") {
+      rewritten[name] = version;
+      continue;
+    }
+
+    if (version.startsWith("workspace:")) {
+      const absolutePath = workspacePackageMap[name];
+      if (absolutePath) {
+        rewritten[name] = `file:${absolutePath}`;
+      } else {
+        rewritten[name] = version;
+      }
+      continue;
+    }
+
+    if (!version.startsWith("file:")) {
       rewritten[name] = version;
       continue;
     }
@@ -35,8 +51,56 @@ function rewriteFileDependencies(deps = {}) {
   return rewritten;
 }
 
+/**
+ * Extracts workspace package paths from a pnpm-workspace.yaml file
+ * @param {string} yamlText
+ * @returns {string[]}
+ */
+function extractWorkspacePackageGlobs(yamlText) {
+  const match = yamlText.match(/^packages:\s*\n((?:\s*-\s*.+\n?)*)/m);
+
+  if (!match) return [];
+  const listBlock = match[1];
+
+  return listBlock
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim())
+    .filter(Boolean);
+}
+
+/**
+ * Builds a map from workspace package name to absolute directory path.
+ * Glob patterns containing "*" are skipped.
+ * @param {string[]} packagePaths
+ * @returns {Promise<Record<string, string>>}
+ */
+async function buildWorkspacePackageMap(packagePaths) {
+  const map = {};
+
+  for (const pkgPath of packagePaths) {
+    if (pkgPath.includes("*")) continue;
+
+    const pkgDir = resolve(ROOT_DIR, pkgPath);
+    const pkgJsonPath = resolve(pkgDir, "package.json");
+
+    try {
+      const raw = await readFile(pkgJsonPath, "utf8");
+      const pkg = JSON.parse(raw);
+      if (pkg.name) {
+        map[pkg.name] = pkgDir;
+      }
+    } catch {
+      // Skip packages whose package.json cannot be read
+    }
+  }
+
+  return map;
+}
+
 /** Creates a minimal package.json file */
-async function createMinimalPackageJson() {
+async function createMinimalPackageJson(workspacePackageMap) {
   const mainRawJSON = await readFile(MAIN_PACKAGE_PATH, "utf8");
   const mainPkg = JSON.parse(mainRawJSON);
 
@@ -59,7 +123,10 @@ async function createMinimalPackageJson() {
   };
 
   if (mainPkg.dependencies && Object.keys(mainPkg.dependencies).length > 0) {
-    minimal.dependencies = rewriteFileDependencies(mainPkg.dependencies);
+    minimal.dependencies = rewriteFileDependencies(
+      mainPkg.dependencies,
+      workspacePackageMap,
+    );
   }
 
   await mkdir(DIST_DIR, { recursive: true });
@@ -96,12 +163,11 @@ function extractOnlyBuiltDependencies(yamlText) {
 }
 
 /** Prepares all PNPM related files */
-async function preparePNPM() {
+async function preparePNPM(rawWorkspaceYaml) {
   const npmrc = ["node-linker=hoisted", "shamefully-hoist=true"].join("\n");
   await writeFile(resolve(DIST_DIR, ".npmrc"), npmrc);
   console.log("✔  Created dist/.npmrc");
 
-  const rawWorkspaceYaml = await readFile(PNPM_WORKSPACE_PATH, "utf8");
   const onlyBuiltDependencies = extractOnlyBuiltDependencies(rawWorkspaceYaml);
 
   const minimalYaml =
@@ -114,8 +180,12 @@ async function preparePNPM() {
 }
 
 async function main() {
-  await createMinimalPackageJson();
-  await preparePNPM();
+  const rawWorkspaceYaml = await readFile(PNPM_WORKSPACE_PATH, "utf8");
+  const packageGlobs = extractWorkspacePackageGlobs(rawWorkspaceYaml);
+  const workspacePackageMap = await buildWorkspacePackageMap(packageGlobs);
+
+  await createMinimalPackageJson(workspacePackageMap);
+  await preparePNPM(rawWorkspaceYaml);
 }
 
 main().catch((err) => {

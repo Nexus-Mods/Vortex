@@ -4,7 +4,7 @@ import type { ICategoryDictionary } from "../../category_management/types/ICateg
 
 import type { IModCategory } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 interface IGameInfo {
   categories: IModCategory[];

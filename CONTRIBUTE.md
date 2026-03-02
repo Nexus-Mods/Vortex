@@ -28,12 +28,17 @@ A bootstrap script is provided that installs all dependencies (Git, Python 3.10,
 4. After completion:
     ```powershell
     cd C:\vortex\Vortex
-    yarn install
-    yarn build
-    yarn start
+    npm install --global corepack@latest
+    corepack install
+    pnpm run build:fomod && pnpm install
+    pnpm run build
+    pnpm run start
     ```
 
 The script is idempotent - it detects existing installations and only adds missing components.
+
+> [!note]
+> TODO: add PNPM bootstrap to `windows_dev_setup.ps1` after Windows validation. For now, enable Corepack manually after running the script.
 
 ## Generic Linux
 
@@ -104,12 +109,18 @@ sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
 
 ### Setup
 
+> [!WARNING]
+> If you use Volta, install `yarn@v1` explicitly: `volta install node@22 yarn@v1`.
+>
+> `volta install yarn` currently installs Yarn 4 by default. That may still appear to work in the repo root because Volta can read the root `package.json` pin, but bundled extension subprojects invoke `yarn` directly during `pnpm run subprojects:out` / `pnpm run subprojects:dist` and will fail with Yarn 4.
+
 - Clone repository
-- Install toolchain requirements: `volta install node yarn`
-- Install dependencies: `yarn install`
-- Build: `yarn build`
-- Start: `yarn start`
-    - Wayland: `yarn start --ozone-platform-hint=auto`
+- Install toolchain requirements: `volta install node@22 yarn@v1`
+- Install PNPM via Corepack: `npm install --global corepack@latest && corepack install`
+- Setup dependencies: `pnpm run build:fomod && pnpm install`
+- Build: `pnpm run build`
+- Start: `pnpm run start`
+    - Wayland: `pnpm run start -- --ozone-platform-hint=auto`
 
 ### Notes
 
@@ -119,7 +130,7 @@ sudo pacman -S base-devel python python-setuptools dotnet-sdk-9.0
 
 ## NixOS
 
-There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, `python`, `make`, `clang` toolchain, and Electron runtime libraries.
+There is a `flake.nix` that provides all required dependencies: `node`, `pnpm`, `yarn` (legacy extension builds), `python`, `make`, `clang` toolchain, and Electron runtime libraries.
 
 ### Requirements
 
@@ -142,9 +153,10 @@ There is a `flake.nix` that provides all required dependencies: `node`, `yarn`, 
 - Clone repository
 - Enter development shell: `nix develop`
     - Or if using direnv: `direnv allow` (from now on shell will auto-activate when you `cd` into this folder)
-- Install dependencies: `yarn install`
-- Build: `yarn build`
-- Start: `yarn start`
+- Use shell-provided `pnpm` directly (do not run `corepack enable` inside Nix shells)
+- Setup dependencies: `pnpm run build:fomod && pnpm install`
+- Build: `pnpm run build`
+- Start: `pnpm run start`
 
 Python is included in the dev shell (with `setuptools`) for node-gyp and the Flatpak helper scripts.
 

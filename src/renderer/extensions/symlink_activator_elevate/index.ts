@@ -38,7 +38,7 @@ import { generate as shortid } from "shortid";
 import { runElevated } from "vortex-run";
 import * as winapi from "winapi-bindings";
 import { enableUserSymlinks } from "./actions";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const TASK_NAME = "Vortex Symlink Deployment";
 const SCRIPT_NAME = "vortexSymlinkService.js";

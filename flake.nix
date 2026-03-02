@@ -17,8 +17,9 @@
       in {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            # Node.js and package manager
+            # Node.js and package managers
             nodejs_22
+            pnpm
             yarn
 
             # Flatpak tooling
@@ -58,7 +59,7 @@
             CC = "${pkgs.clang}/bin/clang";
             CXX = "${pkgs.clang}/bin/clang++";
 
-            # Ignore strict node engine version checks
+            # Ignore strict node engine version checks for legacy yarn tasks
             YARN_IGNORE_ENGINES = "true";
 
             # Prevent yarn from downloading Electron binaries

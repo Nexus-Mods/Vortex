@@ -1,12 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.base.json",
-  "include": [
-    "**/*",
-    "../shared/**/*",
-    "../../typings.custom/*.d.ts",
-    "./typings.custom/*.d.ts"
-  ],
+  "include": ["**/*", "../../typings.custom/*.d.ts", "./typings.custom/*.d.ts"],
   "exclude": [
     "./util/vortex-run/**/*",
     "./__tests__/",
@@ -19,13 +14,11 @@
   "compilerOptions": {
     "composite": true,
     "target": "esnext",
-    "module": "commonjs", // TODO: change to esnext
-    "moduleResolution": "node", // TODO: change to bundler
+    "module": "node16", // TODO: change to esnext
+    "moduleResolution": "node16", // TODO: change to bundler
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "outDir": "../main/out",
-    "rootDir": "..",
+    "outDir": "../main/out/renderer",
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true

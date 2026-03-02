@@ -1,11 +1,13 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "../../tsconfig.base.json",
-  "include": ["**/*", "typings.custom/promise.d.ts"],
+  "include": ["src/**/*", "../../typings.custom/promise.d.ts"],
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "allowJs": false,
+    "isolatedDeclarations": true,
     "composite": true,
     "noEmit": true,
     "types": [],

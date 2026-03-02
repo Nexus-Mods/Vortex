@@ -1,8 +1,13 @@
+import type { AddressInfo } from "node:net";
+
+import { unknownToError } from "@vortex/shared";
 import * as http from "node:http";
 import * as https from "node:https";
-import type { AddressInfo } from "node:net";
 import * as querystring from "node:querystring";
 import * as url from "node:url";
+import { v1 as uuidv1 } from "uuid";
+
+import { ArgumentInvalid } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
 import {
   OAUTH_REDIRECT_URL,
@@ -10,8 +15,6 @@ import {
   getOAuthRedirectUrl,
 } from "../constants";
 import NEXUSMODS_LOGO from "./nexusmodslogo";
-import { ArgumentInvalid } from "../../../util/CustomErrors";
-import { unknownToError } from "../../../../shared/errors";
 
 type TokenType = "Bearer";
 
@@ -107,15 +110,13 @@ class OAuth {
     onToken: (err: Error, token: ITokenReply) => void,
     onOpenPage: (url: string) => void,
   ): Promise<void> {
-    // importing uuid can take significant amounts of time so always delay it as far as possible
-    const uuid = (await import("uuid/v1")).default;
     const crypto = (await import("crypto")).default;
 
-    const state = uuid();
+    const state = uuidv1();
     this.mStates[state] = onToken;
 
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.1
-    this.mVerifier = Buffer.from(uuid().replace(/-/g, "")).toString("base64");
+    this.mVerifier = Buffer.from(uuidv1().replace(/-/g, "")).toString("base64");
     // see https://www.rfc-editor.org/rfc/rfc7636#section-4.2
     const challenge = crypto
       .createHash("sha256")
@@ -223,7 +224,7 @@ class OAuth {
     if (code !== undefined && state !== undefined) {
       (async () => {
         try {
-          await this.receiveCode(code, state as string);
+          await this.receiveCode(code, state);
         } catch (err) {
           // ignore unexpected codes
         }
@@ -233,7 +234,7 @@ class OAuth {
       this.checkServerStillRequired();
     } else if (error !== undefined) {
       const err = new Error(
-        (error_description as string) ?? "Description missing",
+        (error_description) ?? "Description missing",
       );
       err["code"] = error;
       this.mStates[state]?.(err, undefined);
@@ -318,9 +319,9 @@ class OAuth {
       redirect_uri: this.mServerSettings.getRedirectUrl
         ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
         : this.mServerSettings.redirectUrl.replace(
-            "PORT",
-            this.mLastServerPort.toString(),
-          ),
+          "PORT",
+          this.mLastServerPort.toString(),
+        ),
       state,
       code_challenge: OAuth.sanitizeBase64(challenge),
     };
@@ -334,9 +335,9 @@ class OAuth {
       redirect_uri: this.mServerSettings.getRedirectUrl
         ? this.mServerSettings.getRedirectUrl(this.mLastServerPort)
         : this.mServerSettings.redirectUrl.replace(
-            "PORT",
-            this.mLastServerPort.toString(),
-          ),
+          "PORT",
+          this.mLastServerPort.toString(),
+        ),
       code,
       code_verifier: this.mVerifier,
     };

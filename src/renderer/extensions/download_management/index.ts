@@ -23,7 +23,7 @@ import type { IProtocolHandlers, IResolvedURL } from "./types/ProtocolHandlers";
 import type { IDownloadViewProps } from "./views/DownloadView";
 
 import ReduxProp from "../../ReduxProp";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import { getApplication } from "../../util/application";
 import {
   DataInvalid,

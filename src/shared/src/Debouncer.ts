@@ -72,7 +72,7 @@ export class GenericDebouncer<
    *             and the function actually gets invoked, only the last set of
    *             parameters will be used
    */
-  public schedule(callback?: (err: Error) => void, ...args: any[]) {
+  public schedule(callback?: (err: Error) => void, ...args: any[]): void {
     if (callback !== undefined && callback !== null) {
       this.mCallbacks.push(callback);
     }
@@ -110,7 +110,7 @@ export class GenericDebouncer<
    *
    * @memberOf Debouncer
    */
-  public runNow(callback: (err: Error) => void, ...args: any[]) {
+  public runNow(callback: (err: Error) => void, ...args: any[]): void {
     if (this.mTimer !== undefined) {
       this.clear();
     }
@@ -143,10 +143,11 @@ export class GenericDebouncer<
   public wait(
     callback: (err: Error | null) => void,
     immediately: boolean = false,
-  ) {
+  ): void {
     if (this.mTimer === undefined && !this.mRunning) {
       // not scheduled
-      return callback(null);
+      callback(null);
+      return;
     }
 
     this.mAddCallbacks.push(callback);
@@ -158,7 +159,7 @@ export class GenericDebouncer<
     }
   }
 
-  public clear() {
+  public clear(): void {
     this.#clearTimeoutFunc(this.mTimer);
     this.mTimer = undefined;
   }

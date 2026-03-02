@@ -1,4 +1,4 @@
-import type { PreloadWindow } from "../shared/types/preload";
+import type { PreloadWindow } from "@vortex/shared/preload";
 
 declare global {
   interface Window extends PreloadWindow {

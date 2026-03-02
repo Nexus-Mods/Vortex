@@ -62,8 +62,9 @@ The script installs and configures the following development tools:
 - **CMake** - Build system generator
 - **Visual Studio 2022 Build Tools** - C++ compiler and Windows SDK
 - **NVM for Windows** - Node.js version manager
-- **Node.js 18.20.4** - JavaScript runtime (via NVM)
-- **Yarn 1.x** - Package manager for Node.js
+- **Node.js 22.x** - JavaScript runtime (via NVM)
+- **Corepack + PNPM** - Package manager tooling
+- **Yarn 1.x** - Required for bundled extension subproject builds
 - **Repository Setup** - Clones Vortex repo to `C:\vortex\Vortex`
 
 ### Prerequisites
@@ -96,8 +97,15 @@ The script installs and configures the following development tools:
 6. **Start developing**:
    ```powershell
    cd C:\vortex\Vortex
-   yarn install
+   npm install --global corepack@latest
+   corepack install
+   pnpm run build:fomod && pnpm install
+   pnpm run build
+   pnpm run start
    ```
+
+> [!note]
+> TODO: add PNPM bootstrap to `windows_dev_setup.ps1` after Windows validation. For now, enable Corepack manually after running the script.
 
 ### Smart Installation Logic
 
@@ -106,7 +114,7 @@ The script intelligently handles existing installations:
 - **Fresh Install**: Uses winget for new installations
 - **Existing Tools**: Detects and updates/modifies existing installations
 - **Visual Studio Build Tools**: Uses `vswhere` to detect existing installations and only adds missing components
-- **NVM**: Repairs broken configurations and activates Node.js 18.20.4
+- **NVM**: Repairs broken configurations and activates Node.js 22.x
 
 ### Common Issues & Solutions
 
@@ -153,10 +161,8 @@ Remove-Item "$env:APPDATA\nvm\settings.txt" -Force
 
 **Solution**:
 ```powershell
-nvm use 18.20.4
-# Or manually:
 nvm list
-nvm use [correct-version]
+nvm use [installed-22.x-version]
 ```
 
 #### 6. Path Issues / Commands Not Found
@@ -243,8 +249,8 @@ Once complete, you can build Vortex:
 
 ```powershell
 cd C:\vortex\Vortex
-yarn install          # Install dependencies
-yarn build            # Build the application
+pnpm run build:fomod && pnpm install  # Setup dependencies
+pnpm run build        # Build the application
 ```
 
 ### Support
@@ -268,13 +274,13 @@ In release builds we use webpack and ts-loader to bake all `.ts` files and depen
 
 As a result, dev builds are easier to work with and building is much quicker but runtime is slower.
 
-Further, we use a two-package structure, meaning the `/package.json` file is used for all development and the build environment for releases (e.g. this file always controls the electron version being used/bundled) whereas `/app/package.json` decides settings (name, version, dependencies) for the release builds only. We use a custom script (`checkPackages.js`) to ensure that the dependencies for release are a subset of the build `env` dependencies and that they use the same version to avoid problems that didn't occur during testing because of differing dependencies.
+Further, we use a PNPM workspace structure. The repository root manages shared tooling, while process-specific packages live in `src/main`, `src/renderer`, `src/preload`, and `src/shared`. For release packaging, `src/main/prepare-dist-package.mjs` creates the staged package in `src/main/dist`.
 
 Bundled extensions on the other hand are built the same between dev and release: they are always built with webpack and each have their own build setup - with the exception of simple game extensions which are already single js files, those simply get copied over.
 
-### Yarn 1 vs Yarn 3 vs NPM vs PNPM
+### Package Management
 
-This codebase still uses yarn 1 (classic). Any attempt to use yarn 2 or 3 ended up with nonsensical errors (missing dependencies that are clearly listed, successive installs leading to missing packages) with no reasonable way to investigate why. npm and pnpm are quite slow in comparison. We don't really use any yarn-specific features (workspaces?) so switching shouldn't be too difficult but for now yarn "classic" works.
+This codebase uses PNPM workspaces. `packageManager` and `engines` are pinned in `package.json`, and CI/dev environments should follow those versions.
 
 ### ESM vs CommonJS
 

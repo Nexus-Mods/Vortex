@@ -156,7 +156,7 @@ import * as path from "path";
 import React from "react";
 import type * as Redux from "redux";
 import shortid from "shortid";
-import { getErrorCode } from "../../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 import { nxmMod } from "../../ui/lib/icon_paths/icon-paths";
 
 interface IAppContext {

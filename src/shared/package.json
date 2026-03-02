@@ -3,8 +3,61 @@
   "name": "@vortex/shared",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "pnpm tsc --composite false -p tsconfig.json",
-    "typecheck": "pnpm tsc --noEmit --composite false -p tsconfig.json"
+    "build": "pnpm tsdown",
+    "dist": "pnpm tsdown",
+    "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./cli": {
+      "import": "./dist/cli.js",
+      "require": "./dist/cli.cjs"
+    },
+    "./errors": {
+      "import": "./dist/errors.js",
+      "require": "./dist/errors.cjs"
+    },
+    "./ipc": {
+      "import": "./dist/ipc.js",
+      "require": "./dist/ipc.cjs"
+    },
+    "./preload": {
+      "import": "./dist/preload.js",
+      "require": "./dist/preload.cjs"
+    },
+    "./state": {
+      "import": "./dist/state.js",
+      "require": "./dist/state.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs"
+      },
+      "./ipc": {
+        "import": "./dist/ipc.mjs",
+        "require": "./dist/ipc.cjs"
+      },
+      "./preload": {
+        "import": "./dist/preload.mjs",
+        "require": "./dist/preload.cjs"
+      },
+      "./state": {
+        "import": "./dist/state.mjs",
+        "require": "./dist/state.cjs"
+      },
+      "./package.json": "./package.json"
+    }
   }
 }

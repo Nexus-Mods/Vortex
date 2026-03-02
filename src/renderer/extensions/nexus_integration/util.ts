@@ -95,7 +95,7 @@ import { IAccountStatus } from "./types/IValidateKeyData";
 import {
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../shared/errors";
+} from "@vortex/shared";
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 

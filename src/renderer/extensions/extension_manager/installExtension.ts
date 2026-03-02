@@ -1,5 +1,5 @@
 import { removeExtension } from "../../actions";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";

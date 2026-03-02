@@ -1,14 +1,16 @@
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 import { createHash } from "crypto";
+
 import type {
   IErrorOptions,
   IExtensionApi,
 } from "../../types/IExtensionContext";
 import type { INotificationAction } from "../../types/INotification";
+
 import { log } from "../../util/log";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../../../shared/errors";
 
 // In test environment, use synchronous execution to avoid timing issues with Jest fake timers
 // Check for jest global or NODE_ENV to detect test environment reliably
@@ -444,7 +446,7 @@ export class NotificationAggregator {
   private normalizeMessage(message: string): string {
     // Check cache first to avoid expensive regex operations
     if (this.mNormalizedMessageCache.has(message)) {
-      return this.mNormalizedMessageCache.get(message)!;
+      return this.mNormalizedMessageCache.get(message);
     }
 
     // Remove variable parts from messages to enable better grouping

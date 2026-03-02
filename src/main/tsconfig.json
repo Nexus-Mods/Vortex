@@ -3,7 +3,6 @@
   "extends": "../../tsconfig.base.json",
   "include": [
     "**/*",
-    "../shared/**/*",
     "../../typings.custom/electron.d.ts",
     "../../typings.custom/promise.d.ts"
   ],
@@ -11,12 +10,10 @@
   "compilerOptions": {
     "composite": true,
     "target": "esnext",
-    "module": "commonjs", // TODO: change to nodenext
-    "moduleResolution": "node", // TODO: change to nodenext
+    "module": "node16", // TODO: change to nodenext
+    "moduleResolution": "node16", // TODO: change to nodenext
     "types": ["node"],
-    "baseUrl": ".",
-    "outDir": "./out",
-    "rootDir": "..",
+    "outDir": "./out/main",
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true

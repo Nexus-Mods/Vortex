@@ -33,7 +33,7 @@ import { setFBForceUpdate } from "../actions/session";
 import ToolbarDropdown from "../../../controls/ToolbarDropdown";
 
 import { currentLoadOrderForProfile } from "../selectors";
-import { unknownToError } from "../../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 const PanelX: any = Panel;
 

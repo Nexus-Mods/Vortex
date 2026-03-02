@@ -1,4 +1,4 @@
-import { getErrorCode } from "../../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 
 export function remoteCode(ipcClient, req) {
   const RETRY_ERRORS = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);

@@ -10,9 +10,7 @@ import tseslint from "typescript-eslint";
 
 import noBluebirdPromiseAliasRule from "./eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "./eslint-rules/no-bluebird-resolve-promiselike.mjs";
-import noCrossImportsRule from "./eslint-rules/no-cross-imports.mjs";
 import noRestrictedImportsRule from "./eslint-rules/no-restricted-imports.mjs";
-import noModuleImportsRule from "./eslint-rules/no-module-imports.mjs";
 
 const isCI = !!process.env.CI;
 const tseslintConfig = isCI
@@ -25,6 +23,7 @@ export default defineConfig([
     ignores: [
       "./src/main/out",
       "./src/main/dist",
+      "./src/shared/dist",
       "./src/renderer/__tests__",
       "./src/renderer/__mocks__",
       "./extensions",
@@ -104,18 +103,14 @@ export default defineConfig([
     plugins: {
       vortex: {
         rules: {
-          "no-cross-imports": noCrossImportsRule,
           "no-bluebird-promise-alias": noBluebirdPromiseAliasRule,
           "no-bluebird-resolve-promiselike": noBluebirdResolveWithPromiseLike,
           "no-restricted-imports-errors": noRestrictedImportsRule,
           "no-restricted-imports-warnings": noRestrictedImportsRule,
-          "no-module-imports": noModuleImportsRule,
         },
       },
     },
     rules: {
-      "vortex/no-module-imports": "error",
-      "vortex/no-cross-imports": "error",
       "vortex/no-bluebird-promise-alias": "error",
       "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
       "vortex/no-restricted-imports-errors": [
@@ -153,6 +148,75 @@ export default defineConfig([
     name: "Migrating Webpack to Vite",
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
+    },
+  },
+
+  {
+    name: "Shared package - no platform-specific imports",
+    files: ["src/shared/src/**/*.{ts,js,mjs,cjs}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^node:",
+              message:
+                "Node.js built-ins are not allowed in the shared package. This package must be platform-agnostic.",
+            },
+            {
+              regex: "^electron(/|$)",
+              message:
+                "Electron is not allowed in the shared package. This package must be platform-agnostic.",
+            },
+          ],
+          paths: [
+            // Node.js built-in modules (legacy imports without 'node:' prefix)
+            ...[
+              "assert",
+              "async_hooks",
+              "buffer",
+              "child_process",
+              "cluster",
+              "crypto",
+              "dgram",
+              "diagnostics_channel",
+              "dns",
+              "domain",
+              "events",
+              "fs",
+              "http",
+              "http2",
+              "https",
+              "inspector",
+              "module",
+              "net",
+              "os",
+              "path",
+              "perf_hooks",
+              "process",
+              "querystring",
+              "readline",
+              "repl",
+              "stream",
+              "string_decoder",
+              "timers",
+              "tls",
+              "tty",
+              "url",
+              "util",
+              "v8",
+              "vm",
+              "wasi",
+              "worker_threads",
+              "zlib",
+            ].map((name) => ({
+              name,
+              message: `'${name}' is a Node.js built-in and is not allowed in the shared package. This package must be platform-agnostic.`,
+            })),
+          ],
+        },
+      ],
     },
   },
 

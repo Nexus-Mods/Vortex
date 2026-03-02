@@ -7,9 +7,9 @@
  * ApplicationData.init() has been called before accessing these values.
  */
 
-import type { Api, PreloadWindow } from "../../shared/types/preload";
+import type { Api, PreloadWindow } from "@vortex/shared/preload";
 
-import { ApplicationData } from "../../shared/applicationData";
+import { ApplicationData } from "@vortex/shared";
 
 /**
  * Get the entire preload window object.

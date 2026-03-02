@@ -24,7 +24,7 @@ import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
 
-import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";

@@ -2,7 +2,7 @@ import type * as Redux from "redux";
 
 import { isEqual } from "lodash";
 
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 const select = (state: any, selector: string[]) =>
   selector.reduce((prev: any, current: string) => prev[current], state);

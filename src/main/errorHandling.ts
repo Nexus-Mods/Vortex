@@ -1,9 +1,9 @@
+import { getErrorMessage } from "@vortex/shared";
+import { UserCanceled } from "@vortex/shared/errors";
 import { app, dialog } from "electron";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { getErrorMessage } from "../shared/errors";
-import { UserCanceled } from "../shared/types/errors";
 import {
   reportCrash,
   errorToReportableError,

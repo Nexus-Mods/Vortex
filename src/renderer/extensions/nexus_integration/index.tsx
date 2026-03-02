@@ -153,7 +153,7 @@ import Icon from "../../controls/Icon";
 import {
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../shared/errors";
+} from "@vortex/shared";
 
 let nexus: NexusT;
 let userInfoDebouncer: Debouncer;

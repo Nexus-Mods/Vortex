@@ -7,7 +7,7 @@ import {
 import { app } from "electron";
 import { readFile } from "node:fs/promises";
 
-import type { ReportableError } from "../shared/types/errors";
+import type { ReportableError } from "@vortex/shared/errors";
 
 import { recordErrorOnSpan } from "../shared/telemetry/spans";
 import { createVortexResource } from "./telemetry/resources";

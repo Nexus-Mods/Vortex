@@ -1,21 +1,23 @@
+import type { TOptions, i18n } from "i18next";
+
+import Bluebird from "bluebird";
+import I18next from "i18next";
+import FSBackend from "i18next-fs-backend";
+import * as path from "path";
+import { initReactI18next } from "react-i18next";
+
 import type { IExtension } from "../types/extensions";
 
 import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 
-import Bluebird from "bluebird";
-import type { TOptions, i18n } from "i18next";
-import I18next from "i18next";
-import * as path from "path";
-import { initReactI18next } from "react-i18next";
-
 type TFunction = typeof I18next.t;
 
 let debugging = false;
 let currentLanguage = "en";
 const fallbackTFunc: TFunction = (str) =>
-  (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
+  Array.isArray(str) ? str[0].toString() : str.toString();
 
 let actualT: TFunction = fallbackTFunc;
 
@@ -36,7 +38,7 @@ class MultiBackend {
   private static type = "backend";
   private mOptions: any;
   private mServices: any;
-  private mCurrentBackend: any;
+  private mCurrentBackend: FSBackend;
   private mLastReadLanguage: string;
   private mBackendType: BackendType;
 
@@ -49,23 +51,20 @@ class MultiBackend {
     this.mServices = services;
   }
 
-  public read(language: string, namespace: string, callback) {
-    (async () => {
-      const { backendType, extPath } = this.backendType(language);
-      if (
-        backendType !== this.mBackendType ||
-        (backendType === "extension" && language !== this.mLastReadLanguage)
-      ) {
-        this.mCurrentBackend = await this.initBackend(backendType, extPath);
-      }
+  public read(language: string, namespace: string, callback): void {
+    const { backendType, extPath } = this.backendType(language);
+    if (
+      backendType !== this.mBackendType ||
+      (backendType === "extension" && language !== this.mLastReadLanguage)
+    ) {
+      this.mCurrentBackend = this.initBackend(backendType, extPath);
+    }
 
-      this.mLastReadLanguage = language;
-      this.mCurrentBackend.read(language, namespace, callback);
-    })();
+    this.mLastReadLanguage = language;
+    this.mCurrentBackend.read(language, namespace, callback);
   }
 
-  private async initBackend(type: BackendType, extPath: string) {
-    const FSBackend = await (await import("i18next-fs-backend")).default;
+  private initBackend(type: BackendType, extPath: string) {
     const res = new FSBackend();
 
     let basePath: string;
@@ -83,7 +82,6 @@ class MultiBackend {
     });
 
     this.mBackendType = type;
-
     return res;
   }
 

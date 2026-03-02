@@ -2,7 +2,7 @@ import walk from "./walk";
 
 import PromiseBB from "bluebird";
 import type * as fs from "fs";
-import { getErrorCode } from "../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 
 export interface IFileEntry {
   filePath: string;

@@ -42,7 +42,7 @@ import * as fs from "../../util/fs";
 import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 
 import UpdateSet from "./UpdateSet";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];

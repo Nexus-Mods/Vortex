@@ -7,7 +7,8 @@
     "./ts-to-zod.config.mjs",
     "./eslint.config.mjs",
     "./eslint-rules/*.mjs",
-    "./src/main/prepare-dist-package.mjs"
+    "./src/main/prepare-dist-package.mjs",
+    "./src/shared/tsdown.config.ts"
   ],
   "compilerOptions": {
     "composite": true,

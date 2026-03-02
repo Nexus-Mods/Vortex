@@ -1,8 +1,8 @@
 import * as path from "path";
 
-import type { IParameters } from "../../shared/types/cli";
+import type { IParameters } from "@vortex/shared/cli";
 
-import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { getApplication } from "./application";
 import Debouncer from "./Debouncer";
 import * as fs from "./fs";

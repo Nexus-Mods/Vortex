@@ -35,7 +35,7 @@ import { findDOMNode } from "react-dom";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import { generate as shortid } from "shortid";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 interface IServerEntry {
   url: string;

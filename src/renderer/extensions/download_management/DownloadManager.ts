@@ -38,7 +38,7 @@ import type { IExtensionApi } from "../../types/api";
 import {
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../shared/errors";
+} from "@vortex/shared";
 import { getPreloadApi } from "../../util/preloadAccess";
 
 function getCookies(

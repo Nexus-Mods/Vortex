@@ -12,10 +12,12 @@
  * 3. Persists diffs to LevelDB
  * 4. Provides hydration data to renderer
  */
-import type { Serializable } from "../../shared/types/ipc";
+import type { Serializable } from "@vortex/shared/ipc";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type LevelPersist from "./LevelPersist";
 
-import { getErrorMessageOrDefault } from "../../shared/errors";
 import { log } from "../logging";
 import { setupPersistenceIPC } from "./persistenceIPC";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";

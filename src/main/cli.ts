@@ -1,9 +1,9 @@
+import type { IParameters, ISetItem } from "@vortex/shared/cli";
+
 import program from "commander";
 import { app } from "electron";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-
-import type { IParameters, ISetItem } from "../shared/types/cli";
 
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";

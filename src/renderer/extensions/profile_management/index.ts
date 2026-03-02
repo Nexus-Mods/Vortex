@@ -100,7 +100,7 @@ import { CorruptActiveProfile } from "./types/Errors";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
 import TransferDialog from "./views/TransferDialog";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const profileFiles: {
   [gameId: string]: Array<string | (() => PromiseLike<string[]>)>;

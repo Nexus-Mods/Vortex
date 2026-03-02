@@ -23,7 +23,7 @@ import { log } from "../../util/log";
 import relativeTime from "../../util/relativeTime";
 import { FULL_BACKUP_PATH } from "../../store/store";
 import { spawnSelf } from "../../util/util";
-import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IBaseProps {
   onCreateManualBackup: () => void;

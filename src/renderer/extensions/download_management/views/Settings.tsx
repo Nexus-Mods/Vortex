@@ -85,7 +85,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import getVortexPath from "../../../util/getVortexPath";
 import Image from "../../../controls/Image";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const MB = 1024 * 1024;
 

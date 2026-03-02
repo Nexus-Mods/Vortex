@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "packageManager": "pnpm@10.30.2+sha512.36cdc707e7b7940a988c9c1ecf88d084f8514b5c3f085f53a2e244c2921d3b2545bc20dd4ebe1fc245feec463bb298aecea7a63ed1f7680b877dc6379d8d0cb4",
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "engines": {
     "node": "22"
   },
@@ -37,6 +37,7 @@
   "devDependencies": {
     "@eslint-react/eslint-plugin": "2.3.7",
     "@eslint/js": "9.39.1",
+    "@microsoft/api-extractor": "^7.57.6",
     "@stylistic/eslint-plugin": "^5.7.1",
     "@tailwindcss/cli": "4.1.17",
     "@types/copyfiles": "~2.4.4",
@@ -62,6 +63,7 @@
     "tailwindcss": "4.1.17",
     "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.1",
+    "tsdown": "0.21.0-beta.1",
     "typescript": "^5.0.0",
     "typescript-eslint": "8.47.0",
     "webpack": "^5.94.0",

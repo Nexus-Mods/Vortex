@@ -1,5 +1,3 @@
-import { contextBridge, ipcRenderer } from "electron";
-
 import type {
   AppInitMetadata,
   RendererChannels,
@@ -8,9 +6,11 @@ import type {
   SerializableArgs,
   AssertSerializable,
   Serializable,
-} from "../shared/types/ipc";
-import type { PreloadWindow } from "../shared/types/preload";
-import type { PersistedHive } from "../shared/types/state";
+} from "@vortex/shared/ipc";
+import type { PreloadWindow } from "@vortex/shared/preload";
+import type { PersistedHive } from "@vortex/shared/state";
+
+import { contextBridge, ipcRenderer } from "electron";
 
 // NOTE(erri120): Welcome to the preload script. This is the correct and safe place to expose data and methods to the renderer. Here are a few rules and tips to make your life easier:
 // 1) Never expose anything electron related to the renderer. This is what the preload script is for.

@@ -15,7 +15,7 @@ import metaLookupMatch from "../util/metaLookupMatch";
 import NXMUrl from "../../nexus_integration/NXMUrl";
 
 import * as React from "react";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IBaseProps {
   buttonType: ButtonType;

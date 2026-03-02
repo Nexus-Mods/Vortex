@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import type { IMainPage } from "../../types/IMainPage";
 
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { NavItem } from "../../controls/TooltipControls";
 import { log } from "../../logging";
 import { PageButton } from "../PageButton";

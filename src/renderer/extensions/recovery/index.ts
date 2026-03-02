@@ -20,7 +20,7 @@ import { getSafe } from "../../util/storeHelper";
 import { getManifest } from "../mod_management/util/activationStore";
 import Workarounds from "./Workarounds";
 
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 const ONE_HOUR = 60 * 60 * 1000;
 

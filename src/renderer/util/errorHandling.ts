@@ -29,7 +29,7 @@ import {
   NEXUS_BASE_URL,
   OAUTH_CLIENT_ID,
 } from "../extensions/nexus_integration/constants";
-import { getErrorMessageOrDefault, unknownToError } from "../../shared/errors";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { recordErrorOnSpan } from "../../shared/telemetry/spans";
 import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
 import { getApplication } from "./application";

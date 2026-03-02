@@ -12,7 +12,7 @@ import queryInfo from "./queryDLInfo";
 import { batchDispatch } from "../../../util/util";
 import path from "path";
 import type { IHashResult } from "modmeta-db";
-import { getErrorMessageOrDefault } from "../../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export function finalizeDownload(
   api: IExtensionApi,

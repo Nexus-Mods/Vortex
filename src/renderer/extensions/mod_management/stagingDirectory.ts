@@ -20,7 +20,7 @@ import { fallbackPurge } from "./util/activationStore";
 import { resolveInstallPath } from "./util/getInstallPath";
 
 import type * as winapiT from "winapi-bindings";
-import { isErrorWithSystemCode, unknownToError } from "../../../shared/errors";
+import { isErrorWithSystemCode, unknownToError } from "@vortex/shared";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 

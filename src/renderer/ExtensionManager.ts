@@ -82,12 +82,12 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
-import { VCREDIST_URL } from "../shared/constants";
+import { VCREDIST_URL } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
-} from "../shared/errors";
+} from "@vortex/shared";
 import { registerSanityCheck } from "./store/reduxSanity";
 import { Archive } from "./util/archives";
 import { getApplication } from "./util/application";
@@ -127,7 +127,7 @@ import {
 import ReduxWatcher from "./store/ReduxWatcher";
 import { getPreloadApi } from "./util/preloadAccess";
 import { computeStateDiff } from "./store/stateDiff";
-import type { PreloadWindow } from "../shared/types/preload";
+import type { PreloadWindow } from "@vortex/shared/preload";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 

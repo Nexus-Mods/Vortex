@@ -28,7 +28,7 @@ import { renderError, showError } from "../../util/message";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { flatten, setdefault, truthy, batchDispatch } from "../../util/util";
-import { unknownToError } from "../../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import {
   ModsDownloadStartedClientEvent,
   ModsDownloadCompletedEvent,

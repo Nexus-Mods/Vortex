@@ -3,7 +3,7 @@ import { log } from "../util/log";
 import * as _ from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export interface IProps {
   container: HTMLElement;

@@ -7,7 +7,7 @@ import type {
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
 import opn from "../../util/opn";
-import { getErrorMessageOrDefault } from "../../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 interface IPreviewHandler {
   priority: number;

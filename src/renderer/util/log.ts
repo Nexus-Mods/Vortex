@@ -1,5 +1,5 @@
-import type { Level } from "../../shared/types/logging";
-export type { Level as LogLevel } from "../../shared/types/logging";
+import type { Level } from "@vortex/shared";
+export type { Level as LogLevel } from "@vortex/shared";
 import { log as rendererLog } from "../logging";
 
 /** @deprecated Use log method from renderer directly */

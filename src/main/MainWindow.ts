@@ -1,11 +1,12 @@
+import type { IWindow } from "@vortex/shared/state";
+
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import type { IWindow } from "../shared/types/state";
 import type TrayIcon from "./TrayIcon";
 
-import { getErrorMessageOrDefault } from "../shared/errors";
 import { terminate } from "./errorHandling";
 import getVortexPath from "./getVortexPath";
 import { log } from "./logging";

@@ -1,8 +1,9 @@
-import type { AttributeExtractor } from "../../../types/IExtensionContext";
 import {
   getErrorMessageOrDefault,
   unknownToError,
-} from "../../../../shared/errors";
+} from "@vortex/shared";
+
+import type { AttributeExtractor } from "../../../types/IExtensionContext";
 
 import { log } from "../../../util/log";
 

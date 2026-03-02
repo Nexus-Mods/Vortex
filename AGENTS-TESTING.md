@@ -30,6 +30,6 @@ jest.mock("../util/dependencies");
 
 ## Running Tests
 
-- `yarn test` - All tests
-- `yarn test <path>` - Specific file or directory
-- `yarn test --watch` - Watch mode
+- `pnpm run test` - All tests
+- `pnpm run test -- <path>` - Specific file or directory
+- `pnpm run test -- --watch` - Watch mode
