@@ -15,6 +15,8 @@ import type { IAttributeState } from "./IAttributeState";
 import type { IDialog } from "./IDialog";
 import type { INotification } from "./INotification";
 import type { VortexInstallType } from "./VortexInstallType";
+import type { IHealthCheckSessionState } from "../extensions/health_check/reducers/session";
+import type { IHealthCheckPersistentState } from "../extensions/health_check/reducers/persistent";
 
 // re-export these to keep the imports from extensions local
 export type { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -345,6 +347,7 @@ export interface IState {
     browser: IBrowserState;
     history: IHistoryState;
     overlays: IOverlaysState;
+    healthCheck: IHealthCheckSessionState;
     extensions: {
       available: IAvailableExtension[];
       optional: { [extId: string]: IExtensionOptional[] };
@@ -362,6 +365,7 @@ export interface IState {
     deployment: { needToDeploy: { [gameId: string]: boolean } };
     transactions: IStateTransactions;
     history: IHistoryPersistent;
+    healthCheck: IHealthCheckPersistentState;
   };
 }
 

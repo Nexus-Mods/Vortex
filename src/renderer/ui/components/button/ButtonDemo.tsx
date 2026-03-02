@@ -158,6 +158,21 @@ export const ButtonDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Responsive Buttons
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          These buttons change size based on screen width. Try resizing the
+          window!
+        </Typography>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <Button size="sm">Responsive (sm on mobile, md on desktop)</Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Buttons with Icons
         </Typography>
 

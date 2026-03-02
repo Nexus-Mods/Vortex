@@ -5,7 +5,7 @@ import type { IModRepoId } from "../../mod_management/types/IMod";
 import { nexusGames } from "../util";
 
 const gameNum = (() => {
-  let cache: { [gameId: string]: number };
+  let cache: { [gameId: string]: number } | undefined;
   return (gameId: string): number | undefined => {
     if (cache === undefined) {
       const games = nexusGames();
