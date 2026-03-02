@@ -1,6 +1,7 @@
 import type { AddressInfo } from "node:net";
 
 import { unknownToError } from "@vortex/shared";
+import crypto from "crypto";
 import * as http from "node:http";
 import * as https from "node:https";
 import * as querystring from "node:querystring";
@@ -110,8 +111,6 @@ class OAuth {
     onToken: (err: Error, token: ITokenReply) => void,
     onOpenPage: (url: string) => void,
   ): Promise<void> {
-    const crypto = (await import("crypto")).default;
-
     const state = uuidv1();
     this.mStates[state] = onToken;
 
