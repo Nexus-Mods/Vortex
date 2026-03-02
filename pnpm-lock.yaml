@@ -1342,6 +1342,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.11
+      '@types/react':
+        specifier: '16'
+        version: 16.14.66
       '@types/react-bootstrap':
         specifier: 'catalog:'
         version: 0.32.37
