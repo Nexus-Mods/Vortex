@@ -2,6 +2,12 @@
 
 How to build and update the Flatpak package.
 
+> [!WARNING]
+> ## IMPORTANT: PNPM LOCKFILES ARE NOT SUPPORTED IN FLATPAK-BUILDER-TOOLS YET
+> Flatpak dependency source generation still relies on compatibility lockfiles (npm/yarn), not `pnpm-lock.yaml`.
+> - https://github.com/flatpak/flatpak-builder-tools/pull/511
+> - https://github.com/flatpak/flatpak-builder-tools/issues/383
+
 > [!note] Prerequisites
 > See [Flatpak basics in CONTRIBUTE.md](../CONTRIBUTE.md#flatpak-basics-linux-packaging).
 

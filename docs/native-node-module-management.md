@@ -1,5 +1,8 @@
 ## Overview
 
+> [!note]
+> The workspace now uses PNPM, but native-module orchestration is run directly via `node scripts/manage-node-modules.js` (for example, `node scripts/manage-node-modules.js status`).
+
 This document explains how to manage all C++ and C# projects in the Vortex solution, including native Node.js modules and .NET libraries that have their own Git repositories.
 
 The Vortex project includes multiple types of projects maintained as separate repositories:

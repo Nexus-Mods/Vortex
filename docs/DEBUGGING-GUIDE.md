@@ -26,10 +26,10 @@ The recommended workflow is VS Code's integrated debugger. Use **Debug Electron*
 
 ```bash
 # 1. Build the project first
-yarn build
+pnpm run build
 
-# 2. Ensure out/main.js exists
-ls out/main.js
+# 2. Ensure main build output exists
+ls src/main/out/main/main.js
 ```
 
 1. Open VS Code in the Vortex project root
@@ -38,7 +38,7 @@ ls out/main.js
 
 ### Set Breakpoints
 
-- **Main Process**: Set breakpoints in `src/main.ts`, `src/app/*.ts`
+- **Main Process**: Set breakpoints in `src/main/main.ts`, `src/main/*.ts`
 - **Renderer Process**: Set breakpoints in `src/renderer.tsx`, `src/views/*.tsx`, `src/extensions/**/*.ts`
 
 ### Debug Configuration
@@ -50,20 +50,20 @@ VS Code debug configurations are defined in `.vscode/launch.json`. The default *
 
 **Important Notes:**
 
-- Always run `yarn build` before debugging to ensure source maps are current
+- Always run `pnpm run build` before debugging to ensure source maps are current
 - If breakpoints aren't hitting, check that `out/` directory has recent files
-- The renderer attach profile needs a running Electron instance with `--remote-debugging-port=9222` (provided by the main-process profiles or `yarn start`)
+- The renderer attach profile needs a running Electron instance with `--remote-debugging-port=9222` (provided by the main-process profiles or `pnpm run start`)
 
 ### Debug Configurations (Profiles)
 
 #### Core Profiles
 
-| Profile                | Purpose                                      | Notes                                                               |
-| ---------------------- | -------------------------------------------- | ------------------------------------------------------------------- |
-| Debug Electron         | Launches main + renderer (compound)          | **Recommended**; default F5 workflow                                |
-| Debug Main Process     | Launches Electron main process only          | Good for startup, IPC, filesystem, updater work                     |
-| Debug Renderer Process | Attaches to renderer on port `9222`          | Start the main process first (`Debug Main Process` or `yarn start`) |
-| Debug Jest Tests       | Launches Jest with the args in `launch.json` | Update args per test                                                |
+| Profile                | Purpose                                      | Notes                                                                   |
+| ---------------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
+| Debug Electron         | Launches main + renderer (compound)          | **Recommended**; default F5 workflow                                    |
+| Debug Main Process     | Launches Electron main process only          | Good for startup, IPC, filesystem, updater work                         |
+| Debug Renderer Process | Attaches to renderer on port `9222`          | Start the main process first (`Debug Main Process` or `pnpm run start`) |
+| Debug Jest Tests       | Launches Jest with the args in `launch.json` | Update args per test                                                    |
 
 #### System Electron Profiles
 
@@ -101,7 +101,7 @@ Use **Debug Main Process** (or its staging variant) when you want to inspect sta
 
 ### Debugging Renderer Process Only
 
-1. Start Vortex with **Debug Main Process**, **Debug Main Process (Staging)**, or `yarn start`.
+1. Start Vortex with **Debug Main Process**, **Debug Main Process (Staging)**, or `pnpm run start`.
 2. Launch **Debug Renderer Process** to attach to port `9222`.
 3. Set breakpoints in `src/renderer.tsx`, `src/views/*.tsx`, and `src/extensions/**/*.ts`.
 
@@ -230,7 +230,7 @@ log("error", "download failed", {
 
 ```bash
 # Start with DevTools open
-yarn start -- --devtools
+pnpm run start -- --devtools
 ```
 
 ### Console Logging
@@ -417,7 +417,7 @@ Sometimes issues only occur in production builds. Here's how to debug them.
 
 ```bash
 # Build without code signing (faster)
-yarn build_dist:local
+pnpm run package:nosign
 ```
 
 This creates an installer in `dist/` directory.
@@ -428,7 +428,7 @@ Production builds use webpack which creates source maps. Ensure they're not excl
 
 ```bash
 # Check webpack config includes source maps
-cat webpack.config.js | grep "devtool"
+cat src/main/webpack.config.cjs | grep "devtool"
 ```
 
 ### Debug Production Build
@@ -504,8 +504,8 @@ If a native module crashes:
 
 **Solutions:**
 
-1. Rebuild the project: `yarn build`
-2. Check source maps exist in `out/` directory
+1. Rebuild the project: `pnpm run build`
+2. Check source maps exist in `src/main/out/` directory
 3. Verify `outFiles` in launch.json matches build output
 4. Clear VS Code breakpoint cache: Restart VS Code
 5. Check file path matches (Windows path separators)
@@ -516,9 +516,9 @@ If a native module crashes:
 
 **Solutions:**
 
-1. Run `yarn install` to ensure all dependencies
+1. Run `pnpm install` to ensure all dependencies
 2. Check `NODE_PATH` environment variable
-3. Rebuild native modules: `yarn install --force`
+3. Rebuild native modules: `pnpm install --force`
 4. Clear cache: Delete `node_modules/`
 
 ### Debugging Freezes/Hangs
