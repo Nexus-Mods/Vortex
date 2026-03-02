@@ -107,9 +107,9 @@ function getRuleSpec(
     res[conflict.otherMod.id] =
       existingRule !== undefined
         ? {
-            type: existingRule.type as any,
-            version: importVersion(existingRule.reference.versionMatch),
-          }
+          type: existingRule.type as any,
+          version: importVersion(existingRule.reference.versionMatch),
+        }
         : { type: undefined, version: "any" };
   });
   return res;
@@ -331,8 +331,8 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         text: t(
           'This change will only be applied once you choose to "Save" the change in the main ' +
-            "dialogue window. Please be aware that once saved, this action cannot be undone and the " +
-            "mod rules and file overrides will have to be set again.",
+          "dialogue window. Please be aware that once saved, this action cannot be undone and the " +
+          "mod rules and file overrides will have to be set again.",
         ),
       },
       [
@@ -386,15 +386,15 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         bbcode: t(
           "Vortex can set some of the rules automatically based on the last modified date. " +
-            "Mods with newer files will be loaded after mods with older files, effectively overriding " +
-            "older mods. While this is a quick way to resolve mod conflicts with generally decent results, " +
-            "it is no guarantee for a working mod load order.[br][/br][br][/br]" +
-            "Please note: Vortex will be unable to suggest rules for mods with files " +
-            "that are both older than some and newer than others from a conflicting mod.[br][/br][br][/br]" +
-            "Loading mods in the incorrect order can lead to in-game errors such as:[br][/br][br][/br]" +
-            "[list][*]Mods not having an effect on the game[*]Incorrect textures or models showing up " +
-            "[*]The game crashing[/list][br][/br]If you find that your mods don't work correctly " +
-            "you can always come here and change their order.",
+          "Mods with newer files will be loaded after mods with older files, effectively overriding " +
+          "older mods. While this is a quick way to resolve mod conflicts with generally decent results, " +
+          "it is no guarantee for a working mod load order.[br][/br][br][/br]" +
+          "Please note: Vortex will be unable to suggest rules for mods with files " +
+          "that are both older than some and newer than others from a conflicting mod.[br][/br][br][/br]" +
+          "Loading mods in the incorrect order can lead to in-game errors such as:[br][/br][br][/br]" +
+          "[list][*]Mods not having an effect on the game[*]Incorrect textures or models showing up " +
+          "[*]The game crashing[/list][br][/br]If you find that your mods don't work correctly " +
+          "you can always come here and change their order.",
         ),
       },
       [
@@ -415,7 +415,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                   const existingRule = modRules.find(
                     (rule) =>
                       ["before", "after", "conflicts"].indexOf(rule.type) !==
-                        -1 &&
+                      -1 &&
                       util.testModReference(conflict.otherMod, rule.reference),
                   );
 
@@ -439,21 +439,21 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                     res[conflict.otherMod.id] =
                       conflict.suggestion !== null
                         ? {
-                            type: conflict.suggestion,
-                            version:
-                              existingRule !== undefined
-                                ? importVersion(
-                                    existingRule.reference.versionMatch,
-                                  )
-                                : "any",
-                          }
+                          type: conflict.suggestion,
+                          version:
+                            existingRule !== undefined
+                              ? importVersion(
+                                existingRule.reference.versionMatch,
+                              )
+                              : "any",
+                        }
                         : existingRule !== undefined
                           ? {
-                              type: existingRule.type as any,
-                              version: importVersion(
-                                existingRule.reference.versionMatch,
-                              ),
-                            }
+                            type: existingRule.type as any,
+                            version: importVersion(
+                              existingRule.reference.versionMatch,
+                            ),
+                          }
                           : { type: undefined, version: "any" };
                   }
                 });
@@ -482,10 +482,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const isRuleSet: boolean =
       rules[otherModId]?.[modId] === undefined
         ? (mods[otherModId]?.rules ?? []).find(
-            (rule) =>
-              ["before", "after", "conflicts"].includes(rule.type) &&
-              util.testModReference(mods[modId], rule.reference),
-          ) !== undefined
+          (rule) =>
+            ["before", "after", "conflicts"].includes(rule.type) &&
+            util.testModReference(mods[modId], rule.reference),
+        ) !== undefined
         : rules[otherModId][modId].type !== undefined;
 
     return hideResolved
@@ -658,7 +658,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       {
         bbcode: t(
           "You are about to apply a group rule (before/after all), to the following " +
-            "mods: [br][/br][br][/br]{{mods}}[br][/br][br][/br]",
+          "mods: [br][/br][br][/br]{{mods}}[br][/br][br][/br]",
           { replace: { mods: [modId].concat(refIds).join("[br][/br]") } },
         ),
       },
@@ -689,21 +689,21 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const hasAppliedFilters = hideResolved || !!filterValue;
     const refIds = hasAppliedFilters
       ? Object.keys(rules[modId]).filter((refId) => {
-          if (mods[refId] === undefined) {
-            return false;
-          }
-          const modName = util.renderModName(mods[refId]);
-          let matchesFilter = false;
-          if (modName !== undefined) {
-            const refModName = modName.toLowerCase();
-            matchesFilter = refModName.includes(filterValue.toLowerCase());
-          }
-          return (
-            (!!filterValue && matchesFilter) ||
-            (hideResolved &&
-              this.isUnresolved(mods, modId, refId, rules, hideResolved))
-          );
-        })
+        if (mods[refId] === undefined) {
+          return false;
+        }
+        const modName = util.renderModName(mods[refId]);
+        let matchesFilter = false;
+        if (modName !== undefined) {
+          const refModName = modName.toLowerCase();
+          matchesFilter = refModName.includes(filterValue.toLowerCase());
+        }
+        return (
+          (!!filterValue && matchesFilter) ||
+          (hideResolved &&
+            this.isUnresolved(mods, modId, refId, rules, hideResolved))
+        );
+      })
       : Object.keys(rules[modId]);
     const unassignedRefIds = refIds.filter((refId) => {
       const currentModRule = rules[modId]?.[refId]?.type;
@@ -715,18 +715,18 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const removeRefRule = (refId: string) =>
       rules[refId]?.[modId] === undefined
         ? (newRules = {
-            ...newRules,
-            [refId]: {
-              [modId]: {
-                version: "any",
-                type: undefined,
-              },
+          ...newRules,
+          [refId]: {
+            [modId]: {
+              version: "any",
+              type: undefined,
             },
-          })
+          },
+        })
         : (newRules[refId][modId] = {
-            version: "any",
-            type: undefined,
-          });
+          version: "any",
+          type: undefined,
+        });
 
     const applyRule = () => {
       const refrencedModIds =
@@ -895,7 +895,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           >
             <option value="any">{t("Any version")}</option>
             {conflict.otherMod.version &&
-            semver.valid(conflict.otherMod.version) ? (
+              semver.valid(conflict.otherMod.version) ? (
               <option value="compatible">{t("Compatible version")}</option>
             ) : null}
             {conflict.otherMod.version ? (
@@ -943,7 +943,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private unlock = (evt: React.MouseEvent<HTMLDivElement>) => {
+  private unlock = (evt: React.MouseEvent<any>) => {
     const { t, gameId, mods, onRemoveRule } = this.props;
     const modId = evt.currentTarget.getAttribute("data-modid");
     const rule = JSON.parse(evt.currentTarget.getAttribute("data-rule"));
