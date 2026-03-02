@@ -444,31 +444,29 @@ export function testRefByIdentifiers(
   }
 
   const { fileNames, modId, fileIds, condition } = identifiers;
-  if (
-    ref.repo?.modId != null &&
-    modId != null &&
-    ref.repo?.fileId != null &&
-    fileIds != null &&
-    fileIds.length > 0
-  ) {
+  if (ref.repo?.modId != null && modId != null) {
+    // Definitive match: same mod page and same file
     if (
       ref.repo.modId === modId.toString() &&
+      ref.repo?.fileId != null &&
+      fileIds != null &&
+      fileIds.length > 0 &&
       fileIds.includes(ref.repo.fileId)
     ) {
       return true;
     }
-  }
-  // If the reference specifies a repo mod id and the download has a known
-  // (different) mod id, this is definitively not the right download - don't
-  // fall through to weaker matching criteria like logicalFileName which can
-  // produce false matches for generic names like "Main File"
-  if (
-    ref.repo?.modId != null &&
-    modId != null &&
-    !isNaN(modId) &&
-    ref.repo.modId !== modId.toString()
-  ) {
-    return false;
+    if (!isNaN(modId)) {
+      if (ref.repo.modId !== modId.toString()) {
+        // Different mod page — don't fall through to weaker matching criteria
+        // like logicalFileName which can produce false matches for generic names
+        return false;
+      }
+      // Same mod page but different file (e.g. different version) — the fileId
+      // mismatch is definitive (we already checked for a match above)
+      if (ref.repo?.fileId != null && fileIds != null && fileIds.length > 0) {
+        return false;
+      }
+    }
   }
   // right file?
   if (
