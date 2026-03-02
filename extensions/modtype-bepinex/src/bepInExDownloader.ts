@@ -69,8 +69,8 @@ async function install(
     const isInjectorInstalled = force
       ? false
       : Object.keys(mods).find(
-          (id) => mods[id].type === MODTYPE_BIX_INJECTOR,
-        ) !== undefined;
+        (id) => mods[id].type === MODTYPE_BIX_INJECTOR,
+      ) !== undefined;
     if (!isInjectorInstalled) {
       return new Promise<string>((resolve, reject) => {
         api.events.emit(
@@ -217,7 +217,7 @@ export async function ensureBepInExPack(
 
   const isInjectorInstalled = !force
     ? Object.keys(mods).find((id) => mods[id].type === MODTYPE_BIX_INJECTOR) !==
-      undefined
+    undefined
     : false;
 
   if (isInjectorInstalled) {
@@ -254,7 +254,7 @@ export async function ensureBepInExPack(
       if (err instanceof NotPremiumError) {
         const downloadInfo = downloadRes as INexusDownloadInfo;
         const url =
-          path.join(NEXUS, downloadInfo.domainId, "mods", downloadInfo.modId) +
+          path.join(NEXUS, downloadInfo.domainId, "mods", downloadInfo.modId.toString()) +
           `?tab=files&file_id=${downloadRes.fileId}&nmm=1`;
         util.opn(url).catch((err2) =>
           api.showErrorNotification("Failed to download custom pack", err2, {
@@ -303,13 +303,13 @@ export async function raiseConsentDialog(
     {
       bbcode: t(
         "The {{game}} game extension requires a widely used 3rd party assembly " +
-          "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
-          "Vortex can walk you through the download/installation process; once complete, BepInEx " +
-          "will be available in your mods page to enable/disable just like any other regular mod. " +
-          "Depending on the modding pattern of {{game}}, BepInEx may be a hard requirement " +
-          "for mods to function in-game, in which case you MUST have the library enabled and deployed " +
-          "at all times for the mods to work!{{bl}}" +
-          "To remove the library, simply disable the mod entry for BepInEx.",
+        "patching/injection library called Bepis Injector Extensible (BepInEx).{{bl}}" +
+        "Vortex can walk you through the download/installation process; once complete, BepInEx " +
+        "will be available in your mods page to enable/disable just like any other regular mod. " +
+        "Depending on the modding pattern of {{game}}, BepInEx may be a hard requirement " +
+        "for mods to function in-game, in which case you MUST have the library enabled and deployed " +
+        "at all times for the mods to work!{{bl}}" +
+        "To remove the library, simply disable the mod entry for BepInEx.",
         { replace },
       ),
     },

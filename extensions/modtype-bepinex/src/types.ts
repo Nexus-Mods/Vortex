@@ -157,10 +157,10 @@ export interface INexusDownloadInfo {
   architecture: BepInExArchitecture;
 
   // The numerical id of the mod.
-  modId: string;
+  modId: number;
 
   // The id of the specific file we want to download.
-  fileId: string;
+  fileId: number;
 
   // The name of the archive including its extension (i.e. '.zip', '.7z', etc).
   archiveName: string;
