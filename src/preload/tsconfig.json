@@ -1,12 +1,11 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "./tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "include": [
-    "src/main/**/*",
-    "src/preload/**/*",
-    "src/shared/**/*",
-    "typings.custom/electron.d.ts",
-    "typings.custom/promise.d.ts"
+    "**/*",
+    "../shared/**/*",
+    "../../typings.custom/electron.d.ts",
+    "../../typings.custom/promise.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
@@ -15,9 +14,8 @@
     "moduleResolution": "node", // TODO: change to nodenext
     "types": ["node"],
     "baseUrl": ".",
-    "outDir": "./out",
-    "rootDir": "./src",
-    "jsx": "react-jsx", // TODO: remove after renderer separation
+    "outDir": "../main/out",
+    "rootDir": "..",
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true

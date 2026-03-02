@@ -1,18 +1,37 @@
-import { showDialog } from "../../actions/notifications";
-import { setDialogVisible } from "../../actions/session";
-import OptionsFilter, {
-  type ISelectOption,
-} from "../../controls/table/OptionsFilter";
+import type * as Redux from "redux";
+
+import { mdiGamepadSquare } from "@mdi/js";
+import PromiseBB from "bluebird";
+import { clipboard } from "electron";
+import * as fsExtra from "fs-extra";
+import * as path from "path";
+import React from "react";
+import * as semver from "semver";
+
+import type { IExtensionDownloadInfo } from "../../types/extensions";
 import type {
   GameInfoQuery,
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import isIGame from "../../types/IGame.validator";
 import type { IGameStore } from "../../types/IGameStore";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
+import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
+import type GameModeManager from "./GameModeManager";
+import type { IDiscoveryResult } from "./types/IDiscoveryResult";
+import type { IGameStored } from "./types/IGameStored";
+import type { IModType } from "./types/IModType";
+
+import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
+import { showDialog } from "../../actions/notifications";
+import { setDialogVisible } from "../../actions/session";
+import LazyComponent from "../../controls/LazyComponent";
+import OptionsFilter, {
+  type ISelectOption,
+} from "../../controls/table/OptionsFilter";
+import ReduxProp from "../../ReduxProp";
 import { COMPANY_ID, NEXUSMODS_EXT_ID } from "../../util/constants";
 import {
   DataInvalid,
@@ -22,23 +41,16 @@ import {
 } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import GameStoreHelper from "../../util/GameStoreHelper";
-import LazyComponent from "../../controls/LazyComponent";
 import local from "../../util/local";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import opn from "../../util/opn";
-import ReduxProp from "../../ReduxProp";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-
 import { batchDispatch } from "../../util/util";
-
-import type { IExtensionDownloadInfo } from "../../types/extensions";
 import { setModType } from "../mod_management/actions/mods";
-import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
-
 import { setGameInfo } from "./actions/persistent";
 import {
   addDiscoveredGame,
@@ -46,13 +58,17 @@ import {
   setGamePath,
   setGameSearchPaths,
 } from "./actions/settings";
+import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
-import type { IDiscoveryResult } from "./types/IDiscoveryResult";
-import type { IGameStored } from "./types/IGameStored";
-import type { IModType } from "./types/IModType";
+import {
+  currentGame,
+  currentGameDiscovery,
+  discoveryByGame,
+  gameById,
+} from "./selectors";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
 import {
@@ -62,32 +78,12 @@ import {
 } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
-import {} from "./views/GamePicker";
+import { } from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
 import PathSelectionDialog from "./views/PathSelection";
 import ProgressFooter from "./views/ProgressFooter";
 import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
-
-import type GameModeManager from "./GameModeManager";
-import { type IGameStub } from "./GameModeManager";
-import {
-  currentGame,
-  currentGameDiscovery,
-  discoveryByGame,
-  gameById,
-} from "./selectors";
-
-import PromiseBB from "bluebird";
-import * as fsExtra from "fs-extra";
-import * as path from "path";
-import type * as Redux from "redux";
-import * as semver from "semver";
-import React from "react";
-
-import { clipboard } from "electron";
-import { getErrorCode, getErrorMessageOrDefault } from "../../../shared/errors";
-import { mdiGamepadSquare } from "@mdi/js";
 
 const gameStoreLaunchers: IGameStore[] = [];
 
@@ -279,7 +275,7 @@ function manualGameStoreSelection(
         {
           bbcode: api.translate(
             'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
-              "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
+            "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
             { replace: { gameStore: detectedStore?.name || "Unknown" } },
           ),
           choices: gameStores
@@ -394,8 +390,8 @@ function browseGameLocation(
                 {
                   text: api.translate(
                     "This directory doesn't appear to contain the game.\n" +
-                      "Usually you need to select the top-level game directory, " +
-                      "containing the following files:\n{{ files }}",
+                    "Usually you need to select the top-level game directory, " +
+                    "containing the following files:\n{{ files }}",
                     { replace: { files: game.requiredFiles.join("\n") } },
                   ),
                 },
@@ -766,13 +762,6 @@ function init(context: IExtensionContext): boolean {
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
-      if (!isIGame(game)) {
-        log("warn", "invalid game extension", { errors: isIGame.errors });
-        throw new Error(
-          "Invalid game extension: " +
-            isIGame.errors.map((err) => err.message).join(", "),
-        );
-      }
       game.extensionPath = extensionPath;
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, "info.json"), {
@@ -781,7 +770,7 @@ function init(context: IExtensionContext): boolean {
       );
       game.contributed =
         gameExtInfo.author === COMPANY_ID ||
-        gameExtInfo.author === NEXUSMODS_EXT_ID
+          gameExtInfo.author === NEXUSMODS_EXT_ID
           ? undefined
           : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, "1.0.0");
@@ -820,12 +809,12 @@ function init(context: IExtensionContext): boolean {
       game.path == null || typeof game.path !== "string"
         ? PromiseBB.resolve({})
         : PromiseBB.resolve({
-            path: {
-              title: "Path",
-              value: path.normalize(game.path),
-              type: "url",
-            },
-          }),
+          path: {
+            title: "Path",
+            value: path.normalize(game.path),
+            type: "url",
+          },
+        }),
   );
 
   context.registerGameInfoProvider(
@@ -1065,10 +1054,10 @@ function init(context: IExtensionContext): boolean {
           state.settings.gameMode.searchPaths.length > 0
             ? PromiseBB.resolve()
             : PromiseBB.resolve(getDriveList(context.api))
-                .catch(() => [])
-                .then((drives) => {
-                  context.api.store.dispatch(setGameSearchPaths(drives));
-                });
+              .catch(() => [])
+              .then((drives) => {
+                context.api.store.dispatch(setGameSearchPaths(drives));
+              });
 
         initPromise.then(() => {
           context.api.store.dispatch(setDialogVisible("game-search-paths"));
@@ -1165,14 +1154,14 @@ function init(context: IExtensionContext): boolean {
                         {
                           bbcode: context.api.translate(
                             "Vortex attempted to manage the game and has " +
-                              'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
-                              "Depending on recent changes on your environment and/or the game store through " +
-                              "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
-                              "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
-                              "[*]The game store through which you purchased the game might require additional steps " +
-                              "to enable modding capabilities" +
-                              "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
-                              "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
+                            'encountered a missing file:[br][/br]"{{errPath}}".[br][/br][br][/br]' +
+                            "Depending on recent changes on your environment and/or the game store through " +
+                            "which the game has been purchased, this error could be due to several factors:[br][/br][list]" +
+                            "[*]The game might be only partially installed/uninstalled or in a corrupt state" +
+                            "[*]The game store through which you purchased the game might require additional steps " +
+                            "to enable modding capabilities" +
+                            "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
+                            "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
                             { replace: { errPath: err.path } },
                           ),
                         },

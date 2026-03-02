@@ -15,6 +15,7 @@
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "typescript": "^4.9.5",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings"
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "xml2js": "^0.5.0"
   }
 }

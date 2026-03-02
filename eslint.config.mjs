@@ -23,13 +23,12 @@ export default defineConfig([
   {
     // NOTE(erri120): exclude build output and tests as well as any submodules
     ignores: [
-      "out/**",
-      "dist/**",
-      "app/**",
+      "./src/main/out",
+      "./src/main/dist",
       "./src/renderer/__tests__",
       "./src/renderer/__mocks__",
-      "extensions/**",
-      "api/**",
+      "./extensions",
+      "./api",
     ],
   },
 

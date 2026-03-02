@@ -2,10 +2,12 @@
   // NOTE(erri120): This TSConfig file is only for node scripts and config files used during development
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "include": [
+    "./BuildSubprojects.mjs",
+    "./InstallAssets.mjs",
     "./ts-to-zod.config.mjs",
     "./eslint.config.mjs",
     "./eslint-rules/*.mjs",
-    "./jest.config.mjs"
+    "./src/main/prepare-dist-package.mjs"
   ],
   "compilerOptions": {
     "composite": true,

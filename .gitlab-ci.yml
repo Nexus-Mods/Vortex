@@ -20,8 +20,10 @@ workflow:
   stage: build
   interruptible: true
   script:
-    - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn build
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run build
+    - pnpm run subprojects:out
 
 build:linux:
   extends: .build_template
@@ -42,19 +44,25 @@ build:linux:
       export VOLTA_HOME="$HOME/.volta"
       export PATH="$VOLTA_HOME/bin:$PATH"
       curl https://get.volta.sh | bash -s -- --skip-setup
-      volta install node yarn
+      volta install node@22 yarn@v1
+      npm install --global corepack@latest
+      corepack install
 
       # Print environment information
       echo "=== Environment Version Information ==="
       git --version
       node --version
       yarn --version
+      pnpm --version
+      pnpm exec node -v
       echo "=== End Environment Info ==="
   script:
-    - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn lint:ci
-    - yarn build
-    - yarn test
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run lint:ci
+    - pnpm run build
+    - pnpm run test
+    - pnpm run subprojects:out
 
 build:windows:
   extends: .build_template
@@ -70,7 +78,9 @@ build:windows:
     GIT_CONFIG_VALUE_0: "true"
   before_script:
     # Install Node and Yarn via Volta (reads versions from package.json)
-    - volta install node yarn
+    - volta install node@22 yarn@v1
+    - npm install --global corepack@latest
+    - corepack install
 
     # Configure node-gyp to use VS 2022
     - $env:npm_config_msvs_version = "2022"
@@ -79,17 +89,21 @@ build:windows:
     # Mark directory as safe for Git
     - git config --global --add safe.directory $CI_PROJECT_DIR
   script:
-    - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn lint:ci
-    - yarn build
-    - yarn test
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run lint:ci
+    - pnpm run build
+    - pnpm run test
+    - pnpm run subprojects:out
 
 .dist_template:
   stage: build
   interruptible: true
   script:
-    - yarn --frozen-lockfile --network-timeout 600000 install
-    - yarn build_dist
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run dist
+    - pnpm run subprojects:dist
 
 dist:linux:
   extends: .dist_template
@@ -109,7 +123,9 @@ dist:linux:
       export VOLTA_HOME="$HOME/.volta"
       export PATH="$VOLTA_HOME/bin:$PATH"
       curl https://get.volta.sh | bash -s -- --skip-setup
-      volta install node yarn
+      volta install node@22 yarn@v1
+      npm install --global corepack@latest
+      corepack install
 
 dist:windows:
   extends: .dist_template
@@ -121,7 +137,9 @@ dist:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   before_script:
-    - volta install node yarn
+    - volta install node@22 yarn@v1
+    - npm install --global corepack@latest
+    - corepack install
     - $env:npm_config_msvs_version = "2022"
     - $env:GYP_MSVS_VERSION = "2022"
     - git config --global --add safe.directory $CI_PROJECT_DIR

@@ -1,12 +1,20 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "./tsconfig.base.json",
-  "include": ["src/renderer/**/*", "src/shared/**/*", "typings.custom/*.d.ts"],
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "**/*",
+    "../shared/**/*",
+    "../../typings.custom/*.d.ts",
+    "./typings.custom/*.d.ts"
+  ],
   "exclude": [
-    "src/renderer/util/vortex-run/**/*",
-    "src/renderer/__tests__",
-    "src/renderer/__mocks__",
-    "src/renderer/dist"
+    "./util/vortex-run/**/*",
+    "./__tests__/",
+    "./__mocks__/",
+    "./dist",
+    "./temp",
+    "./setupTests.js",
+    "./jest.config.mjs"
   ],
   "compilerOptions": {
     "composite": true,
@@ -16,8 +24,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "outDir": "./out",
-    "rootDir": "./src",
+    "outDir": "../main/out",
+    "rootDir": "..",
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://www.schemastore.org/pnpm-workspace.json
+packages:
+  - ./src/shared
+  - ./src/preload
+  - ./src/main
+  - ./src/renderer
+
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - core-js
+  - crash-dump
+  - diskusage
+  - drivelist
+  - electron
+  - fomod-installer-native
+  - leveldown
+  - native-errors
+  - vortexmt
+  - winapi-bindings
+  - xxhash-addon

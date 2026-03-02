@@ -57,23 +57,6 @@ function runCommand(command, args, options = {}) {
 }
 
 /**
- * Initialize and update git submodules
- * @returns {Promise<void>}
- */
-async function updateSubmodules() {
-  console.log("Initializing git submodules...");
-  try {
-    await runCommand("git", ["submodule", "update", "--init", "--recursive"], {
-      cwd: __dirname,
-    });
-    console.log("Git submodules updated successfully");
-  } catch (err) {
-    console.error("Failed to update git submodules:", err.message);
-    throw err;
-  }
-}
-
-/**
  * Build FOMOD IPC TypeScript project
  * @returns {Promise<void>}
  */
@@ -149,13 +132,6 @@ async function main() {
   console.log("Starting preinstall script...");
 
   try {
-    // Update git submodules (can be skipped for offline builds like Flatpak)
-    if (process.env.VORTEX_SKIP_SUBMODULES === "1") {
-      console.log("Skipping git submodules (VORTEX_SKIP_SUBMODULES=1)");
-    } else {
-      await updateSubmodules();
-    }
-
     // Build FOMOD IPC
     await buildFomodIPC();
 

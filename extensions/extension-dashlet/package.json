@@ -15,11 +15,13 @@
     "@types/react-bootstrap": "^0.32.20",
     "@types/react-redux": "^7.1.5",
     "copyfiles": "^2.2.0",
-    "react-i18next": "^11.2.2",
+    "i18next": "^19.0.1",
+    "react-i18next": "^11.11.0",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "typescript": "^4.9.5",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "memoize-one": "^5.1.1"
   }
 }

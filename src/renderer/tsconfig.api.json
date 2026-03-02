@@ -1,11 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "extends": "./tsconfig.base.json",
-  "include": [
-    "src/renderer/api.ts",
-    "typings.custom/index.d.ts",
-    "src/renderer/preload.ts"
-  ],
+  "extends": "../../tsconfig.base.json",
+  "include": ["api.ts", "preload.ts", "../../typings.custom/index.d.ts"],
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
@@ -13,8 +9,8 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "jsx": "react-jsx",
-    "outDir": "./api/lib",
-    "rootDir": "./src",
+    "outDir": "../../api/lib",
+    "rootDir": "..",
     "removeComments": false,
     "lib": ["ESNext", "DOM", "DOM.Iterable"]
   }

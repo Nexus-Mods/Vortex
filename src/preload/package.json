@@ -1,0 +1,15 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/preload",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "pnpm tsc --composite false -p tsconfig.json",
+    "typecheck": "pnpm tsc --noEmit --composite false -p tsconfig.json",
+    "dist": "pnpm webpack --config ./webpack.config.cjs"
+  },
+  "devDependencies": {
+    "electron": "37.4.0"
+  }
+}

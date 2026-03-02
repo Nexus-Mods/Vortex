@@ -1,4 +1,7 @@
 !include WinVer.nsh
+!addplugindir "${BUILD_RESOURCES_DIR}\plugins\amd64-unicode"
+!addplugindir "${BUILD_RESOURCES_DIR}\plugins\x86-ansi"
+!addplugindir "${BUILD_RESOURCES_DIR}\plugins\x86-unicode"
 !macro preInit
   ${IfNot} ${AtLeastWin10}
 
@@ -18,8 +21,8 @@ ignore:
 
 !macro customInstall
   SetOutPath "$TEMP"
-  File "${BUILD_RESOURCES_DIR}\VC_redist.x64.exe"
-  File "${BUILD_RESOURCES_DIR}\windowsdesktop-runtime-win-x64.exe"
+  File "${PROJECT_DIR}\build\VC_redist.x64.exe"
+  File "${PROJECT_DIR}\build\windowsdesktop-runtime-win-x64.exe"
   ExecWait '"$TEMP\\VC_redist.x64.exe" /quiet /norestart'
   ExecWait '"$TEMP\\windowsdesktop-runtime-win-x64.exe" /install /quiet /norestart'
 

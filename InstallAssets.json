@@ -5,20 +5,20 @@
       "srcPath": "./LICENSE.md",
       "outPath": "",
       "skipPaths": 0,
-      "target": ["app"]
+      "target": ["dist"]
     },
     {
       "srcPath": "src/stylesheets",
       "outPath": "assets/css",
       "skipPaths": 2,
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
       "outPath": "assets/css",
       "rename": "bootstrap.scss",
       "skipPaths": 4,
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "src/renderer/index.dev.html",
@@ -30,13 +30,13 @@
     {
       "srcPath": "src/renderer/index.html",
       "outPath": "",
-      "target": ["app"],
+      "target": ["dist"],
       "skipPaths": 2
     },
     {
       "srcPath": "src/renderer/splash.html",
       "outPath": "",
-      "target": ["out", "app"],
+      "target": ["out", "dist"],
       "skipPaths": 2
     },
     {
@@ -47,59 +47,59 @@
     {
       "srcPath": "locales/*/*",
       "outPath": "",
-      "target": ["app"]
+      "target": ["dist"]
     },
     {
       "srcPath": "assets/images/",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/icons/",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/pictograms/",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/fonts/*",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/dotnetprobe.exe",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/dotnetprobe",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/*.json",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "assets/licenses/*",
       "outPath": "",
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
       "skipPaths": 2,
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     },
     {
       "srcPath": "extensions/*/index.js",
       "outPath": "bundledPlugins",
       "skipPaths": 1,
-      "target": ["out", "app"]
+      "target": ["out", "dist"]
     }
   ]
 }

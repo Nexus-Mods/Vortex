@@ -42,7 +42,7 @@
    *
    * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
    */
-  "mainEntryPointFilePath": "<projectFolder>/api/lib/renderer/api.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/../../api/lib/renderer/api.d.ts",
   /**
    * A list of NPM package names whose exports should be treated as part of this package.
    *
@@ -133,7 +133,7 @@
     /**
      * (REQUIRED) Whether to generate an API report.
      */
-    "enabled": true
+    "enabled": true,
     /**
      * The base filename for the API report files, to be combined with "reportFolder" or "reportTempFolder"
      * to produce the full file path.  The "reportFileName" should not include any path separators such as
@@ -148,7 +148,7 @@
      * SUPPORTED TOKENS: <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<unscopedPackageName>"
      */
-    // "reportFileName": "<unscopedPackageName>",
+    "reportFileName": "vortex",
     /**
      * To support different approval requirements for different API levels, multiple "variants" of the API report can
      * be generated.  The "reportVariants" setting specifies a list of variants to be generated.  If omitted,
@@ -172,7 +172,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/etc/"
      */
-    // "reportFolder": "<projectFolder>/etc/",
+    "reportFolder": "<projectFolder>/../../etc/"
     /**
      * Specifies the folder where the temporary report file is written.  The file name portion is determined by
      * the "reportFileName" setting.

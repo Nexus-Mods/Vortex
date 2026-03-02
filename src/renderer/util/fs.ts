@@ -13,37 +13,39 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
+import type * as permissionT from "permissions";
+import type * as vortexRunT from "vortex-run";
+import type * as whoLocksT from "wholocks";
+
+import PromiseBB from "bluebird";
+import { dialog as dialogIn } from "electron";
+import * as fs from "fs-extra";
+import { decode } from "iconv-lite";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+import * as net from "net";
+import * as path from "path";
+import rimraf from "rimraf";
+import { generate as shortid } from "shortid";
+import * as tmp from "tmp";
+
+import type { TFunction } from "./i18n";
+
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  isErrorWithSystemCode,
+} from "../../shared/errors";
 import {
   ProcessCanceled,
   SelfCopyCheckError,
   UserCanceled,
 } from "./CustomErrors";
 import { createErrorReport, getVisibleWindow } from "./errorHandling";
-import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import { restackErr, truthy } from "./util";
-
-import PromiseBB from "bluebird";
-import { decode } from "iconv-lite";
-import { dialog as dialogIn } from "electron";
-import * as fs from "fs-extra";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import * as net from "net";
-import * as path from "path";
-import type * as permissionT from "permissions";
-import rimraf from "rimraf";
-import { generate as shortid } from "shortid";
-import * as tmp from "tmp";
-import type * as vortexRunT from "vortex-run";
-import type * as whoLocksT from "wholocks";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  isErrorWithSystemCode,
-} from "../../shared/errors";
 
 const permission: typeof permissionT = lazyRequire(() =>
   require("permissions"),
