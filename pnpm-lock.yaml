@@ -1849,6 +1849,9 @@ importers:
       immutability-helper:
         specifier: 'catalog:'
         version: 3.1.1
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
       prop-types:
         specifier: 'catalog:'
         version: 15.8.1
@@ -1873,6 +1876,9 @@ importers:
       redux-act:
         specifier: 'catalog:'
         version: 1.8.0
+      redux-thunk:
+        specifier: 'catalog:'
+        version: 2.4.2(redux@4.2.1)
       ts-loader:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
