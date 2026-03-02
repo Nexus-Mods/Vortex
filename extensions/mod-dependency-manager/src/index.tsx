@@ -1150,6 +1150,20 @@ function once(api: types.IExtensionApi) {
     return Promise.resolve();
   });
 
+  api.onAsync('will-deploy', (_profileId: string) => {
+    // During collection installation we suppress continuous sort/rules updates (see state-change
+    // and mods-enabled handlers above) to avoid re-rendering the mods table on every mod install.
+    // Force-run them here, right before each deployment, so the sort order and dependency rules
+    // are up-to-date when the deployment executes.
+    if (selectors.getCollectionActiveSession(api.getState()) == null) {
+      return Promise.resolve();
+    }
+    const gameMode = selectors.activeGameId(store.getState());
+    return new Promise<void>((resolve) => {
+      updateRulesDebouncer.runNow((_err: Error) => resolve(), gameMode);
+    });
+  });
+
   api.events.on('did-install-collection', (gameId: string) => {
     updateRulesDebouncer.schedule(() => {
       updateConflictDebouncer.schedule(undefined, true);
@@ -1244,7 +1258,8 @@ function once(api: types.IExtensionApi) {
           && (changeMayAffectRules(util.getSafe(oldState, [gameMode, modId], undefined),
                                    newState[gameMode][modId])));
 
-      if (relevantChange !== undefined) {
+      if (relevantChange !== undefined
+        && selectors.getCollectionActiveSession(api.getState()) == null) {
         updateRulesDebouncer.schedule(() => {
           updateConflictDebouncer.schedule(undefined, true);
         }, gameMode);
@@ -1275,7 +1290,8 @@ function once(api: types.IExtensionApi) {
 
   api.events.on('mods-enabled', (modIds: string[], enabled: boolean, gameMode: string,
                                  options?: { silent: boolean, installed: boolean }) => {
-    if (gameMode === selectors.activeGameId(store.getState())) {
+    if (gameMode === selectors.activeGameId(store.getState())
+        && selectors.getCollectionActiveSession(api.getState()) == null) {
       updateRulesDebouncer.schedule(() => {
         updateConflictDebouncer.schedule(undefined, true);
       }, gameMode);
