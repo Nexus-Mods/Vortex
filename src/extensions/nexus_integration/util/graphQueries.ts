@@ -238,8 +238,10 @@ export const MOD_REQUIREMENTS_INFO: IModRequirementsQuery = {
   nexusRequirements: {
     nodes: {
       id: true,
+      gameId: true,
       modId: true,
       modName: true,
+      notes: true,
       url: true,
       externalRequirement: true,
     },

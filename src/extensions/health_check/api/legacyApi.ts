@@ -5,8 +5,8 @@
 
 import type { CheckFunction } from "../../../renderer/types/IExtensionContext";
 import type { HealthCheckCategory } from "../../../renderer/types/IHealthCheck";
-import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
+import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
 
 export interface ILegacyApi {
   registerTest: (

@@ -1,8 +1,10 @@
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
 import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
-import { log } from "../../../renderer/util/log";
 import type { IHealthCheckApi } from "../types";
+
+import { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
+import Debouncer from "../../../renderer/util/Debouncer";
+import { log } from "../../../renderer/util/log";
 
 /**
  * Setup automatic triggers for health checks
@@ -45,15 +47,36 @@ export function setupAutomaticTriggers(
       triggerHealthChecks(healthCheckApi, HealthCheckTrigger.SettingsChanged);
     });
 
-    // Mods changed triggers
+    // Mods changed triggers - debounced because did-install-mod and
+    // did-enable-mods fire in quick succession for the same install, and
+    // setModsEnabled() in InstallManager is not awaited so state may not
+    // be updated when the first event fires.
+    const modsChangedDebouncer = new Debouncer(
+      () =>
+        healthCheckApi
+          .runChecksByTrigger(HealthCheckTrigger.ModsChanged)
+          .then((results) => {
+            log("debug", "Debounced mods-changed health checks completed", {
+              totalChecks: results.length,
+            });
+          })
+          .catch((error) => {
+            const err = error as Error;
+            log("error", "Failed to run debounced mods-changed health checks", {
+              error: err.message,
+            });
+          }),
+      500,
+    );
+
     api.events.on("did-install-mod", () => {
-      log("debug", "Triggering mod change health checks (installed)");
-      triggerHealthChecks(healthCheckApi, HealthCheckTrigger.ModsChanged);
+      log("debug", "Mod installed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
     });
 
     api.onAsync("did-enable-mods", () => {
-      log("debug", "Triggering mod change health checks (deployed)");
-      triggerHealthChecks(healthCheckApi, HealthCheckTrigger.ModsChanged);
+      log("debug", "Mods enabled, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
       return Promise.resolve();
     });
 

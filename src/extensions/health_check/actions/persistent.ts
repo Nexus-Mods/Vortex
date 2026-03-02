@@ -33,6 +33,14 @@ export const clearAllHiddenRequirements = safeCreateAction(
 );
 
 /**
+ * Enable or disable mod requirements health check suggestions
+ */
+export const setModRequirementsEnabled = safeCreateAction(
+  "SET_HEALTH_CHECK_MOD_REQUIREMENTS_ENABLED",
+  (enabled: boolean) => ({ enabled }),
+);
+
+/**
  * Record that feedback was given for a specific requirement
  */
 export const setFeedbackGiven = safeCreateAction(

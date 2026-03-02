@@ -20,6 +20,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
+import { setSettingsPage } from "../../../renderer/actions/session";
 import { Button } from "../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../renderer/ui/components/icon/Icon";
 import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
@@ -75,7 +76,10 @@ const Mod = ({
 
         <Typography appearance="subdued" typographyType="body-sm">
           {t("listing::item::description", {
-            dependencyModName: requirementInfo.modName,
+            dependencyModName:
+              requirementInfo.modName ||
+              requirementInfo.modUrl ||
+              requirementInfo.notes,
           })}
         </Typography>
       </div>
@@ -177,7 +181,6 @@ function HealthCheckPage({
           setSelectedRequirement(null);
         }}
         onDownloadMod={(mod, file) => onDownloadRequirement?.(mod, file)}
-        onRefresh={onRefresh}
       />
     );
   }
@@ -188,7 +191,7 @@ function HealthCheckPage({
   return (
     <MainPage id="health-check-page">
       <MainPage.Body>
-        <div className="space-y-4 p-6">
+        <div className="h-full space-y-4 overflow-y-auto p-6">
           <div className="flex items-center gap-x-6">
             <div className="flex grow items-center gap-x-2">
               <Pictogram name="health-check" size="sm" />
@@ -234,6 +237,10 @@ function HealthCheckPage({
                 leftIconPath={mdiCog}
                 size="sm"
                 title={t("common:::settings")}
+                onClick={() => {
+                  api.events.emit("show-main-page", "application_settings");
+                  dispatch(setSettingsPage("Vortex"));
+                }}
               />
             </div>
           </div>

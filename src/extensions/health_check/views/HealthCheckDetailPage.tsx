@@ -15,20 +15,28 @@ import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IState } from "../../../renderer/types/IState";
 import type { IModRequirementExt, IModFileInfo } from "../types";
 
-import { log } from "../../../renderer/util/log";
-import MainPage from "../../../renderer/views/MainPage";
-import { unknownToError } from "../../../shared/errors";
 import { Button } from "../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../renderer/ui/components/icon/Icon";
+import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import {
   Typography,
   TypographyLink,
 } from "../../../renderer/ui/components/typography/Typography";
-import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
 import { opn } from "../../../renderer/util/api";
+import { log } from "../../../renderer/util/log";
+import {
+  Campaign,
+  Content,
+  Section,
+  nexusModsURL,
+} from "../../../renderer/util/util";
+import MainPage from "../../../renderer/views/MainPage";
+import { unknownToError } from "../../../shared/errors";
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
+import { PREMIUM_PATH } from "../../nexus_integration/constants";
 import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";
 import { FeedbackModal } from "../components/feedback_modal";
+import { ModRequirement } from "../components/mod_requirement";
 import { PremiumModal } from "../components/premium_modal";
 import {
   getModFiles,
@@ -37,13 +45,11 @@ import {
   feedbackGivenMap,
 } from "../selectors";
 import { getModFilesWithCache } from "../util";
-import { ModRequirement } from "../components/mod_requirement";
 
 interface IHealthCheckDetailPageProps {
   mod: IModRequirementExt;
   api: IExtensionApi;
   onBack: () => void;
-  onRefresh?: () => void;
   onDownloadMod?: (
     mod: IModRequirementExt,
     file?: IModFileInfo,
@@ -54,7 +60,6 @@ function HealthCheckDetailPage({
   mod,
   api,
   onBack,
-  onRefresh,
   onDownloadMod,
 }: IHealthCheckDetailPageProps) {
   const { t } = useTranslation(["health_check", "common"]);
@@ -107,22 +112,20 @@ function HealthCheckDetailPage({
   }, [mod.requiredBy.modUrl]);
 
   // Memoized callback for premium modal download action
-  const handleDownload = React.useCallback(async () => {
-    setShowPremiumModal(false);
-    if (isPremium) {
-      // Download and install the mod
-      await onDownloadMod?.(mod);
-      // Navigate back to main page
-      onBack();
-      // Manually trigger a refresh to ensure health check updates
-      // Small delay to ensure mod is fully enabled before refresh
-      setTimeout(() => {
-        onRefresh?.();
-      }, 1000);
-    } else {
-      setShowPremiumModal(true);
-    }
-  }, [onDownloadMod, mod, isPremium, onBack, onRefresh]);
+  const handleDownload = React.useCallback(
+    async (file?: IModFileInfo) => {
+      setShowPremiumModal(false);
+      if (isPremium) {
+        await onDownloadMod?.(mod, file);
+        onBack();
+        // Health check list is refreshed automatically by the debounced
+        // did-install-mod / did-enable-mods triggers in api/triggers.ts
+      } else {
+        setShowPremiumModal(true);
+      }
+    },
+    [onDownloadMod, mod, isPremium, onBack],
+  );
 
   // Memoized callback for positive feedback (thumbs up)
   const handlePositiveFeedback = React.useCallback(() => {
@@ -177,6 +180,16 @@ function HealthCheckDetailPage({
     onBack();
   }, [api.store, mod.requiredBy.modId, mod.id, onBack]);
 
+  const goPremium = React.useCallback(() => {
+    opn(
+      nexusModsURL(PREMIUM_PATH, {
+        section: Section.Users,
+        campaign: Campaign.BuyPremium,
+        content: Content.HealthCheckAd,
+      }),
+    ).catch(() => undefined);
+  }, []);
+
   return (
     <MainPage id="health-check-detail-page">
       <MainPage.Body>
@@ -223,28 +236,30 @@ function HealthCheckDetailPage({
             </div>
           </div>
 
-          <div className="mb-4 flex items-center justify-between gap-x-6 rounded-sm border border-premium-moderate/23 bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 px-4 py-3 shadow-xs">
-            <div className="flex items-center gap-x-1.5">
-              <Icon
-                className="text-netural-strong shrink-0"
-                path={mdiLightningBolt}
-              />
+          {!isPremium && (
+            <div className="mb-4 flex items-center justify-between gap-x-6 rounded-sm border border-premium-moderate/23 bg-linear-to-r from-premium-moderate/25 via-premium-moderate/10 to-premium-moderate/25 px-4 py-3 shadow-xs">
+              <div className="flex items-center gap-x-1.5">
+                <Icon
+                  className="text-netural-strong shrink-0"
+                  path={mdiLightningBolt}
+                />
 
-              <div className="flex grow items-center gap-x-2">
-                <Typography className="font-semibold">
-                  {t("premium::banner::title")}
-                </Typography>
+                <div className="flex grow items-center gap-x-2">
+                  <Typography className="font-semibold">
+                    {t("premium::banner::title")}
+                  </Typography>
 
-                <Typography appearance="none" className="text-premium-strong">
-                  {t("premium::banner::subtitle")}
-                </Typography>
+                  <Typography appearance="none" className="text-premium-strong">
+                    {t("premium::banner::subtitle")}
+                  </Typography>
+                </div>
               </div>
-            </div>
 
-            <Button buttonType="premium" size="sm">
-              {t("premium::banner::button")}
-            </Button>
-          </div>
+              <Button buttonType="premium" size="sm" onClick={goPremium}>
+                {t("premium::banner::button")}
+              </Button>
+            </div>
+          )}
 
           <div className="flex items-start gap-x-3 rounded-lg border border-stroke-weak p-6">
             <Icon
@@ -299,8 +314,9 @@ function HealthCheckDetailPage({
                 mod={mod}
                 modFiles={modFiles}
                 onConfirmInstall={handleConfirmInstall}
-                onDownload={handleDownload}
-                onShowVortexModal={() => setShowPremiumModal(true)}
+                onShowVortexModal={
+                  isPremium ? handleDownload : () => setShowPremiumModal(true)
+                }
               />
             </div>
           </div>

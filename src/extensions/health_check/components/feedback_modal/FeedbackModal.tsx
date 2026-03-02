@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Checkbox } from "../../../../renderer/ui/components/form/checkbox/Checkbox";
 import { Modal } from "../../../../renderer/ui/components/modal/Modal";
-import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Typography } from "../../../../renderer/ui/components/typography/Typography";
 
 const FEEDBACK_OPTIONS = [

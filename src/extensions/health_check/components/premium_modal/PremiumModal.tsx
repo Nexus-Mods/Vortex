@@ -2,10 +2,18 @@ import { mdiCheck, mdiDiamondStone } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Modal } from "../../../../renderer/ui/components/modal/Modal";
 import { Button } from "../../../../renderer/ui/components/button/Button";
 import { Icon } from "../../../../renderer/ui/components/icon/Icon";
+import { Modal } from "../../../../renderer/ui/components/modal/Modal";
 import { Typography } from "../../../../renderer/ui/components/typography/Typography";
+import { opn } from "../../../../renderer/util/api";
+import {
+  Campaign,
+  Content,
+  Section,
+  nexusModsURL,
+} from "../../../../renderer/util/util";
+import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
   <li className="flex gap-x-1">
@@ -29,6 +37,16 @@ export const PremiumModal = ({
   onDownload: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
+
+  const goPremium = React.useCallback(() => {
+    opn(
+      nexusModsURL(PREMIUM_PATH, {
+        section: Section.Users,
+        campaign: Campaign.BuyPremium,
+        content: Content.HealthCheckAd,
+      }),
+    ).catch(() => undefined);
+  }, []);
 
   return (
     <Modal isOpen={isOpen} title={t("premium::modal::title")} onClose={onClose}>
@@ -69,7 +87,7 @@ export const PremiumModal = ({
           className="w-full"
           leftIconPath={mdiDiamondStone}
           size="sm"
-          onClick={onClose}
+          onClick={goPremium}
         >
           {t("premium::modal::buttons::premium")}
         </Button>

@@ -44,6 +44,11 @@
       }
     }
   },
+  "settings": {
+    "title": "Health Check (Beta)",
+    "description": "Detect issues with your mod list and suggest fixes. More checks are coming soon.",
+    "mod_requirements": "Missing mod requirements suggestions"
+  },
   "premium": {
     "banner": {
       "title": "Unlock 1-click installs with Premium.",

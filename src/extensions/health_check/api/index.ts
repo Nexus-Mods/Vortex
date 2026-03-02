@@ -8,6 +8,7 @@ import type { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
 import type { HealthCheckRegistry } from "../core/HealthCheckRegistry";
 import type { LegacyTestAdapter } from "../core/LegacyTestAdapter";
 import type { IHealthCheckApi } from "../types";
+
 import { createCustomCheckApi, type ICustomCheckApi } from "./customCheckApi";
 import { createLegacyApi, type ILegacyApi } from "./legacyApi";
 import { createResultsApi, type IResultsApi } from "./resultsApi";

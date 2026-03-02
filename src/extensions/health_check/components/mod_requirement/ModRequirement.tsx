@@ -21,14 +21,12 @@ export const ModRequirement = ({
   modFiles,
   loadingFiles,
   onShowVortexModal,
-  onDownload,
   onConfirmInstall,
 }: {
   mod: IModRequirementExt;
   modFiles?: IModFileInfo[];
   loadingFiles?: boolean;
-  onShowVortexModal?: () => void;
-  onDownload: (mod: IModRequirementExt, file?: IModFileInfo) => void;
+  onShowVortexModal?: (file?: IModFileInfo) => void;
   onConfirmInstall?: () => void;
 }) => {
   const { t } = useTranslation(["health_check"]);
@@ -49,16 +47,18 @@ export const ModRequirement = ({
       <div className="space-y-2 rounded-sm bg-surface-mid px-4 py-3">
         <div className="flex items-center gap-x-2">
           <div className="flex grow items-center gap-x-2">
-            <div className="relative flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-stroke-weak bg-surface-translucent-low">
-              <img
-                alt=""
-                className="absolute max-h-full"
-                src={previewImageSrc}
-              />
-            </div>
+            {!mod.externalRequirement && (
+              <div className="relative flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-stroke-weak bg-surface-translucent-low">
+                <img
+                  alt=""
+                  className="absolute max-h-full"
+                  src={previewImageSrc}
+                />
+              </div>
+            )}
 
             <div>
-              <Typography>{mod.modName}</Typography>
+              <Typography>{mod.modName || mod.modUrl || mod.notes}</Typography>
 
               <Typography appearance="subdued" typographyType="body-sm">
                 {t("detail::item::check_the_description")}
@@ -104,7 +104,7 @@ export const ModRequirement = ({
                     </span>
                   }
                   size="sm"
-                  onClick={onShowVortexModal}
+                  onClick={() => onShowVortexModal?.()}
                 >
                   {t("detail::item::install_in_app")}
                 </Button>
@@ -196,9 +196,9 @@ export const ModRequirement = ({
                         filled="weak"
                         leftIconPath={mdiDownload}
                         size="sm"
-                        onClick={() => onDownload(mod, file)}
+                        onClick={() => onShowVortexModal?.(file)}
                       >
-                        Download
+                        {t("detail::item::install_in_app")}
                       </Button>
                     </div>
                   ))}

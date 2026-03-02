@@ -1,6 +1,6 @@
 import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
-import { setSafe, deleteOrNop } from "../../../renderer/util/storeHelper";
 
+import { setSafe, deleteOrNop } from "../../../renderer/util/storeHelper";
 import * as actions from "../actions/persistent";
 
 export interface IHealthCheckPersistentState {
@@ -16,6 +16,8 @@ export interface IHealthCheckPersistentState {
    * Prevents users from submitting feedback multiple times for the same requirement
    */
   feedbackGiven: { [modId: number]: string[] };
+  /** Whether mod requirements health check suggestions are enabled */
+  modRequirementsEnabled: boolean;
 }
 
 /**
@@ -53,6 +55,9 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
     [actions.clearAllHiddenRequirements as any]: (state) => {
       return setSafe(state, ["hiddenRequirements"], {});
     },
+    [actions.setModRequirementsEnabled as any]: (state, payload) => {
+      return setSafe(state, ["modRequirementsEnabled"], payload.enabled);
+    },
     [actions.setFeedbackGiven as any]: (state, payload) => {
       const { modId, requirementId } = payload;
       const current = state.feedbackGiven?.[modId] || [];
@@ -69,5 +74,6 @@ export const persistentReducer: IReducerSpec<IHealthCheckPersistentState> = {
   defaults: {
     hiddenRequirements: {},
     feedbackGiven: {},
+    modRequirementsEnabled: true,
   },
 };

@@ -1,7 +1,7 @@
-import type { IState } from "../../renderer/types/IState";
-import type { IHealthCheckSessionState } from "./reducers/session";
-import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckResult } from "../../renderer/types/IHealthCheck";
+import type { IState } from "../../renderer/types/IState";
+import type { IHealthCheckPersistentState } from "./reducers/persistent";
+import type { IHealthCheckSessionState } from "./reducers/session";
 import type {
   HealthCheckId,
   IModMissingRequirements,
@@ -119,7 +119,14 @@ export const healthCheckPersistentState = (
   state.persistent?.healthCheck ?? {
     hiddenRequirements: {},
     feedbackGiven: {},
+    modRequirementsEnabled: true,
   };
+
+/**
+ * Check if mod requirements health check suggestions are enabled
+ */
+export const isModRequirementsEnabled = (state: IState): boolean =>
+  healthCheckPersistentState(state).modRequirementsEnabled ?? true;
 
 /**
  * Get the hidden requirements map

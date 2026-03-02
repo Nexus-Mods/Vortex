@@ -1,17 +1,18 @@
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import {
-  HealthCheckCategory,
-  HealthCheckTrigger,
-  HealthCheckSeverity,
-} from "../../../renderer/types/IHealthCheck";
 import type {
   IHealthCheck,
   IHealthCheckEntry,
   IHealthCheckResult,
   ILegacyTestAdapter,
 } from "../../../renderer/types/IHealthCheck";
-import { log } from "../../../renderer/util/log";
 import type { HealthCheckId } from "../types";
+
+import {
+  HealthCheckCategory,
+  HealthCheckTrigger,
+  HealthCheckSeverity,
+} from "../../../renderer/types/IHealthCheck";
+import { log } from "../../../renderer/util/log";
 import { setHealthCheckResult } from "../actions/session";
 
 export class HealthCheckRegistry {
@@ -360,7 +361,7 @@ export class HealthCheckRegistry {
       categories[entry.healthCheck.category]++;
 
       if (entry.lastResult) {
-        const status = entry.lastResult.status as keyof typeof lastResults;
+        const status = entry.lastResult.status;
         if (status in lastResults) {
           lastResults[status]++;
         }

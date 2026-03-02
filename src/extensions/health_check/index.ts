@@ -3,31 +3,34 @@
  * Provides health check functionality for mods
  */
 
-import { activeGameId } from "../../renderer/util/selectors";
 import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
-import HealthCheckPage from "./views/HealthCheckPage";
-import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
-import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
-import { createHealthCheckApi } from "./api";
-import { setupAutomaticTriggers } from "./api/triggers";
-import {
-  HealthCheckCategory,
-  HealthCheckTrigger,
-  HealthCheckSeverity,
-} from "../../renderer/types/IHealthCheck";
-import { sessionReducer } from "./reducers/session";
-import { persistentReducer } from "./reducers/persistent";
-import { onDownloadRequirement } from "./util";
 import type {
   IHealthCheckApi,
   IModFileInfo,
   IModRequirementExt,
 } from "./types";
+
+import {
+  HealthCheckCategory,
+  HealthCheckTrigger,
+  HealthCheckSeverity,
+} from "../../renderer/types/IHealthCheck";
+import { activeGameId } from "../../renderer/util/selectors";
+import { setHealthCheckRunning } from "./actions/session";
+import { createHealthCheckApi } from "./api";
+import { setupAutomaticTriggers } from "./api/triggers";
 import {
   checkModRequirements,
   MOD_REQUIREMENTS_CHECK_ID,
 } from "./checks/modRequirementsCheck";
-import { setHealthCheckRunning } from "./actions/session";
+import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
+import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
+import { persistentReducer } from "./reducers/persistent";
+import { sessionReducer } from "./reducers/session";
+import { isModRequirementsEnabled } from "./selectors";
+import { onDownloadRequirement } from "./util";
+import HealthCheckPage from "./views/HealthCheckPage";
+import SettingsHealthCheck from "./views/SettingsHealthCheck";
 
 let registry: HealthCheckRegistry | null = null;
 let legacyAdapter: LegacyTestAdapter | null = null;
@@ -46,6 +49,15 @@ function init(context: IExtensionContext): boolean {
 
   // Register persistent reducer for health check settings (hidden mods, etc.)
   context.registerReducer(["persistent", "healthCheck"], persistentReducer);
+
+  // Register health check settings on the Vortex tab (priority 90 = above Data & Privacy)
+  context.registerSettings(
+    "Vortex",
+    SettingsHealthCheck,
+    undefined,
+    undefined,
+    100,
+  );
 
   // Register the Health Check page
   context.registerMainPage("health", "Health Check", HealthCheckPage, {
@@ -88,8 +100,21 @@ function init(context: IExtensionContext): boolean {
         HealthCheckTrigger.Manual,
         HealthCheckTrigger.ProfileChanged,
         HealthCheckTrigger.GameChanged,
+        HealthCheckTrigger.SettingsChanged,
       ],
       check: async () => {
+        // Skip check if mod requirements suggestions are disabled
+        if (!isModRequirementsEnabled(context.api.getState())) {
+          return {
+            checkId: MOD_REQUIREMENTS_CHECK_ID,
+            status: "passed" as const,
+            severity: HealthCheckSeverity.Info,
+            message: "Mod requirements check disabled",
+            executionTime: 0,
+            timestamp: new Date(),
+          };
+        }
+
         context.api.store?.dispatch(
           setHealthCheckRunning(MOD_REQUIREMENTS_CHECK_ID, true),
         );
@@ -109,6 +134,16 @@ function init(context: IExtensionContext): boolean {
         }
       },
     });
+
+    // Re-run checks when the mod requirements setting changes
+    context.api.onStateChange(
+      ["persistent", "healthCheck", "modRequirementsEnabled"],
+      () => {
+        void healthCheckApi?.runChecksByTrigger?.(
+          HealthCheckTrigger.SettingsChanged,
+        );
+      },
+    );
   });
 
   return true;

@@ -3,6 +3,7 @@
  */
 
 import type { IModRequiring, IModRequirement } from "@nexusmods/nexus-api";
+
 import type {
   HealthCheckTrigger,
   IHealthCheckResult,

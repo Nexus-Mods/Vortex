@@ -3,33 +3,35 @@
  * Validates that all Nexus mod requirements are satisfied
  */
 
+import type { IModRequirements } from "@nexusmods/nexus-api";
+
 import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
-import { HealthCheckSeverity } from "../../../renderer/types/IHealthCheck";
-import { log } from "../../../renderer/util/log";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../../../shared/errors";
-import { activeProfile } from "../../profile_management/selectors";
-import { isLoggedIn } from "../../nexus_integration/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
-import type { IModRequirements } from "@nexusmods/nexus-api";
-import { getSafe } from "../../../renderer/util/storeHelper";
-import { setModAttribute } from "../../../renderer/actions";
 import type {
   IModRequirementsCheckMetadata,
   IModMissingRequirements,
   IModRequirementsCheckParams,
 } from "../types";
+
+import { setModAttribute } from "../../../renderer/actions";
+import { HealthCheckSeverity } from "../../../renderer/types/IHealthCheck";
 import {
   getGame,
   nexusGameId,
   renderModName,
 } from "../../../renderer/util/api";
-import { makeModUID } from "../../nexus_integration/util/UIDs";
+import { log } from "../../../renderer/util/log";
+import { getSafe } from "../../../renderer/util/storeHelper";
 import { batchDispatch } from "../../../renderer/util/util";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "../../../shared/errors";
+import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericGameIdToDomainName } from "../../nexus_integration/util/convertGameId";
+import { makeModUID } from "../../nexus_integration/util/UIDs";
+import { activeProfile } from "../../profile_management/selectors";
 
 export const MOD_REQUIREMENTS_CHECK_ID = "check-nexus-mod-requirements";
 
@@ -319,8 +321,13 @@ export async function checkModRequirements(
       if (requirements.nexusRequirements?.nodes) {
         for (const req of requirements.nexusRequirements.nodes) {
           const requiredModId = parseInt(req.modId, 10);
-          const requiredGameId = parseInt(req.gameId, 10);
-          const domainName = numericGameIdToDomainName(requiredGameId);
+          const requiredGameId = req.gameId
+            ? parseInt(req.gameId, 10)
+            : undefined;
+          const domainName =
+            requiredGameId != null
+              ? numericGameIdToDomainName(requiredGameId)
+              : gameId;
           // Fallback for gameId if domain name not found (to satisfy type contract)
           const gameIdForStorage = domainName ?? gameId;
 

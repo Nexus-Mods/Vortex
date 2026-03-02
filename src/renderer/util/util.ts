@@ -1077,6 +1077,7 @@ export enum Campaign {
  * @property DashboardDashletAd - Advertisement displayed in a dashboard dashlet.
  * @property CollectionsDownloadAd - Advertisement shown during collection downloads.
  * @property SettingsDownloadAd - Advertisement displayed in the settings download section.
+ * @property HealthCheckAd - Advertisement displayed in the health check page.
  */
 export enum Content {
   HeaderAd = "header_ad",
@@ -1085,6 +1086,7 @@ export enum Content {
   DashboardDashletAd = "dashboard_dashlet_ad",
   CollectionsDownloadAd = "collections_download_ad",
   SettingsDownloadAd = "settings_download_ad",
+  HealthCheckAd = "health_check_ad",
 }
 
 export interface INexusURLOptions {
