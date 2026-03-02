@@ -30,6 +30,6 @@
     "react-bootstrap": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
+    "vortex-api": "catalog:"
   }
 }

@@ -25,6 +25,6 @@
     "webpack-cli": "catalog:",
     "bluebird": "catalog:",
     "@types/bluebird": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
+    "vortex-api": "catalog:"
   }
 }

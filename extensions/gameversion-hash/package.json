@@ -24,7 +24,7 @@
     "vortexmt": "Nexus-Mods/node-vortexmt",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
+    "vortex-api": "catalog:"
   },
   "dependencies": {
     "simple-git": "catalog:"

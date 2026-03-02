@@ -49,8 +49,8 @@ catalogs:
       specifier: ^2.7.0
       version: 2.8.0
     '@nexusmods/nexus-api':
-      specifier: ^1.0.5
-      version: 1.1.5
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679
+      version: 1.5.1
     '@stylistic/eslint-plugin':
       specifier: ^5.7.1
       version: 5.9.0
@@ -276,6 +276,9 @@ catalogs:
     babel-polyfill:
       specifier: ^6.13.0
       version: 6.26.0
+    bbcode-to-react:
+      specifier: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
+      version: 0.2.11
     big.js:
       specifier: ^5.2.2
       version: 5.2.2
@@ -303,6 +306,9 @@ catalogs:
     copyfiles:
       specifier: ^2.4.1
       version: 2.4.1
+    crash-dump:
+      specifier: git+https://github.com/Nexus-Mods/node-crash-dump#7fc76dabdc9117a7f238d7bf5e5fb7841a374804
+      version: 2.0.2
     crc-32:
       specifier: ^1.2.1
       version: 1.2.2
@@ -336,12 +342,18 @@ catalogs:
     dequal:
       specifier: ^2.0.3
       version: 2.0.3
+    diskusage:
+      specifier: git+https://github.com/TanninOne/node-diskusage#eb52fd176b2c311dd3ae5f0e68ff7488c08a179d
+      version: 2.0.1
     dnd-core:
       specifier: ^9.4.0
       version: 9.5.1
     draggabilly:
       specifier: ^2.2.0
       version: 2.4.1
+    drivelist:
+      specifier: git+https://github.com/TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
+      version: 10.0.2
     electron:
       specifier: 37.4.0
       version: 37.4.0
@@ -354,6 +366,9 @@ catalogs:
     electron-devtools-installer:
       specifier: ^3.2.0
       version: 3.2.1
+    electron-redux:
+      specifier: git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8
+      version: 1.4.9-sync
     electron-updater:
       specifier: ^4.2.0
       version: 4.6.5
@@ -378,6 +393,9 @@ catalogs:
     eslint-plugin-perfectionist:
       specifier: ^5.4.0
       version: 5.6.0
+    exe-version:
+      specifier: git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406
+      version: 2.3.0
     feedparser:
       specifier: ^2.2.9
       version: 2.2.10
@@ -435,6 +453,9 @@ catalogs:
     json-loader:
       specifier: ^0.5.7
       version: 0.5.7
+    json-socket:
+      specifier: git+https://github.com/foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
+      version: 0.3.0
     jsonwebtoken:
       specifier: ^9.0.0
       version: 9.0.3
@@ -462,6 +483,15 @@ catalogs:
     mixpanel-browser:
       specifier: ^2.71.0
       version: 2.74.0
+    modmeta-db:
+      specifier: git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
+      version: 0.9.3
+    native-errors:
+      specifier: git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18
+      version: 2.0.3
+    node-7z:
+      specifier: git+https://github.com/Nexus-Mods/node-7z#3d98d2ba40906f8afa9de52d2ceb6a44f7143198
+      version: 0.7.9
     normalize-url:
       specifier: ^6.0.1
       version: 6.1.0
@@ -474,6 +504,9 @@ catalogs:
     packery:
       specifier: ^2.1.2
       version: 2.1.2
+    permissions:
+      specifier: git+https://github.com/Nexus-Mods/node-permissions#7c1b6f1d6437f2238be51316de823b0fbd63e4c0
+      version: 2.1.0
     prettier:
       specifier: 3.6.2
       version: 3.6.2
@@ -571,8 +604,8 @@ catalogs:
       specifier: ^1.12.0
       version: 1.22.11
     rimraf:
-      specifier: ^2.6.1
-      version: 2.7.1
+      specifier: git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
+      version: 2.6.2
     sass:
       specifier: 1.97.3
       version: 1.97.3
@@ -585,6 +618,9 @@ catalogs:
     simple-git:
       specifier: ^3.7.1
       version: 3.32.3
+    simple-vdf:
+      specifier: git+https://github.com/Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
+      version: 1.1.3
     source-map-support:
       specifier: ^0.5.16
       version: 0.5.21
@@ -612,6 +648,9 @@ catalogs:
     tsdown:
       specifier: 0.21.0-beta.1
       version: 0.21.0-beta.1
+    turbowalk:
+      specifier: git+https://github.com/Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+      version: 3.1.1
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -624,6 +663,15 @@ catalogs:
     uuid:
       specifier: ^3.3.3
       version: 3.4.0
+    vortex-api:
+      specifier: git+https://github.com/Nexus-Mods/vortex-api#bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
+      version: 1.9.1-r41
+    vortex-parse-ini:
+      specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
+      version: 0.4.0
+    vortexmt:
+      specifier: git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a
+      version: 0.3.0
     webpack:
       specifier: ^5.94.0
       version: 5.105.2
@@ -636,6 +684,12 @@ catalogs:
     which:
       specifier: ^1.3.1
       version: 1.3.1
+    wholocks:
+      specifier: git+https://github.com/Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
+      version: 1.1.0
+    winapi-bindings:
+      specifier: git+https://github.com/Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
+      version: 2.7.3
     winston:
       specifier: ^2.4.3
       version: 2.4.7
@@ -735,7 +789,7 @@ importers:
         version: 4.2.2(prettier@3.6.2)
       rimraf:
         specifier: 'catalog:'
-        version: 2.7.1
+        version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       sass:
         specifier: 'catalog:'
         version: 1.97.3
@@ -818,7 +872,7 @@ importers:
         specifier: 'catalog:'
         version: 7.7.4
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -844,7 +898,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: 1.1.5
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
@@ -951,7 +1005,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortexmt:
         specifier: Nexus-Mods/node-vortexmt
@@ -1044,7 +1098,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -1092,7 +1146,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1155,7 +1209,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -1239,7 +1293,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1251,7 +1305,7 @@ importers:
         specifier: 'catalog:'
         version: 5.1.4(webpack@5.105.2)
       winapi-bindings:
-        specifier: git+https://github.com/Nexus-Mods/node-winapi-bindings
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
 
   extensions/game-pillarsofeternity2:
@@ -1314,7 +1368,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1353,7 +1407,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1440,7 +1494,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: Nexus-Mods/vortex-parse-ini
@@ -1471,7 +1525,7 @@ importers:
         version: 2.4.1
       rimraf:
         specifier: 'catalog:'
-        version: 2.7.1
+        version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       ts-loader:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
@@ -1507,7 +1561,7 @@ importers:
         version: 2.4.1
       rimraf:
         specifier: 'catalog:'
-        version: 2.7.1
+        version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
@@ -1515,7 +1569,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -1581,7 +1635,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -1923,7 +1977,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1956,7 +2010,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -1989,7 +2043,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -2071,7 +2125,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -2093,7 +2147,7 @@ importers:
         version: 7.29.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: 1.1.5
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -2362,7 +2416,7 @@ importers:
         specifier: 'catalog:'
         version: 2.2.17
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -2428,7 +2482,7 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -2572,7 +2626,7 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -2702,7 +2756,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-parse-ini:
         specifier: Nexus-Mods/vortex-parse-ini
@@ -2738,7 +2792,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -2762,7 +2816,7 @@ importers:
         specifier: 'catalog:'
         version: 3.7.2
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -2795,7 +2849,7 @@ importers:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -2883,7 +2937,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -2988,7 +3042,7 @@ importers:
         specifier: 'catalog:'
         version: 2.2.17
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3024,7 +3078,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3108,7 +3162,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -3147,7 +3201,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -3192,7 +3246,7 @@ importers:
         specifier: 'catalog:'
         version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3243,7 +3297,7 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3260,7 +3314,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: 1.1.5
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -3298,7 +3352,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3409,7 +3463,7 @@ importers:
         specifier: Nexus-Mods/node-turbowalk
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3493,7 +3547,7 @@ importers:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       webpack:
         specifier: 'catalog:'
@@ -3538,7 +3592,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vortex-api:
-        specifier: git+https://github.com/Nexus-Mods/vortex-api
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       vortex-ext-dependencies:
         specifier: Nexus-Mods/vortex-ext-dependencies
@@ -3560,7 +3614,7 @@ importers:
         version: 2.8.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: 1.1.5
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
       '@tailwindcss/cli':
         specifier: 'catalog:'
         version: 4.1.17
@@ -3574,7 +3628,7 @@ importers:
         specifier: workspace:*
         version: link:../shared
       bbcode-to-react:
-        specifier: git+https://github.com/TanninOne/bbcode-to-react
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
       big.js:
         specifier: 'catalog:'
@@ -3598,7 +3652,7 @@ importers:
         specifier: 'catalog:'
         version: 1.0.5
       crash-dump:
-        specifier: git+https://github.com/Nexus-Mods/node-crash-dump
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/7fc76dabdc9117a7f238d7bf5e5fb7841a374804(bluebird@3.7.2)
       d3:
         specifier: 'catalog:'
@@ -3613,7 +3667,7 @@ importers:
         specifier: 'catalog:'
         version: 2.0.3
       diskusage:
-        specifier: git+https://github.com/TanninOne/node-diskusage
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d(bluebird@3.7.2)
       dnd-core:
         specifier: 'catalog:'
@@ -3622,13 +3676,13 @@ importers:
         specifier: 'catalog:'
         version: 2.4.1
       drivelist:
-        specifier: git+https://github.com/TanninOne/drivelist
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
       electron-redux:
-        specifier: git+https://github.com/TanninOne/electron-redux
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
@@ -3637,7 +3691,7 @@ importers:
         specifier: 'catalog:'
         version: 6.3.0
       exe-version:
-        specifier: git+https://github.com/Nexus-Mods/node-exe-version
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
       feedparser:
         specifier: 'catalog:'
@@ -3679,7 +3733,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.0
       json-socket:
-        specifier: git+https://github.com/foi/node-json-socket
+        specifier: 'catalog:'
         version: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
       jsonwebtoken:
         specifier: 'catalog:'
@@ -3703,13 +3757,13 @@ importers:
         specifier: 'catalog:'
         version: 2.74.0(@mixpanel/rrweb-utils@2.0.0-alpha.18.3)
       modmeta-db:
-        specifier: git+https://github.com/Nexus-Mods/modmeta-db
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       native-errors:
-        specifier: git+https://github.com/Nexus-Mods/node-native-errors
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
-        specifier: git+https://github.com/Nexus-Mods/node-7z
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3d98d2ba40906f8afa9de52d2ceb6a44f7143198
       normalize-url:
         specifier: 'catalog:'
@@ -3721,7 +3775,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.2
       permissions:
-        specifier: git+https://github.com/Nexus-Mods/node-permissions
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0
       prop-types:
         specifier: 'catalog:'
@@ -3802,7 +3856,7 @@ importers:
         specifier: 'catalog:'
         version: 1.22.11
       rimraf:
-        specifier: git+https://github.com/TanninOne/rimraf
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       sass:
         specifier: 'catalog:'
@@ -3814,7 +3868,7 @@ importers:
         specifier: 'catalog:'
         version: 2.2.17
       simple-vdf:
-        specifier: git+https://github.com/Nexus-Mods/vdf-parser
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/df279ff89cb480597544d3029e12f90cb8c79464
       source-map-support:
         specifier: 'catalog:'
@@ -3829,7 +3883,7 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0
       turbowalk:
-        specifier: git+https://github.com/Nexus-Mods/node-turbowalk
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       universal-analytics:
         specifier: 'catalog:'
@@ -3838,19 +3892,19 @@ importers:
         specifier: 'catalog:'
         version: 3.4.0
       vortex-parse-ini:
-        specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
       vortex-run:
         specifier: file:../renderer/util/vortex-run
         version: file:src/renderer/util/vortex-run
       vortexmt:
-        specifier: git+https://github.com/Nexus-Mods/node-vortexmt
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
       wholocks:
-        specifier: git+https://github.com/Nexus-Mods/node-wholocks
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
       winapi-bindings:
-        specifier: git+https://github.com/Nexus-Mods/node-winapi-bindings
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
       winston:
         specifier: 'catalog:'
@@ -4039,7 +4093,7 @@ importers:
         version: 2.8.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: 1.1.5
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
       '@tailwindcss/cli':
         specifier: 'catalog:'
         version: 4.1.17
@@ -4194,7 +4248,7 @@ importers:
         specifier: 'catalog:'
         version: 29.7.0(@babel/core@7.29.0)
       bbcode-to-react:
-        specifier: git+https://github.com/TanninOne/bbcode-to-react
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/c67356006470e5066ea447e04a3968dca367339d(react@16.14.0)
       big.js:
         specifier: 'catalog:'
@@ -4218,7 +4272,7 @@ importers:
         specifier: 'catalog:'
         version: 1.0.5
       crash-dump:
-        specifier: git+https://github.com/Nexus-Mods/node-crash-dump
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/7fc76dabdc9117a7f238d7bf5e5fb7841a374804(bluebird@3.7.2)
       csstype:
         specifier: 'catalog:'
@@ -4236,7 +4290,7 @@ importers:
         specifier: 'catalog:'
         version: 2.0.3
       diskusage:
-        specifier: git+https://github.com/TanninOne/node-diskusage
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/node-diskusage/tar.gz/eb52fd176b2c311dd3ae5f0e68ff7488c08a179d(bluebird@3.7.2)
       dnd-core:
         specifier: 'catalog:'
@@ -4245,7 +4299,7 @@ importers:
         specifier: 'catalog:'
         version: 2.4.1
       drivelist:
-        specifier: git+https://github.com/TanninOne/drivelist
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
@@ -4254,7 +4308,7 @@ importers:
         specifier: 'catalog:'
         version: 3.6.1
       electron-redux:
-        specifier: git+https://github.com/TanninOne/electron-redux
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/electron-redux/tar.gz/66bbd9d389579806e8c4ebd87bd513a668cc64a8
       electron-updater:
         specifier: 'catalog:'
@@ -4269,7 +4323,7 @@ importers:
         specifier: 'catalog:'
         version: 1.15.8(enzyme@3.11.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       exe-version:
-        specifier: git+https://github.com/Nexus-Mods/node-exe-version
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/eded60fc0a0f3c234e1d586d2eb9952401945406
       feedparser:
         specifier: 'catalog:'
@@ -4323,7 +4377,7 @@ importers:
         specifier: 'catalog:'
         version: 0.5.7
       json-socket:
-        specifier: git+https://github.com/foi/node-json-socket
+        specifier: 'catalog:'
         version: https://codeload.github.com/foi/node-json-socket/tar.gz/d56c8e2938fa4284c4001b815d9b6e4a92b5c07b
       jsonwebtoken:
         specifier: 'catalog:'
@@ -4347,13 +4401,13 @@ importers:
         specifier: 'catalog:'
         version: 2.74.0(@mixpanel/rrweb-utils@2.0.0-alpha.18.3)
       modmeta-db:
-        specifier: git+https://github.com/Nexus-Mods/modmeta-db
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@4.1.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
       native-errors:
-        specifier: git+https://github.com/Nexus-Mods/node-native-errors
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/51913db07e4c9b68a96ba7fcf741b32796758f18(bluebird@3.7.2)
       node-7z:
-        specifier: git+https://github.com/Nexus-Mods/node-7z
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3d98d2ba40906f8afa9de52d2ceb6a44f7143198
       normalize-url:
         specifier: 'catalog:'
@@ -4365,7 +4419,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.2
       permissions:
-        specifier: git+https://github.com/Nexus-Mods/node-permissions
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0
       prop-types:
         specifier: 'catalog:'
@@ -4452,7 +4506,7 @@ importers:
         specifier: 'catalog:'
         version: 1.22.11
       rimraf:
-        specifier: git+https://github.com/TanninOne/rimraf
+        specifier: 'catalog:'
         version: https://codeload.github.com/TanninOne/rimraf/tar.gz/7b8b70d4e8783cd233fca3283cf1f930af4e39c2
       sass:
         specifier: 'catalog:'
@@ -4464,7 +4518,7 @@ importers:
         specifier: 'catalog:'
         version: 2.2.17
       simple-vdf:
-        specifier: git+https://github.com/Nexus-Mods/vdf-parser
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/df279ff89cb480597544d3029e12f90cb8c79464
       source-map-support:
         specifier: 'catalog:'
@@ -4482,7 +4536,7 @@ importers:
         specifier: 'catalog:'
         version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@29.7.0(@babel/core@7.29.0))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.11)(babel-plugin-macros@3.1.0))(typescript@5.9.3)
       turbowalk:
-        specifier: git+https://github.com/Nexus-Mods/node-turbowalk
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       universal-analytics:
         specifier: 'catalog:'
@@ -4491,19 +4545,19 @@ importers:
         specifier: 'catalog:'
         version: 3.4.0
       vortex-parse-ini:
-        specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
       vortex-run:
         specifier: file:./util/vortex-run
         version: file:src/renderer/util/vortex-run
       vortexmt:
-        specifier: git+https://github.com/Nexus-Mods/node-vortexmt
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
       wholocks:
-        specifier: git+https://github.com/Nexus-Mods/node-wholocks
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
       winapi-bindings:
-        specifier: git+https://github.com/Nexus-Mods/node-winapi-bindings
+        specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
       winston:
         specifier: 'catalog:'
@@ -5526,9 +5580,6 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
-
-  '@nexusmods/nexus-api@1.1.5':
-    resolution: {integrity: sha512-l2tgyw1thsHZd1McxLdNLU6SP8RDMBNeD+b1lGV63FVgCsaAfeC9DgIX24gDPcc0iygBfWktKvcrTRrTWqSzhQ==}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679}
@@ -9363,10 +9414,6 @@ packages:
   jsonify@0.0.1:
     resolution: {integrity: sha512-2/Ki0GcmuqSrgFyelQq9M05y7PS0mEwuIzrf3f1fPqkVDVRvZrPZtVSMHxdgo8Aq0sxAOb/cr2aqqA3LeWHVPg==}
 
-  jsonwebtoken@8.5.1:
-    resolution: {integrity: sha512-XjwVfRS6jTMsqYs0EsuJ4LGxXV14zQybNd4L2r0UvbVnSF9Af8x7p5MzbJ90Ioz/9TI41/hTCvznF/loiSzn8w==}
-    engines: {node: '>=4', npm: '>=1.4.28'}
-
   jsonwebtoken@9.0.3:
     resolution: {integrity: sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==}
     engines: {node: '>=12', npm: '>=6'}
@@ -9378,14 +9425,8 @@ packages:
   jszip@3.10.1:
     resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
 
-  jwa@1.4.2:
-    resolution: {integrity: sha512-eeH5JO+21J78qMvTIDdBXidBd6nG2kZjg5Ohz/1fpa28Z4CcsWUzJ1ZZyFq/3z3N17aZy+ZuBoHljASbL1WfOw==}
-
   jwa@2.0.1:
     resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
-
-  jws@3.2.3:
-    resolution: {integrity: sha512-byiJ0FLRdLdSVSReO/U4E7RoEyOCKnEnEPMjq3HxWtvzLsV08/i5RQKsFVNkCldrCaPr2vDNAOMsfs8T/Hze7g==}
 
   jws@4.0.1:
     resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
@@ -13586,14 +13627,6 @@ snapshots:
       '@emnapi/runtime': 1.8.1
       '@tybys/wasm-util': 0.10.1
     optional: true
-
-  '@nexusmods/nexus-api@1.1.5':
-    dependencies:
-      jsonwebtoken: 8.5.1
-      request: 2.88.2
-      set-cookie-parser: 2.7.2
-      string-template: 1.0.0
-      typed-emitter: 1.4.0
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
     dependencies:
@@ -18386,19 +18419,6 @@ snapshots:
 
   jsonify@0.0.1: {}
 
-  jsonwebtoken@8.5.1:
-    dependencies:
-      jws: 3.2.3
-      lodash.includes: 4.3.0
-      lodash.isboolean: 3.0.3
-      lodash.isinteger: 4.0.4
-      lodash.isnumber: 3.0.3
-      lodash.isplainobject: 4.0.6
-      lodash.isstring: 4.0.1
-      lodash.once: 4.1.1
-      ms: 2.1.3
-      semver: 5.7.2
-
   jsonwebtoken@9.0.3:
     dependencies:
       jws: 4.0.1
@@ -18426,21 +18446,10 @@ snapshots:
       readable-stream: 2.3.8
       setimmediate: 1.0.5
 
-  jwa@1.4.2:
-    dependencies:
-      buffer-equal-constant-time: 1.0.1
-      ecdsa-sig-formatter: 1.0.11
-      safe-buffer: 5.2.1
-
   jwa@2.0.1:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
-      safe-buffer: 5.2.1
-
-  jws@3.2.3:
-    dependencies:
-      jwa: 1.4.2
       safe-buffer: 5.2.1
 
   jws@4.0.1:

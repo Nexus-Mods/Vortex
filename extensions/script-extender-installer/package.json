@@ -26,7 +26,7 @@
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "@nexusmods/nexus-api": "catalog:",
     "webpack": "catalog:",

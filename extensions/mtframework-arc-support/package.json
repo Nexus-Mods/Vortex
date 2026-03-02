@@ -17,7 +17,7 @@
     "@types/redux": "catalog:",
     "node-7z": "Nexus-Mods/node-7z",
     "shortid": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "react": "catalog:",
     "react-i18next": "catalog:",

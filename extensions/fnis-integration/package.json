@@ -42,7 +42,7 @@
     "i18next": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
-    "winapi-bindings": "git+https://github.com/Nexus-Mods/node-winapi-bindings"
+    "vortex-api": "catalog:",
+    "winapi-bindings": "catalog:"
   }
 }

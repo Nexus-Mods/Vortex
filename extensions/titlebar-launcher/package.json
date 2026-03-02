@@ -28,6 +28,6 @@
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "redux-act": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
+    "vortex-api": "catalog:"
   }
 }

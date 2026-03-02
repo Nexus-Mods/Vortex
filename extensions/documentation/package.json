@@ -15,7 +15,7 @@
     "@types/react-redux": "catalog:",
     "copyfiles": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "redux-act": "catalog:",

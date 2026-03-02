@@ -14,7 +14,7 @@
     "@types/i18next": "catalog:",
     "@types/redux": "catalog:",
     "babel-loader": "catalog:",
-    "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
