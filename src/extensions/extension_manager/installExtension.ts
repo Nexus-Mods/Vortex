@@ -394,12 +394,13 @@ function installExtension(
         }
       })
       .catch(DataInvalid, (err) =>
-        rimrafAsync(tempPath, { glob: false }).then(() =>
+        rimrafAsync(tempPath, { glob: false }).then(() => {
           api.showErrorNotification("Invalid Extension", err, {
             allowReport: false,
             message: archivePath,
-          }),
-        ),
+          });
+          return Promise.reject(err);
+        }),
       )
       .catch((err) =>
         rimrafAsync(tempPath, { glob: false }).then(() => Promise.reject(err)),
