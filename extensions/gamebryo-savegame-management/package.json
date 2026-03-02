@@ -34,7 +34,6 @@
     "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "gamebryo-savegame": "catalog:",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "lodash": "catalog:",
@@ -53,5 +52,8 @@
     "vortex-parse-ini": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
+  },
+  "optionalDependencies": {
+    "gamebryo-savegame": "catalog:"
   }
 }

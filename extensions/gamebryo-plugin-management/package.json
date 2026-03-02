@@ -37,12 +37,10 @@
     "cytoscape": "catalog:",
     "cytoscape-cose-bilkent": "catalog:",
     "cytoscape-edgehandles": "catalog:",
-    "esptk": "catalog:",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "js-yaml": "catalog:",
     "json-loader": "catalog:",
-    "loot": "catalog:",
     "markdown-ast": "catalog:",
     "memoize-one": "catalog:",
     "lodash": "catalog:",
@@ -66,5 +64,9 @@
     "react-dnd-html5-backend": "catalog:",
     "exe-version": "catalog:",
     "date-fns": "catalog:"
+  },
+  "optionalDependencies": {
+    "loot": "catalog:",
+    "esptk": "catalog:"
   }
 }

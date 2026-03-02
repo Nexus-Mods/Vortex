@@ -19,9 +19,12 @@ onlyBuiltDependencies:
   - diskusage
   - drivelist
   - electron
+  - esptk
   - fomod-installer-native
   - font-scanner
+  - gamebryo-savegame
   - leveldown
+  - loot
   - native-errors
   - unrs-resolver
   - vortexmt
