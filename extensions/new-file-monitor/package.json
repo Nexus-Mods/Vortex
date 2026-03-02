@@ -15,9 +15,9 @@
     "@types/node": "catalog:",
     "copyfiles": "catalog:",
     "redux": "catalog:",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-ext-dependencies": "catalog:",
     "bluebird": "catalog:",
     "@types/bluebird": "catalog:",
     "vortex-api": "catalog:"

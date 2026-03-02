@@ -117,25 +117,8 @@ catalog:
   "@types/xml2js": ~0.4.14
   "@typescript-eslint/utils": 8.47.0
   "@welldone-software/why-did-you-render": ^10.0.1
-  "electron": "37.4.0"
-  "glob": "^11.0.3"
-  "jest": "^29.7.0"
-  "json-loader": "^0.5.7"
-  "react-dnd": "^14.0.5"
-  "react-dom": "^16.12.0"
-  "react-i18next": "^11.11.0"
-  "react-markdown": "^6.0.2"
-  "react-redux": "^7.1.3"
-  "react-select": "^1.2.1"
-  "redux": "^4.0.4"
-  "redux-act": "^1.8.0"
-  "redux-thunk": "^2.3.0"
-  "reselect": "^4.1.7"
-  "semver": "^7.6.0"
-  "shortid": "2.2.17"
-  "tailwindcss": "^4.1.17"
-  "tmp": "^0.1.0"
-  "ts-jest": "^29.2.5"
+  7z-bin: "git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a"
+  ba2tk: "git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971"
   babel-core: ^6.26.3
   babel-jest: ^29.7.0
   babel-loader: ^7.1.4
@@ -145,6 +128,8 @@ catalog:
   bluebird: "^3.7.2"
   bootstrap-sass: ^3.4.1
   bs58: ^4.0.1
+  bsatk: "git+https://github.com/Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59"
+  bsdiff-node: "git+https://github.com/Nexus-Mods/bsdiff-node#a2bd60f5f96d172892b7f6708fb9a7a212b3b2e5"
   classnames: ^2.2.6
   commander: ^4.0.1
   content-disposition: ^0.5.3
@@ -171,6 +156,7 @@ catalog:
   electron-devtools-installer: ^3.2.0
   electron-redux: "git+https://github.com/TanninOne/electron-redux#66bbd9d389579806e8c4ebd87bd513a668cc64a8"
   electron-updater: ^4.2.0
+  electron: "37.4.0"
   encoding-down: ^6.3.0
   enzyme-adapter-react-16: ^1.15.1
   enzyme: ^3.10.0
@@ -178,12 +164,15 @@ catalog:
   eslint-plugin-better-tailwindcss: ^4.0.2
   eslint-plugin-perfectionist: ^5.4.0
   eslint: 9.39.1
+  esptk: "git+https://github.com/Nexus-Mods/node-esptk#6b8900658d66438fe92ac55bc182a45404e8bf3f"
   exe-version: "git+https://github.com/Nexus-Mods/node-exe-version#eded60fc0a0f3c234e1d586d2eb9952401945406"
   feedparser: ^2.2.9
   font-scanner: ^0.2.1
   fork-ts-checker-webpack-plugin: "^9.0.2"
   fs-extra: ^9.1.0
   fuzzball: ^1.3.0
+  gamebryo-savegame: "git+https://github.com/Nexus-Mods/node-gamebryo-savegames#f060df62b04aa53e0d2fa7e6de0c9df423bbd44c"
+  glob: "^11.0.3"
   globals: ^17.3.0
   graphlib: ^2.1.7
   i18next-fs-backend: ^2.1.1
@@ -194,12 +183,15 @@ catalog:
   is-admin: ^3.0.0
   jest-cli: ^29.7.0
   jest-environment-jsdom: ^29.7.0
+  jest: "^29.7.0"
   js-yaml: ^4.1.0
+  json-loader: "^0.5.7"
   json-socket: "git+https://github.com/foi/node-json-socket#d56c8e2938fa4284c4001b815d9b6e4a92b5c07b"
   jsonwebtoken: ^9.0.0
   leveldown: ^5.6.0
   levelup: ^4.4.0
   lodash: ^4.17.21
+  loot: "git+https://github.com/Nexus-Mods/node-loot#c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec"
   markdown-ast: ^0.2.1
   memoize-one: "^5.1.1"
   minimatch: ^3.0.5
@@ -207,6 +199,7 @@ catalog:
   mixpanel-browser: ^2.71.0
   modmeta-db: "git+https://github.com/Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336"
   native-errors: "git+https://github.com/Nexus-Mods/node-native-errors#51913db07e4c9b68a96ba7fcf741b32796758f18"
+  nexus-api: "git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679"
   node-7z: "git+https://github.com/Nexus-Mods/node-7z#3d98d2ba40906f8afa9de52d2ceb6a44f7143198"
   normalize-url: ^6.0.1
   numeral: ^2.0.6
@@ -223,25 +216,40 @@ catalog:
   react-color: ^2.17.0
   react-datepicker: ^3.3.0
   react-dnd-html5-backend: ^14.0.5
+  react-dnd: "^14.0.5"
+  react-dom: "^16.12.0"
   react-hot-toast: ^2.6.0
+  react-i18next: "^11.11.0"
+  react-markdown: "^6.0.2"
   react-overlays: ^1.2.0
+  react-redux: "^7.1.3"
   react-resize-detector: ^4.2.1
+  react-select: "^1.2.1"
   react-shallow-testutils: ^3.0.1
   react-sortable-tree-theme-file-explorer: ^2.0.0
   react-sortable-tree: ^2.6.2
   react: "^16.12.0"
   recharts: ^1.8.5
+  redux: "^4.0.4"
+  redux-act: "^1.8.0"
   redux-batched-actions: ^0.5.0
   redux-freeze: 0.1.7
+  redux-thunk: "^2.3.0"
   relaxed-json: ^1.0.3
+  reselect: "^4.1.7"
   resolve: ^1.12.0
   rimraf: "git+https://github.com/TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2"
   sass: 1.97.3
+  semver: "^7.6.0"
+  shortid: "2.2.17"
   simple-git: ^3.7.1
   simple-vdf: "git+https://github.com/Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464"
   source-map-support: ^0.5.16
   string-template: ^1.0.0
+  tailwindcss: "^4.1.17"
   terser-webpack-plugin: ^5.3.10
+  tmp: "^0.1.0"
+  ts-jest: "^29.2.5"
   ts-loader: ^9.5.1
   ts-v-gen: ^1.0.1
   tsdown: 0.21.0-beta.1
@@ -251,6 +259,7 @@ catalog:
   universal-analytics: ^0.4.23
   uuid: ^3.3.3
   vortex-api: "git+https://github.com/Nexus-Mods/vortex-api#bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424"
+  vortex-ext-dependencies: "Nexus-Mods/vortex-ext-dependencies"
   vortex-parse-ini: "git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d"
   vortexmt: "git+https://github.com/Nexus-Mods/node-vortexmt#5251ea012ce856742aeaf73a583073497aff773a"
   webpack-cli: ^5.1.4

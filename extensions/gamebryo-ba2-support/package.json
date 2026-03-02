@@ -17,12 +17,12 @@
   "devDependencies": {
     "@types/i18next": "catalog:",
     "@types/rimraf": "catalog:",
-    "ba2tk": "Nexus-Mods/node-ba2tk",
+    "ba2tk": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
   }

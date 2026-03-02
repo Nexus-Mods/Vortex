@@ -20,7 +20,7 @@
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
   }

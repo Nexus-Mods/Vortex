@@ -12,10 +12,10 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/libxmljs": "catalog:",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "vortex-ext-dependencies": "catalog:",
+    "winapi-bindings": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "xml2js": "catalog:",

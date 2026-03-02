@@ -37,8 +37,8 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "vortex-api": "catalog:",
+    "vortex-parse-ini": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
   }

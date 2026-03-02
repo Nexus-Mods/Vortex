@@ -16,7 +16,7 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "7z-bin": "Nexus-Mods/7z-bin",
+    "7z-bin": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
@@ -25,7 +25,7 @@
     "react-redux": "catalog:",
     "redux": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-ext-dependencies": "catalog:",
     "redux-act": "catalog:",
     "react-i18next": "catalog:",
     "vortex-api": "catalog:"

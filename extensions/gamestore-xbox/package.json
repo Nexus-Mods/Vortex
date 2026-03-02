@@ -13,10 +13,10 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "vortex-ext-dependencies": "catalog:",
+    "winapi-bindings": "catalog:",
     "xml2js": "catalog:",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "turbowalk": "catalog:",
     "@types/redux": "catalog:",
     "redux-thunk": "catalog:",
     "redux": "catalog:"

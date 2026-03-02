@@ -24,7 +24,7 @@
     "babel-polyfill": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
-    "exe-version": "Nexus-Mods/node-exe-version",
+    "exe-version": "catalog:",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "json-loader": "catalog:",
@@ -35,8 +35,8 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "vortex-api": "catalog:",
+    "vortex-parse-ini": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
   }

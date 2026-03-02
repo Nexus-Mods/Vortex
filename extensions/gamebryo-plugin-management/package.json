@@ -34,12 +34,12 @@
     "cytoscape": "catalog:",
     "cytoscape-cose-bilkent": "catalog:",
     "cytoscape-edgehandles": "catalog:",
-    "esptk": "Nexus-Mods/node-esptk",
+    "esptk": "catalog:",
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "js-yaml": "catalog:",
     "json-loader": "catalog:",
-    "loot": "Nexus-Mods/node-loot",
+    "loot": "catalog:",
     "markdown-ast": "catalog:",
     "prop-types": "catalog:",
     "react": "catalog:",
@@ -51,7 +51,7 @@
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
     "ts-loader": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "react-markdown": "catalog:",
@@ -59,7 +59,7 @@
     "shortid": "catalog:",
     "electron": "catalog:",
     "react-dnd-html5-backend": "catalog:",
-    "exe-version": "Nexus-Mods/node-exe-version",
+    "exe-version": "catalog:",
     "date-fns": "catalog:"
   }
 }

@@ -33,7 +33,7 @@
     "redux-act": "catalog:",
     "semver": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-ext-dependencies": "catalog:",
     "react-i18next": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",

@@ -27,7 +27,7 @@
     "i18next": "catalog:",
     "immutability-helper": "catalog:",
     "json-loader": "catalog:",
-    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "modmeta-db": "catalog:",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
@@ -40,7 +40,7 @@
     "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "winapi-bindings": "catalog:",
     "redux": "catalog:"
   }
 }

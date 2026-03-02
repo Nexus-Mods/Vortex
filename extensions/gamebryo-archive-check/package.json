@@ -23,7 +23,7 @@
     "react-bootstrap": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-ext-dependencies": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "bluebird": "catalog:",

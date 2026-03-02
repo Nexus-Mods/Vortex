@@ -33,8 +33,8 @@
     "react-dnd": "catalog:",
     "ts-loader": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "vortex-api": "catalog:",
+    "vortex-parse-ini": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:"
   }

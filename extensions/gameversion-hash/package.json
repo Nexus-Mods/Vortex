@@ -20,8 +20,8 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "vortexmt": "Nexus-Mods/node-vortexmt",
+    "vortex-ext-dependencies": "catalog:",
+    "vortexmt": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "vortex-api": "catalog:"

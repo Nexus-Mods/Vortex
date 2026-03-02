@@ -17,7 +17,7 @@
     ]
   },
   "devDependencies": {
-    "7z-bin": "Nexus-Mods/7z-bin",
+    "7z-bin": "catalog:",
     "@types/i18next": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
@@ -31,7 +31,7 @@
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "ts-loader": "catalog:",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "turbowalk": "catalog:",
     "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",

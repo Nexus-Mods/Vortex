@@ -21,7 +21,7 @@
     "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "winapi-bindings": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:",
     "redux": "catalog:",

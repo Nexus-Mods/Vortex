@@ -19,7 +19,7 @@
     "redux": "catalog:",
     "ts-loader": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "which": "catalog:"

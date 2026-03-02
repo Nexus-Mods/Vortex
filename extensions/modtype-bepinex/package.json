@@ -25,7 +25,7 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "lodash": "catalog:",
-    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "vortex-parse-ini": "catalog:",
     "semver": "catalog:",
     "@types/semver": "catalog:"
   },

@@ -27,7 +27,7 @@
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "bluebird": "catalog:",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "winapi-bindings": "catalog:",
     "redux-act": "catalog:",
     "fuzzball": "catalog:",
     "react-i18next": "catalog:",

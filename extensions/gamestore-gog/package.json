@@ -13,10 +13,10 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "vortex-ext-dependencies": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
+    "winapi-bindings": "catalog:",
     "bluebird": "catalog:",
     "@types/bluebird": "catalog:",
     "vortex-api": "catalog:"
