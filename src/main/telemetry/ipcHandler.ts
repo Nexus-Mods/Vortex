@@ -1,8 +1,8 @@
 import {
   getProcessor,
   setTelemetryEnabled,
-} from "../../shared/telemetry/state";
-import { deserializeSpan } from "../../shared/telemetry/types";
+  deserializeSpan,
+} from "@vortex/shared/telemetry";
 import { betterIpcMain } from "../ipc";
 
 /**

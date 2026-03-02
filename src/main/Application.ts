@@ -911,7 +911,7 @@ class Application {
       ]);
       if (analyticsEnabled === true) {
         const { setTelemetryEnabled } = await import(
-          "../shared/telemetry/state"
+          "@vortex/shared/telemetry"
         );
         setTelemetryEnabled(true);
       }

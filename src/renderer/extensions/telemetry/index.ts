@@ -9,8 +9,7 @@ import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-ho
 import { Resource } from "@opentelemetry/resources";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 
-import { patchBluebirdContext } from "../../../shared/telemetry/bluebird-patch";
-import { serializeSpan } from "../../../shared/telemetry/types";
+import { patchBluebirdContext, serializeSpan } from "@vortex/shared/telemetry";
 
 /**
  * A minimal SpanProcessor that forwards every completed span to the main

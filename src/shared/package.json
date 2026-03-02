@@ -37,6 +37,10 @@
       "import": "./dist/state.js",
       "require": "./dist/state.cjs"
     },
+    "./telemetry": {
+      "import": "./dist/telemetry.js",
+      "require": "./dist/telemetry.cjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

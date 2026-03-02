@@ -30,7 +30,7 @@ import {
   OAUTH_CLIENT_ID,
 } from "../extensions/nexus_integration/constants";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import { recordErrorOnSpan } from "../../shared/telemetry/spans";
+import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { isTelemetryEnabled } from "../extensions/telemetry/selectors";
 import { getApplication } from "./application";
 import { COMPANY_ID } from "./constants";

@@ -1,3 +1,4 @@
+import type { Tracer } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 
 import type { RingBufferSpanProcessor } from "./RingBufferSpanProcessor";
@@ -28,6 +29,6 @@ export function isTelemetryEnabled(): boolean {
  * Get a tracer scoped to a Vortex subsystem.
  * Convention: use dotted names like 'vortex.mod-management', 'vortex.downloads'.
  */
-export function getTracer(name: string) {
+export function getTracer(name: string): Tracer {
   return trace.getTracer(name);
 }

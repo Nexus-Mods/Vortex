@@ -9,7 +9,7 @@ import { readFile } from "node:fs/promises";
 
 import type { ReportableError } from "@vortex/shared/errors";
 
-import { recordErrorOnSpan } from "../shared/telemetry/spans";
+import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { createVortexResource } from "./telemetry/resources";
 import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
 

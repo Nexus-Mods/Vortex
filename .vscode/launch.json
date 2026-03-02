@@ -43,12 +43,12 @@
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [".", "--remote-debugging-port=9222"],
-      "cwd": "${workspaceRoot}",
+      "cwd": "${workspaceRoot}/src/main",
       "env": {
         "NODE_ENV": "development",
         "START_DEVTOOLS": "true"
@@ -91,9 +91,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/out/main.js",
       "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": ["."],
       "env": {

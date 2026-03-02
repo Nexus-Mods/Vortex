@@ -9,6 +9,7 @@ export default defineConfig({
   dts: {
     sourcemap: true,
   },
+  external: [/^@opentelemetry\//, "bluebird"],
   exports: true,
   platform: "neutral",
 });

@@ -10,3 +10,4 @@ export {
 } from "./state";
 export { deserializeSpan, serializeSpan } from "./types";
 export type { SerializedSpan } from "./types";
+export { patchBluebirdContext } from "./bluebird-patch";
