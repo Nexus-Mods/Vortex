@@ -8,9 +8,11 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "clear": "rm-local-modules",
-    "build": "npm run webpack && extractInfo",
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/local-gamesettings",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/local-gamesettings",
-    "buildDev": "npm run build && npm run installDev"
+    "buildDev": "npm run build && npm run installDev",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/local-gamesettings"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

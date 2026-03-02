@@ -12,9 +12,11 @@
     "fix_async_path": "node -e \"const fs=require('fs');const f='dist/async.js';let c=fs.readFileSync(f,'utf8');c=c.replace('./build/Release/node-loot','./node-loot');fs.writeFileSync(f,c);\"",
     "copy_assets": "copyfiles -f src/stylesheets/plugin_management.scss dist && copyfiles -f src/language.json dist",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run fix_async_path && npm run copy_assets && extractInfo",
+    "_build": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run fix_async_path && npm run copy_assets && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-plugin-management",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
-    "buildDev": "npm run build && npm run installDev"
+    "buildDev": "npm run build && npm run installDev",
+    "_dist": "npm run webpack && npm run copy_esptk && npm run copy_loot && npm run copy_async && npm run fix_async_path && npm run copy_assets && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-plugin-management",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

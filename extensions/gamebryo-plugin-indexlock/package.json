@@ -6,7 +6,9 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-plugin-indexlock",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-plugin-indexlock"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

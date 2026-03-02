@@ -5,7 +5,9 @@
   "main": "./dist/index.js",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gameversion-hash",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gameversion-hash"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "MIT",

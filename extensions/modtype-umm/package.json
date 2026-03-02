@@ -6,8 +6,10 @@
   "repository": "",
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo",
-    "postinstall": "generate-validation -t ./tsconfig.json"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/modtype-umm",
+    "postinstall": "generate-validation -t ./tsconfig.json",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/modtype-umm"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -26,7 +28,8 @@
     "react-i18next": "catalog:",
     "redux": "catalog:",
     "semver": "catalog:",
-    "@types/semver": "catalog:"
+    "@types/semver": "catalog:",
+    "copyfiles": "catalog:"
   },
   "dependencies": {
     "ts-v-gen": "catalog:"

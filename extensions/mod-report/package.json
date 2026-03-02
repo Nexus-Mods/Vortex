@@ -7,7 +7,9 @@
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mod-report",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mod-report"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -19,6 +21,7 @@
     "typescript": "catalog:",
     "vortex-api": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "webpack-cli": "catalog:",
+    "copyfiles": "catalog:"
   }
 }

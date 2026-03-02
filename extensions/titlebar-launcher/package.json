@@ -10,8 +10,10 @@
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/titlebar-launcher",
     "bundle7z": "7z a -t7z titlebar-launcher.7z .\\dist\\index.js .\\dist\\info.json .\\dist\\titlebar-launcher.scss",
-    "build": "npm run webpack && copyfiles -f titlebar-launcher.scss dist && copyfiles -f src/images/* dist && extractInfo",
-    "buildDev": "npm run build && npm run installDev"
+    "_build": "npm run webpack && copyfiles -f titlebar-launcher.scss dist && copyfiles -f src/images/* dist && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/titlebar-launcher",
+    "buildDev": "npm run build && npm run installDev",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/titlebar-launcher"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

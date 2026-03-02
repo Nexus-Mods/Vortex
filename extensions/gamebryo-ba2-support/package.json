@@ -9,9 +9,11 @@
     "clear": "rm-local-modules",
     "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/ba2tk.node ./dist",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
+    "_build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-ba2-support",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-ba2-support",
-    "buildDev": "npm run build && npm run installDev"
+    "buildDev": "npm run build && npm run installDev",
+    "_dist": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-ba2-support",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

@@ -7,7 +7,9 @@
   "scripts": {
     "pack": "pnpm webpack --config webpack.config.js --progress --profile --color",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || pnpm run _build",
-    "_build": "pnpm run pack && extractInfo"
+    "_build": "pnpm run pack && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamestore-xbox",
+    "_dist": "pnpm run pack && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamestore-xbox",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || pnpm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -23,6 +25,7 @@
     "redux": "catalog:",
     "vortex-api": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "webpack-cli": "catalog:",
+    "copyfiles": "catalog:"
   }
 }

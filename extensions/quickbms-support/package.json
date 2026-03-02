@@ -6,7 +6,9 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && node download_dependencies.js && extractInfo"
+    "_build": "npm run webpack && node download_dependencies.js && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/quickbms-support",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/quickbms-support"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -25,6 +27,7 @@
     "webpack-cli": "catalog:",
     "bluebird": "catalog:",
     "@types/bluebird": "catalog:",
-    "vortex-api": "catalog:"
+    "vortex-api": "catalog:",
+    "copyfiles": "catalog:"
   }
 }

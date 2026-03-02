@@ -9,9 +9,11 @@
     "clear": "rm-local-modules",
     "copyfiles": "copyfiles -f ./node_modules/gamebryo-savegame/build/Release/GamebryoSave.node ./dist && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist && copyfiles -f ./node_modules/gamebryo-savegame/dist/zlib.dll ./dist && copyfiles -f src/stylesheets/savegame_management.scss dist",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run webpack && npm run copyfiles && extractInfo",
+    "_build": "npm run webpack && npm run copyfiles && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-savegame-management",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-savegame-management",
-    "buildDev": "npm run build && npm run installDev"
+    "buildDev": "npm run build && npm run installDev",
+    "_dist": "npm run webpack && npm run copyfiles && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-savegame-management",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

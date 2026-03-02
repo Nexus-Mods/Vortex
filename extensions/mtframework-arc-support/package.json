@@ -6,7 +6,9 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && node download_arctool.js && extractInfo"
+    "_build": "npm run webpack && node download_arctool.js && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mtframework-arc-support",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mtframework-arc-support"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -22,6 +24,7 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "webpack-cli": "catalog:",
+    "copyfiles": "catalog:"
   }
 }

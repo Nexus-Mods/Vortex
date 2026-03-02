@@ -7,7 +7,9 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "clear": "rm-local-modules",
-    "build": "npm run webpack && extractInfo"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-test-settings",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-test-settings"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

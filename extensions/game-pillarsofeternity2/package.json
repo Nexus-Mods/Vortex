@@ -8,7 +8,9 @@
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "copy_gameart": "copyfiles -f assets/gameart.png dist",
     "copy_scss": "copyfiles -f src/stylesheet.scss dist",
-    "build": "yarn run webpack && yarn run copy_gameart && yarn run copy_scss && extractInfo"
+    "_build": "yarn run webpack && yarn run copy_gameart && yarn run copy_scss && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/game-pillarsofeternity2",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/game-pillarsofeternity2"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

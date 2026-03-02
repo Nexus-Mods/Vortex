@@ -11,9 +11,11 @@
     "bundle7z": "7z a -t7z collections.7z .\\dist\\index.js .\\dist\\info.json .\\dist\\language.json .\\dist\\*.svg .\\dist\\style.scss",
     "update_validation": "generate-validation .",
     "_postinstall": "npm run update_validation",
-    "build": "npm run webpack && npm run copy_assets && extractInfo",
+    "_build": "npm run webpack && npm run copy_assets && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/collections",
     "test": "jest",
-    "test:build": "node scripts/validate-build.js"
+    "test:build": "node scripts/validate-build.js",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/collections"
   },
   "devDependencies": {
     "7z-bin": "catalog:",

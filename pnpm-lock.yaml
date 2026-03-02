@@ -1063,6 +1063,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -1429,6 +1432,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       react-bootstrap:
         specifier: 'catalog:'
         version: 0.33.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -1975,6 +1981,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -2014,6 +2023,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2044,6 +2056,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -2080,6 +2095,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2107,6 +2125,9 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       redux:
         specifier: 'catalog:'
         version: 4.2.1
@@ -2738,6 +2759,9 @@ importers:
       bs58:
         specifier: 'catalog:'
         version: 4.0.1
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       electron:
         specifier: 'catalog:'
         version: 37.4.0
@@ -2787,6 +2811,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -2832,6 +2859,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -2865,6 +2895,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
@@ -2895,6 +2928,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       redux-thunk:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
@@ -2925,6 +2961,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -2968,6 +3007,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -3082,6 +3124,9 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       node-7z:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3d98d2ba40906f8afa9de52d2ceb6a44f7143198
@@ -3241,6 +3286,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       i18next:
         specifier: 'catalog:'
         version: 19.9.2
@@ -3283,6 +3331,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       cross-fetch:
         specifier: 'catalog:'
         version: 3.2.0(encoding@0.1.13)
@@ -3380,6 +3431,9 @@ importers:
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
+      copyfiles:
+        specifier: 'catalog:'
+        version: 2.4.1
       electron:
         specifier: 'catalog:'
         version: 37.4.0

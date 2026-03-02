@@ -5,7 +5,9 @@
   "main": "./out/index.js",
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo"
+    "_build": "npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mod-highlight",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mod-highlight"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

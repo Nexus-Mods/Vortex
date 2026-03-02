@@ -7,7 +7,9 @@
   "scripts": {
     "copyassets": "node copyassets.js",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo && npm run copyassets"
+    "_build": "npm run webpack && extractInfo && npm run copyassets",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/modtype-bepinex",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/modtype-bepinex"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -27,7 +29,8 @@
     "lodash": "catalog:",
     "vortex-parse-ini": "catalog:",
     "semver": "catalog:",
-    "@types/semver": "catalog:"
+    "@types/semver": "catalog:",
+    "copyfiles": "catalog:"
   },
   "dependencies": {
     "@iarna/toml": "catalog:"

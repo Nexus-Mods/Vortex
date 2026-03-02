@@ -7,7 +7,9 @@
   "license": "GPL-3.0",
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "_build": "npm run webpack && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/common-interpreters",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/common-interpreters"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -22,6 +24,7 @@
     "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "which": "catalog:"
+    "which": "catalog:",
+    "copyfiles": "catalog:"
   }
 }

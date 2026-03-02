@@ -7,7 +7,9 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "copy_scss": "copyfiles -f src/changelog.scss dist",
-    "build": "npm run webpack && npm run copy_scss && extractInfo"
+    "_build": "npm run webpack && npm run copy_scss && extractInfo",
+    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/changelog-dashlet",
+    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/changelog-dashlet"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
