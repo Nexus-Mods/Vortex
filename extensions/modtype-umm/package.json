@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "_build": "pnpm generate-validation -t ./tsconfig.json && pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs modtype-umm out",
     "dist": "pnpm run _build && node ../copy-extension.mjs modtype-umm dist"
   },
