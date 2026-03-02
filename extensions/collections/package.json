@@ -49,7 +49,12 @@
     "typescript": "^5.6.0",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.1.4",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
+    "modmeta-db": "Nexus-Mods/modmeta-db",
+    "turbowalk": "Nexus-Mods/node-turbowalk",
+    "redux-thunk": "^2.3.0",
+    "vortexmt": "Nexus-Mods/node-vortexmt"
   },
   "resolutions": {
     "@types/react": "16.14.66",

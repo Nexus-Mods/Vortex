@@ -1554,6 +1554,11 @@ rechoir@^0.7.0:
   dependencies:
     resolve "^1.9.0"
 
+redux-act@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/redux-act/-/redux-act-1.8.0.tgz#5394a9433b36937d1a1da11aca6547d97d10ab00"
+  integrity sha512-xW3FIco/VwJGMW3eCD3JGAxyozNC4k35qrWM5lEQf9T2pfv3leDC+3vQ8WdHZjcrol/jjWAeJ+ULqrscuDqlKg==
+
 redux@^4.0.0:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/redux/-/redux-4.1.2.tgz#140f35426d99bb4729af760afcf79eaaac407104"

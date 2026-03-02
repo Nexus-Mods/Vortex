@@ -1,5 +1,5 @@
-import { SITE_ID } from "../../../extensions/gamemode_management/constants";
-import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
+import { SITE_ID } from "../../extensions/gamemode_management/constants";
+import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
 import type { IDiscoveryResult, IState } from "../../types/IState";
 import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 import { activeGameId } from "../../util/selectors";

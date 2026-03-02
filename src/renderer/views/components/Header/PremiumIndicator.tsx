@@ -3,7 +3,7 @@ import React, { type FC, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { PREMIUM_PATH } from "../../../../extensions/nexus_integration/constants";
+import { PREMIUM_PATH } from "../../../extensions/nexus_integration/constants";
 import { Button } from "../../../ui/components/button/Button";
 import { Typography } from "../../../ui/components/typography/Typography";
 import opn from "../../../util/opn";

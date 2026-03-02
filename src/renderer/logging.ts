@@ -1,4 +1,4 @@
-import type { Level } from "../shared/types/logging";
+import type { Level } from "@vortex/shared";
 
 function replacer(_key: string, value: unknown): unknown {
   if (value instanceof Error) {

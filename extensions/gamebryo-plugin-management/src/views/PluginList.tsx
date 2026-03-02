@@ -188,7 +188,7 @@ class GroupSelect extends React.PureComponent<
     const existingOptions = Array.from(
       new Set(
         []
-          .concat(masterlist.groups, userlist.groups)
+          .concat(masterlist.groups || [], userlist.groups || [])
           .filter((iter) => iter !== undefined)
           .map((iter) => iter.name),
       ),
@@ -1312,14 +1312,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderLootMessages(plugin: IPluginCombined, relevantOnly?: boolean) {
-    if (plugin?.messages === undefined) {
+    const messages = plugin?.messages;
+    if (!Array.isArray(messages)) {
       return null;
     }
 
     const filtered =
       relevantOnly === true
-        ? plugin.messages.filter((msg) => msg.type !== -1)
-        : plugin.messages;
+        ? messages.filter((msg) => msg.type !== -1)
+        : messages;
     return (
       <ListGroup className="loot-message-list">
         {filtered.map((msg: Message, idx: number) => (
@@ -1354,8 +1355,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       this.props;
     if (
       group !== undefined &&
-      masterlist.groups.find((iter) => iter.name === group) === undefined &&
-      userlist.groups.find((iter) => iter.name === group) === undefined
+      (masterlist.groups || []).find((iter) => iter.name === group) ===
+        undefined &&
+      (userlist.groups || []).find((iter) => iter.name === group) === undefined
     ) {
       onAddGroup(group);
       onAddGroupRule(group, "default");
@@ -1798,12 +1800,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           t: TranslationFunction,
         ) => (
           <ListGroup className="loot-message-list">
-            {plugin.cleanliness.map((dat, idx) => (
+            {(plugin.cleanliness ?? []).map((dat, idx) => (
               <ListGroupItem key={idx}>
                 {this.renderCleaningData(dat)}
               </ListGroupItem>
             ))}
-            {plugin.dirtyness.map((dat, idx) => (
+            {(plugin.dirtyness ?? []).map((dat, idx) => (
               <ListGroupItem key={idx}>
                 {this.renderCleaningData(dat)}
               </ListGroupItem>
@@ -1811,7 +1813,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           </ListGroup>
         ),
         calc: (plugin: IPluginCombined) =>
-          plugin.cleanliness.length + plugin.dirtyness.length,
+          (plugin.cleanliness ?? []).length + (plugin.dirtyness ?? []).length,
         placement: "detail",
       },
       {

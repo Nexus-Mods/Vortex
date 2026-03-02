@@ -1,4 +1,4 @@
-import { unknownToError } from "../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import { log } from "./logging";
 
 type Partial =

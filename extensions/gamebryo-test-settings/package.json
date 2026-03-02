@@ -29,6 +29,7 @@
     "react-bootstrap": "^2.1.0",
     "react-dom": "^16.14.0",
     "react-i18next": "^11.15.3",
+    "redux": "^4.0.4",
     "redux-act": "^1.7.3",
     "rm-local-modules": "^0.0.2",
     "ts-loader": "^9.2.6",

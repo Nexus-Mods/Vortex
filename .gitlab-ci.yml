@@ -1,0 +1,145 @@
+stages:
+  - build
+
+variables:
+  NO_PARALLEL: "true" # unreliable if false
+  GIT_SUBMODULE_STRATEGY: recursive
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# Prevent duplicate pipelines for merge requests
+.default_rules:
+  interruptible: true
+
+.build_template:
+  stage: build
+  interruptible: true
+  script:
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run build
+    - pnpm run subprojects:out
+
+build:linux:
+  extends: .build_template
+  tags:
+    - nexus_runner
+    # TODO: use our dockerfile image instead, don't install dependencies.
+  image: ubuntu:24.04
+  before_script:
+    - |
+      apt-get update && apt-get install -y curl git libfontconfig1-dev ca-certificates xz-utils python3 python3-setuptools build-essential libicu-dev
+
+      # Install .NET SDK 9.0
+      curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
+      export DOTNET_ROOT="$HOME/.dotnet"
+      export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
+
+      # Install Volta and Node.js/Yarn
+      export VOLTA_HOME="$HOME/.volta"
+      export PATH="$VOLTA_HOME/bin:$PATH"
+      curl https://get.volta.sh | bash -s -- --skip-setup
+      volta install node@22 yarn@v1
+      npm install --global corepack@latest
+      corepack install
+
+      # Print environment information
+      echo "=== Environment Version Information ==="
+      git --version
+      node --version
+      yarn --version
+      pnpm --version
+      pnpm exec node -v
+      echo "=== End Environment Info ==="
+  script:
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run lint:ci
+    - pnpm run build
+    - pnpm run test
+    - pnpm run subprojects:out
+
+build:windows:
+  extends: .build_template
+  tags:
+    - windows
+  # Custom image with VS Build Tools 2022, Git, Python 3.10, .NET SDK 9
+  # Built from: docker/windows/Dockerfile
+  # TODO: Push to registry and update this reference
+  image: registry.nexusmods.com/nexusmods/vortex-ci:latest
+  variables:
+    GIT_CONFIG_COUNT: "1"
+    GIT_CONFIG_KEY_0: "core.longpaths"
+    GIT_CONFIG_VALUE_0: "true"
+  before_script:
+    # Install Node and Yarn via Volta (reads versions from package.json)
+    - volta install node@22 yarn@v1
+    - npm install --global corepack@latest
+    - corepack install
+
+    # Configure node-gyp to use VS 2022
+    - $env:npm_config_msvs_version = "2022"
+    - $env:GYP_MSVS_VERSION = "2022"
+
+    # Mark directory as safe for Git
+    - git config --global --add safe.directory $CI_PROJECT_DIR
+  script:
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run lint:ci
+    - pnpm run build
+    - pnpm run test
+    - pnpm run subprojects:out
+
+.dist_template:
+  stage: build
+  interruptible: true
+  script:
+    - pnpm run build:fomod
+    - pnpm install
+    - pnpm run dist
+    - pnpm run subprojects:dist
+
+dist:linux:
+  extends: .dist_template
+  tags:
+    - nexus_runner
+  image: ubuntu:24.04
+  before_script:
+    - |
+      apt-get update && apt-get install -y curl git libfontconfig1-dev ca-certificates xz-utils python3 python3-setuptools build-essential libicu-dev
+
+      # Install .NET SDK 9.0
+      curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
+      export DOTNET_ROOT="$HOME/.dotnet"
+      export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
+
+      # Install Volta and Node.js/Yarn
+      export VOLTA_HOME="$HOME/.volta"
+      export PATH="$VOLTA_HOME/bin:$PATH"
+      curl https://get.volta.sh | bash -s -- --skip-setup
+      volta install node@22 yarn@v1
+      npm install --global corepack@latest
+      corepack install
+
+dist:windows:
+  extends: .dist_template
+  tags:
+    - windows
+  image: registry.nexusmods.com/nexusmods/vortex-ci:latest
+  variables:
+    GIT_CONFIG_COUNT: "1"
+    GIT_CONFIG_KEY_0: "core.longpaths"
+    GIT_CONFIG_VALUE_0: "true"
+  before_script:
+    - volta install node@22 yarn@v1
+    - npm install --global corepack@latest
+    - corepack install
+    - $env:npm_config_msvs_version = "2022"
+    - $env:GYP_MSVS_VERSION = "2022"
+    - git config --global --add safe.directory $CI_PROJECT_DIR

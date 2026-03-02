@@ -8,7 +8,7 @@ import { IConflict } from "./types/IConflict";
 import { IModLookupInfo } from "./types/IModLookupInfo";
 import determineConflicts from "./util/conflicts";
 import DependenciesFilter from "./util/DependenciesFilter";
-import findRule from "./util/findRule";
+import { findRuleBiDir, isConflictResolved } from "./util/findRule";
 import renderModLookup from "./util/renderModLookup";
 import ruleFulfilled from "./util/ruleFulfilled";
 import showUnsolvedConflictsDialog from "./util/showUnsolvedConflicts";
@@ -159,6 +159,9 @@ function updateMetaRules(
     ) {
       return;
     }
+    // Include the mod id so that testModReference can match this reference
+    // back to its mod even when file-based attributes are incomplete
+    ref.id = modId;
     rules = rules.concat(mapRules(ref, mod.rules));
     let downloadGame = mod.attributes["downloadGame"] || gameId;
     if (Array.isArray(downloadGame)) {
@@ -512,17 +515,24 @@ async function updateConflictInfo(
 
   // see if there is a mod that has conflicts for which there are no rules
   Object.keys(conflicts).forEach((modId) => {
-    const filtered = conflicts[modId].filter(
-      (conflict) =>
-        findRule(dependencyState.modRules, mods[modId], conflict.otherMod) ===
-          undefined && !encountered.has(mapEnc(modId, conflict.otherMod.id)),
-    );
+    const filtered = conflicts[modId].filter((conflict) => {
+      const encKey = mapEnc(modId, conflict.otherMod.id);
+      if (encountered.has(encKey)) {
+        return false;
+      }
+      encountered.add(encKey);
+      return (
+        !isConflictResolved(mods, modId, conflict.otherMod) &&
+        findRuleBiDir(
+          dependencyState.modRules,
+          mods[modId],
+          conflict.otherMod,
+        ) === undefined
+      );
+    });
 
     if (filtered.length !== 0) {
       unsolved[modId] = filtered;
-      filtered.forEach((conflict) => {
-        encountered.add(mapEnc(modId, conflict.otherMod.id));
-      });
     }
   });
 

@@ -33,6 +33,7 @@
     "redux-act": "^1.7.4",
     "semver": "^5.5.0",
     "typescript": "^4.4.3",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "react-i18next": "^11.11.0"
   }
 }

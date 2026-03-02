@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { pathToFileURL } from "url";
 
-import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IState } from "../types/IState";
 
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 import EmptyPlaceholder from "../controls/EmptyPlaceholder";
 import Spinner from "../controls/Spinner";
 import { IconButton } from "../controls/TooltipControls";

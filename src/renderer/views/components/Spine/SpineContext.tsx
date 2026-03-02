@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import type { IMainPage } from "../../../types/IMainPage";
 
-import { setNextProfile } from "../../../../extensions/profile_management/actions/settings";
+import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
 import { setOpenMainPage } from "../../../actions/session";
 import { useMainContext, usePagesContext } from "../../../contexts";
 import {

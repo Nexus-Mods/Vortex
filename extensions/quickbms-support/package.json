@@ -13,10 +13,13 @@
   "devDependencies": {
     "@types/i18next": "^8.4.0",
     "@types/redux": "^3.6.0",
+    "@types/react": "16.14.66",
     "babel-loader": "^7.1.1",
     "cross-fetch": "^3.1.5",
     "i18next": "^8.4.3",
     "node-7z": "Nexus-Mods/node-7z",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "react": "^16.12.0",
+    "react-i18next": "^11.11.0"
   }
 }

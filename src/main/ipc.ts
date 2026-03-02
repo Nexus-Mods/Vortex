@@ -1,5 +1,3 @@
-import { ipcMain, type WebContents } from "electron";
-
 import type {
   RendererChannels,
   MainChannels,
@@ -7,7 +5,9 @@ import type {
   SyncChannels,
   SerializableArgs,
   AssertSerializable,
-} from "../shared/types/ipc.js";
+} from "@vortex/shared/ipc";
+
+import { ipcMain, type WebContents } from "electron";
 
 import { log } from "./logging";
 

@@ -1,5 +1,5 @@
 import type * as pathT from "path";
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
 
 /**
  * Monkey patching is obviously considered evil but there may be cases where the alternative

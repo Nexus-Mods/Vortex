@@ -31,7 +31,9 @@
     "exe-version": "Nexus-Mods/node-exe-version",
     "react-redux": "^5.0.7",
     "redux-act": "^1.8.0",
+    "react-i18next": "^11.11.0",
     "typescript": "^4.9.5",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "modmeta-db": "Nexus-Mods/modmeta-db"
   }
 }

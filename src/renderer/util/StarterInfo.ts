@@ -7,10 +7,10 @@ import GameStoreHelper from "./GameStoreHelper";
 
 import { getSafe } from "./storeHelper";
 
-import type { IDiscoveryResult } from "../../extensions/gamemode_management/types/IDiscoveryResult";
-import type { IGameStored } from "../../extensions/gamemode_management/types/IGameStored";
-import type { IToolStored } from "../../extensions/gamemode_management/types/IToolStored";
-import { getGame } from "../../extensions/gamemode_management/util/getGame";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
 
 import type { IExtensionApi } from "../types/IExtensionContext";
 
@@ -27,10 +27,10 @@ import PromiseBB from "bluebird";
 import * as fs from "fs";
 import * as path from "path";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
-import { getErrorCode, unknownToError } from "../../shared/errors";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
-import { ApplicationData } from "../../shared/applicationData";
+import { ApplicationData } from "@vortex/shared";
 
 async function hideWindow(): Promise<void> {
   await window.api.window.hide(ApplicationData.windowId);

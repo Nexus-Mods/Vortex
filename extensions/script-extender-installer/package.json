@@ -27,7 +27,8 @@
     "redux": "^4.0.5",
     "typescript": "^4.4.3",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api"
   },
   "dependencies": {
     "semver": "^6.3.0"

@@ -3,7 +3,7 @@ import * as fs from "./fs";
 import PromiseBB from "bluebird";
 import * as fsOrig from "fs-extra";
 import * as path from "path";
-import { getErrorCode } from "../../shared/errors";
+import { getErrorCode } from "@vortex/shared";
 
 export interface IWalkOptions {
   ignoreErrors?: string[] | true;

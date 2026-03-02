@@ -1,3 +1,5 @@
+import type { ReportableError } from "@vortex/shared/errors";
+
 import nexusApi from "@nexusmods/nexus-api";
 import { app, dialog } from "electron";
 import { createHash } from "node:crypto";
@@ -5,8 +7,6 @@ import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
-
-import type { ReportableError } from "../shared/types/errors";
 
 import { log } from "./logging";
 

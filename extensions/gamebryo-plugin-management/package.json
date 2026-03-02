@@ -53,6 +53,13 @@
     "ts-loader": "^9.5.1",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.1.4",
+    "react-markdown": "^6.0.2",
+    "reselect": "^4.1.7",
+    "shortid": "2.2.17",
+    "electron": "37.4.0",
+    "react-dnd-html5-backend": "^14.0.5",
+    "exe-version": "Nexus-Mods/node-exe-version",
+    "date-fns": "^2.8.0"
   }
 }

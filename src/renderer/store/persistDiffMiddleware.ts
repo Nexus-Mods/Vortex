@@ -9,11 +9,11 @@
 
 import type { Middleware, MiddlewareAPI, Dispatch, AnyAction } from "redux";
 
-import type { DiffOperation } from "../../shared/types/ipc";
-import type { PersistedHive } from "../../shared/types/state";
+import type { DiffOperation } from "@vortex/shared/ipc";
+import type { PersistedHive } from "@vortex/shared/state";
 import type { IState } from "../types/IState";
 
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { log } from "../util/log";
 import { computeStateDiff } from "./stateDiff";
 

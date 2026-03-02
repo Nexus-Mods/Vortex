@@ -3,13 +3,16 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.shared.json"
+      "path": "./src/shared/tsconfig.json"
     },
     {
-      "path": "./tsconfig.main.json"
+      "path": "./src/preload/tsconfig.json"
     },
     {
-      "path": "./tsconfig.renderer.json"
+      "path": "./src/main/tsconfig.json"
+    },
+    {
+      "path": "./src/renderer/tsconfig.json"
     },
     {
       "path": "./tsconfig.node.json"

@@ -46,7 +46,9 @@
     "vortex-api": "Nexus-Mods/vortex-api",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.1.4",
+    "react-i18next": "^11.11.0",
+    "react-select": "^1.2.1"
   },
   "resolutions": {
     "@types/react": "16.14.66",

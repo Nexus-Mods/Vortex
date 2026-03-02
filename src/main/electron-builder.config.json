@@ -1,0 +1,69 @@
+{
+  "$schema": "https://github.com/electron-userland/electron-builder/raw/refs/tags/v24.13.3/packages/app-builder-lib/scheme.json",
+  "appId": "com.nexusmods.vortex",
+  "includeSubNodeModules": false,
+  "directories": {
+    "buildResources": "./nsis",
+    "app": "./dist",
+    "output": "../../dist"
+  },
+  "win": {
+    "target": "nsis",
+    "icon": "nsis/icon.ico",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Nexus-Mods",
+        "repo": "Vortex",
+        "private": false
+      }
+    ],
+    "publisherName": ["Black Tree Gaming Limited", "Black Tree Gaming Ltd"],
+    "signingHashAlgorithms": ["sha256"],
+    "rfc3161TimeStampServer": "http://timestamp.comodoca.com/rfc3161",
+    "timeStampServer": "http://timestamp.comodoca.com"
+  },
+  "nsis": {
+    "perMachine": true,
+    "runAfterFinish": true,
+    "menuCategory": true,
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "uninstallDisplayName": "${productName}",
+    "include": "./nsis/installer.nsh",
+    "artifactName": "vortex-setup-${version}.${ext}",
+    "installerIcon": "nsis/icon.ico",
+    "installerHeaderIcon": "nsis/icon.ico"
+  },
+  "linux": {
+    "target": ["zip"],
+    "icon": "../../assets/images/vortex.png",
+    "category": "Network;Development;Game;",
+    "synopsis": "Mod Manager",
+    "description": "The elegant, powerful, and open-source mod manager from Nexus Mods.",
+    "maintainer": "Black Tree Gaming Ltd. <support@nexusmods.com> (https://www.nexusmods.com/)",
+    "mimeTypes": ["x-scheme-handler/nxm"]
+  },
+  "extraResources": [
+    "./build/VC_redist.x64.exe",
+    "./build/windowsdesktop-runtime-win-x64.exe",
+    "./nsis/**/*",
+    "../../locales"
+  ],
+  "files": ["**/*"],
+  "asar": true,
+  "asarUnpack": [
+    "LICENSE.md",
+    "bundledPlugins",
+    "node_modules/7z-bin",
+    "node_modules/bootstrap-sass/assets/stylesheets",
+    "node_modules/react-select/scss",
+    "node_modules/fomod-installer-native/dist/*.dll",
+    "node_modules/fomod-installer-ipc/dist/*.exe",
+    "assets/*.exe",
+    "assets/css/**",
+    "**/*.node"
+  ],
+  "buildDependenciesFromSource": false,
+  "npmRebuild": false
+}

@@ -1,4 +1,4 @@
-import { GenericDebouncer } from "../shared/Debouncer";
+import { GenericDebouncer } from "@vortex/shared";
 
 export default class Debouncer extends GenericDebouncer<
   NodeJS.Timeout,

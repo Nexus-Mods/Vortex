@@ -60,6 +60,11 @@ import type crashDumpT from "crash-dump";
 import type * as I18next from "i18next";
 
 import "./util/application.electron";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  ApplicationData,
+} from "@vortex/shared";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
 import { EventEmitter } from "events";
@@ -67,9 +72,9 @@ import * as nativeErr from "native-errors";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
 import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 
 import "./util/monkeyPatching";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import * as ReactDOM from "react-dom";
 import { I18nextProvider } from "react-i18next";
 import { Provider } from "react-redux";
@@ -80,7 +85,6 @@ import { generate as shortid } from "shortid";
 import type { ThunkStore } from "./types/IExtensionContext";
 import type { IState } from "./types/IState";
 
-import { getErrorCode, getErrorMessageOrDefault } from "../shared/errors";
 import { setLanguage, setNetworkConnected } from "./actions";
 import {
   setApplicationVersion,
@@ -97,17 +101,16 @@ import {
   setWindowPosition,
   setWindowSize,
 } from "./actions/window";
-import reducer, { Decision } from "./reducers/index";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
+import reducer, { Decision } from "./reducers/index";
 import { fetchHydrationState } from "./store/hydration";
 import { persistDiffMiddleware } from "./store/persistDiffMiddleware";
-import StyleManager from "./StyleManager";
-import { AppLayout } from "./views/AppLayout";
 import { reduxLogger } from "./store/reduxLogger";
 import { reduxSanity, type StateError } from "./store/reduxSanity";
+import StyleManager from "./StyleManager";
 import { relaunch } from "./util/commandLine";
 import { UserCanceled } from "./util/CustomErrors";
 import { setOutdated, terminate, toError } from "./util/errorHandling";
@@ -123,6 +126,7 @@ import getI18n, {
 import { showError } from "./util/message";
 import { getSafe } from "./util/storeHelper";
 import { bytesToString, getAllPropertyNames } from "./util/util";
+import { AppLayout } from "./views/AppLayout";
 import LoadingScreen from "./views/LoadingScreen";
 
 log("debug", "renderer process started", { pid: process["pid"] });
@@ -433,7 +437,6 @@ let extensions: ExtensionManager;
 async function initGlobals(): Promise<void> {
   // Initialize application data asynchronously from main process cache
   // This replaces synchronous IPC calls that were in the preload script
-  const { ApplicationData } = await import("../shared/applicationData");
   await ApplicationData.init();
 }
 

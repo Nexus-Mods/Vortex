@@ -1,0 +1,5 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/extensions-hack",
+  "packageManager": "yarn@1.22.22"
+}

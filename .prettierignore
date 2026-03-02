@@ -30,3 +30,16 @@ coverage/
 # Test mocks and temporary files
 __tests__/
 __mocks__/
+
+.babelrc
+.github
+.storybook
+.vscode
+*.md
+.devcontainer
+extensions/
+flatpak/
+samples/
+tools/
+
+pnpm-lock.yaml

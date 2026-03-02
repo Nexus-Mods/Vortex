@@ -4,7 +4,7 @@ import PromiseBB from "bluebird";
 import * as fsOrig from "fs-extra";
 import * as path from "path";
 import { restackErr } from "./util";
-import { getErrorCode, getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 export type Normalize = (input: string) => string;
 

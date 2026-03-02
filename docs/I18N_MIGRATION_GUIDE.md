@@ -56,8 +56,8 @@ const { t } = useTranslation(['collection', 'common']);
 
 ### 5. Test
 
-- Build: `yarn build`
-- Start: `yarn start`
+- Build: `pnpm run build`
+- Start: `pnpm run start`
 - Navigate to your feature
 - Verify text appears correctly
 

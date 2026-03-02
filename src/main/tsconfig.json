@@ -1,0 +1,21 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "**/*",
+    "../../typings.custom/electron.d.ts",
+    "../../typings.custom/promise.d.ts"
+  ],
+  "exclude": ["./*.js", "./*.mjs", "./*.cjs", "./dist", "./out"],
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "node16", // TODO: change to nodenext
+    "moduleResolution": "node16", // TODO: change to nodenext
+    "types": ["node"],
+    "outDir": "./out/main",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "removeComments": true
+  }
+}

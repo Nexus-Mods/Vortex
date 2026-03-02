@@ -11,12 +11,15 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/react": "16.14.66",
     "@types/bluebird": "^3.5.30",
     "@types/i18next": "^8.4.0",
     "@types/redux": "^3.6.0",
     "node-7z": "Nexus-Mods/node-7z",
     "shortid": "2.2.8",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
+    "react": "^16.12.0",
+    "react-i18next": "^11.11.0"
   }
 }

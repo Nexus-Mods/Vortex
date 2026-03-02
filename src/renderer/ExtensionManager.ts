@@ -13,7 +13,7 @@ import type {
 import type {
   IModReference,
   IModRepoId,
-} from "../extensions/mod_management/types/IMod";
+} from "./extensions/mod_management/types/IMod";
 import type { SanityCheck } from "./store/reduxSanity";
 import type {
   IAvailableExtension,
@@ -81,13 +81,13 @@ import {
 } from "./actions/notifications";
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
-import { setOptionalExtensions } from "../extensions/extension_manager/actions";
-import { VCREDIST_URL } from "../shared/constants";
+import { setOptionalExtensions } from "./extensions/extension_manager/actions";
+import { VCREDIST_URL } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   unknownToError,
-} from "../shared/errors";
+} from "@vortex/shared";
 import { registerSanityCheck } from "./store/reduxSanity";
 import { Archive } from "./util/archives";
 import { getApplication } from "./util/application";
@@ -127,7 +127,7 @@ import {
 import ReduxWatcher from "./store/ReduxWatcher";
 import { getPreloadApi } from "./util/preloadAccess";
 import { computeStateDiff } from "./store/stateDiff";
-import type { PreloadWindow } from "../shared/types/preload";
+import type { PreloadWindow } from "@vortex/shared/preload";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -3119,8 +3119,8 @@ class ExtensionManager {
       .map((name: string) => ({
         name,
         namespace: name,
-        path: path.resolve(__dirname, "..", "extensions", name),
-        initFunc: () => require(`../extensions/${name}/index`).default,
+        path: path.resolve(__dirname, "extensions", name),
+        initFunc: () => require(`./extensions/${name}/index`).default,
         dynamic: false,
       }))
       .concat(

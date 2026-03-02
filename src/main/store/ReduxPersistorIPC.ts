@@ -11,10 +11,11 @@
  * - Provides hydration data to renderer on startup
  */
 
-import type { DiffOperation, Serializable } from "../../shared/types/ipc";
-import type { IPersistor, PersistorKey } from "../../shared/types/state";
+import type { DiffOperation, Serializable } from "@vortex/shared/ipc";
+import type { IPersistor, PersistorKey } from "@vortex/shared/state";
 
-import { unknownToError } from "../../shared/errors";
+import { unknownToError } from "@vortex/shared";
+
 import { terminate } from "../errorHandling";
 import { log } from "../logging";
 

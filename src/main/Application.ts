@@ -1,3 +1,20 @@
+import type { IParameters, ISetItem } from "@vortex/shared/cli";
+import type { AppInitMetadata } from "@vortex/shared/ipc";
+import type { IWindow } from "@vortex/shared/state";
+
+import { ApplicationData } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import {
+  DataInvalid,
+  DocumentsPathMissing,
+  ProcessCanceled,
+  UserCanceled,
+} from "@vortex/shared/errors";
+import { currentStatePath } from "@vortex/shared/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
@@ -11,23 +28,6 @@ import * as semver from "semver";
 import { v4 as uuidv4 } from "uuid";
 import winapi from "winapi-bindings";
 
-import type { IParameters, ISetItem } from "../shared/types/cli";
-import type { AppInitMetadata } from "../shared/types/ipc";
-import type { IWindow } from "../shared/types/state";
-
-import { ApplicationData } from "../shared/applicationData";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../shared/errors";
-import {
-  DataInvalid,
-  DocumentsPathMissing,
-  ProcessCanceled,
-  UserCanceled,
-} from "../shared/types/errors";
-import { currentStatePath } from "../shared/types/state";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { terminate } from "./errorHandling";
 import { disableErrorReporting } from "./errorReporting";
@@ -63,7 +63,7 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
 class Application {
   public static shouldIgnoreError(error: unknown, promise?: unknown): boolean {
     const err = unknownToError(error);
-    if (err instanceof UserCanceled) {
+    if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
       return true;
     }
 
@@ -321,17 +321,15 @@ class Application {
       },
     );
 
-    // Default open or close DevTools by F12 in development
-    if (process.env.NODE_ENV === "development") {
-      app.on("browser-window-created", (_, window) => {
-        const { webContents } = window;
-        webContents.on("before-input-event", (_, input) => {
-          if (input.type !== "keyDown") return;
-          if (input.code !== "F12") return;
-          webContents.toggleDevTools();
-        });
+    // Enable F12 to toggle DevTools in all builds
+    app.on("browser-window-created", (_, window) => {
+      const { webContents } = window;
+      webContents.on("before-input-event", (_, input) => {
+        if (input.type !== "keyDown") return;
+        if (input.code !== "F12") return;
+        webContents.toggleDevTools();
       });
-    }
+    });
   }
 
   private attachWebView = (
@@ -919,7 +917,7 @@ class Application {
 
   private async initDevel(): Promise<void> {
     if (process.env.NODE_ENV === "development") {
-      const { installDevelExtensions } = await import("./devel");
+      const { installDevelExtensions } = await import("./devel.js");
       await installDevelExtensions();
     }
   }

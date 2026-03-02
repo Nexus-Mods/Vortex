@@ -2,7 +2,7 @@ import { mdiDownload } from "@mdi/js";
 import React, { type FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { DownloadState } from "../../../../extensions/download_management/types/IDownload";
+import type { DownloadState } from "../../../extensions/download_management/types/IDownload";
 import type { IState } from "../../../types/IState";
 
 import { setOpenMainPage } from "../../../actions/session";

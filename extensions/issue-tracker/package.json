@@ -34,6 +34,10 @@
     "typescript": "^4.9.5",
     "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^5.76.1",
-    "webpack-cli": "^5.0.1"
+    "webpack-cli": "^5.0.1",
+    "react-i18next": "^11.11.0",
+    "react-markdown": "^6.0.2",
+    "lodash": "^4.17.21",
+    "tmp": "^0.1.0"
   }
 }

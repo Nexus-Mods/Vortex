@@ -38,7 +38,7 @@ import * as ReactDOM from "react-dom";
 import type * as Redux from "redux";
 import type { OutputSelector } from "reselect";
 import { createSelector } from "reselect";
-import { getErrorMessageOrDefault } from "../../shared/errors";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 export type ChangeDataHandler = (
   rowId: string,
