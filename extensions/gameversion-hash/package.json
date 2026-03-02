@@ -27,6 +27,6 @@
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   },
   "dependencies": {
-    "simple-git": "^3.7.1"
+    "simple-git": "catalog:"
   }
 }

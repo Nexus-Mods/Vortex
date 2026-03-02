@@ -11,14 +11,14 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/libxmljs": "^0.18.4",
+    "@types/libxmljs": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "typescript": "^4.9.5",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
-    "xml2js": "^0.5.0",
+    "xml2js": "catalog:",
     "bluebird": "^3.7.2",
     "@types/bluebird": "~3.5.20",
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"

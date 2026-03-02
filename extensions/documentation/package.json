@@ -23,8 +23,8 @@
     "react-bootstrap": "^0.33.0",
     "react-dom": "^16.12.0",
     "react-i18next": "^11.11.0",
-    "lodash": "^4.17.21",
-    "@types/lodash": "~4.17.24",
+    "lodash": "catalog:",
+    "@types/lodash": "catalog:",
     "redux": "^4.0.4"
   }
 }

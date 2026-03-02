@@ -18,7 +18,7 @@
   "devDependencies": {
     "@babel/core": "^7.16.7",
     "@types/bluebird": "^3.5.29",
-    "@types/iconv-lite": "^0.0.1",
+    "@types/iconv-lite": "catalog:",
     "@types/immutability-helper": "^2.0.15",
     "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.32.29",

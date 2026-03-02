@@ -27,7 +27,7 @@
     "bluebird": "^3.5.3",
     "bsdiff-node": "Nexus-Mods/bsdiff-node",
     "copyfiles": "^2.1.0",
-    "crc-32": "^1.2.1",
+    "crc-32": "catalog:",
     "i18next": "^15.0.9",
     "jest": "^30.1.3",
     "memoize-one": "^6.0.0",
@@ -50,13 +50,13 @@
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
-    "@nexusmods/nexus-api": "Nexus-Mods/node-nexus-api",
+    "@nexusmods/nexus-api": "catalog:",
     "modmeta-db": "Nexus-Mods/modmeta-db",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "redux-thunk": "^2.3.0",
     "vortexmt": "Nexus-Mods/node-vortexmt",
-    "lodash": "^4.17.21",
-    "@types/lodash": "~4.17.24"
+    "lodash": "catalog:",
+    "@types/lodash": "catalog:"
   },
   "resolutions": {
     "@types/react": "16.14.66",

@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@types/node": "^11.10.5",
-    "bs58": "^4.0.1",
+    "bs58": "catalog:",
     "electron": "^16.0.6",
     "fork-ts-checker-webpack-plugin": "^6.5.0",
     "ts-loader": "^9.2.6",

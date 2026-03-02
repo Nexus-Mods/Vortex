@@ -27,6 +27,6 @@
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
     "bluebird": "^3.7.2",
-    "@types/bluebird": "~3.5.20"
+    "@types/bluebird": "3.5.20"
   }
 }

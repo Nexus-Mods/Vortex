@@ -30,7 +30,7 @@
     "redux-act": "^1.7.4",
     "semver": "^5.5.0",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "lodash": "^4.17.21",
+    "lodash": "catalog:",
     "react-i18next": "^11.11.0",
     "react-markdown": "^6.0.2",
     "webpack": "^5.94.0",

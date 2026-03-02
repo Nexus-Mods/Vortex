@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.16.7",
-    "@nexusmods/nexus-api": "^1.0.5",
+    "@nexusmods/nexus-api": "catalog:",
     "@types/bluebird": "^3.5.29",
     "@types/node": "^10.3.4",
     "@types/react": "^16.9.17",
@@ -37,7 +37,7 @@
     "webpack-cli": "^5.0.1",
     "react-i18next": "^11.11.0",
     "react-markdown": "^6.0.2",
-    "lodash": "^4.17.21",
+    "lodash": "catalog:",
     "tmp": "^0.1.0"
   }
 }
