@@ -10,19 +10,19 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/react": "16.0.34",
-    "@types/react-bootstrap": "^0.32.29",
-    "@types/react-redux": "7.1.22",
-    "@types/redux": "^3.6.0",
-    "copyfiles": "^2.1.1",
-    "react-bootstrap": "^0.32.3",
-    "ts-loader": "^9.2.6",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-redux": "catalog:",
+    "@types/redux": "catalog:",
+    "copyfiles": "catalog:",
+    "react-bootstrap": "catalog:",
+    "ts-loader": "catalog:",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1",
-    "react-i18next": "^11.11.0",
-    "react-dom": "^16.12.0",
-    "redux-thunk": "^2.3.0",
-    "redux-act": "^1.8.0"
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "react-i18next": "catalog:",
+    "react-dom": "catalog:",
+    "redux-thunk": "catalog:",
+    "redux-act": "catalog:"
   }
 }

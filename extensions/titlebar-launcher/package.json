@@ -17,17 +17,17 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "7z-bin": "Nexus-Mods/7z-bin",
-    "@types/node": "^13.5.1",
-    "@types/react": "^16.9.19",
-    "@types/react-bootstrap": "^0.32.20",
-    "copyfiles": "^2.4.1",
-    "memoize-one": "^5.1.1",
-    "react-redux": "^7.1.3",
-    "redux": "^4.0.5",
-    "typescript": "^4.9.5",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "copyfiles": "catalog:",
+    "memoize-one": "catalog:",
+    "react-redux": "catalog:",
+    "redux": "catalog:",
+    "typescript": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "redux-act": "^1.8.0",
-    "react-i18next": "^11.11.0",
+    "redux-act": "catalog:",
+    "react-i18next": "catalog:",
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }

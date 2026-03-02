@@ -13,14 +13,14 @@
   "devDependencies": {
     "@types/libxmljs": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
-    "typescript": "^4.9.5",
+    "typescript": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
     "xml2js": "catalog:",
-    "bluebird": "^3.7.2",
-    "@types/bluebird": "~3.5.20",
+    "bluebird": "catalog:",
+    "@types/bluebird": "catalog:",
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }

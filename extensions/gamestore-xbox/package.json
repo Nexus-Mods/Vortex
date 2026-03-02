@@ -11,14 +11,14 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/node": "^12.12.14",
-    "typescript": "^4.9.5",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "xml2js": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
-    "@types/redux": "^3.6.0",
-    "redux-thunk": "^2.3.0",
-    "redux": "^4.0.4"
+    "@types/redux": "catalog:",
+    "redux-thunk": "catalog:",
+    "redux": "catalog:"
   }
 }

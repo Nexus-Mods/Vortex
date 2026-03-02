@@ -10,16 +10,16 @@
     "build": "npm run webpack && extractInfo"
   },
   "devDependencies": {
-    "@types/node": "^11.10.5",
+    "@types/node": "catalog:",
     "bs58": "catalog:",
-    "electron": "^16.0.6",
-    "fork-ts-checker-webpack-plugin": "^6.5.0",
-    "ts-loader": "^9.2.6",
+    "electron": "catalog:",
+    "fork-ts-checker-webpack-plugin": "catalog:",
+    "ts-loader": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
-    "typescript": "^4.9.5",
+    "typescript": "catalog:",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1"
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:"
   },
   "resolutions": {
     "node-gyp": "^9.0.0"

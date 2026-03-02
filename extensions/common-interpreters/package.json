@@ -10,18 +10,18 @@
     "build": "npm run webpack && extractInfo"
   },
   "devDependencies": {
-    "@types/node": "^11.13.0",
-    "@types/react": "^16.8.12",
-    "@types/react-redux": "^7.1.22",
-    "@types/redux": "^3.6.0",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-redux": "catalog:",
+    "@types/redux": "catalog:",
     "@types/which": "catalog:",
-    "bluebird": "^3.5.1",
-    "redux": "^4.0.1",
-    "ts-loader": "^9.4.2",
-    "typescript": "^4.9.5",
+    "bluebird": "catalog:",
+    "redux": "catalog:",
+    "ts-loader": "catalog:",
+    "typescript": "catalog:",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.76.1",
-    "webpack-cli": "^5.0.1",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
     "which": "catalog:"
   }
 }

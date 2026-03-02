@@ -18,18 +18,18 @@
   },
   "devDependencies": {
     "7z-bin": "Nexus-Mods/7z-bin",
-    "@types/i18next": "^12.1.0",
-    "@types/node": "^16.10.3",
-    "copyfiles": "^2.1.1",
-    "i18next": "^17.0.4",
-    "react-bootstrap": "^0.32.4",
+    "@types/i18next": "catalog:",
+    "@types/node": "catalog:",
+    "copyfiles": "catalog:",
+    "i18next": "catalog:",
+    "react-bootstrap": "catalog:",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "bluebird": "^3.7.2",
-    "@types/bluebird": "~3.5.20",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "bluebird": "catalog:",
+    "@types/bluebird": "catalog:",
     "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api"
   }
 }
