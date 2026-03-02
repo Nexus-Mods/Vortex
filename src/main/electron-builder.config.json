@@ -48,7 +48,10 @@
     "./build/VC_redist.x64.exe",
     "./build/windowsdesktop-runtime-win-x64.exe",
     "./nsis/**/*",
-    "../../locales"
+    {
+      "from": "../../locales",
+      "to": "locales"
+    }
   ],
   "files": ["**/*"],
   "asar": true,

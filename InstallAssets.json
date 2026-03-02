@@ -45,11 +45,6 @@
       "target": ["out"]
     },
     {
-      "srcPath": "locales/*/*",
-      "outPath": "",
-      "target": ["dist"]
-    },
-    {
       "srcPath": "assets/images/",
       "outPath": "",
       "target": ["out", "dist"]
