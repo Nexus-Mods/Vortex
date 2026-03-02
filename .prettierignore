@@ -43,3 +43,6 @@ samples/
 tools/
 
 pnpm-lock.yaml
+
+assets/
+
