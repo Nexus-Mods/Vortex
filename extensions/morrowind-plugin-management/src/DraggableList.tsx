@@ -105,7 +105,7 @@ const entryTarget: DropTargetSpec<IItemProps> = {
     }
 
     const domNode = ReactDOM.findDOMNode(component);
-    if (domNode === null) {
+    if (domNode === null || domNode instanceof Text) {
       return;
     }
     const hoverBoundingRect = domNode.getBoundingClientRect();

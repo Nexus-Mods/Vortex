@@ -3046,6 +3046,9 @@ importers:
       react-dnd:
         specifier: 'catalog:'
         version: 14.0.5(@types/hoist-non-react-statics@3.3.7(@types/react@16.14.66))(@types/node@22.19.11)(@types/react@16.14.66)(react@16.14.0)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@19.9.2)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       ts-loader:
         specifier: 'catalog:'
         version: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
