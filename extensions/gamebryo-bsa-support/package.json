@@ -11,9 +11,6 @@
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
     "build": "npm run webpack && npm run copy_bsatk && extractInfo"
   },
-  "os": [
-    "win32"
-  ],
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
