@@ -1,6 +1,7 @@
 engineStrict: true
 catalogMode: "strict"
 cleanupUnusedCatalogs: true
+failIfNoMatch: true
 
 packages:
   - ./src/shared
