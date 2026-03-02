@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.6] - 2026-03-02
+
+- Fixed gamebryo plugin group filter crashing the renderer process ([#20436](https://github.com/Nexus-Mods/Vortex/issues/20436), [#19848](https://github.com/Nexus-Mods/Vortex/issues/19848))
+- Fixed attempts to modify readonly error fields ([#20971](https://github.com/Nexus-Mods/Vortex/issues/20971))
+- Fixed GitHub SAS tokens not preserved when decoding download URLs ([#20133](https://github.com/Nexus-Mods/Vortex/issues/20133))
+- Fixed skipped optional dependencies showing as error notifications ([#21108](https://github.com/Nexus-Mods/Vortex/issues/21108))
+- Fixed extension manager error handling for invalid or uninstalled extensions
+- Fixed grouping key generation not sanitizing custom file paths
+- Fixed version detection when installing different versions of the same mod
+- Fixed fomod installer blocking the UI during unattended collection installs
+- Batched mod-completion Redux dispatches to reduce expensive re-renders
+- Removed superfluous collection mod state dispatches
+- Deferred mod dependency rule sorting during collection installs — updates now suppressed during active sessions and triggered before each phase deployment
+- Fixed stale progress notifications lingering after install completion
+- Improved testModReference matching robustness
+- Fixed React state-after-unmount warning in SuccessRating component
+
+## [1.16.5] - 2026-02-25
+
+- Fixed stub extensions not downloading correctly through the games page ([#20967](https://github.com/Nexus-Mods/Vortex/issues/20967))
+- Fixed collection stalling indefinitely in some cases
+- Fixed file id/inode precision loss when purging files (hardlinks)
+- Fixed unsolved conflicts notification reporting resolved conflicts ([#20702](https://github.com/Nexus-Mods/Vortex/issues/20702))
+- Fixed logicalFileName false positive reference checks for downloads ([#20870](https://github.com/Nexus-Mods/Vortex/issues/20870))
+- Ensured the numeric game id cache is populated before generating UIDs ([#20819](https://github.com/Nexus-Mods/Vortex/issues/20819))
+- Added download removal confirmation dialog wrapper/barrier ([#20957](https://github.com/Nexus-Mods/Vortex/issues/20957))
+- Improved UI stutter/responsiveness during collection installation
+- Improved hash based on stack to better de-duplicate GitHub tickets
+
+
 ## [1.16.4] - 2026-02-19
 
 - Fixed plugin cyclic interaction dialog changes not reflected in userlist ([#19605](https://github.com/Nexus-Mods/Vortex/issues/19605))
@@ -1435,6 +1465,8 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[1.16.6]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.6
+[1.16.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.5
 [1.16.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.4
 [1.16.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.3
 [1.16.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/v1.16.2
