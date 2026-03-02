@@ -8,8 +8,8 @@
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mod-report",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mod-report"
+    "build": "npm run _build && node ../copy-extension.mjs mod-report out",
+    "dist": "npm run _build && node ../copy-extension.mjs mod-report dist"
   },
   "devDependencies": {
     "@types/node": "catalog:",

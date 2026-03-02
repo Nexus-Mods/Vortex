@@ -7,8 +7,8 @@
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gameinfo-steam",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gameinfo-steam"
+    "build": "npm run _build && node ../copy-extension.mjs gameinfo-steam out",
+    "dist": "npm run _build && node ../copy-extension.mjs gameinfo-steam dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

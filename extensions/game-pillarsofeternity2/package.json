@@ -9,8 +9,8 @@
     "copy_gameart": "copyfiles -f assets/gameart.png dist",
     "copy_scss": "copyfiles -f src/stylesheet.scss dist",
     "_build": "yarn run webpack && yarn run copy_gameart && yarn run copy_scss && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/game-pillarsofeternity2",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/game-pillarsofeternity2"
+    "build": "npm run _build && node ../copy-extension.mjs game-pillarsofeternity2 out",
+    "dist": "npm run _build && node ../copy-extension.mjs game-pillarsofeternity2 dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

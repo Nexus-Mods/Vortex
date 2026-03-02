@@ -8,8 +8,8 @@
     "copyassets": "node copyassets.js",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo && npm run copyassets",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/modtype-bepinex",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/modtype-bepinex"
+    "build": "npm run _build && node ../copy-extension.mjs modtype-bepinex out",
+    "dist": "npm run _build && node ../copy-extension.mjs modtype-bepinex dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

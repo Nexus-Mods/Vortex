@@ -7,8 +7,8 @@
   "scripts": {
     "pack": "pnpm webpack --config webpack.config.js --progress --profile --color",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || pnpm run _build",
-    "_build": "pnpm run pack && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamestore-xbox",
-    "_dist": "pnpm run pack && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamestore-xbox",
+    "_build": "pnpm run pack && extractInfo && node ../copy-extension.mjs gamestore-xbox out",
+    "_dist": "pnpm run pack && extractInfo && node ../copy-extension.mjs gamestore-xbox dist",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || pnpm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",

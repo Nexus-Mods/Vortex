@@ -6,7 +6,9 @@
   "repository": "",
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && copyfiles -f src/stylesheet.scss dist && extractInfo"
+    "_build": "npm run webpack && copyfiles -f src/stylesheet.scss dist && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs morrowind-plugin-management out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs morrowind-plugin-management dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

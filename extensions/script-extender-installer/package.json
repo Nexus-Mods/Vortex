@@ -8,8 +8,8 @@
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "bundle7z": "7z a -t7z script-extender-installer.7z .\\dist\\index.js .\\dist\\info.json",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/script-extender-installer",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/script-extender-installer"
+    "build": "npm run _build && node ../copy-extension.mjs script-extender-installer out",
+    "dist": "npm run _build && node ../copy-extension.mjs script-extender-installer dist"
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",

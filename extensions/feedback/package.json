@@ -6,8 +6,8 @@
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo && copyfiles -f src/stylesheets/feedback.scss dist && copyfiles -f issues.json dist",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/feedback",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/feedback"
+    "build": "npm run _build && node ../copy-extension.mjs feedback out",
+    "dist": "npm run _build && node ../copy-extension.mjs feedback dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

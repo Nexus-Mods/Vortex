@@ -7,8 +7,8 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && node download_arctool.js && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mtframework-arc-support",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mtframework-arc-support"
+    "build": "npm run _build && node ../copy-extension.mjs mtframework-arc-support out",
+    "dist": "npm run _build && node ../copy-extension.mjs mtframework-arc-support dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

@@ -7,8 +7,8 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-archive-check",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-archive-check"
+    "build": "npm run _build && node ../copy-extension.mjs gamebryo-archive-check out",
+    "dist": "npm run _build && node ../copy-extension.mjs gamebryo-archive-check dist"
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",

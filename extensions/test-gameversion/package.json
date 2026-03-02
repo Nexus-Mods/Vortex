@@ -8,8 +8,8 @@
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "clear": "rm-local-modules",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/test-gameversion",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/test-gameversion"
+    "build": "npm run _build && node ../copy-extension.mjs test-gameversion out",
+    "dist": "npm run _build && node ../copy-extension.mjs test-gameversion dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

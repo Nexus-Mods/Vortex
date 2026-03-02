@@ -7,8 +7,8 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/modtype-dinput",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/modtype-dinput"
+    "build": "npm run _build && node ../copy-extension.mjs modtype-dinput out",
+    "dist": "npm run _build && node ../copy-extension.mjs modtype-dinput dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

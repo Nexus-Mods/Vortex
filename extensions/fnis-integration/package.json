@@ -7,8 +7,8 @@
   "scripts": {
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "_build": "npm run webpack && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/fnis-integration",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/fnis-integration"
+    "build": "npm run _build && node ../copy-extension.mjs fnis-integration out",
+    "dist": "npm run _build && node ../copy-extension.mjs fnis-integration dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

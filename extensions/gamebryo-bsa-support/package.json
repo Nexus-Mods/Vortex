@@ -10,8 +10,8 @@
     "webpack": "webpack --config webpack.config.js --mode development --progress --profile --color",
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
     "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _build",
-    "_build": "npm run webpack && npm run copy_bsatk && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/gamebryo-bsa-support",
-    "_dist": "npm run webpack && npm run copy_bsatk && extractInfo && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/gamebryo-bsa-support",
+    "_build": "npm run webpack && npm run copy_bsatk && extractInfo && node ../copy-extension.mjs gamebryo-bsa-support out",
+    "_dist": "npm run webpack && npm run copy_bsatk && extractInfo && node ../copy-extension.mjs gamebryo-bsa-support dist",
     "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || npm run _dist"
   },
   "author": "Black Tree Gaming Ltd.",

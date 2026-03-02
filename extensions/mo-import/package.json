@@ -8,9 +8,9 @@
     "webpack": "webpack --config webpack.config.js --progress --profile --color",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/mo-import",
     "_build": "npm run webpack && copyfiles -f src/stylesheets/mo-import.scss dist && extractInfo",
-    "build": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/out/bundledPlugins/mo-import",
-    "buildDev": "npm run build && npm run installDev",
-    "dist": "npm run _build && copyfiles -u 1 dist/**/* ../../src/main/dist/bundledPlugins/mo-import"
+    "build": "npm run _build && node ../copy-extension.mjs mo-import out",
+    "buildDev": "npm run build",
+    "dist": "npm run _build && node ../copy-extension.mjs mo-import dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
