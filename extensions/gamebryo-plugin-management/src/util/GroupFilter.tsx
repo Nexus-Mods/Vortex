@@ -26,12 +26,20 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
       ),
     ).map((iter) => ({ label: iter, value: iter }));
 
+    // react-select is marked as an external module in our webpack config.
+    //  This means that even though we're trying to use version 5, the actual
+    //  version that gets used is 1.3.0, which has a different API.
+    //  The proper fix for this is to update react-select to version 5 in the package
+    //  file, but that will break any other extensions that use react-select, so for
+    //  now we just have to be hacky.
+    // TODO: Update react-select to version 5 and remove the cast to any.
+    const SelectV1 = Select as any;
     return (
-      <Select
-        isMulti
-        className="select-compact"
+      <SelectV1
+        multi
+        className='select-compact'
         options={options}
-        value={filter}
+        value={Array.isArray(filter) ? filter : []}
         onChange={this.changeFilter}
       />
     );
@@ -41,7 +49,7 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     const { attributeId, onSetFilter } = this.props;
     onSetFilter(
       attributeId,
-      (value ?? []).map((val) => val.value),
+      (Array.isArray(value) ? value : []).map((val) => val.value),
     );
   };
 }
@@ -70,7 +78,7 @@ class GroupFilter implements types.ITableFilter {
   public raw = false;
 
   public matches(filter: any, value: any, state: types.IState): boolean {
-    if (filter.length === 0) {
+    if (!Array.isArray(filter) || filter.length === 0) {
       // no filter category set
       return true;
     }
@@ -79,7 +87,7 @@ class GroupFilter implements types.ITableFilter {
   }
 
   public isEmpty(filter: any): boolean {
-    return filter.length === 0;
+    return !Array.isArray(filter) || filter.length === 0;
   }
 }
 
