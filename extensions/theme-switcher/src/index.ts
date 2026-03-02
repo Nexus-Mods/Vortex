@@ -103,6 +103,11 @@ function init(context: types.IExtensionContext) {
   context.once(() => {
     const store = context.api.store;
 
+    context.api.setStylesheet(
+      "theme-switcher",
+      path.join(__dirname, "theme_switcher.scss"),
+    );
+
     context.api.events.on("select-theme", (selectedThemePath: string) => {
       applyTheme(context.api, selectedThemePath, false);
     });
