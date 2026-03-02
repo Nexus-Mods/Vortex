@@ -6,6 +6,7 @@ packages:
   - ./src/preload
   - ./src/main
   - ./src/renderer
+  - ./extensions/*
 
 onlyBuiltDependencies:
   - "@parcel/watcher"
