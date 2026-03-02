@@ -1334,23 +1334,12 @@ class InstallDriver {
 
     const downloadProgress = Object.values(mods).reduce((prev, mod) => {
       let size = 0;
-      const isBundled = mod.collectionRule?.extra?.localPath != null;
 
       if (mod.state === "downloaded") {
         // Download complete - use full file size
-        this.updateModTracking(mod.collectionRule, "downloaded");
         size += mod.attributes?.fileSize || 0;
       } else if (mod.state === "downloading" || mod.state == null) {
-        const downloadExists = Object.values(downloads).some((d) => {
-          const lookup = util.lookupFromDownload(d);
-          return util.testModReference(lookup, mod.collectionRule.reference);
-        });
         // Download in progress - use received bytes or total size
-        if (isBundled || downloadExists) {
-          this.updateModTracking(mod.collectionRule, "downloaded");
-        } else {
-          this.updateModTracking(mod.collectionRule, "downloading");
-        }
         const download = downloads[mod.archiveId];
         size += download?.received || download?.size || 0;
       } else {
