@@ -91,6 +91,7 @@ class InstallContext implements IInstallContext {
   private mStartTime: number;
   private mNotificationAggregator?: NotificationAggregator;
   private mSourceModId?: string;
+  private mActionBuffer: any[] | null = null;
 
   constructor(
     gameMode: string,
@@ -105,6 +106,13 @@ class InstallContext implements IInstallContext {
     this.mSourceModId = sourceModId;
     const store = api.store;
     const dispatch = store.dispatch;
+    const doDispatch = (action: any) => {
+      if (this.mActionBuffer !== null) {
+        this.mActionBuffer.push(action);
+      } else {
+        dispatch(action);
+      }
+    };
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
@@ -137,7 +145,7 @@ class InstallContext implements IInstallContext {
     };
     this.mLastProgress = 0;
     this.mSetModState = (id, state) =>
-      dispatch(setModState(gameMode, id, state));
+      doDispatch(setModState(gameMode, id, state));
     this.mSetModAttributes = (modId, attributes) => {
       Object.keys(attributes).forEach((attributeId) => {
         if (attributes[attributeId] === undefined) {
@@ -145,7 +153,7 @@ class InstallContext implements IInstallContext {
         }
       });
       if (Object.keys(attributes).length > 0) {
-        dispatch(setModAttributes(gameMode, modId, attributes));
+        doDispatch(setModAttributes(gameMode, modId, attributes));
       }
     };
     this.mSetModInstallationPath = (id, installPath) =>
@@ -165,7 +173,7 @@ class InstallContext implements IInstallContext {
       return getSafe(profile, ["modState", modId, "enabled"], false);
     };
     this.mSetDownloadInstalled = (archiveId, gameId, modId) => {
-      dispatch(setDownloadInstalled(archiveId, gameId, modId));
+      doDispatch(setDownloadInstalled(archiveId, gameId, modId));
     };
     this.mIsDownload = (archiveId) => {
       const state: IState = store.getState();
@@ -343,6 +351,16 @@ class InstallContext implements IInstallContext {
       }
     }
     this.mInstallOutcome = outcome;
+  }
+
+  public beginBatch(): void {
+    this.mActionBuffer = [];
+  }
+
+  public flushBatch(): any[] {
+    const actions = this.mActionBuffer ?? [];
+    this.mActionBuffer = null;
+    return actions;
   }
 
   public setInstallPathCB(id: string, installPath: string) {

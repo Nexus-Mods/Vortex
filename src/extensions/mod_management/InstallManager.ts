@@ -1856,16 +1856,18 @@ class InstallManager {
                   state.persistent.mods[installGameId]?.[modId]?.attributes ||
                     {},
                 );
+                installContext.beginBatch();
                 installContext.finishInstallCB(
                   "success",
                   _.omit(modInfo, existingKeys),
                 );
-                (rules ?? []).forEach((rule) => {
-                  api.store.dispatch(addModRule(installGameId, modId, rule));
-                });
-                api.store.dispatch(
+                batchDispatch(api.store, [
+                  ...installContext.flushBatch(),
+                  ...(rules ?? []).map((rule) =>
+                    addModRule(installGameId, modId, rule),
+                  ),
                   setFileOverride(installGameId, modId, overrides),
-                );
+                ]);
                 if (installProfile !== undefined) {
                   if (enable) {
                     setModsEnabled(api, installProfile.id, [modId], true, {
