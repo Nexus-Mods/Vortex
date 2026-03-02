@@ -5,8 +5,8 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && extractInfo"
+    "pack": "pnpm webpack --config webpack.config.js --progress --profile --color",
+    "build": "pnpm run pack && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -19,6 +19,9 @@
     "turbowalk": "catalog:",
     "@types/redux": "catalog:",
     "redux-thunk": "catalog:",
-    "redux": "catalog:"
+    "redux": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:"
   }
 }
