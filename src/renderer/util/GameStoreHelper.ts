@@ -172,7 +172,6 @@ class GameStoreHelper {
           }
           if (
             result &&
-            result.gameStoreId !== undefined &&
             result.priority !== undefined
           ) {
             result.priority =
