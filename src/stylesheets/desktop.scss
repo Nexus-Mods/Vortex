@@ -43,6 +43,27 @@ a {
     margin-right: initial;
 }
 
+// in native ui's, the cursor doesn't change to a hand over buttons
+[role="button"] {
+    cursor: default;
+}
+
+a,
+.btn {
+    cursor: default;
+}
+
+.btn.disabled,
+.btn[disabled],
+fieldset[disabled] .btn {
+    cursor: initial;
+}
+
+.radio label,
+.checkbox label {
+    cursor: default;
+}
+
 .Select-arrow-zone {
     cursor: default;
     min-width: 25px;
@@ -67,34 +88,4 @@ a {
 :not(input):not(textarea)::before {
     -webkit-user-select: none;
     user-select: none;
-}
-
-.legacy-layout {
-    a,
-    .btn,
-    .radio label,
-    .checkbox label,
-    // in native ui's, the cursor doesn't change to a hand over buttons
-    [role="button"] {
-        cursor: default;
-    }
-
-    .btn.disabled,
-    .btn[disabled],
-    fieldset[disabled] .btn {
-        cursor: initial;
-    }
-
-    :not(input):not(textarea),
-    :not(input):not(textarea)::after,
-    :not(input):not(textarea)::before {
-        cursor: default;
-    }
-
-    input,
-    button,
-    textarea,
-    :focus {
-        outline: none;
-    }
 }
