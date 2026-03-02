@@ -47,7 +47,7 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": "^7.57.6"
   "@msgpack/msgpack": ^2.7.0
-  "@nexusmods/nexus-api": "git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679"
+  "@nexusmods/nexus-api": "git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161"
   "@stylistic/eslint-plugin": ^5.7.1
   "@tailwindcss/cli": "^4.1.17"
   "@types/babel__preset-env": ~7.10.0

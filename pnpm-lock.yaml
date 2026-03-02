@@ -52,8 +52,8 @@ catalogs:
       specifier: ^2.7.0
       version: 2.8.0
     '@nexusmods/nexus-api':
-      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#d16099d8c9def488dde7b545428d4d7a04668679
-      version: 1.5.1
+      specifier: git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161
+      version: 1.5.2
     '@stylistic/eslint-plugin':
       specifier: ^5.7.1
       version: 5.9.0
@@ -918,7 +918,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
@@ -2220,7 +2220,7 @@ importers:
         version: 7.29.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -3420,7 +3420,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
       '@types/bluebird':
         specifier: 'catalog:'
         version: 3.5.20
@@ -3723,7 +3723,7 @@ importers:
         version: 2.8.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
       '@tailwindcss/cli':
         specifier: 'catalog:'
         version: 4.1.17
@@ -4202,7 +4202,7 @@ importers:
         version: 2.8.0
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161
       '@tailwindcss/cli':
         specifier: 'catalog:'
         version: 4.1.17
@@ -5689,6 +5689,10 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
+
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
+    resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161}
+    version: 1.5.2
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679}
@@ -13736,6 +13740,15 @@ snapshots:
       '@emnapi/runtime': 1.8.1
       '@tybys/wasm-util': 0.10.1
     optional: true
+
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4192c0c9f34306c2167e258dd4fef773af406161':
+    dependencies:
+      form-data: 4.0.5
+      jsonwebtoken: 9.0.3
+      request: 2.88.2
+      set-cookie-parser: 2.7.2
+      string-template: 1.0.0
+      typed-emitter: 1.4.0
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d16099d8c9def488dde7b545428d4d7a04668679':
     dependencies:
