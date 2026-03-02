@@ -1,18 +1,18 @@
-import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type {
   IHealthCheck,
   IHealthCheckEntry,
   IHealthCheckResult,
   ILegacyTestAdapter,
-} from "../../../renderer/types/IHealthCheck";
+} from "../../../types/IHealthCheck";
 import type { HealthCheckId } from "../types";
 
 import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
-} from "../../../renderer/types/IHealthCheck";
-import { log } from "../../../renderer/util/log";
+} from "../../../types/IHealthCheck";
+import { log } from "../../../util/log";
 import { setHealthCheckResult } from "../actions/session";
 
 export class HealthCheckRegistry {

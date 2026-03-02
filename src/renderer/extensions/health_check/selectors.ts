@@ -1,5 +1,5 @@
-import type { IHealthCheckResult } from "../../renderer/types/IHealthCheck";
-import type { IState } from "../../renderer/types/IState";
+import type { IHealthCheckResult } from "../../types/IHealthCheck";
+import type { IState } from "../../types/IState";
 import type { IHealthCheckPersistentState } from "./reducers/persistent";
 import type { IHealthCheckSessionState } from "./reducers/session";
 import type {

@@ -1,10 +1,10 @@
-import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IHealthCheckApi } from "../types";
 
-import { HealthCheckTrigger } from "../../../renderer/types/IHealthCheck";
-import Debouncer from "../../../renderer/util/Debouncer";
-import { log } from "../../../renderer/util/log";
+import { HealthCheckTrigger } from "../../../types/IHealthCheck";
+import Debouncer from "../../../util/Debouncer";
+import { log } from "../../../util/log";
 
 /**
  * Setup automatic triggers for health checks

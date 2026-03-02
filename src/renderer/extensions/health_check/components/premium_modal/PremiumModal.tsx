@@ -2,17 +2,17 @@ import { mdiCheck, mdiDiamondStone } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "../../../../renderer/ui/components/button/Button";
-import { Icon } from "../../../../renderer/ui/components/icon/Icon";
-import { Modal } from "../../../../renderer/ui/components/modal/Modal";
-import { Typography } from "../../../../renderer/ui/components/typography/Typography";
-import { opn } from "../../../../renderer/util/api";
+import { Button } from "../../../../ui/components/button/Button";
+import { Icon } from "../../../../ui/components/icon/Icon";
+import { Modal } from "../../../../ui/components/modal/Modal";
+import { Typography } from "../../../../ui/components/typography/Typography";
+import { opn } from "../../../../util/api";
 import {
   Campaign,
   Content,
   Section,
   nexusModsURL,
-} from "../../../../renderer/util/util";
+} from "../../../../util/util";
 import { PREMIUM_PATH } from "../../../nexus_integration/constants";
 
 const ListItem = ({ children }: { children: ReactNode }) => (

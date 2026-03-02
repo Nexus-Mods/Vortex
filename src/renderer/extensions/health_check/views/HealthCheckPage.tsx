@@ -17,21 +17,21 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 
-import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IModFileInfo, IModRequirementExt } from "../types";
 
-import { setSettingsPage } from "../../../renderer/actions/session";
-import { Button } from "../../../renderer/ui/components/button/Button";
-import { Icon } from "../../../renderer/ui/components/icon/Icon";
-import { NoResults } from "../../../renderer/ui/components/no_results/NoResults";
-import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
-import { TabButton } from "../../../renderer/ui/components/tabs/Tab";
-import { TabBar } from "../../../renderer/ui/components/tabs/TabBar";
-import { TabPanel } from "../../../renderer/ui/components/tabs/TabPanel";
-import { TabProvider } from "../../../renderer/ui/components/tabs/tabs.context";
-import { Typography } from "../../../renderer/ui/components/typography/Typography";
-import { batchDispatch } from "../../../renderer/util/util";
-import MainPage from "../../../renderer/views/MainPage";
+import { setSettingsPage } from "../../../actions/session";
+import { Button } from "../../../ui/components/button/Button";
+import { Icon } from "../../../ui/components/icon/Icon";
+import { NoResults } from "../../../ui/components/no_results/NoResults";
+import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
+import { TabButton } from "../../../ui/components/tabs/Tab";
+import { TabBar } from "../../../ui/components/tabs/TabBar";
+import { TabPanel } from "../../../ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../ui/components/tabs/tabs.context";
+import { Typography } from "../../../ui/components/typography/Typography";
+import { batchDispatch } from "../../../util/util";
+import MainPage from "../../../views/MainPage";
 import {
   setRequirementHidden,
   clearAllHiddenRequirements,

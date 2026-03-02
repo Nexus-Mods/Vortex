@@ -1,8 +1,8 @@
-import type { IExtensionApi } from "../../renderer/types/IExtensionContext";
-import type { IGame } from "../../renderer/types/IGame";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IGame } from "../../types/IGame";
 import type { IModFileInfo, IModRequirementExt } from "./types";
 
-import { getGame, toPromise } from "../../renderer/util/api";
+import { getGame, toPromise } from "../../util/api";
 import { nexusGameId } from "../nexus_integration/util/convertGameId";
 import { setModFiles, setModFilesLoading } from "./actions/session";
 import { getModFiles as getModFilesSelector } from "./selectors";

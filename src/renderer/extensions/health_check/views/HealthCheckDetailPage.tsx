@@ -11,27 +11,27 @@ import React, { useState, useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import type { IState } from "../../../renderer/types/IState";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import type { IModRequirementExt, IModFileInfo } from "../types";
 
-import { Button } from "../../../renderer/ui/components/button/Button";
-import { Icon } from "../../../renderer/ui/components/icon/Icon";
-import { Pictogram } from "../../../renderer/ui/components/pictogram/Pictogram";
+import { Button } from "../../../ui/components/button/Button";
+import { Icon } from "../../../ui/components/icon/Icon";
+import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
 import {
   Typography,
   TypographyLink,
-} from "../../../renderer/ui/components/typography/Typography";
-import { opn } from "../../../renderer/util/api";
-import { log } from "../../../renderer/util/log";
+} from "../../../ui/components/typography/Typography";
+import { opn } from "../../../util/api";
+import { log } from "../../../util/log";
 import {
   Campaign,
   Content,
   Section,
   nexusModsURL,
-} from "../../../renderer/util/util";
-import MainPage from "../../../renderer/views/MainPage";
-import { unknownToError } from "../../../shared/errors";
+} from "../../../util/util";
+import MainPage from "../../../views/MainPage";
+import { unknownToError } from "@vortex/shared";
 import { HealthCheckFeedbackEvent } from "../../analytics/mixpanel/MixpanelEvents";
 import { PREMIUM_PATH } from "../../nexus_integration/constants";
 import { setRequirementHidden, setFeedbackGiven } from "../actions/persistent";

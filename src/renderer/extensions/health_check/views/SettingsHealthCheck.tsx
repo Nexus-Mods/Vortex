@@ -3,7 +3,7 @@ import { ControlLabel, FormGroup, HelpBlock } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import Toggle from "../../../renderer/controls/Toggle";
+import Toggle from "../../../controls/Toggle";
 import { setModRequirementsEnabled } from "../actions/persistent";
 import { isModRequirementsEnabled } from "../selectors";
 

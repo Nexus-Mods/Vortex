@@ -10,11 +10,11 @@ import { useTranslation } from "react-i18next";
 
 import type { IModFileInfo, IModRequirementExt } from "../../types";
 
-import { Button } from "../../../../renderer/ui/components/button/Button";
-import { Icon } from "../../../../renderer/ui/components/icon/Icon";
-import { Typography } from "../../../../renderer/ui/components/typography/Typography";
-import { opn } from "../../../../renderer/util/api";
-import { bytesToString } from "../../../../renderer/util/util";
+import { Button } from "../../../../ui/components/button/Button";
+import { Icon } from "../../../../ui/components/icon/Icon";
+import { Typography } from "../../../../ui/components/typography/Typography";
+import { opn } from "../../../../util/api";
+import { bytesToString } from "../../../../util/util";
 
 export const ModRequirement = ({
   mod,

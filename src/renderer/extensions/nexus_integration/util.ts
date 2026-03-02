@@ -2197,3 +2197,7 @@ export function nexusGames(): IGameListEntry[] {
 export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
   return cachePromise.then(() => nexusGamesCache);
 }
+
+export function numericGameIdToDomainName(gameId: number): string | undefined {
+  return nexusGamesCache.find(g => g.id === gameId)?.domain_name;
+}

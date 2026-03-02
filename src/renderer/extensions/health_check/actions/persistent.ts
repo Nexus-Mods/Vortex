@@ -1,4 +1,4 @@
-import safeCreateAction from "../../../renderer/actions/safeCreateAction";
+import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * Set whether a specific requirement is hidden for a mod

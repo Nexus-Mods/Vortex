@@ -3,7 +3,7 @@
  * Provides health check functionality for mods
  */
 
-import type { IExtensionContext } from "../../renderer/types/IExtensionContext";
+import type { IExtensionContext } from "../../types/IExtensionContext";
 import type {
   IHealthCheckApi,
   IModFileInfo,
@@ -14,8 +14,8 @@ import {
   HealthCheckCategory,
   HealthCheckTrigger,
   HealthCheckSeverity,
-} from "../../renderer/types/IHealthCheck";
-import { activeGameId } from "../../renderer/util/selectors";
+} from "../../types/IHealthCheck";
+import { activeGameId } from "../../util/selectors";
 import { setHealthCheckRunning } from "./actions/session";
 import { createHealthCheckApi } from "./api";
 import { setupAutomaticTriggers } from "./api/triggers";

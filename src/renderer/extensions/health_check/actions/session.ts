@@ -1,7 +1,7 @@
-import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IModFileInfo } from "../types";
 
-import safeCreateAction from "../../../renderer/actions/safeCreateAction";
+import safeCreateAction from "../../../actions/safeCreateAction";
 
 /**
  * Set the result of a health check

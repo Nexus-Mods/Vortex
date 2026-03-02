@@ -5,8 +5,8 @@
 
 import type { IModRequirements } from "@nexusmods/nexus-api";
 
-import type { IExtensionApi } from "../../../renderer/types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IMod } from "../../mod_management/types/IMod";
 import type {
   IModRequirementsCheckMetadata,
@@ -14,22 +14,19 @@ import type {
   IModRequirementsCheckParams,
 } from "../types";
 
-import { setModAttribute } from "../../../renderer/actions";
-import { HealthCheckSeverity } from "../../../renderer/types/IHealthCheck";
+import { setModAttribute } from "../../../actions";
+import { HealthCheckSeverity } from "../../../types/IHealthCheck";
 import {
   getGame,
   nexusGameId,
   renderModName,
-} from "../../../renderer/util/api";
-import { log } from "../../../renderer/util/log";
-import { getSafe } from "../../../renderer/util/storeHelper";
-import { batchDispatch } from "../../../renderer/util/util";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "../../../shared/errors";
+} from "../../../util/api";
+import { log } from "../../../util/log";
+import { getSafe } from "../../../util/storeHelper";
+import { batchDispatch } from "../../../util/util";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { isLoggedIn } from "../../nexus_integration/selectors";
-import { numericGameIdToDomainName } from "../../nexus_integration/util/convertGameId";
+import { numericGameIdToDomainName } from "../../nexus_integration/util";
 import { makeModUID } from "../../nexus_integration/util/UIDs";
 import { activeProfile } from "../../profile_management/selectors";
 

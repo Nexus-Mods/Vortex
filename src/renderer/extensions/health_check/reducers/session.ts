@@ -1,8 +1,8 @@
-import type { IReducerSpec } from "../../../renderer/types/IExtensionContext";
-import type { IHealthCheckResult } from "../../../renderer/types/IHealthCheck";
+import type { IReducerSpec } from "../../../types/IExtensionContext";
+import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IModFileInfo } from "../types";
 
-import { deleteOrNop, setSafe } from "../../../renderer/util/storeHelper";
+import { deleteOrNop, setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/session";
 
 export interface IHealthCheckSessionState {
