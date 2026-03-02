@@ -2638,6 +2638,7 @@ class InstallManager {
 
           this.mActiveInstalls.delete(installKey);
         } catch (unknownError) {
+          const err = unknownToError(unknownError);
           this.mActiveInstalls.delete(installKey);
           const currentRetryCount =
             this.mDependencyRetryCount.get(installKey) || 0;
@@ -2649,8 +2650,7 @@ class InstallManager {
           if (!isCanceled && hasRetriesLeft) {
             this.mPendingInstalls.set(installKey, dep); // Re-queue for potential retry
             this.mDependencyRetryCount.set(installKey, currentRetryCount + 1);
-          } else {
-            const err = unknownToError(unknownError);
+          } else if (!isCanceled) {
             // Max retries exceeded, clean up and show error
             this.mDependencyRetryCount.delete(installKey);
             this.showDependencyError(
@@ -2660,6 +2660,8 @@ class InstallManager {
               err,
               renderModReference(dep.reference),
             );
+          } else {
+            this.mDependencyRetryCount.delete(installKey);
           }
           // Don't rethrow to avoid crashing the concurrency limiter
         } finally {
