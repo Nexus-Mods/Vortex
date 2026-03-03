@@ -9,7 +9,7 @@ import { IExtendedInterfaceProps } from './types/IExtendedInterfaceProps';
 import { genDefaultsAction } from './util/defaults';
 import { addExtension } from './util/extension';
 import InstallDriver from './util/InstallDriver';
-import { cloneCollection, createCollection, makeCollectionId } from './util/transformCollection';
+import { cloneCollection, createCollection, findLinkedCollection, makeCollectionId } from './util/transformCollection';
 import { bbProm, getUnfulfilledNotificationId } from './util/util';
 import AddModsDialog from './views/AddModsDialog';
 import HealthDownvoteDialog from './views/CollectionPageView/HealthDownvoteDialog';
@@ -60,8 +60,7 @@ function isEditableCollection(state: types.IState, modIds: string[]): boolean {
 function profileCollectionExists(api: types.IExtensionApi, profileId: string) {
   const state = api.store.getState();
   const gameMode = selectors.activeGameId(state);
-  const mods = state.persistent.mods[gameMode];
-  return mods[makeCollectionId(profileId)] !== undefined;
+  return findLinkedCollection(api, profileId, gameMode) !== undefined;
 }
 
 function onlyLocalRules(rule: types.IModRule) {
@@ -199,7 +198,14 @@ async function cloneInstalledCollection(api: types.IExtensionApi,
   if (result.action === 'Clone') {
     await updateMeta(api, collectionId);
     const id = makeCollectionId(shortid());
-    return cloneCollection(api, gameMode, id, collectionId);
+    const newId = await cloneCollection(api, gameMode, id, collectionId);
+    if (newId !== undefined) {
+      const activeProfileId = selectors.activeProfile(api.getState())?.id;
+      if (activeProfileId) {
+        api.store.dispatch(actions.setModAttribute(gameMode, id, 'associatedProfile', activeProfileId));
+      }
+    }
+    return newId;
   } else {
     return Promise.resolve(undefined);
   }
@@ -839,6 +845,76 @@ function register(context: types.IExtensionContext,
       initFromProfile(context.api, profileIds[0])
         .catch(err => context.api.showErrorNotification('Failed to update collection', err));
     }, (profileIds: string[]) => profileCollectionExists(context.api, profileIds[0]));
+
+  context.registerAction('profile-actions', 150, 'highlight-lab', {}, 'Link Collection',
+    (profileIds: string[]) => {
+      const profileId = profileIds[0];
+      const state = context.api.store.getState();
+      const gameMode = selectors.activeGameId(state);
+      const mods = state.persistent.mods[gameMode] ?? {};
+
+      const editableCollections = Object.values(mods).filter(
+        (m: types.IMod) => m.type === MOD_TYPE && m.attributes?.editable === true,
+      ) as types.IMod[];
+
+      const currentLink = findLinkedCollection(context.api, profileId, gameMode);
+
+      context.api.showDialog('question', 'Link Collection to Profile', {
+        text: context.api.translate(
+          'Select the collection to associate with this profile. '
+          + '"Update Collection" will sync this profile\'s mods into the selected collection.',
+        ),
+        choices: editableCollections.map(mod => ({
+          id: mod.id,
+          text: util.renderModName(mod),
+          value: mod.id === currentLink?.id,
+        })),
+      }, [
+        { label: 'Cancel' },
+        ...(currentLink !== undefined ? [{ label: 'Unlink' }] : []),
+        { label: 'Link', default: true },
+      ]).then(result => {
+        if (result.action === 'Unlink' && currentLink !== undefined) {
+          context.api.store.dispatch(
+            actions.setModAttribute(gameMode, currentLink.id, 'associatedProfile', undefined),
+          );
+        } else if (result.action === 'Link') {
+          const selectedId = Object.keys(result.input).find(k => result.input[k]);
+          if (selectedId) {
+            // Clear any existing link to this collection from another profile
+            const existingHolder = Object.values(state.persistent.profiles ?? {})
+              .find((p: any) => {
+                const linked = findLinkedCollection(context.api, p.id, gameMode);
+                return linked?.id === selectedId && p.id !== profileId;
+              }) as any;
+            if (existingHolder) {
+              const prevMod = findLinkedCollection(context.api, existingHolder.id, gameMode);
+              if (prevMod?.id === selectedId) {
+                context.api.store.dispatch(
+                  actions.setModAttribute(gameMode, selectedId, 'associatedProfile', undefined),
+                );
+              }
+            }
+            context.api.store.dispatch(
+              actions.setModAttribute(gameMode, selectedId, 'associatedProfile', profileId),
+            );
+          }
+        }
+      }).catch(err => context.api.showErrorNotification('Failed to link collection', err));
+    },
+    (profileIds: string[]) => {
+      const profileId = profileIds[0];
+      const state = context.api.store.getState();
+      const gameMode = selectors.activeGameId(state);
+      const profile = state.persistent.profiles[profileId];
+      if (profile?.gameId !== gameMode) return false;
+      if (profileCollectionExists(context.api, profileId)) return false;
+      const mods = state.persistent.mods[gameMode] ?? {};
+      return Object.values(mods).some(
+        (m: types.IMod) => m.type === MOD_TYPE && m.attributes?.editable === true,
+      );
+    },
+  );
 
   context.registerAction('mods-action-icons', 300, 'collection', {}, 'Add to Collection...',
     (instanceIds: string[]) => {

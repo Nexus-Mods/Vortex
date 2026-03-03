@@ -739,6 +739,23 @@ export function makeCollectionId(baseId: string): string {
   return `vortex_collection_${baseId}`;
 }
 
+export function findLinkedCollection(
+  api: types.IExtensionApi,
+  profileId: string,
+  gameId: string,
+): types.IMod | undefined {
+  const mods = api.getState().persistent.mods[gameId] ?? {};
+  // Backwards compat: old ID convention
+  const byId = mods[makeCollectionId(profileId)];
+  if (byId?.type === MOD_TYPE) return byId;
+  // New: explicit attribute
+  return Object.values(mods).find(m =>
+    m.type === MOD_TYPE &&
+    m.attributes?.editable === true &&
+    m.attributes?.associatedProfile === profileId,
+  );
+}
+
 function deduceCollectionAttributes(
   collectionMod: types.IMod,
   collection: ICollection,
@@ -1075,11 +1092,17 @@ export async function createCollectionFromProfile(api: types.IExtensionApi,
   const profile = state.persistent.profiles[profileId];
 
   const isQuickCollection = forceName !== undefined;
-  const id = (isQuickCollection)
+  const conventionId = (isQuickCollection)
     ? makeCollectionId(`${profileId}_${shortid()}`)
     : makeCollectionId(profileId);
 
-  const mod: types.IMod = state.persistent.mods[profile.gameId]?.[id];
+  // For non-quick collections, also check for a mod linked via the associatedProfile attribute
+  const existingMod: types.IMod = isQuickCollection
+    ? state.persistent.mods[profile.gameId]?.[conventionId]
+    : findLinkedCollection(api, profileId, profile.gameId);
+
+  const id = existingMod?.id ?? conventionId;
+  const mod = existingMod;
 
   const isNexusSourced = (m: types.IMod) => (m?.attributes?.source === 'nexus');
   const isGeneratedMod = (m: types.IMod) => (m?.attributes?.generated === true);
@@ -1113,13 +1136,16 @@ export async function createCollectionFromProfile(api: types.IExtensionApi,
     }
 
     wantsToUpload = result.action === uploadLabel;
-    
-    name = result.input['name'];
+
+    name = result.input['name'] ?? util.renderModName(mod);
     await createCollection(api, profile.gameId, id, name, rules);
     await createTweaksFromProfile(api, profile, state.persistent.mods[profile.gameId] ?? {}, id);
+    api.store.dispatch(actions.setModAttribute(profile.gameId, id, 'associatedProfile', profileId));
   } else {
-    name = mod.attributes?.name;
     updateCollection(api, profile.gameId, mod, rules);
+    if (!mod.attributes?.associatedProfile) {
+      api.store.dispatch(actions.setModAttribute(profile.gameId, id, 'associatedProfile', profileId));
+    }
   }
 
   return { id, name, updated: mod !== undefined, wantsToUpload };
