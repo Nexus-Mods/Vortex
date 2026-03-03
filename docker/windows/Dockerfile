@@ -63,6 +63,9 @@ RUN Write-Host '=== Creating VS configuration file ==='; `
     Start-Sleep -Seconds 2; `
     Write-Host 'Installation complete' 
 
+# Enable long path support on Windows
+RUN New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
 # Default working directory
 WORKDIR C:\src
 
