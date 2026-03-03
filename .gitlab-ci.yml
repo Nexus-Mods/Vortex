@@ -77,6 +77,8 @@ build:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   before_script:
+    # Enable long path support (>260 chars)
+    - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
     # Install Node and Yarn via Volta (reads versions from package.json)
     - volta install node@22 yarn@v1
     - npm install --global corepack@latest
@@ -137,6 +139,8 @@ dist:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   before_script:
+    # Enable long path support (>260 chars)
+    - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
     - volta install node@22 yarn@v1
     - npm install --global corepack@latest
     - corepack install
