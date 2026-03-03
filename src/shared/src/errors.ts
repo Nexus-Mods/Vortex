@@ -85,10 +85,17 @@ export function isErrorWithSystemCode(
  *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins\x\index.js:1:2)"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
-const INSTALL_PATH_RE =
-  // Windows/Unix absolute path up to the first stable segment:
-  // src\, node_modules\, app.asar(\unpacked)?, or plugins\
-  /[A-Za-z]:[/\\](?:[^/\\():]+[/\\])*(?=(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)[/\\])|(?<!\/)\/(?:[^/\\():]+\/)*(?=(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)\/)/g;
+const _SEP = String.raw`[/\\]`;
+const _WIN = String.raw`[A-Za-z]:${_SEP}`; // C:\ or C:/
+const _UNIX = String.raw`(?<!\/)\/`; // / not inside ://
+const _SEGS = String.raw`(?:[^/\\():]+${_SEP})*?`; // lazy path segments
+const _ANCHORS = String.raw`(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)`;
+/** Matches the installation-specific prefix of a stack frame path up to the first
+ * stable segment (src, node_modules, app.asar, or plugins). */
+const INSTALL_PATH_RE = new RegExp(
+  String.raw`(?:${_WIN}|${_UNIX})${_SEGS}(?=${_ANCHORS}${_SEP})`,
+  "g",
+);
 
 const sanitizeFramePath = (frame: string): string =>
   frame.replace(INSTALL_PATH_RE, "");
