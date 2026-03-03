@@ -7,8 +7,9 @@ import type {
 
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-import { patchBluebirdContext, serializeSpan } from "@vortex/shared/telemetry";
+import { serializeSpan } from "@vortex/shared/telemetry";
 
+import { patchBluebirdContext } from "./bluebird-patch";
 import { createRendererResource } from "./resources";
 
 /**

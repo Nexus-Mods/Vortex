@@ -2,13 +2,11 @@ import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-ho
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 import {
-  patchBluebirdContext,
-  RingBufferSpanProcessor,
-  type RingBufferOptions,
   isTelemetryEnabled,
   setProcessor,
 } from "@vortex/shared/telemetry";
 
+import { RingBufferSpanProcessor, type RingBufferOptions } from "./RingBufferSpanProcessor";
 import { createVortexResource } from "./resources";
 
 export const COLLECTOR_URL =
@@ -47,5 +45,4 @@ export const createMainTelemetryProvider = (
     contextManager: new AsyncLocalStorageContextManager(),
   });
 
-  patchBluebirdContext();
 };

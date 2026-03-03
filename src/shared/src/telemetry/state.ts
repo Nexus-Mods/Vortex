@@ -1,20 +1,19 @@
 import type { Tracer } from "@opentelemetry/api";
+import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 
 import { trace } from "@opentelemetry/api";
 
-import type { RingBufferSpanProcessor } from "./RingBufferSpanProcessor";
-
 /** Process-level singleton reference to the span processor. */
-let processorSingleton: RingBufferSpanProcessor | undefined;
+let processorSingleton: SpanProcessor | undefined;
 
 /** Whether telemetry export is enabled (controlled by analytics opt-in). */
 let telemetryExportEnabled = false;
 
-export const setProcessor = (processor: RingBufferSpanProcessor): void => {
+export const setProcessor = (processor: SpanProcessor): void => {
   processorSingleton = processor;
 };
 
-export const getProcessor = (): RingBufferSpanProcessor | undefined => {
+export const getProcessor = (): SpanProcessor | undefined => {
   return processorSingleton;
 };
 
