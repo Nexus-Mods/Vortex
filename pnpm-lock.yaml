@@ -1747,12 +1747,18 @@ importers:
       json-loader:
         specifier: 'catalog:'
         version: 0.5.7
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
       loot:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/c4f6d3dbae7bc2e19b8cb2d4cd387fffd90c87ec
       markdown-ast:
         specifier: 'catalog:'
         version: 0.2.1
+      memoize-one:
+        specifier: 'catalog:'
+        version: 5.2.1
       prop-types:
         specifier: 'catalog:'
         version: 15.8.1

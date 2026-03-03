@@ -41,6 +41,8 @@
     "json-loader": "catalog:",
     "loot": "catalog:",
     "markdown-ast": "catalog:",
+    "memoize-one": "catalog:",
+    "lodash": "catalog:",
     "prop-types": "catalog:",
     "react": "catalog:",
     "react-dnd": "catalog:",
