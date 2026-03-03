@@ -542,18 +542,24 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.updateDetailsDebouncer = new util.Debouncer((pluginList: IPlugins, gameId: string) => {
-      if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
-        log('debug', 'deferring update plugin details because mod activity');
-        this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
-        return Promise.resolve();
-      }
-      return this.updatePlugins(pluginList, gameId)
-        .catch(util.ProcessCanceled, () => null)
-        .catch(err => {
-          log('warn', 'failed to update plugins', { error: err.message });
-        });
-    }, 2000);
+    this.updateDetailsDebouncer = new util.Debouncer(
+      (pluginList: IPlugins, gameId: string) => {
+        if (
+          this.props.modActivity !== undefined &&
+          this.props.modActivity.length > 0
+        ) {
+          log("debug", "deferring update plugin details because mod activity");
+          this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
+          return Promise.resolve();
+        }
+        return this.updatePlugins(pluginList, gameId)
+          .catch(util.ProcessCanceled, () => null)
+          .catch((err) => {
+            log("warn", "failed to update plugins", { error: err.message });
+          });
+      },
+      2000,
+    );
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
@@ -623,25 +629,42 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
-    const hasUserlistChange = (this.props.userlist !== nextProps.userlist);
+    const hasUserlistChange = this.props.userlist !== nextProps.userlist;
     // Guard: only do the expensive O(n log n) pluginPaths comparison when the plugins
     // reference actually changed or the userlist changed. During collection installation
     // many unrelated props (modActivity, mods) update several times per second — without
     // this guard those updates would each trigger a full sort+compare of 1000+ file paths.
     if (this.props.plugins !== nextProps.plugins || hasUserlistChange) {
       const pluginPaths = (input: IPlugins) =>
-        Object.values(input ?? {}).map(plug => plug.filePath).sort();
-      if ((this.props.plugins === undefined)
-          || !_.isEqual(Object.keys(this.props.plugins ?? {}), Object.keys(nextProps.plugins ?? {}))
-          || !_.isEqual(pluginPaths(this.props.plugins), pluginPaths(nextProps.plugins))
-          || hasUserlistChange) {
+        Object.values(input ?? {})
+          .map((plug) => plug.filePath)
+          .sort();
+      if (
+        this.props.plugins === undefined ||
+        !_.isEqual(
+          Object.keys(this.props.plugins ?? {}),
+          Object.keys(nextProps.plugins ?? {}),
+        ) ||
+        !_.isEqual(
+          pluginPaths(this.props.plugins),
+          pluginPaths(nextProps.plugins),
+        ) ||
+        hasUserlistChange
+      ) {
         if (hasUserlistChange) {
           // There's a chance that the userlist has changed (user applied a new
           // group to a plugin, etc)
           // we need to apply the userlist change before scheduling the update.
-          this.applyUserlist(nextProps.userlist.plugins || [], nextProps.masterlist.plugins || []);
+          this.applyUserlist(
+            nextProps.userlist.plugins || [],
+            nextProps.masterlist.plugins || [],
+          );
         }
-        this.updateDetailsDebouncer.schedule(undefined, nextProps.plugins, nextProps.gameMode);
+        this.updateDetailsDebouncer.schedule(
+          undefined,
+          nextProps.plugins,
+          nextProps.gameMode,
+        );
       }
     }
 
@@ -650,7 +673,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.forceListUpdate !== nextProps.forceListUpdate) {
-      this.updateDetailsDebouncer.schedule(undefined, nextProps.plugins, nextProps.gameMode);
+      this.updateDetailsDebouncer.schedule(
+        undefined,
+        nextProps.plugins,
+        nextProps.gameMode,
+      );
     }
   }
 

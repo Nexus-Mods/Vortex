@@ -1538,7 +1538,7 @@ function once(api: types.IExtensionApi) {
     },
   );
 
-  api.onAsync('will-deploy', (_profileId: string) => {
+  api.onAsync("will-deploy", (_profileId: string) => {
     // During collection installation we suppress continuous sort/rules updates (see state-change
     // and mods-enabled handlers above) to avoid re-rendering the mods table on every mod install.
     // Force-run them here, right before each deployment, so the sort order and dependency rules
@@ -1552,13 +1552,13 @@ function once(api: types.IExtensionApi) {
     });
   });
 
-  api.events.on('did-install-collection', (gameId: string) => {
+  api.events.on("did-install-collection", (gameId: string) => {
     updateRulesDebouncer.schedule(() => {
       updateConflictDebouncer.schedule(undefined, true);
     }, gameId);
   });
 
-  api.events.on('profile-did-change', () => {
+  api.events.on("profile-did-change", () => {
     const gameMode = selectors.activeGameId(store.getState());
     updateMetaRules(api, gameMode, store.getState().persistent.mods[gameMode])
       .then((rules) => {
@@ -1659,8 +1659,10 @@ function once(api: types.IExtensionApi) {
           ),
       );
 
-      if (relevantChange !== undefined
-        && selectors.getCollectionActiveSession(api.getState()) == null) {
+      if (
+        relevantChange !== undefined &&
+        selectors.getCollectionActiveSession(api.getState()) == null
+      ) {
         updateRulesDebouncer.schedule(() => {
           updateConflictDebouncer.schedule(undefined, true);
         }, gameMode);
@@ -1695,15 +1697,24 @@ function once(api: types.IExtensionApi) {
     },
   );
 
-  api.events.on('mods-enabled', (modIds: string[], enabled: boolean, gameMode: string,
-                                 options?: { silent: boolean, installed: boolean }) => {
-    if (gameMode === selectors.activeGameId(store.getState())
-        && selectors.getCollectionActiveSession(api.getState()) == null) {
-      updateRulesDebouncer.schedule(() => {
-        updateConflictDebouncer.schedule(undefined, true);
-      }, gameMode);
-    }
-  });
+  api.events.on(
+    "mods-enabled",
+    (
+      modIds: string[],
+      enabled: boolean,
+      gameMode: string,
+      options?: { silent: boolean; installed: boolean },
+    ) => {
+      if (
+        gameMode === selectors.activeGameId(store.getState()) &&
+        selectors.getCollectionActiveSession(api.getState()) == null
+      ) {
+        updateRulesDebouncer.schedule(() => {
+          updateConflictDebouncer.schedule(undefined, true);
+        }, gameMode);
+      }
+    },
+  );
 }
 
 interface IManageRuleButtonProps {

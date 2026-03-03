@@ -20,7 +20,11 @@ export function SuccessRating(props: ISuccessRatingProps) {
     let mounted = true;
     (async () => {
       try {
-        const rev = await infoCache.getRevisionInfo(revisionId, collectionSlug, revisionNumber);
+        const rev = await infoCache.getRevisionInfo(
+          revisionId,
+          collectionSlug,
+          revisionNumber,
+        );
         if (!mounted) return;
         if ((rev?.rating?.total ?? 0) < 3) {
           setRating(undefined);
@@ -36,7 +40,9 @@ export function SuccessRating(props: ISuccessRatingProps) {
         });
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [revisionId]);
 
   const classes = ["collection-success-indicator"];

@@ -37,7 +37,7 @@ class GroupFilterComponent extends React.Component<IProps, {}> {
     return (
       <SelectV1
         multi
-        className='select-compact'
+        className="select-compact"
         options={options}
         value={Array.isArray(filter) ? filter : []}
         onChange={this.changeFilter}

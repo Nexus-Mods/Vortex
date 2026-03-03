@@ -1304,10 +1304,16 @@ class InstallDriver {
   };
 
   private close = () => {
-    if ((this.mGameId !== undefined) && (this.mCollection !== undefined)) {
-      this.mApi.events.emit('did-install-collection', this.mGameId, this.mCollection.id);
+    if (this.mGameId !== undefined && this.mCollection !== undefined) {
+      this.mApi.events.emit(
+        "did-install-collection",
+        this.mGameId,
+        this.mCollection.id,
+      );
       this.mProgressDebouncer.clear();
-      this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
+      this.mApi.dismissNotification(
+        INSTALLING_NOTIFICATION_ID + this.mCollection.id,
+      );
     }
 
     this.completeInstallationTracking(true);
