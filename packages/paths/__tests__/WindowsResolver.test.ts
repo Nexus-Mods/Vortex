@@ -64,6 +64,7 @@ describe('WindowsResolver', () => {
       ['e', 'E:\\'],
       ['z', 'Z:\\'],
     ])('resolves %s anchor to %s', async (anchorName, expected) => {
+      // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filePath = resolver.PathFor(anchorName as any);
       const resolved = await filePath.resolve();
@@ -87,6 +88,7 @@ describe('WindowsResolver', () => {
       const invalidAnchor = Anchor.make('invalidDrive');
 
       await expect(
+        // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         (resolver as any).resolveAnchor(invalidAnchor)
       ).rejects.toThrow(/Unknown anchor/);

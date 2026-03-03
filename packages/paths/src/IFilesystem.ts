@@ -63,6 +63,8 @@ export interface FileEntry {
 /**
  * Helper functions for checking file types
  */
+// Namespace provides static factory methods (e.g. .isFile(), .directory()) as a companion
+// to the interface, which is the idiomatic TS pattern for attaching utilities to a type.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace FileEntry {
   /**

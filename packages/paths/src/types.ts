@@ -89,6 +89,8 @@ declare const RELATIVE_PATH_BRAND: unique symbol;
  */
 export type RelativePath = string & { readonly [RELATIVE_PATH_BRAND]: typeof RELATIVE_PATH_BRAND };
 
+// Namespace provides static factory methods (e.g. .make(), .join()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace RelativePath {
   /**
@@ -232,6 +234,8 @@ declare const RESOLVED_PATH_BRAND: unique symbol;
  */
 export type ResolvedPath = string & { readonly [RESOLVED_PATH_BRAND]: typeof RESOLVED_PATH_BRAND };
 
+// Namespace provides static factory methods (e.g. .make(), .join()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace ResolvedPath {
   /**
@@ -361,6 +365,8 @@ declare const EXTENSION_BRAND: unique symbol;
  */
 export type Extension = string & { readonly [EXTENSION_BRAND]: typeof EXTENSION_BRAND };
 
+// Namespace provides static factory methods (e.g. .make(), .fromPath()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Extension {
   /**
@@ -459,6 +465,8 @@ declare const ANCHOR_BRAND: unique symbol;
  */
 export type Anchor = symbol & { readonly [ANCHOR_BRAND]: typeof ANCHOR_BRAND };
 
+// Namespace provides static factory methods (e.g. .make(), .name()) as a companion
+// to the branded type, which is the idiomatic TS pattern for attaching utilities to a type.
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Anchor {
   /**

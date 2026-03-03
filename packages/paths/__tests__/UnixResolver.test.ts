@@ -79,6 +79,7 @@ describe('UnixResolver', () => {
       const invalidAnchor = Anchor.make('invalid');
 
       await expect(
+        // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         (resolver as any).resolveAnchor(invalidAnchor)
       ).rejects.toThrow(/Unknown anchor/);
@@ -165,6 +166,7 @@ describe('UnixResolver', () => {
       ['/var/www/html/index.html', 'root', 'var/www/html/index.html'],
       ['/tmp/downloads', 'root', 'tmp/downloads'],
     ])('resolves %s correctly', async (expected, anchor, relative) => {
+      // Cast to `any` to intentionally bypass type safety and test error handling with invalid inputs.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const path = resolver.PathFor(anchor as any, relative);
       const resolved = await path.resolve();
