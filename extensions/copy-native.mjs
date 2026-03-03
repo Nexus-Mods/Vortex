@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
 
@@ -27,7 +26,6 @@ if (missingFiles.length > 0) {
   for (const file of missingFiles) {
     console.error(`  - ${file}`);
   }
-  console.error('\nTo build native modules, run: node scripts/manage-node-modules.js build');
   process.exit(1);
 }
 
