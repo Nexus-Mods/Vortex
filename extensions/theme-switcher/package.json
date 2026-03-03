@@ -5,7 +5,7 @@
   "main": "./out/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -u 3 themes/**/* dist",
-    "_native": "node ../copy-native.mjs -u 4 node_modules/font-scanner/build/Release/fontmanager.node",
+    "_native": "node ../copy-native.mjs -u 4 ./node_modules/font-scanner/build/Release/fontmanager.node",
     "_build": "pnpm webpack --config webpack.config.js --stats-error-details --progress --profile --color && pnpm run _assets && pnpm run _native && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs theme-switcher out",
     "dist": "pnpm run _build && node ../copy-extension.mjs theme-switcher dist"

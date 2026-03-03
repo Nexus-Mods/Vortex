@@ -11,8 +11,8 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-const files = args.filter(arg => !arg.startsWith('-'));
-const copyFlags = args.filter(arg => arg.startsWith('-')).join(' ') || '-u 1 -f';
+const files = args.filter(arg => !arg.startsWith('-') && !/^\d+$/.test(arg));
+const copyFlags = args.filter(arg => arg.startsWith('-') || /^\d+$/.test(arg)).join(' ') || '-u 1 -f';
 
 const missingFiles = [];
 
