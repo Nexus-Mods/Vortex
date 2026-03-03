@@ -10,7 +10,7 @@ import Bluebird from "bluebird";
  * nor Zone.js can track context across Bluebird .then() chains without
  * this patch.
  */
-export function patchBluebirdContext(): void {
+export const patchBluebirdContext = (): void => {
   const originalThen = Bluebird.prototype.then;
   Bluebird.prototype.then = function (
     this: Bluebird<unknown>,
@@ -28,4 +28,4 @@ export function patchBluebirdContext(): void {
         : onRejected;
     return originalThen.call(this, wrappedFulfilled, wrappedRejected);
   } as typeof originalThen;
-}
+};

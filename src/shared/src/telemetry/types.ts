@@ -1,5 +1,6 @@
 import type { Attributes } from "@opentelemetry/api";
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+
 import { Resource } from "@opentelemetry/resources";
 
 /** Serializable span representation for IPC transport.
@@ -38,7 +39,7 @@ export interface SerializedSpan {
 }
 
 /** Convert a ReadableSpan into plain serializable data for IPC. */
-export function serializeSpan(span: ReadableSpan): SerializedSpan {
+export const serializeSpan = (span: ReadableSpan): SerializedSpan => {
   const ctx = span.spanContext();
   return {
     name: span.name,
@@ -75,10 +76,10 @@ export function serializeSpan(span: ReadableSpan): SerializedSpan {
     droppedEventsCount: span.droppedEventsCount,
     droppedLinksCount: span.droppedLinksCount,
   };
-}
+};
 
 /** Reconstruct a ReadableSpan-compatible object from serialized IPC data. */
-export function deserializeSpan(data: SerializedSpan): ReadableSpan {
+export const deserializeSpan = (data: SerializedSpan): ReadableSpan => {
   return {
     name: data.name,
     kind: data.kind,
@@ -113,4 +114,4 @@ export function deserializeSpan(data: SerializedSpan): ReadableSpan {
     droppedEventsCount: data.droppedEventsCount,
     droppedLinksCount: data.droppedLinksCount,
   };
-}
+};

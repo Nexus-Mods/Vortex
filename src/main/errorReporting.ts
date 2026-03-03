@@ -1,15 +1,15 @@
+import type { ReportableError } from "@vortex/shared/errors";
+
 import { trace } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import {
   BasicTracerProvider,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
+import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { app } from "electron";
 import { readFile } from "node:fs/promises";
 
-import type { ReportableError } from "@vortex/shared/errors";
-
-import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import { createVortexResource } from "./telemetry/resources";
 import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
 
@@ -57,7 +57,7 @@ export async function reportCrash(
   context?: Record<string, string>,
   sourceProcess?: string,
 ): Promise<void> {
-  const resource = createVortexResource("report", app.getVersion());
+  const resource = createVortexResource("report");
 
   const exporter = new OTLPTraceExporter({
     url: `${COLLECTOR_URL}/v1/traces`,

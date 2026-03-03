@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 /** Extracts an error message from an unknown value in a catch statement */
 export function getErrorMessage(err: unknown): string | null {
   if (err instanceof Error) {
@@ -79,10 +77,10 @@ export function isErrorWithSystemCode(
  * Same error from the same code path in the same version produces the same hash,
  * which can be used for deduplication on the backend.
  */
-export function computeErrorFingerprint(
+export const computeErrorFingerprint = (
   stack: string | undefined,
   appVersion: string,
-): string | undefined {
+): string | undefined => {
   if (stack === undefined) return undefined;
   const frames = stack
     .split("\n")
@@ -90,5 +88,16 @@ export function computeErrorFingerprint(
     .filter((line) => line.startsWith("at "));
   if (frames.length === 0) return undefined;
   const input = frames.join("\n") + "\n" + appVersion;
-  return createHash("sha256").update(input).digest("hex");
-}
+  return fnv1aHash(input);
+};
+
+/** FNV-1a hash producing an 8-char hex string. Not cryptographic —
+ *  used only for error deduplication fingerprints. */
+const fnv1aHash = (input: string): string => {
+  let hash = 0x811c9dc5; // FNV offset basis
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0; // FNV prime, keep as uint32
+  }
+  return hash.toString(16).padStart(8, "0");
+};

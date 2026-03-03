@@ -144,8 +144,8 @@ export class RingBufferSpanProcessor implements SpanProcessor {
   }
 }
 
-function byStartTime(a: ReadableSpan, b: ReadableSpan): number {
+const byStartTime = (a: ReadableSpan, b: ReadableSpan): number => {
   const [aSec, aNano] = a.startTime;
   const [bSec, bNano] = b.startTime;
   return aSec !== bSec ? aSec - bSec : aNano - bNano;
-}
+};

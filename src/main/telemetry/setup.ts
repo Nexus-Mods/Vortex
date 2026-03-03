@@ -1,7 +1,6 @@
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-
 import {
   patchBluebirdContext,
   RingBufferSpanProcessor,
@@ -9,6 +8,7 @@ import {
   isTelemetryEnabled,
   setProcessor,
 } from "@vortex/shared/telemetry";
+
 import { createVortexResource } from "./resources";
 
 export const COLLECTOR_URL =
@@ -20,13 +20,10 @@ export const OTLP_HEADERS: Record<string, string> = {};
  * Create and register the main-process TracerProvider.
  * Call once early in main process startup.
  */
-export function createMainTelemetryProvider(
-  appVersion: string,
+export const createMainTelemetryProvider = (
   options?: RingBufferOptions,
-): void {
-  const resource = createVortexResource("main", appVersion, {
-    "process.pid": process.pid,
-  });
+): void => {
+  const resource = createVortexResource("main");
 
   const exporter = new OTLPTraceExporter({
     url: `${COLLECTOR_URL}/v1/traces`,
@@ -51,4 +48,4 @@ export function createMainTelemetryProvider(
   });
 
   patchBluebirdContext();
-}
+};

@@ -3,6 +3,7 @@ import {
   setTelemetryEnabled,
   deserializeSpan,
 } from "@vortex/shared/telemetry";
+
 import { betterIpcMain } from "../ipc";
 
 /**
@@ -13,7 +14,7 @@ import { betterIpcMain } from "../ipc";
  *
  * Call once after {@link createMainTelemetryProvider}.
  */
-export function initTelemetryIpcHandler(): void {
+export const initTelemetryIpcHandler = (): void => {
   betterIpcMain.on("telemetry:forward-span", (_event, serializedSpan) => {
     const span = deserializeSpan(serializedSpan);
     getProcessor()?.onEnd(span);
@@ -34,4 +35,4 @@ export function initTelemetryIpcHandler(): void {
       }
     }
   });
-}
+};

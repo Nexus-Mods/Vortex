@@ -163,7 +163,7 @@ async function main(): Promise<void> {
     "UseEcoQoSForBackgroundProcess",
   );
 
-  createMainTelemetryProvider(app.getVersion());
+  createMainTelemetryProvider();
 
   initIpcHandlers();
   initTelemetryIpcHandler();

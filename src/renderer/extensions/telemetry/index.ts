@@ -6,10 +6,10 @@ import type {
 } from "@opentelemetry/sdk-trace-base";
 
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
-import { Resource } from "@opentelemetry/resources";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-
 import { patchBluebirdContext, serializeSpan } from "@vortex/shared/telemetry";
+
+import { createRendererResource } from "./resources";
 
 /**
  * A minimal SpanProcessor that forwards every completed span to the main
@@ -32,11 +32,8 @@ class ForwardingSpanProcessor implements SpanProcessor {
   }
 }
 
-function init(): boolean {
-  const resource = new Resource({
-    "service.name": "vortex",
-    "process.type": "renderer",
-  });
+const init = (): boolean => {
+  const resource = createRendererResource();
 
   const provider = new BasicTracerProvider({
     resource,
