@@ -805,6 +805,7 @@ function processAttributes(
       allowRating: input?.download?.modInfo?.nexus?.modInfo?.allow_rating,
       customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
       rating: nexusCollectionInfo?.rating,
+      requirements: nexusModInfo?.requirements,
     };
   });
 }
@@ -1206,6 +1207,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
     nexusModFileContents: eh.onModFileContents(api, nexus),
+    nexusGetModInfo: eh.onGetModInfo(api, nexus),
     nexusGetModRequirements: eh.onGetModRequirements(api, nexus),
     nexusGetPreferences: eh.onGetPreferences(api, nexus),
     nexusGetUserKeyData: eh.onGetUserKeyData(api),

@@ -71,7 +71,14 @@ export default class StylesheetCompiler {
       style: this.#style,
     });
 
-    return result.css;
+    // Remove UTF-8 BOM if present (ef bb bf)
+    // The BOM can cause CSS parsing issues when the CSS is injected inline into HTML
+    let css = result.css;
+    if (css.charCodeAt(0) === 0xfeff) {
+      css = css.substring(1);
+    }
+
+    return css;
   }
 
   private static sanitize(input: string): string {

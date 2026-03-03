@@ -336,7 +336,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean = false;
   private mCachedGameMode: string;
   private mUpdateId: string;
-  private mUpdateDetailsDebounder: util.Debouncer;
+  private updateDetailsDebouncer: util.Debouncer;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -542,14 +542,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.mUpdateDetailsDebounder = new util.Debouncer(
+    this.updateDetailsDebouncer = new util.Debouncer(
       (pluginList: IPlugins, gameId: string) => {
         if (
           this.props.modActivity !== undefined &&
           this.props.modActivity.length > 0
         ) {
           log("debug", "deferring update plugin details because mod activity");
-          this.mUpdateDetailsDebounder.schedule(undefined, pluginList, gameId);
+          this.updateDetailsDebouncer.schedule(undefined, pluginList, gameId);
           return Promise.resolve();
         }
         return this.updatePlugins(pluginList, gameId)
@@ -630,36 +630,42 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     const hasUserlistChange = this.props.userlist !== nextProps.userlist;
-    const pluginPaths = (input: IPlugins) =>
-      Object.values(input ?? {})
-        .map((plug) => plug.filePath)
-        .sort();
-    if (
-      this.props.plugins === undefined ||
-      !_.isEqual(
-        Object.keys(this.props.plugins ?? {}),
-        Object.keys(nextProps.plugins ?? {}),
-      ) ||
-      !_.isEqual(
-        pluginPaths(this.props.plugins),
-        pluginPaths(nextProps.plugins),
-      ) ||
-      hasUserlistChange
-    ) {
-      if (hasUserlistChange) {
-        // There's a chance that the userlist has changed (user applied a new
-        // group to a plugin, etc)
-        // we need to apply the userlist change before scheduling the update.
-        this.applyUserlist(
-          nextProps.userlist.plugins || [],
-          nextProps.masterlist.plugins || [],
+    // Guard: only do the expensive O(n log n) pluginPaths comparison when the plugins
+    // reference actually changed or the userlist changed. During collection installation
+    // many unrelated props (modActivity, mods) update several times per second — without
+    // this guard those updates would each trigger a full sort+compare of 1000+ file paths.
+    if (this.props.plugins !== nextProps.plugins || hasUserlistChange) {
+      const pluginPaths = (input: IPlugins) =>
+        Object.values(input ?? {})
+          .map((plug) => plug.filePath)
+          .sort();
+      if (
+        this.props.plugins === undefined ||
+        !_.isEqual(
+          Object.keys(this.props.plugins ?? {}),
+          Object.keys(nextProps.plugins ?? {}),
+        ) ||
+        !_.isEqual(
+          pluginPaths(this.props.plugins),
+          pluginPaths(nextProps.plugins),
+        ) ||
+        hasUserlistChange
+      ) {
+        if (hasUserlistChange) {
+          // There's a chance that the userlist has changed (user applied a new
+          // group to a plugin, etc)
+          // we need to apply the userlist change before scheduling the update.
+          this.applyUserlist(
+            nextProps.userlist.plugins || [],
+            nextProps.masterlist.plugins || [],
+          );
+        }
+        this.updateDetailsDebouncer.schedule(
+          undefined,
+          nextProps.plugins,
+          nextProps.gameMode,
         );
       }
-      this.mUpdateDetailsDebounder.schedule(
-        undefined,
-        nextProps.plugins,
-        nextProps.gameMode,
-      );
     }
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
@@ -667,7 +673,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.forceListUpdate !== nextProps.forceListUpdate) {
-      this.mUpdateDetailsDebounder.schedule(
+      this.updateDetailsDebouncer.schedule(
         undefined,
         nextProps.plugins,
         nextProps.gameMode,

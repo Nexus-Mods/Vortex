@@ -128,7 +128,7 @@ class GameStoreHelper {
       const result: IGameStoreEntry = {
         appid: lookup,
         gamePath: instPath.value as string,
-        gameStoreId: undefined,
+        gameStoreId: "registry",
         name: path.basename(instPath.value as string),
         priority: defaultPriority,
       };
