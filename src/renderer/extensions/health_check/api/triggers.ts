@@ -1,10 +1,12 @@
+import { unknownToError } from '@vortex/shared';
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
 import type { IHealthCheckApi } from "../types";
 
+import { log } from "../../../logging";
 import { HealthCheckTrigger } from "../../../types/IHealthCheck";
 import Debouncer from "../../../util/Debouncer";
-import { log } from "../../../util/log";
 import { hasCollectionActiveSession } from "../../collections_integration/selectors";
 
 /**
@@ -33,19 +35,19 @@ export function setupAutomaticTriggers(
     // Game changed trigger
     api.events.on("gamemode-activated", (gameMode: string) => {
       log("debug", "Triggering game change health checks", { gameMode });
-      triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.GameChanged);
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.GameChanged);
     });
 
     // Profile changed trigger
     api.events.on("profile-did-change", (profileId: string) => {
       log("debug", "Triggering profile change health checks", { profileId });
-      triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ProfileChanged);
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ProfileChanged);
     });
 
     // Settings changed trigger
     api.events.on("settings-changed", (path: string[]) => {
       log("debug", "Triggering settings change health checks", { path });
-      triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.SettingsChanged);
     });
 
     // Mods changed triggers - debounced because did-install-mod and
@@ -54,7 +56,7 @@ export function setupAutomaticTriggers(
     // be updated when the first event fires.
     const modsChangedDebouncer = new Debouncer(
       () =>
-        triggerHealthChecksAsync(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
+        void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged),
       500,
     );
 
@@ -73,7 +75,7 @@ export function setupAutomaticTriggers(
     // matching the pattern used by gamebryo-plugin-management for LOOT.
     api.events.on("collection-postprocess-complete", () => {
       log("debug", "Collection post-processing complete, triggering health checks");
-      triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged);
+      void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ModsChanged);
     });
 
     api.onStateChange?.(
@@ -82,7 +84,7 @@ export function setupAutomaticTriggers(
         log("debug", "Triggering requirements change health checks", {
           lastFullRun,
         });
-        triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ResultsChanged);
+        void triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.ResultsChanged);
       },
     );
 
@@ -98,69 +100,40 @@ export function setupAutomaticTriggers(
  * Suppressed during collection installation (except Manual) — checks
  * run after collection-postprocess-complete instead.
  */
-function triggerHealthChecks(
-  api: IExtensionApi,
-  healthCheckApi: IHealthCheckApi,
-  trigger: HealthCheckTrigger,
-): void {
-  if (
-    trigger !== HealthCheckTrigger.Manual &&
-    hasCollectionActiveSession(api.getState())
-  ) {
-    log("debug", "Skipping health checks during collection installation", {
-      trigger,
-    });
-    return;
-  }
-
-  healthCheckApi
-    .runChecksByTrigger(trigger)
-    .then((results) => {
-      log("debug", "Health checks completed", {
-        trigger,
-        totalChecks: results.length,
-        passed: results.filter((r) => r.status === "passed").length,
-        warnings: results.filter((r) => r.status === "warning").length,
-        errors: results.filter((r) => r.status === "error").length,
-        failed: results.filter((r) => r.status === "failed").length,
-      });
-    })
-    .catch((error) => {
-      const err = error as Error;
-      log("error", "Failed to run health checks", {
-        trigger,
-        error: err.message,
-      });
-    });
-}
-
-/**
- * Like triggerHealthChecks but returns a Promise — used by the debouncer.
- */
-function triggerHealthChecksAsync(
+async function triggerHealthChecks(
   api: IExtensionApi,
   healthCheckApi: IHealthCheckApi,
   trigger: HealthCheckTrigger,
 ): Promise<void> {
-  if (hasCollectionActiveSession(api.getState())) {
-    return Promise.resolve();
+  if (
+    trigger !== HealthCheckTrigger.Manual &&
+    hasCollectionActiveSession(api.getState())
+  ) {
+    return;
   }
 
-  return healthCheckApi
-    .runChecksByTrigger(trigger)
-    .then((results) => {
-      log("debug", "Health checks completed", {
-        trigger,
-        totalChecks: results.length,
-      });
-    })
-    .catch((error) => {
-      const err = error as Error;
-      log("error", "Failed to run health checks", {
-        trigger,
-        error: err.message,
-      });
+  try {
+    const results = await healthCheckApi.runChecksByTrigger(trigger);
+    log("debug", "Health checks completed", {
+      trigger,
+      totalChecks: results.length,
+      passed: results.filter((r) => r.status === "passed").length,
+      warnings: results.filter((r) => r.status === "warning").length,
+      errors: results.filter((r) => r.status === "error").length,
+      failed: results.filter((r) => r.status === "failed").length,
     });
+  } catch (error) {
+    const err = unknownToError(error);
+    log("error", "Failed to trigger health checks", {
+      trigger,
+      error: err.message,
+    });
+    api.showErrorNotification(
+      "Failed to run health checks",
+      "An error occurred while running health checks. Please check the logs for details.",
+    );
+    return;
+  }
 }
 
 /**
