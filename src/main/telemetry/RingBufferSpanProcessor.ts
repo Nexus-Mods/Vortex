@@ -11,14 +11,11 @@ const SPAN_STATUS_ERROR = 2;
 export interface RingBufferOptions {
   /** Maximum number of completed spans to retain. Default: 500 */
   maxSpans?: number;
-  /** Number of recent spans to include as temporal context on crash. Default: 20 */
-  tailSize?: number;
   /** Called when spans from an error trace need to be exported. Fire-and-forget. */
   onExportSpans?: (spans: ReadableSpan[]) => void;
 }
 
 const DEFAULT_MAX_SPANS = 500;
-const DEFAULT_TAIL_SIZE = 20;
 const MAX_EXPORTED_TRACE_IDS = 1000;
 
 /**
@@ -35,63 +32,61 @@ const MAX_EXPORTED_TRACE_IDS = 1000;
  * operations that were interrupted by a crash.
  */
 export class RingBufferSpanProcessor implements SpanProcessor {
-  private readonly buffer: (ReadableSpan | undefined)[];
-  private head: number = 0;
-  private count: number = 0;
-  private readonly maxSpans: number;
-  private readonly tailSize: number;
-  private readonly onExportSpans?: RingBufferOptions["onExportSpans"];
+  readonly #buffer: (ReadableSpan | undefined)[];
+  #head: number = 0;
+  #count: number = 0;
+  readonly #maxSpans: number;
+  readonly #onExportSpans?: RingBufferOptions["onExportSpans"];
 
   /** TraceIds already exported — late-arriving spans are exported immediately */
-  private readonly exportedTraceIds = new Set<string>();
+  readonly #exportedTraceIds = new Set<string>();
 
   /** Spans that have been started but not yet ended */
-  private readonly inFlight = new Map<string, Span>();
+  readonly #inFlight = new Map<string, Span>();
 
   constructor(options: RingBufferOptions = {}) {
-    this.maxSpans = options.maxSpans ?? DEFAULT_MAX_SPANS;
-    this.tailSize = options.tailSize ?? DEFAULT_TAIL_SIZE;
-    this.buffer = new Array<ReadableSpan | undefined>(this.maxSpans).fill(
+    this.#maxSpans = options.maxSpans ?? DEFAULT_MAX_SPANS;
+this.#buffer = new Array<ReadableSpan | undefined>(this.#maxSpans).fill(
       undefined,
     );
-    this.onExportSpans = options.onExportSpans;
+    this.#onExportSpans = options.onExportSpans;
   }
 
   onStart(span: Span, _parentContext: Context): void {
-    this.inFlight.set(span.spanContext().spanId, span);
+    this.#inFlight.set(span.spanContext().spanId, span);
   }
 
   onEnd(span: ReadableSpan): void {
-    this.inFlight.delete(span.spanContext().spanId);
+    this.#inFlight.delete(span.spanContext().spanId);
 
     const traceId = span.spanContext().traceId;
 
     // Trace already exported — send this late-arriving span immediately
-    if (this.exportedTraceIds.has(traceId)) {
-      this.exportSpans([span]);
+    if (this.#exportedTraceIds.has(traceId)) {
+      this.#exportSpans([span]);
       return;
     }
 
     // Add to ring buffer
-    this.buffer[this.head] = span;
-    this.head = (this.head + 1) % this.maxSpans;
-    this.count = Math.min(this.count + 1, this.maxSpans);
+    this.#buffer[this.#head] = span;
+    this.#head = (this.#head + 1) % this.#maxSpans;
+    this.#count = Math.min(this.#count + 1, this.#maxSpans);
 
     // Error span — export the entire trace
     if ((span.status.code as number) === SPAN_STATUS_ERROR) {
-      this.markTraceExported(traceId);
-      this.exportSpans(this.takeSpansByTraceId(traceId));
+      this.#markTraceExported(traceId);
+      this.#exportSpans(this.#takeSpansByTraceId(traceId));
     }
   }
 
   /** Return all buffered (completed) spans in chronological order */
   getBufferedSpans(): ReadableSpan[] {
-    if (this.count === 0) return [];
+    if (this.#count === 0) return [];
 
     const raw =
-      this.count < this.maxSpans
-        ? this.buffer.slice(0, this.count)
-        : [...this.buffer.slice(this.head), ...this.buffer.slice(0, this.head)];
+      this.#count < this.#maxSpans
+        ? this.#buffer.slice(0, this.#count)
+        : [...this.#buffer.slice(this.#head), ...this.#buffer.slice(0, this.#head)];
 
     return raw.filter((s): s is ReadableSpan => s !== undefined);
   }
@@ -101,28 +96,28 @@ export class RingBufferSpanProcessor implements SpanProcessor {
   }
 
   shutdown(): Promise<void> {
-    this.buffer.fill(undefined);
-    this.head = 0;
-    this.count = 0;
-    this.inFlight.clear();
-    this.exportedTraceIds.clear();
+    this.#buffer.fill(undefined);
+    this.#head = 0;
+    this.#count = 0;
+    this.#inFlight.clear();
+    this.#exportedTraceIds.clear();
     return Promise.resolve();
   }
 
   /** Fire-and-forget export via the callback. Never throws. */
-  private exportSpans(spans: ReadableSpan[]): void {
-    if (this.onExportSpans === undefined || spans.length === 0) return;
+  #exportSpans(spans: ReadableSpan[]): void {
+    if (this.#onExportSpans === undefined || spans.length === 0) return;
     try {
-      this.onExportSpans(spans);
+      this.#onExportSpans(spans);
     } catch {
       // Never let callback errors break the processor
     }
   }
 
-  private markTraceExported(traceId: string): void {
-    this.exportedTraceIds.add(traceId);
-    if (this.exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
-      this.exportedTraceIds.clear();
+  #markTraceExported(traceId: string): void {
+    this.#exportedTraceIds.add(traceId);
+    if (this.#exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
+      this.#exportedTraceIds.delete(this.#exportedTraceIds.values().next().value!);
     }
   }
 
@@ -131,13 +126,13 @@ export class RingBufferSpanProcessor implements SpanProcessor {
    * Exported spans are removed from the ring buffer so they won't
    * appear in subsequent exports or crash reports.
    */
-  private takeSpansByTraceId(traceId: string): ReadableSpan[] {
+  #takeSpansByTraceId(traceId: string): ReadableSpan[] {
     const result: ReadableSpan[] = [];
-    for (let i = 0; i < this.buffer.length; i++) {
-      const s = this.buffer[i];
+    for (let i = 0; i < this.#buffer.length; i++) {
+      const s = this.#buffer[i];
       if (s !== undefined && s.spanContext().traceId === traceId) {
         result.push(s);
-        this.buffer[i] = undefined;
+        this.#buffer[i] = undefined;
       }
     }
     return result.sort(byStartTime);

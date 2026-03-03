@@ -15,7 +15,7 @@ import {
   UserCanceled,
 } from "@vortex/shared/errors";
 import { currentStatePath } from "@vortex/shared/state";
-import { setTelemetryEnabled } from "@vortex/shared/telemetry";
+import { setTelemetryEnabled } from "./telemetry/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";

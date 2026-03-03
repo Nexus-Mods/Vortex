@@ -73,6 +73,23 @@ export function isErrorWithSystemCode(
 }
 
 /**
+ * Strip the installation-specific path prefix from a stack frame, keeping
+ * only from `src/` or `node_modules/` onward so fingerprints are stable
+ * across different machines and install locations.
+ *
+ * Examples:
+ *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src\foo.ts:1:2)"
+ *   "at f (/home/user/Vortex/src/foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
+ *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
+ */
+const INSTALL_PATH_RE =
+  // Windows absolute path up to the first src\ or node_modules\ segment
+  /[A-Za-z]:[/\\](?:[^/\\():]+[/\\])*(?=(?:src|node_modules)[/\\])|(?<!\/)\/(?:[^/\\():]+\/)*(?=(?:src|node_modules)\/)/g;
+
+const sanitizeFramePath = (frame: string): string =>
+  frame.replace(INSTALL_PATH_RE, "");
+
+/**
  * Compute a fingerprint from the stack trace call frames and app version.
  * Same error from the same code path in the same version produces the same hash,
  * which can be used for deduplication on the backend.
@@ -85,7 +102,8 @@ export const computeErrorFingerprint = (
   const frames = stack
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.startsWith("at "));
+    .filter((line) => line.startsWith("at "))
+    .map(sanitizeFramePath);
   if (frames.length === 0) return undefined;
   const input = frames.join("\n") + "\n" + appVersion;
   return fnv1aHash(input);

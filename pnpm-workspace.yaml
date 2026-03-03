@@ -17,6 +17,7 @@ onlyBuiltDependencies:
   - fomod-installer-native
   - leveldown
   - native-errors
+  - protobufjs
   - vortexmt
   - winapi-bindings
   - xxhash-addon

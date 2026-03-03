@@ -1,7 +1,4 @@
-import type { Tracer } from "@opentelemetry/api";
 import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
-
-import { trace } from "@opentelemetry/api";
 
 /** Process-level singleton reference to the span processor. */
 let processorSingleton: SpanProcessor | undefined;
@@ -23,12 +20,4 @@ export const setTelemetryEnabled = (enabled: boolean): void => {
 
 export const isTelemetryEnabled = (): boolean => {
   return telemetryExportEnabled;
-};
-
-/**
- * Get a tracer scoped to a Vortex subsystem.
- * Convention: use dotted names like 'vortex.mod-management', 'vortex.downloads'.
- */
-export const getTracer = (name: string): Tracer => {
-  return trace.getTracer(name);
 };

@@ -1,10 +1,8 @@
-import {
-  getProcessor,
-  setTelemetryEnabled,
-  deserializeSpan,
-} from "@vortex/shared/telemetry";
+import { deserializeSpan } from "@vortex/shared/telemetry";
 
 import { betterIpcMain } from "../ipc";
+import { SerializedSpanSchema } from "./serializedSpanSchema";
+import { getProcessor, setTelemetryEnabled } from "./state";
 
 /**
  * Register IPC handlers for telemetry:
@@ -16,8 +14,9 @@ import { betterIpcMain } from "../ipc";
  */
 export const initTelemetryIpcHandler = (): void => {
   betterIpcMain.on("telemetry:forward-span", (_event, serializedSpan) => {
-    const span = deserializeSpan(serializedSpan);
-    getProcessor()?.onEnd(span);
+    const result = SerializedSpanSchema.safeParse(serializedSpan);
+    if (!result.success) return;
+    getProcessor()?.onEnd(deserializeSpan(result.data));
   });
 
   // Watch for analytics opt-in state changes via persistence diffs.
