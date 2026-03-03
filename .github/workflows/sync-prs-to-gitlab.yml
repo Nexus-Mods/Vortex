@@ -1,0 +1,282 @@
+name: Sync GitHub PRs to GitLab
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "Label to filter PRs by"
+        required: false
+        type: string
+        default: "sync-to-gitlab"
+      dry-run:
+        description: "Dry run (log actions without pushing/creating MRs)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GITLAB_API_URL: https://gitlab.nexdev.uk/api/v4
+      GITLAB_PROJECT_PATH: nexus-mods/app/Vortex
+      GITLAB_HOST: gitlab.nexdev.uk
+      GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      SYNC_LABEL: ${{ inputs.label || 'sync-to-gitlab' }}
+      DRY_RUN: ${{ inputs.dry-run && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Derive GitLab project path encoding
+        id: gitlab-project
+        run: |
+          ENCODED_PATH=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${GITLAB_PROJECT_PATH}', safe=''))")
+          echo "encoded_path=$ENCODED_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: List labeled PRs
+        id: list-prs
+        run: |
+          echo "Fetching open PRs with label: $SYNC_LABEL"
+
+          PR_DATA=$(gh pr list \
+            --label "$SYNC_LABEL" \
+            --state open \
+            --json number,title,headRefName,headRepositoryOwner,headRefOid \
+            --limit 100)
+
+          PR_COUNT=$(echo "$PR_DATA" | jq length)
+          echo "Found $PR_COUNT PR(s) with label '$SYNC_LABEL'"
+
+          # Write to temp file to avoid GITHUB_OUTPUT size/escaping issues
+          echo "$PR_DATA" > /tmp/pr_data.json
+          echo "pr_count=$PR_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Sync PRs to GitLab
+        env:
+          ENCODED_PATH: ${{ steps.gitlab-project.outputs.encoded_path }}
+          PR_COUNT: ${{ steps.list-prs.outputs.pr_count }}
+        run: |
+          PR_DATA=$(cat /tmp/pr_data.json)
+
+          if [ "$PR_COUNT" -eq 0 ]; then
+            echo "No PRs to sync."
+            echo "## GitLab Sync Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No open PRs found with label \`$SYNC_LABEL\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          SYNCED=0
+          SKIPPED=0
+          CONFLICT=0
+          FAILED=0
+          SUMMARY=""
+
+          for i in $(seq 0 $((PR_COUNT - 1))); do
+            PR_NUMBER=$(echo "$PR_DATA" | jq -r ".[$i].number")
+            PR_TITLE=$(echo "$PR_DATA" | jq -r ".[$i].title")
+            PR_HEAD_SHA=$(echo "$PR_DATA" | jq -r ".[$i].headRefOid")
+            GITLAB_BRANCH="github-pr-${PR_NUMBER}"
+            MR_ALREADY_EXISTS="false"
+
+            echo ""
+            echo "============================================"
+            echo "Processing PR #${PR_NUMBER}: ${PR_TITLE}"
+            echo "  HEAD SHA: ${PR_HEAD_SHA}"
+            echo "============================================"
+
+            # --- Idempotency: check for existing open MR on this branch ---
+            EXISTING_MR=$(curl -sf \
+              --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+              "${GITLAB_API_URL}/projects/${ENCODED_PATH}/merge_requests?source_branch=${GITLAB_BRANCH}&state=opened" \
+              2>/dev/null || echo "[]")
+
+            EXISTING_MR_COUNT=$(echo "$EXISTING_MR" | jq 'length')
+
+            if [ "$EXISTING_MR_COUNT" -gt 0 ]; then
+              MR_ALREADY_EXISTS="true"
+              EXISTING_MR_URL=$(echo "$EXISTING_MR" | jq -r '.[0].web_url')
+              echo "Open MR already exists: ${EXISTING_MR_URL}"
+
+              # Check if GitLab branch is already up-to-date
+              GITLAB_BRANCH_INFO=$(curl -sf \
+                --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+                "${GITLAB_API_URL}/projects/${ENCODED_PATH}/repository/branches/${GITLAB_BRANCH}" \
+                2>/dev/null || echo "{}")
+
+              GL_HEAD=$(echo "$GITLAB_BRANCH_INFO" | jq -r '.commit.id // empty')
+
+              if [ "$GL_HEAD" = "$PR_HEAD_SHA" ]; then
+                echo "GitLab branch is up-to-date. Skipping."
+                SKIPPED=$((SKIPPED + 1))
+                SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: SKIPPED (MR exists, up-to-date: ${EXISTING_MR_URL})"
+                continue
+              else
+                echo "GitLab branch is stale (GL: ${GL_HEAD} vs GH: ${PR_HEAD_SHA}). Will update."
+              fi
+            fi
+
+            # --- Fetch the PR commits from GitHub ---
+            echo "Fetching refs/pull/${PR_NUMBER}/head..."
+            if ! git fetch origin "refs/pull/${PR_NUMBER}/head:refs/remotes/pr/${PR_NUMBER}"; then
+              echo "ERROR: Failed to fetch PR #${PR_NUMBER}"
+              FAILED=$((FAILED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: FAILED (could not fetch PR ref)"
+              continue
+            fi
+
+            # --- Check for merge conflicts against master ---
+            echo "Testing merge into master..."
+            git checkout -f master 2>/dev/null
+            git reset --hard origin/master 2>/dev/null
+
+            if ! git merge --no-commit --no-ff "refs/remotes/pr/${PR_NUMBER}" 2>/dev/null; then
+              echo "CONFLICT: PR #${PR_NUMBER} has merge conflicts with master"
+              git merge --abort 2>/dev/null || true
+              git checkout -f master 2>/dev/null
+              CONFLICT=$((CONFLICT + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: CONFLICT"
+
+              if [ "$DRY_RUN" != "true" ]; then
+                gh pr comment "$PR_NUMBER" --body \
+                  "> **GitLab Sync:** This PR has merge conflicts with \`master\` and could not be synced. Please rebase or resolve conflicts and re-trigger the sync workflow."
+              fi
+              continue
+            fi
+
+            # Clean up trial merge
+            git merge --abort 2>/dev/null || true
+            git checkout -f master 2>/dev/null
+            git reset --hard origin/master 2>/dev/null
+
+            # --- Dry run gate ---
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "DRY RUN: Would push ${GITLAB_BRANCH} and create MR for PR #${PR_NUMBER}"
+              SYNCED=$((SYNCED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: DRY RUN OK"
+              continue
+            fi
+
+            # --- Push PR branch to GitLab ---
+            echo "Pushing branch ${GITLAB_BRANCH} to GitLab..."
+            GITLAB_REMOTE_URL="https://oauth2:${GITLAB_TOKEN}@${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git"
+
+            if ! git push "$GITLAB_REMOTE_URL" \
+              "refs/remotes/pr/${PR_NUMBER}:refs/heads/${GITLAB_BRANCH}" --force 2>&1; then
+              echo "ERROR: Failed to push branch ${GITLAB_BRANCH} to GitLab"
+              FAILED=$((FAILED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: FAILED (push failed)"
+              continue
+            fi
+
+            echo "Branch ${GITLAB_BRANCH} pushed."
+
+            # --- If MR already existed (stale update), just update the branch ---
+            if [ "$MR_ALREADY_EXISTS" = "true" ]; then
+              EXISTING_MR_URL=$(echo "$EXISTING_MR" | jq -r '.[0].web_url')
+              echo "Branch updated. Existing MR: ${EXISTING_MR_URL}"
+              SYNCED=$((SYNCED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: UPDATED -> ${EXISTING_MR_URL}"
+
+              gh pr comment "$PR_NUMBER" --body \
+                "> **GitLab Sync:** Branch \`${GITLAB_BRANCH}\` updated on GitLab. MR: ${EXISTING_MR_URL}"
+              continue
+            fi
+
+            # --- Create Merge Request on GitLab ---
+            echo "Creating Merge Request on GitLab..."
+            MR_DESCRIPTION="Synced from GitHub PR: https://github.com/${{ github.repository }}/pull/${PR_NUMBER}
+
+            Original PR author's commits are preserved.
+            Created automatically by the GitHub Actions sync workflow."
+
+            MR_RESPONSE=$(curl -sf \
+              --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --request POST \
+              --data "$(jq -n \
+                --arg title "GH-PR-${PR_NUMBER}: ${PR_TITLE}" \
+                --arg source "$GITLAB_BRANCH" \
+                --arg target "master" \
+                --arg desc "$MR_DESCRIPTION" \
+                '{
+                  title: $title,
+                  source_branch: $source,
+                  target_branch: $target,
+                  description: $desc,
+                  remove_source_branch: true
+                }')" \
+              "${GITLAB_API_URL}/projects/${ENCODED_PATH}/merge_requests" 2>&1)
+
+            if [ $? -ne 0 ] || [ -z "$MR_RESPONSE" ]; then
+              echo "ERROR: Failed to create MR for PR #${PR_NUMBER}"
+              echo "Response: $MR_RESPONSE"
+              FAILED=$((FAILED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: FAILED (MR creation failed)"
+              continue
+            fi
+
+            MR_URL=$(echo "$MR_RESPONSE" | jq -r '.web_url')
+            MR_IID=$(echo "$MR_RESPONSE" | jq -r '.iid')
+
+            if [ "$MR_URL" = "null" ] || [ -z "$MR_URL" ]; then
+              echo "ERROR: MR response malformed:"
+              echo "$MR_RESPONSE" | jq .
+              FAILED=$((FAILED + 1))
+              SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: FAILED (MR response missing web_url)"
+              continue
+            fi
+
+            echo "MR created: ${MR_URL}"
+
+            # --- Comment on GitHub PR with MR link ---
+            gh pr comment "$PR_NUMBER" --body "> **GitLab Sync:** This PR has been synced to GitLab as [MR !${MR_IID}](${MR_URL}).
+            >
+            > - Branch: \`${GITLAB_BRANCH}\`
+            > - Target: \`master\`
+            >
+            > Re-run the sync workflow to update after new commits."
+
+            SYNCED=$((SYNCED + 1))
+            SUMMARY="${SUMMARY}\n- PR #${PR_NUMBER}: SYNCED -> ${MR_URL}"
+          done
+
+          # --- Summary ---
+          echo ""
+          echo "============================================"
+          echo "SYNC SUMMARY"
+          echo "============================================"
+          echo "Total: $PR_COUNT | Synced: $SYNCED | Skipped: $SKIPPED | Conflicts: $CONFLICT | Failed: $FAILED"
+          echo -e "$SUMMARY"
+
+          {
+            echo "## GitLab Sync Summary"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Total PRs | $PR_COUNT |"
+            echo "| Synced | $SYNCED |"
+            echo "| Skipped (up-to-date) | $SKIPPED |"
+            echo "| Conflicts | $CONFLICT |"
+            echo "| Failed | $FAILED |"
+            echo ""
+            echo "### Details"
+            echo ""
+            echo -e "$SUMMARY"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::warning::${FAILED} PR(s) failed to sync. Check the summary for details."
+          fi
