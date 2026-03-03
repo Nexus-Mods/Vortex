@@ -17,6 +17,7 @@ export function SuccessRating(props: ISuccessRatingProps) {
   const [rating, setRating] = React.useState(undefined);
 
   React.useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
         const rev = await infoCache.getRevisionInfo(
@@ -24,6 +25,7 @@ export function SuccessRating(props: ISuccessRatingProps) {
           collectionSlug,
           revisionNumber,
         );
+        if (!mounted) return;
         if ((rev?.rating?.total ?? 0) < 3) {
           setRating(undefined);
         } else {
@@ -38,6 +40,9 @@ export function SuccessRating(props: ISuccessRatingProps) {
         });
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [revisionId]);
 
   const classes = ["collection-success-indicator"];

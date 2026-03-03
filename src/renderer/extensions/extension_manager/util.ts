@@ -590,7 +590,9 @@ export function downloadGithubRaw(
           );
         })
         .then(() =>
-          fs.moveAsync(archivePath, path.join(downloadPath, archiveName)),
+          fs.moveAsync(archivePath, path.join(downloadPath, archiveName), {
+            overwrite: true,
+          }),
         )
         .then(() => {
           const archiveId = shortid();
