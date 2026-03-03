@@ -130,7 +130,7 @@ class GameStoreHelper {
       const result: IGameStoreEntry = {
         appid: lookup,
         gamePath: instPath.value as string,
-        gameStoreId: undefined,
+        gameStoreId: "registry",
         name: path.basename(instPath.value as string),
         priority: defaultPriority,
       };
@@ -172,6 +172,7 @@ class GameStoreHelper {
           }
           if (
             result &&
+            result.gameStoreId !== undefined &&
             result.priority !== undefined
           ) {
             result.priority =
