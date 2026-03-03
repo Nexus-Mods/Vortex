@@ -80,11 +80,15 @@ export function isErrorWithSystemCode(
  * Examples:
  *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src\foo.ts:1:2)"
  *   "at f (/home/user/Vortex/src/foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
+ *   "at f (C:\Program Files\Vortex\resources\app.asar\renderer.js:1:2)" → "at f (app.asar\renderer.js:1:2)"
+ *   "at f (D:\Program Files\Vortex\resources\app.asar.unpacked\bundledPlugins\x\index.js:1:2)" → "at f (app.asar.unpacked\bundledPlugins\x\index.js:1:2)"
+ *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins\x\index.js:1:2)"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
 const INSTALL_PATH_RE =
-  // Windows absolute path up to the first src\ or node_modules\ segment
-  /[A-Za-z]:[/\\](?:[^/\\():]+[/\\])*(?=(?:src|node_modules)[/\\])|(?<!\/)\/(?:[^/\\():]+\/)*(?=(?:src|node_modules)\/)/g;
+  // Windows/Unix absolute path up to the first stable segment:
+  // src\, node_modules\, app.asar(\unpacked)?, or plugins\
+  /[A-Za-z]:[/\\](?:[^/\\():]+[/\\])*(?=(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)[/\\])|(?<!\/)\/(?:[^/\\():]+\/)*(?=(?:src|node_modules|app\.asar(?:\.unpacked)?|plugins)\/)/g;
 
 const sanitizeFramePath = (frame: string): string =>
   frame.replace(INSTALL_PATH_RE, "");
