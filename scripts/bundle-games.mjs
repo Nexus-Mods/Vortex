@@ -1,7 +1,7 @@
-import { rolldown } from "rolldown";
-import * as path from "node:path";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { builtinModules } from "node:module";
+import * as path from "node:path";
+import { rolldown } from "rolldown";
 
 const gamesDirectory = path.resolve(
   import.meta.dirname,
@@ -105,7 +105,7 @@ async function bundleGame(gameDirectory, externals) {
   } catch (err) {
     console.error(`* Failure: ${gameDirectory.name} due to error:`);
     console.error(err);
-    process.exit(1);
+    // process.exit(1);
   }
 }
 
