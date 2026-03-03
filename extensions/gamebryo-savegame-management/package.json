@@ -30,7 +30,7 @@
     "@types/redux-thunk": "2.1.0",
     "babel-loader": "^8.0.6",
     "bluebird": "^3.7.2",
-    "copyfiles": "^2.1.1",
+    "copyfiles": "^2.4.1",
     "gamebryo-savegame": "Nexus-Mods/node-gamebryo-savegames",
     "i18next": "^15.0.9",
     "immutability-helper": "^2.8.1",
