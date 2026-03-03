@@ -1,9 +1,13 @@
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-import { RingBufferSpanProcessor, type RingBufferOptions } from "./RingBufferSpanProcessor";
-import { isTelemetryEnabled, setProcessor } from "./state";
+
 import { createVortexResource } from "./resources";
+import {
+  RingBufferSpanProcessor,
+  type RingBufferOptions,
+} from "./RingBufferSpanProcessor";
+import { isTelemetryEnabled, setProcessor } from "./state";
 
 export const COLLECTOR_URL =
   process.env.VORTEX_COLLECTOR_URL ?? "https://vortex-collector.nexusmods.com";
@@ -40,5 +44,4 @@ export const createMainTelemetryProvider = (
   provider.register({
     contextManager: new AsyncLocalStorageContextManager(),
   });
-
 };

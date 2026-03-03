@@ -15,7 +15,6 @@ import {
   UserCanceled,
 } from "@vortex/shared/errors";
 import { currentStatePath } from "@vortex/shared/state";
-import { setTelemetryEnabled } from "./telemetry/state";
 import crashDump from "crash-dump";
 import { app, dialog, ipcMain, protocol, shell } from "electron";
 import contextMenu from "electron-context-menu";
@@ -46,6 +45,7 @@ import {
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
+import { setTelemetryEnabled } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,

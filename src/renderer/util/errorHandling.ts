@@ -42,7 +42,6 @@ import { log } from "./log";
 import { bundleAttachment } from "./message";
 import { getCPUArch } from "./nativeArch";
 import opn from "./opn";
-import { getPreloadApi } from "./preloadAccess";
 import { getSafe } from "./storeHelper";
 import { flatten, getAllPropertyNames, spawnSelf } from "./util";
 
@@ -158,11 +157,6 @@ export function createErrorReport(
       error,
       labels: labels || [],
       context,
-      token: getSafe(
-        state,
-        ["confidential", "account", "nexus", "OAuthCredentials"],
-        undefined,
-      ),
       reportProcess: process.type,
       sourceProcess,
       userData,
