@@ -1,9 +1,31 @@
+import type { PreloadWindow } from "@vortex/shared/preload";
 import type { SpawnOptions } from "child_process";
 import type { OpenDialogOptions, SaveDialogOptions } from "electron";
 import type { IHashResult, ILookupResult, IModInfo } from "modmeta-db";
 import type * as modmetaT from "modmeta-db";
 import type { ToastOptions } from "react-hot-toast";
-import type * as winapiT from "vortex-run";
+
+import { VCREDIST_URL } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
+import PromiseBB from "bluebird";
+import { spawn } from "child_process";
+import { EventEmitter } from "events";
+import * as fs from "fs-extra";
+import * as fuzz from "fuzzball";
+import JsonSocket from "json-socket";
+import * as _ from "lodash";
+import * as net from "net";
+import * as path from "path";
+import { toast } from "react-hot-toast";
+import * as semver from "semver";
+import { generate as shortid } from "shortid";
+import stringFormat from "string-template";
+import { dynreq, runElevated } from "vortex-run";
+import { fileMD5 } from "vortexmt";
 
 import type {
   DialogActions,
@@ -16,6 +38,7 @@ import type {
 } from "./extensions/mod_management/types/IMod";
 import type { SanityCheck } from "./store/reduxSanity";
 import type {
+  ExtensionInit,
   IAvailableExtension,
   IExtension,
   IRegisteredExtension,
@@ -50,22 +73,6 @@ import type {
   IState,
 } from "./types/IState";
 import type { i18n } from "./util/i18n";
-import StyleManager from "./StyleManager";
-
-import PromiseBB from "bluebird";
-import { spawn } from "child_process";
-import { EventEmitter } from "events";
-import * as fs from "fs-extra";
-import * as fuzz from "fuzzball";
-import JsonSocket from "json-socket";
-import * as _ from "lodash";
-import * as net from "net";
-import * as path from "path";
-import { toast } from "react-hot-toast";
-import * as semver from "semver";
-import { generate as shortid } from "shortid";
-import stringFormat from "string-template";
-import { fileMD5 } from "vortexmt";
 
 import {
   forgetExtension,
@@ -82,15 +89,12 @@ import {
 import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
-import { VCREDIST_URL } from "@vortex/shared";
-import {
-  getErrorCode,
-  getErrorMessageOrDefault,
-  unknownToError,
-} from "@vortex/shared";
 import { registerSanityCheck } from "./store/reduxSanity";
-import { Archive } from "./util/archives";
+import ReduxWatcher from "./store/ReduxWatcher";
+import { computeStateDiff } from "./store/stateDiff";
+import StyleManager from "./StyleManager";
 import { getApplication } from "./util/application";
+import { Archive } from "./util/archives";
 import { COMPANY_ID } from "./util/constants";
 import {
   MissingDependency,
@@ -107,13 +111,14 @@ import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { log } from "./util/log";
 import { showError } from "./util/message";
-import runElevatedCustomTool from "./util/runElevatedCustomTool";
-import { activeGameId } from "./util/selectors";
-import { getSafe } from "./util/storeHelper";
+import { getPreloadApi } from "./util/preloadAccess";
 import {
   deregisterProtocolHandler,
   registerProtocolHandler,
 } from "./util/protocolRegistration";
+import runElevatedCustomTool from "./util/runElevatedCustomTool";
+import { activeGameId } from "./util/selectors";
+import { getSafe } from "./util/storeHelper";
 import {
   filteredEnvironment,
   isFunction,
@@ -124,10 +129,6 @@ import {
   wrapExtCBAsync,
   wrapExtCBSync,
 } from "./util/util";
-import ReduxWatcher from "./store/ReduxWatcher";
-import { getPreloadApi } from "./util/preloadAccess";
-import { computeStateDiff } from "./store/stateDiff";
-import type { PreloadWindow } from "@vortex/shared/preload";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
 
@@ -141,8 +142,6 @@ export function isExtSame(
 
   return installed.name === remote.name;
 }
-
-const winapi = lazyRequire<typeof winapiT>(() => require("vortex-run"));
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
@@ -1796,7 +1795,13 @@ class ExtensionManager {
       try {
         const apiProxy = new APIProxyCreator(ext, this.mEventEmitter);
         const extProxy = new Proxy(contextProxy, apiProxy);
-        ext.initFunc()(extProxy as IExtensionContext);
+        const init = ext.initFunc();
+        if (typeof init !== "function") {
+          throw new Error(
+            `init isn't a function but ${typeof init}: ${init} for ${Object.keys(ext)}`,
+          );
+        }
+        init(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (unknownError) {
         if (!ext.dynamic) {
@@ -2637,13 +2642,12 @@ class ExtensionManager {
       });
 
       log("debug", "running elevated", { executable, cwd, args });
-      winapi
-        .runElevated(ipcPath, runElevatedCustomTool, {
-          toolPath: executable,
-          toolCWD: cwd,
-          parameters: args,
-          environment: env,
-        })
+      runElevated(ipcPath, runElevatedCustomTool, {
+        toolPath: executable,
+        toolCWD: cwd,
+        parameters: args,
+        environment: env,
+      })
         .then((tmpPath) => {
           tmpFilePath = tmpPath;
           if (onSpawned !== undefined) {
@@ -2937,7 +2941,7 @@ class ExtensionManager {
       return {
         name,
         namespace,
-        initFunc: () => winapi.dynreq(indexPath).default,
+        initFunc: () => ExtensionManager.getExtensionInitFunc(indexPath),
         path: extensionPath,
         dynamic: true,
         info: {
@@ -2953,6 +2957,21 @@ class ExtensionManager {
       });
       return undefined;
     }
+  }
+
+  /** Finds the default exported extension init function of a module */
+  private static getExtensionInitFunc(id: string): ExtensionInit | undefined {
+    const mod: unknown = require(id);
+    if (!mod) return undefined;
+
+    if (typeof mod === "function") return mod as ExtensionInit;
+    if (typeof mod !== "object") return undefined;
+
+    // NOTE(erri120): interop hacks because of jank...
+    const fn: unknown = mod["__esModule"]
+      ? mod["default"]
+      : (mod["default"] ?? mod);
+    return typeof fn === "function" ? (fn as ExtensionInit) : undefined;
   }
 
   private loadDynamicExtensions(
@@ -3056,8 +3075,6 @@ class ExtensionManager {
    * retrieves all extensions to the base functionality, both the static
    * and external ones.
    * This loads external extensions from disc synchronously
-   *
-   * @returns {ExtensionInit[]}
    */
   private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
@@ -3121,7 +3138,8 @@ class ExtensionManager {
         name,
         namespace: name,
         path: path.resolve(__dirname, "extensions", name),
-        initFunc: () => require(`./extensions/${name}/index`).default,
+        initFunc: () =>
+          ExtensionManager.getExtensionInitFunc(`./extensions/${name}/index`),
         dynamic: false,
       }))
       .concat(

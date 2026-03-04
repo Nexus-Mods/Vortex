@@ -62,7 +62,8 @@ export function createConfig(input, output, customPlugins = []) {
       file: output,
       format: "commonjs",
       dynamicImportInCjs: false,
-      minify: true,
+      minify: false,
+      sourcemap: true,
     },
   });
 }
