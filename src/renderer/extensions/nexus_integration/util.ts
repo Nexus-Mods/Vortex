@@ -44,7 +44,7 @@ import {
   TemporaryError,
   UserCanceled,
 } from "../../util/CustomErrors";
-import { contextify, setApiKey, setOauthToken } from "../../util/errorHandling";
+import { contextify } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
@@ -2007,7 +2007,6 @@ export function updateToken(
   nexus: Nexus,
   credentials: any,
 ): BluebirdPromise<boolean> {
-  setOauthToken(credentials); // used for reporting, unimportant right now
 
   log("info", "updateToken()");
 
@@ -2049,7 +2048,6 @@ export function updateKey(
   nexus: Nexus,
   key: string,
 ): BluebirdPromise<boolean> {
-  setApiKey(key);
   return (
     BluebirdPromise.resolve(nexus.setKey(key))
       .then(() => true)

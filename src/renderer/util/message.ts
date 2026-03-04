@@ -1,22 +1,19 @@
-import type ZipT from "node-7z";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as os from "os";
 import * as path from "path";
-import { file as tmpFile, tmpName } from "tmp";
 
 /* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
-import type { IAttachment, IErrorOptions } from "../types/IExtensionContext";
+import type { IErrorOptions } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import type { HTTPError } from "./CustomErrors";
 
 import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { unknownToError } from "@vortex/shared";
 import { jsonRequest } from "./network";
 import {
   StalledError,
@@ -26,12 +23,11 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import { didIgnoreError, isOutdated, recordErrorSpan } from "./errorHandling";
-import * as fs from "./fs";
 import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import opn from "./opn";
-import { flatten, nexusModsURL, setdefault, truthy } from "./util";
+import { flatten, nexusModsURL, truthy } from "./util";
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -149,94 +145,6 @@ function shouldAllowReport(
   return !noReportErrors.includes(err.code);
 }
 
-function dataToFile(id, input: any) {
-  return new PromiseBB<string>((resolve, reject) => {
-    const data: Buffer = Buffer.from(JSON.stringify(input));
-    tmpFile(
-      {
-        prefix: id,
-        postfix: ".json",
-      },
-      (err, tmpPath: string, fd: number, cleanup: () => void) => {
-        if (err !== null) {
-          return reject(err);
-        }
-        fs.writeAsync(fd, data, 0, data.byteLength, 0)
-          .then(() => fs.closeAsync(fd))
-          .then(() => {
-            resolve(tmpPath);
-          })
-          .catch((innerErr) => {
-            log("error", "failed to write attachment data to file", {
-              error: getErrorMessageOrDefault(innerErr),
-            });
-            return reject(innerErr);
-          });
-      },
-    );
-  });
-}
-
-function zipFiles(files: string[]): PromiseBB<string | undefined> {
-  if (files.length === 0) {
-    return PromiseBB.resolve(undefined);
-  }
-  const Zip: typeof ZipT = require("node-7z");
-  const task: ZipT = new Zip();
-
-  return new PromiseBB<string>((resolve, reject) => {
-    tmpName(
-      {
-        postfix: ".7z",
-      },
-      (err, tmpPath: string) => (err !== null ? reject(err) : resolve(tmpPath)),
-    );
-  }).then((tmpPath) =>
-    task.add(tmpPath, files, { ssw: true }).then(() => tmpPath),
-  );
-}
-
-function serializeAttachments(input: IAttachment): PromiseBB<string> {
-  if (input.type === "file") {
-    return input.data;
-  } else {
-    return dataToFile(input.id, input.data);
-  }
-}
-
-export function bundleAttachment(
-  options?: IErrorOptions,
-): PromiseBB<string | undefined> {
-  if (
-    options === undefined ||
-    options.attachments === undefined ||
-    options.attachments.length === 0
-  ) {
-    return PromiseBB.resolve(undefined);
-  }
-
-  return PromiseBB.reduce(
-    options.attachments,
-    (accum: string[], iter: IAttachment) => {
-      if (iter.type === "file") {
-        return fs
-          .statAsync(iter.data)
-          .then(() => serializeAttachments(iter))
-          .then((fileName) => {
-            accum.push(fileName);
-            return accum;
-          })
-          .catch((err) => accum);
-      } else {
-        return serializeAttachments(iter).then((fileName) => {
-          accum.push(fileName);
-          return accum;
-        });
-      }
-    },
-    [],
-  ).then((fileNames) => zipFiles(fileNames));
-}
 
 /**
  * show an error notification with an optional "more" button that displays further details
@@ -309,45 +217,6 @@ export function showError(
               ...(err.parameters || {}),
             },
           };
-
-  if (
-    details?.["attachLogOnReport"] === true &&
-    (options.attachments ?? []).find((iter) => iter.id === "log") === undefined
-  ) {
-    options.attachments = setdefault(
-      options,
-      "attachments",
-      Array<IAttachment>(),
-    )?.concat([
-      {
-        id: "log",
-        type: "file",
-        data: path.join(getVortexPath("userData"), "vortex.log"),
-        description: "Vortex Log",
-      },
-      {
-        id: "log2",
-        type: "file",
-        data: path.join(getVortexPath("userData"), "vortex1.log"),
-        description: "Vortex Log (old)",
-      },
-    ]);
-  }
-
-  if (details?.["attachFilesOnReport"] !== undefined) {
-    options.attachments = setdefault(
-      options,
-      "attachments",
-      Array<IAttachment>(),
-    )?.concat(
-      details["attachFilesOnReport"].map((filePath: string, idx: number) => ({
-        id: `file${idx}`,
-        type: "file",
-        data: filePath,
-        description: path.basename(filePath),
-      })),
-    );
-  }
 
   let extIssueTrackerURL: string | undefined = undefined;
   if (options.extension?.info?.issueTrackerURL !== undefined) {
