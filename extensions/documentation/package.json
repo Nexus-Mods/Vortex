@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss dist",
-    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "_build": "node build.mjs && pnpm run _assets && extractInfo",
     "build": "pnpm run _build && node ../copy-extension.mjs documentation out",
     "dist": "pnpm run _build && node ../copy-extension.mjs documentation dist"
   },

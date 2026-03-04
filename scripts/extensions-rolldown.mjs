@@ -31,17 +31,33 @@ export function getExternals() {
 }
 
 /**
+ * @param {Record<string, string>} mappings
+ * @return {import("rolldown").Plugin} */
+export function nativeRemapPlugin(mappings) {
+  return {
+    name: "remap native",
+    resolveId(id) {
+      if (mappings[id]) {
+        return { id: mappings[id], external: true };
+      }
+    },
+  };
+}
+
+/**
  * @param {import("rolldown").InputOptions} input
  * @param {string} output
+ * @param {import("rolldown").Plugin[]} [customPlugins=[]]
  * @returns {import("rolldown").RolldownOptions}
  * */
-export function createConfig(input, output) {
+export function createConfig(input, output, customPlugins = []) {
   const externals = getExternals();
 
   return defineConfig({
     input: input,
     external: externals,
     platform: "node",
+    plugins: customPlugins,
     output: {
       file: output,
       format: "commonjs",
