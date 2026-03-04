@@ -13,14 +13,10 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "bs58": "catalog:",
+    "copyfiles": "catalog:",
     "electron": "catalog:",
-    "fork-ts-checker-webpack-plugin": "catalog:",
-    "ts-loader": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "copyfiles": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

@@ -48,13 +48,10 @@
     "shortid": "catalog:",
     "tmp": "catalog:",
     "ts-jest": "catalog:",
-    "ts-loader": "catalog:",
     "ts-v-gen": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "vortexmt": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortexmt": "catalog:"
   }
 }

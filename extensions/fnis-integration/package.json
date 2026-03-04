@@ -26,7 +26,6 @@
     "@types/redux-thunk": "catalog:",
     "@types/semver": "catalog:",
     "babel-core": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "exe-version": "catalog:",
@@ -41,8 +40,6 @@
     "redux-thunk": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:"
   }
 }

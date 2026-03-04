@@ -18,7 +18,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
@@ -27,18 +26,14 @@
     "@types/react-dom": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
-    "babel-loader": "catalog:",
     "copyfiles": "catalog:",
-    "react-redux": "catalog:",
-    "redux-act": "catalog:",
-    "ts-loader": "catalog:",
-    "typescript": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
+    "lodash": "catalog:",
     "react-i18next": "catalog:",
     "react-markdown": "catalog:",
-    "lodash": "catalog:",
-    "tmp": "catalog:"
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "tmp": "catalog:",
+    "typescript": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

@@ -18,8 +18,6 @@
     "copyfiles": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:"
   }
 }

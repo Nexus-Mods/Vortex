@@ -17,9 +17,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "catalog:",
-    "babel-loader": "catalog:",
-    "babel-polyfill": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "i18next": "catalog:",
@@ -31,10 +28,7 @@
     "react-i18next": "catalog:",
     "redux": "catalog:",
     "redux-act": "catalog:",
-    "ts-loader": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-parse-ini": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-parse-ini": "catalog:"
   }
 }

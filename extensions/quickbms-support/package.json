@@ -16,7 +16,6 @@
     "@types/i18next": "catalog:",
     "@types/react": "catalog:",
     "@types/redux": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "cross-fetch": "catalog:",
@@ -24,8 +23,6 @@
     "node-7z": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

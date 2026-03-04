@@ -27,8 +27,6 @@
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "winapi-bindings": "catalog:"
   }
 }

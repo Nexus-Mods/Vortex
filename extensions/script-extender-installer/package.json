@@ -32,9 +32,7 @@
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
     "typescript": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   },
   "dependencies": {
     "semver": "catalog:"

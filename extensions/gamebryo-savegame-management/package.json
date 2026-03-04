@@ -27,7 +27,6 @@
     "@types/react-router": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "i18next": "catalog:",
@@ -42,12 +41,9 @@
     "redux": "catalog:",
     "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "ts-loader": "catalog:",
     "turbowalk": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-parse-ini": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-parse-ini": "catalog:"
   },
   "optionalDependencies": {
     "gamebryo-savegame": "catalog:"

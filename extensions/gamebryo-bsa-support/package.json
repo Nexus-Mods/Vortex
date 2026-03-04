@@ -23,9 +23,6 @@
     "copyfiles": "catalog:",
     "rimraf": "catalog:",
     "tmp": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

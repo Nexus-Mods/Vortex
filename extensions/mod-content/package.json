@@ -31,11 +31,8 @@
     "i18next": "catalog:",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
-    "ts-loader": "catalog:",
+    "redux": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "redux": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

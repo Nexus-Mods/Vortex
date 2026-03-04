@@ -15,12 +15,9 @@
     "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",
     "@types/redux": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux-thunk": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

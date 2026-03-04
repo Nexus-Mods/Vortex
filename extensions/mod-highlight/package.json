@@ -18,13 +18,10 @@
     "@types/redux": "catalog:",
     "copyfiles": "catalog:",
     "react-bootstrap": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "react-i18next": "catalog:",
     "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "redux-act": "catalog:",
     "redux-thunk": "catalog:",
-    "redux-act": "catalog:"
+    "vortex-api": "catalog:"
   }
 }

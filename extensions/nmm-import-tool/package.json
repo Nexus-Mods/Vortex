@@ -32,15 +32,12 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
+    "redux": "catalog:",
     "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
     "semver": "catalog:",
     "shortid": "catalog:",
-    "redux-thunk": "catalog:",
-    "ts-loader": "catalog:",
     "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "winapi-bindings": "catalog:",
-    "redux": "catalog:"
+    "winapi-bindings": "catalog:"
   }
 }

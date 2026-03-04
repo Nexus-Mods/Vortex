@@ -40,8 +40,6 @@
     "semver": "catalog:",
     "shortid": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-parse-ini": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-parse-ini": "catalog:"
   }
 }

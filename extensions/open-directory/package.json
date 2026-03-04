@@ -14,15 +14,11 @@
   "devDependencies": {
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
-    "babel-loader": "catalog:",
     "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "i18next": "catalog:",
-    "redux-thunk": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
     "redux": "catalog:",
-    "copyfiles": "catalog:"
+    "redux-thunk": "catalog:",
+    "vortex-api": "catalog:"
   }
 }

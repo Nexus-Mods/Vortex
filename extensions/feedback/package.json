@@ -19,20 +19,17 @@
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "@types/tmp": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "cross-fetch": "catalog:",
-    "react-bootstrap": "catalog:",
-    "redux": "catalog:",
-    "tmp": "catalog:",
-    "ts-loader": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "winapi-bindings": "catalog:",
-    "redux-act": "catalog:",
     "fuzzball": "catalog:",
+    "react-bootstrap": "catalog:",
     "react-i18next": "catalog:",
-    "redux-thunk": "catalog:"
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "tmp": "catalog:",
+    "vortex-api": "catalog:",
+    "winapi-bindings": "catalog:"
   }
 }

@@ -21,8 +21,6 @@
     "react": "catalog:",
     "react-i18next": "catalog:",
     "shortid": "catalog:",
-    "vortex-api": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:"
+    "vortex-api": "catalog:"
   }
 }
