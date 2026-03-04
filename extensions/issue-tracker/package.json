@@ -12,11 +12,6 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",
     "@types/bluebird": "catalog:",

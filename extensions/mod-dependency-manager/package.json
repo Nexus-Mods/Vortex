@@ -23,7 +23,6 @@
     "@types/react-router": "catalog:",
     "@types/react-sortable-tree": "catalog:",
     "@types/semver": "catalog:",
-    "babel-core": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "cytoscape": "catalog:",

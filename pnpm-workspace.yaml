@@ -100,7 +100,6 @@ catalog:
   "@welldone-software/why-did-you-render": ^10.0.1
   7z-bin: git+https://github.com/Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
   ba2tk: git+https://github.com/Nexus-Mods/node-ba2tk#762d8de841ca1c770a0925311fd626d71de67971
-  babel-core: ^6.26.3
   babel-jest: ^29.7.0
   bbcode-to-react: git+https://github.com/TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: ^5.2.2

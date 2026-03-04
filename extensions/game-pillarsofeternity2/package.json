@@ -12,11 +12,6 @@
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
@@ -27,7 +22,6 @@
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "@types/semver": "catalog:",
-    "babel-core": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "react": "catalog:",

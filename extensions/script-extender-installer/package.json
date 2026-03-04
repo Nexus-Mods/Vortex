@@ -11,11 +11,6 @@
   },
   "author": "Pickysaurus",
   "license": "GPL-3.0",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "devDependencies": {
     "7z-bin": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
