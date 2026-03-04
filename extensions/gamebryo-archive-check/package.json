@@ -17,18 +17,17 @@
     ]
   },
   "devDependencies": {
+    "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",
     "@types/node": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "react-bootstrap": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
-    "copyfiles": "catalog:"
+    "webpack-cli": "catalog:"
   }
 }

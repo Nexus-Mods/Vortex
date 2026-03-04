@@ -21,11 +21,10 @@
     "react-bootstrap": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
+    "vortex-api": "catalog:",
     "vortexmt": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "vortex-api": "catalog:"
+    "webpack-cli": "catalog:"
   },
   "dependencies": {
     "simple-git": "catalog:"

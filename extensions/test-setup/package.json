@@ -18,18 +18,17 @@
   },
   "devDependencies": {
     "7z-bin": "catalog:",
+    "@types/bluebird": "catalog:",
     "@types/i18next": "catalog:",
     "@types/node": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "i18next": "catalog:",
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
-    "winapi-bindings": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
-    "vortex-api": "catalog:"
+    "winapi-bindings": "catalog:"
   }
 }

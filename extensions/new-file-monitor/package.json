@@ -12,14 +12,13 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
     "vortex-api": "catalog:"
   }
 }

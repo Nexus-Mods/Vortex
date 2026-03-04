@@ -12,15 +12,14 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "winapi-bindings": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
-    "vortex-api": "catalog:",
-    "copyfiles": "catalog:"
+    "winapi-bindings": "catalog:"
   }
 }

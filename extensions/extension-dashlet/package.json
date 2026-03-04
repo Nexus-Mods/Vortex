@@ -18,13 +18,12 @@
     "@types/react-redux": "catalog:",
     "copyfiles": "catalog:",
     "i18next": "catalog:",
+    "memoize-one": "catalog:",
     "react-i18next": "catalog:",
     "redux": "catalog:",
     "redux-thunk": "catalog:",
     "turbowalk": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
-    "memoize-one": "catalog:",
     "vortex-api": "catalog:"
   }
 }

@@ -18,6 +18,7 @@
     ]
   },
   "devDependencies": {
+    "@types/bluebird": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
@@ -28,19 +29,17 @@
     "@types/semver": "catalog:",
     "babel-core": "catalog:",
     "babel-loader": "catalog:",
+    "bluebird": "catalog:",
     "copyfiles": "catalog:",
+    "react": "catalog:",
     "react-dnd": "catalog:",
+    "react-i18next": "catalog:",
     "react-redux": "catalog:",
     "redux-act": "catalog:",
     "semver": "catalog:",
     "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
-    "react-i18next": "catalog:",
+    "vortex-api": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
-    "react": "catalog:",
-    "vortex-api": "catalog:"
+    "webpack-cli": "catalog:"
   }
 }

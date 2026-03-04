@@ -13,17 +13,16 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
-    "winapi-bindings": "catalog:",
-    "xml2js": "catalog:",
-    "turbowalk": "catalog:",
     "@types/redux": "catalog:",
-    "redux-thunk": "catalog:",
+    "copyfiles": "catalog:",
     "redux": "catalog:",
+    "redux-thunk": "catalog:",
+    "turbowalk": "catalog:",
+    "typescript": "catalog:",
     "vortex-api": "catalog:",
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
-    "copyfiles": "catalog:"
+    "winapi-bindings": "catalog:",
+    "xml2js": "catalog:"
   }
 }

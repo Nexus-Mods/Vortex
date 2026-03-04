@@ -690,9 +690,6 @@ catalogs:
     vortex-api:
       specifier: git+https://github.com/Nexus-Mods/vortex-api#bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
       version: 1.9.1-r41
-    vortex-ext-dependencies:
-      specifier: Nexus-Mods/vortex-ext-dependencies
-      version: 1.0.1
     vortex-parse-ini:
       specifier: git+https://github.com/Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
       version: 0.4.0
@@ -901,9 +898,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -1177,9 +1171,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
 
   extensions/feedback:
     devDependencies:
@@ -1324,9 +1315,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -1402,9 +1390,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -1444,9 +1429,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2034,9 +2016,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2070,9 +2049,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2106,9 +2082,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2145,9 +2118,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2200,9 +2170,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       vortexmt:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/5251ea012ce856742aeaf73a583073497aff773a
@@ -2491,9 +2458,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
@@ -2903,9 +2867,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -2939,9 +2900,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -3144,9 +3102,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -3180,9 +3135,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
 
   extensions/nmm-import-tool:
     devDependencies:
@@ -3354,9 +3306,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -3405,9 +3354,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
 
   extensions/script-extender-installer:
     dependencies:
@@ -3463,9 +3409,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -3574,9 +3517,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
       webpack:
         specifier: 'catalog:'
         version: 5.105.2(webpack-cli@5.1.4)
@@ -3703,9 +3643,6 @@ importers:
       vortex-api:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      vortex-ext-dependencies:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3)
 
   src/main:
     dependencies:
@@ -6126,9 +6063,6 @@ packages:
   '@types/bluebird@3.5.20':
     resolution: {integrity: sha512-Wk41MVdF+cHBfVXj/ufUHJeO3BlIQr1McbHZANErMykaCWeDSZbH5erGjNBw2/3UlRdSxZbLfSuQTzFmPOYFsA==}
 
-  '@types/bluebird@3.5.42':
-    resolution: {integrity: sha512-Jhy+MWRlro6UjVi578V/4ZGNfeCOcNCp0YaFNIUGFKlImowqwb1O/22wDVk3FDGMLqxdpOV3qQHD5fPEH4hK6A==}
-
   '@types/cacheable-request@6.0.3':
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
 
@@ -7081,13 +7015,6 @@ packages:
       babel-core: '6'
       webpack: 2 || 3 || 4
 
-  babel-loader@9.2.1:
-    resolution: {integrity: sha512-fqe8naHt46e0yIdkjUZYqddSXfej3AHajX+CSO5X7oy0EmPc6o5Xh+RClNoHjnieWz9AW4kZxW9yyFMhVB1QLA==}
-    engines: {node: '>= 14.15.0'}
-    peerDependencies:
-      '@babel/core': ^7.12.0
-      webpack: '>=5'
-
   babel-messages@6.23.0:
     resolution: {integrity: sha512-Bl3ZiA+LjqaMtNYopA9TYE9HP1tQ+E5dLxE0XrAzcIJeK2UqF0/EaqXwBn9esd4UmTfEab+P+UYQ1GnioFIb/w==}
 
@@ -7513,9 +7440,6 @@ packages:
   commander@8.3.0:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
-
-  common-path-prefix@3.0.0:
-    resolution: {integrity: sha512-QE33hToZseCH3jS0qN96O/bSh3kaw/h+Tq7ngyY9eWDUnTlTNUyqfqvCXioLe5Na5jFsL78ra/wuBU4iuEgd4w==}
 
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
@@ -8483,10 +8407,6 @@ packages:
     resolution: {integrity: sha512-Tq6PixE0w/VMFfCgbONnkiQIVol/JJL7nRMi20fqzA4NRs9AfeqMGeRdPi3wIhYkxjeBaWh2rxwapn5Tu3IqOQ==}
     engines: {node: '>=6'}
 
-  find-cache-dir@4.0.0:
-    resolution: {integrity: sha512-9ZonPT4ZAK4a+1pUPVPZJapbi7O5qbbJPdYw/NOQWZZbVLdDTYM3A4R9z/DpAM08IDaFGsvPgiGZ82WEwUDWjg==}
-    engines: {node: '>=14.16'}
-
   find-up@2.1.0:
     resolution: {integrity: sha512-NWzkk0jSJtTt08+FBFMvXoeZnOJD+jTtsRmBYbAIzJdX6l7dLgR7CTubCM5/eDdPUBvLCeVasP1brfVR/9/EZQ==}
     engines: {node: '>=4'}
@@ -8502,10 +8422,6 @@ packages:
   find-up@5.0.0:
     resolution: {integrity: sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng==}
     engines: {node: '>=10'}
-
-  find-up@6.3.0:
-    resolution: {integrity: sha512-v2ZsoEuVHYy8ZIlYqwPe/39Cy+cFDzp4dXPaxNvkEuouymu+2Jbz0PxpKarJHYJTmv2HWT3O382qY8l4jMWthw==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   fizzy-ui-utils@2.0.7:
     resolution: {integrity: sha512-CZXDVXQ1If3/r8s0T+v+qVeMshhfcuq0rqIFgJnrtd+Bu8GmDmqMjntjUePypVtjHXKJ6V4sw9zeyox34n9aCg==}
@@ -8912,9 +8828,6 @@ packages:
 
   i18next@19.9.2:
     resolution: {integrity: sha512-0i6cuo6ER6usEOtKajUUDj92zlG+KArFia0857xxiEHAQcUwh/RtOQocui1LPJwunSYT574Pk64aNva1kwtxZg==}
-
-  i18next@8.4.3:
-    resolution: {integrity: sha512-V6HKLWSh2d/CSie1s/TErgEIdu/gPRUGJo/kBRcOW+YH2fnwMl3ByIMGsKSO5qajThceQ9AghZQ+OsGVS492/g==}
 
   iconv-corefoundation@1.1.7:
     resolution: {integrity: sha512-T10qvkw0zz4wnm560lOEg0PovVqUXuOFhhHAkixw8/sycy7TJt7v/RrkEKEQnAw2viPSJu6iAkErxnzR0g8PpQ==}
@@ -9713,10 +9626,6 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
-  locate-path@7.2.0:
-    resolution: {integrity: sha512-gvVijfZvn7R+2qyPX8mAuKcFGDf6Nc61GdvGafQsHL0sBIxfKzA+usWn4GFC/bk+QdwPUD4kWFJLhElipq+0VA==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
   lodash-es@4.17.23:
     resolution: {integrity: sha512-kVI48u3PZr38HdYz98UmfPnXl2DXrpdctLrFLCd3kOx1xUkOmpFPx7gCWWM5MPkL/fD8zb+Ph0QzjGFs4+hHWg==}
 
@@ -10300,10 +10209,6 @@ packages:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
 
-  p-limit@4.0.0:
-    resolution: {integrity: sha512-5b0R4txpzjPWVw/cXXUResoD4hb6U/x9BH08L7nw+GN1sezDzPdxeRvpc9c433fZhBan/wusjbCsqwqm4EIBIQ==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
   p-limit@7.3.0:
     resolution: {integrity: sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw==}
     engines: {node: '>=20'}
@@ -10323,10 +10228,6 @@ packages:
   p-locate@5.0.0:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
-
-  p-locate@6.0.0:
-    resolution: {integrity: sha512-wPrq66Llhl7/4AGC6I+cqxT07LhXvWL08LNXz1fENOw0Ap4sRZZ/gZpTTJ5jpurzzzfS2W/Ge9BY3LgLjCShcw==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   p-map@4.0.0:
     resolution: {integrity: sha512-/bjOqmgETBYB5BoEeGVea8dmvHb2m9GLy1E9W43yeyfP6QQCZGFNa+XRceJEuDB6zqr+gKpIAmlLebMpykw/MQ==}
@@ -10380,10 +10281,6 @@ packages:
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
     engines: {node: '>=8'}
-
-  path-exists@5.0.0:
-    resolution: {integrity: sha512-RjhtfwJOxzcFmNOi6ltcbcu4Iu+FL3zEj83dk4kAS+fVpTxXLO1b38RvJgT/0QwvV/L3aY9TAnyv0EOqW4GoMQ==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   path-is-absolute@1.0.1:
     resolution: {integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==}
@@ -10462,10 +10359,6 @@ packages:
   pkg-dir@4.2.0:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
-
-  pkg-dir@7.0.0:
-    resolution: {integrity: sha512-Ie9z/WINcxxLp27BKOCHGde4ITq9UklYKDzVo1nhk5sqGEXU3FpkwP5GM2voTGJkGd9B3Otl+Q4uwSOeSUtOBA==}
-    engines: {node: '>=14.16'}
 
   plist@3.1.0:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
@@ -12032,10 +11925,6 @@ packages:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424}
     version: 1.9.1-r41
     hasBin: true
-
-  vortex-ext-dependencies@https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964:
-    resolution: {tarball: https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964}
-    version: 1.0.1
 
   vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d:
     resolution: {tarball: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d}
@@ -14112,8 +14001,6 @@ snapshots:
 
   '@types/bluebird@3.5.20': {}
 
-  '@types/bluebird@3.5.42': {}
-
   '@types/cacheable-request@6.0.3':
     dependencies:
       '@types/http-cache-semantics': 4.2.0
@@ -15331,13 +15218,6 @@ snapshots:
       mkdirp: 0.5.6
       webpack: 5.105.2(webpack-cli@5.1.4)
 
-  babel-loader@9.2.1(@babel/core@7.29.0)(webpack@5.105.2):
-    dependencies:
-      '@babel/core': 7.29.0
-      find-cache-dir: 4.0.0
-      schema-utils: 4.3.3
-      webpack: 5.105.2(webpack-cli@5.1.4)
-
   babel-messages@6.23.0:
     dependencies:
       babel-runtime: 6.26.0
@@ -15892,8 +15772,6 @@ snapshots:
   commander@5.1.0: {}
 
   commander@8.3.0: {}
-
-  common-path-prefix@3.0.0: {}
 
   commondir@1.0.1: {}
 
@@ -17217,11 +17095,6 @@ snapshots:
       make-dir: 2.1.0
       pkg-dir: 3.0.0
 
-  find-cache-dir@4.0.0:
-    dependencies:
-      common-path-prefix: 3.0.0
-      pkg-dir: 7.0.0
-
   find-up@2.1.0:
     dependencies:
       locate-path: 2.0.0
@@ -17239,11 +17112,6 @@ snapshots:
     dependencies:
       locate-path: 6.0.0
       path-exists: 4.0.0
-
-  find-up@6.3.0:
-    dependencies:
-      locate-path: 7.2.0
-      path-exists: 5.0.0
 
   fizzy-ui-utils@2.0.7:
     dependencies:
@@ -17736,8 +17604,6 @@ snapshots:
   i18next@19.9.2:
     dependencies:
       '@babel/runtime': 7.28.6
-
-  i18next@8.4.3: {}
 
   iconv-corefoundation@1.1.7:
     dependencies:
@@ -18721,10 +18587,6 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
-  locate-path@7.2.0:
-    dependencies:
-      p-locate: 6.0.0
-
   lodash-es@4.17.23: {}
 
   lodash.assign@4.2.0: {}
@@ -19334,10 +19196,6 @@ snapshots:
     dependencies:
       yocto-queue: 0.1.0
 
-  p-limit@4.0.0:
-    dependencies:
-      yocto-queue: 1.2.2
-
   p-limit@7.3.0:
     dependencies:
       yocto-queue: 1.2.2
@@ -19357,10 +19215,6 @@ snapshots:
   p-locate@5.0.0:
     dependencies:
       p-limit: 3.1.0
-
-  p-locate@6.0.0:
-    dependencies:
-      p-limit: 4.0.0
 
   p-map@4.0.0:
     dependencies:
@@ -19417,8 +19271,6 @@ snapshots:
   path-exists@3.0.0: {}
 
   path-exists@4.0.0: {}
-
-  path-exists@5.0.0: {}
 
   path-is-absolute@1.0.1: {}
 
@@ -19477,10 +19329,6 @@ snapshots:
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
-
-  pkg-dir@7.0.0:
-    dependencies:
-      find-up: 6.3.0
 
   plist@3.1.0:
     dependencies:
@@ -21291,26 +21139,6 @@ snapshots:
   void-elements@3.1.0: {}
 
   vortex-api@https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424: {}
-
-  vortex-ext-dependencies@https://codeload.github.com/Nexus-Mods/vortex-ext-dependencies/tar.gz/ec7ff5362cfb95849c726badd41e5b42e23ed964(@babel/core@7.29.0)(typescript@5.9.3):
-    dependencies:
-      '@types/bluebird': 3.5.42
-      babel-loader: 9.2.1(@babel/core@7.29.0)(webpack@5.105.2)
-      bluebird: 3.7.2
-      i18next: 8.4.3
-      ts-loader: 9.5.4(typescript@5.9.3)(webpack@5.105.2)
-      vortex-api: https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/bcd0f8a425ab9a42509cbd39d62c0d1ad8b56424
-      webpack: 5.105.2(webpack-cli@5.1.4)
-      webpack-cli: 5.1.4(webpack@5.105.2)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@swc/core'
-      - '@webpack-cli/generators'
-      - esbuild
-      - typescript
-      - uglify-js
-      - webpack-bundle-analyzer
-      - webpack-dev-server
 
   vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d:
     dependencies:

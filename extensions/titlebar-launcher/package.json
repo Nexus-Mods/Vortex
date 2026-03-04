@@ -21,12 +21,11 @@
     "@types/react-bootstrap": "catalog:",
     "copyfiles": "catalog:",
     "memoize-one": "catalog:",
+    "react-i18next": "catalog:",
     "react-redux": "catalog:",
     "redux": "catalog:",
-    "typescript": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
     "redux-act": "catalog:",
-    "react-i18next": "catalog:",
+    "typescript": "catalog:",
     "vortex-api": "catalog:"
   }
 }

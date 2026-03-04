@@ -18,24 +18,23 @@
   },
   "devDependencies": {
     "7z-bin": "catalog:",
+    "@nexusmods/nexus-api": "catalog:",
+    "@types/bluebird": "catalog:",
+    "@types/lodash": "catalog:",
     "@types/node": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
     "electron": "catalog:",
     "exe-version": "catalog:",
+    "lodash": "catalog:",
     "nexus-api": "catalog:",
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "redux": "catalog:",
     "typescript": "catalog:",
     "vortex-api": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
-    "@nexusmods/nexus-api": "catalog:",
     "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "bluebird": "catalog:",
-    "@types/bluebird": "catalog:",
-    "lodash": "catalog:",
-    "@types/lodash": "catalog:",
-    "copyfiles": "catalog:"
+    "webpack-cli": "catalog:"
   },
   "dependencies": {
     "semver": "catalog:"

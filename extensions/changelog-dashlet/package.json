@@ -27,16 +27,15 @@
     "@types/redux-thunk": "catalog:",
     "@types/semver": "catalog:",
     "copyfiles": "catalog:",
-    "react-redux": "catalog:",
-    "redux-act": "catalog:",
-    "semver": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
     "lodash": "catalog:",
     "react-i18next": "catalog:",
     "react-markdown": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
+    "react-redux": "catalog:",
     "redux": "catalog:",
-    "vortex-api": "catalog:"
+    "redux-act": "catalog:",
+    "semver": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:"
   }
 }

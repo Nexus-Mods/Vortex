@@ -30,7 +30,6 @@
     "react": "catalog:",
     "react-bootstrap": "catalog:",
     "turbowalk": "catalog:",
-    "vortex-ext-dependencies": "catalog:",
     "vortex-api": "catalog:"
   }
 }
