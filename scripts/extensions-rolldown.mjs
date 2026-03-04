@@ -64,6 +64,10 @@ export function createConfig(input, output, customPlugins = []) {
       dynamicImportInCjs: false,
       minify: false,
       sourcemap: true,
+      sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
+        // Turn relative sourcemap paths into absolute paths
+        return path.resolve(path.dirname(sourcemapPath), relativeSourcePath);
+      },
     },
   });
 }
