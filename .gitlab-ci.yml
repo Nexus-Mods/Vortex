@@ -3,17 +3,39 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  PNPM_CACHE_FOLDER: .pnpm-store
 
 workflow:
   auto_cancel:
     on_new_commit: interruptible
   rules:
-    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "web"
 
 # Prevent duplicate pipelines for merge requests
 .default_rules:
   interruptible: true
+
+.cache_linux:
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+      prefix: linux
+    paths:
+      - $PNPM_CACHE_FOLDER
+    policy: pull-push
+
+.cache_windows:
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+      prefix: windows
+    paths:
+      - $PNPM_CACHE_FOLDER
+    policy: pull-push
 
 .build_template:
   stage: build
@@ -21,16 +43,24 @@ workflow:
   script:
     - pnpm run build:fomod
     - pnpm install
+    - pnpm run lint:ci
     - pnpm run build:all
+    - pnpm run test
+    - pnpm run dist:all
 
 build:linux:
-  extends: .build_template
+  extends:
+    - .build_template
+    - .cache_linux
   tags:
     - nexus_runner
     # TODO: use our dockerfile image instead, don't install dependencies.
   image: ubuntu:24.04
   before_script:
     - |
+      set -euo pipefail
+
+      # Install system dependencies
       apt-get update && apt-get install -y curl git libfontconfig1-dev ca-certificates xz-utils python3 python3-setuptools build-essential libicu-dev
 
       # Install .NET SDK 9.0
@@ -38,7 +68,7 @@ build:linux:
       export DOTNET_ROOT="$HOME/.dotnet"
       export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
 
-      # Install Volta and Node.js/Yarn
+      # Install Volta and Node.js/pnpm
       export VOLTA_HOME="$HOME/.volta"
       export PATH="$VOLTA_HOME/bin:$PATH"
       curl https://get.volta.sh | bash -s -- --skip-setup
@@ -46,28 +76,20 @@ build:linux:
       npm install --global corepack@latest
       corepack install
 
-      # Print environment information
-      echo "=== Environment Version Information ==="
-      git --version
-      node --version
-      yarn --version
-      pnpm --version
-      pnpm exec node -v
-      echo "=== End Environment Info ==="
-  script:
-    - pnpm run build:fomod
-    - pnpm install
-    - pnpm run lint:ci
-    - pnpm run build:all
-    - pnpm run test
+      # Configure node-gyp
+      # (no-op on Linux, native toolchain installed via apt)
+
+      # Configure pnpm store
+      pnpm config set store-dir $PNPM_CACHE_FOLDER
 
 build:windows:
-  extends: .build_template
+  extends:
+    - .build_template
+    - .cache_windows
   tags:
     - windows
   # Custom image with VS Build Tools 2022, Git, Python 3.10, .NET SDK 9
   # Built from: docker/windows/Dockerfile
-  # TODO: Push to registry and update this reference
   image: registry.nexusmods.com/nexusmods/vortex-ci:latest
   variables:
     GIT_CONFIG_COUNT: "1"
@@ -75,72 +97,26 @@ build:windows:
     GIT_CONFIG_VALUE_0: "true"
     GIT_CLONE_PATH: $CI_BUILDS_DIR\vortex
   before_script:
-    # Enable long path support (>260 chars)
+    # Enable long path support (>260 chars) system-wide and for Git
     - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
-    # Install Node and Yarn via Volta (reads versions from package.json)
+
+    # Install system dependencies
+    # (pre-installed in registry.nexusmods.com/nexusmods/vortex-ci:latest)
+
+    # Install .NET SDK 9.0
+    # (pre-installed in registry.nexusmods.com/nexusmods/vortex-ci:latest)
+
+    # Install Volta and Node.js/pnpm
     - volta install node@22 yarn@v1
     - npm install --global corepack@latest
     - corepack install
 
-    # Configure node-gyp to use VS 2022
+    # Configure node-gyp
     - $env:npm_config_msvs_version = "2022"
     - $env:GYP_MSVS_VERSION = "2022"
+
+    # Configure pnpm store
+    - pnpm config set store-dir $env:PNPM_CACHE_FOLDER
 
     # Mark directory as safe for Git
-    - git config --global --add safe.directory $CI_PROJECT_DIR
-  script:
-    - pnpm run build:fomod
-    - pnpm install
-    - pnpm run lint:ci
-    - pnpm run build:all
-    - pnpm run test
-
-.dist_template:
-  stage: build
-  interruptible: true
-  script:
-    - pnpm run build:fomod
-    - pnpm install
-    - pnpm run dist:all
-
-dist:linux:
-  extends: .dist_template
-  tags:
-    - nexus_runner
-  image: ubuntu:24.04
-  before_script:
-    - |
-      apt-get update && apt-get install -y curl git libfontconfig1-dev ca-certificates xz-utils python3 python3-setuptools build-essential libicu-dev
-
-      # Install .NET SDK 9.0
-      curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
-      export DOTNET_ROOT="$HOME/.dotnet"
-      export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
-
-      # Install Volta and Node.js/Yarn
-      export VOLTA_HOME="$HOME/.volta"
-      export PATH="$VOLTA_HOME/bin:$PATH"
-      curl https://get.volta.sh | bash -s -- --skip-setup
-      volta install node@22 yarn@v1
-      npm install --global corepack@latest
-      corepack install
-
-dist:windows:
-  extends: .dist_template
-  tags:
-    - windows
-  image: registry.nexusmods.com/nexusmods/vortex-ci:latest
-  variables:
-    GIT_CONFIG_COUNT: "1"
-    GIT_CONFIG_KEY_0: "core.longpaths"
-    GIT_CONFIG_VALUE_0: "true"
-    GIT_CLONE_PATH: $CI_BUILDS_DIR\vortex
-  before_script:
-    # Enable long path support (>260 chars)
-    - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
-    - volta install node@22 yarn@v1
-    - npm install --global corepack@latest
-    - corepack install
-    - $env:npm_config_msvs_version = "2022"
-    - $env:GYP_MSVS_VERSION = "2022"
     - git config --global --add safe.directory $CI_PROJECT_DIR

@@ -28,6 +28,8 @@ export default defineConfig([
       "./src/renderer/__mocks__",
       "./extensions",
       "./api",
+      ".pnpm-store",
+      "./node_modules/",
     ],
   },
 
