@@ -24,6 +24,7 @@ import type {
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+import type { SerializedSpan } from "../telemetry/types";
 
 /** Globals exposed by the preload script to the renderer */
 export interface PreloadWindow {
@@ -84,6 +85,9 @@ export interface Api {
 
   /** Power Save Blocker APIs */
   powerSaveBlocker: PowerSaveBlocker;
+
+  /** Telemetry APIs - span export from renderer to main */
+  telemetry: TelemetryApi;
 }
 
 export interface Example {
@@ -396,4 +400,10 @@ export interface UpdaterApi {
    * Trigger restart and install of the downloaded update.
    */
   restartAndInstall(): void;
+}
+
+/** API for forwarding telemetry spans from renderer to main for buffering/export */
+export interface TelemetryApi {
+  /** Forward a completed span to main process for buffering and OTLP export */
+  forwardSpan(span: SerializedSpan): void;
 }

@@ -49,7 +49,7 @@ import {
   UnsupportedOperatingSystem,
   UserCanceled,
 } from "../../../util/CustomErrors";
-import { withContext } from "../../../util/errorHandling";
+import { withTrackedActivity } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
@@ -350,10 +350,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
-    return withContext(
-      "Transferring Staging",
-      `from ${oldPath} to ${newPath}`,
-      () =>
+    return withTrackedActivity(
+      "vortex.mod-management",
+      "staging.transfer",
+      {
+        "staging.transfer.from": oldPath,
+        "staging.transfer.to": newPath,
+      },
+      (_setAttribute, _setError) =>
         fs
           .statAsync(oldPath)
           .catch((err) => {
@@ -421,6 +425,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               );
             });
           }),
+      {},
     );
   }
 

@@ -39,6 +39,8 @@ import { sendReportFile } from "./errorReporting";
 import getVortexPath from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import StylesheetCompiler from "./stylesheetCompiler";
+import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
+import { createMainTelemetryProvider } from "./telemetry/setup";
 
 process.env["UV_THREADPOOL_SIZE"] = (os.cpus().length * 2).toString();
 process.env["VORTEX_VERSION"] = VORTEX_VERSION;
@@ -161,7 +163,10 @@ async function main(): Promise<void> {
     "UseEcoQoSForBackgroundProcess",
   );
 
+  createMainTelemetryProvider();
+
   initIpcHandlers();
+  initTelemetryIpcHandler();
   StylesheetCompiler.init();
 
   // --run has to be evaluated *before* we request the single instance lock!

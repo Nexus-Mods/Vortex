@@ -3097,6 +3097,7 @@ class ExtensionManager {
       "file_preview",
       "tool_variables_base",
       "history_management",
+      "telemetry",
       "analytics",
       "onboarding_dashlet",
       "mod_spotlights_dashlet",

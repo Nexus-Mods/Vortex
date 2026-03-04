@@ -36,19 +36,19 @@
         "order": 1
       },
       "stopAll": true
-    }
+    },
   ],
   "configurations": [
     {
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": [".", "--remote-debugging-port=9222"],
-      "cwd": "${workspaceRoot}",
+      "cwd": "${workspaceRoot}/src/main",
       "env": {
         "NODE_ENV": "development",
         "START_DEVTOOLS": "true"
@@ -91,9 +91,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/out/main.js",
       "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"
       },
       "runtimeArgs": ["."],
       "env": {
@@ -126,6 +126,24 @@
         "${workspaceRoot}/node_modules/**",
         "${workspaceRoot}/dist-electron/**"
       ]
+    },
+    {
+      "name": "Debug Report Process",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/src/main/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": ["."],
+      "args": ["--report", "${env:APPDATA}/@vortex/main/crashinfo.json"],
+      "cwd": "${workspaceRoot}/src/main",
+      "env": { "NODE_ENV": "development" },
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/src/main/out/**/*.js"],
+      "timeout": 60000,
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
     {
       "name": "Debug Jest Tests",

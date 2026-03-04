@@ -45,6 +45,7 @@ import {
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
+import { setTelemetryEnabled } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
@@ -901,6 +902,16 @@ class Application {
       } else {
         log("debug", "startup instance", { instanceId });
         this.mAppMetadata.instanceId = instanceId;
+      }
+
+      // 8. Read initial analytics opt-in state for telemetry gating.
+      // Subsequent changes are picked up via persist:diff listener in ipcHandler.
+      const analyticsEnabled = await readPersistedValue<boolean>("settings", [
+        "analytics",
+        "enabled",
+      ]);
+      if (analyticsEnabled === true) {
+        setTelemetryEnabled(true);
       }
 
       log("debug", "persistence setup complete");
