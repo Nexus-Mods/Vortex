@@ -1,7 +1,7 @@
-import { readFile, readdir, stat } from "node:fs/promises";
-import { builtinModules } from "node:module";
+import { readdir, stat } from "node:fs/promises";
 import * as path from "node:path";
-import { rolldown } from "rolldown";
+
+import { createConfig, bundle } from "./extensions-rolldown.mjs";
 
 const gamesDirectory = path.resolve(
   import.meta.dirname,
@@ -9,32 +9,6 @@ const gamesDirectory = path.resolve(
   "extensions",
   "games",
 );
-const packageJsonPath = path.resolve(
-  import.meta.dirname,
-  "..",
-  "src",
-  "main",
-  "package.json",
-);
-
-/** @returns {Promise<string[]>} */
-async function getExternals() {
-  const rawPackageJson = await readFile(packageJsonPath, "utf8");
-  const packageJson = JSON.parse(rawPackageJson);
-
-  const injectedExternals = ["electron", "vortex-api"];
-
-  /** @type {string[]} */
-  const external = [
-    ...new Set([
-      ...builtinModules.filter((m) => !m.startsWith("_")),
-      ...Object.keys(packageJson.dependencies),
-      ...injectedExternals,
-    ]),
-  ];
-
-  return external;
-}
 
 async function exists(file) {
   try {
@@ -65,9 +39,8 @@ async function findEntryPoint(directory) {
 
 /**
  * @param {import("node:fs").Dirent<string>} gameDirectory
- * @param {string[]} externals
  * */
-async function bundleGame(gameDirectory, externals) {
+async function bundleGame(gameDirectory) {
   const gamePath = path.resolve(gameDirectory.parentPath, gameDirectory.name);
   const entryPoint = await findEntryPoint(gamePath);
   const output = path.resolve(gamePath, "index.js");
@@ -79,28 +52,10 @@ async function bundleGame(gameDirectory, externals) {
     return;
   }
 
+  const config = createConfig(entryPoint, output);
+
   try {
-    const bundle = await rolldown({
-      input: entryPoint,
-      external: externals,
-      platform: "node",
-      onLog: (level, log, defaultHandler) => {
-        if (log.code !== "UNRESOLVED_IMPORT") {
-          defaultHandler(level, log);
-          return;
-        }
-
-        defaultHandler("error", log);
-      },
-    });
-
-    await bundle.write({
-      file: output,
-      format: "commonjs",
-      dynamicImportInCjs: false,
-      minify: true,
-    });
-
+    await bundle(config);
     console.log(`* Success: ${gameDirectory.name}`);
   } catch (err) {
     console.error(`* Failure: ${gameDirectory.name} due to error:`);
@@ -110,9 +65,6 @@ async function bundleGame(gameDirectory, externals) {
 }
 
 async function main() {
-  const externals = await getExternals();
-  console.log(`Using ${externals.length} external dependencies`);
-
   const entries = await readdir(gamesDirectory, { withFileTypes: true });
   const gameDirectories = entries.filter(
     (entry) => entry.isDirectory() && entry.name.startsWith("game-"),
@@ -121,7 +73,7 @@ async function main() {
   console.log(`Bundling ${gameDirectories.length} game extensions`);
 
   for (const gameDirectory of gameDirectories) {
-    await bundleGame(gameDirectory, externals);
+    await bundleGame(gameDirectory);
   }
 }
 
