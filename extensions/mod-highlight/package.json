@@ -4,25 +4,27 @@
   "description": "Custom highlighting (and notes) for mods",
   "main": "./out/index.js",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/mod-highlight.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs mod-highlight out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs mod-highlight dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/react": "16.0.34",
-    "@types/react-bootstrap": "^0.32.29",
-    "@types/react-redux": "7.1.22",
-    "@types/redux": "^3.6.0",
-    "copyfiles": "^2.1.1",
-    "react-bootstrap": "^0.32.3",
-    "ts-loader": "^9.2.6",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1",
-    "react-i18next": "^11.11.0",
-    "react-dom": "^16.12.0",
-    "redux-thunk": "^2.3.0",
-    "redux-act": "^1.8.0"
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-redux": "catalog:",
+    "@types/redux": "catalog:",
+    "copyfiles": "catalog:",
+    "react-bootstrap": "catalog:",
+    "ts-loader": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "react-i18next": "catalog:",
+    "react-dom": "catalog:",
+    "redux-thunk": "catalog:",
+    "redux-act": "catalog:"
   }
 }

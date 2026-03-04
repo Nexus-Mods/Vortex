@@ -2,7 +2,6 @@ stages:
   - build
 
 variables:
-  NO_PARALLEL: "true" # unreliable if false
   GIT_SUBMODULE_STRATEGY: recursive
 
 workflow:
@@ -22,8 +21,7 @@ workflow:
   script:
     - pnpm run build:fomod
     - pnpm install
-    - pnpm run build
-    - pnpm run subprojects:out
+    - pnpm run build:all
 
 build:linux:
   extends: .build_template
@@ -60,9 +58,8 @@ build:linux:
     - pnpm run build:fomod
     - pnpm install
     - pnpm run lint:ci
-    - pnpm run build
+    - pnpm run build:all
     - pnpm run test
-    - pnpm run subprojects:out
 
 build:windows:
   extends: .build_template
@@ -77,6 +74,8 @@ build:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   before_script:
+    # Enable long path support (>260 chars)
+    - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
     # Install Node and Yarn via Volta (reads versions from package.json)
     - volta install node@22 yarn@v1
     - npm install --global corepack@latest
@@ -92,9 +91,8 @@ build:windows:
     - pnpm run build:fomod
     - pnpm install
     - pnpm run lint:ci
-    - pnpm run build
+    - pnpm run build:all
     - pnpm run test
-    - pnpm run subprojects:out
 
 .dist_template:
   stage: build
@@ -102,8 +100,7 @@ build:windows:
   script:
     - pnpm run build:fomod
     - pnpm install
-    - pnpm run dist
-    - pnpm run subprojects:dist
+    - pnpm run dist:all
 
 dist:linux:
   extends: .dist_template
@@ -137,6 +134,8 @@ dist:windows:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   before_script:
+    # Enable long path support (>260 chars)
+    - New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force
     - volta install node@22 yarn@v1
     - npm install --global corepack@latest
     - corepack install

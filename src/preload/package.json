@@ -10,7 +10,7 @@
     "dist": "pnpm webpack --config ./webpack.config.cjs"
   },
   "devDependencies": {
-    "electron": "37.4.0"
+    "electron": "catalog:"
   },
   "dependencies": {
     "@vortex/shared": "workspace:*"

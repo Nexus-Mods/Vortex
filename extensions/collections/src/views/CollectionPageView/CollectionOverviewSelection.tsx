@@ -4,14 +4,14 @@ import CollectionReleaseStatus from "../CollectionReleaseStatus";
 import SlideshowControls from "./SlideshowControls";
 
 import { ICollectionRevisionMod } from "@nexusmods/nexus-api";
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
 import { Image as BSImage, Media, Panel } from "react-bootstrap";
 import { ComponentEx, tooltip, types, util } from "vortex-api";
 
 interface ICollectionOverviewProps {
-  t: i18next.TFunction;
+  t: TFunction;
   profile: types.IProfile;
   collection: types.IMod;
   incomplete: boolean;

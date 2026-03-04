@@ -238,8 +238,8 @@ async function createReportImpl(
       deploymentTime: (manifest as any).deploymentTime || 0,
       modType: mod.type || "default",
       source: mod.attributes?.source || "N/A",
-      modId: mod.attributes?.modId || "N/A",
-      fileId: mod.attributes?.fileId || "N/A",
+      modId: mod.attributes?.modId || -1,
+      fileId: mod.attributes?.fileId || -1,
     },
   };
 

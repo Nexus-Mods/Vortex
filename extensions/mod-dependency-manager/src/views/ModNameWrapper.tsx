@@ -80,6 +80,7 @@ function ModNameWrapper(props: React.PropsWithChildren<IModNameWrapper>) {
         className="filter-dependencies-icon"
         data-modid={rowId}
         onClick={filterByDependencies}
+        tooltip={""}
       />,
     );
   }

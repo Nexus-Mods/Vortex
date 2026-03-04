@@ -1,6 +1,6 @@
 import { ICollectionSourceInfo, SourceType } from "../../types/ICollection";
 
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as path from "path";
 import * as React from "react";
@@ -26,7 +26,7 @@ import {
 import { ADULT_CONTENT_URL, INSTRUCTIONS_PLACEHOLDER } from "../../constants";
 
 export interface IModsPageProps {
-  t: I18next.TFunction;
+  t: TFunction;
   collection: types.IMod;
   mods: { [modId: string]: types.IMod };
   showPhaseUsage: boolean;

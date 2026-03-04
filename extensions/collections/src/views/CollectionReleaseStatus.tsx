@@ -1,9 +1,9 @@
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as React from "react";
 import { types, util } from "vortex-api";
 
 export interface ICollectionReleaseStatusProps {
-  t: i18next.TFunction;
+  t: TFunction;
   collection: types.IMod;
   active: boolean;
   enabled: boolean;

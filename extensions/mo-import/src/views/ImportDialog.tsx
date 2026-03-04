@@ -56,7 +56,7 @@ interface IConnectedProps {
   mods: { [modId: string]: types.IMod };
 }
 
-interface IActionProps {}
+interface IActionProps { }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
@@ -105,8 +105,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             moconfig.game === convertGameId(gameId)
               ? undefined
               : t("Can't import mods from different game: {{gameId}}", {
-                  replace: { gameId: moconfig.game },
-                });
+                replace: { gameId: moconfig.game },
+              });
         })
         .catch((err) => {
           log("warn", "invalid MO directory", { error: err.messag });
@@ -228,7 +228,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <span className="start-content">
         {t(
           "This tool is an easy way of transferring your current " +
-            "MO configuration into Vortex.",
+          "MO configuration into Vortex.",
         )}
         <div>
           {t("Before you continue, please take note of a few things:")}
@@ -551,8 +551,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         const errorMessage =
           err.code === "EPERM"
             ? "Vortex does not have sufficient permissions to run file operations. " +
-              "Please ensure your user has full read/write permissions and/or that Vortex " +
-              "is not being blocked by your Anti-Virus and then try again."
+            "Please ensure your user has full read/write permissions and/or that Vortex " +
+            "is not being blocked by your Anti-Virus and then try again."
             : err;
         this.context.api.showErrorNotification(
           "Failed to start import process",
@@ -708,7 +708,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         customRenderer: (
           mod: IModEntry,
           detail: boolean,
-          t: I18next.TranslationFunction,
+          t: I18next.TFunction,
         ) => {
           return mod.isAlreadyManaged ? (
             <tooltip.Icon
@@ -739,7 +739,7 @@ function mapStateToProps(state: types.IState): IConnectedProps {
 }
 
 function mapDispatchToProps(
-  dispatch: Redux.Dispatch<types.IState>,
+  dispatch: Redux.Dispatch<Redux.AnyAction>,
 ): IActionProps {
   return {};
 }

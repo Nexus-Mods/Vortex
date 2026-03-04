@@ -5,8 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm tsdown",
-    "dist": "pnpm tsdown",
+    "build": "pnpm run typecheck && pnpm tsdown",
+    "dist": "pnpm run typecheck && pnpm tsdown",
     "typecheck": "pnpm tsc --noEmit -p tsconfig.json"
   },
   "main": "./dist/index.cjs",

@@ -7,25 +7,25 @@
     "node": "./out/index.js"
   },
   "scripts": {
-    "webpack": "webpack --config webpack.config.js --mode development --progress --profile --color",
-    "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/bsatk.node ./dist",
-    "build": "npm run webpack && npm run copy_bsatk && extractInfo"
+    "_native": "node ../copy-native.mjs ./node_modules/bsatk/build/Release/bsatk.node",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _native && extractInfo",
+    "build": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-bsa-support out)",
+    "dist": "node -e \"if(process.platform==='win32')process.exit(1)\" || (pnpm run _build && node ../copy-extension.mjs gamebryo-bsa-support dist)"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/i18next": "^13.0.0",
-    "@types/node": "^22.14.0",
-    "@types/rimraf": "^3.0.2",
-    "bluebird": "^3.7.2",
-    "bsatk": "Nexus-Mods/node-bsatk",
-    "copyfiles": "^2.4.1",
-    "rimraf": "^3.0.2",
-    "rm-local-modules": "^0.0.2",
-    "ts-loader": "^9.5.1",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "tmp": "^0.1.0"
+    "@types/i18next": "catalog:",
+    "@types/node": "catalog:",
+    "@types/rimraf": "catalog:",
+    "bluebird": "catalog:",
+    "bsatk": "catalog:",
+    "copyfiles": "catalog:",
+    "rimraf": "catalog:",
+    "tmp": "catalog:",
+    "ts-loader": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:"
   }
 }

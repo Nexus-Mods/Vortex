@@ -24,7 +24,7 @@ import {
   RatingOptions,
 } from "@nexusmods/nexus-api";
 import Bluebird from "bluebird";
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import memoizeOne from "memoize-one";
 import * as React from "react";
@@ -49,7 +49,7 @@ import {
 } from "vortex-api";
 
 export interface ICollectionPageProps {
-  t: i18next.TFunction;
+  t: TFunction;
   className: string;
   profile: types.IProfile;
   collection: types.IMod;

@@ -13,14 +13,71 @@ const MAIN_PACKAGE_PATH = resolve(MAIN_DIR, "package.json");
 const DIST_DIR = resolve(MAIN_DIR, "dist");
 const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
 
+/** Parse catalog from pnpm-workspace.yaml
+ * @param {string} yamlText
+ * @returns {Record<string, string>}
+ */
+function parseCatalog(yamlText) {
+  const match = yamlText.match(/^catalog:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  if (!match) return {};
+
+  const catalog = {};
+  const lines = match[1].split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const colonIdx = trimmed.indexOf(":");
+    if (colonIdx === -1) continue;
+
+    let key = trimmed.slice(0, colonIdx).trim();
+    let value = trimmed.slice(colonIdx + 1).trim();
+
+    if (key.startsWith('"') && key.endsWith('"')) {
+      key = key.slice(1, -1);
+    } else if (key.startsWith("'") && key.endsWith("'")) {
+      key = key.slice(1, -1);
+    }
+
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    } else if (value.startsWith("'") && value.endsWith("'")) {
+      value = value.slice(1, -1);
+    }
+
+    if (key && value) {
+      catalog[key] = value;
+    }
+  }
+
+  return catalog;
+}
+
 /** Rewrite relative file dependencies to absolute file dependencies,
  *  and resolve workspace: dependencies to absolute file dependencies */
-function rewriteFileDependencies(deps = {}, workspacePackageMap = {}) {
+function rewriteFileDependencies(
+  deps = {},
+  workspacePackageMap = {},
+  catalog = {},
+) {
   const rewritten = {};
 
   for (const [name, version] of Object.entries(deps)) {
     if (typeof version !== "string") {
       rewritten[name] = version;
+      continue;
+    }
+
+    if (version.startsWith("catalog:")) {
+      const catalogName = version.slice("catalog:".length);
+      const resolvedName = catalogName || name;
+      const catalogVersion = catalog[resolvedName];
+      if (catalogVersion) {
+        rewritten[name] = catalogVersion;
+      } else {
+        rewritten[name] = version;
+      }
       continue;
     }
 
@@ -100,7 +157,7 @@ async function buildWorkspacePackageMap(packagePaths) {
 }
 
 /** Creates a minimal package.json file */
-async function createMinimalPackageJson(workspacePackageMap) {
+async function createMinimalPackageJson(workspacePackageMap, catalog) {
   const mainRawJSON = await readFile(MAIN_PACKAGE_PATH, "utf8");
   const mainPkg = JSON.parse(mainRawJSON);
 
@@ -126,6 +183,7 @@ async function createMinimalPackageJson(workspacePackageMap) {
     minimal.dependencies = rewriteFileDependencies(
       mainPkg.dependencies,
       workspacePackageMap,
+      catalog,
     );
   }
 
@@ -138,6 +196,17 @@ async function createMinimalPackageJson(workspacePackageMap) {
   );
 
   console.log("✔  Created dist/package.json");
+}
+
+/**
+ * Extracts the raw "catalog:" block from a pnpm-workspace.yaml file
+ * @param {string} yamlText
+ * @returns {string | null}
+ */
+function extractCatalogBlock(yamlText) {
+  const match = yamlText.match(/^catalog:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  if (!match) return null;
+  return "catalog:\n" + match[1];
 }
 
 /**
@@ -170,7 +239,11 @@ async function preparePNPM(rawWorkspaceYaml) {
 
   const onlyBuiltDependencies = extractOnlyBuiltDependencies(rawWorkspaceYaml);
 
+  const catalog = extractCatalogBlock(rawWorkspaceYaml);
+
   const minimalYaml =
+    catalog +
+    "\n" +
     "onlyBuiltDependencies:\n" +
     onlyBuiltDependencies.map((dep) => `  - ${dep}`).join("\n") +
     "\n";
@@ -183,8 +256,9 @@ async function main() {
   const rawWorkspaceYaml = await readFile(PNPM_WORKSPACE_PATH, "utf8");
   const packageGlobs = extractWorkspacePackageGlobs(rawWorkspaceYaml);
   const workspacePackageMap = await buildWorkspacePackageMap(packageGlobs);
+  const catalog = parseCatalog(rawWorkspaceYaml);
 
-  await createMinimalPackageJson(workspacePackageMap);
+  await createMinimalPackageJson(workspacePackageMap, catalog);
   await preparePNPM(rawWorkspaceYaml);
 }
 

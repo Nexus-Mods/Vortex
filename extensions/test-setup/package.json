@@ -5,9 +5,9 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "bundle7z": "7z a -t7z test-setup.7z .\\dist\\index.js .\\dist\\info.json",
-    "build": "npm run webpack && extractInfo"
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs test-setup out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs test-setup dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -17,14 +17,18 @@
     ]
   },
   "devDependencies": {
-    "7z-bin": "Nexus-Mods/7z-bin",
-    "@types/i18next": "^12.1.0",
-    "@types/node": "^16.10.3",
-    "copyfiles": "^2.1.1",
-    "i18next": "^17.0.4",
-    "react-bootstrap": "^0.32.4",
-    "turbowalk": "Nexus-Mods/node-turbowalk",
-    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies"
+    "7z-bin": "catalog:",
+    "@types/bluebird": "catalog:",
+    "@types/i18next": "catalog:",
+    "@types/node": "catalog:",
+    "bluebird": "catalog:",
+    "copyfiles": "catalog:",
+    "i18next": "catalog:",
+    "react-bootstrap": "catalog:",
+    "turbowalk": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "winapi-bindings": "catalog:"
   }
 }

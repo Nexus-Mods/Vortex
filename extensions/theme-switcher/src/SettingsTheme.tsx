@@ -1,5 +1,6 @@
 import { selectTheme } from "./actions";
 import ThemeEditor from "./ThemeEditor";
+import Bluebird from "bluebird";
 
 import * as React from "react";
 import {
@@ -43,7 +44,7 @@ interface IActionProps {
     title: string,
     content: types.IDialogContent,
     actions: types.DialogActions,
-  ) => Promise<types.IDialogResult>;
+  ) => Bluebird<types.IDialogResult>;
   onShowError: (title: string, details: any) => void;
 }
 

@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import Select, { SingleValue } from "react-select";
+import Select from "react-select";
 import * as Redux from "redux";
 import { ThunkDispatch } from "redux-thunk";
 import { ComponentEx, Icon, tooltip, types } from "vortex-api";
@@ -140,7 +140,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         </ModalHeader>
         {dialog !== undefined ? (
           <Modal.Body>
-            <Select<ISelectOption>
+            <Select
               options={pluginOptions}
               placeholder={
                 <div>
@@ -150,19 +150,16 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               }
               value={filter}
               onChange={this.setFilter}
-              styles={{
-                container: (provided) => ({ ...provided, maxWidth: "50%" }),
-              }}
             />
             <ListGroup className="userlist-existing-rules">
               {userlist.filter(this.filterList).map(this.renderRules)}
             </ListGroup>
             <hr />
             <div className="userlist-add-controls">
-              <Select<ISelectOption>
+              <Select
                 className="userlist-select-plugin"
                 options={pluginOptions}
-                isClearable={false}
+                clearable={false}
                 placeholder={t("Select Plugin...")}
                 value={
                   pluginOptions.find(
@@ -171,7 +168,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 }
                 onChange={this.selectPlugin}
               />
-              <Select<IRuleTypeOption>
+              <Select
                 options={[
                   { value: "after", label: t("Must Load After") },
                   { value: "requires", label: t("Requires") },
@@ -180,25 +177,25 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 value={
                   dialog.type
                     ? (() => {
-                        const typeLabels = {
-                          after: t("Must Load After"),
-                          requires: t("Requires"),
-                          incompatible: t("Is Incompatible With"),
-                        };
-                        return {
-                          value: dialog.type,
-                          label: typeLabels[dialog.type],
-                        };
-                      })()
+                      const typeLabels = {
+                        after: t("Must Load After"),
+                        requires: t("Requires"),
+                        incompatible: t("Is Incompatible With"),
+                      };
+                      return {
+                        value: dialog.type,
+                        label: typeLabels[dialog.type],
+                      };
+                    })()
                     : null
                 }
-                isClearable={false}
+                clearable={false}
                 onChange={this.selectType}
               />
-              <Select<ISelectOption>
+              <Select
                 className="userlist-select-plugin select-pull-right"
                 options={pluginOptions}
-                isClearable={false}
+                clearable={false}
                 placeholder={t("Select Plugin...")}
                 value={
                   dialog.reference
@@ -290,11 +287,11 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     return userlistItem.name === filter.value;
   };
 
-  private setFilter = (newValue: SingleValue<ISelectOption>) => {
+  private setFilter = (newValue: ISelectOption) => {
     this.nextState.filter = newValue === null ? undefined : newValue;
   };
 
-  private selectPlugin = (newValue: SingleValue<ISelectOption>) => {
+  private selectPlugin = (newValue: ISelectOption) => {
     if (newValue === null) {
       return;
     }
