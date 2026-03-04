@@ -222,14 +222,14 @@ class GroupSelect extends React.PureComponent<
         placeholder={group || "default"}
         onChange={(newValue: any) => this.changeGroup(newValue)}
         onInputChange={this.handleInputChange}
-        inputValue={inputValue}
         options={options}
       />
     );
   }
 
-  private handleInputChange = (newValue: string) => {
+  private handleInputChange = (newValue: string): string => {
     this.setState({ inputValue: newValue });
+    return newValue;
   };
 
   private changeGroup = (
@@ -292,7 +292,7 @@ function PluginCount(props: IPluginCountProps) {
 
   let tooltipText = t(
     "Plugins shouldn't exceed mod index {{maxIndex}} for a total of {{count}} " +
-      "plugins (including base game and DLCs).",
+    "plugins (including base game and DLCs).",
     {
       replace: {
         maxIndex: mediumGame ? "0xFC" : eslGame ? "0xFD" : "0xFE",
@@ -303,9 +303,9 @@ function PluginCount(props: IPluginCountProps) {
 
   tooltipText += mediumGame
     ? "\n" +
-      t(
-        "In addition you can have up to 256 medium plugins, and 4096 light plugins.",
-      )
+    t(
+      "In addition you can have up to 256 medium plugins, and 4096 light plugins.",
+    )
     : "\n" + t("In addition you can have up to 4096 light plugins.");
 
   return (
@@ -494,11 +494,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               : t("Autosort Disabled", { ns: NAMESPACE }),
             tooltip: autoSort
               ? t("Disable automatic load order sorting powered by LOOT", {
-                  ns: NAMESPACE,
-                })
+                ns: NAMESPACE,
+              })
               : t("Enable automatic load order sorting powered by LOOT", {
-                  ns: NAMESPACE,
-                }),
+                ns: NAMESPACE,
+              }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -746,10 +746,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                 <More id="sorting-with-loot" name="Sorting with LOOT">
                   {t(
                     "LOOT can automatically calculate a load order that satisfies all plugin dependencies and maximises each plugin\’s " +
-                      "impact on your game. It can also detect many issues, and provides a large number of plugin-specific usage notes. " +
-                      "While LOOT can correctly handle the vast majority of plugins without help, some plugins need additional metadata " +
-                      "to be sorted correctly, especially for mods that have yet to be added to the LOOT masterlist by volunteers. " +
-                      "If a plugin is not listed in the masterlist, you can control its load order by assigning it to the appropriate group.",
+                    "impact on your game. It can also detect many issues, and provides a large number of plugin-specific usage notes. " +
+                    "While LOOT can correctly handle the vast majority of plugins without help, some plugins need additional metadata " +
+                    "to be sorted correctly, especially for mods that have yet to be added to the LOOT masterlist by volunteers. " +
+                    "If a plugin is not listed in the masterlist, you can control its load order by assigning it to the appropriate group.",
                   )}
                 </More>
               </UsageX>
@@ -1362,7 +1362,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     if (
       group !== undefined &&
       (masterlist.groups || []).find((iter) => iter.name === group) ===
-        undefined &&
+      undefined &&
       (userlist.groups || []).find((iter) => iter.name === group) === undefined
     ) {
       onAddGroup(group);
@@ -1700,54 +1700,54 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               title={
                 !plugin.isValidAsLightPlugin && !plugin.isLight
                   ? t(
-                      "This plugin can't be an esl since it contains form-ids " +
-                        "outside the valid range",
-                    )
+                    "This plugin can't be an esl since it contains form-ids " +
+                    "outside the valid range",
+                  )
                   : !isEsp
                     ? t("Only plugins with .esp extension can be converted")
                     : plugin.isLight
                       ? t(
-                          "This plugin already has the light flag set, you can unset it.",
-                        )
+                        "This plugin already has the light flag set, you can unset it.",
+                      )
                       : t(
-                          "This is a regular plugin that could be turned into a light one " +
-                            "(also known as an ESPfe). " +
-                            "When you do this, it will no longer take up a spot in the load " +
-                            "order while still working as usual.",
-                        )
+                        "This is a regular plugin that could be turned into a light one " +
+                        "(also known as an ESPfe). " +
+                        "When you do this, it will no longer take up a spot in the load " +
+                        "order while still working as usual.",
+                      )
               }
               onClick={
                 canBeConverted
                   ? () => {
-                      this.eslify(plugin, !plugin.isLight)
-                        .then(() => {
-                          this.props.onRefreshPlugins();
+                    this.eslify(plugin, !plugin.isLight)
+                      .then(() => {
+                        this.props.onRefreshPlugins();
 
-                          // TODO: this was previously treated as a manual sort which caused the
-                          // autosort setting to be ignored. Was there a reason for that?
-                          this.context.api.events.emit(
-                            "autosort-plugins",
-                            false,
-                          );
-                        })
-                        .catch((err) => {
-                          const hasSubstring = (subString) =>
-                            err.message.indexOf(subString) !== -1;
-                          // still haven't figured out why these error messages are localized
-                          // but what we actually want to "suppress" reporting on is "Access denied"
-                          // and "file not found" given that we can't stop the user or 3rd party
-                          // applications from removing the file for whatever reason.
-                          this.context.api.showErrorNotification(
-                            "Failed to convert plugin",
-                            err,
-                            {
-                              allowReport:
-                                !hasSubstring("rename:") &&
-                                !hasSubstring("file not found"),
-                            },
-                          );
-                        });
-                    }
+                        // TODO: this was previously treated as a manual sort which caused the
+                        // autosort setting to be ignored. Was there a reason for that?
+                        this.context.api.events.emit(
+                          "autosort-plugins",
+                          false,
+                        );
+                      })
+                      .catch((err) => {
+                        const hasSubstring = (subString) =>
+                          err.message.indexOf(subString) !== -1;
+                        // still haven't figured out why these error messages are localized
+                        // but what we actually want to "suppress" reporting on is "Access denied"
+                        // and "file not found" given that we can't stop the user or 3rd party
+                        // applications from removing the file for whatever reason.
+                        this.context.api.showErrorNotification(
+                          "Failed to convert plugin",
+                          err,
+                          {
+                            allowReport:
+                              !hasSubstring("rename:") &&
+                              !hasSubstring("file not found"),
+                          },
+                        );
+                      });
+                  }
                   : nop
               }
             >

@@ -4,24 +4,28 @@
   "description": "In-Application documentation and tutorial videos",
   "main": "./dist/index.js",
   "scripts": {
-    "tsc": "tsc -p .",
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "build": "npm run webpack && copyfiles -f src/stylesheets/*.scss dist && extractInfo"
+    "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs documentation out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs documentation dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/react": "16.0.34",
-    "@types/react-redux": "4.4.35",
-    "copyfiles": "^2.1.1",
-    "ts-loader": "^9.2.6",
-    "vortex-api": "Nexus-Mods/vortex-api",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1",
-    "redux-act": "^1.8.0",
-    "i18next": "^19.0.1",
-    "react-bootstrap": "^0.33.0",
-    "react-dom": "^16.12.0",
-    "react-i18next": "^11.11.0"
+    "@types/react": "catalog:",
+    "@types/react-redux": "catalog:",
+    "copyfiles": "catalog:",
+    "ts-loader": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "redux-act": "catalog:",
+    "i18next": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "lodash": "catalog:",
+    "@types/lodash": "catalog:",
+    "redux": "catalog:"
   }
 }

@@ -1,4 +1,4 @@
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import memoize from "memoize-one";
 import * as React from "react";
 import { ControlLabel, ListGroup, ListGroupItem } from "react-bootstrap";
@@ -10,7 +10,7 @@ import {
 import { renderReference, ruleId } from "../../util/util";
 
 export interface IModsPageProps {
-  t: I18next.TFunction;
+  t: TFunction;
   collection: types.IMod;
   mods: { [modId: string]: types.IMod };
   rules: ICollectionModRule[];

@@ -1,4 +1,4 @@
-import I18next from "i18next";
+import type { TFunction } from "i18next";
 import * as path from "path";
 import * as React from "react";
 import { ControlLabel, Image, Table } from "react-bootstrap";
@@ -19,7 +19,7 @@ function ToolIcon(props: { gameId: string; imageUrl: string }) {
 }
 
 interface IToolItemProps {
-  t: I18next.TFunction;
+  t: TFunction;
   gameId: string;
   tool: types.IDiscoveredTool;
   enabled: boolean;
@@ -50,7 +50,7 @@ function ToolItem(props: IToolItemProps) {
 }
 
 interface IToolsProps {
-  t: I18next.TFunction;
+  t: TFunction;
   collection: types.IMod;
   onSetCollectionAttribute: (attrPath: string[], value: any) => void;
 }
@@ -99,8 +99,8 @@ function Tools(props: IToolsProps) {
         <p>
           {t(
             "Obviously users will need to have these tools installed. If they aren't " +
-              "included in the game and not installed as a mod through this collection, " +
-              "you should include instructions for the user on how to get the tool.",
+            "included in the game and not installed as a mod through this collection, " +
+            "you should include instructions for the user on how to get the tool.",
           )}
         </p>
       </ControlLabel>

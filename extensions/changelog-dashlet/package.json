@@ -5,9 +5,10 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --progress --profile --color",
-    "copy_scss": "copyfiles -f src/changelog.scss dist",
-    "build": "npm run webpack && npm run copy_scss && extractInfo"
+    "_assets": "copyfiles -u 1 -f src/changelog.scss dist",
+    "_build": "pnpm webpack --config webpack.config.js --progress --profile --color && pnpm run _assets && extractInfo",
+    "build": "pnpm run _build && node ../copy-extension.mjs changelog-dashlet out",
+    "dist": "pnpm run _build && node ../copy-extension.mjs changelog-dashlet dist"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -17,21 +18,24 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.16.7",
-    "@types/bluebird": "3.5.20",
-    "@types/react": "^16.9.17",
-    "@types/react-bootstrap": "^0.32.20",
-    "@types/react-dom": "^16.9.4",
-    "@types/redux": "^3.6.0",
-    "@types/redux-thunk": "^2.1.0",
-    "@types/semver": "^5.5.0",
-    "copyfiles": "^2.1.1",
-    "react-redux": "^5.0.7",
-    "redux-act": "^1.7.4",
-    "semver": "^5.5.0",
-    "vortex-ext-dependencies": "Nexus-Mods/vortex-ext-dependencies",
-    "lodash": "^4.17.21",
-    "react-i18next": "^11.11.0",
-    "react-markdown": "^6.0.2"
+    "@babel/core": "catalog:",
+    "@types/bluebird": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/redux": "catalog:",
+    "@types/redux-thunk": "catalog:",
+    "@types/semver": "catalog:",
+    "copyfiles": "catalog:",
+    "lodash": "catalog:",
+    "react-i18next": "catalog:",
+    "react-markdown": "catalog:",
+    "react-redux": "catalog:",
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "semver": "catalog:",
+    "vortex-api": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:"
   }
 }

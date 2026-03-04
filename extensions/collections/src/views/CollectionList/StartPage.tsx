@@ -17,7 +17,7 @@ import CollectionThumbnail from "../CollectionTile";
 import CollectionThumbnailRemote from "../CollectionTile/RemoteTile";
 
 import { IRevision } from "@nexusmods/nexus-api";
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
@@ -40,7 +40,7 @@ const BUG_REPORT_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSdmDBdGjTQVRa7wRouN4yP6zMvqsxTT86R-DwmQXZq7SWGCSg/viewform?usp=sf_link";
 
 export interface IStartPageProps {
-  t: i18next.TFunction;
+  t: TFunction;
   game: types.IGameStored;
   installing: types.IMod;
   infoCache: InfoCache;
@@ -96,7 +96,7 @@ const nop = () => null;
 // special characters space and minus
 const validRE = /^[\p{L}\p{N} -]*$/u;
 
-function validateCollectionName(t: i18next.TFunction, input: string): string {
+function validateCollectionName(t: TFunction, input: string): string {
   if (
     input.length < MIN_COLLECTION_NAME_LENGTH ||
     input.length > MAX_COLLECTION_NAME_LENGTH
