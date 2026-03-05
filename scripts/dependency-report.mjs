@@ -22,6 +22,8 @@ async function writeLicenses() {
 
   for (const [license, packages] of Object.entries(licenseGroups)) {
     for (const pkg of packages) {
+      if (pkg.name.startsWith("@vortex")) continue;
+
       for (const version of pkg.versions) {
         const key = `${pkg.name}@${version}`;
         result[key] = {
