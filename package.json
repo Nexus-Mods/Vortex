@@ -73,12 +73,5 @@
     "webpack": "catalog:",
     "webpack-cli": "catalog:",
     "webpack-node-externals": "catalog:"
-  },
-  "pnpm": {
-    "overrides": {
-      "node-addon-api": "8.5.0",
-      "@types/react": "16",
-      "@types/react-dom": "16"
-    }
   }
 }

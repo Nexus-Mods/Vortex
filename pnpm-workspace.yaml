@@ -5,6 +5,11 @@ packages:
   - ./src/renderer
   - ./extensions/*
 
+overrides:
+  "@types/react": "16"
+  "@types/react-dom": "16"
+  "node-addon-api": "8.5.0"
+
 catalog:
   "@opentelemetry/api": ^1.9.0
   "@opentelemetry/context-async-hooks": ^2.5.1
