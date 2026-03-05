@@ -173,7 +173,6 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
       "The elegant, powerful, and open-source mod manager from Nexus Mods",
     license: "GPL-3.0",
     type: mainPkg.type,
-    pnpm: rootPkg.pnpm,
     packageManager: rootPkg.packageManager,
     engines: rootPkg.engines,
     volta: rootPkg.volta,
@@ -196,6 +195,17 @@ async function createMinimalPackageJson(workspacePackageMap, catalog) {
   );
 
   console.log("✔  Created dist/package.json");
+}
+
+/**
+ * Extracts the raw "overrides:" block from a pnpm-workspace.yaml file
+ * @param {string} yamlText
+ * @returns {string | null}
+ */
+function extractOverridesBlock(yamlText) {
+  const match = yamlText.match(/^overrides:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m);
+  if (!match) return null;
+  return "overrides:\n" + match[1];
 }
 
 /**
@@ -240,8 +250,10 @@ async function preparePNPM(rawWorkspaceYaml) {
   const onlyBuiltDependencies = extractOnlyBuiltDependencies(rawWorkspaceYaml);
 
   const catalog = extractCatalogBlock(rawWorkspaceYaml);
+  const overrides = extractOverridesBlock(rawWorkspaceYaml);
 
   const minimalYaml =
+    (overrides ? overrides + "\n" : "") +
     catalog +
     "\n" +
     "onlyBuiltDependencies:\n" +

@@ -30,6 +30,7 @@ export default defineConfig([
       "./api",
       ".pnpm-store",
       "./node_modules/",
+      "./dist",
     ],
   },
 
