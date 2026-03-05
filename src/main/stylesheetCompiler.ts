@@ -69,7 +69,9 @@ export default class StylesheetCompiler {
     const result = this.#compiler.compileString(source, {
       loadPaths: this.#loadPaths,
       style: this.#style,
-      silenceDeprecations: ["slash-div"],
+      // Silence deprecation warnings from dependencies (node_modules)
+      // while still showing warnings from our own code
+      quietDeps: true,
     });
 
     // Remove UTF-8 BOM if present (ef bb bf)
