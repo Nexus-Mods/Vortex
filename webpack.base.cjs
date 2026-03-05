@@ -67,7 +67,8 @@ function createConfig(entry, target, tsconfig) {
         optimization: {
             minimizer: mode === "development" ? [] : [optimizer],
         },
-        devtool: mode === "development" ? "eval-source-map" : "source-map",
+        devtool:
+            mode === "development" ? "cheap-module-source-map" : "source-map",
         externals: [
             nodeExternals(),
             // Explicitly exclude local file: dependencies that must remain external
