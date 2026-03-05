@@ -9,7 +9,7 @@
     "dist": "pnpm webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm tsc --noEmit --composite false -p tsconfig.json",
     "test": "pnpm jest --no-cache",
-    "api:build": "pnpm tsc -p tsconfig.api.json",
+    "api:build": "pnpm rimraf ./lib && pnpm tsc -p tsconfig.api.json",
     "api:docs": "pnpm api-extractor run --local"
   },
   "devDependencies": {

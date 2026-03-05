@@ -47,6 +47,7 @@ import type { IModFileContentPage } from '@nexusmods/nexus-api';
 import type { IModFileContentPageQuery } from '@nexusmods/nexus-api';
 import type { IModFileContentSearchFilter } from '@nexusmods/nexus-api';
 import type { IModInfo } from 'modmeta-db';
+import type { IModInfo as IModInfo_2 } from '@nexusmods/nexus-api';
 import type { IModRequirements } from '@nexusmods/nexus-api';
 import type { IncomingMessage } from 'http';
 import type { IPreference } from '@nexusmods/nexus-api';
@@ -398,7 +399,7 @@ const addMods: reduxAct.ComplexActionCreator2<string, IMod[], {
 }, {}>;
 
 // @public
-function addNotification(notification: INotification): (dispatch: any) => any;
+function addNotification(notification: INotification): (dispatch: any) => Promise_2<void> | Promise<void>;
 
 // @public (undocumented)
 function addReducer<ActionT, StateT>(action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT): {
@@ -718,6 +719,8 @@ enum Content {
     // (undocumented)
     HeaderAd = "header_ad",
     // (undocumented)
+    HealthCheckAd = "health_check_ad",
+    // (undocumented)
     SettingsDownloadAd = "settings_download_ad"
 }
 
@@ -789,7 +792,7 @@ function deBOM(input: string): string;
 // Warning: (ae-forgotten-export) The symbol "GenericDebouncer" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-class Debouncer extends GenericDebouncer<ReturnType<typeof setTimeout>, typeof setTimeout, typeof clearTimeout> {
+class Debouncer extends GenericDebouncer<number, typeof window.setTimeout, typeof window.clearTimeout> {
     constructor(func: (...args: any[]) => Error | PromiseLike<void>, debounceMS: number, reset?: boolean, triggerImmediately?: boolean);
 }
 
@@ -856,13 +859,13 @@ const discoveryByGame: ParametricSelector<IState, string, IDiscoveryResult> & {
 };
 
 // @public (undocumented)
-function dismissAllNotifications(): (dispatch: any) => any;
+function dismissAllNotifications(): (dispatch: any) => Promise_2<void>;
 
 // @public
 const dismissDialog: ComplexActionCreator1<any, any, {}>;
 
 // @public (undocumented)
-function dismissNotification(id: string): (dispatch: any) => any;
+function dismissNotification(id: string): (dispatch: any) => Promise_2<void>;
 
 // @public
 const displayGroup: ComplexActionCreator2<string, string, {
@@ -1006,9 +1009,9 @@ function findModByRef(reference: IModReference, mods: {
 }): IMod;
 
 // @public
-const finishDownload: ComplexActionCreator3<string, "failed" | "finished" | "redirect", any, {
+const finishDownload: ComplexActionCreator3<string, "finished" | "failed" | "redirect", any, {
 id: string;
-state: "failed" | "finished" | "redirect";
+state: "finished" | "failed" | "redirect";
 failCause: any;
 }, {}>;
 
@@ -1218,7 +1221,7 @@ class GameStoreNotFound extends Error {
 function generateCollectionSessionId(collectionId: string, profileId: string): string;
 
 // @public (undocumented)
-function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => any;
+function genFSWrapperAsync<T extends (...args: any[]) => any>(func: T): (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
 function getActivator(activatorId: string): IDeploymentMethod;
@@ -2020,8 +2023,8 @@ interface IDownload {
         modId: string;
     };
     localPath?: string;
-    // Warning: (ae-forgotten-export) The symbol "IModInfo_2" needs to be exported by the entry point api.d.ts
-    modInfo: IModInfo_2;
+    // Warning: (ae-forgotten-export) The symbol "IModInfo_3" needs to be exported by the entry point api.d.ts
+    modInfo: IModInfo_3;
     pausable?: boolean;
     received: number;
     size: number;
@@ -3643,6 +3646,7 @@ interface IState {
         };
         transactions: IStateTransactions;
         history: IHistoryPersistent;
+        healthCheck: IHealthCheckPersistentState;
     };
     // (undocumented)
     session: {
@@ -3654,6 +3658,7 @@ interface IState {
         browser: IBrowserState;
         history: IHistoryState;
         overlays: IOverlaysState;
+        healthCheck: IHealthCheckSessionState;
         extensions: {
             available: IAvailableExtension[];
             optional: {
@@ -4178,7 +4183,7 @@ function makeOverlayableDictionary<KeyT extends string | number | symbol, ValueT
 }, deduceLayer: (key: KeyT, extraArg: any) => string): Overlayable<KeyT, ValueT>;
 
 // @public
-function makeQueue<T>(): (func: () => Bluebird<T>, tryOnly: boolean) => any;
+function makeQueue<T>(): (func: () => Bluebird<T>, tryOnly: boolean) => Bluebird<T>;
 
 // @public
 function makeReactive<T extends object>(value: T): T;
@@ -4578,7 +4583,7 @@ const readAsync: <BufferT>(...args: any[]) => Promise_2<{
 const readdirAsync: (path: string) => Promise_2<string[]>;
 
 // @public (undocumented)
-function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string): any;
+function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string): Promise_2<any[]>;
 
 // @public (undocumented)
 const readFileAsync: (...args: any[]) => Promise_2<any>;
@@ -5193,7 +5198,7 @@ const setModInstallationPath: reduxAct.ComplexActionCreator3<string, string, str
 }, {}>;
 
 // @public (undocumented)
-const setModsEnabled: (api: IExtensionApi, profileIdIn: string, modIdsIn: string[], enableIn: boolean, optionsIn?: IEnableOptions) => any;
+const setModsEnabled: (api: IExtensionApi, profileIdIn: string, modIdsIn: string[], enableIn: boolean, optionsIn?: IEnableOptions) => Bluebird<void>;
 
 // Warning: (ae-forgotten-export) The symbol "ModState" needs to be exported by the entry point api.d.ts
 //
@@ -5394,7 +5399,7 @@ const setZoomFactor: reduxAct.ComplexActionCreator1<any, any, {}>;
 function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string): void;
 
 // @public
-function showDialog(type: DialogType, title: string, content: IDialogContent, actions: DialogActions, inId?: string): (dispatch: any) => any;
+function showDialog(type: DialogType, title: string, content: IDialogContent, actions: DialogActions, inId?: string): (dispatch: any) => Promise_2<IDialogResult>;
 
 // @public
 function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>, title: string, details?: string | Error | any, options?: IErrorOptions): void;
@@ -5500,7 +5505,7 @@ class StarterInfo implements IStarterInfo {
     // Warning: (ae-forgotten-export) The symbol "OnShowErrorFunc" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
-    static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc): any;
+    static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc): Promise_2<any>;
     // (undocumented)
     shell: boolean;
     // (undocumented)
@@ -6193,16 +6198,16 @@ export class Webview extends React_2.Component<IWebviewProps & IWebView_2, {}> {
 const willRemoveProfile: reduxAct.ComplexActionCreator1<unknown, unknown, {}>;
 
 // @public
-function withContext(id: string, value: string, fun: () => Promise_2<any>): any;
+function withContext(id: string, value: string, fun: () => Promise_2<any>): Promise_2<any>;
 
 // @public (undocumented)
-const withTmpDir: (...args: any[]) => any;
+const withTmpDir: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
 function withTmpDirImpl<T>(cb: (tmpPath: string) => Promise_2<T>): Promise_2<T>;
 
 // @public (undocumented)
-const withTmpFile: (...args: any[]) => any;
+const withTmpFile: (...args: any[]) => Promise_2<any>;
 
 // @public (undocumented)
 const writeAsync: <BufferT>(...args: any[]) => Promise_2<{
@@ -6235,12 +6240,14 @@ export class ZoomableImage extends React_2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/types/IState.d.ts:348:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/types/IState.d.ts:378:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
-// /mnt/redline/projects/NexusMods/Vortex/api/lib/renderer/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
+// lib/extensions/mod_management/selectors.d.ts:59:5 - (ae-forgotten-export) The symbol "INeedToDeployMap" needs to be exported by the entry point api.d.ts
+// lib/types/IDialog.d.ts:84:9 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:350:9 - (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:352:9 - (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:381:9 - (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+// lib/types/IState.d.ts:382:9 - (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+// lib/views/MainPage.d.ts:12:5 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
+// lib/views/MainPage.d.ts:13:5 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 
