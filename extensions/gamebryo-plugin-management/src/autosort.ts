@@ -563,6 +563,7 @@ class LootInterface {
       group: undefined,
       isValidAsLightPlugin: false,
       loadsArchive: false,
+      isEmpty: false,
       incompatibilities: [],
       requirements: [],
       version: "",
@@ -624,6 +625,7 @@ class LootInterface {
               pluginsLoaded && info !== undefined && info.isValidAsLightPlugin,
             loadsArchive:
               pluginsLoaded && info !== undefined && info.loadsArchive,
+            isEmpty: pluginsLoaded && info !== undefined && info.isEmpty,
             version: pluginsLoaded && info !== undefined ? info.version : "",
           };
         } catch (err) {
