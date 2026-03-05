@@ -3087,71 +3087,99 @@ class ExtensionManager {
    * This loads external extensions from disc synchronously
    */
   private prepareExtensions(): IRegisteredExtension[] {
-    const staticExtensions = [
-      "about_dialog",
-      "analytics",
-      "announcement_dashlet",
-      "browse_nexus",
-      "browser",
-      "category_management",
-      "collections_integration",
-      "dashboard",
-      "design_system_dev",
-      "diagnostics_files",
-      "download_management",
-      "extension_manager",
-      "file_based_loadorder",
-      "file_preview",
-      "firststeps_dashlet",
-      "gamemode_management",
-      "gameversion_management",
-      "hardlink_activator",
-      "health_check",
-      "history_management",
-      "ini_prep",
-      "installer_dotnet",
-      "installer_fomod_ipc",
-      "installer_fomod_native",
-      "installer_fomod_shared",
-      "installer_nested_fomod",
-      "instructions_overlay",
-      "mod_load_order",
-      "mod_management",
-      "mod_spotlights_dashlet",
-      "move_activator",
-      "news_dashlet",
-      "nexus_integration",
-      "null_activator",
-      "onboarding_dashlet",
-      "profile_management",
-      "recovery",
-      "settings_application",
-      "settings_interface",
-      "settings_metaserver",
-      "starter_dashlet",
-      "sticky_mods",
-      "symlink_activator",
-      "symlink_activator_elevate",
-      "telemetry",
-      "test_runner",
-      "tool_variables_base",
-      "updater",
-    ];
+    const staticExtensions: Record<string, () => unknown> = {
+      about_dialog: () => require("./extensions/about_dialog/index.ts"),
+      analytics: () => require("./extensions/analytics/index.ts"),
+      announcement_dashlet: () =>
+        require("./extensions/announcement_dashlet/index.ts"),
+      browse_nexus: () => require("./extensions/browse_nexus/index.ts"),
+      browser: () => require("./extensions/browser/index.ts"),
+      category_management: () =>
+        require("./extensions/category_management/index.ts"),
+      collections_integration: () =>
+        require("./extensions/collections_integration/index.ts"),
+      dashboard: () => require("./extensions/dashboard/index.ts"),
+      design_system_dev: () =>
+        require("./extensions/design_system_dev/index.ts"),
+      diagnostics_files: () =>
+        require("./extensions/diagnostics_files/index.ts"),
+      download_management: () =>
+        require("./extensions/download_management/index.ts"),
+      extension_manager: () =>
+        require("./extensions/extension_manager/index.ts"),
+      file_based_loadorder: () =>
+        require("./extensions/file_based_loadorder/index.ts"),
+      file_preview: () => require("./extensions/file_preview/index.ts"),
+      firststeps_dashlet: () =>
+        require("./extensions/firststeps_dashlet/index.ts"),
+      gamemode_management: () =>
+        require("./extensions/gamemode_management/index.ts"),
+      gameversion_management: () =>
+        require("./extensions/gameversion_management/index.ts"),
+      hardlink_activator: () =>
+        require("./extensions/hardlink_activator/index.ts"),
+      health_check: () => require("./extensions/health_check/index.ts"),
+      history_management: () =>
+        require("./extensions/history_management/index.ts"),
+      ini_prep: () => require("./extensions/ini_prep/index.ts"),
+      installer_dotnet: () => require("./extensions/installer_dotnet/index.ts"),
+      installer_fomod_ipc: () =>
+        require("./extensions/installer_fomod_ipc/index.ts"),
+      installer_fomod_native: () =>
+        require("./extensions/installer_fomod_native/index.ts"),
+      installer_fomod_shared: () =>
+        require("./extensions/installer_fomod_shared/index.ts"),
+      installer_nested_fomod: () =>
+        require("./extensions/installer_nested_fomod/index.ts"),
+      instructions_overlay: () =>
+        require("./extensions/instructions_overlay/index.ts"),
+      mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
+      mod_management: () => require("./extensions/mod_management/index.ts"),
+      mod_spotlights_dashlet: () =>
+        require("./extensions/mod_spotlights_dashlet/index.ts"),
+      move_activator: () => require("./extensions/move_activator/index.ts"),
+      news_dashlet: () => require("./extensions/news_dashlet/index.ts"),
+      nexus_integration: () =>
+        require("./extensions/nexus_integration/index.tsx"),
+      null_activator: () => require("./extensions/null_activator/index.ts"),
+      onboarding_dashlet: () =>
+        require("./extensions/onboarding_dashlet/index.ts"),
+      profile_management: () =>
+        require("./extensions/profile_management/index.ts"),
+      recovery: () => require("./extensions/recovery/index.ts"),
+      settings_application: () =>
+        require("./extensions/settings_application/index.ts"),
+      settings_interface: () =>
+        require("./extensions/settings_interface/index.ts"),
+      settings_metaserver: () =>
+        require("./extensions/settings_metaserver/index.ts"),
+      starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
+      sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
+      symlink_activator: () =>
+        require("./extensions/symlink_activator/index.ts"),
+      symlink_activator_elevate: () =>
+        require("./extensions/symlink_activator_elevate/index.ts"),
+      telemetry: () => require("./extensions/telemetry/index.ts"),
+      test_runner: () => require("./extensions/test_runner/index.ts"),
+      tool_variables_base: () =>
+        require("./extensions/tool_variables_base/index.ts"),
+      updater: () => require("./extensions/updater/index.ts"),
+    };
 
     require("./util/extensionRequire").default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
     let dynamicallyLoaded = [];
-    return staticExtensions
+    return Object.keys(staticExtensions)
       .map((name: string) => ({
         name,
         namespace: name,
         path: path.resolve(__dirname, "extensions", name),
-        initFunc: () =>
-          ExtensionManager.getExtensionInitFunc(
-            require(`./extensions/${name}/index`),
-          ),
+        initFunc: () => {
+          const f = staticExtensions[name];
+          return ExtensionManager.getExtensionInitFunc(f());
+        },
         dynamic: false,
       }))
       .concat(
